@@ -1,0 +1,19 @@
+{
+  "name": "convergence-player-counter",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-03",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "PLAYER_COUNTER",
+        "class_name": "PlayerCounter"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["PlayerCounter"]
+    }
+  ]
+}

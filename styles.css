@@ -68,6 +68,20 @@ h1 { font-size: clamp(4rem, 8vw, 7rem); line-height: 0.88; letter-spacing: -0.06
 .button.secondary { background: rgba(255,255,255,0.06); }
 .button:hover { transform: translateY(-2px); }
 .small { color: #9186a5; font-size: 0.84rem; margin-top: 1rem; }
+.player-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0;
+  padding: 0.5rem 0.75rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  border: 1px solid rgba(57, 219, 194, 0.24);
+  border-radius: 999px;
+  background: rgba(20, 13, 35, 0.44);
+}
+.player-count[hidden] { display: none; }
+.player-count strong { color: var(--teal); font-size: 0.94rem; }
 
 .card-stack { height: 520px; position: relative; perspective: 1100px; }
 .feature-card {
@@ -165,4 +179,3 @@ footer a { color: var(--teal); white-space: nowrap; }
   .section { padding-block: 5rem; }
   footer { flex-direction: column; }
 }
-

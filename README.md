@@ -8,6 +8,8 @@ Convergence is a free, fan-made browser card duel where 175 characters and force
 
 No installation or account is required. A modern desktop browser is recommended.
 
+The homepage and game show the same public **played this game** total. Opening the game registers a browser once using a local browser marker; the counter service stores only the aggregate number, not names or visitor records.
+
 ## Quick rules
 
 - Both cores begin at 76 health. Reduce the opposing core to zero to win.
