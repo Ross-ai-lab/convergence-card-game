@@ -1,0 +1,177 @@
+{
+  "$comment": [
+    "Thresholds for the balance gate. `npm run sim` and `npm run check:balance` read this file and",
+    "turn the measured numbers into PASS / FAIL / SKIP. Nothing here is hard-coded in the scripts.",
+    "",
+    "Three rules this file exists to enforce:",
+    "  1. A check whose sample is too small SKIPS loudly. It is never counted as a pass.",
+    "  2. A threshold left null means 'not decided yet' and also SKIPS. It never silently passes.",
+    "  3. Unknown keys are a hard load error, so a typo cannot quietly disable a check.",
+    "",
+    "Mana cost is frozen (see README). Nothing in here is a licence to change a card's cost."
+  ],
+
+  "sample": {
+    "$comment": [
+      "Minimum evidence each check needs before it is allowed to have an opinion.",
+      "Below these numbers the check reports SKIP with the reason, and the run's verdict says so."
+    ],
+    "minDecidedGamesForCoinFlip": 800,
+    "minFinishedGamesForLength": 200,
+    "minGamesForOpening": 400,
+    "minGamesPerLadderMatchup": 75,
+    "minLeadGamesForSnowball": 200,
+    "minCardDrawnForRates": 40,
+    "minCardPlaysForTier": 60
+  },
+
+  "checks": {
+    "coinFlip": {
+      "$comment": [
+        "How often the player who moves first wins. 50% is a perfectly fair start.",
+        "Band widened from 45-55 to 44-56 on owner ruling: the game measures 46-49%, and a 45%",
+        "floor sits close enough to that to go red on shuffle luck rather than on a real problem."
+      ],
+      "enabled": true,
+      "minPct": 44,
+      "maxPct": 56
+    },
+
+    "matchLength": {
+      "$comment": [
+        "Median duel length in player-turns (about half that many turns each).",
+        "The shipped game measures 21. Outside this band the pacing has moved and every",
+        "per-turn effect in the game changed value with it (game-balance.md R-gb-03)."
+      ],
+      "enabled": true,
+      "minMedianTurns": 18,
+      "maxMedianTurns": 26
+    },
+
+    "softLocks": {
+      "$comment": "A live game that offers nobody a legal move. Always a bug. No tolerance, no sample floor.",
+      "enabled": true,
+      "max": 0
+    },
+
+    "stalls": {
+      "$comment": "A duel that hit the turn cap without anybody winning. No tolerance, no sample floor.",
+      "enabled": true,
+      "max": 0
+    },
+
+    "invariants": {
+      "$comment": [
+        "Breaches found by the fuzzer: crashes, NaN or negative stats, duplicate minions,",
+        "a save that will not survive a JSON round trip. No tolerance.",
+        "NOTE ON COVERAGE: the full invariant suite runs on every fuzz duel, but on only every",
+        "40th self-play duel (deepChecks in simulate.ts) because it is ~3x slower. So a corrupt",
+        "state that only competent play can assemble is checked in a fraction of the bot duels."
+      ],
+      "enabled": true,
+      "max": 0
+    },
+
+    "draws": {
+      "$comment": [
+        "Duels where both cores fall at once, so nobody wins. Not a stall and not a soft-lock.",
+        "This check exists because an adversarial review pointed out that a draw silently leaves",
+        "every other rate here measured on a smaller sample - the coin flip, the ladder and the",
+        "snowball metric all just quietly exclude it - so the game could start ending in draws",
+        "half the time with no lamp lighting anywhere. Measured at 0 on the shipped game; 0.5% is",
+        "a guard that tolerates the genuinely rare mutual kill without tolerating a trend."
+      ],
+      "enabled": true,
+      "maxPct": 0.5
+    },
+
+    "deadOpening": {
+      "$comment": [
+        "How often a player can play NOTHING across their first N own turns — measured by asking",
+        "the engine for legal moves, not by comparing costs, so The Coin, discounts and relics count.",
+        "Owner ruling: gate on the 3-turn window (the real pathology). The turn-1 number is reported",
+        "beside it but never gated — going first means one card and one mana, so a dead first turn",
+        "is the design, not a defect.",
+        "",
+        "MEASURED on 3000 openings at the current hand sizes of 2 and 3: 13.0% overall — 17.3% going",
+        "first, 8.8% going second. Re-baselined from 24 after the hand-size change; 24 was a guard on the",
+        "OLD hand sizes of 1 and 2, where the figure was 20.7%, and left in place it was far too loose to",
+        "catch anything.",
+        "",
+        "17 gives about four points of headroom over the measured 13.0% — enough that shuffle variation",
+        "will not trip it, tight enough that a rules change quietly undoing the hand-size fix goes red.",
+        "Re-baseline this again after any change to hand size, the draw, or the cost curve."
+      ],
+      "enabled": true,
+      "throughOwnTurns": 3,
+      "maxPct": 17
+    },
+
+    "skillLadder": {
+      "$comment": [
+        "Does skill actually win? Each matchup is its own check, so the summary names which one broke.",
+        "A matchup passes only when BOTH hold: the observed rate clears its floor, AND the 95%",
+        "confidence interval sits entirely above 50% — i.e. the gap is real, not shuffle luck.",
+        "Measured on the shipped bot: hard>easy 79.2, hard>normal 71.6, normal>easy 62.4.",
+        "",
+        "Sample sizes are per matchup because the cost and the need are inverted. A duel involving",
+        "the hard bot takes about eight times as long (it searches whole turns), and those two",
+        "matchups have 20-point margins that need almost no sample: at 80 duels the chance of a false",
+        "red is under one in a thousand. normal>easy has only 9 points of headroom over its floor and",
+        "is the cheap matchup, so it gets 200. Flat 200s across all three would cost 16 minutes and",
+        "buy nothing; this costs about 7."
+      ],
+      "enabled": true,
+      "games": {
+        "hard>easy": 80,
+        "hard>normal": 80,
+        "normal>easy": 200
+      },
+      "floors": {
+        "hard>easy": 60,
+        "hard>normal": 55,
+        "normal>easy": 53
+      }
+    },
+
+    "snowball": {
+      "$comment": [
+        "Take whoever is ahead at turn N and ask how often they go on to win. A game already",
+        "decided at turn 5 feels bad for the ten turns it still takes to end.",
+        "'Ahead' = ahead on core health AND on board strength at the same time. Measured all three",
+        "ways and gated on that one, because health alone turned out to be a poor signal this early:",
+        "the player on more health at turn 5 is often just the one who has not attacked yet.",
+        "Duels where the two measures disagree are excluded, not counted as ties.",
+        "",
+        "MEASURED across 627 duels with a clear turn-5 leader: 59.5%. The curve then runs 66% at",
+        "turn 9, 73% at turn 13, 85% at turn 17 — a game that tightens gradually rather than one",
+        "decided in its opening. This is a genuinely healthy result.",
+        "70 is a regression guard with room for normal variation (about five standard errors above",
+        "the measured value). The line where an early lead starts to FEEL deterministic is nearer 80."
+      ],
+      "enabled": true,
+      "atTurn": 5,
+      "maxLeaderWinPct": 70
+    }
+  },
+
+  "report": {
+    "$comment": [
+      "Report-only tuning. Nothing under here can fail the gate.",
+      "watchlistPlayRatePct: the owner's real signal for cards that rot in hand. The worst card in",
+      "  the roster is played 16% of the times it is drawn, so a 1% gate would never fire; 20% is",
+      "  where the interesting cards actually sit (owner ruling — the 1% gate was dropped for this).",
+      "tierOutlier*: a card is only named as an outlier when it is BOTH beyond this many standard",
+      "  errors from its own cost tier's mean AND at least this many points away from it. Judging",
+      "  against the tier, never the roster average (game-balance.md R-gb-04).",
+      "diffNoiseMultiple: a before/after card delta is marked 'noise' unless it exceeds this many",
+      "  standard errors of the difference. At default sample sizes that floor is around 12 points,",
+      "  which is the honest resolution of a per-card diff."
+    ],
+    "watchlistPlayRatePct": 20,
+    "tierOutlierZ": 2,
+    "tierOutlierMinDeltaPct": 6,
+    "diffNoiseMultiple": 2,
+    "historyRunsKept": 20
+  }
+}

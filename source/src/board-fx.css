@@ -1,0 +1,279 @@
+/* ============================================================================
+   BOARD FX — the camp signatures, the Mythic entrance, and the killing blow.
+
+   These are BOARD effects and they used to live in `screens/Screens.css`, whose
+   stated job is "everything that is NOT the board". They were filed there
+   because the camp signatures were built in the same session as the title
+   screen, and they stayed because moving CSS between files can silently change
+   which rule wins a tie.
+
+   Nothing ties here: after the camp blocks were consolidated into one definition
+   per camp, no selector in this file is also declared in Screens.css. The import
+   in App.tsx sits directly after `./App.css`, which keeps every rule below in
+   the same position it held when it loaded via Screens.css — after App.css, and
+   ahead of nothing that touches it.
+
+   If you add a rule here that ALSO exists in App.css, remember this file wins.
+   ============================================================================ */
+
+/* ============================================================================
+   CAMP SIGNATURES, THE MYTHIC ENTRANCE, AND THE KILLING BLOW
+
+   Three summon looks rather than 175: a player learns them in one duel, and the
+   board reads far richer for a fraction of the work. Colour alone is not a
+   signature — each one also MOVES differently, which is the half of the read
+   that survives being glanced at.
+   ============================================================================ */
+
+.camp-sigil {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  pointer-events: none;
+  animation: sigil-life 0.72s cubic-bezier(0.15, 0.8, 0.25, 1) var(--fd, 0s) both;
+}
+
+/* NO SHADE LAYER, and that was a decision rather than an omission.
+
+   All three sigils were tuned against a DARK screenshot and then shipped onto
+   bright parchment under a lit card face, where a thin coloured line at 60%
+   opacity is close to invisible. Two backdrop layers were built to fix that and
+   both were deleted after being photographed on the real parchment (which the
+   harness in scripts/shoot-screens.mjs now paints, instead of the dark panel it
+   used to lie with): a filled pool read as a grey smudge in the middle of every
+   effect, and a ring read as a grey donut around it. Both looked like dirt on
+   the table and both were worse than plain parchment.
+
+   What actually fixed legibility was the boring half: Magic 124 -> 150px at 4px
+   stroke, Nature 132 -> 160px at higher alpha, Tech 136 -> 164px at 5px, and all
+   three held ~30% longer. Contrast, not scaffolding. If a future pass reaches
+   for a backdrop again: look at it on parchment before keeping it.
+   -------------------------------------------------------------------------- */
+
+@keyframes sigil-life {
+  0% { opacity: 0; scale: 0.35; }
+  22% { opacity: 1; }
+  100% { opacity: 0; scale: 1.5; }
+}
+
+/* ONE definition per camp. There used to be three generations of them stacked
+   on top of each other — `.camp-nature .camp-sigil` and `.camp-tech .camp-sigil`
+   were each declared twice, ~150 lines apart, with the later one silently
+   winning on half its properties and inheriting the rest. It worked and it was
+   unreadable: you could not tell what a camp looked like without diffing two
+   blocks and knowing the file order. Each camp is now stated once, in full.
+
+   Shared shape rules, all three learned the hard way:
+     - They must differ in SHAPE and MOTION, not only colour. The first version
+       passed a glance and was, frozen side by side and blown up, the same
+       glowing circle three times.
+     - The shared summon flash (.impact-core) drops to a soft under-glow when a
+       camp signature is present, or it is the dominant round shape in all three.
+     - They play on bright parchment over a lit card. Judge them there — the
+       harness in shoot-screens.mjs paints the battlefield gradient behind them.
+     - No backdrop layer. Two were tried and both looked like dirt; see the note
+       above .camp-sigil.
+   -------------------------------------------------------------------------- */
+
+/* When a camp signature is present it IS the effect, so the generic summon ring
+   stands down to a small coloured glow underneath it. */
+.impact-summon.camp-magic .impact-core,
+.impact-summon.camp-nature .impact-core,
+.impact-summon.camp-tech .impact-core {
+  width: 22px;
+  height: 22px;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.impact-summon.camp-magic .impact-core {
+  background: radial-gradient(circle, rgba(186, 142, 255, 0.55), transparent 72%);
+}
+
+.impact-summon.camp-nature .impact-core {
+  background: radial-gradient(circle, rgba(121, 198, 106, 0.55), transparent 72%);
+}
+
+.impact-summon.camp-tech .impact-core {
+  background: radial-gradient(circle, rgba(127, 168, 216, 0.55), transparent 72%);
+}
+
+/* --- MAGIC: an arcane ring that turns as it opens. -------------------------- */
+.camp-magic .camp-sigil {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 4px solid rgba(226, 200, 255, 1);
+  box-shadow:
+    0 0 12px rgba(226, 200, 255, 0.9),
+    0 0 48px rgba(155, 119, 210, 1),
+    inset 0 0 34px rgba(186, 142, 255, 0.75);
+  animation:
+    sigil-life 0.95s cubic-bezier(0.15, 0.8, 0.25, 1) var(--fd, 0s) both,
+    sigil-turn 0.95s linear var(--fd, 0s) both;
+}
+
+/* The dashed inner ring is what makes it read as a SIGIL rather than a hoop. */
+.camp-magic .camp-sigil::before {
+  content: "";
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  border: 3px dashed rgba(240, 226, 255, 0.95);
+}
+
+@keyframes sigil-turn { to { rotate: 200deg; } }
+
+/* --- NATURE: a bloom opening upward. Never a closed circle. ----------------- */
+.camp-nature .camp-sigil {
+  width: 160px;
+  height: 116px;
+  border: 0;
+  border-radius: 50% 50% 40% 40%;
+  background:
+    radial-gradient(ellipse at 50% 88%, rgba(190, 250, 160, 0.95) 0%, rgba(121, 198, 106, 0.6) 38%, transparent 74%);
+  box-shadow: 0 0 56px rgba(121, 198, 106, 0.8);
+  animation: bloom-life 1s cubic-bezier(0.2, 0.9, 0.2, 1) var(--fd, 0s) both;
+}
+
+/* Two shoots ANCHORED AT THE BASE and rotated outward from it — the shape of a
+   sprout. Drawn as full-box diagonal gradients once, which crossed through the
+   centre and read as an X: crossed blades, the opposite of growth. */
+.camp-nature .camp-sigil::before,
+.camp-nature .camp-sigil::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 20%;
+  width: 5px;
+  height: 46px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(0deg, rgba(121, 198, 106, 0.2), rgba(190, 250, 165, 1));
+  box-shadow: 0 0 12px rgba(160, 232, 130, 0.9);
+  transform-origin: 50% 100%;
+}
+
+.camp-nature .camp-sigil::before { transform: translateX(-50%) rotate(-26deg); }
+.camp-nature .camp-sigil::after { transform: translateX(-50%) rotate(26deg); height: 38px; }
+
+@keyframes bloom-life {
+  0% { opacity: 0; scale: 0.3 0.1; translate: -50% -20%; }
+  30% { opacity: 1; }
+  100% { opacity: 0; scale: 1.45 1.6; translate: -50% -66%; }
+}
+
+/* --- TECH: a bracket pair that snaps shut. Hard, square, no radius anywhere. -- */
+.camp-tech .camp-sigil {
+  width: 164px;
+  height: 112px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  animation: bracket-snap 0.8s cubic-bezier(0.2, 1.3, 0.35, 1) var(--fd, 0s) both;
+}
+
+.camp-tech .camp-sigil::before,
+.camp-tech .camp-sigil::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  border-top: 5px solid rgba(206, 234, 255, 1);
+  border-bottom: 5px solid rgba(206, 234, 255, 1);
+  box-shadow: 0 0 10px rgba(206, 234, 255, 0.8), 0 0 30px rgba(127, 168, 216, 1);
+}
+
+.camp-tech .camp-sigil::before {
+  left: 0;
+  border-left: 5px solid rgba(206, 234, 255, 1);
+}
+
+.camp-tech .camp-sigil::after {
+  right: 0;
+  border-right: 5px solid rgba(206, 234, 255, 1);
+}
+
+@keyframes bracket-snap {
+  0% { opacity: 0; scale: 2.1 0.4; }
+  40% { opacity: 1; scale: 1 1; }
+  72% { opacity: 1; scale: 1 1; }
+  100% { opacity: 0; scale: 1.1 1.1; }
+}
+
+/* ------------------------------------------------- the Mythic entrance */
+
+.mythic-tear {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 140vw;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #fff5e3 22%, #fff 50%, #fff5e3 78%, transparent);
+  box-shadow: 0 0 40px 10px rgba(255, 245, 227, 0.75);
+  animation: tear-open 0.62s cubic-bezier(0.16, 0.9, 0.2, 1) both;
+}
+
+@keyframes tear-open {
+  0% { opacity: 0; scale: 0 1; }
+  26% { opacity: 1; scale: 1 1; }
+  60% { opacity: 1; scale: 1 26; filter: blur(9px); }
+  100% { opacity: 0; scale: 1 40; filter: blur(20px); }
+}
+
+.mythic-shock {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 3px solid rgba(240, 199, 103, 0.85);
+  animation: shock-out 1s cubic-bezier(0.1, 0.75, 0.2, 1) 0.16s both;
+}
+
+.mythic-shock-2 {
+  border-color: rgba(223, 103, 84, 0.6);
+  animation-delay: 0.32s;
+}
+
+@keyframes shock-out {
+  0% { opacity: 0; scale: 0.1; }
+  18% { opacity: 1; }
+  100% { opacity: 0; scale: 5.2; border-width: 1px; }
+}
+
+.mythic-text strong span {
+  display: inline-block;
+  white-space: pre;
+  animation: mythic-letter 0.44s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+@keyframes mythic-letter {
+  from { opacity: 0; transform: translateY(-18px) scale(1.5); filter: blur(5px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+/* ------------------------------------------------------ the killing blow */
+
+.lethal-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 88;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.92) 0%, rgba(255, 245, 227, 0.5) 18%, transparent 55%),
+    linear-gradient(0deg, transparent 46%, rgba(255, 255, 255, 0.9) 50%, transparent 54%);
+  animation: lethal-blow 0.72s cubic-bezier(0.1, 0.8, 0.2, 1) both;
+}
+
+@keyframes lethal-blow {
+  0% { opacity: 0; scale: 0.4 1; }
+  12% { opacity: 1; scale: 1 1; }
+  40% { opacity: 0.7; }
+  100% { opacity: 0; scale: 1.3 1.3; }
+}

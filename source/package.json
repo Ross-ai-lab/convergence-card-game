@@ -1,0 +1,38 @@
+{
+  "name": "convergence-card-game",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Editable source for the Convergence browser card game",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "sim": "tsx scripts/simulate.ts",
+    "check:balance": "tsx scripts/simulate.ts --full",
+    "check:audio": "node scripts/check-audio.mjs",
+    "shoot": "node scripts/shoot-screens.mjs",
+    "validate:data": "node scripts/validate-cards.mjs",
+    "check:ui": "node scripts/check-ui.mjs",
+    "check:cardface": "node scripts/check-cardface.mjs",
+    "sync:relics": "node scripts/sync-relic-text.mjs"
+  },
+  "dependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "jsdom": "^29.1.0",
+    "tsx": "^4.23.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10",
+    "playwright": "^1.60.0",
+    "vitest": "^4.1.5"
+  }
+}

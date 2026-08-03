@@ -12,9 +12,8 @@ from pathlib import Path
 import openpyxl
 
 HERE = Path(__file__).resolve().parent
-# HERE = .../Convergence Master.../Card art/card-render-pipeline
-MASTER = HERE.parents[1]  # .../Convergence Master Folder of All Materials
-XLSX = MASTER / "Convergence card stat excel sheet.xlsx"
+MATERIALS = HERE.parent
+XLSX = MATERIALS / "Convergence card stat excel sheet.xlsx"
 
 # Rulebook v1.0: "Rarity – Rare (Black), Epic (Purple), Legendary (Yellow), Mythic (Red)"
 RARITY_COLOR = {

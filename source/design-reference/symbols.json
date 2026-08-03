@@ -1,0 +1,146 @@
+{
+  "_about": "How card games signal COST, ATTACK and HEALTH. The question this answers: which number is which, without reading a label. Shapes here are original SVG reconstructions of the CONVENTION (a crystal, a sword, a drop) — not copies of any game's artwork. Source links are for checking the facts, not for copying assets.",
+  "_source_of_truth": "This file. index.html is generated from it by build-reference.py — edit here, then rerun that.",
+  "shapes": {
+    "crystal": "M50 4 L96 50 L50 96 L4 50 Z",
+    "gem-cut": "M50 6 L88 30 L88 70 L50 94 L12 70 L12 30 Z",
+    "drop": "M50 6 C50 6 84 44 84 64 A34 34 0 0 1 16 64 C16 44 50 6 50 6 Z",
+    "heart": "M50 92 C18 66 8 52 8 36 A24 24 0 0 1 50 22 A24 24 0 0 1 92 36 C92 52 82 66 50 92 Z",
+    "sword": "M44 0 H56 V8 H44 Z M10 8 H90 V22 H10 Z M26 22 H74 L74 58 L50 99 L26 58 Z",
+    "shield": "M50 5 L88 20 V50 C88 72 70 88 50 95 C30 88 12 72 12 50 V20 Z",
+    "circle": "M50 50 m-45 0 a45 45 0 1 0 90 0 a45 45 0 1 0 -90 0"
+  },
+  "games": [
+    {
+      "game": "Hearthstone",
+      "note": "The reference point for this whole convention. Three different shapes AND three different colours — nothing relies on position alone.",
+      "source": "https://hearthstone.wiki.gg/wiki/Card",
+      "stats": [
+        {
+          "stat": "cost",
+          "shape": "crystal",
+          "fill": "#2f8fd6",
+          "rim": "#a9e4ff",
+          "position": "top-left",
+          "reads_as": "a blue mana crystal"
+        },
+        {
+          "stat": "attack",
+          "shape": "sword",
+          "fill": "#d9911f",
+          "rim": "#ffd98a",
+          "position": "bottom-left",
+          "reads_as": "a sword blade"
+        },
+        {
+          "stat": "health",
+          "shape": "drop",
+          "fill": "#d92b18",
+          "rim": "#ff9b86",
+          "position": "bottom-right",
+          "reads_as": "a drop of blood"
+        }
+      ]
+    },
+    {
+      "game": "Legends of Runeterra",
+      "note": "Cost top-left in a gem. Power and health sit at the bottom corners in the same left/right order as Hearthstone — that left=offence, right=defence split is the strongest cross-game convention there is.",
+      "source": "https://support-legendsofruneterra.riotgames.com/hc/en-us/articles/360035562134-Card-Types-and-How-They-Work",
+      "stats": [
+        {
+          "stat": "cost",
+          "shape": "gem-cut",
+          "fill": "#3f7fd0",
+          "rim": "#bcdcff",
+          "position": "top-left",
+          "reads_as": "a cut gem"
+        },
+        {
+          "stat": "attack",
+          "shape": "sword",
+          "fill": "#c8892a",
+          "rim": "#ffe1a3",
+          "position": "bottom-left",
+          "reads_as": "a blade"
+        },
+        {
+          "stat": "health",
+          "shape": "shield",
+          "fill": "#2f9c5a",
+          "rim": "#a8f0c4",
+          "position": "bottom-right",
+          "reads_as": "a shield"
+        }
+      ]
+    },
+    {
+      "game": "Magic: The Gathering (Arena)",
+      "note": "The outlier, and a useful warning: mana pips are top-right, and power/toughness share ONE box bottom-right written as 3/4. It works because players learn the slash, not because it is self-explanatory. Do not copy this.",
+      "source": "https://magic.wizards.com/en/rules",
+      "stats": [
+        {
+          "stat": "cost",
+          "shape": "circle",
+          "fill": "#8a8f98",
+          "rim": "#dfe3e8",
+          "position": "top-right",
+          "reads_as": "round mana pips"
+        },
+        {
+          "stat": "attack",
+          "shape": "circle",
+          "fill": "#5c5148",
+          "rim": "#cbbba6",
+          "position": "bottom-right",
+          "reads_as": "the left half of 3/4"
+        },
+        {
+          "stat": "health",
+          "shape": "circle",
+          "fill": "#5c5148",
+          "rim": "#cbbba6",
+          "position": "bottom-right",
+          "reads_as": "the right half of 3/4"
+        }
+      ]
+    },
+    {
+      "game": "Convergence (this game, current)",
+      "note": "Built 2026-07-30. Shape AND colour, never position alone. Health is a heart because the player's own core is a heart too. The attack sword took three tries: a wide hexagonal blade read as a house, a blade-over-pommel read as a coin with a cross on it, and only a DOWNWARD sword — grip, wide crossguard, blade tapering to a point — reads as a weapon at card size. The number sits in the blade.",
+      "source": "src/App.css — .cf-mana / .cf-atk / .cf-hp",
+      "stats": [
+        {
+          "stat": "cost",
+          "shape": "crystal",
+          "fill": "#2f8fd6",
+          "rim": "#a9e4ff",
+          "position": "top-right",
+          "reads_as": "a blue crystal"
+        },
+        {
+          "stat": "attack",
+          "shape": "sword",
+          "fill": "#d9911f",
+          "rim": "#ffd98a",
+          "position": "bottom-left",
+          "reads_as": "an amber blade"
+        },
+        {
+          "stat": "health",
+          "shape": "heart",
+          "fill": "#d92b18",
+          "rim": "#ff9b86",
+          "position": "bottom-right",
+          "reads_as": "a red heart"
+        }
+      ]
+    }
+  ],
+  "conclusions": [
+    "Colour is read before shape, and shape before position. Encode meaning in at least two of the three; three identical discs told apart only by corner is the failure this file exists to prevent.",
+    "Blue = cost, red = health and warm gold = attack are near-universal. Runeterra's green shield for health is the one common variation, and it still pairs a distinct colour with a distinct shape.",
+    "Bottom-left = offence, bottom-right = defence holds across every game here. Keep it.",
+    "A container shape must be WIDER than the number it holds. The first sword here had a 40-unit blade against a ~40-unit digit, so the number sat above the shape instead of inside it and read as two separate marks. Check that at full size, not on a thumbnail.",
+    "A weapon icon only reads if the crossguard is WIDE and the blade TAPERS. Symmetrical blocky shapes collapse into a house or a shield at small sizes, whatever the intent. Point the sword down: it puts the widest part of the blade where the number has to go."
+  ]
+}

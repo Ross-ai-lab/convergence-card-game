@@ -1,0 +1,291 @@
+import { describe, expect, it } from "vitest";
+import { cards } from "../data/cards";
+import { chooseBotAction } from "./bot";
+import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
+import type { GameState, MinionInstance, PlayerId } from "./types";
+import { spawnTestMinion } from "./test-utils";
+
+const library = makeCardLibrary(cards);
+
+function cardId(name: string): string {
+  const card = cards.find((entry) => entry.name === name);
+  if (!card) throw new Error(`Missing card ${name}`);
+  return card.id;
+}
+
+function makeMinion(name: string, owner: PlayerId, overrides: Partial<MinionInstance> = {}): MinionInstance {
+  return spawnTestMinion(library[cardId(name)], owner, overrides);
+}
+
+/** A stat-only body, immune to whatever effect its card may gain later. */
+function dummy(name: string, owner: PlayerId, overrides: Partial<MinionInstance> = {}): MinionInstance {
+  return makeMinion(name, owner, { effectId: "none", effectTiming: "none", keywords: [], ...overrides });
+}
+
+/**
+ * Plays a card from hand into a slot, ignoring mana — how a Battlecry fires.
+ * (Most effects moved from Ongoing to Battlecry, so cycling turns no longer
+ * triggers them.)
+ */
+function playCardFor(state: GameState, player: PlayerId, name: string, slotIndex = 0): GameState {
+  const next: GameState = { ...state, cheatMode: true, activePlayer: player, phase: "main", drawChoice: null };
+  next.players = [...state.players] as GameState["players"];
+  next.players[player] = { ...state.players[player], hand: [cardId(name)] };
+  return applyAction(next, { type: "play_card", player, handIndex: 0, slotIndex }, library).state;
+}
+
+function mainState(seed = "targeting-tests"): GameState {
+  const state = createInitialGame(cards, seed);
+  state.phase = "main";
+  state.drawChoice = null;
+  state.activePlayer = 0;
+  return state;
+}
+
+/** Ongoing effects fire at the start of the owner's turn, so get back round to it. */
+function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
+  let next = applyAction(state, { type: "end_turn", player }, library).state;
+  if (next.phase === "drawChoice" && next.drawChoice) {
+    next = applyAction(next, { type: "choose_draw", player: next.drawChoice.player, choiceIndex: 0 }, library).state;
+  }
+  return next;
+}
+const toMyNextTurn = (state: GameState): GameState => endTurnAndDraw(endTurnAndDraw(state, 0), 1);
+
+describe("targeted effects", () => {
+  it("stops and asks when more than one enemy is legal", () => {
+    const state = mainState();
+    state.players[1].board[0] = dummy("John Wick", 1);
+    state.players[1].board[2] = dummy("Zoro", 1);
+
+    const after = playCardFor(state, 0, "Kiritsugu Emiya", 1); // Battlecry: freeze an enemy
+    expect(after.phase).toBe("targeting");
+    expect(after.pendingTarget?.sourceName).toBe("Kiritsugu Emiya");
+    expect(after.pendingTarget?.player).toBe(0);
+    expect(after.pendingTarget?.options).toEqual([
+      { owner: 1, slot: 0 },
+      { owner: 1, slot: 2 },
+    ]);
+    // Nothing has happened to either enemy yet.
+    expect(after.players[1].board[0]?.frozen).toBe(false);
+    expect(after.players[1].board[2]?.frozen).toBe(false);
+    // The only legal moves are the choices themselves.
+    expect(getLegalActions(after, library).every((action) => action.type === "choose_target")).toBe(true);
+  });
+
+  it("hits the minion the player named, not the leftmost one", () => {
+    const state = mainState();
+    state.players[1].board[0] = dummy("John Wick", 1);
+    state.players[1].board[2] = dummy("Zoro", 1);
+
+    const asking = playCardFor(state, 0, "Kiritsugu Emiya", 1);
+    const chosen = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: 1 }, library).state;
+
+    expect(chosen.phase).toBe("main");
+    expect(chosen.pendingTarget).toBeNull();
+    expect(chosen.players[1].board[2]?.frozen).toBe(true);
+    expect(chosen.players[1].board[0]?.frozen).toBe(false); // the old engine always hit this one
+  });
+
+  it("Batman asks for two different enemies and freezes both choices", () => {
+    const state = mainState();
+    state.players[1].board[0] = dummy("John Wick", 1);
+    state.players[1].board[2] = dummy("Zoro", 1);
+    state.players[1].board[4] = dummy("Death Star", 1);
+
+    const firstPrompt = playCardFor(state, 0, "Batman", 1);
+    const firstIndex = firstPrompt.pendingTarget!.options.findIndex((option) => option.slot === 2);
+    const secondPrompt = applyAction(
+      firstPrompt,
+      { type: "choose_target", player: 0, choiceIndex: firstIndex },
+      library,
+    ).state;
+    expect(secondPrompt.phase).toBe("targeting");
+    expect(secondPrompt.pendingTarget?.options.some((option) => option.slot === 2)).toBe(false);
+
+    const secondIndex = secondPrompt.pendingTarget!.options.findIndex((option) => option.slot === 4);
+    const frozen = applyAction(
+      secondPrompt,
+      { type: "choose_target", player: 0, choiceIndex: secondIndex },
+      library,
+    ).state;
+    expect(frozen.players[1].board[0]?.frozen).toBe(false);
+    expect(frozen.players[1].board[2]?.frozen).toBe(true);
+    expect(frozen.players[1].board[4]?.frozen).toBe(true);
+  });
+
+  it("Musashi destroys the damaged enemy the player names", () => {
+    const state = mainState();
+    state.players[1].board[0] = dummy("John Wick", 1, { hp: 1, maxHp: 2 });
+    state.players[1].board[3] = dummy("Zoro", 1, { hp: 2, maxHp: 3 });
+
+    const asking = playCardFor(state, 0, "Musashi", 1);
+    const chosenIndex = asking.pendingTarget!.options.findIndex((option) => option.slot === 3);
+    const after = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: chosenIndex }, library).state;
+    expect(after.players[1].board[0]).not.toBeNull();
+    expect(after.players[1].board[3]).toBeNull();
+  });
+
+  it("cards that explicitly say random do not open a targeting prompt", () => {
+    for (const name of ["Darth Vader", "Ragnaros", "The 7? Heroic Spirits"]) {
+      const state = mainState(`random-${name}`);
+      state.players[1].board[0] = dummy("John Wick", 1, { alignment: name === "Darth Vader" ? "Good" : "Neutral", hp: 1, maxHp: 2 });
+      state.players[1].board[2] = dummy("Zoro", 1, { alignment: name === "Darth Vader" ? "Good" : "Neutral", hp: 1, maxHp: 2 });
+      const after = playCardFor(state, 0, name, 1);
+      expect(after.phase).toBe("main");
+      expect(after.pendingTarget).toBeNull();
+      expect(after.players[1].board.filter(Boolean)).toHaveLength(1);
+    }
+  });
+
+  it("resolves silently when only one target is legal", () => {
+    const state = mainState();
+    state.players[1].board[3] = dummy("John Wick", 1);
+
+    const after = playCardFor(state, 0, "Kiritsugu Emiya", 1);
+    expect(after.phase).toBe("main");
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[1].board[3]?.frozen).toBe(true);
+  });
+
+  it("fizzles without asking when nothing is legal", () => {
+    const state = mainState();
+    state.players[1].board[0] = makeMinion("Hypnos", 1, { atk: 0 });
+
+    const after = playCardFor(state, 0, "GLaDOS", 1); // reduce_atk_3 needs an enemy with ATK
+    expect(after.phase).toBe("main");
+    expect(after.pendingTarget).toBeNull();
+  });
+
+  it("only offers friendly minions to a friendly-side effect", () => {
+    const state = mainState();
+    state.players[0].board[1] = dummy("John Wick", 0);
+    state.players[0].board[2] = dummy("Zoro", 0);
+    state.players[1].board[0] = dummy("John Wick", 1);
+
+    const after = playCardFor(state, 0, "Knov", 0); // Battlecry: give an ally Divine Shield
+    expect(after.pendingTarget?.options.every((option) => option.owner === 0)).toBe(true);
+    // Knov itself already has Divine Shield, so it is not among its own options.
+    expect(after.pendingTarget?.options).toEqual([
+      { owner: 0, slot: 1 },
+      { owner: 0, slot: 2 },
+    ]);
+  });
+
+  it("holds the rest of the turn's ongoing effects behind the prompt", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("S-Class Heroes", 0, { playOrder: 1 }); // ongoing + targeted: asks first
+    state.players[0].board[1] = makeMinion("Mob Psycho", 0, { playOrder: 2 }); // ongoing self_buff_2, no prompt
+    state.players[0].board[2] = dummy("Zoro", 0, { alignment: "Good" });
+    state.players[0].board[3] = dummy("John Wick", 0, { alignment: "Good" });
+
+    const asking = toMyNextTurn(state);
+    expect(asking.phase).toBe("targeting");
+    expect(asking.players[0].board[1]?.atk).toBe(5); // Mob Psycho has NOT fired yet
+
+    const zoroIndex = asking.pendingTarget!.options.findIndex((option) => option.slot === 2);
+    const resumed = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: zoroIndex }, library).state;
+    expect(resumed.phase).toBe("main");
+    expect(resumed.players[0].board[2]?.atk).toBe(5); // Zoro took the +2/+2
+    expect(resumed.players[0].board[1]?.atk).toBe(7); // and Mob Psycho's own +2 landed after it
+    expect(resumed.effectQueue).toHaveLength(0);
+  });
+});
+
+describe("seeded randomness", () => {
+  function rollWith(seed: string): number {
+    const state = mainState(seed);
+    // dice_buff. The die is a d6 but Kite pays out ceil(d6/2), so what is visible
+    // through this card is 1-3, not 1-6 — the balance pass halved it.
+    const kiteCard = cards.find((card) => card.name === "Kite")!;
+    state.players[0].board[0] = makeMinion("Kite", 0);
+    const after = toMyNextTurn(state);
+    const kite = after.players[0].board[0];
+    return (kite?.atk ?? 0) - kiteCard.atk;
+  }
+
+  it("is reproducible from the same seed", () => {
+    expect(rollWith("same-seed")).toBe(rollWith("same-seed"));
+  });
+
+  it("spreads across seeds instead of following a turn-counter pattern", () => {
+    // The old implementation was (turnNumber + playOrder) % 6 + 1, which returns a
+    // single fixed value for a fixed board. This asserts real spread, measured two
+    // ways so that retuning a card's payout can never quietly disarm it: the
+    // generator's own state must vary widely, and the visible payout must vary at
+    // all across the range the card actually pays.
+    const payouts = new Set<number>();
+    const seeds = new Set<number>();
+    for (let index = 0; index < 60; index += 1) {
+      payouts.add(rollWith(`seed-${index}`));
+      seeds.add(toMyNextTurn(mainState(`seed-${index}`)).rngSeed);
+    }
+    for (const roll of payouts) {
+      expect(roll).toBeGreaterThanOrEqual(1);
+      expect(roll).toBeLessThanOrEqual(3);
+    }
+    expect(payouts.size).toBe(3);
+    expect(seeds.size).toBeGreaterThan(40);
+  });
+
+  it("advances the seed, so a re-roll from a later state differs", () => {
+    const state = mainState("advance");
+    state.players[0].board[0] = makeMinion("Kite", 0);
+    const first = toMyNextTurn(state);
+    const second = toMyNextTurn(first);
+    expect(second.rngSeed).not.toBe(first.rngSeed);
+  });
+});
+
+describe("practice bot", () => {
+  it("stays silent when it is not its turn", () => {
+    const state = mainState();
+    expect(chooseBotAction(state, library, 1)).toBeNull();
+  });
+
+  it("only ever returns a move the engine already called legal", () => {
+    let state = mainState();
+    state.activePlayer = 1;
+    for (let step = 0; step < 40 && state.phase !== "gameOver"; step += 1) {
+      const action = chooseBotAction(state, library, 1);
+      if (!action) break;
+      const legal = getLegalActions(state, library);
+      expect(legal.some((candidate) => JSON.stringify(candidate) === JSON.stringify(action))).toBe(true);
+      state = applyAction(state, action, library).state;
+    }
+  });
+
+  it("develops its board rather than passing the turn away", () => {
+    const state = mainState();
+    state.activePlayer = 1;
+    state.players[1].mana = 10;
+    state.players[1].maxMana = 10;
+    const action = chooseBotAction(state, library, 1);
+    expect(action?.type).toBe("play_card");
+  });
+
+  it("takes a lethal swing at an open core", () => {
+    const state = mainState();
+    state.activePlayer = 1;
+    state.players[1].hand = [];
+    state.players[1].mana = 0;
+    state.players[1].board[0] = dummy("Zoro", 1, { atk: 9 });
+    state.players[0].health = 4;
+    state.players[0].board = [null, null, null, null, null];
+    const action = chooseBotAction(state, library, 1);
+    expect(action?.type).toBe("attack_core");
+  });
+
+  it("answers its own targeting prompts", () => {
+    const state = mainState();
+    state.activePlayer = 1;
+    state.players[0].board[0] = dummy("John Wick", 0);
+    state.players[0].board[2] = dummy("Zoro", 0);
+
+    const asking = playCardFor(state, 1, "Kiritsugu Emiya", 1);
+    expect(asking.phase).toBe("targeting");
+    expect(asking.pendingTarget?.player).toBe(1);
+    const action = chooseBotAction(asking, library, 1);
+    expect(action?.type).toBe("choose_target");
+  });
+});

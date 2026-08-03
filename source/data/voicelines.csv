@@ -1,0 +1,176 @@
+id,name,voice,rate,pitch,treatment,source,line
+c001,John Wick,en-US-EricNeural,-12%,-6Hz,whisper,rewritten,You should not have taken what was mine.
+c002,Joker,en-US-GuyNeural,+13%,+10Hz,manic,flavor,The punchline was already loaded.
+c003,Detective L,en-US-BrianNeural,-8%,+4Hz,plain,flavor,Justice works in probabilities.
+c004,Bigfoot,en-US-RogerNeural,-20%,-25Hz,beast,rewritten,You walked too far into my woods.
+c005,Batman,en-US-ChristopherNeural,-10%,-14Hz,whisper,flavor,Preparation beats power.
+c006,Sandworm,en-US-ChristopherNeural,-25%,-30Hz,titan,master,You are standing on my back.
+c007,Pandora's Actor,en-US-AndrewMultilingualNeural,+6%,+8Hz,manic,flavor,Every role is useful.
+c008,T-1000,en-US-SteffanNeural,-6%,-8Hz,machine,rewritten,Your shape is easy enough to wear.
+c009,Time Bomb,en-US-JennyNeural,+5%,+12Hz,machine,master,Ten. Nine. You will not reach eight.
+c010,Avatar Aang,en-US-GuyNeural,+10%,+20Hz,hero,rewritten,"Air, water, earth, fire, stand with me!"
+c011,Thirteen Lords of Chaos,en-US-BrianMultilingualNeural,-10%,-18Hz,demon,flavor,Reality picks a side.
+c012,G-Man,en-US-EricNeural,-25%,-4Hz,void,flavor,"Time, Mr. Freeman."
+c013,Doctor Strange,en-US-AndrewNeural,-5%,-6Hz,hero,flavor,Magic trumps everything.
+c014,Kizaru,en-US-BrianNeural,-20%,-10Hz,regal,flavor,Light logic.
+c015,Avengers,en-US-AriaNeural,-4%,-2Hz,hero,rewritten,Together. That's how this ends for you.
+c016,Doom Slayer,en-US-RogerNeural,-15%,-22Hz,machine,rewritten,Hell is empty. I made sure of it.
+c017,Gol D. Roger,en-US-AndrewMultilingualNeural,-6%,-10Hz,regal,rewritten,The whole sea already knows my name.
+c018,Marshall D. Teach,en-AU-WilliamNeural,+8%,-12Hz,demon,master,"Zehahaha! Whatever you have, I take."
+c019,Gilgamesh,en-GB-ThomasNeural,-12%,-6Hz,regal,flavor,Unworthy.
+c020,Superman,en-US-AndrewNeural,-4%,-6Hz,hero,rewritten,Stand down. Nobody else gets hurt today.
+c021,Light Yagami,en-US-BrianMultilingualNeural,+4%,+6Hz,whisper,flavor,"Ryuk, come help."
+c022,Gojo,en-US-BrianNeural,+5%,+6Hz,hero,flavor,Infinity is rude.
+c023,Ainz Ooal Gown,en-US-SteffanNeural,-14%,-20Hz,ancient,rewritten,"Kneel, or join the dead who serve me."
+c024,Conquest,en-US-RogerNeural,-12%,-24Hz,titan,rewritten,Show me something worth breaking my hands on.
+c025,Saitama,en-US-SteffanNeural,-8%,-2Hz,plain,master,"One punch. Sorry, that is how it goes."
+c026,Neo,en-US-AndrewNeural,-8%,-4Hz,hero,rewritten,Your bullets stop when I say stop.
+c027,Thanos,en-US-ChristopherNeural,-18%,-20Hz,titan,flavor,Balance. At any cost.
+c028,Flash,en-US-AndrewNeural,+20%,+12Hz,hero,flavor,Speed of light. And beyond.
+c029,Darth Vader,en-US-ChristopherNeural,-22%,-28Hz,machine,master,What remains of me is enough.
+c030,Dumbledore,en-GB-RyanNeural,-12%,-8Hz,regal,rewritten,"Shall we discuss this calmly, or not?"
+c031,Ragnaros,en-AU-WilliamNeural,-20%,-26Hz,titan,master,You dare wake me from my slumber?
+c032,Silver Surfer,en-US-SteffanNeural,-12%,-6Hz,void,flavor,The tide brings worlds.
+c033,Yujiro,en-US-RogerNeural,-10%,-18Hz,beast,rewritten,Come on. Entertain me for once.
+c034,Yubaba,en-US-MichelleNeural,-6%,-12Hz,ancient,flavor,Are you looking for employment?
+c035,Spider-Man,en-US-GuyNeural,+12%,+14Hz,hero,flavor,Responsibility.
+c036,General Grievous,en-GB-RyanNeural,-6%,-16Hz,machine,flavor,A fine addition.
+c037,Eye of Sauron,en-US-AndrewMultilingualNeural,-18%,-24Hz,void,flavor,Try and hide.
+c038,Buddha,en-US-BrianNeural,-10%,-4Hz,regal,flavor,Peace.
+c039,Deep Sea King,en-US-BrianMultilingualNeural,-14%,-20Hz,beast,rewritten,Crawl back to your dry little land.
+c040,Toji,en-US-EricNeural,-8%,-12Hz,whisper,flavor,No magic. No mercy.
+c041,Bill Cipher,en-US-GuyNeural,+18%,+22Hz,manic,rewritten,"Hey there, meat puppets! Did you miss me?"
+c042,Giorno - Gold Experience Requiem,en-GB-RyanNeural,-6%,+2Hz,void,flavor,Cause and effect.
+c043,Doctor Manhattan,en-US-EricNeural,-16%,-10Hz,void,rewritten,I am already everywhere you will be.
+c044,Mastered Ultra Instinct Goku,en-US-GuyNeural,-6%,-5Hz,hero,master,My body moves before I even think.
+c045,Rick Prime,en-US-EricNeural,+8%,-8Hz,manic,rewritten,You built a family. I built a body count.
+c046,The Watcher,en-US-ChristopherNeural,-12%,-10Hz,void,rewritten,"Every branch of this moment, I have seen."
+c047,"Escanor ""The One""",en-US-AndrewMultilingualNeural,-10%,-6Hz,regal,rewritten,Kneel. The sun has come down to you.
+c048,Lelouch Lamperouge,en-GB-RyanNeural,-8%,-4Hz,regal,flavor,Obey.
+c049,Tempest's Guardian Lords,en-US-BrianMultilingualNeural,-6%,-8Hz,demon,rewritten,"By our master's will, the nation stands."
+c050,Aizen,en-US-SteffanNeural,-10%,-6Hz,whisper,flavor,All part of the plan.
+c051,Boros,en-US-BrianMultilingualNeural,-6%,-14Hz,demon,rewritten,I crossed the stars to find a fight.
+c052,Dormammu,en-US-ChristopherNeural,-14%,-20Hz,titan,rewritten,Your world will burn in my dark dimension.
+c053,Mob Psycho,en-US-BrianNeural,-12%,+10Hz,plain,rewritten,I don't want to hurt anyone. Please stop.
+c054,Morpheus,en-US-AndrewNeural,-12%,-12Hz,radio,rewritten,Wake up. The world you know is bait.
+c055,Death Star,en-US-AvaMultilingualNeural,-6%,-14Hz,machine,rewritten,Target acquired. Commence primary ignition.
+c056,Doomsday,en-US-RogerNeural,-20%,-28Hz,beast,rewritten,Kill. Kill. Nothing kills me twice.
+c057,Ten Tails,en-US-ChristopherNeural,-22%,-30Hz,titan,rewritten,All chakra returns to me. All of it.
+c058,Kaido,en-AU-WilliamNeural,-14%,-22Hz,beast,rewritten,Nothing on this sea can kill me.
+c059,Korosensei,en-US-GuyNeural,+14%,+14Hz,manic,rewritten,"Nurufufufu! Class is in session, my students."
+c060,Monkey D. Luffy Gear 5,en-US-BrianNeural,+12%,+12Hz,hero,rewritten,Hah! My body does whatever I imagine!
+c061,Chaos,en-US-AndrewMultilingualNeural,-18%,-18Hz,void,rewritten,Accept my gift. The price comes later.
+c062,S-Class Heroes,en-US-AndrewNeural,+2%,-2Hz,hero,rewritten,"Hero Association, S-Class. Step back, civilians."
+c063,Sans,en-US-BrianNeural,-12%,-10Hz,spectral,master,heya. you're gonna have a bad time.
+c064,Seven Deadly Sins,en-IE-ConnorNeural,+4%,-4Hz,hero,rewritten,The Sins ride again. Move aside.
+c065,Whitebeard,en-US-RogerNeural,-18%,-24Hz,titan,rewritten,Gurararara! This old man still shakes the world.
+c066,Elder Centipede,en-AU-WilliamNeural,-16%,-26Hz,beast,rewritten,A billion years I have devoured this world.
+c067,Hypnos,en-IE-ConnorNeural,-20%,+8Hz,spectral,rewritten,Mmm… wake me when something interesting dies.
+c068,Star Destroyer,en-GB-ThomasNeural,-4%,-8Hz,radio,rewritten,"All batteries, open fire on my mark."
+c069,Netero,en-AU-WilliamNeural,-16%,-10Hz,plain,master,My prayers land harder than any fist.
+c070,Vergil & Dante & Nero,en-US-AndrewNeural,+4%,-6Hz,hero,rewritten,Three devil hunters. Pick which one kills you.
+c071,All for One,en-US-ChristopherNeural,-12%,-16Hz,demon,rewritten,Give me your quirk. I collect everything.
+c072,Aladdin Lamp,en-US-GuyNeural,+10%,+6Hz,manic,master,"What is thy wish, master?"
+c073,All Might,en-US-AndrewMultilingualNeural,+6%,-4Hz,hero,rewritten,"Stand down, villain. Your evening ends here."
+c074,Grand Master Yoda,en-US-RogerNeural,-22%,+10Hz,ancient,rewritten,"Much to learn, this battlefield still has."
+c075,Ultron Prime,en-US-EricNeural,-6%,-10Hz,machine,rewritten,Peace requires extinction. I have run the numbers.
+c076,Godzilla,en-AU-WilliamNeural,-25%,-30Hz,titan,rewritten,Skreeeonk. The city ends beneath my shadow.
+c077,King,en-US-BrianNeural,-6%,-8Hz,plain,rewritten,That sound? Just my heart. Don't worry.
+c078,UFO Fleet,en-US-JennyNeural,-4%,+6Hz,machine,rewritten,We are many. Your skies are ours.
+c079,Nulgath,en-US-BrianMultilingualNeural,-14%,-18Hz,demon,rewritten,"Serve me, and the shadows will pay you."
+c080,Gandalf the White,en-GB-ThomasNeural,-14%,-10Hz,ancient,rewritten,"I am sent back, until my task is done."
+c081,Gordon Freeman,en-US-EricNeural,-18%,-6Hz,plain,master,The crowbar does the talking.
+c082,Mahoraga,en-US-ChristopherNeural,-20%,-24Hz,ancient,master,I have already adapted to your attack.
+c083,Floor Guardians,en-US-AriaNeural,-6%,-4Hz,regal,rewritten,"For the glory of Nazarick, we descend."
+c084,Meruem,en-GB-RyanNeural,-10%,-8Hz,demon,rewritten,"Name yourself, or be beneath my notice."
+c085,Sonic,en-US-GuyNeural,+18%,+12Hz,hero,rewritten,Blink and you'll miss the whole fight.
+c086,Dominion Authority,en-US-MichelleNeural,-10%,-6Hz,ancient,rewritten,"By divine order, judgment descends upon you."
+c087,Founding Titan,en-US-AndrewNeural,-16%,-18Hz,titan,master,These walls were never meant to protect you.
+c088,Homelander,en-US-AndrewNeural,-6%,-4Hz,hero,rewritten,"America's smile, and the teeth behind it."
+c089,Kratos,en-US-ChristopherNeural,-16%,-20Hz,titan,master,My gods bled. Yours will too.
+c090,Shigaraki,en-US-GuyNeural,+5%,-6Hz,demon,rewritten,I'll turn everything you love to dust.
+c091,Ten Commandments,en-US-RogerNeural,-8%,-12Hz,demon,rewritten,Ten of us. That is already too many.
+c092,UFO,en-US-EmmaNeural,-6%,+8Hz,machine,rewritten,Unidentified. Unwelcome. Already inside your airspace.
+c093,Yoriichi Type Zero,en-US-SteffanNeural,-10%,-10Hz,machine,rewritten,Six arms. No breath. No mercy.
+c094,Grand Master Oogway,en-US-RogerNeural,-22%,-6Hz,ancient,rewritten,The tide arrives when the tide arrives.
+c095,Kojiro Sasaki,en-US-AndrewMultilingualNeural,-8%,-8Hz,hero,rewritten,I lost ten thousand times. Watch me now.
+c096,Dio Brando,en-GB-RyanNeural,-4%,-14Hz,demon,flavor,THE WORLD
+c097,Elden Beast,en-US-BrianMultilingualNeural,-18%,-25Hz,void,rewritten,The order itself rises against you.
+c098,Big Mom,en-US-MichelleNeural,-10%,-18Hz,titan,rewritten,"Life or sweets. Give me both, now."
+c099,Fire Lord Ozai,en-US-ChristopherNeural,-8%,-12Hz,regal,rewritten,The world is mine to burn.
+c100,Rennala Queen of the Full Moon,en-GB-SoniaNeural,-12%,-4Hz,ancient,rewritten,"Come, children. The full moon is watching."
+c101,The 7? Heroic Spirits,en-US-AriaNeural,-5%,+4Hz,ancient,rewritten,Seven legends answer the summons. Choose carefully.
+c102,Dragon,en-IE-ConnorNeural,-12%,-22Hz,beast,rewritten,"Your walls are kindling. Your knights, seasoning."
+c103,Fort,en-IE-EmilyNeural,-8%,-10Hz,radio,rewritten,Nothing gets past these walls. Nothing.
+c104,GLaDOS,en-US-JennyNeural,-6%,-6Hz,machine,flavor,The test continues.
+c105,The Driller,en-US-AvaNeural,-5%,-14Hz,machine,rewritten,Latest design. Nothing under this earth survives.
+c106,Transformers,en-US-AndrewNeural,-10%,-14Hz,machine,rewritten,Move out. Cybertron settles its debts today.
+c107,Chrollo,en-GB-ThomasNeural,-12%,-6Hz,whisper,rewritten,The spider takes what it likes.
+c108,Musashi,en-US-EricNeural,-10%,-10Hz,plain,flavor,Another duel to win.
+c109,Nine Hashira,en-US-AndrewMultilingualNeural,+2%,+2Hz,hero,rewritten,Nine pillars stand. The demons fall tonight.
+c110,Po,en-US-GuyNeural,+8%,+6Hz,hero,rewritten,I'm the Dragon Warrior. Still can't believe it.
+c111,Doctor Octopus,en-US-RogerNeural,-8%,-8Hz,plain,master,"The power of the sun, in my hands."
+c112,Gyoro Gyoro,en-US-MichelleNeural,-8%,-14Hz,demon,rewritten,The monster obeys me. So will you.
+c113,Kite,en-US-BrianNeural,-6%,-6Hz,plain,flavor,Spin the wheel.
+c114,Lord Voldemort,en-GB-ThomasNeural,-12%,-10Hz,demon,rewritten,"Seven pieces of me. Find one, please."
+c115,One-Eyed Owl,en-GB-MaisieNeural,+6%,+8Hz,demon,rewritten,One eye sees everything you hide.
+c116,The Mask,en-US-GuyNeural,+18%,+14Hz,manic,rewritten,"Time to get dangerously, cartoonishly green."
+c117,Albion,en-US-ChristopherNeural,-20%,-28Hz,titan,rewritten,Look up. Keep looking up. Now run.
+c118,Battleship,en-GB-RyanNeural,-6%,-10Hz,radio,master,Broadside ready. Nothing floats after this.
+c119,Carnage Kabuto,en-AU-WilliamNeural,-6%,-18Hz,beast,rewritten,Three days of training. Now I evolve.
+c120,Fantastic Four,en-US-AndrewNeural,+2%,+2Hz,hero,rewritten,Four of us. That has always been enough.
+c121,Shifu with the Furious Five,en-US-EricNeural,-4%,+6Hz,plain,rewritten,Inner peace first. Then the outer beating.
+c122,Wall of Flesh,en-US-BrianMultilingualNeural,-18%,-26Hz,titan,rewritten,I am the wall. Nothing passes me.
+c123,Darkwing,en-US-ChristopherNeural,-10%,-12Hz,whisper,rewritten,Shadow to shadow. This ends with me.
+c124,Knov,en-US-SteffanNeural,-6%,-4Hz,void,rewritten,Step through my door. You won't return.
+c125,Aizawa,en-US-BrianNeural,-14%,-12Hz,plain,flavor,All it takes is one look.
+c126,Gums,en-US-RogerNeural,-12%,-20Hz,beast,rewritten,Open wide. I swallow everything whole.
+c127,Nyan,en-US-GuyNeural,+10%,+10Hz,beast,rewritten,"Nine lives, and you get none."
+c128,The Five Convicts,en-US-AndrewMultilingualNeural,-8%,-12Hz,whisper,rewritten,"Five dead men, walking into your ring."
+c129,Dabi,en-US-BrianMultilingualNeural,-2%,-4Hz,demon,rewritten,Blue flame. It burns me too.
+c130,Godrick the Grafted,en-GB-ThomasNeural,-10%,-6Hz,regal,rewritten,"Lowly one, I shall graft you on."
+c131,Illumi,en-US-SteffanNeural,-14%,-10Hz,whisper,rewritten,Hold still. The needle does the thinking.
+c132,Kento Nanami,en-US-EricNeural,-6%,-8Hz,plain,rewritten,Seven to three. That is where you break.
+c133,Kuma,en-US-SteffanNeural,-16%,-20Hz,machine,rewritten,"I am no longer a man, only a weapon."
+c134,Tai Lung,en-US-RogerNeural,-5%,-12Hz,beast,master,Twenty years in chains. Now you pay.
+c135,APR,en-GB-ThomasNeural,-4%,-6Hz,whisper,rewritten,Nothing you own escapes what you owe.
+c136,Cthulhu,en-US-ChristopherNeural,-22%,-28Hz,void,rewritten,Your world was always only my dream.
+c137,Giant Crystal,en-US-AriaNeural,-15%,+10Hz,ancient,rewritten,"From me they rise, again and again."
+c138,Giant Tree,en-US-AndrewMultilingualNeural,-22%,-20Hz,ancient,rewritten,I stood here before your first word.
+c139,Modern Tank,en-US-BrianNeural,+5%,-10Hz,radio,master,Engine hot. Rolling through your position.
+c140,RoboCop,en-US-ChristopherNeural,-12%,-14Hz,machine,flavor,Uphold the law.
+c141,Tech Hub,en-US-JennyNeural,-5%,+5Hz,machine,master,Every machine you fear was assembled here.
+c142,Zoro,en-US-AndrewNeural,-8%,-14Hz,hero,flavor,Lost again. Still won.
+c143,Survivors,en-US-GuyNeural,+8%,+4Hz,plain,master,We keep moving. That is how we survive.
+c144,Cecil,en-US-EricNeural,-4%,-8Hz,radio,flavor,Nothing personal. Just cleanup.
+c145,Kaku Kaioh,en-US-BrianMultilingualNeural,-14%,-16Hz,ancient,rewritten,One hundred sixty two years. Still standing.
+c146,Kiritsugu Emiya,en-US-SteffanNeural,-10%,-10Hz,whisper,rewritten,No allies. No witnesses. Only the target.
+c147,Kureo Mado,en-US-RogerNeural,+6%,+6Hz,manic,master,Do not squirm. This is delicate work.
+c148,Kurogiri,en-US-AndrewMultilingualNeural,-10%,-14Hz,void,flavor,Every exit leads somewhere else.
+c149,Lu Bu,en-US-ChristopherNeural,-6%,-12Hz,hero,flavor,"Match any man, then pass him."
+c150,Meleoron,en-US-GuyNeural,+12%,+14Hz,whisper,rewritten,Blink once and I am already behind you.
+c151,Mr. Oliva,en-US-AndrewNeural,-10%,-16Hz,regal,rewritten,No cell ever held me. None will.
+c152,Stain,en-US-BrianMultilingualNeural,-8%,-18Hz,whisper,rewritten,One true hero. The rest are fakes.
+c153,Black Ops,en-US-EricNeural,+4%,-6Hz,radio,rewritten,We were never here. Move.
+c154,Gravelord Nito,en-US-ChristopherNeural,-22%,-30Hz,ancient,flavor,The first of the dead keeps the count.
+c155,Margit the Fell Omen,en-GB-ThomasNeural,-12%,-14Hz,demon,rewritten,"Turn back, wretch. My staff bars this road."
+c156,Ouken,en-US-AndrewMultilingualNeural,-18%,-20Hz,ancient,rewritten,I cannot die. I cannot remember why.
+c157,Pillar Men,en-GB-RyanNeural,-14%,-16Hz,demon,rewritten,We slept through empires. The sun waited.
+c158,The Nameless King,en-US-RogerNeural,-20%,-24Hz,titan,rewritten,I traded a crown for a dragon's war.
+c159,Indiana Jones,en-US-AndrewNeural,+2%,-4Hz,plain,rewritten,That belongs to history. Hands off.
+c160,Domovoy,en-IE-ConnorNeural,-6%,+8Hz,spectral,rewritten,I keep this house. Wipe your feet.
+c161,Flowey,en-US-GuyNeural,+14%,+18Hz,manic,master,Howdy! It is kill or be killed.
+c162,Kagaya Ubuyashiki,en-US-SteffanNeural,-18%,-6Hz,regal,rewritten,"My children, go. I will guide you home."
+c163,Angstrom Levy,en-US-BrianNeural,-4%,-8Hz,void,rewritten,A thousand worlds taught me how to kill you.
+c164,Dr. Heinz Doofenshmirtz,en-US-GuyNeural,+10%,+12Hz,manic,flavor,Your doom will be unnecessarily complicated.
+c165,Mugen & Jin,en-US-BrianMultilingualNeural,+6%,-4Hz,hero,rewritten,We do not get along. We still win.
+c166,Sir Nighteye,en-GB-RyanNeural,-6%,-6Hz,plain,master,I foresaw this. You do not survive.
+c167,Vegapunk,en-US-RogerNeural,+8%,+4Hz,machine,rewritten,My mind outgrew my skull. Observe the results.
+c168,Walter White,en-US-EricNeural,-12%,-10Hz,plain,flavor,Say. My. Name.
+c169,An Order of Heavy Knights,en-GB-RyanNeural,-12%,-12Hz,regal,flavor,Honor. Duty.
+c170,Davy Jones,en-GB-ThomasNeural,-14%,-18Hz,demon,rewritten,The sea keeps its debts. I collect them.
+c171,Goblins,en-IE-ConnorNeural,+20%,+25Hz,beast,rewritten,"More of us! Get in, get loud!"
+c172,Mr. Poopybutthole,en-US-GuyNeural,+10%,+16Hz,plain,rewritten,Hey! I have been standing here this whole time.
+c173,Nezu,en-US-GuyNeural,+14%,+22Hz,beast,master,"Yes, a mouse. Also your principal."
+c174,Shibukawa,en-US-SteffanNeural,-12%,-10Hz,plain,flavor,Strength is the easiest thing to redirect.
+c175,V,en-GB-ThomasNeural,-6%,-8Hz,regal,rewritten,The stage is set. Shall we perform?

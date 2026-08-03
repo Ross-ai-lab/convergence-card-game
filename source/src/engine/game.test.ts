@@ -1,0 +1,276 @@
+import { describe, expect, it } from "vitest";
+import { cards } from "../data/cards";
+import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
+import type { GameState, MinionInstance, PlayerId } from "./types";
+import { spawnTestMinion } from "./test-utils";
+
+const library = makeCardLibrary(cards);
+
+function cardId(name: string): string {
+  const card = cards.find((entry) => entry.name === name);
+  if (!card) throw new Error(`Missing card ${name}`);
+  return card.id;
+}
+
+function makeMinion(name: string, owner: PlayerId, overrides: Partial<MinionInstance> = {}): MinionInstance {
+  return spawnTestMinion(library[cardId(name)], owner, overrides);
+}
+/**
+ * Plays a card from hand into a slot, ignoring mana — how a Battlecry fires.
+ * (Most effects moved from Ongoing to Battlecry, so cycling turns no longer
+ * triggers them.)
+ */
+function playCardFor(state: GameState, player: PlayerId, name: string, slotIndex = 0): GameState {
+  const next: GameState = { ...state, cheatMode: true, activePlayer: player, phase: "main", drawChoice: null };
+  next.players = [...state.players] as GameState["players"];
+  next.players[player] = { ...state.players[player], hand: [cardId(name)] };
+  return applyAction(next, { type: "play_card", player, handIndex: 0, slotIndex }, library).state;
+}
+
+function mainState(): GameState {
+  const state = createInitialGame(cards);
+  state.phase = "main";
+  state.drawChoice = null;
+  return state;
+}
+
+describe("Convergence engine", () => {
+  it("starts a hotseat game with the right hands, coins, and legal moves", () => {
+    const state = createInitialGame(cards);
+    const legal = getLegalActions(state, library);
+    expect(state.players[0].hand).toHaveLength(2);
+    expect(state.players[1].hand).toHaveLength(3); // plus The Coin, for going second
+    expect(state.players[1].coins).toBe(1);
+    // The deck is genuinely shuffled, so an opening hand may hold nothing
+    // affordable on turn 1 - that is intended (as in Hearthstone), not a bug.
+    // What must always hold is that the player is never left with no move.
+    expect(legal.length).toBeGreaterThan(0);
+  });
+
+  it("plays a card into an empty slot and spends mana", () => {
+    const state = mainState();
+    state.players[0].hand = [cardId("John Wick")];
+    state.players[0].mana = 1;
+    const result = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library);
+    expect(result.state.players[0].board[0]?.name).toBe("John Wick");
+    expect(result.state.players[0].mana).toBe(0);
+    expect(result.state.players[0].hand).toHaveLength(0);
+  });
+
+  it("lets cheat mode play cards without spending mana", () => {
+    const state = mainState();
+    state.cheatMode = true;
+    state.players[0].hand = [cardId("Batman")];
+    state.players[0].mana = 0;
+    const legal = getLegalActions(state, library);
+    expect(legal.some((action) => action.type === "play_card")).toBe(true);
+    const result = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library);
+    expect(result.state.players[0].board[0]?.name).toBe("Batman");
+    expect(result.state.players[0].mana).toBe(0);
+  });
+
+  it("blocks playing cards when the board is full", () => {
+    const state = mainState();
+    state.players[0].mana = 10;
+    state.players[0].hand = [cardId("John Wick")];
+    state.players[0].board = Array.from({ length: 5 }, (_, index) =>
+      makeMinion("Bigfoot", 0, { instanceId: `full-${index}`, playOrder: index + 1 }),
+    );
+    const legal = getLegalActions(state, library);
+    expect(legal.some((action) => action.type === "play_card")).toBe(false);
+  });
+
+  it("draws one card straight into hand on end turn — no choice step", () => {
+    const state = createInitialGame(cards);
+    const before = state.players[1].hand.length;
+    const ended = applyAction(state, { type: "end_turn", player: 0 }, library).state;
+    expect(ended.phase).toBe("main"); // Hearthstone's draw: no pick-1-of-2
+    expect(ended.activePlayer).toBe(1);
+    expect(ended.players[1].hand).toHaveLength(before + 1);
+    expect(ended.players[1].mana).toBe(ended.players[1].maxMana);
+  });
+
+  it("Detective L turns the draw back into a choice of two", () => {
+    const state = createInitialGame(cards);
+    state.players[1].board[0] = makeMinion("Detective L", 1);
+    const before = state.players[1].hand.length;
+    const ended = applyAction(state, { type: "end_turn", player: 0 }, library).state;
+    expect(ended.phase).toBe("drawChoice");
+    expect(ended.drawChoice?.cards).toHaveLength(2);
+
+    const chosen = applyAction(ended, { type: "choose_draw", player: 1, choiceIndex: 0 }, library).state;
+    expect(chosen.phase).toBe("main");
+    expect(chosen.players[1].hand).toHaveLength(before + 1); // one kept, one to the bottom
+    expect(chosen.bottomDeck).toHaveLength(1);
+  });
+
+  it("a silenced Detective L gives no Foresight", () => {
+    const state = createInitialGame(cards);
+    state.players[1].board[0] = makeMinion("Detective L", 1, { silenced: true });
+    const ended = applyAction(state, { type: "end_turn", player: 0 }, library).state;
+    expect(ended.phase).toBe("main");
+  });
+
+  it("uses taunt to restrict attack targets", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    state.players[1].board[0] = makeMinion("Sandworm", 1);
+    state.players[1].board[1] = makeMinion("Batman", 1);
+    const legalTargets = getLegalActions(state, library).filter((action) => action.type === "attack_minion");
+    expect(legalTargets).toHaveLength(1);
+    expect(legalTargets[0]).toMatchObject({ targetSlot: 0 });
+  });
+
+  it("defender retaliates even when it dies (simultaneous combat)", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Pandora's Actor", 0); // 2 ATK / 2 HP, no combat passive
+    // Pin the defender's body so this remains a simultaneous-combat test,
+    // independent of later balance passes to John Wick's printed stats.
+    state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 1, hp: 1, maxHp: 1 });
+    const result = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
+    expect(result.state.players[1].board[0]).toBeNull(); // defender died
+    expect(result.state.players[0].board[0]?.hp).toBe(1); // attacker still took the hit back
+  });
+
+  it("breaks Divine Shield before health damage", () => {
+    // Pick the defender by the KEYWORD rather than by name: this test used to
+    // name Avatar Aang, and a balance pass that took his Divine Shield away left
+    // it silently testing an ordinary trade instead of the shield rule.
+    const shielded = cards.find((card) => card.keywords.includes("Divine Shield"))!;
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    state.players[1].board[0] = makeMinion(shielded.name, 1);
+    const result = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
+    const defender = result.state.players[1].board[0];
+    expect(defender?.divineShield).toBe(false);
+    expect(defender?.hp).toBe(shielded.hp); // the shield ate the whole blow
+  });
+
+  it("deals no core damage just for having a board", () => {
+    // The passive ping was removed: a board only hurts a core by swinging at it.
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    state.players[0].board[1] = makeMinion("Joker", 0);
+    const before = state.players[1].health;
+    const result = applyAction(state, { type: "end_turn", player: 0 }, library);
+    // Asserted against the core it started on, never against a literal — starting
+    // core HP is the game's pacing dial and has already moved once.
+    expect(result.state.players[1].health).toBe(before);
+  });
+
+  it("resolves Ongoing effects in play order", () => {
+    const state = mainState();
+    state.activePlayer = 1;
+    state.players[0].turnsStarted = 1;
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0, { playOrder: 1 });
+    state.players[0].board[1] = makeMinion("Carnage Kabuto", 0, { playOrder: 2 });
+    // With the draw step gone, the turn's Ongoing effects resolve inside end_turn.
+    const resolved = applyAction(state, { type: "end_turn", player: 1 }, library);
+    const effectTexts = resolved.events.filter((event) => event.kind === "effect").map((event) => event.text);
+    expect(effectTexts[0]).toContain("Mob Psycho");
+    expect(effectTexts.some((text) => text.includes("Carnage Kabuto"))).toBe(true);
+    expect(effectTexts.indexOf(effectTexts.find((t) => t.includes("Mob Psycho"))!))
+      .toBeLessThan(effectTexts.indexOf(effectTexts.find((t) => t.includes("Carnage Kabuto"))!));
+  });
+
+  it("lets destroy effects bypass Divine Shield", () => {
+    const state = mainState();
+    state.players[1].board[0] = makeMinion("Avatar Aang", 1, { divineShield: true });
+    const resolved = playCardFor(state, 0, "Light Yagami", 0);
+    expect(resolved.players[1].board[0]).toBeNull();
+  });
+});
+
+/**
+ * The Hearthstone face rule. Before this, the core could only be attacked with
+ * the enemy board completely empty, so a minion's ATK almost never reached the
+ * thing that ends the game.
+ */
+describe("attacking the enemy core", () => {
+  const dummy = (name: string, owner: PlayerId, overrides: Partial<MinionInstance> = {}) =>
+    makeMinion(name, owner, { effectId: "none", effectTiming: "none", keywords: [], ...overrides });
+  const coreAttacks = (state: GameState) =>
+    getLegalActions(state, library).filter((action) => action.type === "attack_core");
+
+  it("is legal past a defended board", () => {
+    const state = mainState();
+    state.activePlayer = 0;
+    state.players[0].board[0] = dummy("Zoro", 0);
+    state.players[1].board[0] = dummy("Death Star", 1);
+    expect(coreAttacks(state)).toHaveLength(1);
+  });
+
+  it("is blocked by a Taunt", () => {
+    const state = mainState();
+    state.activePlayer = 0;
+    state.players[0].board[0] = dummy("Zoro", 0);
+    state.players[1].board[0] = dummy("Death Star", 1, { keywords: ["Taunt"] });
+    expect(coreAttacks(state)).toHaveLength(0);
+  });
+
+  it("is blocked by Kojiro Sasaki soaking his side", () => {
+    const state = mainState();
+    state.activePlayer = 0;
+    state.players[0].board[0] = dummy("Zoro", 0);
+    state.players[1].board[0] = makeMinion("Kojiro Sasaki", 1);
+    expect(coreAttacks(state)).toHaveLength(0);
+  });
+
+  it("is blocked for a frozen or sleeping minion, guard or no guard", () => {
+    const frozen = mainState();
+    frozen.activePlayer = 0;
+    frozen.players[0].board[0] = dummy("Zoro", 0, { frozen: true });
+    expect(coreAttacks(frozen)).toHaveLength(0);
+
+    const asleep = mainState();
+    asleep.activePlayer = 0;
+    asleep.players[0].board[0] = dummy("Zoro", 0, { sleeping: true });
+    expect(coreAttacks(asleep)).toHaveLength(0);
+  });
+
+  it("costs a frozen minion a whole turn, then lets it act the turn after", () => {
+    // Freeze used to thaw at the START of the owner's turn, in the same loop
+    // that resets attacksUsed -- so the minion attacked immediately and Freeze
+    // cost it nothing. It must now sit out one full turn.
+    const toMain = (state: GameState): GameState => ({ ...state, phase: "main", drawChoice: null });
+
+    // Frozen on the opponent's turn, which is how Freeze is actually applied.
+    let state = mainState();
+    state.activePlayer = 1;
+    state.players[0].board[0] = dummy("Zoro", 0, { frozen: true });
+
+    // Hand back to its owner: it is still frozen, so it cannot swing.
+    state = toMain(applyAction(state, { type: "end_turn", player: 1 }, library).state);
+    expect(state.players[0].board[0]?.frozen).toBe(true);
+    expect(coreAttacks(state)).toHaveLength(0);
+
+    // Ending that turn is what thaws it -- it has served the turn.
+    state = toMain(applyAction(state, { type: "end_turn", player: 0 }, library).state);
+    expect(state.players[0].board[0]?.frozen).toBe(false);
+
+    // And the turn after, it swings normally.
+    state = toMain(applyAction(state, { type: "end_turn", player: 1 }, library).state);
+    expect(coreAttacks(state).length).toBeGreaterThan(0);
+  });
+
+  it("deals exactly the attacker's ATK, with no retaliation", () => {
+    const state = mainState();
+    state.activePlayer = 0;
+    state.players[0].board[0] = dummy("Zoro", 0, { atk: 6 });
+    state.players[1].board[0] = dummy("Death Star", 1);
+    const before = state.players[1].health;
+    const after = applyAction(state, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
+    expect(after.players[1].health).toBe(before - 6);
+    expect(after.players[0].board[0]?.hp).toBe(after.players[0].board[0]?.maxHp);
+  });
+
+  it("refuses a 0-ATK minion entirely", () => {
+    const state = mainState();
+    state.activePlayer = 0;
+    state.players[0].board[0] = dummy("Zoro", 0, { atk: 0 });
+    state.players[1].board[0] = dummy("Death Star", 1);
+    const legal = getLegalActions(state, library);
+    expect(legal.some((action) => action.type === "attack_core")).toBe(false);
+    expect(legal.some((action) => action.type === "attack_minion")).toBe(false);
+  });
+});

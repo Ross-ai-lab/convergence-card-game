@@ -1,0 +1,23 @@
+id,voice,rate,pitch,treatment,line
+turn_you,en-US-AndrewMultilingualNeural,-6%,-8Hz,herald,Your move.
+turn_them,en-US-AndrewMultilingualNeural,-6%,-8Hz,herald,They answer.
+turn_you_2,en-US-AndrewMultilingualNeural,-4%,-6Hz,herald,The rift turns to you.
+turn_them_2,en-US-AndrewMultilingualNeural,-6%,-10Hz,herald,Their turn.
+duel_begin,en-US-AndrewMultilingualNeural,-10%,-10Hz,herald,The rift opens. Two patrons. One board.
+overkill,en-US-AndrewMultilingualNeural,-2%,-4Hz,herald,Overkill.
+big_hit,en-US-AndrewMultilingualNeural,-2%,-2Hz,herald,That will leave a mark.
+core_low_you,en-US-AndrewMultilingualNeural,-8%,-12Hz,herald,Your core is failing.
+core_low_them,en-US-AndrewMultilingualNeural,-6%,-8Hz,herald,Their core is failing.
+board_full,en-US-AndrewMultilingualNeural,-4%,-6Hz,herald,The board is full.
+board_wipe,en-US-AndrewMultilingualNeural,-8%,-12Hz,herald,Nothing left standing.
+taunt_blocked,en-US-AndrewMultilingualNeural,-4%,-6Hz,herald,The wall holds.
+taunt_broken,en-US-AndrewMultilingualNeural,-4%,-6Hz,herald,The wall falls. The core is open.
+relic_gained,en-US-AndrewMultilingualNeural,-8%,-8Hz,herald,An Ascension Relic surfaces.
+relic_stolen,en-US-AndrewMultilingualNeural,-6%,-8Hz,herald,Taken.
+silence,en-US-AndrewMultilingualNeural,-4%,-8Hz,herald,Silenced.
+freeze,en-US-AndrewMultilingualNeural,-6%,-6Hz,herald,Frozen solid.
+shield_break,en-US-AndrewMultilingualNeural,-2%,-4Hz,herald,The shield shatters.
+lethal_warning,en-US-AndrewMultilingualNeural,-10%,-14Hz,herald,One more blow ends this.
+victory,en-US-AndrewMultilingualNeural,-8%,-6Hz,herald,The rift closes. You stand alone.
+defeat,en-US-AndrewMultilingualNeural,-12%,-16Hz,herald,Your core collapses. The rift takes you.
+draw,en-US-AndrewMultilingualNeural,-10%,-12Hz,herald,Both cores fail. Nobody walks away.

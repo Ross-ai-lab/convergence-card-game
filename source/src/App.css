@@ -1,0 +1,4063 @@
+/* ============================================================================
+   CONVERGENCE — Hearthstone-style board
+   Layout contract (hard-learned):
+   - every grid row that must not grow uses minmax(0, 1fr)
+   - minions render in absolutely-positioned wraps (definite heights)
+   ============================================================================ */
+
+:root {
+  --ink: #fff5e3;
+  --ink-dark: #2b1c10;
+  --muted: #c9bea7;
+  --wood-hi: #6b4526;
+  --wood: #4a2e17;
+  --wood-dark: #2a1709;
+  --parch-hi: #e9d6a8;
+  --parch: #d9c191;
+  --parch-dark: #b99a63;
+  --gold: #f0c767;
+  --gold-dark: #b57a2b;
+  --teal: #43cdbd;
+  --red: #df6754;
+  --green: #79c66a;
+  --panel: rgba(20, 14, 10, 0.94);
+  --line: rgba(255, 241, 207, 0.22);
+  --shadow: 0 22px 70px rgba(0, 0, 0, 0.45);
+  color: var(--ink);
+  background: #140d1e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 360px;
+  overflow: hidden;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(155, 119, 210, 0.16), transparent 40%),
+    radial-gradient(circle at 50% 115%, rgba(240, 199, 103, 0.1), transparent 45%),
+    linear-gradient(160deg, #1c1128 0%, #150d20 55%, #0e0a16 100%);
+}
+
+button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 246, 222, 0.08);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(240, 199, 103, 0.85);
+  background: rgba(240, 199, 103, 0.16);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.primary {
+  color: #1a120b;
+  border-color: rgba(255, 232, 154, 0.9);
+  background: linear-gradient(180deg, #ffe9a8, var(--gold-dark));
+  box-shadow: 0 8px 28px rgba(181, 122, 43, 0.28);
+}
+
+/* ---------------------------------------------------------------- shell */
+.hs-shell {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+  height: 100dvh;
+  padding: 8px 14px 12px;
+  overflow: hidden;
+  /* Nothing on this screen is text anybody wants to select, and dragging a card
+     across the board otherwise paints a blue selection over every card name it
+     passes. The log drawer opts back in below. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.log-drawer,
+.event-log,
+.debug-panel {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.hs-shell.grabbing,
+.hs-shell.grabbing * {
+  cursor: grabbing !important;
+}
+
+.table-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 62% 52% at 50% 54%, rgba(240, 199, 103, 0.1), transparent 70%);
+}
+
+/* ---------------------------------------------------------------- top strip */
+.top-strip {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.brand-mini {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+}
+
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  background: conic-gradient(from 18deg, var(--gold), var(--teal), var(--red), #9b77d2, var(--gold));
+  box-shadow: inset 0 0 0 4px #16110d, 0 0 18px rgba(240, 199, 103, 0.28);
+}
+
+.player-count-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  margin-left: 4px;
+  padding: 5px 9px;
+  color: rgba(255, 241, 207, 0.74);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  white-space: nowrap;
+  border: 1px solid rgba(240, 199, 103, 0.22);
+  border-radius: 999px;
+  background: rgba(18, 12, 20, 0.5);
+}
+
+.player-count-chip b {
+  color: var(--gold);
+  font-size: 0.78rem;
+}
+
+.system-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.system-buttons button {
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 0.78rem;
+}
+
+.cheat-toggle.active,
+.cheat-toggle.active:hover:not(:disabled) {
+  color: #10221f;
+  border-color: rgba(67, 205, 189, 0.92);
+  background: linear-gradient(180deg, #9bf1df, var(--teal));
+}
+
+.sound-toggle.muted {
+  color: var(--muted);
+  border-color: rgba(255, 241, 207, 0.18);
+  background: rgba(255, 246, 222, 0.04);
+}
+
+/* ---------------------------------------------------------------- table frame */
+.table-frame {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  border-radius: 30px;
+  padding: 10px 12px 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 236, 190, 0.09), transparent 22%),
+    linear-gradient(160deg, var(--wood-hi), var(--wood) 38%, var(--wood-dark) 85%);
+  box-shadow:
+    inset 0 0 0 2px rgba(240, 199, 103, 0.35),
+    inset 0 0 0 6px rgba(20, 10, 4, 0.55),
+    inset 0 3px 18px rgba(255, 226, 160, 0.14),
+    0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+/* Screen shake when a hero takes a hit. */
+.table-frame.shaking {
+  animation: screen-shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes screen-shake {
+  10% { transform: translate(-4px, 2px); }
+  25% { transform: translate(5px, -3px); }
+  40% { transform: translate(-5px, 3px); }
+  55% { transform: translate(4px, -2px); }
+  70% { transform: translate(-3px, 1px); }
+  85% { transform: translate(2px, -1px); }
+  100% { transform: none; }
+}
+
+/* ---------------------------------------------------------------- enemy zone */
+.enemy-zone {
+  display: grid;
+  place-items: center;
+  padding: 0 0 2px; /* was 2px 0 6px — see the height budget on .battlefield */
+}
+
+/* ---------------------------------------------------------------- battlefield */
+.battlefield {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  /* THE HEIGHT BUDGET. Everything below is height reclaimed for the cards.
+     A board minion is sized by `--u`, which takes the SMALLER of the width fit
+     and the height fit — so once the slot cap went to 224px the binding
+     constraint became vertical, and the only way to make the card bigger was to
+     stop spending the arena's height on air:
+       row gap        8 -> 2   (a card now sits against the rift, as asked)
+       padding      14 -> 4    top and bottom
+       enemy zone    8 -> 2    (below)
+       command bar   8 -> 2    (below)
+       enemy plate   about a third shorter (below)
+     Roughly 60px back, which is ~30px per row, which is why the cards grew.
+     The left/right padding is untouched: the right side still has to host the
+     End Turn button and the deck pile. */
+  gap: 2px;
+  min-height: 0;
+  padding: 4px 92px 4px 56px; /* right space hosts End Turn + deck pile */
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse 90% 75% at 50% 50%, var(--parch-hi) 0%, var(--parch) 55%, var(--parch-dark) 100%),
+    var(--parch);
+  box-shadow:
+    inset 0 0 0 2px rgba(58, 36, 16, 0.55),
+    inset 0 0 44px rgba(70, 42, 16, 0.5),
+    inset 0 -14px 34px rgba(70, 42, 16, 0.3);
+}
+
+.battlefield::before {
+  /* subtle paper grain */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.22 0 0 0 0 0.10 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* The arena has more width than five slots need, and flat parchment out to the
+   frame made the board read as an island in an empty field. This darkens and
+   cools the flanks so they read as the far edge of the table, and drops a
+   violet/teal breath in from the top and bottom edges so the duel sits in the
+   same world as the title screen instead of on a different piece of furniture.
+   Purely a light layer — it never touches a card. */
+.battlefield::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 58% 100% at 50% 50%, transparent 40%, rgba(52, 30, 12, 0.42) 100%),
+    linear-gradient(90deg, rgba(40, 22, 9, 0.4), transparent 18%, transparent 82%, rgba(40, 22, 9, 0.4)),
+    linear-gradient(180deg, rgba(96, 66, 150, 0.14), transparent 26%),
+    linear-gradient(0deg, rgba(30, 110, 120, 0.12), transparent 26%);
+}
+
+/* ---------------------------------------------------------------- the rift
+   The seam where the two worlds meet. The game is NAMED after this line, so it
+   is the one thing on the table that is alive while nothing is happening: a cut
+   in the wood with light underneath it, and two sweeps travelling along it in
+   OPPOSITE directions — the convergence drawn instead of labelled.
+
+   It is deliberately the only permanent motion in the arena. Everything else
+   that moves is telling you about game state; this is telling you where you are.
+   Layers are separate elements rather than pseudo-elements because there are
+   five of them and they overlap. */
+.rift-line {
+  position: relative;
+  z-index: 1; /* above .battlefield::after, the arena vignette */
+  display: grid;
+  place-items: center;
+  height: 10px;
+}
+
+/* The cut itself: dark, with a lit upper lip so the table reads as split open
+   rather than as a stripe painted on top of it. */
+.rift-seam {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  top: 50%;
+  height: 11px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(38, 20, 7, 0.95) 8%, rgba(26, 13, 4, 0.98) 50%, rgba(38, 20, 7, 0.95) 92%, transparent);
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, 0.85),
+    0 1px 0 rgba(255, 242, 205, 0.6);
+}
+
+/* The light inside the cut. Violet at one end, teal at the other, gold where
+   they meet — the two sides of the duel and the point they arrive at. */
+.rift-glow {
+  position: absolute;
+  left: 3%;
+  right: 3%;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(178, 138, 255, 1) 12%,
+    rgba(255, 232, 168, 1) 46%,
+    rgba(255, 250, 226, 1) 50%,
+    rgba(255, 232, 168, 1) 54%,
+    rgba(96, 236, 216, 1) 88%,
+    transparent
+  );
+  box-shadow:
+    0 0 8px rgba(255, 246, 214, 0.9),
+    0 0 20px rgba(255, 214, 130, 0.75),
+    0 0 46px rgba(180, 130, 230, 0.5),
+    0 0 46px rgba(67, 205, 189, 0.42);
+  animation: rift-breathe 7.5s ease-in-out infinite;
+}
+
+@keyframes rift-breathe {
+  0%,
+  100% {
+    opacity: 0.82;
+    filter: brightness(0.95);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.4);
+  }
+}
+
+/* Two highlights running the length of the seam, towards each other. Different
+   periods on purpose: matched speeds would read as a marquee. */
+.rift-sweep {
+  position: absolute;
+  top: 50%;
+  width: 24%;
+  height: 5px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 248, 226, 0.85), transparent);
+  filter: blur(1px);
+  mix-blend-mode: screen;
+}
+
+.rift-sweep.a {
+  animation: rift-run-right 9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.rift-sweep.b {
+  animation: rift-run-left 13s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  opacity: 0.6;
+}
+
+@keyframes rift-run-right {
+  0% { left: -24%; opacity: 0; }
+  12% { opacity: 0.9; }
+  88% { opacity: 0.9; }
+  100% { left: 100%; opacity: 0; }
+}
+
+@keyframes rift-run-left {
+  0% { right: -24%; opacity: 0; }
+  12% { opacity: 0.7; }
+  88% { opacity: 0.7; }
+  100% { right: 100%; opacity: 0; }
+}
+
+/* A minion landed or a minion broke: the seam answers. Keyed on a counter in
+   App.tsx so each event remounts this and replays it from zero. */
+/* The bloom lives on the BASE rule, not inside the keyframes. A box-shadow
+   declared only at the 18% stop interpolates away from nothing on both sides, so
+   freezing the flare anywhere except exactly 18% showed a bare white bar with no
+   glow at all — which is what the first close-up caught. Keyframes now animate
+   opacity and scale only, and the glow is present for the whole life of it. */
+.rift-flare {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 7px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 250, 232, 1) 16%, #fff 50%, rgba(255, 250, 232, 1) 84%, transparent);
+  box-shadow:
+    0 0 16px 4px rgba(255, 246, 214, 0.95),
+    0 0 52px 14px rgba(255, 226, 150, 0.7),
+    0 0 90px 26px rgba(200, 150, 255, 0.35);
+  animation: rift-flare-out 0.72s cubic-bezier(0.1, 0.8, 0.25, 1) both;
+}
+
+@keyframes rift-flare-out {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scaleX(0.25) scaleY(0.4);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(-50%) scaleX(1) scaleY(1.8);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scaleX(1) scaleY(4);
+    filter: blur(7px);
+  }
+}
+
+
+/* End Turn — right edge, on the frame seam */
+.end-turn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  z-index: 6;
+  transform: translateY(-50%);
+  min-width: 76px;
+  padding: 12px 10px;
+  border: 2px solid rgba(255, 232, 154, 0.9);
+  border-radius: 12px;
+  color: #241203;
+  background: linear-gradient(180deg, #ffe9a8, var(--gold-dark));
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  line-height: 1.05;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.end-turn:hover:not(:disabled) {
+  transform: translateY(-50%) scale(1.05);
+  background: linear-gradient(180deg, #fff3c4, #c88f38);
+}
+
+.end-turn:disabled {
+  color: #d9cdb4;
+  border-color: rgba(120, 100, 70, 0.7);
+  background: linear-gradient(180deg, #6a5a41, #4a3c28);
+}
+
+.deck-pile {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 74px;
+}
+
+.deck-pile .card-back {
+  position: absolute;
+  width: 44px;
+  height: 60px;
+}
+
+.deck-pile .card-back:nth-child(1) { transform: rotate(-6deg) translate(-3px, 2px); }
+.deck-pile .card-back:nth-child(2) { transform: rotate(3deg) translate(2px, 0); }
+.deck-pile .card-back:nth-child(3) { transform: rotate(-1deg); }
+
+.deck-pile em {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  z-index: 2;
+  min-width: 24px;
+  padding: 2px 6px;
+  border: 1px solid rgba(240, 199, 103, 0.7);
+  border-radius: 999px;
+  color: var(--gold);
+  background: var(--panel);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 950;
+  text-align: center;
+}
+
+.card-back {
+  display: inline-block;
+  width: 22px;
+  height: 30px;
+  border: 1px solid rgba(240, 199, 103, 0.75);
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(240, 199, 103, 0.5) 0 3px, transparent 4px),
+    conic-gradient(from 18deg at 50% 42%, #6b4fae, #2f7f96, #8a3a55, #6b4fae),
+    #241640;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+}
+
+/* ---------------------------------------------------------------- board rows */
+.board-row {
+  /* positioned so the rows sit ABOVE .battlefield::after — a pseudo-element is
+     the last child, so without this the vignette paints over the cards at the
+     edges of the board and dims them. */
+  position: relative;
+  z-index: 1;
+  display: grid;
+  /* 224, up from 168 (and 152 before that). Now that a board minion prints its
+     rules text, the card has to carry a paragraph rather than a picture, and the
+     size comes entirely out of the DEAD SPACE around the board — see the height
+     budget on `.battlefield` below. Nothing inside the card was scaled to get
+     here; it simply has a bigger slot to fill.
+
+     Whether the card actually reaches 224 depends on height: `--u` takes the
+     smaller of the width and height fits, so on a short window the card stays
+     5:7 and centres in the slot rather than stretching. */
+  grid-template-columns: repeat(5, minmax(96px, 224px));
+  /* 12 -> 24 -> 34. The doubling fixed cards reading as one continuous strip;
+     34 is what the Taunt barricade needs, because it stands proud of the card
+     and at 24 it reached into the neighbouring slot. Costs nothing: the cards
+     are limited by the arena's HEIGHT, not by this. */
+  gap: 34px;
+  justify-content: center;
+  min-height: 0;
+}
+
+.board-slot {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  touch-action: none; /* see .hand-card — the drag is pointer-driven */
+}
+
+.board-slot:hover:not(:disabled) {
+  transform: none;
+  background: transparent;
+}
+
+/* An empty slot used to be invisible at rest (6% of a brown wash), on the theory
+   that a table should not look like a template. In practice a whole half of the
+   arena was featureless parchment and a new player could not see where a card
+   was supposed to go until they had already picked one up. The answer is not a
+   dashed outline — it is FURNITURE: a shallow recess pressed into the table,
+   with the light coming from above. It reads as part of the board, and it is
+   still nowhere near loud enough to compete with a card standing in it. */
+.board-slot.empty::before {
+  content: "";
+  position: absolute;
+  inset: 8% 6%;
+  border: 2px dashed transparent;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 50% 55%, rgba(80, 50, 22, 0.05), rgba(96, 62, 26, 0.11) 72%);
+  box-shadow:
+    inset 0 2px 5px rgba(70, 42, 16, 0.3),
+    inset 0 -1px 0 rgba(255, 240, 200, 0.28);
+  pointer-events: none;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.board-slot.placeable::before {
+  border-color: rgba(38, 140, 70, 0.75);
+  background: radial-gradient(ellipse at 50% 55%, rgba(90, 200, 120, 0.28), transparent 72%);
+  box-shadow: inset 0 0 22px rgba(90, 200, 120, 0.25);
+}
+
+.board-slot.placeable {
+  animation: breath-green 1.5s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------- board rings
+   EVERY state ring is drawn on `.cf-stage`, never on `.minion-wrap`.
+
+   `.minion-wrap` is the SLOT box. `.cf-stage` is literally the card: exactly
+   750x1050 design units, and `.card-face` centres it. A slot is not 5:7, so the
+   card letterboxes inside it — and a ring painted on the wrap traced the slot
+   and left a fat gap above and below the card it was supposed to be outlining.
+   Drawing on `.cf-stage` also inherits the card's own corner radius for free,
+   so the ring follows the rounded corners instead of guessing at them.
+
+   Each state repeats `var(--cf-drop)` at the end because `box-shadow` replaces
+   the whole list — dropping it would delete the card's own drop shadow and make
+   a lit minion look flatter than a dark one. */
+.board-slot.occupied.ready .minion-wrap .cf-stage {
+  /* "I can attack with this one." It was a thin rim that read as decoration; it
+     is an unmistakable green halo, because missing it means missing a turn. */
+  box-shadow:
+    0 0 0 5px rgba(86, 226, 122, 0.95),
+    0 0 22px 6px rgba(70, 200, 110, 0.65),
+    0 0 46px 12px rgba(70, 200, 110, 0.35),
+    var(--cf-drop);
+}
+
+.board-slot.occupied.ready .minion-wrap {
+  animation: breath-green 1.8s ease-in-out infinite;
+}
+
+.board-slot.occupied.targetable .minion-wrap .cf-stage {
+  box-shadow: 0 0 0 3px rgba(211, 62, 40, 0.9), 0 0 26px rgba(211, 62, 40, 0.5), var(--cf-drop);
+}
+
+.board-slot.occupied.targetable .minion-wrap {
+  animation: breath-red 1.3s ease-in-out infinite;
+}
+
+/* The minion currently being dragged as an attacker. */
+.board-slot.occupied.armed .minion-wrap .cf-stage {
+  box-shadow: 0 0 0 3px rgba(255, 214, 120, 0.95), 0 0 30px rgba(240, 199, 103, 0.6), var(--cf-drop);
+}
+
+.board-slot.occupied.armed .minion-wrap {
+  filter: brightness(1.1);
+}
+
+@keyframes breath-green {
+  50% {
+    filter: brightness(1.12);
+  }
+}
+
+@keyframes breath-red {
+  50% {
+    filter: brightness(1.16);
+  }
+}
+
+/* --- minion layers: absolute wraps = definite sizes (see header note) --- */
+.minion-wrap {
+  position: absolute;
+  inset: 4px 2px;
+  z-index: 1;
+  animation: minion-arrive 0.3s cubic-bezier(0.18, 0.85, 0.3, 1.25);
+}
+
+.minion-wrap .card-face,
+.lunge-wrap .card-face,
+.ghost-wrap .card-face {
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+.lunge-wrap {
+  width: 100%;
+  height: 100%;
+}
+
+/* Directional strike: --lx/--ly point at the actual target's center. */
+.lunge-wrap.lunging {
+  animation: lunge-strike 0.45s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+.board-slot.striking {
+  z-index: 9;
+}
+
+.jolt-wrap {
+  width: 100%;
+  height: 100%;
+}
+
+.jolt-wrap.jolting {
+  animation: hit-jolt 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) var(--fd, 0s) both;
+}
+
+.jolt-wrap.frosting {
+  animation: frost-tint 0.9s ease-out var(--fd, 0s) both;
+}
+
+.jolt-wrap.jolting.frosting {
+  animation:
+    hit-jolt 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) var(--fd, 0s) both,
+    frost-tint 0.9s ease-out var(--fd, 0s) both;
+}
+
+.ghost-wrap {
+  position: absolute;
+  inset: 4px 2px;
+  z-index: 3;
+  display: grid;
+  pointer-events: none;
+  animation: ghost-out 0.62s cubic-bezier(0.36, 0, 0.28, 1) var(--fd, 0s) both;
+}
+
+@keyframes minion-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(-26px) scale(1.22);
+    filter: brightness(1.9);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(2px) scale(0.985);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes lunge-strike {
+  0% {
+    transform: none;
+  }
+  22% {
+    /* wind up away from the target */
+    transform: translate(calc(var(--lx, 0px) * -0.14), calc(var(--ly, -30px) * -0.14)) scale(1.05);
+  }
+  55% {
+    /* smash into it */
+    transform: translate(var(--lx, 0px), var(--ly, -30px)) scale(1.1);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes hit-jolt {
+  10% {
+    transform: translate(-5px, 2px) rotate(-1.2deg);
+  }
+  30% {
+    transform: translate(6px, -3px) rotate(1.4deg);
+  }
+  50% {
+    transform: translate(-6px, 1px) rotate(-1deg);
+  }
+  70% {
+    transform: translate(4px, 2px) rotate(0.8deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes frost-tint {
+  20% {
+    filter: brightness(1.25) drop-shadow(0 0 12px rgba(159, 214, 255, 0.95));
+  }
+  100% {
+    filter: none;
+  }
+}
+
+@keyframes ghost-out {
+  0% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  /* the blow lands — a hard white flinch */
+  9% {
+    opacity: 1;
+    transform: scale(1.07) rotate(-1.5deg);
+    filter: brightness(3.4) saturate(0.2) contrast(1.4);
+  }
+  /* it goes cold and starts to come apart */
+  22% {
+    opacity: 1;
+    transform: scale(0.99) rotate(1deg);
+    filter: brightness(1.15) grayscale(0.75) contrast(1.25);
+  }
+  /* the break: sheared in half along a diagonal */
+  46% {
+    opacity: 0.9;
+    transform: translateY(6px) scale(0.93) rotate(-4deg) skewX(7deg);
+    filter: brightness(0.85) grayscale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(54px) scale(0.62) rotate(-15deg) skewX(16deg);
+    filter: brightness(0.35) grayscale(1) blur(3px);
+  }
+}
+
+/* The flash + shockwave that sell the moment of the break. */
+.ghost-wrap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  border: 3px solid rgba(255, 246, 222, 0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 24px rgba(255, 232, 180, 0.8);
+  transform: translate(-50%, -50%);
+  animation: death-shock 0.46s cubic-bezier(0.1, 0.8, 0.3, 1) var(--fd, 0s) both;
+  pointer-events: none;
+}
+
+@keyframes death-shock {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  12% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(5.4); border-width: 1px; }
+}
+
+/* --- floating damage / heal numbers --- */
+.float-num {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  z-index: 12;
+  pointer-events: none;
+  font-size: 1.55rem;
+  font-weight: 950;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 0 3px rgba(0, 0, 0, 0.9);
+  animation: float-up 0.95s ease-out var(--fd, 0s) both;
+}
+
+.float-num.hurt {
+  color: #ff5a41;
+}
+
+.float-num.heal {
+  color: #5eff8f;
+}
+
+@keyframes float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.7);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.18);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -36px) scale(1);
+  }
+}
+
+/* ============================================================================
+   IMPACT FX — spawned by diffing state. Every card slot and hero plate hosts a
+   .fx-layer; each impact drops a centered flash (.impact-core) plus a burst of
+   particles (i.p) that fly along per-particle --dx/--dy vectors.
+   ============================================================================ */
+.fx-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.impact {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+}
+
+.impact-core {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+}
+
+/* impact flash colours per kind */
+.impact-hit .impact-core {
+  width: 96px;
+  height: 96px;
+  background: radial-gradient(circle, rgba(255, 244, 224, 0.95) 0%, rgba(255, 138, 92, 0.6) 34%, transparent 68%);
+  animation: flash-pop 0.4s ease-out var(--fd, 0s) both;
+}
+
+.impact-heal .impact-core {
+  width: 104px;
+  height: 104px;
+  background: radial-gradient(circle, rgba(224, 255, 232, 0.9) 0%, rgba(94, 255, 143, 0.55) 40%, transparent 70%);
+  animation: flash-pop 0.55s ease-out var(--fd, 0s) both;
+}
+
+.impact-summon .impact-core {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 236, 176, 0.95);
+  background: radial-gradient(circle, rgba(255, 246, 214, 0.5), transparent 70%);
+  box-shadow: 0 0 24px rgba(240, 199, 103, 0.7);
+  animation: summon-ring 0.62s cubic-bezier(0.2, 0.6, 0.2, 1) var(--fd, 0s) both;
+}
+
+.impact-buff .impact-core {
+  width: 92px;
+  height: 92px;
+  background: radial-gradient(circle, rgba(255, 244, 190, 0.85) 0%, rgba(240, 199, 103, 0.45) 42%, transparent 72%);
+  animation: flash-pop 0.6s ease-out var(--fd, 0s) both;
+}
+
+.impact-debuff .impact-core {
+  width: 92px;
+  height: 92px;
+  background: radial-gradient(circle, rgba(190, 150, 220, 0.7) 0%, rgba(120, 70, 160, 0.4) 45%, transparent 72%);
+  animation: flash-pop 0.6s ease-out var(--fd, 0s) both;
+}
+
+.impact-freeze .impact-core {
+  width: 88px;
+  height: 88px;
+  background: radial-gradient(circle, rgba(220, 244, 255, 0.85) 0%, rgba(120, 190, 255, 0.5) 42%, transparent 72%);
+  animation: flash-pop 0.6s ease-out var(--fd, 0s) both;
+}
+
+/* Divine-shield break: a hard bright ring snapping outward. */
+.impact-shield .impact-core {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 238, 180, 0.98);
+  background: radial-gradient(circle, rgba(255, 250, 224, 0.65), transparent 68%);
+  box-shadow: 0 0 30px rgba(255, 226, 150, 0.9);
+  animation: shield-break 0.5s cubic-bezier(0.15, 0.7, 0.2, 1) var(--fd, 0s) both;
+}
+
+.p {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--ps, 5px);
+  height: var(--ps, 5px);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+  animation: particle-fly var(--pt, 0.5s) ease-out calc(var(--fd, 0s) + var(--pd, 0s)) both;
+}
+
+.p-hit {
+  background: radial-gradient(circle, #fff2d8, #ff7a4a);
+  box-shadow: 0 0 6px rgba(255, 138, 92, 0.8);
+}
+
+.p-heal,
+.p-buff {
+  background: radial-gradient(circle, #eafff0, #5eff8f);
+  box-shadow: 0 0 6px rgba(94, 255, 143, 0.75);
+}
+
+.p-debuff {
+  background: radial-gradient(circle, #e7d4ff, #9a5ecf);
+  box-shadow: 0 0 6px rgba(154, 94, 207, 0.7);
+}
+
+.p-summon {
+  background: radial-gradient(circle, #fff6d6, #f0c767);
+  box-shadow: 0 0 7px rgba(240, 199, 103, 0.85);
+}
+
+.p-shield {
+  background: radial-gradient(circle, #fffaf0, #ffe39a);
+  box-shadow: 0 0 8px rgba(255, 227, 154, 0.9);
+}
+
+/* Freeze shards: little rotated ice chips instead of round motes. */
+.p-freeze {
+  border-radius: 1px;
+  background: linear-gradient(160deg, #eaf7ff, #86c8ff);
+  box-shadow: 0 0 6px rgba(134, 200, 255, 0.85);
+}
+
+.p-death {
+  border-radius: 1px;
+  background: linear-gradient(150deg, #fff3d4, #e0a24a 55%, #7d2f18);
+  box-shadow: 0 0 7px rgba(255, 198, 120, 0.9), 0 0 2px rgba(0, 0, 0, 0.6);
+  animation-name: shard-fly;
+  animation-timing-function: cubic-bezier(0.15, 0.85, 0.45, 1);
+}
+
+/* Shards blast out, then gravity takes them — the arc is what makes it read as
+   debris instead of a dissolve. */
+@keyframes shard-fly {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15) rotate(0deg);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--dx, 0px) * 0.85), calc(-50% + var(--dy, 0px) * 0.7 - 14px))
+      scale(0.9) rotate(calc(var(--pr, 0deg) * 0.6));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px) + 42px))
+      scale(0.45) rotate(var(--pr, 0deg));
+  }
+}
+
+.death-burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+@keyframes flash-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.25);
+  }
+}
+
+@keyframes summon-ring {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(4.6);
+    border-width: 1px;
+  }
+}
+
+@keyframes shield-break {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.8);
+    border-width: 1px;
+  }
+}
+
+@keyframes particle-fly {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) rotate(var(--pr, 0deg)) scale(0.4);
+  }
+}
+
+/* ============================================================================
+   DRAG & DROP — a card ghost that follows the cursor, and an SVG targeting
+   arrow drawn from the attacking minion to the pointer.
+   ============================================================================ */
+.drag-layer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 80;
+  width: 128px;
+  pointer-events: none;
+  will-change: transform;
+  filter: drop-shadow(0 26px 40px rgba(0, 0, 0, 0.6));
+}
+
+.drag-card {
+  transform: rotate(-4deg) scale(1.04);
+  animation: drag-grab 0.16s ease-out;
+}
+
+.drag-card .cf-stage {
+  box-shadow:
+    0 0 0 2px rgba(240, 199, 103, 0.7),
+    0 0 28px rgba(240, 199, 103, 0.4),
+    0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes drag-grab {
+  from {
+    transform: rotate(0deg) scale(0.9);
+  }
+  to {
+    transform: rotate(-4deg) scale(1.04);
+  }
+}
+
+.hand-card.dragging {
+  opacity: 0.28;
+  filter: grayscale(0.4);
+}
+
+.target-arrow {
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.arrow-path {
+  fill: none;
+  stroke: #ff6d4d;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 2 14;
+  filter: drop-shadow(0 0 8px rgba(255, 90, 60, 0.8));
+  animation: arrow-flow 0.5s linear infinite;
+}
+
+.arrow-root {
+  fill: rgba(255, 120, 90, 0.55);
+  stroke: #ffcaba;
+  stroke-width: 2;
+}
+
+.arrow-head {
+  fill: #ff6d4d;
+  filter: drop-shadow(0 0 6px rgba(255, 90, 60, 0.9));
+}
+
+@keyframes arrow-flow {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+/* ============================================================================
+   TURN BANNER — sweeps across when the active player changes.
+
+   This section header, and `banner-sweep` below it, sat here with NOTHING using
+   either of them: the turn change was announced by one sound and no picture at
+   all, so against the bot you had no idea whose turn it was except by noticing
+   the End Turn button had gone grey. It is wired up now.
+
+   Never shown behind the hotseat curtain — the curtain already names whose turn
+   it is, and a banner underneath it would just be flashing at a closed door.
+   ============================================================================ */
+.turn-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 42%;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  animation: banner-hold 1.5s ease-out both;
+}
+
+.turn-banner b {
+  padding: 10px 46px;
+  border-top: 2px solid rgba(240, 199, 103, 0.9);
+  border-bottom: 2px solid rgba(240, 199, 103, 0.9);
+  background: linear-gradient(90deg, transparent, rgba(24, 14, 8, 0.88) 14%, rgba(24, 14, 8, 0.88) 86%, transparent);
+  color: var(--gold);
+  font-size: 2.1rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.8), 0 0 26px rgba(240, 199, 103, 0.45);
+  animation: banner-sweep 1.5s cubic-bezier(0.16, 0.9, 0.2, 1) both;
+}
+
+/* The far player's turn is stated in cooler metal, so "mine" and "theirs" are
+   two different events rather than the same word twice. */
+.turn-banner.theirs b {
+  border-color: rgba(150, 176, 214, 0.85);
+  color: #cfe0f5;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.8), 0 0 26px rgba(120, 160, 220, 0.4);
+  font-size: 1.6rem;
+}
+
+/* The band the word rides in on, kept separate so it can sweep wider and faster
+   than the text does. */
+.turn-banner::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240, 199, 103, 0.7), transparent);
+  animation: banner-line 1.5s cubic-bezier(0.16, 0.9, 0.2, 1) both;
+}
+
+@keyframes banner-hold {
+  0%, 88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes banner-line {
+  0% { opacity: 0; transform: scaleX(0.1); }
+  22% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1.3); }
+}
+
+@keyframes banner-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.94);
+  }
+  18% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(40px) scale(1.02);
+  }
+}
+
+/* ============================================================================
+   THE DRAW — a card leaving the deck and arriving somewhere.
+
+   Drawing is the single most repeated event in a card game and it had no
+   picture and no sound: the card simply appeared in the fan, and the `draw`
+   sound that already existed in sfx.ts was only ever fired by Detective L's
+   choice overlay. The flight is measured at spawn time from the real deck pile
+   and the real destination, the same way the attacker lunge is.
+   ============================================================================ */
+.draw-flight {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 78;
+  pointer-events: none;
+  animation: draw-fly 0.62s cubic-bezier(0.3, 0.05, 0.25, 1) both;
+}
+
+.draw-flight .card-back {
+  width: 54px;
+  height: 74px;
+  box-shadow: 0 0 18px rgba(240, 199, 103, 0.55), 0 14px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* The card the OPPONENT drew flies smaller and dimmer — you are told it
+   happened, not invited to watch it. */
+.draw-flight.theirs {
+  opacity: 0.72;
+}
+
+.draw-flight.theirs .card-back {
+  width: 34px;
+  height: 46px;
+}
+
+@keyframes draw-fly {
+  0% {
+    opacity: 0;
+    transform: translate(var(--fx0), var(--fy0)) scale(0.5) rotate(-14deg);
+  }
+  16% {
+    opacity: 1;
+    transform: translate(
+        calc(var(--fx0) + (var(--fx1) - var(--fx0)) * 0.18),
+        calc(var(--fy0) + (var(--fy1) - var(--fy0)) * 0.18 - 34px)
+      )
+      scale(1.14) rotate(-6deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--fx1), var(--fy1)) scale(0.72) rotate(6deg);
+  }
+}
+
+/* The pile answers, so the count on it is not the only sign a card left. */
+.deck-pile.drawing .card-back:nth-child(3) {
+  animation: deck-kick 0.42s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes deck-kick {
+  0% { transform: rotate(-1deg); }
+  40% { transform: rotate(-7deg) translate(-5px, -4px); }
+  100% { transform: rotate(-1deg); }
+}
+
+/* ---------------------------------------------------------------- command bar */
+.command-bar {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  /* 250, matching `.hero-plate`'s own min-width. At 220 the column could be
+     squeezed narrower than the plate it holds, and the plate then overflowed
+     under the hand fan. */
+  grid-template-columns: minmax(250px, 1fr) auto minmax(250px, 1fr);
+  gap: 14px;
+  align-items: center;
+  min-height: 0;
+  padding: 2px 10px 2px; /* was 8px top — see the height budget on .battlefield */
+}
+
+.command-bar .hero-plate {
+  justify-self: start; /* push the hero + health gem to the far-left corner */
+}
+
+.command-bar .mana-tray {
+  justify-self: end; /* push the mana tray to the far-right corner */
+}
+
+.hand-fan {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-width: 0;
+  height: 148px;
+  padding-top: 6px;
+}
+
+.hand-card {
+  flex: 0 0 118px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  /* The drag is pointer-driven, so the browser's own pan/zoom gesture has to be
+     taken off these or a drag on a touchscreen scrolls the page instead of
+     moving the card. Same reason on the board slots and the relic badge. */
+  touch-action: none;
+  transform: rotate(var(--rot, 0deg)) translateY(var(--ty, 0px));
+  transform-origin: 50% 120%;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.hand-card:hover:not(:disabled) {
+  transform: translateY(-30px) scale(1.12);
+  z-index: 40 !important;
+}
+
+.hand-card.selected {
+  transform: translateY(-26px) scale(1.1);
+  z-index: 39 !important;
+}
+
+.hand-card.selected .cf-stage {
+  outline: 3px solid rgba(67, 205, 189, 0.95);
+  outline-offset: 1px;
+}
+
+/* Affordable right now — BLUE, the colour of mana, matching the crystals in the
+   tray. It must NOT be gold: gold is the Divine Shield rim, and a shielded card
+   sitting in hand looked exactly like "you can afford this" (it is what made
+   Giant Crystal appear playable at 2 mana). It must not be green either — green
+   is the board's "this minion can attack". One colour, one meaning, screen-wide. */
+.hand-card.playable .cf-stage {
+  outline: 2.5px solid rgba(96, 178, 255, 0.95);
+  outline-offset: 1px;
+  box-shadow: 0 0 22px rgba(70, 150, 255, 0.5), 0 14px 34px rgba(0, 0, 0, 0.4);
+}
+
+.hand-card.playable:hover:not(:disabled) .cf-stage {
+  outline-color: #cfe6ff;
+  box-shadow: 0 0 36px rgba(120, 195, 255, 0.85), 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+/* A shielded card in hand keeps its gold rim; the blue outline stands off it so
+   the two read as two separate things rather than one thick glow. */
+.hand-card.playable .card-face.kw-divine-shield .cf-stage {
+  outline-offset: 4px;
+}
+
+/* THE COST MOVES TO THE LEFT IN HAND, and this is not a style choice.
+   The fan overlaps left-to-right, so only each card's LEFT strip is visible —
+   every card except the last one had its top-RIGHT corner underneath its
+   neighbour, which is where the mana crystal lives. The hand read as "nothing is
+   seen at all" for that reason and not only for size: making the crystal bigger
+   moved it further under the next card. Hearthstone puts cost top-left for
+   exactly this reason. A board minion is never overlapped, so it keeps the
+   printed card's top-right corner and the two contexts stay honest. */
+.hand-card .cf-mana,
+.drag-card .cf-mana,
+.prompt-hand-card .cf-mana {
+  right: auto;
+  left: calc(2 * var(--u));
+}
+
+.mana-tray {
+  justify-self: end; /* push the mana tray to the far-right corner */
+}
+
+.mana-tray strong {
+  color: #bfe4ff;
+  font-size: 1.35rem;
+  font-weight: 950;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.mana-inf {
+  color: #9bf1df;
+  font-size: 1.3rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.mana-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+  /* Ten crystals at 20px + 7px gap is 270. At the old 260 the tenth wrapped onto
+     a line of its own, so the tray changed height exactly when you hit max mana. */
+  max-width: 300px;
+}
+
+.mana-pip {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(130, 205, 255, 0.6);
+  border-radius: 3px;
+  background: rgba(28, 52, 70, 0.55);
+  transform: rotate(45deg) scale(0.85);
+}
+
+.mana-pip.full {
+  border-color: #c4ebff;
+  background: linear-gradient(160deg, #aee6ff, #2f8fc9);
+  box-shadow: 0 0 7px rgba(110, 195, 255, 0.8);
+}
+
+/* Paying for a card used to be a silent re-render with fewer lit pips. These are
+   the crystals you just spent, going out one after another; the stagger is what
+   makes "that cost six" legible without reading a number. */
+.mana-pip.spent {
+  animation: mana-burn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) calc(var(--mi, 0) * 55ms) both;
+}
+
+@keyframes mana-burn {
+  0% {
+    border-color: #eaf8ff;
+    background: linear-gradient(160deg, #eaf8ff, #6fc4f5);
+    box-shadow: 0 0 22px rgba(180, 232, 255, 1);
+    transform: rotate(45deg) scale(1.35);
+  }
+  55% {
+    border-color: rgba(180, 232, 255, 0.7);
+    box-shadow: 0 0 12px rgba(130, 205, 255, 0.55);
+    transform: rotate(45deg) scale(0.7);
+  }
+  100% {
+    border-color: rgba(130, 205, 255, 0.6);
+    background: rgba(28, 52, 70, 0.55);
+    box-shadow: none;
+    transform: rotate(45deg) scale(0.85);
+  }
+}
+
+/* Turn start: the tray fills back up left to right instead of simply being
+   fuller than it was. */
+.mana-pip.refill {
+  animation: mana-fill 0.44s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(var(--mi, 0) * 60ms) both;
+}
+
+@keyframes mana-fill {
+  0% {
+    border-color: rgba(130, 205, 255, 0.6);
+    background: rgba(28, 52, 70, 0.55);
+    box-shadow: none;
+    transform: rotate(45deg) scale(0.5);
+  }
+  60% {
+    box-shadow: 0 0 20px rgba(160, 224, 255, 0.95);
+    transform: rotate(45deg) scale(1.2);
+  }
+  100% {
+    border-color: #c4ebff;
+    background: linear-gradient(160deg, #aee6ff, #2f8fc9);
+    box-shadow: 0 0 7px rgba(110, 195, 255, 0.8);
+    transform: rotate(45deg) scale(0.85);
+  }
+}
+
+/* ---------------------------------------------------------------- hero plates */
+.hero-plate {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 250px;
+  padding: 7px 12px;
+  border: 2px solid rgba(240, 199, 103, 0.5);
+  border-radius: 16px;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(255, 236, 190, 0.1), transparent 30%),
+    linear-gradient(160deg, #3c2513, #24140a 80%);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(20, 10, 4, 0.7);
+  cursor: default;
+}
+
+.hero-plate:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.hero-plate:hover:not(:disabled) {
+  transform: none;
+  background:
+    linear-gradient(180deg, rgba(255, 236, 190, 0.1), transparent 30%),
+    linear-gradient(160deg, #3c2513, #24140a 80%);
+}
+
+.hero-plate.me {
+  border-color: rgba(67, 205, 189, 0.55);
+}
+
+/* THE ENEMY PLATE IS ABOUT A THIRD SMALLER THAN YOURS, on purpose.
+   It is the only thing standing between the top of the arena and the top of the
+   window, so every pixel it occupies is a pixel the board cannot have — and it
+   carries the least information on screen: a name, a health number, a hand
+   count. Yours sits beside the hand at the bottom, where it costs the board
+   nothing, so it keeps full size. The asymmetry is the point; do not "fix" it by
+   matching them. */
+.hero-plate.enemy {
+  min-width: 172px;
+  padding: 4px 9px;
+  gap: 7px;
+}
+
+.hero-plate.enemy .hero-sigil {
+  width: 31px;
+  height: 31px;
+  border-width: 1px;
+}
+
+.hero-plate.enemy .hero-name strong {
+  font-size: 0.72rem;
+}
+
+.hero-plate.enemy .health-gem {
+  min-width: 39px;
+  min-height: 36px;
+  padding-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.hero-plate.enemy .mini-mana {
+  padding: 2px 6px;
+  font-size: 0.62rem;
+}
+
+.hero-plate.enemy .hand-backs {
+  padding-right: 11px;
+}
+
+.hero-plate.enemy .hand-backs .card-back {
+  width: 15px;
+  height: 20px;
+}
+
+.hero-plate.enemy .hand-backs em {
+  font-size: 0.6rem;
+}
+
+/* Whose turn it is, held for the whole turn rather than only announced at the
+   moment it changes. The banner is the event; this is the state. */
+.hero-plate.active {
+  border-color: rgba(255, 226, 150, 0.95);
+  box-shadow:
+    0 0 0 2px rgba(240, 199, 103, 0.4),
+    0 0 30px rgba(240, 199, 103, 0.28),
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(20, 10, 4, 0.7);
+}
+
+/* The practice opponent takes about two thirds of a second per move and used to
+   do it with no sign that anything was happening at all. */
+.hero-plate.thinking .hero-think {
+  display: inline-flex;
+}
+
+.hero-think {
+  display: none;
+  gap: 4px;
+  align-items: center;
+  margin-left: 8px;
+}
+
+.hero-think i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 226, 150, 0.9);
+  animation: think-bob 1.05s ease-in-out infinite;
+}
+
+.hero-think i:nth-child(2) { animation-delay: 0.16s; }
+.hero-think i:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes think-bob {
+  0%, 70%, 100% { opacity: 0.25; transform: translateY(0); }
+  35% { opacity: 1; transform: translateY(-4px); }
+}
+
+/* No "Strike!" tag — the pulsing red plate is the whole message. */
+.hero-plate.targetable {
+  border-color: rgba(255, 120, 90, 0.95);
+  box-shadow: 0 0 0 3px rgba(211, 62, 40, 0.55), 0 0 34px rgba(211, 62, 40, 0.5);
+  animation: breath-red 1.3s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.hero-plate.hit {
+  animation: hero-hit 0.5s ease-out;
+}
+
+@keyframes hero-hit {
+  15% {
+    transform: translate(-4px, 2px);
+  }
+  30% {
+    border-color: #ff6d57;
+    box-shadow: inset 0 0 0 999px rgba(223, 103, 84, 0.3);
+    transform: translate(4px, -2px);
+  }
+  50% {
+    transform: translate(-3px, 1px);
+  }
+  70% {
+    transform: translate(2px, 0);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* A player's heraldry: fixed for the whole duel, drawn not photographed. It must
+   never be mistakable for a minion — that confusion once read as a combat bug. */
+.hero-sigil {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #2b2140, #140d20 70%);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8), 0 0 18px rgba(240, 199, 103, 0.25);
+  overflow: hidden;
+}
+
+.hero-sigil svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hero-plate.me .hero-sigil {
+  border-color: var(--teal);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(67, 205, 189, 0.4);
+}
+
+.hero-plate.enemy .hero-sigil {
+  border-color: var(--red);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(223, 103, 84, 0.4);
+}
+
+.sigil-field { fill: rgba(255, 246, 222, 0.04); }
+
+/* Player One — the convergent star. */
+.hero-plate.me .sigil-ray {
+  stroke: #43cdbd;
+  stroke-width: 1.4;
+  opacity: 0.55;
+}
+.hero-plate.me .sigil-core {
+  fill: rgba(67, 205, 189, 0.28);
+  stroke: #7ff0e2;
+  stroke-width: 1.6;
+}
+.hero-plate.me .sigil-pip { fill: #d8fff9; }
+
+/* Player Two — the eclipse. */
+.hero-plate.enemy .sigil-ring {
+  fill: none;
+  stroke: #df6754;
+  stroke-width: 1.5;
+  opacity: 0.7;
+}
+.hero-plate.enemy .sigil-ring.inner { opacity: 0.4; }
+.hero-plate.enemy .sigil-shard {
+  fill: rgba(223, 103, 84, 0.5);
+  stroke: #ffb4a1;
+  stroke-width: 1.2;
+}
+.hero-plate.enemy .sigil-void {
+  fill: #1a0d0a;
+  stroke: #ffb4a1;
+  stroke-width: 1.4;
+}
+
+.hero-name .hero-role {
+  color: var(--muted);
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+}
+
+.hero-name {
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.hero-name strong {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.hero-name small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.hand-backs {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-right: 16px;
+}
+
+.hand-backs em {
+  position: absolute;
+  right: -2px;
+  bottom: -6px;
+  min-width: 20px;
+  padding: 1px 5px;
+  border: 1px solid rgba(240, 199, 103, 0.7);
+  border-radius: 999px;
+  color: var(--gold);
+  background: var(--panel);
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 950;
+  text-align: center;
+}
+
+.mini-mana {
+  padding: 3px 8px;
+  border: 1px solid rgba(130, 205, 255, 0.45);
+  border-radius: 999px;
+  color: #bfe4ff;
+  background: rgba(16, 24, 40, 0.72);
+  font-size: 0.74rem;
+  font-weight: 950;
+}
+
+/* A heart, so the number needs no label. The word "Core" used to do that job. */
+.health-gem {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 58px;
+  min-height: 54px;
+  padding-bottom: 6px;
+  margin-left: 2px;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 950;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.75);
+  filter: drop-shadow(0 4px 10px rgba(143, 18, 6, 0.55));
+}
+
+.health-gem::before,
+.health-gem::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  -webkit-mask: var(--shape-heart) center / contain no-repeat;
+  mask: var(--shape-heart) center / contain no-repeat;
+}
+.health-gem::before { inset: 0; background: rgba(255, 214, 170, 0.9); }
+.health-gem::after {
+  inset: 8%;
+  background: radial-gradient(circle at 42% 28%, #ff9b86, #d92b18 55%, #8f1206);
+}
+
+.hero-plate .float-num {
+  font-size: 1.25rem;
+}
+
+/* ============================================================================
+   THE CARD FACE — drawn live, from card data
+
+   There is no baked card image any more. Everything you see on a card (banner,
+   mana/ATK/HP gems, camp + alignment rails, description plaque, flavour, origin)
+   is DOM, so a stat can change mid-combat and the card simply redraws. Editing
+   one line of data/cards.csv is now the whole of "buff this card".
+
+   This is a transcription of the print pipeline's card_template.html — the same
+   design that renders the 1500x2100 faces for PHYSICAL cards — with two
+   deliberate differences:
+     - the side rails are thinner, because a ~150px board minion cannot spare the
+       48 design-px the printed card gives them (owner decision);
+     - small cards hide their text (see the @container block at the bottom), so a
+       board minion reads as art + name + stats and the full card appears on hover.
+
+   HOW THE SCALING WORKS
+   The design space is 750x1050 (5:7) — the SAME numbers the print template uses,
+   so the screen card and the printed card cannot drift apart. `--u` is the size
+   of one design pixel: the smaller of "fit the width" and "fit the height", so
+   the card is letterboxed inside whatever box the layout hands it and never
+   distorts or crops. That needs container-type: size, which needs a definite
+   container height — every call site has one (board slots inherit the viewport
+   grid, everything else comes from aspect-ratio).
+
+   TEXT FITTING
+   The print pipeline measures text in headless Chromium and shrinks it to fit.
+   Nothing measures anything here — App.tsx passes the widest font each string
+   can take (in design px) as --cf-*fit, and CSS takes the smaller of that and
+   the design size. No layout thrash, no flash of oversized text, same result.
+   ========================================================================= */
+
+@font-face {
+  font-family: "Baloo 2";
+  font-weight: 400 800;
+  font-display: block;
+  src: url("/fonts/Baloo2.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: block;
+  src: url("/fonts/Nunito.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Nunito";
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: block;
+  src: url("/fonts/Nunito-Italic.ttf") format("truetype");
+}
+
+.card-face {
+  container: cardface / size;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 5 / 7;
+  /* one design pixel */
+  --u: min(0.1333333cqw, 0.0952381cqh);
+  /* The card's own drop shadow. Named because every board state ring is drawn
+     on .cf-stage and box-shadow replaces the whole list — each of those rules
+     has to put this back or a highlighted minion loses its shadow and reads as
+     flatter than an idle one. */
+  --cf-drop: 0 calc(12 * var(--u)) calc(28 * var(--u)) rgba(0, 0, 0, 0.42);
+  /* Text auto-fit ceilings, overwritten per card by App.tsx. These defaults only
+     apply to a face rendered without the fit variables at all, so they match the
+     `min(…)` ceilings used below rather than the old pre-measurement numbers. */
+  --cf-namefit: 46;
+  --cf-namefitc: 72;
+  --cf-namefitb: 46;
+  --cf-efffit: 96;
+  --cf-efffitb: 96;
+  --cf-flavfit: 48;
+  /* default palette (Rare / Black) — .rarity-* below overrides */
+  --metal-light: #9aa1aa;
+  --metal-mid: #474c54;
+  --metal-dark: #1b1e23;
+  --rail-light: #2c2f35;
+  --rail-dark: #15171b;
+  --banner-light: #3a3e45;
+  --banner-dark: #1c1e22;
+  --panel-light: #34383f;
+  --panel-dark: #16181c;
+  --badge-light: #cdd3da;
+  --badge-mid: #5a606a;
+  --badge-dark: #24272c;
+}
+
+/* --- rarity palettes, lifted verbatim from render_cards.py THEMES ---------- */
+.card-face.rarity-yellow {           /* Legendary — gold */
+  --metal-light: #f6e08c; --metal-mid: #caa23c; --metal-dark: #6f4f12;
+  --rail-light: #7c6e34; --rail-dark: #4a3f18;
+  --banner-light: #6f6228; --banner-dark: #3c3414;
+  --panel-light: #5f5326; --panel-dark: #2e2810;
+  --badge-light: #ffe9a6; --badge-mid: #c89a36; --badge-dark: #5e410f;
+}
+
+.card-face.rarity-red {              /* Mythic — crimson */
+  --metal-light: #dd8a70; --metal-mid: #9c3327; --metal-dark: #561310;
+  --rail-light: #5a3326; --rail-dark: #331a13;
+  --banner-light: #6e241c; --banner-dark: #3a120e;
+  --panel-light: #5a201a; --panel-dark: #2c0f0c;
+  --badge-light: #f0b3a0; --badge-mid: #b23a2e; --badge-dark: #5e1410;
+}
+
+.card-face.rarity-purple {           /* Epic — amethyst */
+  --metal-light: #caa0e6; --metal-mid: #7d3fa8; --metal-dark: #3a1858;
+  --rail-light: #42295c; --rail-dark: #241038;
+  --banner-light: #4a2668; --banner-dark: #26113c;
+  --panel-light: #3e2058; --panel-dark: #1f0f30;
+  --badge-light: #e0c2f4; --badge-mid: #8b46c0; --badge-dark: #3f1a5e;
+}
+
+.card-face.rarity-relic {            /* Ascension Relics — radiant teal */
+  --metal-light: #bdeffb; --metal-mid: #2f9fbe; --metal-dark: #0f4c63;
+  --rail-light: #1f5466; --rail-dark: #0d2c38;
+  --banner-light: #1b6c83; --banner-dark: #0c3947;
+  --panel-light: #174c5d; --panel-dark: #0b2733;
+  --badge-light: #d6f6ff; --badge-mid: #34a6c4; --badge-dark: #114a5e;
+}
+
+/* --- the 750x1050 stage ---------------------------------------------------- */
+.cf-stage {
+  position: relative;
+  /* Everything on .card-face is stacked in ONE grid cell: the card, the Taunt
+     guard and the Divine Shield bubble. Drop this and the effects get their own
+     grid row and float off above the card. */
+  grid-area: 1 / 1;
+  z-index: 1;
+  width: calc(750 * var(--u));
+  height: calc(1050 * var(--u));
+  border-radius: calc(12 * var(--u));
+  overflow: hidden;
+  color: #fff;
+  background: #141118;
+  box-shadow: var(--cf-drop);
+  transition: transform 140ms ease;
+}
+
+/* metal frame */
+.cf-frame {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(12 * var(--u));
+  background: linear-gradient(
+    135deg,
+    var(--metal-light) 0%,
+    var(--metal-mid) 38%,
+    var(--metal-dark) 70%,
+    var(--metal-mid) 100%
+  );
+  box-shadow:
+    inset 0 0 0 calc(3 * var(--u)) rgba(0, 0, 0, 0.35),
+    inset 0 0 calc(20 * var(--u)) rgba(0, 0, 0, 0.5);
+}
+
+/* textured well — inset 9 instead of the print card's 16: THE THINNER RAILS */
+.cf-well {
+  position: absolute;
+  inset: calc(9 * var(--u));
+  border-radius: calc(10 * var(--u));
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.035) 0 calc(3 * var(--u)), rgba(0, 0, 0, 0.05) calc(3 * var(--u)) calc(7 * var(--u))),
+    linear-gradient(160deg, var(--rail-light), var(--rail-dark));
+  box-shadow:
+    inset 0 0 0 calc(2 * var(--u)) rgba(0, 0, 0, 0.55),
+    inset 0 0 calc(22 * var(--u)) rgba(0, 0, 0, 0.5);
+}
+
+/* --- art window ------------------------------------------------------------
+   Top 68 lands exactly on the banner's bottom edge (banner top 4 + height 64).
+   Left/right 9 match the well, so art runs the full width inside the frame. */
+.cf-art {
+  position: absolute;
+  left: calc(9 * var(--u));
+  right: calc(9 * var(--u));
+  top: calc(68 * var(--u));
+  height: calc(492 * var(--u));
+  overflow: hidden;
+  background: #0c0c10;
+  box-shadow: inset 0 0 0 calc(3 * var(--u)) rgba(0, 0, 0, 0.7);
+}
+
+.cf-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 26%;
+}
+
+/* the soft glass sheen the old baked face had, kept so cards still read as objects */
+.cf-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 38%, rgba(0, 0, 0, 0.18)),
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(0, 0, 0, 0.3));
+  mix-blend-mode: soft-light;
+}
+
+/* --- name banner ----------------------------------------------------------- */
+.cf-banner {
+  position: absolute;
+  top: calc(4 * var(--u));
+  left: calc(5 * var(--u));
+  right: calc(5 * var(--u));
+  height: calc(64 * var(--u));
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.34)),
+    linear-gradient(180deg, var(--banner-light), var(--banner-dark));
+  border: calc(3 * var(--u)) solid var(--metal-light);
+  border-radius: calc(8 * var(--u));
+  clip-path: polygon(2% 0, 98% 0, 100% 50%, 98% 100%, 2% 100%, 0 50%);
+  box-shadow:
+    inset 0 calc(1 * var(--u)) 0 rgba(255, 255, 255, 0.35),
+    0 calc(3 * var(--u)) calc(7 * var(--u)) rgba(0, 0, 0, 0.45);
+}
+
+.cf-name {
+  padding: 0 calc(8 * var(--u));
+  color: #fff;
+  font-family: "Baloo 2", cursive;
+  font-weight: 700;
+  font-size: calc(min(46, var(--cf-namefit)) * var(--u));
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.75);
+}
+
+/* --- gem badges ------------------------------------------------------------ */
+/* Shapes as masks so they scale with the card's --u unit at any size. */
+:root {
+  --shape-heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
+  --shape-crystal: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.5 22.5 12 12 22.5 1.5 12z'/%3E%3C/svg%3E");
+  --shape-sword: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M44 0 H56 V8 H44 Z M10 8 H90 V22 H10 Z M26 22 H74 L74 58 L50 99 L26 58 Z'/%3E%3C/svg%3E");
+}
+.cf-gem {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: calc(3 * var(--u)) solid var(--metal-light);
+  background: radial-gradient(circle at 50% 42%, var(--badge-dark) 0%, var(--badge-mid) 66%, var(--badge-light) 100%);
+  color: #fff;
+  font-family: "Baloo 2", cursive;
+  font-weight: 800;
+  text-shadow: 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.8);
+  box-shadow:
+    inset 0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(255, 255, 255, 0.35),
+    inset 0 calc(-4 * var(--u)) calc(8 * var(--u)) rgba(0, 0, 0, 0.6),
+    0 calc(3 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, 0.5);
+  transition: color 180ms ease, box-shadow 180ms ease;
+}
+
+/* relics have no ATK/HP, Infinity Castle has no cost */
+.cf-gem:empty { display: none; }
+
+.cf-mana {
+  top: calc(2 * var(--u));
+  right: calc(2 * var(--u));
+  width: calc(84 * var(--u));
+  height: calc(84 * var(--u));
+  font-size: calc(40 * var(--u));
+  border: none;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 calc(3 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, 0.65));
+}
+/* Two stacked masks: the rarity metal as a rim, the mana blue inside it. */
+.cf-mana::before,
+.cf-mana::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  -webkit-mask: var(--shape-crystal) center / contain no-repeat;
+  mask: var(--shape-crystal) center / contain no-repeat;
+}
+.cf-mana::before { inset: 0; background: var(--metal-light); }
+.cf-mana::after {
+  inset: 11%;
+  background: radial-gradient(circle at 50% 34%, #a9e4ff, #2f8fd6 58%, #14456e);
+}
+
+.cf-atk,
+.cf-hp {
+  bottom: calc(12 * var(--u));
+  width: calc(72 * var(--u));
+  height: calc(72 * var(--u));
+  font-size: calc(40 * var(--u));
+}
+
+.cf-atk { left: calc(10 * var(--u)); }
+.cf-hp { right: calc(10 * var(--u)); }
+
+/* Attack is a blade. It was the last stat carried by colour alone, which made
+   it the odd one out once cost became a crystal and health a heart. The blade
+   is widened from a literal sword silhouette so a digit actually fits in it. */
+.cf-atk {
+  width: calc(86 * var(--u));
+  height: calc(86 * var(--u));
+  bottom: calc(11 * var(--u)); /* the blade's point was grazing the card frame */
+  padding-top: calc(14 * var(--u)); /* centre the number in the blade, below the guard */
+  border: none;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 calc(3 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, 0.65));
+}
+.cf-atk::before,
+.cf-atk::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  -webkit-mask: var(--shape-sword) center / contain no-repeat;
+  mask: var(--shape-sword) center / contain no-repeat;
+}
+.cf-atk::before { inset: 0; background: var(--metal-light); }
+.cf-atk::after {
+  inset: 7%;
+  background: radial-gradient(circle at 50% 34%, #ffd98a, #d9911f 62%, #6d3f05);
+}
+
+/* Health is a heart. Same two-mask trick as the mana crystal. */
+.cf-hp {
+  width: calc(80 * var(--u));
+  height: calc(80 * var(--u));
+  bottom: calc(8 * var(--u));
+  border: none;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 calc(3 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, 0.65));
+}
+.cf-hp::before,
+.cf-hp::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  -webkit-mask: var(--shape-heart) center / contain no-repeat;
+  mask: var(--shape-heart) center / contain no-repeat;
+}
+.cf-hp::before { inset: 0; background: var(--metal-light); }
+.cf-hp::after {
+  inset: 9%;
+  background: radial-gradient(circle at 50% 32%, #ff9b86, #d92b18 58%, #7d1004);
+}
+/* The number sits slightly high inside a heart or it looks like it is falling out. */
+.cf-hp { padding-bottom: calc(8 * var(--u)); }
+
+/* THE WHOLE POINT: a changed stat recolours its own gem instead of having a
+   second number pasted on top of a picture that cannot be edited. */
+.cf-gem.is-buffed {
+  color: #8dffa6;
+  box-shadow:
+    inset 0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(255, 255, 255, 0.35),
+    inset 0 calc(-4 * var(--u)) calc(8 * var(--u)) rgba(0, 0, 0, 0.6),
+    0 0 calc(16 * var(--u)) rgba(141, 255, 166, 0.75);
+}
+
+.cf-gem.is-hurt {
+  color: #ff8a72;
+  box-shadow:
+    inset 0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(255, 255, 255, 0.35),
+    inset 0 calc(-4 * var(--u)) calc(8 * var(--u)) rgba(0, 0, 0, 0.6),
+    0 0 calc(16 * var(--u)) rgba(255, 138, 114, 0.75);
+}
+
+/* --- camp / alignment rails (thinner than print: font 26, inset 11) -------- */
+.cf-rail {
+  position: absolute;
+  top: calc(566 * var(--u));
+  bottom: calc(130 * var(--u));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+  font-size: calc(26 * var(--u));
+  letter-spacing: calc(0.5 * var(--u));
+  white-space: nowrap;
+  text-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.85);
+}
+
+.cf-camp {
+  left: calc(11 * var(--u));
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.cf-align {
+  right: calc(11 * var(--u));
+  writing-mode: vertical-rl;
+}
+
+/* --- description plaque ----------------------------------------------------
+   Fixed box from 566 down to 130-from-bottom, which lands 6 design-px above the
+   flavour line — the same gap the print pipeline grows its box to hit, minus the
+   measuring pass. Wider than print (left/right 41 vs 48+16) thanks to the rails. */
+.cf-desc {
+  position: absolute;
+  left: calc(41 * var(--u));
+  right: calc(41 * var(--u));
+  top: calc(566 * var(--u));
+  bottom: calc(130 * var(--u));
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  padding: calc(30 * var(--u)) calc(22 * var(--u)) calc(16 * var(--u));
+  border: calc(3 * var(--u)) solid var(--metal-mid);
+  border-radius: calc(16 * var(--u));
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.52)),
+    linear-gradient(180deg, var(--panel-light), var(--panel-dark));
+  box-shadow:
+    inset 0 0 0 calc(2 * var(--u)) rgba(0, 0, 0, 0.45),
+    inset 0 calc(2 * var(--u)) calc(10 * var(--u)) rgba(0, 0, 0, 0.5),
+    0 calc(3 * var(--u)) calc(8 * var(--u)) rgba(0, 0, 0, 0.4);
+}
+
+.cf-desc p {
+  margin: 0;
+  color: #fff;
+  font-family: "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: calc(min(96, var(--cf-efffit)) * var(--u));
+  line-height: 1.16;
+  text-align: center;
+  text-shadow: 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.7);
+}
+
+/* A silenced minion's text box really is blank on the table, so it is blank here. */
+.card-face.is-silenced .cf-desc p {
+  color: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+}
+
+/* --- flavour + origin ------------------------------------------------------ */
+.cf-flavor {
+  position: absolute;
+  left: calc(70 * var(--u));
+  right: calc(70 * var(--u));
+  bottom: calc(40 * var(--u));
+  height: calc(84 * var(--u));
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  color: #f3ecdc;
+  font-family: "Nunito", sans-serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: calc(min(48, var(--cf-flavfit)) * var(--u));
+  line-height: 1.1;
+  text-align: center;
+  text-shadow: 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.85);
+}
+
+.cf-origin {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(14 * var(--u));
+  z-index: 2;
+  color: #e9e1cd;
+  opacity: 0.9;
+  font-family: "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: calc(15 * var(--u));
+  letter-spacing: calc(2 * var(--u));
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.85);
+}
+
+.cf-art.empty-art {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 246, 222, 0.16), transparent 40%),
+    linear-gradient(145deg, #211710, #070606 72%);
+}
+
+/* ============================================================================
+   SIZE TIERS — the thing a baked image could never do.
+   Under 200px the card is a token you glance at, not a card you read: the text
+   would be 4px tall and is noise, so the art takes the space instead and the
+   name and stats grow into something legible. Hover it and the full card below
+   200px-and-up rules apply, text and all.
+   ========================================================================= */
+@container cardface (max-width: 199px) {
+  .cf-desc,
+  .cf-flavor,
+  .cf-origin,
+  .cf-rail {
+    display: none;
+  }
+
+  /* art runs from the banner down to just above the gems */
+  .cf-art {
+    height: auto;
+    bottom: calc(96 * var(--u));
+  }
+
+  /* its own fit variable: the compact gems are bigger, so the name has less
+     room before it would slide under the mana number */
+  .cf-name {
+    font-size: calc(min(72, var(--cf-namefitc)) * var(--u));
+  }
+
+  /* THE GEMS ARE THE CARD AT THIS SIZE.
+     Under 200px the description, flavour and rails are already hidden — what is
+     left is a picture, a name and three numbers, and those three numbers are
+     the only thing you actually play off. They were 100-104 design units, which
+     is 16px on a 118px hand card with a 9px digit inside it: present, and
+     unreadable. A board minion is a token you glance at, so the numbers have to
+     survive a glance.
+
+     Sizes are capped by geometry, not by taste:
+       mana  240u — top-right corner; any wider and it eats the name banner
+       atk   250u + hp 240u — 490 of 750u across the bottom, leaving a 250u gap
+                              between them, so the two never touch
+     The mana growth is why NAME_BOX_COMPACT dropped 520 -> 470 in App.tsx: that
+     constant is the width `fitOneLine` is allowed to use, and without moving it
+     a long name slides under the cost number. Change one, change the other. */
+  .cf-mana {
+    width: calc(240 * var(--u));
+    height: calc(240 * var(--u));
+    font-size: calc(132 * var(--u));
+  }
+
+  .cf-atk {
+    width: calc(250 * var(--u));
+    height: calc(250 * var(--u));
+    font-size: calc(128 * var(--u));
+    /* the blade's guard sits high, so the digit has to be pushed below it —
+       scaled with the gem, or the number floats above the blade at this size */
+    padding-top: calc(40 * var(--u));
+  }
+
+  .cf-hp {
+    width: calc(240 * var(--u));
+    height: calc(240 * var(--u));
+    font-size: calc(128 * var(--u));
+    padding-bottom: calc(24 * var(--u));
+  }
+
+  /* THE NAME HAS TO GET OUT OF THE CRYSTAL'S WAY, and NAME_BOX_COMPACT alone
+     cannot do it. That constant caps how WIDE the name may be; it does not move
+     where the name sits, and the name is centred in the banner. At a 240u
+     crystal the two genuinely overlap: a full-width name spans 140u-610u and the
+     crystal starts at 508u, so the longest names in the roster — "Giorno - Gold
+     Experience Requiem", "Rennala Queen of the Full Moon" — slid straight under
+     the cost number. The padding is asymmetric so the centred item's TEXT sits
+     off-centre, clear of the corner the crystal owns. */
+  .cf-name {
+    padding-right: calc(250 * var(--u));
+  }
+
+  /* ...and in hand the crystal is on the LEFT (see .hand-card .cf-mana), so the
+     reserve has to flip with it. */
+  .hand-card .cf-name,
+  .drag-card .cf-name,
+  .prompt-hand-card .cf-name {
+    padding-right: calc(8 * var(--u));
+    padding-left: calc(250 * var(--u));
+  }
+}
+
+/* ============================================================================
+   A MINION ON THE BOARD IS THE PRINTED CARD, NOT A TOKEN (owner ruling)
+
+   The compact tier above was built on "a board minion is a token you glance at":
+   hide the text, grow the art. It is prettier and it is unusable — with three or
+   more minions in play you cannot tell what any of them DO without hovering each
+   one in turn, and that is a mouse trip per minion, every turn.
+
+   So the board opts back out of the compact tier entirely. Scoped on `.on-board`
+   rather than on a size, deliberately: the board card sits within a few pixels of
+   the 200px container breakpoint, so keying this on width would make the whole
+   layout flip between two looks depending on the window height. A class cannot
+   flip-flop.
+
+   The hand keeps the compact look. A card in hand is already readable by hovering
+   it — and it is overlapped by its neighbours anyway, so rules text there would
+   be half-covered.
+   ============================================================================ */
+.card-face.on-board .cf-desc,
+.card-face.on-board .cf-flavor,
+.card-face.on-board .cf-rail {
+  display: flex;
+}
+
+/* A VANILLA MINION IS ALL PICTURE. 21 of the 175 have no rules text at all, and
+   an empty panel on those is worse than no panel: it reads as text that failed
+   to load. They get the space back as artwork instead — which is the direction
+   every trade on this card goes. */
+.card-face.cf-blank .cf-desc,
+.card-face.cf-blank .cf-flavor,
+.card-face.cf-blank .cf-rail {
+  display: none;
+}
+
+.card-face.on-board.cf-blank .cf-art {
+  height: calc(806 * var(--u));
+}
+
+/* THE ARTWORK IS THE CARD. IT NEVER PAYS FOR ANYTHING ELSE (hard rule, owner
+   ruling — this was broken once and it must not happen again).
+
+   A previous pass wanted bigger rules text and took the height out of the art:
+   492 units down to 356, about a quarter of the picture, to grow the plaque. It
+   was never asked for and it was not a trade that was anyone else's to make. The
+   art is the most important thing on a card. If text needs more room it comes
+   from somewhere else or it does not come at all.
+
+   The art is now 566 units — 15% MORE than the printed card's 492 — and the
+   plaque takes what is left between it and the gems. That box is smaller than
+   the printed card's, so the rules text is smaller than it would otherwise be;
+   that is the correct direction for the trade and it is deliberate.
+
+   If a future pass is tempted here: the levers that are open are the SLOT size,
+   the space around the board, and the gem sizes. The art window is not a lever. */
+.card-face.on-board .cf-art {
+  height: calc(566 * var(--u));
+  bottom: auto;
+}
+
+.card-face.on-board .cf-desc {
+  top: calc(646 * var(--u));
+  left: calc(26 * var(--u));
+  right: calc(26 * var(--u));
+}
+
+/* The camp and alignment rails run down the plaque's sides, so they follow it. */
+.card-face.on-board .cf-rail {
+  top: calc(646 * var(--u));
+}
+
+/* THE NAME IS PUSHED LEFT, and sized against the space that leaves.
+   A board minion's cost crystal is 150 units wide against the printed card's 78,
+   so it reaches from 598 to 748 — straight through where a centred name ends.
+   Measured, not guessed: the collision was 343 square pixels on the longest name
+   in the roster and invisible in every screenshot. The asymmetric padding moves
+   the centred text's own centre to about 299, and `--cf-namefitb` caps its width
+   at 540, so the longest name stops around 569 and the crystal starts at 598. */
+.card-face.on-board .cf-name {
+  font-size: calc(min(46, var(--cf-namefitb)) * var(--u));
+  padding: 0 calc(160 * var(--u)) 0 calc(8 * var(--u));
+}
+
+/* THE PLAQUE STOPS SHORT OF THE BOTTOM GEMS: the blade and the heart are 150-156
+   units on a board minion and reach up to y=883, while the plaque's text ran to
+   y=904, so the last line of the wordiest cards crossed underneath them.
+   `--cf-efffitb` is measured against the shortened box, so nothing overflows.
+
+   The side and top padding are trimmed from the printed card's 30/22 to 14 as
+   well. That is the only place left to find text room now that the art is off
+   limits: it is the plaque's own margin, not part of the picture. */
+.card-face.on-board .cf-desc {
+  padding: calc(14 * var(--u)) calc(14 * var(--u)) calc(56 * var(--u));
+}
+
+.card-face.on-board .cf-desc p {
+  font-size: calc(min(96, var(--cf-efffitb)) * var(--u));
+}
+
+/* The origin line is attribution, not something you play off, and at board size
+   it computes to four or five pixels — a smudge rather than a word. Hidden by
+   SIZE rather than by `.on-board`, so the 300px hover preview keeps it, where it
+   is readable and belongs.
+   The 280px threshold is NOT the 199px one the compact tier uses: board slots
+   went to 224px, which sails past 199 and would have quietly switched this line
+   back on at four pixels tall. Anything keyed to the old breakpoint has to be
+   re-checked whenever the slot cap moves. */
+@container cardface (max-width: 280px) {
+  .card-face.on-board .cf-origin {
+    display: none;
+  }
+}
+
+/* THE GEMS COME BACK DOWN, because the plaque is now underneath them.
+   They cannot keep the 240-250 units they take in hand: the description ends at
+   920 units and an atk gem at `bottom: 11` and 250 tall would start at 789 and
+   cover a third of the rules text. 150 units clears the plaque with a hair to
+   spare and is still nearly twice the printed card's own gem. */
+.card-face.on-board .cf-mana {
+  width: calc(150 * var(--u));
+  height: calc(150 * var(--u));
+  font-size: calc(84 * var(--u));
+}
+
+.card-face.on-board .cf-atk {
+  width: calc(156 * var(--u));
+  height: calc(156 * var(--u));
+  font-size: calc(80 * var(--u));
+  padding-top: calc(26 * var(--u));
+}
+
+.card-face.on-board .cf-hp {
+  width: calc(150 * var(--u));
+  height: calc(150 * var(--u));
+  font-size: calc(80 * var(--u));
+  padding-bottom: calc(15 * var(--u));
+}
+
+/* ============================================================================
+   KEYWORDS AND CONDITIONS — drawn, never labelled
+
+   There is deliberately no badge, chip or pill anywhere on a card. A card says
+   what it is by how it LOOKS: Taunt stands behind a stone barrier, Divine Shield
+   wears a gold rim, Frozen is encased in ice. That is the Hearthstone lesson —
+   you read the board at a glance, not by reading words on it.
+
+   The channels are kept separate so conditions can stack without fighting:
+     inner ring   .cf-stage::before   Taunt (a barrier INSIDE the card edge)
+     outer rim    .cf-stage::after    Divine Shield / Invulnerable / Marked
+     full wash    .cf-fx              Frozen / Silenced / Adapted / Protected
+     overlay      .cf-fx::before      Chains
+     glyphs       .cf-sleep           the drifting z's of a sleeping minion
+   Every size is in design units, so all of it scales with the card.
+   ========================================================================= */
+
+.cf-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  border-radius: calc(12 * var(--u));
+}
+
+/* --- TAUNT: a steel plate the minion is SET INTO ---------------------------
+   Checked against Hearthstone directly: a Taunt minion's artwork is 100% visible.
+   The shield is a thick metal frame AROUND the portrait, proud of it on every
+   side with small angular nubs, so the silhouette changes. It never covers the
+   character. An earlier version here laid a big grey shield ON TOP of the art and
+   swallowed half the card — do not go back to that. */
+/* TAUNT HAS TO BE READABLE ACROSS THE BOARD, not findable on inspection.
+
+   The original was a light-grey slab 44 units proud, sitting BEHIND the card so
+   the art stayed clean. Three things were wrong at once: 44 units is about 13
+   real pixels at board size, mid-grey on a parchment table is almost no
+   contrast, and something hiding behind the card is the one place the eye never
+   goes. The symptom was a player repeatedly trying to attack past a Taunt and
+   not understanding the refusal — the worst thing a board can do, because the
+   rule is invisible and the refusal is silent.
+
+   It went too far the other way next: 88 units proud, plus a gold shield icon
+   on the corner. At 88 the barricade reached into the 24px gap between slots and
+   crowded both neighbours, and the shield was a second thing competing for the
+   same corner. BOTH were pulled back (owner ruling): the barricade is 56 units,
+   the gap between slots went 24 -> 34, and the shield is gone entirely.
+
+   What carries it is contrast and material, not size: dark iron with a lit top
+   edge and a hard shadow, against a light table and a dark card frame. The
+   artwork is never covered — that is not a lever here or anywhere. */
+.card-face.kw-taunt::before {
+  content: "";
+  grid-area: 1 / 1;
+  z-index: 0;                       /* BEHIND the card. The art must stay clean. */
+  width: calc(862 * var(--u));      /* card is 750 wide  -> 56 units proud each side */
+  height: calc(1162 * var(--u));    /* card is 1050 tall -> 56 units proud top and bottom */
+  pointer-events: none;
+  border-radius: calc(26 * var(--u));
+  clip-path: polygon(
+    0% 4%, 4% 0%, 18% 0%, 20% 3%, 34% 3%, 36% 0%, 64% 0%, 66% 3%, 80% 3%, 82% 0%, 96% 0%, 100% 4%,
+    100% 38%, 89% 45%, 100% 52%,
+    100% 96%, 96% 100%, 4% 100%, 0% 96%,
+    0% 52%, 11% 45%, 0% 38%
+  );
+  background:
+    repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.06) 0 calc(9 * var(--u)), rgba(0, 0, 0, 0.16) calc(9 * var(--u)) calc(19 * var(--u))),
+    linear-gradient(157deg, #8e9aa6 0%, #59626d 18%, #333a43 48%, #1b2027 76%, #6f7a86 100%);
+  box-shadow:
+    inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(0, 0, 0, 0.95),
+    inset 0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(230, 240, 255, 0.5),
+    inset 0 calc(-14 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.8),
+    0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
+}
+
+/* --- DIVINE SHIELD: a bright golden bubble around the whole card -----------
+   Hearthstone's is loud on purpose — you read it across a board instantly. Thick
+   gold rim, strong outer glow, clear centre so the art is untouched. */
+.card-face.is-shielded::after {
+  content: "";
+  grid-area: 1 / 1;
+  z-index: 5;
+  width: calc(786 * var(--u));
+  height: calc(1086 * var(--u));
+  pointer-events: none;
+  border-radius: calc(30 * var(--u));
+  /* NO radial-gradient here. A radial gradient on a rectangle paints an ELLIPSE
+     inscribed in it, so the "bubble" showed up as an oval edge slicing across
+     the artwork and the rules box. box-shadow follows border-radius, so the
+     halo hugs the card's actual outline the way it should. */
+  background: linear-gradient(158deg, rgba(255, 255, 255, 0.16), transparent 40%);
+  box-shadow:
+    0 0 0 max(3px, calc(5 * var(--u))) rgba(255, 240, 176, 0.98),
+    0 0 max(30px, calc(46 * var(--u))) rgba(255, 198, 62, 0.95),
+    0 0 max(60px, calc(90 * var(--u))) rgba(255, 176, 30, 0.55),
+    inset 0 0 max(16px, calc(26 * var(--u))) rgba(255, 242, 186, 0.55);
+  animation: shield-bubble 2.4s ease-in-out infinite;
+}
+
+@keyframes shield-bubble {
+  0%, 100% { opacity: 0.92; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.022); }
+}
+
+/* --- INVULNERABLE: a hard white rim, no softness -------------------------- */
+.card-face.is-invulnerable .cf-stage {
+  animation: none;
+  box-shadow:
+    0 0 0 max(3.5px, calc(4 * var(--u))) #ffffff,
+    0 0 max(20px, calc(26 * var(--u))) rgba(190, 230, 255, 0.9),
+    0 calc(12 * var(--u)) calc(28 * var(--u)) rgba(0, 0, 0, 0.42);
+}
+
+/* --- MARKED FOR DEATH: a red pulse creeping in from the edges ------------- */
+.card-face.is-marked .cf-fx {
+  background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(150, 12, 12, 0.62) 100%);
+  animation: mark-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes mark-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* --- FROZEN: encased in ice ---------------------------------------------- */
+.card-face.is-frozen .cf-art img {
+  filter: saturate(0.45) brightness(1.12) contrast(0.92);
+}
+
+.card-face.is-frozen .cf-fx {
+  background:
+    linear-gradient(150deg, rgba(206, 243, 255, 0.42), rgba(96, 178, 224, 0.28) 45%, rgba(158, 226, 255, 0.44)),
+    radial-gradient(circle at 22% 12%, rgba(255, 255, 255, 0.6), transparent 26%),
+    radial-gradient(circle at 78% 84%, rgba(255, 255, 255, 0.45), transparent 24%);
+  box-shadow:
+    inset 0 0 0 max(2.5px, calc(4 * var(--u))) rgba(198, 240, 255, 0.85),
+    inset 0 0 calc(30 * var(--u)) rgba(120, 200, 240, 0.6);
+  /* jagged shards biting in from the corners */
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  animation: frost-shimmer 3.4s ease-in-out infinite;
+}
+
+@keyframes frost-shimmer {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+/* --- CHAINED: iron over the artwork, never over the rules text ------------
+   Using .cf-art::before means the chains track the art window automatically,
+   including when it grows on a small card. */
+.card-face.is-chained .cf-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    34deg,
+    transparent 0 calc(58 * var(--u)),
+    rgba(0, 0, 0, 0.5) calc(58 * var(--u)) calc(62 * var(--u)),
+    rgba(206, 212, 220, 0.92) calc(62 * var(--u)) calc(72 * var(--u)),
+    rgba(88, 93, 100, 0.92) calc(72 * var(--u)) calc(78 * var(--u)),
+    rgba(0, 0, 0, 0.5) calc(78 * var(--u)) calc(82 * var(--u)),
+    transparent calc(82 * var(--u)) calc(140 * var(--u))
+  );
+  filter: drop-shadow(0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.8));
+}
+
+/* --- SILENCED: the voice goes out of it ----------------------------------- */
+.card-face.is-silenced .cf-art img {
+  filter: grayscale(0.85) brightness(0.72);
+}
+
+.card-face.is-silenced .cf-fx {
+  background: linear-gradient(180deg, rgba(40, 36, 52, 0.5), rgba(20, 18, 26, 0.62));
+}
+
+/* --- PROTECTED: a guarding dome over the top ------------------------------ */
+.card-face.is-protected .cf-fx {
+  background: radial-gradient(ellipse 120% 60% at 50% 0%, rgba(67, 205, 189, 0.42), transparent 62%);
+  box-shadow: inset 0 calc(3 * var(--u)) 0 rgba(120, 240, 225, 0.9);
+}
+
+/* --- ADAPTED: it took on a camp's colour ---------------------------------- */
+.card-face.is-adapted .cf-fx {
+  background: radial-gradient(ellipse at 50% 100%, rgba(150, 90, 240, 0.4), transparent 60%);
+}
+
+/* --- ATTACK LOCKED: the sword arm is dead, so the ATK gem is ------------- */
+.card-face.is-locked .cf-atk {
+  color: #6d7076;
+  background: radial-gradient(circle at 50% 42%, #23262a 0%, #3a3e44 66%, #55595f 100%);
+  border-color: #6d7076;
+  box-shadow: inset 0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(255, 255, 255, 0.12),
+    inset 0 calc(-4 * var(--u)) calc(8 * var(--u)) rgba(0, 0, 0, 0.7);
+}
+
+/* --- SLEEPING: it hasn't woken up yet ------------------------------------- */
+/* A sleeping minion is dimmed, not blacked out. 0.62 looked like a broken image
+   on the many cards whose art is already dark (Silver Surfer is a star field);
+   the drifting z's carry the meaning, the dim only supports them. */
+.card-face.is-sleeping .cf-art img {
+  filter: brightness(0.88) saturate(0.92);
+}
+
+.cf-sleep {
+  position: absolute;
+  top: calc(190 * var(--u));
+  right: calc(74 * var(--u));
+  z-index: 9;
+  pointer-events: none;
+  font-family: "Baloo 2", cursive;
+  font-weight: 800;
+  line-height: 1;
+  color: #eaf6ff;
+  text-shadow:
+    0 0 calc(10 * var(--u)) rgba(120, 190, 255, 0.9),
+    0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, 0.95);
+}
+
+/* ============================================================================
+   NO REDUCED-MOTION HANDLING. EVER. (owner ruling, standing)
+
+   Do NOT add `@media (prefers-reduced-motion: reduce)` anywhere in this game.
+   Four such blocks were removed on the owner's instruction — they were quietly
+   stripping the board FX, the victory rays, the particles and the card
+   conditions. This is a hobby game built for its own spectacle: the animation IS
+   the product, and it runs at full strength for everyone. If you are ever
+   tempted to "be safe" and put one back: don't.
+
+   The related rule that DOES still apply: never let an effect exist only inside
+   keyframes. Declare it statically too, so it is never one media query or one
+   paused animation away from vanishing.
+   ========================================================================= */
+
+.cf-sleep i {
+  position: absolute;
+  font-style: normal;
+  animation: sleep-drift 2.8s ease-in-out infinite;
+}
+
+.cf-sleep i:first-child { font-size: calc(84 * var(--u)); }
+.cf-sleep i:last-child {
+  font-size: calc(54 * var(--u));
+  left: calc(52 * var(--u));
+  top: calc(-42 * var(--u));
+  animation-delay: 0.9s;
+}
+
+@keyframes sleep-drift {
+  0% { opacity: 0; transform: translateY(calc(6 * var(--u))) scale(0.82); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(calc(-26 * var(--u))) scale(1.12); }
+}
+
+/* Someone's turn to move: the whole card should feel awake, not wear a label. */
+/* ---------------------------------------------------------------- log drawer */
+.log-drawer {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  z-index: 30;
+  transform: translateY(-50%);
+  max-width: 340px;
+}
+
+.log-drawer > summary {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  padding: 12px 4px;
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 0 10px 10px 0;
+  color: var(--muted);
+  background: var(--panel);
+  cursor: pointer;
+  writing-mode: vertical-rl;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  list-style: none;
+}
+
+.log-drawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.log-drawer[open] > summary {
+  border-color: rgba(240, 199, 103, 0.6);
+  color: var(--gold);
+}
+
+.log-drawer-body {
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+  width: 310px;
+  max-height: 74vh;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.event-log {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 60px;
+  max-height: 56vh;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.event-log li {
+  padding: 6px 9px;
+  border-left: 3px solid var(--gold);
+  border-radius: 5px;
+  color: #eadcc1;
+  background: rgba(255, 246, 222, 0.065);
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+
+.event-warning,
+.event-death,
+.event-gameOver {
+  border-left-color: var(--red) !important;
+}
+
+.event-effect,
+.event-draw {
+  border-left-color: var(--teal) !important;
+}
+
+.event-log li.event-damage {
+  border-left-color: #e2543e;
+  color: #ffc9bd;
+}
+
+.event-log li.event-combat {
+  border-left-color: #d98a2b;
+  color: #ffe1b8;
+}
+
+.event-log li.event-play {
+  border-left-color: var(--green);
+  color: #d2f5c8;
+}
+
+.event-log li.event-turn {
+  border-left-color: #5b9bd5;
+  color: #cfe6ff;
+}
+
+.event-log li.event-death {
+  background: rgba(223, 103, 84, 0.12);
+}
+
+.event-log li.event-gameOver {
+  font-weight: 950;
+}
+
+.debug-panel {
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.debug-panel summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.debug-panel pre {
+  max-height: 150px;
+  overflow: auto;
+  color: #d8eadf;
+  font-size: 0.66rem;
+}
+
+/* ---------------------------------------------------------------- hover preview */
+.hover-preview {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+  filter: drop-shadow(0 24px 60px rgba(0, 0, 0, 0.55));
+  animation: preview-in 0.14s ease-out 0.1s both;
+}
+
+.hover-preview .card-face {
+  min-height: 0;
+}
+
+@keyframes preview-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------- overlays */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  overflow-y: auto;
+  background: rgba(10, 8, 7, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.draw-panel,
+.result-panel {
+  width: min(860px, 100%);
+  padding: 24px;
+  border: 2px solid rgba(240, 199, 103, 0.4);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(240, 199, 103, 0.12), transparent 45%),
+    #1c130c;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.draw-panel {
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+}
+
+.draw-panel span,
+.result-panel span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.draw-panel h2,
+.result-panel h2 {
+  margin: 8px 0 18px;
+  font-size: 1.8rem;
+}
+
+.choice-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(170px, 300px));
+  gap: 14px;
+  justify-content: center;
+}
+
+.choice-card {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.choice-card:hover .card-face {
+  transform: translateY(-6px);
+}
+
+/* Selection glows target .cf-stage, not .card-face: the face is a letterbox that
+   can be larger than the card inside it, so a glow on it would float in space. */
+.choice-card.selected .cf-stage {
+  outline: 4px solid #5eff8f;
+  box-shadow: 0 0 42px rgba(94, 255, 143, 0.35), 0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+.choice-detail {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-height: 0;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(255, 246, 222, 0.16);
+  border-radius: 8px;
+  background: #241811;
+}
+
+.choice-detail h3,
+.choice-detail p,
+.choice-detail small {
+  margin: 0;
+}
+
+.choice-detail h3 {
+  font-size: 1.25rem;
+}
+
+.choice-detail p,
+.choice-detail small {
+  max-width: 620px;
+  color: var(--muted);
+  line-height: 1.34;
+}
+
+.choice-detail button {
+  min-height: 42px;
+  padding: 0 18px;
+}
+
+.result-panel p {
+  color: var(--muted);
+}
+
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.result-stats div {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid rgba(255, 246, 222, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 246, 222, 0.06);
+}
+
+.result-stats span,
+.result-stats small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.result-stats strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.result-panel button {
+  min-height: 44px;
+  padding: 0 18px;
+}
+
+/* ============================================================================
+   NARROW SCREENS — a real portrait layout, not a squeezed desktop one.
+
+   The old fallback let the page scroll and wrapped the hand onto several rows.
+   That is not a playable phone layout: five board slots crushed to 84px are
+   unreadable, a wrapped hand pushes the board off-screen, and the End Turn
+   button sat off the right edge of a 390px viewport entirely.
+
+   The shape here instead:
+     - nothing scrolls the PAGE. The two board rows and the hand each scroll
+       sideways on their own, so the duel always fills the screen
+     - cards keep a real size (132px) and you swipe along a row to see the rest
+     - the fan is flattened. A fan needs cards to overlap, and overlapping cards
+       cannot be swiped through
+     - drag is not fought: `touch-action: pan-x` hands horizontal swipes to the
+       browser, the game's pointer drag receives `pointercancel` and folds, and
+       the tap-to-select-then-tap-to-place path that already exists takes over.
+       That path is not a mobile special case — it is how the game has always
+       worked with a mouse.
+   ============================================================================ */
+@media (max-width: 1180px) {
+  .hs-shell {
+    padding: 6px 6px 8px;
+    gap: 4px;
+  }
+
+  .top-strip {
+    padding: 0;
+  }
+
+  .brand-mini strong {
+    display: none; /* the mark alone; the word costs a button's worth of width */
+  }
+
+  .player-count-chip {
+    margin-left: 0;
+    padding-inline: 7px;
+    font-size: 0.62rem;
+  }
+
+  .system-buttons {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .system-buttons button {
+    min-height: 26px;
+    padding: 0 8px;
+    font-size: 0.68rem;
+  }
+
+  .table-frame {
+    border-radius: 18px;
+    padding: 6px 6px 4px;
+  }
+
+  .battlefield {
+    padding: 4px 6px;
+    border-radius: 14px;
+  }
+
+  /* Each row is its own horizontal scroller. `grid-auto-flow: column` keeps the
+     slots in one line however many there are, and the fixed column width is what
+     stops five slots from being divided into unreadable slivers. */
+  .board-row {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 132px;
+    gap: 10px;
+    justify-content: start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    touch-action: pan-x;
+    scrollbar-width: none;
+  }
+
+  .board-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .board-slot {
+    scroll-snap-align: center;
+    touch-action: pan-x; /* let the row scroll; tap still selects */
+  }
+
+  /* End Turn is a fixed thumb-reachable button, not a tab on the frame's edge:
+     at 390px the frame's right edge is off-screen. */
+  .end-turn {
+    position: fixed;
+    top: auto;
+    right: 8px;
+    bottom: 8px;
+    z-index: 40;
+    transform: none;
+    min-width: 64px;
+    padding: 9px 10px;
+    font-size: 0.72rem;
+  }
+
+  .end-turn:hover:not(:disabled) {
+    transform: scale(1.04);
+  }
+
+  .deck-pile {
+    right: 6px;
+    bottom: auto;
+    top: 4px;
+    width: 34px;
+    height: 42px;
+  }
+
+  .deck-pile .card-back {
+    width: 26px;
+    height: 34px;
+  }
+
+  .command-bar {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "plate mana" "hand hand";
+    gap: 6px;
+    padding: 4px 2px 0;
+  }
+
+  .command-bar .hero-plate {
+    grid-area: plate;
+    min-width: 0;
+    padding: 3px 8px;
+    gap: 6px;
+  }
+
+  .command-bar .hero-plate .hero-sigil {
+    width: 26px;
+    height: 26px;
+  }
+
+  .command-bar .hero-plate .health-gem {
+    min-width: 34px;
+    min-height: 32px;
+    font-size: 0.85rem;
+  }
+
+  .command-bar .hero-plate .hero-name strong {
+    font-size: 0.7rem;
+  }
+
+  .command-bar .mana-tray {
+    grid-area: mana;
+  }
+
+  .mana-row {
+    max-width: 152px;
+    gap: 4px;
+  }
+
+  .mana-pip {
+    width: 13px;
+    height: 13px;
+    border-width: 1px;
+  }
+
+  /* THE FAN IS FLATTENED. Overlapping cards cannot be swiped past, and the
+     negative margins and rotations are set as inline styles from App.tsx, so
+     `!important` is the only thing that reaches them. It is deliberate and it is
+     the whole reason this rule exists. */
+  .hand-fan {
+    grid-area: hand;
+    height: auto;
+    /* The right padding is the End Turn button's parking space. It is fixed to
+       the bottom-right corner on narrow screens, directly over this strip, and
+       without the reserve the last card in hand sits underneath it and cannot
+       be tapped. */
+    padding: 2px 78px 4px 0;
+    gap: 6px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    touch-action: pan-x;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .hand-fan::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hand-card {
+    flex: 0 0 108px;
+    margin-left: 0 !important;
+    transform: none !important;
+    scroll-snap-align: center;
+    touch-action: pan-x;
+  }
+
+  .hand-card.selected .cf-stage {
+    outline-width: 4px; /* the lift-and-scale cue is gone, so the outline carries it */
+  }
+
+  /* The enemy plate keeps its reduced size but loses the width floor. */
+  .hero-plate.enemy {
+    min-width: 0;
+  }
+
+  .log-drawer {
+    display: none; /* nothing here fits a phone, and it is a developer surface */
+  }
+}
+
+/* Portrait phones: the board is the whole screen and the hand is a strip. */
+@media (max-width: 620px) {
+  .board-row {
+    grid-auto-columns: 118px;
+  }
+
+  .enemy-zone {
+    padding: 0;
+  }
+
+  .hero-plate {
+    min-width: 0;
+    padding: 3px 7px;
+  }
+
+  .hand-card {
+    flex: 0 0 96px;
+  }
+
+  .system-buttons button {
+    padding: 0 6px;
+    font-size: 0.62rem;
+  }
+}
+
+/* ============================================================================
+   Practice bot, targeting prompts and the victory screen
+   ============================================================================ */
+
+.bot-toggle.active,
+.bot-toggle.active:hover:not(:disabled) {
+  border-color: rgba(67, 205, 189, 0.9);
+  background: rgba(67, 205, 189, 0.2);
+}
+
+
+
+/* --- targeting ---------------------------------------------------------- */
+
+/* Legal victims pulse; everything else recedes so the choice is unmissable. */
+.board-slot.choosable {
+  cursor: pointer;
+}
+
+/* On .cf-stage like every other ring — see the board-rings block above. */
+.board-slot.choosable .minion-wrap .cf-stage {
+  animation: breath-choose 1.15s ease-in-out infinite;
+  /* the word "Choose" used to sit above these; the ring has to carry it alone now */
+  box-shadow: 0 0 0 3px var(--teal), 0 0 26px rgba(67, 205, 189, 0.65), var(--cf-drop);
+}
+
+.board-slot.dimmed {
+  opacity: 0.4;
+  filter: grayscale(0.5);
+}
+
+@keyframes breath-choose {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(67, 205, 189, 0.85), 0 0 26px rgba(67, 205, 189, 0.45), var(--cf-drop);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(67, 205, 189, 1), 0 0 40px rgba(67, 205, 189, 0.7), var(--cf-drop);
+  }
+}
+
+/* Slot auras: a permanent mark on the POSITION, so it has to be visible whether
+   or not anything is standing there. */
+.slot-auras {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.slot-aura {
+  padding: 2px 6px;
+  border: 1px solid;
+  border-radius: 5px;
+  font-size: 0.5rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.slot-aura.random_attacks {
+  color: #ffd9a8;
+  border-color: rgba(240, 199, 103, 0.8);
+  background: rgba(120, 70, 10, 0.9);
+}
+
+.slot-aura.slot_silence {
+  color: #e5d3ff;
+  border-color: rgba(155, 119, 210, 0.85);
+  background: rgba(60, 30, 105, 0.9);
+}
+
+.slot-aura.slot_grow_2 {
+  color: #c8f7ef;
+  border-color: rgba(67, 205, 189, 0.85);
+  background: rgba(10, 75, 68, 0.9);
+}
+
+/* The relic strapped to a minion, worn in its corner. */
+/* Picked up with pointerdown, so it needs the same gesture opt-out the hand and
+   the board slots take. */
+.relic-badge {
+  touch-action: none;
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 5;
+  width: 26px;
+  height: 26px;
+  overflow: hidden;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(240, 199, 103, 0.8), inset 0 0 0 1px #150d05;
+  pointer-events: none;
+}
+
+/* Relics with no minion to carry them yet. They used to be a bare count; now
+   each one is its own little chip you can hover to read the whole card. */
+.hero-relics {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.hero-relics small {
+  margin-left: 3px;
+  color: var(--muted);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.satchel-relic {
+  display: block;
+  width: 18px;
+  height: 18px;
+  overflow: hidden;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  background: rgba(10, 8, 7, 0.8);
+}
+
+.satchel-relic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.satchel-relic.peekable {
+  cursor: help;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.satchel-relic.peekable:hover {
+  transform: scale(1.35);
+  box-shadow: 0 0 10px rgba(240, 199, 103, 0.75);
+}
+
+/* Hovering the badge swaps the preview to the relic's own full card. */
+.relic-badge.peekable {
+  cursor: help;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.relic-badge.peekable:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 12px rgba(240, 199, 103, 0.7);
+}
+
+.relic-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  display: block;
+}
+
+/* --- The relic shelf ------------------------------------------------------ */
+
+.relic-shelf {
+  background: linear-gradient(180deg, #1c1710 0%, #14100c 100%);
+  border: 1px solid #4a3a22;
+  border-radius: 16px;
+  padding: 26px 30px;
+  max-width: 720px;
+  width: min(92vw, 720px);
+  max-height: 86vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7);
+}
+
+.relic-shelf > span {
+  color: #b99a5e;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.relic-shelf h2 {
+  margin: 4px 0 18px;
+  color: #f0d9a8;
+}
+
+.relic-shelf h3 {
+  margin: 20px 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c9b48c;
+  border-bottom: 1px solid #3a2f22;
+  padding-bottom: 6px;
+}
+
+.shelf-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.shelf-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #221b13;
+  border: 1px solid #3a2f22;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.shelf-item.next {
+  border-color: rgba(240, 199, 103, 0.8);
+  box-shadow: 0 0 16px rgba(240, 199, 103, 0.25);
+}
+
+.shelf-item img {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  object-fit: cover;
+  object-position: center 30%;
+  flex: 0 0 auto;
+}
+
+.shelf-item strong {
+  color: #f0d9a8;
+  font-size: 14px;
+}
+
+.shelf-item p {
+  margin: 2px 0 0;
+  color: #a8977c;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.shelf-next {
+  margin-left: 8px;
+  color: #14100c;
+  background: #f0c767;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-style: normal;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.shelf-empty {
+  color: #8d7c63;
+  font-style: italic;
+  margin: 0;
+}
+
+.shelf-note {
+  margin: 22px 0 16px;
+  color: #a8977c;
+  font-size: 13px;
+  line-height: 1.55;
+  border-left: 2px solid #4a3a22;
+  padding-left: 12px;
+}
+
+/* --- Re-strapping an Ascension Relic -------------------------------------
+   Relics arrive by luck; passing one is the single decision the player gets
+   over them, capped at once a turn. The badge is the handle, and it says so by
+   how it looks rather than with a label — no chips or pills on a card, ever.  */
+
+/* This relic can be passed on right now. A slow gold pulse, using the relic
+   colour the badge already owns, so it never reads as "this can attack". */
+.relic-badge.movable {
+  cursor: grab;
+  animation: relic-offer 2.2s ease-in-out infinite;
+}
+
+@keyframes relic-offer {
+  0%, 100% { box-shadow: 0 0 0 max(1px, 0.12em) rgba(240, 199, 103, 0.55); }
+  50%      { box-shadow: 0 0 max(6px, 0.5em) max(1px, 0.1em) rgba(240, 199, 103, 0.95); }
+}
+
+/* In hand: lifted off its bearer and waiting for somewhere to land.
+   The lift is a plain -3px on purpose: `translateY(max(-4px, -0.3em))` makes the
+   WHOLE transform declaration invalid, so the badge silently did not move at
+   all. A max() floor belongs on a box-shadow spread, not inside a transform. */
+.relic-badge.carried {
+  cursor: grabbing;
+  animation: none;
+  transform: scale(1.3) translateY(-3px);
+  box-shadow:
+    0 0 0 max(2px, 0.16em) rgba(255, 236, 180, 1),
+    0 0 max(16px, 1em) max(3px, 0.2em) rgba(240, 199, 103, 0.85);
+}
+
+/* The minion it came off, dimmed so the eye goes to where it can go. */
+.board-slot.relic-source .minion-wrap {
+  filter: brightness(0.72) saturate(0.75);
+}
+
+/* "The relic can land here." Gold, matching the relic itself and the
+   affordable-card outline — never green, which already means "can attack".
+   `.occupied` is in the selector to outrank `.board-slot.occupied.ready
+   .minion-wrap`: a minion that can take a relic is usually also ready to swing,
+   and the green halo was winning, which is precisely the confusion the
+   gold-vs-green split exists to prevent. */
+.board-slot.occupied.relic-drop .minion-wrap .cf-stage {
+  box-shadow:
+    0 0 0 max(4px, 0.3em) rgba(240, 199, 103, 0.95),
+    0 0 max(22px, 1.4em) max(6px, 0.4em) rgba(240, 199, 103, 0.5),
+    var(--cf-drop);
+  animation: relic-offer 1.4s ease-in-out infinite;
+}
+
+/* A strip, never a modal: the board underneath IS the control surface. */
+.target-prompt {
+  position: fixed;
+  top: 62px;
+  left: 50%;
+  z-index: 45;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  max-width: min(560px, calc(100vw - 24px));
+  padding: 9px 16px 9px 9px;
+  border: 2px solid rgba(67, 205, 189, 0.85);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(11, 46, 43, 0.97), rgba(14, 25, 24, 0.97));
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.6), 0 0 34px rgba(67, 205, 189, 0.28);
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: prompt-in 0.24s ease-out;
+}
+
+@keyframes prompt-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+}
+
+/* Hand and value prompts carry their own controls, so they must be clickable. */
+.target-prompt.interactive {
+  display: block;
+  max-width: min(760px, calc(100vw - 24px));
+  padding: 12px 16px 14px;
+  pointer-events: auto;
+}
+
+.target-prompt-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.prompt-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.prompt-hand-card {
+  width: 96px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.prompt-hand-card:hover:not(:disabled) {
+  border-color: var(--teal);
+  transform: translateY(-3px);
+}
+
+.prompt-hand-card .card-face {
+  height: 134px;
+}
+
+.prompt-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.prompt-value {
+  min-width: 74px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-color: rgba(67, 205, 189, 0.6);
+  background: rgba(67, 205, 189, 0.14);
+  font-size: 1rem;
+}
+
+.target-prompt-art {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  object-position: center 22%;
+  border: 1px solid rgba(240, 199, 103, 0.6);
+  border-radius: 8px;
+}
+
+.target-prompt-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
+.target-prompt-text strong {
+  color: var(--gold);
+  font-size: 0.9rem;
+  line-height: 1.1;
+}
+
+.target-prompt-text span {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.target-prompt-text small {
+  color: var(--teal);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.draw-panel.locked {
+  border-color: rgba(67, 205, 189, 0.5);
+}
+
+.draw-panel.locked .choice-card {
+  cursor: default;
+  opacity: 0.75;
+}
+
+/* --- Mythic arrival ----------------------------------------------------- */
+
+.mythic-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 45%, rgba(60, 12, 6, 0.55), rgba(6, 4, 8, 0.92) 68%);
+  pointer-events: none;
+  animation: mythic-veil 1.9s ease-out forwards;
+}
+
+@keyframes mythic-veil {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  74% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.mythic-rays {
+  position: absolute;
+  inset: -55%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 7deg,
+    rgba(255, 138, 106, 0.24) 7deg 12deg,
+    transparent 12deg 25deg,
+    rgba(240, 199, 103, 0.16) 25deg 29deg,
+    transparent 29deg 46deg
+  );
+  animation: mythic-spin 9s linear infinite;
+}
+
+@keyframes mythic-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mythic-body {
+  position: relative;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  max-width: min(820px, calc(100vw - 40px));
+  padding: 0 20px;
+}
+
+.mythic-art {
+  width: clamp(150px, 22vw, 240px);
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 3px solid var(--gold);
+  border-radius: 16px;
+  box-shadow: 0 0 0 2px #2a0d06, 0 26px 70px rgba(0, 0, 0, 0.75), 0 0 90px rgba(255, 120, 80, 0.55);
+  animation: mythic-card-in 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mythic-art img {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  display: block;
+}
+
+@keyframes mythic-card-in {
+  0% { opacity: 0; transform: scale(1.35) rotate(-7deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.mythic-text {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  text-align: left;
+  animation: mythic-text-in 0.6s 0.14s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes mythic-text-in {
+  0% { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: none; }
+}
+
+.mythic-text .mythic-tier {
+  color: #ff9d80;
+  font-size: 0.82rem;
+  font-weight: 950;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+}
+
+.mythic-text strong {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: clamp(1.9rem, 5vw, 3.4rem);
+  line-height: 1.02;
+  color: #fff3dd;
+  text-shadow: 0 4px 40px rgba(255, 120, 80, 0.7);
+}
+
+.mythic-text em {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 620px) {
+  .mythic-body { flex-direction: column; gap: 16px; text-align: center; }
+  .mythic-text { text-align: center; justify-items: center; }
+}
+
+/* --- victory screen ----------------------------------------------------- */
+
+.result-overlay {
+  background: rgba(8, 6, 5, 0.82);
+}
+
+/* Slow god-rays behind the panel. Purely atmosphere — killed under
+   prefers-reduced-motion along with everything else. */
+.result-rays {
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 8deg,
+    rgba(240, 199, 103, 0.11) 8deg 14deg,
+    transparent 14deg 26deg,
+    rgba(240, 199, 103, 0.07) 26deg 30deg,
+    transparent 30deg 48deg
+  );
+  animation: rays-turn 42s linear infinite;
+  pointer-events: none;
+}
+
+.result-overlay.draw .result-rays {
+  opacity: 0.35;
+}
+
+@keyframes rays-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.result-panel.grand {
+  position: relative;
+  width: min(760px, 100%);
+  padding-top: 0;
+  overflow: hidden;
+  border-color: rgba(240, 199, 103, 0.7);
+  box-shadow: var(--shadow), 0 0 60px rgba(240, 199, 103, 0.18);
+  animation: result-rise 0.42s cubic-bezier(0.18, 0.9, 0.3, 1.2);
+}
+
+@keyframes result-rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.96);
+  }
+}
+
+/* The winner's champion, bled behind the title. */
+.result-hero {
+  position: relative;
+  height: 190px;
+  margin: 0 -24px 4px;
+  overflow: hidden;
+}
+
+.result-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  display: block;
+}
+
+.result-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(28, 19, 12, 0.25) 0%, rgba(28, 19, 12, 0.75) 62%, #1c130c 100%);
+}
+
+.result-panel .result-label {
+  display: block;
+  color: var(--gold-dark);
+  letter-spacing: 0.14em;
+}
+
+.result-panel .result-title {
+  margin: 6px 0 10px;
+  color: var(--gold);
+  font-size: 2.4rem;
+  line-height: 1.05;
+  text-shadow: 0 3px 24px rgba(240, 199, 103, 0.35);
+}
+
+.result-panel .result-sub {
+  margin: 0;
+}
+
+.result-stats div.winner {
+  border-color: rgba(240, 199, 103, 0.7);
+  background: rgba(240, 199, 103, 0.12);
+}
+
+.result-stats div.winner strong {
+  color: var(--gold);
+}
+
+.result-survivors {
+  margin: 0 0 18px;
+}
+
+.survivor-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.survivor-row figure {
+  width: 78px;
+  margin: 0;
+}
+
+.survivor-row img {
+  width: 78px;
+  height: 78px;
+  object-fit: cover;
+  object-position: center 20%;
+  border: 1px solid rgba(240, 199, 103, 0.55);
+  border-radius: 10px;
+  display: block;
+}
+
+.survivor-row figcaption {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-top: 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- a11y */
+/* A single line in the middle of the board, ~1.5s. Replaces the permanent
+   "Need mana" brand on every card the player cannot yet afford. */
+.board-toast {
+  position: fixed;
+  top: 46%;
+  left: 50%;
+  z-index: 55;
+  padding: 12px 26px;
+  border: 2px solid rgba(240, 199, 103, 0.75);
+  border-radius: 12px;
+  color: var(--ink);
+  background: linear-gradient(160deg, rgba(48, 28, 12, 0.96), rgba(24, 14, 8, 0.96));
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.6), 0 0 30px rgba(240, 199, 103, 0.25);
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: toast-life 1.5s ease-out forwards;
+}
+
+@keyframes toast-life {
+  0% { opacity: 0; transform: translate(-50%, -40%) scale(0.94); }
+  14% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  74% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -56%) scale(0.98); }
+}
+
