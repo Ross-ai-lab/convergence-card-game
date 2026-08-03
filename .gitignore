@@ -1,0 +1,7 @@
+release-assets/
+*.pyc
+__pycache__/
+.wrangler/
+.env
+.env.*
+

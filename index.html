@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Play Convergence, a fan-made browser card duel featuring 175 characters from across fiction.">
+  <title>Convergence | Browser Card Duel</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="stars" aria-hidden="true"></div>
+  <header class="hero">
+    <nav>
+      <a class="mark" href="#top">Convergence</a>
+      <div>
+        <a href="#rules">How to play</a>
+        <a href="#materials">Project materials</a>
+      </div>
+    </nav>
+
+    <main id="top" class="hero-grid">
+      <section class="hero-copy">
+        <p class="eyebrow">175 legends. One shared deck.</p>
+        <h1>Every world<br>meets here.</h1>
+        <p class="lead">A free fan-made card duel for one player or two people sharing the same screen. Nothing to install and no account required.</p>
+        <div class="actions">
+          <a class="button primary" href="play/">Play Convergence</a>
+          <a class="button secondary" href="#rules">Read the rules</a>
+        </div>
+        <p class="small">Best played in a modern desktop browser with sound on.</p>
+      </section>
+
+      <section class="card-stack" aria-label="Featured Convergence cards">
+        <article class="feature-card card-left"><img src="play/card-art/raw/c108.webp" alt="Musashi card artwork"></article>
+        <article class="feature-card card-main"><img src="play/card-art/raw/c005.webp" alt="Batman card artwork"></article>
+        <article class="feature-card card-right"><img src="play/card-art/raw/c100.webp" alt="Rennala card artwork"></article>
+      </section>
+    </main>
+  </header>
+
+  <section class="mode-strip" aria-label="Game modes">
+    <div><strong>Solo duel</strong><span>Three opponent levels</span></div>
+    <div><strong>Hotseat</strong><span>Two players, one screen</span></div>
+    <div><strong>Shared deck</strong><span>Every draw changes both plans</span></div>
+    <div><strong>Sandbox</strong><span>Infinite Mana for experiments</span></div>
+  </section>
+
+  <section id="rules" class="section rules-section">
+    <div class="section-heading">
+      <p class="eyebrow">Learn in two minutes</p>
+      <h2>How to play</h2>
+      <p>The opening screen inside the game has a full guide. This is the short version.</p>
+    </div>
+    <div class="rule-grid">
+      <article><b>1</b><h3>Protect your core</h3><p>Both players begin at 76 health. Reduce the opposing core to zero to win.</p></article>
+      <article><b>2</b><h3>Build your board</h3><p>Draw one card each turn. Your mana refills and grows by one. Play cards into five board slots.</p></article>
+      <article><b>3</b><h3>Choose your targets</h3><p>Specific Battlecries ask you to point at their victim. Effects that explicitly say random remain random.</p></article>
+      <article><b>4</b><h3>Strike together</h3><p>Combat is simultaneous. Defenders hit back even when the incoming attack destroys them.</p></article>
+      <article><b>5</b><h3>Respect Taunt</h3><p>A standing Taunt closes the core. Remove it before attacking past it.</p></article>
+      <article><b>6</b><h3>Read the colours</h3><p>Green means ready to attack, red marks legal victims, blue means a hand card can be played, and teal means selected.</p></article>
+    </div>
+    <div class="keys"><span><kbd>Space</kbd> End turn</span><span><kbd>Z</kbd> Undo</span><span><kbd>Esc</kbd> Clear selection</span></div>
+  </section>
+
+  <section id="materials" class="section materials-section">
+    <div class="section-heading">
+      <p class="eyebrow">Behind the game</p>
+      <h2>Project materials</h2>
+      <p>The complete lore, working art, card-building tools, statistics and original track collection are included with this public project.</p>
+    </div>
+    <div class="material-grid">
+      <a href="materials/Convergence-Official-Lore.html"><strong>Official lore</strong><span>Character dossiers, origins and the wider Convergence setting.</span></a>
+      <a href="materials/Convergence%20card%20stat%20excel%20sheet.xlsx" download><strong>Card statistics</strong><span>The complete card and relic workbook.</span></a>
+      <a href="https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/card-render-pipeline"><strong>Card renderer</strong><span>The pipeline, fonts and data used to make printable cards.</span></a>
+      <a href="https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/raw-card-art"><strong>Raw card artwork</strong><span>The full source-art collection arranged by mana cost.</span></a>
+      <a href="https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z"><strong>Audio tracks</strong><span>Download the full original collection as one archive.</span></a>
+    </div>
+  </section>
+
+  <footer>
+    <p>Convergence is a non-commercial fan project. Character names, franchises, imagery and music belong to their respective rights holders. This project is not affiliated with or endorsed by them.</p>
+    <a href="play/">Enter the game</a>
+  </footer>
+</body>
+</html>
