@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 const ALLOWED_ORIGIN = "https://ross-ai-lab.github.io";
-const COUNTER_NAME = "convergence-players";
+const COUNTER_NAME = "convergence-players-live";
 
 function responseHeaders(origin) {
   const headers = new Headers({
