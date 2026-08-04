@@ -38,6 +38,17 @@ The repository now includes the [complete editable game source](source/) with al
 
 Start with the [source setup and project map](source/README.md). To propose a change without collaborator access, follow the [fork and pull-request guide](CONTRIBUTING.md). A public visitor can edit their own fork and submit a proposal, but cannot alter this repository or the live game unless the owner reviews and accepts it.
 
+## Repository map
+
+- `source/` is the only editable game codebase.
+- `play/` is the built copy served by GitHub Pages; do not hand-edit it.
+- `materials/` contains the lore, card workbook, raw art, card-render pipeline, and production tooling.
+- `docs/` contains the project road map and voice-cast reference.
+- `counter/` contains the small aggregate player-counter service.
+- `release-assets/` is the ignored local staging area for large files published through GitHub Releases.
+
+The repository root is the single Convergence project home. `materials/local-production/` includes the public production tools and instructions. Its full-size audio and rendered card libraries are distributed as release downloads so a normal clone stays practical. Everything required to clone, run, edit, test, and build the browser game remains in the repository.
+
 ## Included project materials
 
 - [Official lore and roster guide](https://ross-ai-lab.github.io/convergence-card-game/materials/Convergence-Official-Lore.html)
@@ -45,10 +56,14 @@ Start with the [source setup and project map](source/README.md). To propose a ch
 - [Card rendering pipeline](https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/card-render-pipeline)
 - [Raw card artwork](https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/raw-card-art)
 - [Original audio-track collection](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z)
+- [Rendered card-production library](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Card-Production.7z)
+- [Production tools and setup](materials/local-production/)
+- [Project road map](docs/Convergence%20Browser%20Game%20Roadmap.html)
+- [Voice-cast reference](docs/Convergence%20Voice%20Cast.html)
 - [Complete editable game source](source/)
 - [Contribution guide](CONTRIBUTING.md)
 
-The original audio collection is supplied as a separate release download because it is larger than the maximum size of a GitHub Pages website.
+The original audio collection and rendered card-production library are supplied as separate release downloads because they are large binary working assets rather than runtime dependencies.
 
 ## Fan-project notice
 

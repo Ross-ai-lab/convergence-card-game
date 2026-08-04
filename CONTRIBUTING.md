@@ -25,6 +25,10 @@ npm run dev
 
 Use Node.js 22.12 or newer. See [`source/README.md`](source/README.md) for the project map, commands, and editing recipes.
 
+## Optional production materials
+
+The normal clone already contains everything needed to run, edit, test, and build the browser game. Developers working on original card renders or full-length audio can also use the optional archives linked from [`materials/local-production/`](materials/local-production/). The production helper scripts are stored there in `asset-tools/`.
+
 ## Before opening a pull request
 
 - Keep the change focused and explain the player-visible result.
@@ -41,7 +45,7 @@ Use Node.js 22.12 or newer. See [`source/README.md`](source/README.md) for the p
 - Game rules and computer opponents: `source/src/engine/`
 - Interface and controls: `source/src/App.tsx` and `source/src/*.css`
 - Art, fonts, and runtime audio: `source/public/`
+- Card rendering and optional production tools: `materials/`
 - Tests: files ending in `.test.ts` beside the code they cover
 
 For an idea that is not ready for code, open a GitHub Issue first so it can be discussed without changing the game.
-

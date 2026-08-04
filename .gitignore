@@ -1,7 +1,9 @@
 release-assets/
+materials/local-production/audio-tracks/
+materials/local-production/card-production/
+materials/local-production/browser-development-notes.md
 *.pyc
 __pycache__/
 .wrangler/
 .env
 .env.*
-

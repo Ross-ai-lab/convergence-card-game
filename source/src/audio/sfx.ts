@@ -93,7 +93,7 @@ const FALLBACK_URLS = [`${import.meta.env.BASE_URL}audio/lofi-loop.ogg`, `${impo
  * Two faders. The per-card voice lines were retired -- summoning a minion fired
  * a rarity fanfare, a spoken line AND the card's music theme, and three at once
  * was noise. The clips are kept in
- * `Convergence_Games/_Archive/card-voicelines/` if they are ever wanted back.
+ * the local production library if they are ever wanted back.
  *
  * Card themes count as MUSIC, so the music fader governs both the battle loop
  * and the stings; a player who turns music down does not want either.
