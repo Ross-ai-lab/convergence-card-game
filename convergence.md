@@ -2,7 +2,9 @@
 
 **Use when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
+<!-- KB-JUMP-START -->
 **Jump:** Play · Core rules · Controls · Project structure · Run and verify · Cards and effects · Engine rules · Interface · Balance · Assets and audio · Contributing · Development lessons
+<!-- KB-JUMP-END -->
 
 ## What Convergence is
 
