@@ -9,7 +9,7 @@
  * Four screens, all overlays over the live board so nothing here can break a duel
  * in progress:
  *   TitleScreen  — the front door: continue, solo at three difficulties, hotseat.
- *   HowToPlay    — the rules, in the order they matter, on one screen.
+ *   HowToPlayContent — the rules, in the order they matter, at the end of the codex.
  *   SettingsPanel— three faders and the difficulty, changeable mid-duel.
  *   PassScreen   — the hotseat privacy curtain. Without it, hotseat is not a game:
  *                  both players can read each other's hand off the same screen.
@@ -72,14 +72,12 @@ export function TitleScreen({
   playerCount,
   onContinue,
   onStart,
-  onHowTo,
   onSettings,
 }: {
   canContinue: boolean;
   playerCount: number | null;
   onContinue: () => void;
   onStart: (mode: GameMode) => void;
-  onHowTo: () => void;
   onSettings: () => void;
 }) {
   const [skill, setSkill] = useState<BotSkill>("normal");
@@ -140,11 +138,8 @@ export function TitleScreen({
         </div>
 
         <div className="title-links">
-          <button type="button" onClick={onHowTo}>
-            How to play
-          </button>
           <button type="button" onClick={onSettings}>
-            Sound &amp; settings
+            Settings
           </button>
         </div>
       </div>
@@ -154,10 +149,9 @@ export function TitleScreen({
 
 // ---------------------------------------------------------------------------
 
-export function HowToPlay({ onClose }: { onClose: () => void }) {
+function HowToPlayContent() {
   return (
-    <Overlay title="How to play" onClose={onClose} wide>
-      <div className="rules">
+    <div className="rules">
         <section>
           <h4>The goal</h4>
           <p>
@@ -178,8 +172,8 @@ export function HowToPlay({ onClose }: { onClose: () => void }) {
           <h4>Fighting</h4>
           <p>
             Combat is <b>simultaneous</b> &mdash; the defender always hits back, even when your blow kills it. A minion
-            is asleep the turn it lands and attacks once a turn after that. A minion with <b>0 attack</b> cannot attack
-            at all.
+            is asleep the turn it lands and attacks once a turn after that. A Chained minion waits through two of its
+            owner's turns before it can act. A minion with <b>0 attack</b> cannot attack at all.
           </p>
         </section>
         <section>
@@ -241,6 +235,80 @@ export function HowToPlay({ onClose }: { onClose: () => void }) {
           </p>
         </section>
       </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+export function EffectCodex({ onClose }: { onClose: () => void }) {
+  const sections = [
+    {
+      title: "When it happens",
+      entries: [
+        ["Battlecry", "Happens once when the minion enters play."],
+        ["Ongoing", "Happens at the start of its owner's turn while the minion is active."],
+        ["Passive", "Always applies while the minion is active. It does not trigger a second time."],
+        ["Battlecry/Ongoing", "The same effect happens on arrival and again at the start of its owner's turns."],
+      ],
+    },
+    {
+      title: "Board conditions",
+      entries: [
+        ["Chained", "The minion is unavailable for its first two turns. It cannot attack or run Ongoing effects until the chains break."],
+        ["Taunt", "The enemy must deal with this minion before attacking your core."],
+        ["Divine Shield", "Blocks the next damage instance, then the golden shield disappears."],
+        ["Freeze", "The minion loses its next turn. It thaws after sitting out that turn."],
+        ["Silence", "Removes the minion's printed effect and active keywords. Its stats remain."],
+        ["Invulnerable", "The minion cannot take damage while the condition is active. The blue aura shows it."],
+        ["Evade", "The minion has a chance to avoid an incoming attack. The percentage is printed on the card."],
+      ],
+    },
+    {
+      title: "Effect language",
+      entries: [
+        ["Target", "A chosen minion, card, or board slot. Some protections make a minion untargetable."],
+        ["Board slot", "A position on the board. Slot effects can remain after the original minion leaves."],
+        ["Destroy", "Kills the minion directly rather than dealing damage."],
+        ["Gain stats", "Adds ATK and maximum/current HP to the recipient."],
+        ["Summon", "Creates or brings a minion onto an open board slot."],
+        ["Lose ATK", "Permanently reduces ATK, never below zero."],
+        ["Copy a passive", "Gives the copier the other minion's Passive or Ongoing text, but not its Battlecry."],
+        ["Relic", "Equipment attached to a minion. It dies with that minion and can sometimes be moved once per turn."],
+      ],
+    },
+    {
+      title: "Special rules",
+      entries: [
+        ["Core", "Each player starts at 76 core health. A minion attacks the opposing core directly when no Taunt stops it."],
+        ["Sleep", "Every normal minion sleeps for the turn it is played. Chained adds a second unavailable turn."],
+        ["Immune", "The named damage type cannot hurt the minion while the immunity is active."],
+        ["Marked", "A delayed effect is waiting on the minion. The card's text explains when it resolves."],
+      ],
+    },
+  ] as const;
+
+  return (
+    <Overlay title="Effect Codex" onClose={onClose} wide>
+      <div className="codex">
+        <p className="codex-intro">A quick translation of the words and visual conditions used across the card pool.</p>
+        {sections.map((section) => (
+          <section className="codex-section" key={section.title}>
+            <h4>{section.title}</h4>
+            <div className="codex-grid">
+              {section.entries.map(([term, explanation]) => (
+                <article className="codex-entry" key={term}>
+                  <h5>{term}</h5>
+                  <p>{explanation}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))}
+        <section className="codex-section codex-howto">
+          <h4>How to play</h4>
+          <HowToPlayContent />
+        </section>
+      </div>
     </Overlay>
   );
 }
@@ -249,17 +317,14 @@ export function HowToPlay({ onClose }: { onClose: () => void }) {
 
 export function SettingsPanel({
   onClose,
+  onMenu,
   mode,
   onSkillChange,
-  cheatMode,
-  onCheatToggle,
 }: {
   onClose: () => void;
+  onMenu: () => void;
   mode: GameMode;
   onSkillChange: (skill: BotSkill) => void;
-  /** Infinite mana. It used to be a permanent button in the board's top bar. */
-  cheatMode: boolean;
-  onCheatToggle: () => void;
 }) {
   const [mix, setMix] = useState<Mix>(() => sfx.getMix());
   const [muted, setMuted] = useState(() => sfx.isMuted());
@@ -275,7 +340,7 @@ export function SettingsPanel({
   ];
 
   return (
-    <Overlay title="Sound &amp; settings" onClose={onClose}>
+    <Overlay title="Settings" onClose={onClose}>
       <div className="settings">
         <button
           type="button"
@@ -333,21 +398,10 @@ export function SettingsPanel({
           </div>
         ) : null}
 
-        <div className="setting-block">
-          <h4>Sandbox</h4>
-          <button
-            type="button"
-            className={cheatMode ? "mute-row muted" : "mute-row"}
-            onClick={onCheatToggle}
-            aria-pressed={cheatMode}
-          >
-            {cheatMode ? "Infinite mana is ON" : "Infinite mana is off"}
-          </button>
-          <p className="title-note">
-            For trying cards out rather than for winning. While it is on, every card in your hand is playable whatever
-            it costs, and the board says so.
-          </p>
-        </div>
+        <button type="button" className="title-btn" onClick={onMenu}>
+          Back to menu
+        </button>
+
       </div>
     </Overlay>
   );

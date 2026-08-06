@@ -13,7 +13,7 @@ describe("card CSV data", () => {
     const effectIds = new Set(cards.map((card) => card.effectId));
     expect(keywords.has("Divine Shield")).toBe(true);
     expect(keywords.has("Taunt")).toBe(true);
-    expect(effectIds.has("destroy_weakest")).toBe(true);
+    expect(effectIds.has("kill_random_enemy")).toBe(true);
     expect(effectIds.has("gain_relic")).toBe(true);
     expect(effectIds.has("freeze_two")).toBe(true);
   });
@@ -24,5 +24,17 @@ describe("card CSV data", () => {
     expect(resolvePublicAssetUrl(artwork, "/convergence-card-game/play/")).toBe(
       "/convergence-card-game/play/card-art/raw/c001.webp",
     );
+  });
+
+  it("fully replaces the old keyword layers on changed effects", () => {
+    const changed = new Map(cards.map((card) => [card.name, card]));
+    expect(changed.get("Kaido")?.keywords).not.toContain("Chained");
+    expect(changed.get("Kaido")?.keywords).not.toContain("Taunt");
+    expect(changed.get("King")?.keywords).not.toContain("Taunt");
+    expect(changed.get("Kaku Kaioh")?.keywords).not.toContain("Taunt");
+    expect(changed.get("Gandalf the White")?.keywords).toContain("Divine Shield");
+    expect(changed.get("Gandalf the White")?.effect).toBe("Divine Shield. Battlecry: Give all friendly Good minions Divine Shield");
+    expect(changed.get("Kaido")?.effect).toBe("Battlecry: Destroy an enemy Taunt minion");
+    expect(changed.get("Rennala Queen of the Full Moon")?.effect).toBe("Battlecry: Freeze all other minions");
   });
 });

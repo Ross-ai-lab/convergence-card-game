@@ -82,7 +82,7 @@ function minionValue(minion: MinionInstance, state: GameState): number {
 
   // An engine that fires every turn compounds; a battlecry has already paid out
   // by the time it is sitting here.
-  if (minion.effectTiming === "ongoing" && !minion.silenced && minion.chained === 0) value += 2.2;
+  if ((minion.effectTiming === "ongoing" || minion.effectTiming === "onPlayAndOngoing") && !minion.silenced && minion.chained === 0) value += 2.2;
 
   // Ready right now is tempo the opponent has to answer this turn.
   if (!minion.sleeping && !minion.frozen && minion.attacksUsed === 0 && minion.atk > 0 && !minion.attackLocked) {

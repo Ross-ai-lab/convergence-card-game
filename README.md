@@ -36,13 +36,13 @@ The game also has a complete **How to play** panel on its opening screen.
 
 The repository now includes the [complete editable game source](source/) with all runtime card art, fonts, music, sound effects, voice clips, game data, computer opponents, and automated tests needed to run and build it on another computer.
 
-Start with the [source setup and project map](source/README.md). To propose a change without collaborator access, follow the [fork and pull-request guide](CONTRIBUTING.md). A public visitor can edit their own fork and submit a proposal, but cannot alter this repository or the live game unless the owner reviews and accepts it.
+Start with the [editable source directory](source/) and the [fork and pull-request guide](CONTRIBUTING.md). A public visitor can edit their own fork and submit a proposal, but cannot alter this repository or the live game unless the owner reviews and accepts it.
 
 ## Repository map
 
 - `source/` is the only editable game codebase.
 - `play/` is the built copy served by GitHub Pages; do not hand-edit it.
-- `materials/` contains the lore, card workbook, raw art, card-render pipeline, and production tooling.
+- `materials/` contains the lore, card workbook, raw art, and production tooling.
 - `docs/` contains the project road map and voice-cast reference.
 - `counter/` contains the small aggregate player-counter service.
 - `release-assets/` is the ignored local staging area for large files published through GitHub Releases.
@@ -53,7 +53,6 @@ The repository root is the single Convergence project home. `materials/local-pro
 
 - [Official lore and roster guide](https://ross-ai-lab.github.io/convergence-card-game/materials/Convergence-Official-Lore.html)
 - [Card statistics workbook](materials/Convergence%20card%20stat%20excel%20sheet.xlsx)
-- [Card rendering pipeline](https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/card-render-pipeline)
 - [Raw card artwork](https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/raw-card-art)
 - [Original audio-track collection](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z)
 - [Rendered card-production library](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Card-Production.7z)

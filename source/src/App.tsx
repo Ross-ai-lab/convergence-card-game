@@ -34,7 +34,7 @@ import type {
 import { clearSave, loadGame, saveGame } from "./storage";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
-import { HowToPlay, PassScreen, SettingsPanel, TitleScreen, type GameMode } from "./screens/Screens";
+import { EffectCodex, PassScreen, SettingsPanel, TitleScreen, type GameMode } from "./screens/Screens";
 
 type Selection =
   | { kind: "hand"; handIndex: number }
@@ -160,11 +160,15 @@ const AURA_LABEL: Record<SlotAuraId, string> = {
   random_attacks: "RANDOM",
   slot_silence: "SILENCED",
   slot_grow_2: "+2/+2",
+  slot_protected: "SAFE",
+  slot_stats_one: "1/1",
 };
 const AURA_TEXT: Record<SlotAuraId, string> = {
   random_attacks: "a minion here can only attack at random",
   slot_silence: "a minion here is silenced",
   slot_grow_2: "a minion here gains +2/+2 at the start of your turn",
+  slot_protected: "minions here cannot be targeted, silenced, frozen, or damaged",
+  slot_stats_one: "minions here are permanently set to 1/1",
 };
 
 const BOT_ID: PlayerId = 1;
@@ -260,7 +264,7 @@ export default function App() {
   // The front door. A restored duel still starts here rather than dumping a
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
-  const [overlay, setOverlay] = useState<null | "howto" | "settings" | "relics">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "relics" | "codex">(null);
   /**
    * Hotseat only: who the screen is currently cleared for. The curtain drops
    * whenever the turn passes to the other player, and stays down until they say
@@ -294,7 +298,6 @@ export default function App() {
   /** Non-zero for the moment the killing blow lands, keyed so it replays. */
   const [lethal, setLethal] = useState(0);
   const [drag, setDrag] = useState<DragState>(null);
-  const [muted, setMuted] = useState(() => sfx.isMuted());
   const [playerCount, setPlayerCount] = useState<number | null>(null);
   const fxId = useRef(1);
   /** Herald lines already spoken this duel. A ref, so a re-render cannot re-fire one. */
@@ -496,7 +499,7 @@ export default function App() {
         /** Names of every card whose battlecry opens a prompt. */
         targetingCards: () =>
           Object.values(library)
-            .filter((c) => c.effectTiming === "onPlay" && c.effectId in TARGETED_EFFECTS)
+            .filter((c) => (c.effectTiming === "onPlay" || c.effectTiming === "onPlayAndOngoing") && c.effectId in TARGETED_EFFECTS)
             .map((c) => c.name),
 
         /** Put a card straight into a hand. */
@@ -953,7 +956,7 @@ export default function App() {
       flavor: def ? def.flavor : "",
       atkClass: statClass(minion.atk, minion.baseAtk),
       hpClass: minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp),
-      states: minionStates(minion),
+      states: minionStates(minion, game.players[minion.owner].board),
       onBoard: true,
       rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
     });
@@ -1306,9 +1309,7 @@ export default function App() {
           ) : null}
         </div>
         <div className="system-buttons">
-          <button type="button" onClick={toTitle} title="Back to the title screen">Menu</button>
           <button type="button" onClick={restart}>Restart</button>
-          <button type="button" onClick={undo} disabled={history.length === 0}>Undo</button>
           <button
             type="button"
             onClick={() => {
@@ -1323,42 +1324,30 @@ export default function App() {
             type="button"
             onClick={() => {
               sfx.play("button");
+              setOverlay("codex");
+            }}
+            title="Read what the card effects and conditions mean"
+          >
+            ◇ Effect Codex
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              sfx.play("button");
               setOverlay("settings");
             }}
             title="Sound and settings"
           >
             ⚙ Settings
           </button>
-          {/* Cheat lives in Settings now. Screens.tsx opens with a note about the
-              cheat button being "the third thing a new player saw" and how that
-              is impossible for anyone but the person who built the game — the
-              title screen was fixed then and this button was not. It is still
-              one click away, just not in the furniture. Cheat ON keeps a badge
-              here, because a duel being played with infinite mana is something
-              you should never be able to forget. */}
-          {game.cheatMode ? (
-            <button
-              type="button"
-              className="cheat-toggle active"
-              aria-pressed
-              onClick={toggleCheatMode}
-              title="Infinite mana is on. Click to turn it off."
-            >
-              Cheat On
-            </button>
-          ) : null}
           <button
             type="button"
-            className={muted ? "sound-toggle muted" : "sound-toggle"}
-            aria-pressed={!muted}
-            onClick={() => {
-              const nowMuted = sfx.toggleMuted();
-              setMuted(nowMuted);
-              if (!nowMuted) sfx.play("button");
-            }}
-            title={muted ? "Turn game sound on" : "Turn game sound off"}
+            className={game.cheatMode ? "cheat-toggle active" : "cheat-toggle"}
+            aria-pressed={game.cheatMode}
+            onClick={toggleCheatMode}
+            title={game.cheatMode ? "Infinite mana is on. Click to turn it off." : "Enable infinite mana"}
           >
-            {muted ? "🔇 Sound Off" : "🔊 Sound On"}
+            {game.cheatMode ? "⚡ Cheat On" : "⚡ Cheat Off"}
           </button>
           {/* The Coin exists for about one turn per duel. A button that is greyed
               out for the other twenty teaches nothing and takes up a slot. */}
@@ -1701,23 +1690,24 @@ export default function App() {
             setScreen("playing");
           }}
           onStart={beginDuel}
-          onHowTo={() => setOverlay("howto")}
           onSettings={() => setOverlay("settings")}
         />
       ) : null}
 
-      {overlay === "howto" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
+      {overlay === "codex" ? <EffectCodex onClose={() => setOverlay(null)} /> : null}
       {overlay === "relics" ? <RelicShelf game={game} onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel
           onClose={() => setOverlay(null)}
+          onMenu={() => {
+            setOverlay(null);
+            toTitle();
+          }}
           mode={mode}
           onSkillChange={(skill) => {
             sfx.play("button");
             setMode({ kind: "bot", skill });
           }}
-          cheatMode={game.cheatMode}
-          onCheatToggle={toggleCheatMode}
         />
       ) : null}
     </main>
@@ -1887,6 +1877,7 @@ function BoardRow({
                   >
                     <MinionFace
                       minion={minion}
+                      board={game.players[owner].board}
                       onRelicPickup={canPassRelic ? () => onRelicPickup(relicCarry === slotIndex ? null : slotIndex) : undefined}
                       relicCarried={relicSource}
                       onRelicPreview={onRelicPreview}
@@ -2065,8 +2056,8 @@ const FLAVOR_BOX = { w: 610, h: 84, lineHeight: 1.1 } as const;
  * in the roster are limited by the box rather than by this number, and land
  * wherever the measurer says they land.
  */
-const RULES_CEILING = 96;
-const FLAVOR_CEILING = 48;
+const RULES_CEILING = 64;
+const FLAVOR_CEILING = 32;
 const NAME_CEILING = 46;
 const NAME_CEILING_COMPACT = 72;
 
@@ -2155,12 +2146,14 @@ function CardFace({
 
 function MinionFace({
   minion,
+  board,
   onRelicPreview,
   onRelicPreviewEnd,
   onRelicPickup,
   relicCarried,
 }: {
   minion: MinionInstance;
+  board?: Array<MinionInstance | null>;
   /** Hovering the relic badge swaps the preview to the relic's own card. */
   onRelicPreview?: (relic: RelicInstance, el: HTMLElement) => void;
   /** Given only when re-strapping this relic is legal right now. */
@@ -2173,16 +2166,22 @@ function MinionFace({
 }) {
   const atkClass = statClass(minion.atk, minion.baseAtk);
   const hpClass = minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp);
+  const copiedPassive = minion.stolenPassiveText?.replace(/^Passive:\s*/i, "");
   return (
     <>
       <CardFace
         card={minion}
         onBoard
-        states={minionStates(minion)}
+        states={minionStates(minion, board)}
         atkClass={atkClass}
         hpClass={hpClass}
         effect={minion.silenced ? "Silenced." : minion.effect}
       />
+      {copiedPassive ? (
+        <span className="copied-passive-display" role="status">
+          Copied passive: {copiedPassive}
+        </span>
+      ) : null}
       {minion.relic ? (
         <span
           className={[
@@ -2306,7 +2305,11 @@ function CardArtwork({ card }: { card: CardFaceModel }) {
   // way. Only a handful of card images exist at once; load them eagerly.
   if (!card.art) return <div className="cf-art empty-art" aria-hidden="true" />;
   return (
-    <div className="cf-art">
+    <div
+      className={`cf-art ${
+        card.name === "Yujiro" ? "cf-art-yujiro" : card.name === "Conquest" ? "cf-art-conquest" : ""
+      }`}
+    >
       <img src={card.art} alt="" draggable={false} />
     </div>
   );
@@ -2317,14 +2320,26 @@ function CardArtwork({ card }: { card: CardFaceModel }) {
  * Taunt, a gold rim for Divine Shield, ice for Frozen. There is deliberately no
  * badge or chip anywhere: the artwork does the talking, the way it should.
  */
-function minionStates(minion: MinionInstance): string[] {
+function minionStates(minion: MinionInstance, board?: Array<MinionInstance | null>): string[] {
+  const effectIds = new Set([minion.effectId, ...minion.gainedEffects.map((effect) => effect.effectId)]);
+  const otherGood = board?.some((other) => other && other.instanceId !== minion.instanceId && other.alignment === "Good") ?? false;
+  const goodCount = board?.filter((other) => other?.alignment === "Good").length ?? 0;
+  const activeInvulnerable =
+    !minion.silenced &&
+    (effectIds.has("invuln_if_alone")
+      ? (board?.filter(Boolean).length ?? 1) <= 1
+      : effectIds.has("invuln_with_good_ally")
+        ? otherGood
+        : effectIds.has("invuln_if_three_good")
+          ? goodCount >= 3
+          : false);
   return [
     minion.sleeping ? "is-sleeping" : "",
     minion.chained > 0 ? "is-chained" : "",
     minion.frozen ? "is-frozen" : "",
     minion.silenced ? "is-silenced" : "",
     minion.divineShield ? "is-shielded" : "",
-    minion.invulnerableUntilTurn ? "is-invulnerable" : "",
+    minion.invulnerableUntilTurn !== null || activeInvulnerable ? "is-invulnerable" : "",
     minion.protectedSlot ? "is-protected" : "",
     minion.attackLocked ? "is-locked" : "",
     minion.markedBy ? "is-marked" : "",

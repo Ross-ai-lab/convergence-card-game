@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cards } from "../data/cards";
-import { applyAction, createInitialGame, makeCardLibrary } from "./game";
+import { cards, relics } from "../data/cards";
+import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
 import type { GameState, MinionInstance, PlayerId } from "./types";
 import { spawnTestMinion } from "./test-utils";
 
@@ -28,7 +28,7 @@ function playCardFor(state: GameState, player: PlayerId, name: string, slotIndex
 }
 
 function mainState(): GameState {
-  const state = createInitialGame(cards);
+  const state = createInitialGame(cards, "effects", relics);
   state.phase = "main";
   state.drawChoice = null;
   state.activePlayer = 0;
@@ -40,6 +40,49 @@ function attack(state: GameState, attackerSlot: number, targetSlot: number) {
 }
 
 describe("full-roster effects", () => {
+  it("Gol D. Roger offers three relics and equips the chosen one to a friendly minion", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    const offered = state.relicPool.slice(0, 3).map((relic) => relic.id);
+
+    const firstPrompt = playCardFor(state, 0, "Gol D. Roger", 2);
+    expect(firstPrompt.pendingTarget?.kind).toBe("board");
+    const allyIndex = firstPrompt.pendingTarget!.options.findIndex((option) => option.slot === 0);
+    const secondPrompt = applyAction(firstPrompt, { type: "choose_target", player: 0, choiceIndex: allyIndex }, library).state;
+    expect(secondPrompt.pendingTarget?.kind).toBe("option");
+    expect(secondPrompt.pendingTarget?.labelOptions.map((option) => option.value)).toEqual(offered);
+
+    const after = applyAction(secondPrompt, { type: "choose_target", player: 0, choiceIndex: 1 }, library).state;
+    expect(after.players[0].board[0]?.relic?.id).toBe(offered[1]);
+    expect(after.relicPool.map((relic) => relic.id)).not.toContain(offered[1]);
+  });
+
+  it("Transformers consumes friendly Tech minions and gains their stats and effects", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0, {
+      camp: "Tech",
+      atk: 2,
+      hp: 3,
+      maxHp: 3,
+      keywords: ["Taunt", "Divine Shield"],
+      divineShield: true,
+      effectId: "robocop_evil_bonus",
+      effectTiming: "passive",
+      effect: "Passive: Deal 3x damage against evil minions",
+    });
+
+    const after = playCardFor(state, 0, "Transformers", 2);
+    const transformers = after.players[0].board[2];
+    expect(after.players[0].board[0]).toBeNull();
+    expect(transformers?.atk).toBe(4);
+    expect(transformers?.hp).toBe(8);
+    expect(transformers?.keywords).toEqual(expect.arrayContaining(["Taunt", "Divine Shield"]));
+    expect(transformers?.divineShield).toBe(true);
+    expect(transformers?.gainedEffects).toEqual([
+      expect.objectContaining({ effectId: "robocop_evil_bonus", timing: "passive" }),
+    ]);
+  });
+
   it("Korosensei (mid_attack_only): ignores ATK < 4, takes ATK >= 4", () => {
     const weak = mainState();
     weak.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
@@ -70,12 +113,15 @@ describe("full-roster effects", () => {
     expect(attack(paired, 0, 0).players[1].board[0]).toBeNull(); // 4 hp - 5 dmg
   });
 
-  it("King (freeze_attacker): the attacker is frozen after striking it", () => {
+  it("King (dodge_80): evades an incoming attack", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
     state.players[1].board[0] = makeMinion("King", 1);
+    // This deterministic lower-bound RNG value takes the 80% evasion branch
+    // without making the test probabilistic. The defender still retaliates.
+    state.rngSeed = 1;
     const after = attack(state, 0, 0);
-    expect(after.players[0].board[0]?.frozen).toBe(true);
+    expect(after.players[1].board[0]?.hp).toBe(1);
   });
 
   it("Zoro (on_kill_buff_1): grows +1/+1 after a kill", () => {
@@ -110,15 +156,15 @@ describe("full-roster effects", () => {
     expect(grown.maxHp).toBeGreaterThan(before.maxHp);
   });
 
-  it("Homelander (alone_buff_5, onPlay): +5/+5 when played alone", () => {
+  it("Homelander (alone_buff_5, Battlecry/Ongoing): +3/+3 when played alone", () => {
     const state = mainState();
     state.players[0].hand = [cardId("Homelander")];
     state.players[0].mana = 10;
     const printed = cards.find((card) => card.name === "Homelander")!;
     const after = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library).state;
-    // Read the base off the card — the rule under test is the +5/+5, not his body.
-    expect(after.players[0].board[0]?.atk).toBe(printed.atk + 5);
-    expect(after.players[0].board[0]?.maxHp).toBe(printed.hp + 5);
+    // Read the base off the card — the rule under test is the +3/+3, not his body.
+    expect(after.players[0].board[0]?.atk).toBe(printed.atk + 3);
+    expect(after.players[0].board[0]?.maxHp).toBe(printed.hp + 3);
   });
 
   // --- ongoing effects fire at the start of the owner's turn ---
@@ -131,11 +177,36 @@ describe("full-roster effects", () => {
   }
   const toMyNextTurn = (state: GameState): GameState => endTurnAndDraw(endTurnAndDraw(state, 0), 1);
 
+  it("Chained minions wait through two owner turns before acting", () => {
+    const state = mainState();
+    const afterPlay = playCardFor(state, 0, "One-Eyed Owl", 0);
+    expect(afterPlay.players[0].board[0]?.chained).toBe(2);
+
+    const afterFirstTurn = toMyNextTurn(afterPlay);
+    expect(afterFirstTurn.players[0].board[0]?.chained).toBe(1);
+
+    const afterSecondTurn = toMyNextTurn(afterFirstTurn);
+    expect(afterSecondTurn.players[0].board[0]?.chained).toBe(0);
+    expect(
+      getLegalActions(afterSecondTurn, library).some(
+        (action) => action.type === "attack_core" && action.attackerSlot === 0,
+      ),
+    ).toBe(true);
+  });
+
   it("ongoing buff (Flowey buff_all_evil_1) rallies Evil allies", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Flowey", 0);
     state.players[0].board[1] = makeMinion("Wall of Flesh", 0); // 3/5 Evil
     expect(toMyNextTurn(state).players[0].board[1]?.atk).toBe(4);
+  });
+
+  it("Light Yagami (kill_random_enemy): kills an enemy at the start of its owner's turn", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Light Yagami", 0);
+    state.players[1].board[0] = makeMinion("Avatar Aang", 1, { divineShield: true });
+    const after = toMyNextTurn(state);
+    expect(after.players[1].board[0]).toBeNull();
   });
 
   it("ongoing self-buff (Mob Psycho self_buff_2)", () => {
@@ -151,5 +222,15 @@ describe("full-roster effects", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("Death Star", 1);
     expect(playCardFor(state, 0, "Aizawa", 0).players[1].board[0]?.silenced).toBe(true);
+  });
+
+  it("Rennala freezes every other minion, but not herself", () => {
+    const state = mainState();
+    state.players[0].board[1] = makeMinion("John Wick", 0);
+    state.players[1].board[0] = makeMinion("Death Star", 1);
+    const after = playCardFor(state, 0, "Rennala Queen of the Full Moon", 0);
+    expect(after.players[0].board[0]?.frozen).toBe(false);
+    expect(after.players[0].board[1]?.frozen).toBe(true);
+    expect(after.players[1].board[0]?.frozen).toBe(true);
   });
 });

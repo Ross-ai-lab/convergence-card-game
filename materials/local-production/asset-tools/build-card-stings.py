@@ -70,8 +70,8 @@ ANALYSIS_RATE = 8000          # plenty for an energy envelope, and fast to decod
 HOP = 256                     # ~32 ms per frame at 8 kHz
 
 # The three roster names whose wording differs between the stat sheet and
-# cards.csv. Same table as import-completed-cards.mjs -- keep them in
-# step; a mismatch here silently leaves a card with no sting.
+# cards.csv. Keep the aliases in step with the current roster so a mismatch
+# does not silently leave a card with no sting.
 NAME_ALIASES = {
     "13 lords of chaos": "thirteen lords of chaos",
     "gol d roger king of pirates": "gol d roger",

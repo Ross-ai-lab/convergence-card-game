@@ -393,6 +393,69 @@
   font-size: 13.5px;
 }
 
+/* --------------------------------------------------------------- effect codex */
+
+.codex {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.codex-intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.codex-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.codex-section h4 {
+  margin: 0;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--line);
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.codex-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.codex-entry {
+  padding: 11px 12px;
+  border: 1px solid rgba(240, 199, 103, 0.16);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(155, 119, 210, 0.12), rgba(20, 12, 31, 0.42));
+}
+
+.codex-entry h5 {
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.codex-entry p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 600px) {
+  .codex-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .swatch {
   width: 26px;
   height: 18px;

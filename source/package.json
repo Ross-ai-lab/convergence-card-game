@@ -16,8 +16,7 @@
     "shoot": "node scripts/shoot-screens.mjs",
     "validate:data": "node scripts/validate-cards.mjs",
     "check:ui": "node scripts/check-ui.mjs",
-    "check:cardface": "node scripts/check-cardface.mjs",
-    "sync:relics": "node scripts/sync-relic-text.mjs"
+    "check:cardface": "node scripts/check-cardface.mjs"
   },
   "dependencies": {
     "react": "^19.2.5",

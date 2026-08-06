@@ -660,6 +660,28 @@ button:disabled {
   animation: minion-arrive 0.3s cubic-bezier(0.18, 0.85, 0.3, 1.25);
 }
 
+/* Chrollo's borrowed passive is a live rule, so it gets a small readable strip
+   beneath the card instead of being hidden inside the event log. */
+.copied-passive-display {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  z-index: 4;
+  width: min(250px, calc(100% + 22px));
+  padding: 4px 7px;
+  border: 1px solid rgba(240, 199, 103, 0.72);
+  border-radius: 6px;
+  color: #fff5e3;
+  background: rgba(20, 13, 30, 0.94);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
 .minion-wrap .card-face,
 .lunge-wrap .card-face,
 .ghost-wrap .card-face {
@@ -1341,7 +1363,7 @@ button:disabled {
   justify-content: center;
   align-items: flex-end;
   min-width: 0;
-  height: 148px;
+  height: 174px;
   padding-top: 6px;
 }
 
@@ -1825,8 +1847,7 @@ button:disabled {
    is DOM, so a stat can change mid-combat and the card simply redraws. Editing
    one line of data/cards.csv is now the whole of "buff this card".
 
-   This is a transcription of the print pipeline's card_template.html — the same
-   design that renders the 1500x2100 faces for PHYSICAL cards — with two
+   This follows the shared 750x1050 physical-card design reference — with two
    deliberate differences:
      - the side rails are thinner, because a ~150px board minion cannot spare the
        48 design-px the printed card gives them (owner decision);
@@ -1893,9 +1914,9 @@ button:disabled {
   --cf-namefit: 46;
   --cf-namefitc: 72;
   --cf-namefitb: 46;
-  --cf-efffit: 96;
-  --cf-efffitb: 96;
-  --cf-flavfit: 48;
+  --cf-efffit: 64;
+  --cf-efffitb: 64;
+  --cf-flavfit: 32;
   /* default palette (Rare / Black) — .rarity-* below overrides */
   --metal-light: #9aa1aa;
   --metal-mid: #474c54;
@@ -2013,6 +2034,17 @@ button:disabled {
   height: 100%;
   object-fit: cover;
   object-position: center 26%;
+}
+
+/* Yujiro's source art is a tall portrait. The normal art crop centres on the
+   torso, which cuts off his head in the card's wide picture window. Keep this
+   card anchored to the top so the face remains part of the read. */
+.cf-art-yujiro img {
+  object-position: center 0%;
+}
+
+.cf-art-conquest img {
+  object-position: center 0%;
 }
 
 /* the soft glass sheen the old baked face had, kept so cards still read as objects */
@@ -2259,7 +2291,7 @@ button:disabled {
   color: #fff;
   font-family: "Nunito", sans-serif;
   font-weight: 700;
-  font-size: calc(min(96, var(--cf-efffit)) * var(--u));
+  font-size: calc(min(64, var(--cf-efffit)) * var(--u));
   line-height: 1.16;
   text-align: center;
   text-shadow: 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.7);
@@ -2287,7 +2319,7 @@ button:disabled {
   font-family: "Nunito", sans-serif;
   font-style: italic;
   font-weight: 600;
-  font-size: calc(min(48, var(--cf-flavfit)) * var(--u));
+  font-size: calc(min(32, var(--cf-flavfit)) * var(--u));
   line-height: 1.1;
   text-align: center;
   text-shadow: 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.85);
@@ -2416,10 +2448,49 @@ button:disabled {
    layout flip between two looks depending on the window height. A class cannot
    flip-flop.
 
-   The hand keeps the compact look. A card in hand is already readable by hovering
-   it — and it is overlapped by its neighbours anyway, so rules text there would
-   be half-covered.
+   Hand cards opt back into the full printed face below. They are small, but the
+   player can see what each card is without hovering it first.
    ============================================================================ */
+
+/* HAND CARDS ARE FULL FACES, even though their width keeps them under the compact
+   container breakpoint. The fan stays narrow; the card's own design stays whole.
+   Cost returns to the printed top-right position, and the normal gem sizes keep
+   the bottom edge from swallowing the description and flavour strips. */
+.hand-card .cf-desc,
+.hand-card .cf-flavor,
+.hand-card .cf-rail {
+  display: flex;
+}
+
+.hand-card .cf-origin {
+  display: block;
+}
+
+.hand-card .cf-art {
+  height: calc(492 * var(--u));
+  bottom: auto;
+}
+
+.hand-card .cf-name {
+  font-size: calc(min(46, var(--cf-namefit)) * var(--u));
+  padding: 0 calc(8 * var(--u));
+}
+
+.hand-card .cf-mana {
+  right: calc(2 * var(--u));
+  left: auto;
+  width: calc(84 * var(--u));
+  height: calc(84 * var(--u));
+  font-size: calc(40 * var(--u));
+}
+
+.hand-card .cf-atk,
+.hand-card .cf-hp {
+  width: calc(72 * var(--u));
+  height: calc(72 * var(--u));
+  font-size: calc(40 * var(--u));
+}
+
 .card-face.on-board .cf-desc,
 .card-face.on-board .cf-flavor,
 .card-face.on-board .cf-rail {
@@ -2497,7 +2568,7 @@ button:disabled {
 }
 
 .card-face.on-board .cf-desc p {
-  font-size: calc(min(96, var(--cf-efffitb)) * var(--u));
+  font-size: calc(min(64, var(--cf-efffitb)) * var(--u));
 }
 
 /* The origin line is attribution, not something you play off, and at board size
@@ -2642,13 +2713,20 @@ button:disabled {
   50% { opacity: 1; transform: scale(1.022); }
 }
 
-/* --- INVULNERABLE: a hard white rim, no softness -------------------------- */
+/* --- INVULNERABLE: a cool blue protective field --------------------------- */
 .card-face.is-invulnerable .cf-stage {
-  animation: none;
+  animation: invulnerable-bubble 2.2s ease-in-out infinite;
   box-shadow:
-    0 0 0 max(3.5px, calc(4 * var(--u))) #ffffff,
-    0 0 max(20px, calc(26 * var(--u))) rgba(190, 230, 255, 0.9),
+    0 0 0 max(3.5px, calc(4 * var(--u))) #b9ecff,
+    0 0 max(24px, calc(32 * var(--u))) rgba(64, 190, 255, 0.95),
+    0 0 max(52px, calc(70 * var(--u))) rgba(56, 140, 255, 0.58),
+    inset 0 0 max(18px, calc(28 * var(--u))) rgba(180, 240, 255, 0.55),
     0 calc(12 * var(--u)) calc(28 * var(--u)) rgba(0, 0, 0, 0.42);
+}
+
+@keyframes invulnerable-bubble {
+  0%, 100% { opacity: 0.88; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.018); }
 }
 
 /* --- MARKED FOR DEATH: a red pulse creeping in from the edges ------------- */

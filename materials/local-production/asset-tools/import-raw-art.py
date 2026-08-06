@@ -24,17 +24,16 @@ Run:
 """
 import argparse
 import csv
-import importlib.util
 import sys
-import types
 from pathlib import Path
 
 from PIL import Image
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from art_import_helpers import find_art, trim_letterbox
+
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT = ROOT / "source"
-MATERIALS = ROOT / "materials"
-PIPELINE = MATERIALS / "card-render-pipeline"
 OUT_DIR = PROJECT / "public" / "card-art" / "raw"
 
 # The art window is 750x492 in the print design space. The largest the card is
@@ -42,27 +41,6 @@ OUT_DIR = PROJECT / "public" / "card-art" / "raw"
 COVER_W, COVER_H = 760, 500
 MAX_DIM = 1400          # hard cap so a 8.5 MB PNG never becomes a 900 KB WebP
 QUALITY = 82
-
-
-def load_pipeline():
-    """Import render_cards.py so the fuzzy art match and the letterbox trimmer
-    are literally the same code the print pipeline runs.
-
-    render_cards.py imports Playwright at module scope because it screenshots
-    the print faces with headless Chromium. We only want its two pure image
-    helpers, so a stub is parked in sys.modules first -- that keeps this script
-    on the system Python (Pillow only) instead of pulling a browser engine in
-    just to resize some art."""
-    stub = types.ModuleType("playwright.sync_api")
-    stub.sync_playwright = None
-    sys.modules.setdefault("playwright", types.ModuleType("playwright"))
-    sys.modules.setdefault("playwright.sync_api", stub)
-
-    spec = importlib.util.spec_from_file_location("render_cards", PIPELINE / "render_cards.py")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["render_cards"] = module
-    spec.loader.exec_module(module)
-    return module
 
 
 def read_rows(path, kind):
@@ -79,13 +57,13 @@ def read_rows(path, kind):
     ]
 
 
-def convert(src: Path, dest: Path, trim) -> int:
+def convert(src: Path, dest: Path) -> int:
     image = Image.open(src)
     if image.mode in ("RGBA", "LA", "P"):
         image = image.convert("RGB")
     elif image.mode != "RGB":
         image = image.convert("RGB")
-    image = trim(image)
+    image = trim_letterbox(image)
 
     width, height = image.size
     scale = min(1.0, max(COVER_W / width, COVER_H / height))
@@ -103,7 +81,6 @@ def main():
     parser.add_argument("--force", action="store_true", help="rebuild files that already exist")
     args = parser.parse_args()
 
-    pipeline = load_pipeline()
     cards = read_rows(PROJECT / "data" / "cards.csv", "minion")
     cards += read_rows(PROJECT / "data" / "relics.csv", "relic")
 
@@ -114,12 +91,12 @@ def main():
             skipped += 1
             total_bytes += dest.stat().st_size
             continue
-        src = pipeline.find_art(card)
+        src = find_art(card)
         if not src:
             missing.append(card)
             continue
         try:
-            total_bytes += convert(src, dest, pipeline.trim_letterbox)
+            total_bytes += convert(src, dest)
             done += 1
             print(f"  ok  {card['id']}  {card['name'][:34]:34}  <- {src.name}")
         except Exception as error:  # one bad source never aborts the batch

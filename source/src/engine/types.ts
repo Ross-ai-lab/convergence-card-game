@@ -2,7 +2,7 @@ export type PlayerId = 0 | 1;
 export type Camp = "Magic" | "Tech" | "Nature";
 export type Alignment = "Good" | "Evil" | "Neutral";
 export type Rarity = "Red" | "Yellow" | "Purple" | "Black";
-export type EffectTiming = "none" | "onPlay" | "ongoing" | "passive";
+export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "passive";
 
 export type Keyword =
   | "Passive"
@@ -36,9 +36,13 @@ export type EffectId =
   | "copy_passive"
   | "anti_disable_aura"
   | "destroy_weakest"
+  | "kill_random_enemy"
+  | "destroy_enemy_taunt"
+  | "destroy_and_gain_stats"
   | "high_attack_only"
   | "anti_good_grow"
   | "small_cannot_attack"
+  | "double_damage_nature"
   | "protect_slot"
   | "snap_balance"
   | "triple_attack"
@@ -51,6 +55,7 @@ export type EffectId =
   | "freeze_and_weaken"
   | "tech_buff"
   | "reveal_hand"
+  | "reveal_enemy_draw"
   | "set_hp_one"
   | "lone_evil_buff"
   // --- added 2026-07-12: effects for the full roster (onPlay/ongoing actives) ---
@@ -65,16 +70,20 @@ export type EffectId =
   | "damage_evil_enemy_4"
   | "damage_magic_enemy_2"
   | "destroy_small_4"
+  | "destroy_enemy"
   | "destroy_all_small"
   | "destroy_damaged_enemy"
+  | "destroy_all_damaged_enemies"
   | "devour_small"
   | "devour_friendly"
   | "chain_damage"
   | "reduce_atk_3"
   | "all_enemy_atk_down_2"
   | "freeze_one"
+  | "freeze_all"
   | "silence_enemy"
   | "buff_good_ally_3"
+  | "buff_all_good_2"
   | "buff_magic_ally_3"
   | "buff_evil_ally_2"
   | "buff_evil_ally_3_2_heal"
@@ -103,8 +112,10 @@ export type EffectId =
   | "reshuffle_hand"
   | "discard_draw_2"
   | "consume_tech_card"
+  | "consume_all_friendly_tech"
   | "dice_buff"
   | "doof_dice"
+  | "doof_coinflip"
   | "bounce_enemy"
   | "give_taunt"
   | "alone_buff_5"
@@ -118,8 +129,12 @@ export type EffectId =
   | "invuln_if_alone"
   | "invuln_if_three_good"
   | "dodge_half"
+  | "give_dodge_half"
+  | "immune_nature_tech"
+  | "dodge_80"
   | "freeze_attacker"
   | "on_kill_buff_1"
+  | "on_survive_buff_1"
   | "on_survive_buff_2"
   | "any_death_buff_2_2"
   | "any_death_buff_2_1"
@@ -130,6 +145,7 @@ export type EffectId =
   | "shifu_shield"
   // --- the hard cards, wired once relics, hand targeting and value choices existed ---
   | "steal_relic"
+  | "choose_relic"
   | "destroy_relic"
   | "kill_back"
   | "attack_lock"
@@ -148,6 +164,7 @@ export type EffectId =
   | "alignment_shift"
   | "pressure_chosen_card"
   | "reveal_and_shuffle_chosen"
+  | "steal_magic_effects"
   // --- the last five: slot auras and forced-random attacks ---
   | "slot_random_attacks"
   | "slot_permanent_silence"
@@ -218,12 +235,18 @@ export interface MinionInstance {
   attackedBy: string[];
   /** APR: this minion may never attack again. */
   attackLocked: boolean;
+  /** APR: the lock expires after the minion misses two of its own turns. */
+  attackLockedUntilTurn: number | null;
   /** Kento Nanami: the instance that marked this minion for death. */
   markedBy: string | null;
   /** Doomsday: immunity to one Camp, until the named turn. */
   campImmunity: { camp: Camp; untilTurn: number } | null;
   /** Chrollo: whose passive this minion is currently wearing. */
   stolenPassiveFrom: string | null;
+  /** Chrollo: the printed passive text currently shown beneath this minion. */
+  stolenPassiveText: string | null;
+  /** Yubaba/Nyan: passive or ongoing effects granted by another card. */
+  gainedEffects: Array<{ effectId: EffectId; timing: "passive" | "ongoing"; text: string }>;
 }
 
 export interface PlayerState {
@@ -273,7 +296,9 @@ export type ChoiceKind = "board" | "slot" | "hand" | "option";
 export type SlotAuraId =
   | "random_attacks" // Bill Cipher — a minion here can only attack at random
   | "slot_silence" // Giorno GER — a minion here is silenced the moment it lands
-  | "slot_grow_2"; // Ultra Instinct Goku — a minion here gains +2/+2 each of your turns
+  | "slot_grow_2" // Ultra Instinct Goku — a minion here gains +2/+2 each of your turns
+  | "slot_protected" // Neo — minions here cannot be targeted or disabled
+  | "slot_stats_one"; // Doctor Manhattan — minions here are permanently 1/1
 
 export interface SlotAura {
   slot: number;

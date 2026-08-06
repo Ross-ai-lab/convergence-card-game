@@ -211,21 +211,17 @@ describe("control and theft cards", () => {
 });
 
 describe("choice-driven cards", () => {
-  it("Doctor Manhattan asks for a minion, then a value", () => {
+  it("Doctor Manhattan permanently sets an enemy slot to 1/1", () => {
     const state = mainState();
     state.players[1].board[0] = dummy("Death Star", 1, { atk: 9, hp: 9, maxHp: 9 });
 
     const asking = play(state, "Doctor Manhattan", 0);
     expect(asking.phase).toBe("targeting");
-    expect(asking.pendingTarget?.kind).toBe("board");
+    expect(asking.pendingTarget?.kind).toBe("slot");
     const targetIndex = asking.pendingTarget!.options.findIndex((option) => option.owner === 1 && option.slot === 0);
-    const values = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: targetIndex }, library).state;
-    expect(values.pendingTarget?.kind).toBe("option");
-    expect(values.pendingTarget?.labelOptions).toHaveLength(5);
-
-    const set = applyAction(values, { type: "choose_target", player: 0, choiceIndex: 2 }, library).state;
-    expect(set.players[1].board[0]?.atk).toBe(3);
-    expect(set.players[1].board[0]?.hp).toBe(3);
+    const set = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: targetIndex }, library).state;
+    expect(set.players[1].board[0]?.atk).toBe(1);
+    expect(set.players[1].board[0]?.hp).toBe(1);
   });
 
   it("The Nameless King re-aligns the whole board to the chosen side", () => {

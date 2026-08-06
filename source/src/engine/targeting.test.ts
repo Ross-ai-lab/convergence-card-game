@@ -114,20 +114,19 @@ describe("targeted effects", () => {
     expect(frozen.players[1].board[4]?.frozen).toBe(true);
   });
 
-  it("Musashi destroys the damaged enemy the player names", () => {
+  it("Musashi kills all damaged enemy minions", () => {
     const state = mainState();
     state.players[1].board[0] = dummy("John Wick", 1, { hp: 1, maxHp: 2 });
     state.players[1].board[3] = dummy("Zoro", 1, { hp: 2, maxHp: 3 });
 
-    const asking = playCardFor(state, 0, "Musashi", 1);
-    const chosenIndex = asking.pendingTarget!.options.findIndex((option) => option.slot === 3);
-    const after = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: chosenIndex }, library).state;
-    expect(after.players[1].board[0]).not.toBeNull();
+    const after = playCardFor(state, 0, "Musashi", 1);
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[1].board[0]).toBeNull();
     expect(after.players[1].board[3]).toBeNull();
   });
 
   it("cards that explicitly say random do not open a targeting prompt", () => {
-    for (const name of ["Darth Vader", "Ragnaros", "The 7? Heroic Spirits"]) {
+    for (const name of ["Darth Vader", "Ragnaros"]) {
       const state = mainState(`random-${name}`);
       state.players[1].board[0] = dummy("John Wick", 1, { alignment: name === "Darth Vader" ? "Good" : "Neutral", hp: 1, maxHp: 2 });
       state.players[1].board[2] = dummy("Zoro", 1, { alignment: name === "Darth Vader" ? "Good" : "Neutral", hp: 1, maxHp: 2 });
@@ -174,10 +173,10 @@ describe("targeted effects", () => {
 
   it("holds the rest of the turn's ongoing effects behind the prompt", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("S-Class Heroes", 0, { playOrder: 1 }); // ongoing + targeted: asks first
+    state.players[0].board[0] = makeMinion("Seven Deadly Sins", 0, { playOrder: 1 }); // ongoing + targeted: asks first
     state.players[0].board[1] = makeMinion("Mob Psycho", 0, { playOrder: 2 }); // ongoing self_buff_2, no prompt
-    state.players[0].board[2] = dummy("Zoro", 0, { alignment: "Good" });
-    state.players[0].board[3] = dummy("John Wick", 0, { alignment: "Good" });
+    state.players[0].board[2] = dummy("Zoro", 0, { alignment: "Good", camp: "Magic" });
+    state.players[0].board[3] = dummy("John Wick", 0, { alignment: "Good", camp: "Magic" });
 
     const asking = toMyNextTurn(state);
     expect(asking.phase).toBe("targeting");
@@ -186,7 +185,7 @@ describe("targeted effects", () => {
     const zoroIndex = asking.pendingTarget!.options.findIndex((option) => option.slot === 2);
     const resumed = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: zoroIndex }, library).state;
     expect(resumed.phase).toBe("main");
-    expect(resumed.players[0].board[2]?.atk).toBe(5); // Zoro took the +2/+2
+    expect(resumed.players[0].board[2]?.atk).toBe(6); // Zoro took the +3/+3
     expect(resumed.players[0].board[1]?.atk).toBe(7); // and Mob Psycho's own +2 landed after it
     expect(resumed.effectQueue).toHaveLength(0);
   });

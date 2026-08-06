@@ -24,7 +24,7 @@ const allowed = {
   rarity: new Set(["Red", "Yellow", "Purple", "Black"]),
   camp: new Set(["Magic", "Tech", "Nature"]),
   alignment: new Set(["Good", "Evil", "Neutral"]),
-  effectTiming: new Set(["none", "onPlay", "ongoing", "passive"]),
+  effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive"]),
   keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Invulnerable"]),
 };
 
@@ -46,14 +46,20 @@ const MECHANICAL = ["Taunt", "Divine Shield", "Chained"];
  * an "Ongoing:" card that ambiguity is the whole question. Every card now says
  * which of the four it is, or is stat-only and says nothing at all.
  */
-const TIMING_WORD = { onPlay: "Battlecry", none: null, ongoing: "Ongoing", passive: "Passive" };
+const TIMING_WORD = {
+  onPlay: "Battlecry",
+  onPlayAndOngoing: "Battlecry/Ongoing",
+  none: null,
+  ongoing: "Ongoing",
+  passive: "Passive",
+};
 
 /** A card declares its own keywords as leading sentences ("Taunt. Divine Shield. "),
  *  then the timing word. Only the LEADING block counts as a declaration — The
  *  Driller's "Give another minion Taunt" is about someone else's Taunt, so a
  *  plain substring search would wave it through. */
 const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained)\.\s*)*)/;
-const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*(Battlecry|Ongoing|Passive):\s/;
+const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*(Battlecry\/Ongoing|Battlecry|Ongoing|Passive):\s/;
 
 function checkPrintedText(card, line, errors) {
   const text = card.effect ?? "";
@@ -133,58 +139,6 @@ if (cards.length !== 175) errors.push(`Expected 175 cards, found ${cards.length}
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
-}
-
-// --- relic drift ------------------------------------------------------------
-// relics.csv is what the ENGINE plays. cards.json is what the render pipeline
-// draws from. They describe the same 21 relics and nothing kept them in step,
-// so cards.json quietly went stale: Tesseract described something its own
-// `no_retaliation` hook does not do, and Infinity Castle had lost its cost and
-// effect entirely. The re-import now preserves relics.csv instead of
-// overwriting from cards.json, which stops the damage; this stops the DRIFT.
-{
-  const relicsCsvPath = path.join(projectRoot, "data", "relics.csv");
-  const cardsJsonPath = path.resolve(
-    projectRoot, "..", "materials", "card-render-pipeline", "data", "cards.json",
-  );
-  if (fs.existsSync(relicsCsvPath) && fs.existsSync(cardsJsonPath)) {
-    const norm = (v) => String(v == null ? "" : v).split(" ").filter(Boolean).join(" ").trim().toLowerCase();
-    const rows = fs.readFileSync(relicsCsvPath, "utf8").trim().split(String.fromCharCode(10));
-    const head = rows[0].replace(String.fromCharCode(10), "").trim().split(",");
-    const cell = (row, key) => {
-      const out = []; let cur = ""; let quoted = false;
-      for (let i = 0; i < row.length; i++) {
-        const ch = row[i];
-        if (ch === '"') {
-          // A doubled quote inside a quoted field is ONE literal quote, not two
-          // delimiters. Missing this reported White Whistle as permanently
-          // drifted: its effect really contains "Ongoing" in quotes, and the
-          // naive reader silently stripped them and compared two different
-          // strings forever.
-          if (quoted && row[i + 1] === '"') { cur += '"'; i++; }
-          else quoted = !quoted;
-        } else if (ch === "," && !quoted) { out.push(cur); cur = ""; }
-        else cur += ch;
-      }
-      out.push(cur);
-      const i = head.indexOf(key);
-      return i < 0 ? "" : (out[i] || "").trim();
-    };
-    const csvEffect = new Map(rows.slice(1).map((r) => [norm(cell(r, "name")), norm(cell(r, "effect"))]));
-    const drift = [];
-    for (const c of JSON.parse(fs.readFileSync(cardsJsonPath, "utf8")).cards) {
-      const key = norm(c.name);
-      if (!csvEffect.has(key)) continue;
-      if (csvEffect.get(key) !== norm(c.effect)) drift.push(c.name);
-    }
-    if (drift.length) {
-      errors.push(
-        "Relic text has drifted between relics.csv and the render pipeline's cards.json for: " +
-        drift.join(", ") +
-        ". relics.csv is the truth (the engine reads it) - update cards.json to match.",
-      );
-    }
-  }
 }
 
 if (errors.length) {

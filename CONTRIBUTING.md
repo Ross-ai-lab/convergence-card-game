@@ -23,7 +23,7 @@ npm ci
 npm run dev
 ```
 
-Use Node.js 22.12 or newer. See [`source/README.md`](source/README.md) for the project map, commands, and editing recipes.
+Use Node.js 22.12 or newer. See the repository's [`source/`](source/) directory and the Convergence KB for the project map, commands, and editing recipes.
 
 ## Optional production materials
 

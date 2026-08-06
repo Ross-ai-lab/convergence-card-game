@@ -50,9 +50,12 @@ export function spawnTestMinion(
     relic: null,
     attackedBy: [],
     attackLocked: false,
+    attackLockedUntilTurn: null,
     markedBy: null,
     campImmunity: null,
     stolenPassiveFrom: null,
+    stolenPassiveText: null,
+    gainedEffects: [],
   };
   return { ...base, ...overrides };
 }

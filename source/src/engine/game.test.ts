@@ -173,11 +173,13 @@ describe("Convergence engine", () => {
       .toBeLessThan(effectTexts.indexOf(effectTexts.find((t) => t.includes("Carnage Kabuto"))!));
   });
 
-  it("lets destroy effects bypass Divine Shield", () => {
+  it("keeps Light Yagami on the board as an Ongoing effect", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("Avatar Aang", 1, { divineShield: true });
     const resolved = playCardFor(state, 0, "Light Yagami", 0);
-    expect(resolved.players[1].board[0]).toBeNull();
+    expect(resolved.players[0].board[0]?.name).toBe("Light Yagami");
+    expect(resolved.players[0].board[0]?.effectTiming).toBe("ongoing");
+    expect(resolved.players[1].board[0]?.name).toBe("Avatar Aang");
   });
 });
 

@@ -64,7 +64,7 @@ describe("the relic pool", () => {
 
   it("hands a gained relic to its finder and takes it out of the pool", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Gol D. Roger", 0); // ongoing: gain an Ascension Relic
+    state.players[0].board[0] = makeMinion("Toji", 0); // ongoing: gain an Ascension Relic
     const before = state.relicPool.length;
 
     const after = toMyNextTurn(state);
@@ -74,7 +74,7 @@ describe("the relic pool", () => {
 
   it("passes a second relic to a free ally rather than stacking it", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Gol D. Roger", 0, {
+    state.players[0].board[0] = makeMinion("Toji", 0, {
       relic: relicByName("Elder wand"),
     });
     state.players[0].board[1] = makeMinion("Mob Psycho", 0);
@@ -90,11 +90,11 @@ describe("relic effects", () => {
     const state = mainState();
     const bearer = makeMinion("Mob Psycho", 0); // 6/6
     state.players[0].board[0] = bearer;
-    state.players[0].board[1] = makeMinion("Gol D. Roger", 0);
+    state.players[0].board[1] = makeMinion("Toji", 0);
     state.relicPool = [relicByName("The Holy Grail")];
 
     const after = toMyNextTurn(state);
-    // Roger finds it, is already free-handed, so it lands on him or on Mob —
+    // Toji finds it, is already free-handed, so it lands on him or on Mob —
     // whichever wears it should be doubled.
     const wearer = after.players[0].board.find((minion) => minion?.relic?.name === "The Holy Grail");
     expect(wearer).toBeTruthy();
