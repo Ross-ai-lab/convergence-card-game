@@ -1300,7 +1300,8 @@ export default function App() {
     <main className={drag?.active ? "hs-shell grabbing" : "hs-shell"}>
       <div className="table-glow" aria-hidden="true" />
 
-      <header className="top-strip">
+      <div className={shaking ? "table-frame shaking" : "table-frame"}>
+        <header className="top-strip">
         <div className="brand-mini">
           <span className="brand-mark" />
           <strong>Convergence</strong>
@@ -1365,9 +1366,8 @@ export default function App() {
             </button>
           ) : null}
         </div>
-      </header>
+        </header>
 
-      <div className={shaking ? "table-frame shaking" : "table-frame"}>
         <section className="enemy-zone">
           <HeroPlate
             enemy
