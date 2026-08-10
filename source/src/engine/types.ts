@@ -297,7 +297,7 @@ export type SlotAuraId =
   | "random_attacks" // Bill Cipher — a minion here can only attack at random
   | "slot_silence" // Giorno GER — a minion here is silenced the moment it lands
   | "slot_grow_2" // Ultra Instinct Goku — a minion here gains +2/+2 each of your turns
-  | "slot_protected" // Neo — minions here cannot be targeted or disabled
+  | "slot_protected" // Neo — minions here cannot be targeted, silenced, or frozen
   | "slot_stats_one"; // Doctor Manhattan — minions here are permanently 1/1
 
 export interface SlotAura {

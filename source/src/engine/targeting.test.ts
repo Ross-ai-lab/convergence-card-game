@@ -42,6 +42,13 @@ function mainState(seed = "targeting-tests"): GameState {
   return state;
 }
 
+function protectFriendlySlotWithNeo(state: GameState, slot: number): GameState {
+  const asking = playCardFor(state, 1, "Neo", 4);
+  const choiceIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 1 && option.slot === slot) ?? -1;
+  expect(choiceIndex).toBeGreaterThanOrEqual(0);
+  return applyAction(asking, { type: "choose_target", player: 1, choiceIndex }, library).state;
+}
+
 /** Ongoing effects fire at the start of the owner's turn, so get back round to it. */
 function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
   let next = applyAction(state, { type: "end_turn", player }, library).state;
@@ -53,6 +60,30 @@ function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
 const toMyNextTurn = (state: GameState): GameState => endTurnAndDraw(endTurnAndDraw(state, 0), 1);
 
 describe("targeted effects", () => {
+  it("Neo blocks targeted silence and freeze without blocking damage", () => {
+    const state = protectFriendlySlotWithNeo(mainState("neo-targeting"), 1);
+    state.players[1].board[1] = dummy("John Wick", 1);
+    state.players[1].board[2] = dummy("Zoro", 1);
+
+    const freezePrompt = playCardFor(state, 0, "Kiritsugu Emiya", 0);
+    expect(freezePrompt.pendingTarget?.options.some((option) => option.slot === 1)).toBe(false);
+    expect(freezePrompt.players[1].board[1]?.frozen).toBe(false);
+
+    const silencePrompt = playCardFor(state, 0, "Aizawa", 0);
+    expect(silencePrompt.pendingTarget?.options.some((option) => option.slot === 1)).toBe(false);
+    expect(silencePrompt.players[1].board[1]?.silenced).toBe(false);
+  });
+
+  it("lets combat kill a minion inside Neo's protected slot", () => {
+    const state = protectFriendlySlotWithNeo(mainState("neo-combat"), 1);
+    state.activePlayer = 0;
+    state.players[0].board[0] = dummy("Zoro", 0, { atk: 5 });
+    state.players[1].board[1] = dummy("John Wick", 1, { hp: 3, maxHp: 3 });
+
+    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 1 }, library).state;
+    expect(after.players[1].board[1]).toBeNull();
+  });
+
   it("stops and asks when more than one enemy is legal", () => {
     const state = mainState();
     state.players[1].board[0] = dummy("John Wick", 1);

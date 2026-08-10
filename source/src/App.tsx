@@ -34,7 +34,7 @@ import type {
 import { clearSave, loadGame, saveGame } from "./storage";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
-import { EffectCodex, PassScreen, SettingsPanel, TitleScreen, type GameMode } from "./screens/Screens";
+import { HowToPlay, PassScreen, SettingsPanel, TitleScreen, type GameMode } from "./screens/Screens";
 
 type Selection =
   | { kind: "hand"; handIndex: number }
@@ -167,7 +167,7 @@ const AURA_TEXT: Record<SlotAuraId, string> = {
   random_attacks: "a minion here can only attack at random",
   slot_silence: "a minion here is silenced",
   slot_grow_2: "a minion here gains +2/+2 at the start of your turn",
-  slot_protected: "minions here cannot be targeted, silenced, frozen, or damaged",
+  slot_protected: "minions here cannot be targeted, silenced, or frozen; attacks can still hit them",
   slot_stats_one: "minions here are permanently set to 1/1",
 };
 
@@ -264,7 +264,7 @@ export default function App() {
   // The front door. A restored duel still starts here rather than dumping a
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
-  const [overlay, setOverlay] = useState<null | "settings" | "relics" | "codex">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "relics" | "howToPlay">(null);
   /**
    * Hotseat only: who the screen is currently cleared for. The curtain drops
    * whenever the turn passes to the other player, and stays down until they say
@@ -1338,11 +1338,11 @@ export default function App() {
             type="button"
             onClick={() => {
               sfx.play("button");
-              setOverlay("codex");
+              setOverlay("howToPlay");
             }}
-            title="Read what the card effects and conditions mean"
+            title="Learn the game in a few quick steps"
           >
-            ◇ Effect Codex
+            ◇ How to play
           </button>
           <button
             type="button"
@@ -1691,7 +1691,7 @@ export default function App() {
         />
       ) : null}
 
-      {overlay === "codex" ? <EffectCodex onClose={() => setOverlay(null)} /> : null}
+      {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
       {overlay === "relics" ? <RelicShelf game={game} onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel

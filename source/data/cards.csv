@@ -12,7 +12,7 @@ c010,Avatar Aang,6,2,2,Red,Magic,Good,,harmony_buff,ongoing,Ongoing: Gain +1/+1 
 c011,Thirteen Lords of Chaos,6,6,7,Purple,Magic,Evil,,evil_invulnerable,onPlay,Battlecry: Choose a friendly Evil minion. It becomes Invulnerable until your next turn.,Reality picks a side.,AQW,/card-art/raw/c011.webp
 c012,G-Man,7,1,7,Purple,Tech,Neutral,,set_attack_zero,onPlay,Battlecry: Set an enemy minion's ATK to 1.,"Time, Mr. Freeman.",Half-Life,/card-art/raw/c012.webp
 c013,Doctor Strange,7,3,6,Yellow,Magic,Good,,aoe_damage_2,onPlay,Battlecry: Deal 2 damage to all enemy minions.,Magic trumps everything.,MCU,/card-art/raw/c013.webp
-c014,Kizaru,7,6,7,Yellow,Magic,Neutral,,gain_divine_shield,onPlay,Battlecry: Gain Divine Shield.,Light logic.,One Piece,/card-art/raw/c014.webp
+c014,Kizaru,7,6,7,Yellow,Magic,Neutral,Divine Shield,gain_divine_shield,ongoing,Divine Shield. Ongoing: Gain Divine Shield,Light logic.,One Piece,/card-art/raw/c014.webp
 c015,Avengers,7,4,4,Yellow,Tech,Good,,absorb_left_stats,onPlay,Battlecry: Gain the stats of the friendly minion to your left.,"When the board breaks, they assemble.",MCU,/card-art/raw/c015.webp
 c016,Doom Slayer,7,4,4,Purple,Nature,Good,,damaged_self_buff,ongoing,"Ongoing: If damaged, gain +2/+2 and give another friendly minion +2/+2.",He cleaned Hell and came back.,Doom,/card-art/raw/c016.webp
 c017,Gol D. Roger,8,7,7,Red,Magic,Good,,choose_relic,onPlay,Battlecry: Choose 1 of 3 Ascension Relics. Equip it to a friendly minion.,He has already won.,One Piece,/card-art/raw/c017.webp
@@ -24,7 +24,7 @@ c022,Gojo,9,5,6,Yellow,Magic,Good,Passive,high_attack_only,passive,Passive: Can 
 c023,Ainz Ooal Gown,9,5,5,Yellow,Magic,Neutral,Passive,immune_nature_tech,passive,Passive: Immune from nature and tech minions.,The king of death.,Overlord,/card-art/raw/c023.webp
 c024,Conquest,9,6,6,Purple,Nature,Evil,,anti_good_grow,ongoing,Ongoing: Gain +2/+2 for each enemy Good minion.,Named after his purpose.,Invincible,/card-art/raw/c024.webp
 c025,Saitama,10,10,10,Red,Nature,Good,Passive,small_cannot_attack,passive,Passive: Ignores ATK damage less than 5,The punchline is always the same.,OPM,/card-art/raw/c025.webp
-c026,Neo,10,5,8,Red,Tech,Good,,protect_slot,onPlay,"Battlecry: Choose a friendly minion board slot. Minions on that slot cannot be targeted (silence/freeze/DMG)",He decided the bullets were harmless.,Matrix,/card-art/raw/c026.webp
+c026,Neo,10,5,8,Red,Tech,Good,,protect_slot,onPlay,"Battlecry: Choose a friendly minion board slot. Minions on that slot cannot be targeted, silenced, or frozen. Attacks can still hit them.",He decided the bullets were harmless.,Matrix,/card-art/raw/c026.webp
 c027,Thanos,10,9,10,Yellow,Magic,Evil,,snap_balance,onPlay,Battlecry: Each player destroys a random minion and discards a random card.,Balance. At any cost.,MCU,/card-art/raw/c027.webp
 c028,Flash,10,4,6,Yellow,Magic,Neutral,Divine Shield;Passive,triple_attack,passive,Divine Shield. Passive: Can attack three times each turn.,Speed of light. And beyond.,DCU,/card-art/raw/c028.webp
 c029,Darth Vader,5,3,6,Purple,Magic,Evil,,destroy_small_good,onPlay,Battlecry: Destroy a random Good enemy minion with less than 3 HP.,Reborn.,Star Wars,/card-art/raw/c029.webp
@@ -173,4 +173,4 @@ c171,Goblins,1,2,1,Black,Nature,Evil,Taunt,none,none,Taunt.,"Many, loud, briefly
 c172,Mr. Poopybutthole,1,1,2,Black,Nature,Neutral,,give_taunt,onPlay,Battlecry: Give a minion Taunt,He was there the whole time,Rick and Morty,/card-art/raw/c172.webp
 c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,ongoing,Ongoing: Draw 1 card,The smartest thing here is a mouse.,MHA,/card-art/raw/c173.webp
 c174,Shibukawa,1,1,1,Black,Nature,Neutral,Divine Shield,silence_enemy,onPlay,Divine Shield. Battlecry: Silence one enemy minion of your choice,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
-c175,V,1,1,1,Black,Nature,Evil,Divine Shield;Taunt,none,none,Divine Shield. Taunt.,V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
+c175,V,1,1,1,Black,Nature,Evil,Divine Shield;Taunt,pressure_chosen_card,onPlay,"Divine Shield. Taunt. Battlecry: Choose a card in the opponent's hand. They must play it next turn or it is burned.",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp

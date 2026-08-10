@@ -9,7 +9,7 @@
  * Four screens, all overlays over the live board so nothing here can break a duel
  * in progress:
  *   TitleScreen  — the front door: continue, solo at three difficulties, hotseat.
- *   HowToPlayContent — the rules, in the order they matter, at the end of the codex.
+ *   HowToPlay     — the rules, in the order they matter, in one quick guide.
  *   SettingsPanel— three faders and the difficulty, changeable mid-duel.
  *   PassScreen   — the hotseat privacy curtain. Without it, hotseat is not a game:
  *                  both players can read each other's hand off the same screen.
@@ -152,163 +152,79 @@ export function TitleScreen({
 function HowToPlayContent() {
   return (
     <div className="rules">
+      <p className="rules-intro">A quick path from your opening hand to your first winning attack.</p>
+      <section>
+        <h4>1. Win the duel</h4>
+        <p>
+          Each Core starts at <b>76 health</b>. Reduce the opposing Core to zero. Minions attack it directly unless a
+          <b> Taunt</b> is standing in the way.
+        </p>
+      </section>
+      <section>
+        <h4>2. Take your turn</h4>
+        <ol className="rules-steps">
+          <li><b>Draw</b> one card.</li>
+          <li>Your <b>mana</b> refills and its maximum grows by one.</li>
+          <li>Drag a card onto one of your five empty board slots to play it.</li>
+          <li>Drag a ready minion onto an enemy minion or Core to attack.</li>
+        </ol>
+      </section>
+      <div className="rules-split">
         <section>
-          <h4>The goal</h4>
+          <h4>3. Fight smart</h4>
           <p>
-            Both players start on <b>76 core</b>. Drop it to zero and you win. Nothing damages a core on its own &mdash;
-            every point comes from a minion swinging at it or an effect saying so.
+            A minion sleeps on the turn it arrives and normally attacks once per turn. Combat is <b>simultaneous</b>:
+            the defender hits back even if it dies. <b>Chained</b> minions wait two owner turns, and a minion with
+            <b> 0 ATK</b> cannot attack.
           </p>
         </section>
         <section>
-          <h4>Your turn</h4>
-          <ol>
-            <li>You draw one card.</li>
-            <li>Your mana refills and grows by one. Duels run long enough that even the ten-cost Greats arrive.</li>
-            <li>Drag cards from your hand onto an empty slot to play them. You have five slots.</li>
-            <li>Drag one of your minions onto an enemy minion, or onto the enemy core, to attack.</li>
-          </ol>
-        </section>
-        <section>
-          <h4>Fighting</h4>
-          <p>
-            Combat is <b>simultaneous</b> &mdash; the defender always hits back, even when your blow kills it. A minion
-            is asleep the turn it lands and attacks once a turn after that. A Chained minion waits through two of its
-            owner's turns before it can act. A minion with <b>0 attack</b> cannot attack at all.
-          </p>
-        </section>
-        <section>
-          <h4>The board tells you everything in colour</h4>
+          <h4>4. Read the board</h4>
           <ul className="legend">
-            <li>
-              <span className="swatch ring-green" /> this minion can attack
-            </li>
-            <li>
-              <span className="swatch ring-red" /> a legal target right now
-            </li>
-            {/* BLUE, not gold. This line taught gold for as long as it existed
-                and the game has painted it blue since the day gold was taken
-                away from it — gold is the Divine Shield rim, and a shielded card
-                sitting in hand read as "you can afford this". See the comment on
-                .hand-card.playable in App.css. */}
-            <li>
-              <span className="swatch ring-blue" /> in your hand: you can afford it
-            </li>
-            <li>
-              <span className="swatch ring-teal" /> selected
-            </li>
+            <li><span className="swatch ring-green" /> can attack</li>
+            <li><span className="swatch ring-red" /> legal target</li>
+            <li><span className="swatch ring-blue" /> affordable card</li>
+            <li><span className="swatch ring-teal" /> selected</li>
           </ul>
-          <p className="title-note">
-            Conditions are drawn, never labelled: a wall means Taunt, a gold rim means Divine Shield, ice means Frozen,
-            chains across the art mean Chained, a grey attack gem means it cannot swing.
-          </p>
-        </section>
-        <section>
-          <h4>Ascension Relics</h4>
-          <p>
-            Some effects pull a <b>relic</b> out of the rift and hang it on one of your minions. A relic is equipment:
-            it belongs to the minion carrying it, and it <b>dies with that minion</b>. You never draw one and you never
-            pay for one.
-          </p>
-          <p>
-            You get one decision over them, and it is worth using. <b>Click the relic badge on a minion, then click
-            another of your minions to pass it across.</b> Once a turn. Pull one off something about to die, or move it
-            onto the minion that is about to swing. A few relics spend themselves the moment they land and cannot be
-            passed on.
-          </p>
-          <p className="title-note">
-            The <b>◈ Relics</b> button shows what is still in the rift, in the order it will be claimed, and who is
-            wearing what.
-          </p>
-        </section>
-        <section>
-          <h4>Two things that surprise people</h4>
-          <p>
-            <b>Taunt closes the core.</b> While an enemy Taunt is standing, you must deal with it before anything can
-            reach their core. And <b>both players draw from the same deck</b>, so the card you leave is a card they get.
-          </p>
-        </section>
-        <section>
-          <h4>Three keys</h4>
-          <p>
-            <b>Space</b> ends your turn, <b>Z</b> takes the last move back, <b>Esc</b> drops whatever you have selected.
-            Everything else is the mouse.
-          </p>
+          <p className="title-note">Wall = Taunt · gold rim = Divine Shield · ice = Frozen · chains = Chained.</p>
         </section>
       </div>
+      <section>
+        <h4>5. Learn the card words</h4>
+        <div className="rules-keywords">
+          <p><b>Battlecry</b> — happens once when played.</p>
+          <p><b>Ongoing</b> — happens at the start of its owner&rsquo;s turn.</p>
+          <p><b>Passive</b> — stays active while the minion is on board.</p>
+          <p><b>Silence</b> — removes printed effects and keywords; stats stay.</p>
+          <p><b>Freeze</b> — the minion misses its next turn.</p>
+          <p><b>Divine Shield</b> — blocks the next damage instance.</p>
+          <p><b>Destroy</b> — removes a minion directly, without dealing damage.</p>
+          <p><b>Target</b> — a chosen minion, card, or board slot.</p>
+        </div>
+      </section>
+      <div className="rules-split">
+        <section>
+          <h4>6. Use relics</h4>
+          <p>
+            Relics are equipment. They die with their bearer. Click a relic badge, then one of your minions to pass it
+            across <b>once per turn</b>. The <b>◈ Relics</b> button shows what remains and who is wearing what.
+          </p>
+        </section>
+        <section>
+          <h4>Shortcuts</h4>
+          <p><b>Space</b> end turn · <b>Z</b> undo · <b>Esc</b> clear your selection.</p>
+        </section>
+      </div>
+    </div>
   );
 }
 
 // ---------------------------------------------------------------------------
 
-export function EffectCodex({ onClose }: { onClose: () => void }) {
-  const sections = [
-    {
-      title: "When it happens",
-      entries: [
-        ["Battlecry", "Happens once when the minion enters play."],
-        ["Ongoing", "Happens at the start of its owner's turn while the minion is active."],
-        ["Passive", "Always applies while the minion is active. It does not trigger a second time."],
-        ["Battlecry/Ongoing", "The same effect happens on arrival and again at the start of its owner's turns."],
-      ],
-    },
-    {
-      title: "Board conditions",
-      entries: [
-        ["Chained", "The minion is unavailable for its first two turns. It cannot attack or run Ongoing effects until the chains break."],
-        ["Taunt", "The enemy must deal with this minion before attacking your core."],
-        ["Divine Shield", "Blocks the next damage instance, then the golden shield disappears."],
-        ["Freeze", "The minion loses its next turn. It thaws after sitting out that turn."],
-        ["Silence", "Removes the minion's printed effect and active keywords. Its stats remain."],
-        ["Invulnerable", "The minion cannot take damage while the condition is active. The blue aura shows it."],
-        ["Evade", "The minion has a chance to avoid an incoming attack. The percentage is printed on the card."],
-      ],
-    },
-    {
-      title: "Effect language",
-      entries: [
-        ["Target", "A chosen minion, card, or board slot. Some protections make a minion untargetable."],
-        ["Board slot", "A position on the board. Slot effects can remain after the original minion leaves."],
-        ["Destroy", "Kills the minion directly rather than dealing damage."],
-        ["Gain stats", "Adds ATK and maximum/current HP to the recipient."],
-        ["Summon", "Creates or brings a minion onto an open board slot."],
-        ["Lose ATK", "Permanently reduces ATK, never below zero."],
-        ["Copy a passive", "Gives the copier the other minion's Passive or Ongoing text, but not its Battlecry."],
-        ["Relic", "Equipment attached to a minion. It dies with that minion and can sometimes be moved once per turn."],
-      ],
-    },
-    {
-      title: "Special rules",
-      entries: [
-        ["Core", "Each player starts at 76 core health. A minion attacks the opposing core directly when no Taunt stops it."],
-        ["Sleep", "Every normal minion sleeps for the turn it is played. Chained adds a second unavailable turn."],
-        ["Immune", "The named damage type cannot hurt the minion while the immunity is active."],
-        ["Marked", "A delayed effect is waiting on the minion. The card's text explains when it resolves."],
-      ],
-    },
-  ] as const;
-
+export function HowToPlay({ onClose }: { onClose: () => void }) {
   return (
-    <Overlay title="Effect Codex" onClose={onClose} wide>
-      <div className="codex">
-        <p className="codex-intro">A quick translation of the words and visual conditions used across the card pool.</p>
-        {sections.map((section) => (
-          <section className="codex-section" key={section.title}>
-            <h4>{section.title}</h4>
-            <div className="codex-grid">
-              {section.entries.map(([term, explanation]) => (
-                <article className="codex-entry" key={term}>
-                  <h5>{term}</h5>
-                  <p>{explanation}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-        ))}
-        <section className="codex-section codex-howto">
-          <h4>How to play</h4>
-          <HowToPlayContent />
-        </section>
-      </div>
+    <Overlay title="How to play" onClose={onClose} wide>
+      <HowToPlayContent />
     </Overlay>
   );
 }

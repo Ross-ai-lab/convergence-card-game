@@ -2290,10 +2290,8 @@ function canDamage(
   effectDamage: boolean,
   events: GameEvent[],
 ): boolean {
-  if (isSlotProtected(state, target)) {
-    events.push(effectEvent(`${target.name} is protected by its board slot.`, target));
-    return false;
-  }
+  // Neo's slot protection only blocks targeted effects and disables. Damage —
+  // including normal combat damage — still reaches the minion in that slot.
   if (target.invulnerableUntilTurn !== null && target.invulnerableUntilTurn > state.turnNumber) {
     events.push(effectEvent(`${target.name} is Invulnerable.`, target));
     return false;

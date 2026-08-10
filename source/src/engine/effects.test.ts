@@ -201,6 +201,13 @@ describe("full-roster effects", () => {
     expect(toMyNextTurn(state).players[0].board[1]?.atk).toBe(4);
   });
 
+  it("Kizaru starts with Divine Shield and restores it on his owner's turn", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Kizaru", 0, { divineShield: false });
+    expect(state.players[0].board[0]?.keywords).toContain("Divine Shield");
+    expect(toMyNextTurn(state).players[0].board[0]?.divineShield).toBe(true);
+  });
+
   it("Light Yagami (kill_random_enemy): kills an enemy at the start of its owner's turn", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Light Yagami", 0);
