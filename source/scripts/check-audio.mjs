@@ -163,13 +163,10 @@ await page.waitForTimeout(1200);
 // the opening card happens to be affordable, which is how it failed the first
 // time it ran. The trigger under test is unaffected by how the card was paid for.
 //
-// It lives under Settings -> Sandbox now, not in the top bar. When the button
-// moved, this check went red with "no placeable slot appeared" — which is a
-// correct failure and a misleading message, so the state is asserted here
-// rather than being left for a downstream symptom to report.
-await page.getByRole("button", { name: /Settings/ }).first().click();
-await page.getByRole("button", { name: /Infinite mana is/ }).first().click();
-await page.keyboard.press("Escape");
+// It lives in the top bar now. Keep this check on the actual player-facing
+// control so a UI move does not make the audio trigger check fail before it
+// reaches the card-placement assertion.
+await page.getByRole("button", { name: /Cheat Off|Cheat On/ }).first().click();
 await page.waitForTimeout(400);
 if ((await page.locator(".mana-inf").count()) === 0) {
   check("cheat mode is on for the play-a-card check", false, "no ∞ in the mana tray");
