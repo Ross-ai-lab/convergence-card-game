@@ -155,13 +155,13 @@ function couldPlayAnything(
   player: PlayerId,
   library: CardLibrary,
 ): boolean {
-  if (legal.some((action) => action.type === "play_card" && action.player === player)) return true;
+  if (legal.some((action) => (action.type === "play_card" || action.type === "play_relic") && action.player === player)) return true;
   // A hand that is dead only until The Coin is spent is not a dead hand. Ask
   // again on the other side of it.
   const coin = legal.find((action) => action.type === "use_coin" && action.player === player);
   if (!coin) return false;
   return applyAction(state, coin, library).legalActions.some(
-    (action) => action.type === "play_card" && action.player === player,
+    (action) => (action.type === "play_card" || action.type === "play_relic") && action.player === player,
   );
 }
 
@@ -217,9 +217,9 @@ export interface PlayOptions {
 
 export function playOneGame(options: PlayOptions): GameResult {
   const { cards, relics, seed, drivers, skills, turnCap, deepChecks, startingHealth, manaRamp } = options;
-  const library = makeCardLibrary(cards);
+  const library = makeCardLibrary(cards, relics);
   const rng = makeRng(`${seed}:driver`);
-  const byId = new Map(cards.map((card) => [card.id, card]));
+  const byId = new Map([...cards, ...relics].map((card) => [card.id, card]));
 
   const setup: { startingHealth?: number; manaRamp?: number } = {};
   if (startingHealth) setup.startingHealth = startingHealth;
@@ -305,7 +305,7 @@ export function playOneGame(options: PlayOptions): GameResult {
     if (!action) action = legal[Math.floor(rng() * legal.length)] ?? legal[0];
 
     // A card leaving the hand is only identifiable before the action lands.
-    if (action.type === "play_card") {
+    if (action.type === "play_card" || action.type === "play_relic") {
       const cardId = state.players[action.player].hand[action.handIndex];
       if (cardId) {
         const bucket = playsByPlayer[action.player];

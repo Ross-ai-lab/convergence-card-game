@@ -8,6 +8,7 @@ import "./board-fx.css";
 import { sfx, type SfxName } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
 import { chooseBotAction } from "./engine/bot";
+import { isMinionCard, isRelicCard } from "./engine/types";
 import {
   actionKey,
   applyAction,
@@ -21,13 +22,14 @@ import {
 } from "./engine/game";
 import type {
   Camp,
-  CardDefinition,
   GameAction,
   GameEvent,
   GameState,
   MinionInstance,
   PendingTarget,
   PlayerId,
+  PlayableCard,
+  RelicDefinition,
   RelicInstance,
   SlotAuraId,
 } from "./engine/types";
@@ -70,7 +72,7 @@ const relicLibrary = new Map(relics.map((relic) => [relic.id, relic]));
 
 /** An Ascension Relic as a drawable card: teal frame, no stat gems, and the
  *  side rails the printed relics use. */
-function relicFace(relic: RelicInstance): CardFaceModel {
+function relicFace(relic: RelicInstance | RelicDefinition): CardFaceModel {
   const def = relicLibrary.get(relic.id);
   return {
     name: relic.name,
@@ -83,6 +85,10 @@ function relicFace(relic: RelicInstance): CardFaceModel {
     camp: "Ascension",
     alignment: "Relic",
   };
+}
+
+function playableFace(card: PlayableCard): CardFaceModel {
+  return isRelicCard(card) ? relicFace(card) : card;
 }
 
 // Transient view-only effects. All of them are derived by diffing the previous
@@ -251,7 +257,7 @@ function makeParticles(kind: ImpactKind | "death", camp?: Camp): Particle[] {
 }
 
 export default function App() {
-  const library = useMemo(() => makeCardLibrary(cards), []);
+  const library = useMemo(() => makeCardLibrary(cards, relics), []);
   // A duel in progress is restored from localStorage; anything unreadable or
   // from an older engine falls back to a fresh game (see storage.ts).
   const restored = useMemo(() => loadGame(), []);
@@ -274,12 +280,6 @@ export default function App() {
   const [seatedPlayer, setSeatedPlayer] = useState<PlayerId>(0);
   const [history, setHistory] = useState<GameState[]>([]);
   const [selection, setSelection] = useState<Selection>(null);
-  /**
-   * The slot whose Ascension Relic has been picked up, waiting for a friendly
-   * minion to hand it to. Its own state rather than a `Selection` kind because
-   * carrying a relic must not disturb an armed attacker or a card in hand.
-   */
-  const [relicCarry, setRelicCarry] = useState<number | null>(null);
   const [hover, setHover] = useState<HoverState>(null);
   const [floats, setFloats] = useState<FloatNum[]>([]);
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
@@ -462,8 +462,8 @@ export default function App() {
    *
    * `scripts/check-ui.mjs` can drive most of the game by clicking, but some
    * situations cannot be reached that way without luck: a card that asks for a
-   * target has to BE in your hand, and a relic is never equipped by the player
-   * at all — an effect claims it. Playing cards and hoping made those checks
+   * target has to BE in your hand, and a relic must be played onto a chosen
+   * bearer. Playing cards and hoping made those checks
    * skip on almost every run, which is coverage in name only.
    *
    * This lets a test say "put this card in my hand" and "hang this relic on
@@ -497,9 +497,14 @@ export default function App() {
 
       w.__debug = {
         /** Names of every card whose battlecry opens a prompt. */
-        targetingCards: () =>
-          Object.values(library)
-            .filter((c) => (c.effectTiming === "onPlay" || c.effectTiming === "onPlayAndOngoing") && c.effectId in TARGETED_EFFECTS)
+          targetingCards: () =>
+            Object.values(library)
+            .filter(
+              (c) =>
+                isMinionCard(c) &&
+                (c.effectTiming === "onPlay" || c.effectTiming === "onPlayAndOngoing") &&
+                c.effectId in TARGETED_EFFECTS,
+            )
             .map((c) => c.name),
 
         /** Put a card straight into a hand. */
@@ -518,7 +523,7 @@ export default function App() {
         /** Drop a minion onto a board slot, already awake. */
         place(nameOrId: string, side = "them", slotIndex = 0) {
           const card = findCard(nameOrId);
-          if (!card) return `no card matching "${nameOrId}"`;
+          if (!card || !isMinionCard(card)) return `"${nameOrId}" is not a minion`;
           const owner = sideOf(side);
           setGame((current) => {
             const players = [...current.players] as GameState["players"];
@@ -537,9 +542,15 @@ export default function App() {
           // assigning to an outer variable returns the stale default, because
           // the updater runs after this function has already returned.
           const wanted = relicName.trim().toLowerCase();
-          const relic =
-            game.relicPool.find((r) => r.name.toLowerCase() === wanted) ?? game.relicPool[0];
-          if (!relic) return "relic pool is empty";
+          const relicDef = relics.find((r) => r.name.toLowerCase() === wanted) ?? relics[0];
+          if (!relicDef) return "relic catalog is empty";
+          const relic: RelicInstance = {
+            id: relicDef.id,
+            relicId: relicDef.relicId,
+            name: relicDef.name,
+            effect: relicDef.effect,
+            art: relicDef.art,
+          };
           setGame((current) => {
             const players = [...current.players] as GameState["players"];
             const board = [...players[owner].board];
@@ -929,12 +940,12 @@ export default function App() {
     );
   }
 
-  function previewCard(card: CardDefinition, el: HTMLElement) {
+  function previewCard(card: PlayableCard, el: HTMLElement) {
     if (drag?.active) return;
     sfx.hoverTick();
     const r = el.getBoundingClientRect();
     setHover({
-      face: card,
+      face: playableFace(card),
       effect: card.effect,
       flavor: card.flavor,
       atkClass: "",
@@ -991,7 +1002,9 @@ export default function App() {
       setSelection(null);
       return;
     }
-    const canPlay = uiActions.some((action) => action.type === "play_card" && action.handIndex === handIndex);
+    const canPlay = uiActions.some(
+      (action) => (action.type === "play_card" || action.type === "play_relic") && action.handIndex === handIndex,
+    );
     if (!canPlay) {
       // Every card in hand looks equally playable now, so the reason is said
       // once, briefly, in the middle of the board — not branded on the card.
@@ -1031,22 +1044,10 @@ export default function App() {
     }
     if (game.phase !== "main") return;
 
-    // Carrying an Ascension Relic: this click is where it lands. Checked before
-    // everything else so a relic in hand never arms an attacker by accident.
-    if (relicCarry !== null) {
-      const action = uiActions.find(
-        (candidate) =>
-          candidate.type === "move_relic" && candidate.fromSlot === relicCarry && candidate.toSlot === slotIndex,
-      );
-      setRelicCarry(null);
-      if (action && owner === viewerId) perform(action);
-      return;
-    }
-
     if (selection?.kind === "hand" && owner === viewerId) {
       const action = uiActions.find(
         (candidate) =>
-          candidate.type === "play_card" &&
+          (candidate.type === "play_card" || candidate.type === "play_relic") &&
           candidate.player === viewerId &&
           candidate.handIndex === selection.handIndex &&
           candidate.slotIndex === slotIndex,
@@ -1081,6 +1082,11 @@ export default function App() {
       );
       if (hasAttack) armAttacker(slotIndex);
     }
+  }
+
+  function returnRelic(slotIndex: number) {
+    const action = uiActions.find((candidate) => candidate.type === "return_relic" && candidate.slotIndex === slotIndex);
+    if (action) perform(action);
   }
 
   // ------------------------------------------------------------- drag & drop
@@ -1164,7 +1170,7 @@ export default function App() {
         const slotIndex = Number(slotStr);
         const action = uiActions.find(
           (candidate) =>
-            candidate.type === "play_card" &&
+            (candidate.type === "play_card" || candidate.type === "play_relic") &&
             candidate.handIndex === drag.handIndex &&
             candidate.slotIndex === slotIndex,
         );
@@ -1289,7 +1295,6 @@ export default function App() {
         undo();
       } else if (event.key === "Escape") {
         setSelection(null);
-        setRelicCarry(null);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -1319,8 +1324,6 @@ export default function App() {
           active={game.activePlayer === opponentId && game.phase !== "gameOver"}
           thinking={botThinking}
           onStrike={attackCore}
-          onRelicPreview={previewRelic}
-          onPreviewEnd={endPreview}
         />
         <div className="system-buttons">
           <button type="button" onClick={restart}>Restart</button>
@@ -1391,8 +1394,7 @@ export default function App() {
             pendingTarget={pendingTarget}
             selection={selection}
             onSlot={guardedSlotClick}
-            relicCarry={relicCarry}
-            onRelicPickup={setRelicCarry}
+            onRelicReturn={returnRelic}
             ghosts={ghosts}
             floats={floats}
             impacts={impacts}
@@ -1424,8 +1426,7 @@ export default function App() {
             pendingTarget={pendingTarget}
             selection={selection}
             onSlot={guardedSlotClick}
-            relicCarry={relicCarry}
-            onRelicPickup={setRelicCarry}
+            onRelicReturn={returnRelic}
             ghosts={ghosts}
             floats={floats}
             impacts={impacts}
@@ -1467,14 +1468,14 @@ export default function App() {
             floats={floats.filter((f) => f.slot === "hero" && f.owner === viewerId)}
             impacts={heroFx(viewerId)}
             active={game.activePlayer === viewerId && game.phase !== "gameOver"}
-            onRelicPreview={previewRelic}
-            onPreviewEnd={endPreview}
           />
 
           <div className="hand-fan" aria-label={`${viewer.name}'s hand`}>
             {viewer.hand.map((cardId, handIndex) => {
               const card = library[cardId];
-              const playable = uiActions.some((action) => action.type === "play_card" && action.handIndex === handIndex);
+              const playable = uiActions.some(
+                (action) => (action.type === "play_card" || action.type === "play_relic") && action.handIndex === handIndex,
+              );
               const count = viewer.hand.length;
               const mid = (count - 1) / 2;
               const spread = count > 7 ? 2.6 : count > 4 ? 3.6 : 5;
@@ -1531,7 +1532,7 @@ export default function App() {
                   data-playable={playable}
                   title={playable ? "Drag onto the board (or click) to play" : undefined}
                 >
-                  <CardFace card={card} />
+                  {card ? <CardFace card={playableFace(card)} /> : null}
                 </button>
               );
             })}
@@ -1639,7 +1640,7 @@ export default function App() {
       {drag?.active && drag.kind === "hand" ? (
         <div className="drag-layer" style={{ transform: `translate(${drag.x - 64}px, ${drag.y - 104}px)` }} aria-hidden="true">
           <div className="drag-card">
-            <CardFace card={library[drag.cardId]} />
+            {library[drag.cardId] ? <CardFace card={playableFace(library[drag.cardId])} /> : null}
           </div>
         </div>
       ) : null}
@@ -1692,7 +1693,7 @@ export default function App() {
       ) : null}
 
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "relics" ? <RelicShelf game={game} onClose={() => setOverlay(null)} /> : null}
+      {overlay === "relics" ? <RelicShelf onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel
           onClose={() => setOverlay(null)}
@@ -1731,8 +1732,7 @@ function BoardRow({
   pendingTarget,
   selection,
   onSlot,
-  relicCarry,
-  onRelicPickup,
+  onRelicReturn,
   ghosts,
   floats,
   impacts,
@@ -1754,9 +1754,8 @@ function BoardRow({
   pendingTarget: PendingTarget | null;
   selection: Selection;
   onSlot: (owner: PlayerId, slotIndex: number) => void;
-  /** The slot whose relic is currently in hand, if any. */
-  relicCarry: number | null;
-  onRelicPickup: (slotIndex: number | null) => void;
+  /** Return a reusable attached relic to the owner's hand. */
+  onRelicReturn: (slotIndex: number) => void;
   ghosts: Ghost[];
   floats: FloatNum[];
   impacts: Impact[];
@@ -1775,7 +1774,10 @@ function BoardRow({
         const canPlace =
           selection?.kind === "hand" &&
           owner === viewerId &&
-          legalActions.some((action) => action.type === "play_card" && action.slotIndex === slotIndex);
+          legalActions.some(
+            (action) =>
+              (action.type === "play_card" || action.type === "play_relic") && action.slotIndex === slotIndex,
+          );
         const canTarget =
           selection?.kind === "attacker" &&
           owner !== viewerId &&
@@ -1788,22 +1790,11 @@ function BoardRow({
               (action.type === "attack_minion" || action.type === "attack_core") && action.attackerSlot === slotIndex,
           );
         const armed = selection?.kind === "attacker" && owner === viewerId && selection.slotIndex === slotIndex;
-        // Ascension Relic in hand: this minion can take it.
-        const canTakeRelic =
-          relicCarry !== null &&
-          owner === viewerId &&
-          legalActions.some(
-            (action) =>
-              action.type === "move_relic" && action.fromSlot === relicCarry && action.toSlot === slotIndex,
-          );
-        // ...and this is the minion it came off.
-        const relicSource = relicCarry === slotIndex && owner === viewerId;
-        // This minion's own relic can be passed on right now.
-        const canPassRelic =
+        const canReturnRelic =
           owner === viewerId &&
           minion !== null &&
           minion.relic !== null &&
-          legalActions.some((action) => action.type === "move_relic" && action.fromSlot === slotIndex);
+          legalActions.some((action) => action.type === "return_relic" && action.slotIndex === slotIndex);
         const isLunging = lunge !== null && lunge.owner === owner && lunge.slot === slotIndex;
         // A targeted effect is waiting: only its legal victims light up, and the
         // highlight reads differently from an attack target on purpose.
@@ -1826,8 +1817,6 @@ function BoardRow({
           isLunging ? "striking" : "",
           canBeChosen ? "choosable" : "",
           boardPrompt !== null && !canBeChosen ? "dimmed" : "",
-          canTakeRelic ? "relic-drop" : "",
-          relicSource ? "relic-source" : "",
         ]
           .filter(Boolean)
           .join(" ");
@@ -1875,8 +1864,7 @@ function BoardRow({
                     <MinionFace
                       minion={minion}
                       board={game.players[owner].board}
-                      onRelicPickup={canPassRelic ? () => onRelicPickup(relicCarry === slotIndex ? null : slotIndex) : undefined}
-                      relicCarried={relicSource}
+                      onRelicReturn={canReturnRelic ? () => onRelicReturn(slotIndex) : undefined}
                       onRelicPreview={onRelicPreview}
                       onRelicPreviewEnd={onPreview}
                     />
@@ -2098,8 +2086,11 @@ function CardFace({
     "--cf-namefit": fitOneLine(card.name, NAME_BOX, NAME_CEILING),
     "--cf-namefitc": fitOneLine(card.name, NAME_BOX_COMPACT, NAME_CEILING_COMPACT),
     "--cf-namefitb": fitOneLine(card.name, NAME_BOX_BOARD, NAME_CEILING),
-    "--cf-efffit": fitParagraph(text, RULES_BOX.w, RULES_BOX.h, RULES_BOX.lineHeight, RULES_CEILING),
-    "--cf-efffitb": fitParagraph(text, RULES_BOX_BOARD.w, RULES_BOX_BOARD.h, RULES_BOX_BOARD.lineHeight, RULES_CEILING),
+    // Canvas text metrics are a little more optimistic than the browser's
+    // actual line boxes on the longest effects. Keep a conservative width
+    // reserve so the final glyph line cannot be clipped by the plaque.
+    "--cf-efffit": fitParagraph(text, RULES_BOX.w * 0.9, RULES_BOX.h, RULES_BOX.lineHeight, RULES_CEILING),
+    "--cf-efffitb": fitParagraph(text, RULES_BOX_BOARD.w * 0.9, RULES_BOX_BOARD.h, RULES_BOX_BOARD.lineHeight, RULES_CEILING),
     "--cf-flavfit": fitParagraph(quote, FLAVOR_BOX.w, FLAVOR_BOX.h, FLAVOR_BOX.lineHeight, FLAVOR_CEILING, "flavor"),
   } as CSSProperties;
   const rarity = (card.rarity ?? "Black").toLowerCase();
@@ -2146,17 +2137,14 @@ function MinionFace({
   board,
   onRelicPreview,
   onRelicPreviewEnd,
-  onRelicPickup,
-  relicCarried,
+  onRelicReturn,
 }: {
   minion: MinionInstance;
   board?: Array<MinionInstance | null>;
   /** Hovering the relic badge swaps the preview to the relic's own card. */
   onRelicPreview?: (relic: RelicInstance, el: HTMLElement) => void;
-  /** Given only when re-strapping this relic is legal right now. */
-  onRelicPickup?: () => void;
-  /** True while this badge's relic is the one being carried. */
-  relicCarried?: boolean;
+  /** Given only when returning this relic to hand is legal right now. */
+  onRelicReturn?: () => void;
   /** Leaving it puts the minion back under the pointer, so the preview never
    *  goes blank while the pointer is still inside the slot. */
   onRelicPreviewEnd?: (minion: MinionInstance, el: HTMLElement) => void;
@@ -2184,24 +2172,22 @@ function MinionFace({
           className={[
             "relic-badge",
             onRelicPreview ? "peekable" : "",
-            onRelicPickup ? "movable" : "",
-            relicCarried ? "carried" : "",
+            onRelicReturn ? "movable" : "",
           ]
             .filter(Boolean)
             .join(" ")}
           title={
-            onRelicPickup
-              ? `${minion.relic.name} — ${minion.relic.effect}\n\nClick to pass it to another of your minions (once a turn).`
+            onRelicReturn
+              ? `${minion.relic.name} — ${minion.relic.effect}\n\nClick to return it to your hand (once a turn).`
               : `${minion.relic.name} — ${minion.relic.effect}`
           }
           onPointerDown={
-            onRelicPickup
+            onRelicReturn
               ? (e) => {
-                  // Stops the board's own drag/arm handler seeing this press —
-                  // the badge sits on top of a minion that is usually an attacker.
+                  // Stops the board's own drag/arm handler seeing this press.
                   e.stopPropagation();
                   e.preventDefault();
-                  onRelicPickup();
+                  onRelicReturn();
                 }
               : undefined
           }
@@ -2219,73 +2205,31 @@ function MinionFace({
   );
 }
 
-/**
- * The Ascension Relic shelf: what is still in the rift, in the order it will be
- * claimed, and who is wearing what.
- *
- * Relics used to arrive by luck with no way to see what was coming, which made
- * them feel like weather rather than a system. Showing the order turns the next
- * grant into something a player can plan around — hold the trigger a turn, or
- * take it now — without changing a single rule.
- */
-function RelicShelf({ game, onClose }: { game: GameState; onClose: () => void }) {
-  const worn = game.players.flatMap((player) =>
-    player.board
-      .filter((minion): minion is MinionInstance => Boolean(minion?.relic))
-      .map((minion) => ({ relic: minion.relic as RelicInstance, bearer: minion.name, player })),
-  );
-  const satchelled = game.players.flatMap((player) =>
-    player.relics.map((relic) => ({ relic, bearer: null, player })),
-  );
-  const held = [...worn, ...satchelled];
-
+/** A compact reference; the actual relic cards now live in the shared deck. */
+function RelicShelf({ onClose }: { onClose: () => void }) {
   return (
     <div className="overlay" onClick={onClose}>
       <section className="relic-shelf" onClick={(e) => e.stopPropagation()}>
         <span>Ascension Relics</span>
-        <h2>The shelf</h2>
-
-        <h3>Still in the rift &mdash; {game.relicPool.length} left, in the order they will be claimed</h3>
-        {game.relicPool.length ? (
-          <ol className="shelf-list">
-            {game.relicPool.map((relic, index) => (
-              <li key={`${relic.id}-${index}`} className={index === 0 ? "shelf-item next" : "shelf-item"}>
-                <img src={relic.art} alt="" draggable={false} />
-                <div>
-                  <strong>{relic.name}</strong>
-                  {index === 0 ? <em className="shelf-next">next</em> : null}
-                  <p>{relic.effect}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="shelf-empty">The rift is empty. Every relic has been claimed.</p>
-        )}
-
-        <h3>In play &mdash; {held.length}</h3>
-        {held.length ? (
-          <ol className="shelf-list">
-            {held.map(({ relic, bearer, player }, index) => (
-              <li key={`${relic.id}-held-${index}`} className="shelf-item">
-                <img src={relic.art} alt="" draggable={false} />
-                <div>
-                  <strong>{relic.name}</strong>
-                  <p>
-                    {bearer ? `Worn by ${bearer}` : "Waiting in the satchel"} &middot; {player.name}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="shelf-empty">Nobody has claimed one yet.</p>
-        )}
-
+        <h2>Relic codex</h2>
         <p className="shelf-note">
-          A relic dies with its bearer. You may pass one to another of your minions <b>once a turn</b> &mdash;
-          click the relic on the minion wearing it, then click the minion to give it to. Relics that spend
-          themselves the moment they are equipped cannot be passed on.
+          Relics are cards in the shared deck. Draw or discover one, then play it from your hand onto a friendly
+          minion by paying its mana cost. A minion carries one relic; attached relics are lost when it dies.
+        </p>
+        <ol className="shelf-list">
+          {relics.map((relic) => (
+            <li key={relic.id} className="shelf-item">
+              <img src={relic.art} alt="" draggable={false} />
+              <div>
+                <strong>{relic.name}</strong>
+                <p>{relic.effect}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="shelf-note">
+          Reusable relics can be returned to their owner's hand once per turn from the bearer. One-shot relics stay
+          attached after they trigger.
         </p>
         <button type="button" className="primary" onClick={onClose}>Close</button>
       </section>
@@ -2354,8 +2298,6 @@ function HeroPlate({
   active = false,
   thinking = false,
   onStrike,
-  onRelicPreview,
-  onPreviewEnd,
 }: {
   player: GameState["players"][number];
   cheatMode: boolean;
@@ -2368,9 +2310,6 @@ function HeroPlate({
   /** The practice opponent is mid-move. Only ever true on the enemy plate. */
   thinking?: boolean;
   onStrike?: () => void;
-  /** Satchel relics are real cards too — hovering one shows it. */
-  onRelicPreview?: (relic: RelicInstance, el: HTMLElement) => void;
-  onPreviewEnd?: () => void;
 }) {
   const wasHit = floats.some((f) => f.delta < 0);
   const classes = [
@@ -2407,22 +2346,6 @@ function HeroPlate({
             <i />
           </span>
         </strong>
-        {player.relics.length > 0 ? (
-          <span className="hero-relics" title="Relics waiting for a free minion to carry them">
-            {player.relics.map((relic, index) => (
-              <span
-                key={`${relic.id}-${index}`}
-                className={onRelicPreview ? "satchel-relic peekable" : "satchel-relic"}
-                title={`${relic.name} — ${relic.effect}`}
-                onMouseEnter={onRelicPreview ? (e) => onRelicPreview(relic, e.currentTarget) : undefined}
-                onMouseLeave={onRelicPreview ? onPreviewEnd : undefined}
-              >
-                <img src={relic.art} alt="" draggable={false} />
-              </span>
-            ))}
-            <small>in the satchel</small>
-          </span>
-        ) : null}
       </span>
       {enemy ? (
         <span className="hand-backs" title={`${player.hand.length} cards in hand`}>
@@ -2506,7 +2429,7 @@ function TargetPrompt({
               onClick={() => onChoose(choiceIndex)}
               title={library[option.cardId]?.name}
             >
-              <CardFace card={library[option.cardId]} />
+              {library[option.cardId] ? <CardFace card={playableFace(library[option.cardId])} /> : null}
             </button>
           ))}
         </div>
@@ -2677,7 +2600,7 @@ function DrawChoiceOverlay({
                 }
               }}
             >
-              <CardFace card={library[cardId]} />
+              {library[cardId] ? <CardFace card={playableFace(library[cardId])} /> : null}
             </button>
           ))}
         </div>

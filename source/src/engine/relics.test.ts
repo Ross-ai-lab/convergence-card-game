@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
-import { applyAction, createInitialGame, makeCardLibrary } from "./game";
+import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
 import { spawnTestMinion } from "./test-utils";
 import type { GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
 
-const library = makeCardLibrary(cards);
+const minionLibrary = makeCardLibrary(cards);
+const library = makeCardLibrary(cards, relics);
 
 function cardId(name: string): string {
   const card = cards.find((entry) => entry.name === name);
@@ -13,7 +14,7 @@ function cardId(name: string): string {
 }
 
 function makeMinion(name: string, owner: PlayerId, overrides: Partial<MinionInstance> = {}): MinionInstance {
-  return spawnTestMinion(library[cardId(name)], owner, overrides);
+  return spawnTestMinion(minionLibrary[cardId(name)], owner, overrides);
 }
 
 function relicByName(name: string): RelicInstance {
@@ -42,6 +43,13 @@ function mainState(seed = "relic-tests"): GameState {
   return state;
 }
 
+function playRelicFor(state: GameState, player: PlayerId, relicName: string, slotIndex: number): GameState {
+  const next: GameState = { ...state, cheatMode: true, activePlayer: player, phase: "main", drawChoice: null };
+  next.players = [...state.players] as GameState["players"];
+  next.players[player] = { ...state.players[player], hand: [relicByName(relicName).id] };
+  return applyAction(next, { type: "play_relic", player, handIndex: 0, slotIndex }, library).state;
+}
+
 function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
   let next = applyAction(state, { type: "end_turn", player }, library).state;
   while (next.phase === "drawChoice" && next.drawChoice) {
@@ -51,28 +59,28 @@ function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
 }
 const toMyNextTurn = (state: GameState): GameState => endTurnAndDraw(endTurnAndDraw(state, 0), 1);
 
-describe("the relic pool", () => {
-  it("is stocked, shuffled, and holds every relic — none sits on the bench", () => {
+describe("relic cards in the shared deck", () => {
+  it("puts every relic card in the shared deck", () => {
     const state = mainState();
-    // Tesseract used to be excluded here because it asked for a "move minion"
-    // action the game does not have. It was re-cut as no_retaliation instead.
-    expect(state.relicPool.map((relic) => relic.name)).toContain("Tesseract");
-    expect(state.relicPool.length).toBe(relics.length);
-    expect(state.relicPool.every((relic) => relic.relicId !== "none")).toBe(true);
-    expect(mainState("other-seed").relicPool[0].id).not.toBe(state.relicPool[0].id);
+    const relicIds = relics.map((relic) => relic.id);
+    expect(state.deck.filter((cardId) => relicIds.includes(cardId))).toHaveLength(relics.length);
+    expect(state.deck.length + state.players[0].hand.length + state.players[1].hand.length).toBe(cards.length + relics.length);
+    expect(mainState("other-seed").deck).not.toEqual(state.deck);
   });
 
-  it("hands a gained relic to its finder and takes it out of the pool", () => {
+  it("hands a gained relic to its finder without auto-equipping it", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Toji", 0); // ongoing: gain an Ascension Relic
-    const before = state.relicPool.length;
+    const available = new Set(state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)));
 
     const after = toMyNextTurn(state);
-    expect(after.players[0].board[0]?.relic).not.toBeNull();
-    expect(after.relicPool.length).toBe(before - 1);
+    const gained = after.players[0].hand.find((cardId) => available.has(cardId));
+    expect(gained).toBeTruthy();
+    expect(after.players[0].board[0]?.relic).toBeNull();
+    expect(after.deck).not.toContain(gained);
   });
 
-  it("passes a second relic to a free ally rather than stacking it", () => {
+  it("never auto-equips a second gained relic onto another ally", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Toji", 0, {
       relic: relicByName("Elder wand"),
@@ -81,25 +89,54 @@ describe("the relic pool", () => {
 
     const after = toMyNextTurn(state);
     expect(after.players[0].board[0]?.relic?.name).toBe("Elder wand");
-    expect(after.players[0].board[1]?.relic).not.toBeNull();
+    expect(after.players[0].board[1]?.relic).toBeNull();
+    expect(after.players[0].hand.some((cardId) => relics.some((relic) => relic.id === cardId))).toBe(true);
   });
 });
 
 describe("relic effects", () => {
+  it("plays a relic from hand onto exactly the chosen bearer and charges its cost", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0);
+    state.players[0].board[1] = makeMinion("Toji", 0);
+    state.players[0].hand = [relicByName("Elder wand").id];
+    state.players[0].mana = 2;
+    const action = getLegalActions(state, library).find((candidate) => candidate.type === "play_relic");
+    expect(action).toEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 });
+    const after = applyAction(state, action!, library).state;
+    expect(after.players[0].mana).toBe(0);
+    expect(after.players[0].board[0]?.relic?.name).toBe("Elder wand");
+    expect(after.players[0].board[1]?.relic).toBeNull();
+  });
+
+  it("returns reusable relics to hand once per turn, but never re-fires them automatically", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0, { relic: relicByName("Elder wand") });
+    state.players[0].hand = [];
+    const action = getLegalActions(state, library).find((candidate) => candidate.type === "return_relic");
+    expect(action).toEqual({ type: "return_relic", player: 0, slotIndex: 0 });
+    const returned = applyAction(state, action!, library).state;
+    expect(returned.players[0].board[0]?.relic).toBeNull();
+    expect(returned.players[0].hand).toEqual([relicByName("Elder wand").id]);
+    expect(getLegalActions(returned, library).some((candidate) => candidate.type === "return_relic")).toBe(false);
+  });
+
+  it("does not let a full hand keep a returned relic", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0, { relic: relicByName("Elder wand") });
+    state.players[0].hand = Array.from({ length: 10 }, () => cardId("Zoro"));
+    expect(getLegalActions(state, library).some((candidate) => candidate.type === "return_relic")).toBe(false);
+  });
+
   it("The Holy Grail doubles the bearer on equip", () => {
     const state = mainState();
     const bearer = makeMinion("Mob Psycho", 0); // 6/6
     state.players[0].board[0] = bearer;
-    state.players[0].board[1] = makeMinion("Toji", 0);
-    state.relicPool = [relicByName("The Holy Grail")];
-
-    const after = toMyNextTurn(state);
-    // Toji finds it, is already free-handed, so it lands on him or on Mob —
-    // whichever wears it should be doubled.
-    const wearer = after.players[0].board.find((minion) => minion?.relic?.name === "The Holy Grail");
-    expect(wearer).toBeTruthy();
-    expect(wearer!.atk).toBe(wearer!.baseAtk * 2);
-    expect(wearer!.maxHp).toBe(wearer!.baseHp * 2);
+    const after = playRelicFor(state, 0, "The Holy Grail", 0);
+    const wearer = after.players[0].board[0]!;
+    expect(wearer.relic?.name).toBe("The Holy Grail");
+    expect(wearer.atk).toBe(wearer.baseAtk * 2);
+    expect(wearer.maxHp).toBe(wearer.baseHp * 2);
   });
 
   it("One Ring adds 3 to a swing at the core, and nothing to a minion trade", () => {
@@ -197,7 +234,7 @@ describe("relic effects", () => {
     expect(after.players[1].board[0]).toBeNull();
     // It does not fall into the satchel and it does not go back on the shelf —
     // losing the bearer loses the relic.
-    expect(after.players[1].relics).toHaveLength(0);
+    expect(after.discard).toContain(relicByName("Elder wand").id);
     expect(after.players[1].board.some((minion) => minion?.relic)).toBe(false);
   });
 });

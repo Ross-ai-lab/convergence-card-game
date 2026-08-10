@@ -129,12 +129,12 @@ export function fitParagraph(
   // the box. Measuring to the exact height therefore lands one or two pixels over
   // on the cards that fill their plaque completely, which `overflow: hidden`
   // silently clips — the bottom of the last line disappears and nothing errors.
-  // 3% covers it and costs about 1.5% of font size. It does NOT chase the last
+  // 10% covers it and costs about 5% of font size. It does NOT chase the last
   // pixel: sub-pixel layout rounding leaves some paragraphs reporting one pixel
-  // of overflow at any margin (widening this to 6% moved nothing), and one pixel
+  // of overflow at any margin (margins beyond this moved nothing), and one pixel
   // of a descender is invisible where a clipped LINE is 14. The check tolerates
   // 2px for the same reason and still fails loudly on a real clip.
-  const usable = boxH * 0.97;
+  const usable = boxH * 0.9;
   const value = search((size) => {
     const lines = lineCount(text, size, boxW, font);
     return lines * size * lineHeight <= usable;

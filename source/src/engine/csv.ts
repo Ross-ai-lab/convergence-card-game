@@ -146,6 +146,7 @@ const effectIds = new Set<EffectId>([
   "on_kill_buff_1",
   "on_survive_buff_1",
   "on_survive_buff_2",
+  "friendly_death_buff_1_1",
   "any_death_buff_2_2",
   "any_death_buff_2_1",
   "tech_death_buff",
@@ -174,6 +175,9 @@ const effectIds = new Set<EffectId>([
   "alignment_shift",
   "pressure_chosen_card",
   "reveal_and_shuffle_chosen",
+  "choose_two_discard_one",
+  "freeze_or_kill",
+  "discover_relic_self",
   "steal_magic_effects",
   // slot auras and forced-random attacks
   "slot_random_attacks",
@@ -273,6 +277,7 @@ export function parseRelicsCsv(text: string): RelicDefinition[] {
     const line = index + 2;
     if (!row.id || !row.name) throw new Error(`Relic line ${line}: id and name are required.`);
     return {
+      kind: "relic" as const,
       id: row.id,
       name: row.name,
       relicId: oneOf(row.relicId, relicIds, "relicId", line),
@@ -303,6 +308,7 @@ function normalizeCardRow(row: Record<string, string>, line: number): CardDefini
   }
 
   return {
+    kind: "minion" as const,
     id: row.id,
     name: row.name,
     cost,

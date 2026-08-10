@@ -1367,7 +1367,7 @@ button:disabled {
   align-items: flex-end;
   min-width: 0;
   height: 174px;
-  padding-top: 6px;
+  padding: 6px 0 6px;
 }
 
 .hand-card {

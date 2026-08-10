@@ -136,6 +136,7 @@ export type EffectId =
   | "on_kill_buff_1"
   | "on_survive_buff_1"
   | "on_survive_buff_2"
+  | "friendly_death_buff_1_1"
   | "any_death_buff_2_2"
   | "any_death_buff_2_1"
   | "tech_death_buff"
@@ -164,6 +165,9 @@ export type EffectId =
   | "alignment_shift"
   | "pressure_chosen_card"
   | "reveal_and_shuffle_chosen"
+  | "choose_two_discard_one"
+  | "freeze_or_kill"
+  | "discover_relic_self"
   | "steal_magic_effects"
   // --- the last five: slot auras and forced-random attacks ---
   | "slot_random_attacks"
@@ -174,6 +178,7 @@ export type EffectId =
   | "foresight_draw";
 
 export interface CardDefinition {
+  kind: "minion";
   id: string;
   name: string;
   cost: number;
@@ -258,19 +263,17 @@ export interface PlayerState {
   coins: number;
   hand: string[];
   board: Array<MinionInstance | null>;
-  /** Relics gained but not yet strapped to a minion. */
-  relics: RelicInstance[];
   /** Lelouch: a minion promised to this player at the start of their next turn. */
   pendingControl: { instanceId: string; fromPlayer: PlayerId; dueTurn: number } | null;
   /** Kuma: per-card discounts, keyed by card id. */
   costReductions: Record<string, number>;
-  /** John Wick: a card this player must play by `dueTurn` or lose. */
+  /** Hand-pressure effects: a card this player must play by `dueTurn` or lose. */
   pressured: { cardId: string; dueTurn: number } | null;
   /** Permanent marks on this player's board positions. */
   slotAuras: SlotAura[];
   /** Sans: every minion this player controls swings at random until this turn. */
   confusedUntilTurn: number | null;
-  /** Ascension Relics may be re-strapped once during each of this player's turns. */
+  /** Reusable attached relics may be returned to hand once during this turn. */
   relicMoves: number;
   fatigue: number;
   turnsStarted: number;
@@ -368,8 +371,8 @@ export type ResolvedChoiceWithProgress = ResolvedChoice & {
 
 // --------------------------------------------------------------------------
 // Ascension Relics. Every relic's printed text is about "the bearer", so they
-// are minion equipment, not hero trinkets: gaining one prompts you to strap it
-// to a minion, and it dies with that minion.
+// are minion equipment, not hero trinkets. The card stays in deck/hand until
+// the player explicitly pays its cost and straps it to a chosen friendly minion.
 // --------------------------------------------------------------------------
 export type RelicId =
   | "none"
@@ -397,6 +400,7 @@ export type RelicId =
   | "no_retaliation";
 
 export interface RelicDefinition {
+  kind: "relic";
   id: string;
   name: string;
   relicId: RelicId;
@@ -404,9 +408,19 @@ export interface RelicDefinition {
   flavor: string;
   origin: string;
   art: string;
-  /** Printed on the card's mana gem. The engine ignores it — relics are not
-   *  paid for — but the face shows it. Infinity Castle has none, hence optional. */
+  /** Printed mana cost paid when this relic is played. Infinity Castle has none,
+   * hence optional for the legacy data format. */
   cost?: number;
+}
+
+export type PlayableCard = CardDefinition | RelicDefinition;
+
+export function isMinionCard(card: PlayableCard | undefined): card is CardDefinition {
+  return card?.kind === "minion";
+}
+
+export function isRelicCard(card: PlayableCard | undefined): card is RelicDefinition {
+  return card?.kind === "relic";
 }
 
 /** A relic in play: the definition plus the little state some of them carry. */
@@ -450,8 +464,6 @@ export interface GameState {
   deck: string[];
   bottomDeck: string[];
   discard: string[];
-  /** Shuffled relics still unclaimed. Gaining a relic draws from here. */
-  relicPool: RelicInstance[];
   drawChoice: DrawChoice | null;
   pendingTarget: PendingTarget | null;
   effectQueue: QueuedEffect[];
@@ -461,13 +473,14 @@ export interface GameState {
 
 export type GameAction =
   | { type: "play_card"; player: PlayerId; handIndex: number; slotIndex: number }
+  | { type: "play_relic"; player: PlayerId; handIndex: number; slotIndex: number }
   | { type: "attack_minion"; player: PlayerId; attackerSlot: number; targetSlot: number }
   | { type: "attack_core"; player: PlayerId; attackerSlot: number }
   | { type: "end_turn"; player: PlayerId }
   | { type: "choose_draw"; player: PlayerId; choiceIndex: number }
   | { type: "choose_target"; player: PlayerId; choiceIndex: number }
   | { type: "use_coin"; player: PlayerId }
-  | { type: "move_relic"; player: PlayerId; fromSlot: number; toSlot: number };
+  | { type: "return_relic"; player: PlayerId; slotIndex: number };
 
 export type GameEventKind =
   | "info"

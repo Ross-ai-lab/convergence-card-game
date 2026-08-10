@@ -15,7 +15,7 @@ describe("card CSV data", () => {
     expect(keywords.has("Taunt")).toBe(true);
     expect(effectIds.has("kill_random_enemy")).toBe(true);
     expect(effectIds.has("gain_relic")).toBe(true);
-    expect(effectIds.has("freeze_two")).toBe(true);
+    expect(effectIds.has("freeze_or_kill")).toBe(true);
   });
 
   it("resolves public artwork from both root and folder-hosted builds", () => {

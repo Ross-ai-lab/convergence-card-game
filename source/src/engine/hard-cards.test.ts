@@ -8,7 +8,8 @@ import type { GameState, MinionInstance, PlayerId } from "./types";
  * The cards that used to be listed as "too hard for this engine". Each test
  * pins the mechanic the card needed, not just the card.
  */
-const library = makeCardLibrary(cards);
+const minionLibrary = makeCardLibrary(cards);
+const library = makeCardLibrary(cards, relics);
 
 function cardId(name: string): string {
   const card = cards.find((entry) => entry.name === name);
@@ -17,7 +18,7 @@ function cardId(name: string): string {
 }
 
 function makeMinion(name: string, owner: PlayerId, overrides: Partial<MinionInstance> = {}): MinionInstance {
-  return spawnTestMinion(library[cardId(name)], owner, overrides);
+  return spawnTestMinion(minionLibrary[cardId(name)], owner, overrides);
 }
 
 /** A stat-only body, so a fixture never trips over the card's own effect. */
@@ -147,23 +148,30 @@ describe("control and theft cards", () => {
     expect(later.players[0].board.some((minion) => minion?.name === "Death Star")).toBe(true);
   });
 
-  it("Ten Commandments strips a relic off an enemy and wears it", () => {
+  it("Ten Commandments strips a relic off an enemy and adds it to hand", () => {
     const state = mainState();
-    const relic = state.relicPool[0];
-    state.players[1].board[0] = dummy("Death Star", 1, { relic });
+    const relic = relics.find((entry) => state.deck.includes(entry.id));
+    if (!relic) throw new Error("No relic in test deck");
+    const attached = { id: relic.id, relicId: relic.relicId, name: relic.name, effect: relic.effect, art: relic.art };
+    state.players[1].board[0] = dummy("Death Star", 1, { relic: attached });
 
     const after = play(state, "Ten Commandments", 1);
     expect(after.players[1].board[0]?.relic).toBeNull();
-    expect(after.players[0].board[1]?.relic?.id).toBe(relic.id);
+    expect(after.players[0].hand).toContain(attached.id);
+    expect(after.players[0].board[1]?.relic).toBeNull();
   });
 
   it("Doctor Octopus destroys a relic outright", () => {
     const state = mainState();
-    state.players[1].board[0] = dummy("Death Star", 1, { relic: state.relicPool[0] });
+    const relic = relics.find((entry) => state.deck.includes(entry.id));
+    if (!relic) throw new Error("No relic in test deck");
+    const attached = { id: relic.id, relicId: relic.relicId, name: relic.name, effect: relic.effect, art: relic.art };
+    state.players[1].board[0] = dummy("Death Star", 1, { relic: attached });
 
     const after = play(state, "Doctor Octopus", 1);
     expect(after.players[1].board[0]?.relic).toBeNull();
     expect(after.players[0].board[1]?.relic).toBeNull(); // destroyed, not taken
+    expect(after.discard).toContain(relic.id);
   });
 
   it("Chrollo takes a passive and gives it back when he dies", () => {
@@ -237,29 +245,23 @@ describe("choice-driven cards", () => {
     expect(shifted.players[0].board.every((minion) => !minion || minion.alignment === "Good")).toBe(true);
   });
 
-  it("John Wick names a card in the enemy hand and burns it if unplayed", () => {
+  it("John Wick gains +1/+1 when another friendly minion dies", () => {
     const state = mainState();
-    state.players[1].hand = [cardId("Death Star"), cardId("Zoro")];
+    state.activePlayer = 1;
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    state.players[0].board[1] = dummy("Zoro", 0, { hp: 1, maxHp: 1 });
+    state.players[1].board[0] = dummy("Wall of Flesh", 1, { atk: 5, hp: 20, maxHp: 20 });
 
-    const asking = play(state, "John Wick", 0);
-    expect(asking.phase).toBe("targeting");
-    expect(asking.pendingTarget?.kind).toBe("hand");
-    // The enemy also drew during the turn cycle, so the hand is at least the two
-    // cards we planted — every one of them is on offer.
-    expect(asking.pendingTarget!.handOptions.length).toBe(asking.players[1].hand.length);
+    const before = state.players[0].board[0]!;
+    const after = applyAction(
+      state,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 },
+      library,
+    ).state;
 
-    const index = asking.pendingTarget!.handOptions.findIndex((option) => option.cardId === cardId("Death Star"));
-    const named = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: index }, library).state;
-    expect(named.players[1].pressured?.cardId).toBe(cardId("Death Star"));
-
-    // They get one full turn with it. (As a Battlecry he names one card, once —
-    // he no longer re-marks a fresh one every turn.)
-    const theirTurn = endTurnAndDraw(named, 0); // their chance to play it
-    expect(theirTurn.players[1].hand).toContain(cardId("Death Star"));
-
-    const ignored = endTurnAndDraw(endTurnAndDraw(theirTurn, 1), 0); // they ignored it
-    expect(ignored.players[1].hand).not.toContain(cardId("Death Star"));
-    expect(ignored.discard).toContain(cardId("Death Star"));
+    expect(after.players[0].board[1]).toBeNull();
+    expect(after.players[0].board[0]?.atk).toBe(before.atk + 1);
+    expect(after.players[0].board[0]?.maxHp).toBe(before.maxHp + 1);
   });
 
   it("V inherits John Wick's hand-pressure Battlecry", () => {
@@ -273,7 +275,7 @@ describe("choice-driven cards", () => {
     expect(asking.players[0].board[0]?.keywords).toEqual(expect.arrayContaining(["Taunt"]));
   });
 
-  it("Joker chooses two cards, then chooses which one to shuffle away", () => {
+  it("Joker chooses two cards, then discards one of them", () => {
     const state = mainState();
     state.players[1].hand = [cardId("Death Star"), cardId("Zoro")];
 
@@ -284,9 +286,25 @@ describe("choice-driven cards", () => {
     const deciding = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: firstIndex }, library).state;
     expect(deciding.pendingTarget?.step).toBe(2);
     expect(deciding.pendingTarget?.handOptions).toHaveLength(2);
-    const shuffleIndex = deciding.pendingTarget!.handOptions.findIndex((option) => option.cardId === cardId("Zoro"));
-    const shuffled = applyAction(deciding, { type: "choose_target", player: 0, choiceIndex: shuffleIndex }, library).state;
-    expect(shuffled.players[1].hand).not.toContain(cardId("Zoro"));
-    expect(shuffled.bottomDeck).toContain(cardId("Zoro"));
+    const discardIndex = deciding.pendingTarget!.handOptions.findIndex((option) => option.cardId === cardId("Zoro"));
+    const discarded = applyAction(deciding, { type: "choose_target", player: 0, choiceIndex: discardIndex }, library).state;
+    expect(discarded.players[1].hand).toEqual([cardId("Death Star")]);
+    expect(discarded.discard).toContain(cardId("Zoro"));
+  });
+
+  it("Indiana Jones discovers a relic and adds it to hand", () => {
+    const state = mainState();
+    const offered = state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)).slice(0, 3);
+
+    const asking = play(state, "Indiana Jones", 0);
+    expect(asking.phase).toBe("targeting");
+    expect(asking.pendingTarget?.kind).toBe("option");
+    expect(asking.pendingTarget?.labelOptions).toHaveLength(3);
+
+    const after = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: 0 }, library).state;
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[0].board[0]?.relic).toBeNull();
+    expect(after.players[0].hand).toContain(offered[0]);
+    expect(after.deck).not.toContain(offered[0]);
   });
 });

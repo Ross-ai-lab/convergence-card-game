@@ -9,7 +9,7 @@ import type { GameState, PlayerId } from "./types";
 
 const cards = parseCardsCsv(cardsCsv);
 const relics = parseRelicsCsv(relicsCsv);
-const library = makeCardLibrary(cards);
+const library = makeCardLibrary(cards, relics);
 
 /** Runs a whole duel and hands back the finished state. */
 function playOut(seed: string, skills: [BotSkill, BotSkill], cap = 200): GameState {
@@ -88,13 +88,9 @@ describe("pacing", () => {
     expect(normal.manaRamp).toBe(1);
   });
 
-  it("puts every relic in the pool — nothing sits on the bench", () => {
-    // Tesseract used to be excluded because it needed a "move a minion" action
-    // the game does not have. It was re-cut rather than left unwired.
+  it("puts every relic into the shared deck", () => {
     const state = createInitialGame(cards, "pool", relics);
-    expect(state.relicPool).toHaveLength(relics.length);
-    expect(state.relicPool.some((relic) => relic.relicId === "no_retaliation")).toBe(true);
-    expect(state.relicPool.some((relic) => relic.relicId === "none")).toBe(false);
+    expect(state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId))).toHaveLength(relics.length);
   });
 
   it("carries the ramp through a JSON round trip, so a save restores the same pacing", () => {

@@ -1,9 +1,9 @@
 id,name,cost,atk,hp,rarity,camp,alignment,keywords,effectId,effectTiming,effect,flavor,origin,art
-c001,John Wick,1,2,2,Black,Nature,Neutral,,pressure_chosen_card,onPlay,Battlecry: Choose a card in the opponent's hand. They must play it next turn or it is burned.,A dog was all he had left.,Myth,/card-art/raw/c001.webp
-c002,Joker,1,1,1,Red,Nature,Evil,,reveal_and_shuffle_chosen,onPlay,"Battlecry: Choose 2 cards in your opponent's hand, reveal them, then shuffle one back into the deck.",The punchline was already loaded.,DCU,/card-art/raw/c002.webp
+c001,John Wick,1,2,2,Black,Nature,Neutral,,friendly_death_buff_1_1,passive,"Passive: Whenever another friendly minion dies, gain +1/+1.",A dog was all he had left.,Myth,/card-art/raw/c001.webp
+c002,Joker,1,1,1,Red,Nature,Evil,,choose_two_discard_one,onPlay,"Battlecry: Choose 2 cards in your opponent's hand; discard one of them.",The punchline was already loaded.,DCU,/card-art/raw/c002.webp
 c003,Detective L,1,1,4,Yellow,Nature,Good,,foresight_draw,passive,"Passive: Your draw now shows two cards, pick one",Justice works in probabilities.,Death Note,/card-art/raw/c003.webp
 c004,Bigfoot,2,2,2,Black,Nature,Neutral,Passive,dodge_half,passive,Passive: Evades 50% of incoming attacks.,The woods answer with silence.,Basic,/card-art/raw/c004.webp
-c005,Batman,2,1,2,Purple,Tech,Good,,freeze_two,onPlay,Battlecry: Choose 2 enemy minions to Freeze.,Preparation beats power.,DCU,/card-art/raw/c005.webp
+c005,Batman,2,1,2,Purple,Tech,Good,,freeze_or_kill,onPlay,"Battlecry: Freeze an enemy. If it is already Frozen, kill it.",Preparation beats power.,DCU,/card-art/raw/c005.webp
 c006,Sandworm,2,1,3,Black,Nature,Neutral,Taunt;Passive,small_attack_ward,passive,Taunt. Passive: Cannot be damaged by minions with 2 or less ATK.,The desert itself has teeth.,Dune,/card-art/raw/c006.webp
 c007,Pandora's Actor,2,2,2,Red,Magic,Good,,deal_enemy_core,onPlay,Battlecry: Deal 2 damage to the enemy core.,Every role is useful.,Overlord,/card-art/raw/c007.webp
 c008,T-1000,6,3,7,Purple,Tech,Neutral,,heal_self,ongoing,Ongoing: Heal 3 HP.,It remembers its shape.,Terminator,/card-art/raw/c008.webp
@@ -15,7 +15,7 @@ c013,Doctor Strange,7,3,6,Yellow,Magic,Good,,aoe_damage_2,onPlay,Battlecry: Deal
 c014,Kizaru,7,6,7,Yellow,Magic,Neutral,Divine Shield,gain_divine_shield,ongoing,Divine Shield. Ongoing: Gain Divine Shield,Light logic.,One Piece,/card-art/raw/c014.webp
 c015,Avengers,7,4,4,Yellow,Tech,Good,,absorb_left_stats,onPlay,Battlecry: Gain the stats of the friendly minion to your left.,"When the board breaks, they assemble.",MCU,/card-art/raw/c015.webp
 c016,Doom Slayer,7,4,4,Purple,Nature,Good,,damaged_self_buff,ongoing,"Ongoing: If damaged, gain +2/+2 and give another friendly minion +2/+2.",He cleaned Hell and came back.,Doom,/card-art/raw/c016.webp
-c017,Gol D. Roger,8,7,7,Red,Magic,Good,,choose_relic,onPlay,Battlecry: Choose 1 of 3 Ascension Relics. Equip it to a friendly minion.,He has already won.,One Piece,/card-art/raw/c017.webp
+c017,Gol D. Roger,8,7,7,Red,Magic,Good,,choose_relic,onPlay,Battlecry: Choose 1 of 3 Ascension Relics. Add it to your hand.,He has already won.,One Piece,/card-art/raw/c017.webp
 c018,Marshall D. Teach,8,5,5,Red,Magic,Evil,,copy_passive,ongoing,Ongoing: Copy a passive from one friendly and one enemy minion.,Steal steal steal.,One Piece,/card-art/raw/c018.webp
 c019,Gilgamesh,8,7,7,Yellow,Magic,Evil,,gain_relic,ongoing,Ongoing: Gain an Ascension Relic.,Unworthy.,Fate,/card-art/raw/c019.webp
 c020,Superman,8,7,7,Purple,Nature,Good,Passive,anti_disable_aura,passive,Passive: Friendly minions cannot be Silenced or Frozen.,The heir's son rises.,DCU,/card-art/raw/c020.webp
@@ -157,7 +157,7 @@ c155,Margit the Fell Omen,2,1,1,Black,Nature,Evil,,buff_evil_ally_3_2_heal,ongoi
 c156,Ouken,2,3,2,Black,Magic,Evil,,copy_ally_hp,ongoing,Ongoing: Copy HP of any friendly minion on the board,Immortality cost him everything,Ranking of Kings,/card-art/raw/c156.webp
 c157,Pillar Men,2,2,4,Black,Nature,Evil,Chained,none,none,Chained.,They outwaited the sun.,JoJo,/card-art/raw/c157.webp
 c158,The Nameless King,2,2,3,Black,Nature,Neutral,,alignment_shift,onPlay,"Battlecry: Choose a new Alignment (Good, Evil, or Neutral). All of your minions on the board immediately adopt this Alignment",A crown he threw away.,Elden Ring,/card-art/raw/c158.webp
-c159,Indiana Jones,1,1,1,Red,Nature,Good,,steal_random,onPlay,Battlecry: Steal a random card in your opponent's hand,Mine,Indiana Jones,/card-art/raw/c159.webp
+c159,Indiana Jones,1,1,1,Red,Nature,Good,,discover_relic_self,onPlay,Battlecry: Discover 1 of 3 Ascension Relics. Add it to your hand.,Mine,Indiana Jones,/card-art/raw/c159.webp
 c160,Domovoy,1,1,1,Yellow,Nature,Good,,draw_card,ongoing,Ongoing: Draw a card,The house spirit,Basic,/card-art/raw/c160.webp
 c161,Flowey,1,1,1,Yellow,Magic,Evil,,buff_all_evil_1,ongoing,Ongoing: Give +1/+1 to all other friendly Evil minions,Friendliness is a face you put on.,Undertale,/card-art/raw/c161.webp
 c162,Kagaya Ubuyashiki,1,1,1,Yellow,Nature,Good,,buff_all_good_1,ongoing,Ongoing: Give +1/+1 to all other friendly Good minions,Leadership,Demon Slayer,/card-art/raw/c162.webp

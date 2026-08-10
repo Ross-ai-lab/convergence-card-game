@@ -1,3 +1,4 @@
+import { isMinionCard, isRelicCard } from "./types";
 import type {
   ApplyResult,
   Alignment,
@@ -12,13 +13,14 @@ import type {
   MinionInstance,
   PlayerId,
   PlayerState,
+  PlayableCard,
   RelicDefinition,
   RelicInstance,
   ResolvedChoiceWithProgress as ResolvedChoice,
   TargetOption,
 } from "./types";
 
-export type CardLibrary = Record<string, CardDefinition>;
+export type CardLibrary = Record<string, PlayableCard>;
 
 const boardSize = 5;
 const handLimit = 10;
@@ -81,8 +83,10 @@ export const STARTING_CORE = DEFAULT_STARTING_HEALTH;
  */
 const DEFAULT_MANA_RAMP = 1;
 
-export function makeCardLibrary(cards: CardDefinition[]): CardLibrary {
-  return Object.fromEntries(cards.map((card) => [card.id, card]));
+export function makeCardLibrary(cards: CardDefinition[]): Record<string, CardDefinition>;
+export function makeCardLibrary(cards: CardDefinition[], relics: RelicDefinition[]): CardLibrary;
+export function makeCardLibrary(cards: CardDefinition[], relics: RelicDefinition[] = []): CardLibrary {
+  return Object.fromEntries([...cards, ...relics].map((card) => [card.id, card]));
 }
 
 /** Knobs the simulator sweeps. The game itself always uses the defaults. */
@@ -98,7 +102,10 @@ export function createInitialGame(
   setup: GameSetup = {},
 ): GameState {
   const health = setup.startingHealth ?? DEFAULT_STARTING_HEALTH;
-  const deck = buildDeck(cards, seed);
+  const deck = buildDeck(
+    [...cards, ...relicDefs.filter((relic) => relic.relicId !== "none")],
+    seed,
+  );
   const players: [PlayerState, PlayerState] = [makePlayer(0, "Player One", health), makePlayer(1, "Player Two", health)];
   const state: GameState = {
     phase: "main",
@@ -112,23 +119,6 @@ export function createInitialGame(
     deck,
     bottomDeck: [],
     discard: [],
-    // Relics live in the state as finished instances rather than ids, so the
-    // engine never needs a lookup table and a saved game is self-describing.
-    // All 21 are in the pool now: Tesseract used to ask for a "move a minion to
-    // another slot" action the game does not have, and was re-cut as
-    // `no_retaliation` rather than leaving one relic permanently on the bench.
-    relicPool: seededShuffle(
-      relicDefs
-        .filter((relic) => relic.relicId !== "none")
-        .map((relic) => ({
-          id: relic.id,
-          relicId: relic.relicId,
-          name: relic.name,
-          effect: relic.effect,
-          art: relic.art,
-        })),
-      `${seed}:relics`,
-    ),
     drawChoice: null,
     pendingTarget: null,
     effectQueue: [],
@@ -164,6 +154,8 @@ export function applyAction(state: GameState, action: GameAction, library: CardL
 
   if (action.type === "play_card") {
     playCard(next, action.player, action.handIndex, action.slotIndex, library, events);
+  } else if (action.type === "play_relic") {
+    playRelic(next, action.player, action.handIndex, action.slotIndex, library, events);
   } else if (action.type === "attack_minion" || action.type === "attack_core") {
     // A confused minion still had every legal target offered — the swing simply
     // does not go where it was aimed.
@@ -196,8 +188,8 @@ export function applyAction(state: GameState, action: GameAction, library: CardL
     chooseTarget(next, action.choiceIndex, library, events);
   } else if (action.type === "use_coin") {
     spendCoin(next, action.player, events);
-  } else if (action.type === "move_relic") {
-    moveRelic(next, action.player, action.fromSlot, action.toSlot, events);
+  } else if (action.type === "return_relic") {
+    returnRelicToHand(next, action.player, action.slotIndex, events);
   }
 
   // Slot marks are permanent and position-based, so they are re-applied after
@@ -246,18 +238,14 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
     actions.push({ type: "use_coin", player: player.id });
   }
 
-  // Re-strapping an Ascension Relic. Relics arrive by luck, and this is the one
-  // decision the player gets over them: pull a relic off a minion that is about
-  // to die, or move it onto the threat that is about to swing. Capped per turn,
-  // because a relic dying with its bearer is the cost the whole system is built
-  // on — free movement would delete it.
+  // A non-one-shot relic may be returned to hand once during its owner's turn.
+  // It is an explicit hand action, so relics never jump between minions or
+  // attach themselves automatically.
   if (player.relicMoves < RELIC_MOVES_PER_TURN) {
-    player.board.forEach((bearer, fromSlot) => {
-      if (!bearer || !relicCanMove(bearer.relic)) return;
-      player.board.forEach((target, toSlot) => {
-        if (!target || toSlot === fromSlot || target.relic) return;
-        actions.push({ type: "move_relic", player: player.id, fromSlot, toSlot });
-      });
+    player.board.forEach((bearer, slotIndex) => {
+      if (bearer && relicCanMove(bearer.relic) && player.hand.length < handLimit) {
+        actions.push({ type: "return_relic", player: player.id, slotIndex });
+      }
     });
   }
 
@@ -265,8 +253,11 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
     const card = library[cardId];
     if (!card || (!state.cheatMode && effectiveCost(player, card) > player.mana)) return;
     player.board.forEach((slot, slotIndex) => {
-      if (!slot) {
+      if (isMinionCard(card) && !slot) {
         actions.push({ type: "play_card", player: player.id, handIndex, slotIndex });
+      }
+      if (isRelicCard(card) && slot && !slot.relic) {
+        actions.push({ type: "play_relic", player: player.id, handIndex, slotIndex });
       }
     });
   });
@@ -308,19 +299,20 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
 }
 
 /** A card's cost after Kuma-style discounts. */
-function effectiveCost(player: PlayerState, card: CardDefinition): number {
-  return Math.max(0, card.cost - (player.costReductions[card.id] ?? 0));
+function effectiveCost(player: PlayerState, card: PlayableCard): number {
+  return Math.max(0, (card.cost ?? 0) - (player.costReductions[card.id] ?? 0));
 }
 
 export function actionKey(action: GameAction): string {
   if (action.type === "play_card") return `${action.type}:${action.player}:${action.handIndex}:${action.slotIndex}`;
+  if (action.type === "play_relic") return `${action.type}:${action.player}:${action.handIndex}:${action.slotIndex}`;
   if (action.type === "attack_minion") {
     return `${action.type}:${action.player}:${action.attackerSlot}:${action.targetSlot}`;
   }
   if (action.type === "attack_core") return `${action.type}:${action.player}:${action.attackerSlot}`;
   if (action.type === "choose_draw") return `${action.type}:${action.player}:${action.choiceIndex}`;
   if (action.type === "choose_target") return `${action.type}:${action.player}:${action.choiceIndex}`;
-  if (action.type === "move_relic") return `${action.type}:${action.player}:${action.fromSlot}:${action.toSlot}`;
+  if (action.type === "return_relic") return `${action.type}:${action.player}:${action.slotIndex}`;
   return `${action.type}:${action.player}`;
 }
 
@@ -366,7 +358,7 @@ function coinFlip(state: GameState): boolean {
   return nextRandom(state) < 0.5;
 }
 
-function buildDeck(cards: CardDefinition[], seed: string): string[] {
+function buildDeck(cards: PlayableCard[], seed: string): string[] {
   const shuffled = seededShuffle(cards, seed);
   return shuffled.map((card) => card.id);
 }
@@ -381,7 +373,6 @@ function makePlayer(id: PlayerId, name: string, health: number = DEFAULT_STARTIN
     coins: 0,
     hand: [],
     board: Array(boardSize).fill(null),
-    relics: [],
     pendingControl: null,
     costReductions: {},
     pressured: null,
@@ -433,6 +424,7 @@ function playCard(
   const player = state.players[playerId];
   const cardId = player.hand[handIndex];
   const card = library[cardId];
+  if (!isMinionCard(card)) return;
   player.hand.splice(handIndex, 1);
   if (!state.cheatMode) {
     player.mana -= effectiveCost(player, card);
@@ -453,6 +445,44 @@ function playCard(
     events.push(effectEvent(`${minion.name} gains Divine Shield from Shifu.`, minion));
   }
   applyOnPlayEffects(state, minion, slotIndex, library, events);
+}
+
+function playRelic(
+  state: GameState,
+  playerId: PlayerId,
+  handIndex: number,
+  slotIndex: number,
+  library: CardLibrary,
+  events: GameEvent[],
+): void {
+  const player = state.players[playerId];
+  const cardId = player.hand[handIndex];
+  const relic = library[cardId];
+  const bearer = player.board[slotIndex];
+  if (!isRelicCard(relic) || !bearer || bearer.relic) return;
+  player.hand.splice(handIndex, 1);
+  if (!state.cheatMode) player.mana -= effectiveCost(player, relic);
+  if (player.costReductions[cardId]) delete player.costReductions[cardId];
+  if (player.pressured?.cardId === cardId) player.pressured = null;
+  const instance = createRelicInstance(relic);
+  equipRelic(state, bearer, instance, events);
+  events.push({
+    kind: "play",
+    text: `${player.name} plays ${relic.name} on ${bearer.name}.`,
+    player: playerId,
+    cardId: relic.id,
+    instanceId: bearer.instanceId,
+  });
+}
+
+function createRelicInstance(relic: RelicDefinition): RelicInstance {
+  return {
+    id: relic.id,
+    relicId: relic.relicId,
+    name: relic.name,
+    effect: relic.effect,
+    art: relic.art,
+  };
 }
 
 function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): MinionInstance {
@@ -904,7 +934,7 @@ interface TargetSpec {
   prompt: string;
   /** Which minions may be picked. `source` is excluded unless includeSelf is set. */
   filter?: (minion: MinionInstance, source: MinionInstance) => boolean;
-  handFilter?: (card: CardDefinition, index: number) => boolean;
+  handFilter?: (card: PlayableCard, index: number) => boolean;
   includeSelf?: boolean;
   /** Preconditions checked BEFORE prompting, so the effect never asks then fizzles. */
   enabled?: (state: GameState, source: MinionInstance) => boolean;
@@ -922,6 +952,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   silence_enemy: { side: "enemy", prompt: "Silence an enemy minion", filter: (m) => !m.silenced },
   reduce_atk_3: { side: "enemy", prompt: "Weaken an enemy minion by 3 ATK", filter: (m) => m.atk > 0 },
   bounce_enemy: { side: "enemy", prompt: "Return an enemy minion to its owner's hand" },
+  freeze_or_kill: { side: "enemy", prompt: "Freeze an enemy; kill it if it is already Frozen" },
   delayed_destroy: { side: "enemy", prompt: "Mark an enemy minion" },
   damage_evil_enemy_4: { side: "enemy", prompt: "Deal 4 damage to an Evil enemy", filter: (m) => m.alignment === "Evil" },
   damage_magic_enemy_2: { side: "enemy", prompt: "Deal 2 damage to a Magic enemy", filter: (m) => m.camp === "Magic" },
@@ -967,13 +998,6 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   give_taunt: { side: "friendly", prompt: "Give an ally Taunt", filter: (m) => !hasKeyword(m, "Taunt") },
   devour_friendly: { side: "friendly", prompt: "Consume one of your own minions" },
   // --- the hard cards ---
-  choose_relic: {
-    side: "friendly",
-    prompt: "Choose a friendly minion to receive an Ascension Relic",
-    includeSelf: true,
-    enabled: (state) => state.relicPool.length > 0,
-    filter: (m) => !m.relic,
-  },
   steal_relic: { side: "enemy", prompt: "Take an enemy minion's Ascension Relic", filter: (m) => m.relic !== null },
   destroy_relic: { side: "enemy", prompt: "Destroy an enemy minion's Ascension Relic", filter: (m) => m.relic !== null },
   mark_for_death: { side: "enemy", prompt: "Mark an enemy minion for death", filter: (m) => m.markedBy === null },
@@ -1015,6 +1039,11 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
     side: "enemy",
     prompt: "Choose a card to steal from the enemy hand",
   },
+  choose_two_discard_one: {
+    kind: "hand",
+    side: "enemy",
+    prompt: "Choose the first card in the enemy hand",
+  },
   discard_draw_2: {
     kind: "hand",
     side: "friendly",
@@ -1024,7 +1053,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
     kind: "hand",
     side: "friendly",
     prompt: "Choose a Tech card to consume",
-    handFilter: (card) => card.camp === "Tech",
+    handFilter: (card) => isMinionCard(card) && card.camp === "Tech",
   },
   // --- slot auras: pick a POSITION, empty or not; the mark is permanent ---
   slot_random_attacks: { kind: "slot", side: "enemy", prompt: "Curse an enemy slot — minions there attack at random, forever" },
@@ -1074,7 +1103,10 @@ function handOptions(state: GameState, source: MinionInstance, spec: TargetSpec,
   const ownerId = spec.side === "enemy" ? opponent(source.owner) : source.owner;
   return state.players[ownerId].hand
     .map((cardId, index) => ({ owner: ownerId, index, cardId }))
-    .filter((option) => !spec.handFilter || spec.handFilter(library[option.cardId], option.index));
+    .filter((option) => {
+      const card = library[option.cardId];
+      return Boolean(card) && (!spec.handFilter || spec.handFilter(card, option.index));
+    });
 }
 
 /**
@@ -1124,6 +1156,41 @@ function requestChoice(
   return "asked";
 }
 
+/** Relics currently available as cards in the shared deck, in deck order. */
+function relicsInDeck(state: GameState, library: CardLibrary): RelicDefinition[] {
+  return [...state.deck, ...state.bottomDeck]
+    .map((cardId) => library[cardId])
+    .filter((card): card is RelicDefinition => isRelicCard(card));
+}
+
+function removeCardFromDrawPile(state: GameState, cardId: string): boolean {
+  const deckIndex = state.deck.indexOf(cardId);
+  if (deckIndex >= 0) {
+    state.deck.splice(deckIndex, 1);
+    return true;
+  }
+  const bottomIndex = state.bottomDeck.indexOf(cardId);
+  if (bottomIndex >= 0) {
+    state.bottomDeck.splice(bottomIndex, 1);
+    return true;
+  }
+  return false;
+}
+
+function takeRelicFromDeckToHand(
+  state: GameState,
+  playerId: PlayerId,
+  relicId: string,
+  library: CardLibrary,
+  events: GameEvent[],
+): RelicDefinition | null {
+  const relic = library[relicId];
+  if (!isRelicCard(relic)) return null;
+  if (!removeCardFromDrawPile(state, relicId)) return null;
+  putCardInHand(state, playerId, relicId, events);
+  return relic;
+}
+
 /**
  * Runs a minion's effect. Returns TRUE when it suspended waiting for a target —
  * the caller must stop and let `choose_target` resume it.
@@ -1140,6 +1207,31 @@ function runEffect(
   const enemyId = opponent(source.owner);
   const enemy = state.players[enemyId];
   const label = `${source.name}:`;
+
+  if (source.effectId === "discover_relic_self" || source.effectId === "choose_relic") {
+    if (chosen?.kind !== "option") {
+      const next = requestChoice(
+        state,
+        source,
+        {
+          kind: "option",
+          side: "friendly",
+          prompt: source.effectId === "discover_relic_self" ? "Discover 1 of 3 Ascension Relics" : "Choose 1 of 3 Ascension Relics",
+          values: relicsInDeck(state, library).slice(0, 3).map((relic) => ({ label: relic.name, value: relic.id })),
+        },
+        library,
+      );
+      if (next === "asked") return true;
+      if (next) return runEffect(state, source, sourceSlot, library, events, next);
+      return false;
+    }
+
+    const relic = takeRelicFromDeckToHand(state, source.owner, chosen.option.value, library, events);
+    if (relic) {
+      events.push(effectEvent(`${label} claims ${relic.name}.`, source));
+    }
+    return false;
+  }
 
   // Voldemort still draws two when there are no cards available to discard.
   if (source.effectId === "discard_draw_2" && player.hand.length === 0) {
@@ -1447,6 +1539,11 @@ function runEffect(
     events.push(effectEvent(`${label} saps enemy strength.`, source));
   } else if (source.effectId === "freeze_one") {
     if (picked) applyFreeze(state, source, picked, events);
+  } else if (source.effectId === "freeze_or_kill") {
+    if (picked) {
+      if (picked.frozen) destroyPicked(state, source, picked, "kills", events);
+      else applyFreeze(state, source, picked, events);
+    }
   } else if (source.effectId === "freeze_all") {
     for (const playerId of [0, 1] as PlayerId[]) {
       for (const minion of state.players[playerId].board) {
@@ -1611,9 +1708,56 @@ function runEffect(
     }
     drawDirect(state, source.owner, 2, events);
     events.push(effectEvent(`${label} trades two cards.`, source));
+  } else if (source.effectId === "choose_two_discard_one") {
+    if (!pickedHand) return false;
+    if ((chosen?.step ?? 0) === 0) {
+      const next = requestChoice(
+        state,
+        source,
+        {
+          kind: "hand",
+          side: "enemy",
+          prompt: "Choose the second card in the enemy hand",
+          handFilter: (_card, index) => index !== pickedHand.index,
+        },
+        library,
+        1,
+        [],
+        [pickedHand],
+      );
+      if (next === "asked") return true;
+      if (next) return runEffect(state, source, sourceSlot, library, events, next);
+    }
+    if ((chosen?.step ?? 0) <= 1) {
+      const selected = [...(chosen?.priorHandOptions ?? []), pickedHand];
+      const allowed = new Set(selected.map((option) => option.index));
+      const next = requestChoice(
+        state,
+        source,
+        {
+          kind: "hand",
+          side: "enemy",
+          prompt: "Choose which selected card to discard",
+          handFilter: (_card, index) => allowed.has(index),
+        },
+        library,
+        2,
+        [],
+        selected,
+      );
+      if (next === "asked") return true;
+      if (next) return runEffect(state, source, sourceSlot, library, events, next);
+    }
+    const index = pickedHand.index;
+    const [discarded] = enemy.hand.splice(index, 1);
+    if (discarded) {
+      state.discard.push(discarded);
+      events.push(effectEvent(`${label} discards ${library[discarded]?.name ?? "a card"}.`, source));
+    }
   } else if (source.effectId === "consume_tech_card") {
     if (pickedHand) {
       const def = library[player.hand.splice(pickedHand.index, 1)[0]];
+      if (!isMinionCard(def)) return false;
       buffMinion(source, def.atk, def.hp);
       events.push(effectEvent(`${label} absorbs ${def.name}.`, source));
     }
@@ -1715,47 +1859,21 @@ function runEffect(
     events.push(effectEvent(`${label} rallies allies to the front.`, source));
 
   // ----------------------------------------------------------------- the hard cards
-  } else if (source.effectId === "choose_relic") {
-    if (picked && pickedSlot) {
-      const choices = state.relicPool.slice(0, 3).map((relic) => ({ label: relic.name, value: relic.id }));
-      const next = requestChoice(
-        state,
-        source,
-        {
-          kind: "option",
-          side: "friendly",
-          prompt: "Choose 1 of 3 Ascension Relics",
-          values: choices,
-        },
-        library,
-        1,
-        [pickedSlot],
-      );
-      if (next === "asked") return true;
-      if (next) return runEffect(state, source, sourceSlot, library, events, next);
-    } else if (chosen?.kind === "option" && chosen.priorOptions?.[0]) {
-      const targetOption = chosen.priorOptions[0];
-      const target = state.players[targetOption.owner].board[targetOption.slot];
-      const relicIndex = state.relicPool.findIndex((relic) => relic.id === pickedValue);
-      const relic = relicIndex >= 0 ? state.relicPool.splice(relicIndex, 1)[0] : null;
-      if (target && relic && !target.relic) {
-        equipRelic(state, target, relic, events);
-        events.push(effectEvent(`${label} equips ${relic.name} to ${target.name}.`, source));
-      }
-    }
   } else if (source.effectId === "steal_relic") {
-    // Ten Commandments. The card says "from the enemy hand", but relics are
-    // equipment in this model, so it takes one off an enemy minion instead.
+    // Ten Commandments takes the attached relic as a card. It never equips the
+    // stolen card automatically; the controller must spend mana and choose a
+    // bearer on a later action.
     if (picked?.relic) {
       const stolen = picked.relic;
       unequipRelic(picked);
       events.push(effectEvent(`${label} tears ${stolen.name} from ${picked.name}.`, source));
-      equipRelic(state, source, stolen, events);
+      putCardInHand(state, source.owner, stolen.id, events);
     }
   } else if (source.effectId === "destroy_relic") {
     if (picked?.relic) {
       const lost = picked.relic;
       unequipRelic(picked);
+      state.discard.push(lost.id);
       events.push(effectEvent(`${label} destroys ${picked.name}'s ${lost.name}.`, source));
     }
   } else if (source.effectId === "mark_for_death") {
@@ -1827,11 +1945,18 @@ function runEffect(
     for (const victim of victims) {
       const slot = slotOf(state, victim);
       if (slot < 0) continue;
-      const drawn = drawFromDeck(state, 1, events)[0];
+      let drawn: string | undefined;
+      while (!drawn) {
+        const nextCard = drawFromDeck(state, 1, events)[0];
+        if (!nextCard) break;
+        if (isMinionCard(library[nextCard])) drawn = nextCard;
+        else putCardInHand(state, source.owner, nextCard, events);
+      }
       destroyAtSlot(state, source.owner, slot, events, `${source.name} unmakes ${victim.name}`);
-      if (!drawn || !library[drawn]) continue;
+      const replacement = drawn ? library[drawn] : undefined;
+      if (!isMinionCard(replacement)) continue;
       if (player.board[slot]) continue;
-      player.board[slot] = createMinion(library[drawn], source.owner, state);
+      player.board[slot] = createMinion(replacement, source.owner, state);
       replaced += 1;
     }
     if (replaced > 0) events.push(effectEvent(`${label} remakes ${replaced} of your minions.`, source));
@@ -1917,32 +2042,22 @@ function runEffect(
 }
 
 // ---------------------------------------------------------------------------
-// Ascension Relics. Every relic's text is about "the bearer", so a relic is
-// equipment: gaining one straps it to a minion you control, and it is destroyed
-// with that minion. A minion carries one at a time.
+// Ascension Relics. Relics are ordinary cards in the shared deck and hand.
+// Playing one is the only path that creates an attached RelicInstance.
 // ---------------------------------------------------------------------------
 function grantRelic(state: GameState, playerId: PlayerId, source: MinionInstance, events: GameEvent[]): void {
-  const relic = state.relicPool.shift();
-  if (!relic) {
-    events.push({ kind: "effect", text: "No Ascension Relics remain in the rift.", player: playerId });
+  const cardId = [...state.deck, ...state.bottomDeck].find(isRelicCardId);
+  if (!cardId) {
+    events.push({ kind: "effect", text: "No Ascension Relic remains in the deck.", player: playerId });
     return;
   }
-  events.push({ kind: "effect", text: `${source.name} claims ${relic.name}.`, player: playerId, instanceId: source.instanceId });
-  // Its finder wears it when it can; otherwise it waits in the satchel and the
-  // next minion to arrive picks it up.
-  if (!source.relic) equipRelic(state, source, relic, events);
-  else {
-    const free = state.players[playerId].board.find((minion) => minion && !minion.relic);
-    if (free) equipRelic(state, free, relic, events);
-    else state.players[playerId].relics.push(relic);
-  }
+  removeCardFromDrawPile(state, cardId);
+  putCardInHand(state, playerId, cardId, events);
+  events.push({ kind: "effect", text: `${source.name} adds an Ascension Relic to hand.`, player: playerId, instanceId: source.instanceId, cardId });
 }
 
 function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstance, events: GameEvent[]): void {
-  if (bearer.relic) {
-    state.players[bearer.owner].relics.push(relic);
-    return;
-  }
+  if (bearer.relic) return;
   bearer.relic = relic;
   events.push({ kind: "effect", text: `${bearer.name} equips ${relic.name}.`, player: bearer.owner, instanceId: bearer.instanceId });
   // One-shot relics fire the moment they are strapped on.
@@ -1969,16 +2084,14 @@ function unequipRelic(bearer: MinionInstance): void {
   bearer.relic = null;
 }
 
-/** How many Ascension Relics a player may re-strap in one of their turns. */
+/** How many reusable Ascension Relics a player may return to hand per turn. */
 export const RELIC_MOVES_PER_TURN = 1;
 
 /**
- * Relics that spend themselves the instant they are strapped on. These may NOT
- * be moved. Re-equipping one would re-fire it — Rebirth Cube would double a
- * minion's stats every single turn — and moving one without re-firing it is a
- * dead action that only confuses. The other sixteen are read continuously by
- * combat, damage and upkeep, so moving those is exactly the decision worth
- * having. Keep this set in step with the one-shot branches in `equipRelic`.
+ * Relics that spend themselves the instant they are played. These may NOT be
+ * returned to hand. Re-playing one would re-fire it — the Holy Grail would
+ * double a minion's stats every single time — while reusable relics can safely
+ * be picked up once per turn. Keep this set in step with `equipRelic`.
  */
 const ONE_SHOT_RELICS = new Set(["double_stats", "bearer_divine_shield", "heal_full_now", "monster_cell", "cocoon"]);
 
@@ -1987,32 +2100,36 @@ export function relicCanMove(relic: RelicInstance | null): boolean {
 }
 
 /**
- * Re-strap a relic onto another friendly minion. Deliberately does NOT go
- * through `equipRelic`: that fires the one-shot relics, and this path must never
- * re-fire anything.
+ * Return a reusable attached relic to its owner's hand. Re-playing it later is
+ * intentional and costs mana, so moving it cannot silently re-fire a one-shot.
  */
-function moveRelic(state: GameState, playerId: PlayerId, fromSlot: number, toSlot: number, events: GameEvent[]): void {
+function returnRelicToHand(state: GameState, playerId: PlayerId, slotIndex: number, events: GameEvent[]): void {
   const player = state.players[playerId];
-  const bearer = player.board[fromSlot];
-  const target = player.board[toSlot];
-  if (!bearer || !target || !bearer.relic || target.relic) return;
+  const bearer = player.board[slotIndex];
+  if (!bearer || !bearer.relic) return;
   if (!relicCanMove(bearer.relic)) return;
   if (player.relicMoves >= RELIC_MOVES_PER_TURN) return;
+  if (player.hand.length >= handLimit) return;
 
   const relic = bearer.relic;
   bearer.relic = null;
-  target.relic = relic;
   player.relicMoves += 1;
+  putCardInHand(state, playerId, relic.id, events);
   events.push({
     kind: "effect",
-    text: `${bearer.name} passes ${relic.name} to ${target.name}.`,
+    text: `${bearer.name} returns ${relic.name} to its owner's hand.`,
     player: playerId,
-    instanceId: target.instanceId,
+    instanceId: bearer.instanceId,
   });
 }
 
 function hasRelic(minion: MinionInstance | null | undefined, relicId: string): boolean {
   return Boolean(minion && minion.relic && minion.relic.relicId === relicId);
+}
+
+/** All published relic card IDs use the r### namespace; minions use c###. */
+function isRelicCardId(cardId: string): boolean {
+  return /^r\d+$/i.test(cardId);
 }
 
 /** Mind control: move a minion to the other board if there is room for it. */
@@ -2536,8 +2653,12 @@ function destroyAtSlot(state: GameState, playerId: PlayerId, slotIndex: number, 
     state.discard.push(minion.cardId);
     events.push({ kind: "death", text: message, player: playerId, instanceId: minion.instanceId, cardId: minion.cardId });
   }
-  // A relic dies with its bearer, and Chrollo hands a stolen passive back.
-  if (minion.relic) minion.relic = null;
+  // A relic dies with its bearer. It is a card again only in the discard pile;
+  // nothing puts it into a satchel or onto another minion automatically.
+  if (minion.relic) {
+    state.discard.push(minion.relic.id);
+    minion.relic = null;
+  }
   releaseStolenPassive(state, minion, events);
   reactToDeath(state, minion, playerId, events);
 }
@@ -2577,11 +2698,13 @@ function summonFromHand(
   const slotIndex = player.board.findIndex((slot) => !slot);
   const candidates = player.hand
     .map((cardId, handIndex) => ({ cardId, handIndex, card: library[cardId] }))
-    .filter(({ card }) => card && (!alignment || card.alignment === alignment));
+    .filter(({ card }) => isMinionCard(card) && (!alignment || card.alignment === alignment));
   if (slotIndex < 0 || candidates.length === 0) return;
   const { cardId, handIndex } = candidates[rollInt(state, candidates.length)];
   player.hand.splice(handIndex, 1);
-  const minion = createMinion(library[cardId], playerId, state);
+  const card = library[cardId];
+  if (!isMinionCard(card)) return;
+  const minion = createMinion(card, playerId, state);
   minion.chained = Math.max(2, minion.chained);
   player.board[slotIndex] = minion;
   events.push({ kind: "effect", text: `${player.name} summons ${minion.name} Chained.`, player: playerId, cardId, instanceId: minion.instanceId });
@@ -2701,6 +2824,9 @@ function reactToDeath(state: GameState, dead: MinionInstance, deadOwner: PlayerI
         // no cap, so the opponent's own trades were feeding it.
         buffMinion(minion, 1, 1);
         events.push(effectEvent(`${minion.name} feeds on death (+1/+1).`, minion));
+      } else if (minion.effectId === "friendly_death_buff_1_1" && playerId === deadOwner) {
+        buffMinion(minion, 1, 1);
+        events.push(effectEvent(`${minion.name} avenges ${dead.name} (+1/+1).`, minion));
       } else if (minion.effectId === "tech_death_buff" && playerId === deadOwner && dead.camp === "Tech") {
         buffMinion(minion, 2, 2);
         events.push(effectEvent(`${minion.name} grows from the fallen Tech.`, minion));

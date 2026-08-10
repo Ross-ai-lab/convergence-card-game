@@ -77,14 +77,10 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   // the kind of thing that fails one run in ten and looks like a real bug.
   await page.waitForFunction(() => Boolean(window.__debug), null, { timeout: 15000 }).catch(() => {});
   if (cheat) {
-    // Cheat used to be a permanent button in the top bar. It lives under
-    // Settings -> Sandbox now, so this opens the panel, flips it and closes
-    // again. Deliberately NOT wrapped in a silent catch the way the old
-    // one-liner was: a failure here leaves every cheat-mode scenario below
-    // running without infinite mana and quietly measuring the wrong game.
-    await page.getByRole("button", { name: /Settings/ }).first().click();
-    await page.getByRole("button", { name: /Infinite mana is/ }).first().click();
-    await page.keyboard.press("Escape");
+    // Cheat is a top-bar action in the current layout, so use its accessible
+    // name directly. Deliberately NOT wrapped in a silent catch: a failure here
+    // leaves every scenario running with the wrong mana rules.
+    await page.getByRole("button", { name: /Cheat Off|Cheat On/ }).first().click();
     await page.waitForTimeout(350);
     // And PROVE it took. The old one-liner ended in `.catch(() => {})`, so the
     // day the button moved every cheat scenario below would have carried on
@@ -100,8 +96,10 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
 
   if (!awake) {
     // Summoning-sick body, and it has to arrive BY BEING PLAYED, because the two
-    // checks that use it are about playing a card.
-    await page.locator(".hand-card").first().click();
+    // checks that use it are about playing a card. The shared deck contains
+    // relics now, so inject a known minion instead of gambling on the opening.
+    await page.evaluate(() => window.__debug?.giveCard("Modern Tank"));
+    await page.locator(".hand-card").last().click();
     await page.waitForTimeout(250);
     await page.locator(".board-slot.placeable").first().click();
     await page.waitForTimeout(600);
@@ -224,8 +222,12 @@ if (readyCount > 0) {
 
 // --------------------------------- 4. THE REGRESSION: attack with a card held
 await newBoard();
-await page.locator(".hand-card").first().waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
-await page.locator(".hand-card").first().click(); // pick a card up
+// The shared deck now contains relics, so the first random card may be an
+// intentional play-on-bearer action rather than a minion card. Inject a known
+// minion for this click-regression check, then select the injected last card.
+await page.evaluate(() => window.__debug?.giveCard("Modern Tank"));
+await page.locator(".hand-card").last().waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
+await page.locator(".hand-card").last().click(); // pick a card up
 await page.waitForTimeout(250);
 const handHeld = await page.locator(".hand-card.selected").count();
 
@@ -371,8 +373,7 @@ await newBoard({ place: false });
 await newBoard({ awake: false });
 {
   const occupied = await page.locator(".board-slot.occupied").count();
-  const undoBtn = page.getByRole("button", { name: /^Undo$/ }).first();
-  await undoBtn.click().catch(() => {});
+  await page.keyboard.press("z");
   await page.waitForTimeout(600);
   const afterUndo = await page.locator(".board-slot.occupied").count();
   check(
@@ -426,9 +427,7 @@ await newBoard({ place: false, cheat: false });
     const blockedBefore = (await expensive.getAttribute("data-playable")) === "false";
     const unwantedPopupGone = (await expensive.getAttribute("title")) === null;
 
-    await page.getByRole("button", { name: /Settings/ }).first().click();
-    await page.getByRole("button", { name: /Infinite mana is off/ }).first().click();
-    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: /Cheat Off|Cheat On/ }).first().click();
     await expensive.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
     await page.waitForFunction(() => document.querySelector(".hand-card:last-child")?.getAttribute("data-playable") === "true");
     const playableAfter = (await expensive.getAttribute("data-playable")) === "true";
@@ -491,16 +490,15 @@ async function targetingCheck(label, cardName, choiceSelector) {
   );
 }
 
-// Rennala's freeze_one is an enemy-side board pick with no filter, so any enemy
-// minion is a legal target — the most reliable board prompt in the roster.
+// Kiritsugu's freeze_one is an enemy-side board pick with no filter, so any
+// enemy minion is a legal target — the most reliable board prompt in the roster.
 await targetingCheck(
   "a BOARD-target battlecry asks, then resolves",
-  "Rennala Queen of the Full Moon",
+  "Kiritsugu Emiya",
   ".board-slot.choosable",
 );
 
-// Batman is the regression that motivated this pass: two separate victims must
-// be chosen, and the first choice must disappear from the second prompt.
+// Batman freezes one chosen enemy, or kills it when it is already Frozen.
 await newBoard({ place: false });
 {
   const ready = await page.evaluate(() => Boolean(window.__debug));
@@ -518,32 +516,28 @@ await newBoard({ place: false });
     await page.locator(".board-slot.placeable").first().click();
     await page.locator(".board-slot.choosable").first().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
     const firstOffered = await page.locator(".board-slot.choosable").count();
-    if (firstOffered) await page.locator(".board-slot.choosable").nth(1).click();
-    await page.waitForTimeout(400);
-    const secondOffered = await page.locator(".board-slot.choosable").count();
-    if (secondOffered) await page.locator(".board-slot.choosable").last().click();
+    if (firstOffered) await page.locator(".board-slot.choosable").first().click();
     await page.waitForTimeout(700);
     check(
-      "Batman asks for two distinct freeze targets",
-      firstOffered === 3 && secondOffered === 2 &&
+      "Batman asks for a freeze target",
+      firstOffered === 3 &&
         (await page.locator(".target-prompt").count()) === 0 &&
-        (await page.locator(".board-slot .card-face.is-frozen").count()) === 2,
-      `${firstOffered} then ${secondOffered} choices; ${await page.locator(".board-slot .card-face.is-frozen").count()} board minions frozen`,
+        (await page.locator(".board-slot .card-face.is-frozen").count()) === 1,
+      `${firstOffered} choices; ${await page.locator(".board-slot .card-face.is-frozen").count()} board minion frozen`,
     );
   }
 }
 
-// John Wick's battlecry answers with buttons inside the prompt instead.
+// Gol D. Roger's discover answers with buttons inside the prompt instead.
 await targetingCheck(
   "a VALUE-choice battlecry asks, then resolves",
-  "John Wick",
+  "Gol D. Roger",
   ".prompt-hand-card:not([disabled]), .prompt-value:not([disabled])",
 );
 
 // ------------------------------------------------------------- 10. a relic
-// A relic is never equipped by the player -- an effect claims it -- so there is
-// no click to script. What the UI owes us is that a bearer SHOWS its relic, and
-// the hook can hang one on a minion to prove it.
+// A relic is a real hand card now: select it, then select an occupied friendly
+// slot. The badge check proves the explicit play path and the visual result.
 await newBoard({ place: false });
 {
   const ready = await page.evaluate(() => Boolean(window.__debug));
@@ -551,16 +545,18 @@ await newBoard({ place: false });
     skip("a minion shows the relic it carries", "no __debug hook (production build?)");
   } else {
     const before = await page.locator(".relic-badge").count();
-    const relic = await page.evaluate(() => {
+    await page.evaluate(() => {
       window.__debug.place("Zoro", "me", 0);
-      return window.__debug.equipRelic("The Holy Grail", "me", 0);
+      window.__debug.giveCard("The Holy Grail");
     });
+    await page.locator(".hand-card").last().click();
+    await page.locator(".board-slot.placeable.occupied").first().click();
     await page.waitForTimeout(700);
     const after = await page.locator(".relic-badge").count();
     check(
       "a minion shows the relic it carries",
       before === 0 && after > 0,
-      `${relic}: badges ${before} -> ${after}`,
+      `badges ${before} -> ${after}`,
     );
   }
 }

@@ -1,4 +1,4 @@
-import type { GameEvent, GameState } from "./engine/types";
+import type { GameEvent, GameState, RelicInstance } from "./engine/types";
 import type { BotSkill } from "./engine/bot";
 
 /** How the duel is being played. Mirrors GameMode in screens/Screens.tsx. */
@@ -41,8 +41,17 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // it rather than restoring black cards from stale minion instances.
 // v10: MinionInstance gained `gainedEffects`. A v9 save can therefore reach
 // `hasEffect()` with no array to search, which blanks the game before it draws.
-const SAVE_VERSION = 10;
+// v11: Ascension Relics became ordinary shared-deck cards. Legacy satchels are
+// migrated into hand and the old rift pool is returned to the shared deck.
+const SAVE_VERSION = 11;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
+const LEGACY_SAVE_KEY = "convergence.save.v10";
+
+type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
+type LegacyGameState = Omit<GameState, "players"> & {
+  players: [LegacyPlayer, LegacyPlayer];
+  relicPool?: RelicInstance[];
+};
 
 export interface SavedGame {
   version: number;
@@ -76,22 +85,21 @@ export function saveGame(game: GameState, events: GameEvent[], mode: SavedMode, 
  */
 export function loadGame(): SavedGame | null {
   try {
-    const raw = window.localStorage.getItem(SAVE_KEY);
+    const raw = window.localStorage.getItem(SAVE_KEY) ?? window.localStorage.getItem(LEGACY_SAVE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<SavedGame>;
-    if (!parsed || parsed.version !== SAVE_VERSION) return null;
-    const game = parsed.game;
+    if (!parsed || (parsed.version !== SAVE_VERSION && parsed.version !== SAVE_VERSION - 1)) return null;
+    const game = parsed.game as GameState | undefined;
     if (!game || typeof game !== "object") return null;
     if (!Array.isArray(game.players) || game.players.length !== 2) return null;
     if (typeof game.rngSeed !== "number" || typeof game.turnNumber !== "number") return null;
     if (typeof game.manaRamp !== "number" || game.manaRamp <= 0) return null;
     if (!Array.isArray(game.deck) || !Array.isArray(game.effectQueue)) return null;
-    if (!Array.isArray(game.relicPool)) return null;
+    if (parsed.version === SAVE_VERSION - 1) migrateLegacyRelics(game as LegacyGameState);
     const playerShapeOk = (player: SavedGame["game"]["players"][number]) =>
       Array.isArray(player?.board) &&
       player.board.length === 5 &&
       player.board.every((minion) => minion === null || Array.isArray(minion.gainedEffects)) &&
-      Array.isArray(player.relics) &&
       Array.isArray(player.slotAuras) &&
       player.costReductions !== undefined &&
       "confusedUntilTurn" in player;
@@ -112,6 +120,20 @@ export function loadGame(): SavedGame | null {
   } catch {
     return null;
   }
+}
+
+/** Convert v10's auto-equip satchel into the hand/deck card model. */
+function migrateLegacyRelics(game: LegacyGameState): void {
+  for (const player of game.players) {
+    const satchelIds = Array.isArray(player.relics) ? player.relics.map((relic) => relic.id) : [];
+    delete player.relics;
+    for (const relicId of satchelIds) {
+      if (player.hand.length < 10) player.hand.push(relicId);
+      else game.discard.push(relicId);
+    }
+  }
+  game.deck.push(...(game.relicPool ?? []).map((relic) => relic.id));
+  delete game.relicPool;
 }
 
 export function clearSave(): void {

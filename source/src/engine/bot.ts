@@ -149,7 +149,10 @@ function scoreState(state: GameState, botId: PlayerId): number {
   if (!hasTaunt(state, botId) && theirReach >= me.health) score -= 500;
 
   score += me.hand.length * 0.8 - enemy.hand.length * 0.8;
-  score += me.relics.length * 0.6;
+  // Relics are now cards in hand, so their value is already represented by
+  // hand size; add a small premium because a held relic is a future attached
+  // effect rather than an ordinary card.
+  score += me.hand.filter((cardId) => /^r\d+$/i.test(cardId)).length * 0.6;
   // Unspent mana is a wasted turn.
   score -= me.mana * 0.9;
 

@@ -118,31 +118,18 @@ describe("targeted effects", () => {
     expect(chosen.players[1].board[0]?.frozen).toBe(false); // the old engine always hit this one
   });
 
-  it("Batman asks for two different enemies and freezes both choices", () => {
-    const state = mainState();
-    state.players[1].board[0] = dummy("John Wick", 1);
-    state.players[1].board[2] = dummy("Zoro", 1);
-    state.players[1].board[4] = dummy("Death Star", 1);
+  it("Batman freezes an enemy, but kills it if it is already Frozen", () => {
+    const frozenState = mainState("batman-kill-frozen");
+    frozenState.players[1].board[0] = dummy("John Wick", 1, { frozen: true });
+    const killed = playCardFor(frozenState, 0, "Batman", 1);
+    expect(killed.pendingTarget).toBeNull();
+    expect(killed.players[1].board[0]).toBeNull();
 
-    const firstPrompt = playCardFor(state, 0, "Batman", 1);
-    const firstIndex = firstPrompt.pendingTarget!.options.findIndex((option) => option.slot === 2);
-    const secondPrompt = applyAction(
-      firstPrompt,
-      { type: "choose_target", player: 0, choiceIndex: firstIndex },
-      library,
-    ).state;
-    expect(secondPrompt.phase).toBe("targeting");
-    expect(secondPrompt.pendingTarget?.options.some((option) => option.slot === 2)).toBe(false);
-
-    const secondIndex = secondPrompt.pendingTarget!.options.findIndex((option) => option.slot === 4);
-    const frozen = applyAction(
-      secondPrompt,
-      { type: "choose_target", player: 0, choiceIndex: secondIndex },
-      library,
-    ).state;
-    expect(frozen.players[1].board[0]?.frozen).toBe(false);
-    expect(frozen.players[1].board[2]?.frozen).toBe(true);
-    expect(frozen.players[1].board[4]?.frozen).toBe(true);
+    const openState = mainState("batman-freeze-open");
+    openState.players[1].board[0] = dummy("John Wick", 1);
+    const frozen = playCardFor(openState, 0, "Batman", 1);
+    expect(frozen.pendingTarget).toBeNull();
+    expect(frozen.players[1].board[0]?.frozen).toBe(true);
   });
 
   it("Musashi kills all damaged enemy minions", () => {

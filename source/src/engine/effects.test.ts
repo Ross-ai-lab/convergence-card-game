@@ -4,7 +4,8 @@ import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from
 import type { GameState, MinionInstance, PlayerId } from "./types";
 import { spawnTestMinion } from "./test-utils";
 
-const library = makeCardLibrary(cards);
+const minionLibrary = makeCardLibrary(cards);
+const library = makeCardLibrary(cards, relics);
 
 function cardId(name: string): string {
   const card = cards.find((entry) => entry.name === name);
@@ -13,7 +14,7 @@ function cardId(name: string): string {
 }
 
 function makeMinion(name: string, owner: PlayerId, overrides: Partial<MinionInstance> = {}): MinionInstance {
-  return spawnTestMinion(library[cardId(name)], owner, overrides);
+  return spawnTestMinion(minionLibrary[cardId(name)], owner, overrides);
 }
 /**
  * Plays a card from hand into a slot, ignoring mana — how a Battlecry fires.
@@ -40,21 +41,18 @@ function attack(state: GameState, attackerSlot: number, targetSlot: number) {
 }
 
 describe("full-roster effects", () => {
-  it("Gol D. Roger offers three relics and equips the chosen one to a friendly minion", () => {
+  it("Gol D. Roger offers three relics and adds the chosen one to hand", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("John Wick", 0);
-    const offered = state.relicPool.slice(0, 3).map((relic) => relic.id);
+    const offered = state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)).slice(0, 3);
 
     const firstPrompt = playCardFor(state, 0, "Gol D. Roger", 2);
-    expect(firstPrompt.pendingTarget?.kind).toBe("board");
-    const allyIndex = firstPrompt.pendingTarget!.options.findIndex((option) => option.slot === 0);
-    const secondPrompt = applyAction(firstPrompt, { type: "choose_target", player: 0, choiceIndex: allyIndex }, library).state;
-    expect(secondPrompt.pendingTarget?.kind).toBe("option");
-    expect(secondPrompt.pendingTarget?.labelOptions.map((option) => option.value)).toEqual(offered);
+    expect(firstPrompt.pendingTarget?.kind).toBe("option");
+    expect(firstPrompt.pendingTarget?.labelOptions.map((option) => option.value)).toEqual(offered);
 
-    const after = applyAction(secondPrompt, { type: "choose_target", player: 0, choiceIndex: 1 }, library).state;
-    expect(after.players[0].board[0]?.relic?.id).toBe(offered[1]);
-    expect(after.relicPool.map((relic) => relic.id)).not.toContain(offered[1]);
+    const after = applyAction(firstPrompt, { type: "choose_target", player: 0, choiceIndex: 1 }, library).state;
+    expect(after.players[0].hand).toContain(offered[1]);
+    expect(after.players[0].board[2]?.relic).toBeNull();
+    expect(after.deck).not.toContain(offered[1]);
   });
 
   it("Transformers consumes friendly Tech minions and gains their stats and effects", () => {
