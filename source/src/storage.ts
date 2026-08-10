@@ -39,7 +39,9 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // v9: card and relic artwork now follows the app's deployment base path. A v8
 // save can carry root-only artwork paths into a folder-hosted build, so discard
 // it rather than restoring black cards from stale minion instances.
-const SAVE_VERSION = 9;
+// v10: MinionInstance gained `gainedEffects`. A v9 save can therefore reach
+// `hasEffect()` with no array to search, which blanks the game before it draws.
+const SAVE_VERSION = 10;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
 
 export interface SavedGame {
@@ -88,6 +90,7 @@ export function loadGame(): SavedGame | null {
     const playerShapeOk = (player: SavedGame["game"]["players"][number]) =>
       Array.isArray(player?.board) &&
       player.board.length === 5 &&
+      player.board.every((minion) => minion === null || Array.isArray(minion.gainedEffects)) &&
       Array.isArray(player.relics) &&
       Array.isArray(player.slotAuras) &&
       player.costReductions !== undefined &&
