@@ -81,6 +81,9 @@ export type EffectId =
   | "all_enemy_atk_down_2"
   | "freeze_one"
   | "freeze_all"
+  | "freeze_all_enemies"
+  | "lunar_slime"
+  | "chain_attacker"
   | "silence_enemy"
   | "buff_good_ally_3"
   | "buff_all_good_2"
@@ -196,6 +199,37 @@ export interface CardDefinition {
   art: string;
 }
 
+export interface MinionTransformSnapshot {
+  name: string;
+  cost: number;
+  atk: number;
+  hp: number;
+  maxHp: number;
+  baseAtk: number;
+  baseHp: number;
+  rarity: Rarity;
+  camp: Camp;
+  alignment: Alignment;
+  keywords: Keyword[];
+  effectId: EffectId;
+  effectTiming: EffectTiming;
+  effect: string;
+  origin: string;
+  art: string;
+  silenced: boolean;
+  divineShield: boolean;
+  stolenPassiveFrom: string | null;
+  stolenPassiveText: string | null;
+  gainedEffects: Array<{ effectId: EffectId; timing: "passive" | "ongoing"; text: string }>;
+}
+
+export interface TemporaryMinionTransform {
+  kind: "lunar_slime";
+  expiresAtTurn: number;
+  restoreOnPlayer: PlayerId;
+  original: MinionTransformSnapshot;
+}
+
 export interface MinionInstance {
   instanceId: string;
   cardId: string;
@@ -236,6 +270,8 @@ export interface MinionInstance {
   delayedDestroySource: string | null;
   /** The Ascension Relic strapped to this minion, if any. Dies with it. */
   relic: RelicInstance | null;
+  /** A temporary transformation that restores at the named player's next turn. */
+  temporaryTransform: TemporaryMinionTransform | null;
   /** Mahoraga: every attacker that has already swung at this minion. */
   attackedBy: string[];
   /** APR: this minion may never attack again. */

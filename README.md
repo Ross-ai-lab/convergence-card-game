@@ -134,6 +134,8 @@ For a behaviour change, update the printed CSV text and the engine branch togeth
 
 When an effect is changed, replace the old effect and its old keywords or timing unless the request explicitly says to retain them. Do not silently append a new effect to an existing Taunt, Chained, Divine Shield, or other rule.
 
+Whenever proposing new effects for cards, always list each card’s current/old effect alongside the proposed ideas before suggesting a replacement.
+
 Printed timing must match play. For every target or choice, specify whether it selects a minion, board slot, hand card, or random legal object. Test no-valid-target, cancellation, opponent-turn, and resolution behaviour where relevant.
 
 ## Engine rules that must stay coherent
@@ -197,6 +199,7 @@ When changing a rule, add or update a focused test and make the card text agree 
 ## Development lessons
 
 - A card’s text and its resolution can live in different places. Update CSV, engine, and a focused test together so the card does what it says.
+- When replacing a card effect, treat it as a full definition replacement: remove every obsolete keyword and every obsolete keyword sentence from the CSV row unless the new effect explicitly retains that rule. Before calling the change finished, compare the new keywords, timing, and printed text with the requested effect so stale Taunt, Divine Shield, Chained, Passive, or similar rules cannot survive by accident.
 - Re-measure a balance pass before making its next adjustment. A successful buff can overshoot into the roster’s next outlier.
 - Tune the lever that controls the behaviour. Health does not fix a card whose targeting, keyword, or bot valuation is the real issue.
 - Card text needs real font measurement. A fixed maximum can make short text needlessly tiny while still failing long text.

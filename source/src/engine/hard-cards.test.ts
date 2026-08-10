@@ -271,8 +271,9 @@ describe("choice-driven cards", () => {
     const asking = play(state, "V", 0);
     expect(asking.phase).toBe("targeting");
     expect(asking.pendingTarget?.kind).toBe("hand");
-    expect(asking.players[0].board[0]?.divineShield).toBe(true);
-    expect(asking.players[0].board[0]?.keywords).toEqual(expect.arrayContaining(["Taunt"]));
+    expect(asking.players[0].board[0]?.divineShield).toBe(false);
+    expect(asking.players[0].board[0]?.keywords).not.toContain("Divine Shield");
+    expect(asking.players[0].board[0]?.keywords).not.toContain("Taunt");
   });
 
   it("Joker chooses two cards, then discards one of them", () => {

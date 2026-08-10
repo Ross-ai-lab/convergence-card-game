@@ -65,7 +65,7 @@ c063,Sans,8,5,6,Purple,Magic,Neutral,,confuse_enemies,onPlay,Battlecry: All enem
 c064,Seven Deadly Sins,8,5,6,Purple,Magic,Good,,buff_magic_ally_3,ongoing,Ongoing: Give +3/+3 to one of your Magic type minion,The Magic Number,Seven Deadly Sins,/card-art/raw/c064.webp
 c065,Whitebeard,8,7,9,Purple,Magic,Neutral,,aoe_all_3,onPlay,Battlecry: Deal 3 DMG to ALL other minions,Split the World in two,One Piece,/card-art/raw/c065.webp
 c066,Elder Centipede,8,7,7,Black,Nature,Evil,Chained;Taunt,none,none,Chained. Taunt. Taunt activates after the Chained period ends.,Billion year old,OPM,/card-art/raw/c066.webp
-c067,Hypnos,8,0,9,Black,Magic,Neutral,Taunt;Passive,freeze_attacker,passive,Taunt. Passive: Freeze the enemy minion which attacks this,He sleeps in his sleep,Hades,/card-art/raw/c067.webp
+c067,Hypnos,8,0,9,Black,Magic,Neutral,Taunt;Passive,chain_attacker,passive,Taunt. Passive: Enemy minions that attack this become Chained for 1 turn,He sleeps in his sleep,Hades,/card-art/raw/c067.webp
 c068,Star Destroyer,8,8,8,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c068.webp
 c069,Netero,7,5,6,Red,Magic,Good,Divine Shield,shield_good_magic,onPlay,Divine Shield. Battlecry: Give Divine Shield to all Good and Magic type friendly minions,Each prayer strikes harder than any fist,HxH,/card-art/raw/c069.webp
 c070,Vergil & Dante & Nero,7,3,5,Red,Magic,Neutral,,double_attack,passive,Passive: This minion can attack two times per turn,Infinite potential,Devil May Cry,/card-art/raw/c070.webp
@@ -94,11 +94,11 @@ c092,UFO,6,5,5,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c092.webp
 c093,Yoriichi Type Zero,6,5,4,Black,Tech,Neutral,,survivor_buff,passive,"Passive: Whenever a friendly minion survives a combat, it gains +2/+1.",Strongest puppet,Demon Slayer,/card-art/raw/c093.webp
 c094,Grand Master Oogway,5,2,2,Red,Magic,Good,Divine Shield,silence_enemy,onPlay,Divine Shield. Battlecry: Silence one enemy minion of your choice,Patience,Kung-Fu Panda,/card-art/raw/c094.webp
 c095,Kojiro Sasaki,5,2,7,Red,Nature,Good,,redirect_attacks,passive,"Passive: When an enemy minion attacks another one of your minions, you can choose to direct the attack to yourself",Spending infinity in the Astral made him on par with the Gods,RoR,/card-art/raw/c095.webp
-c096,Dio Brando,5,4,4,Yellow,Magic,Evil,,freeze_opposing,onPlay,Battlecry: Freeze an enemy minion standing on the opposing side,THE WORLD,JoJo,/card-art/raw/c096.webp
+c096,Dio Brando,5,4,4,Yellow,Magic,Evil,,freeze_all_enemies,onPlay,Battlecry: Freeze all enemy minions,THE WORLD,JoJo,/card-art/raw/c096.webp
 c097,Elden Beast,5,4,5,Yellow,Nature,Neutral,,damage_magic_enemy_2,onPlay,Battlecry: Deal 2 DMG to an enemy magic minion,Legends carved into the Lands Between,Elden Ring,/card-art/raw/c097.webp
 c098,Big Mom,5,3,5,Purple,Magic,Evil,,devour_friendly,onPlay,"Battlecry: Destroy a friendly minion. Gain its ATK and HP, in addition to your own",Greed,One Piece,/card-art/raw/c098.webp
 c099,Fire Lord Ozai,5,4,3,Purple,Magic,Evil,,aoe_all_3,onPlay,Battlecry: Deal 3 damage to ALL other minions,Entitlement,Avatar,/card-art/raw/c099.webp
-c100,Rennala Queen of the Full Moon,5,2,5,Purple,Magic,Neutral,,freeze_all,onPlay,Battlecry: Freeze all other minions,The Moon,Elden Ring,/card-art/raw/c100.webp
+c100,Rennala Queen of the Full Moon,5,2,5,Purple,Magic,Neutral,,lunar_slime,ongoing,Ongoing: Transform the strongest enemy minion into a 1/1 Lunar Slime until your next turn,The Moon,Elden Ring,/card-art/raw/c100.webp
 c101,The 7 Heroic Spirits,5,3,6,Purple,Magic,Neutral,,double_damage_nature,passive,Passive: Deal 2x damage to Nature minions,Legends reborn,Fate,/card-art/raw/c101.webp
 c102,Dragon,5,3,5,Black,Nature,Neutral,Taunt,none,none,Taunt.,ROAR,Myth,/card-art/raw/c102.webp
 c103,Fort,5,4,5,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c103.webp
@@ -173,4 +173,4 @@ c171,Goblins,1,2,1,Black,Nature,Evil,Taunt,none,none,Taunt.,"Many, loud, briefly
 c172,Mr. Poopybutthole,1,1,2,Black,Nature,Neutral,,give_taunt,onPlay,Battlecry: Give a minion Taunt,He was there the whole time,Rick and Morty,/card-art/raw/c172.webp
 c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,ongoing,Ongoing: Draw 1 card,The smartest thing here is a mouse.,MHA,/card-art/raw/c173.webp
 c174,Shibukawa,1,1,1,Black,Nature,Neutral,Divine Shield,silence_enemy,onPlay,Divine Shield. Battlecry: Silence one enemy minion of your choice,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
-c175,V,1,1,1,Black,Nature,Evil,Divine Shield;Taunt,pressure_chosen_card,onPlay,"Divine Shield. Taunt. Battlecry: Choose a card in the opponent's hand. They must play it next turn or it is burned.",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
+c175,V,1,1,1,Black,Nature,Evil,,pressure_chosen_card,onPlay,"Battlecry: Choose a card in the opponent's hand. They must play it next turn or it is burned.",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp

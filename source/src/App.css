@@ -3498,14 +3498,16 @@ button:disabled {
   background: rgba(10, 75, 68, 0.9);
 }
 
-/* The relic strapped to a minion, worn in its corner. */
+/* The relic strapped to a minion, centered along the bottom so it does not
+   cover the HP gem in the lower-right corner. */
 /* Picked up with pointerdown, so it needs the same gesture opt-out the hand and
    the board slots take. */
 .relic-badge {
   touch-action: none;
   position: absolute;
-  right: 4px;
+  left: 50%;
   bottom: 4px;
+  transform: translateX(-50%);
   z-index: 5;
   width: 26px;
   height: 26px;
@@ -3567,7 +3569,7 @@ button:disabled {
 }
 
 .relic-badge.peekable:hover {
-  transform: scale(1.25);
+  transform: translateX(-50%) scale(1.25);
   box-shadow: 0 0 12px rgba(240, 199, 103, 0.7);
 }
 

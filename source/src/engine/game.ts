@@ -18,6 +18,7 @@ import type {
   RelicInstance,
   ResolvedChoiceWithProgress as ResolvedChoice,
   TargetOption,
+  TemporaryMinionTransform,
 } from "./types";
 
 export type CardLibrary = Record<string, PlayableCard>;
@@ -520,6 +521,7 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     protectedSlot: false,
     delayedDestroySource: null,
     relic: null,
+    temporaryTransform: null,
     attackedBy: [],
     attackLocked: false,
     attackLockedUntilTurn: null,
@@ -541,7 +543,9 @@ function applyOnPlayEffects(
   library: CardLibrary,
   events: GameEvent[],
 ): void {
-  if (minion.effectTiming !== "onPlay" && minion.effectTiming !== "onPlayAndOngoing") return;
+  // Rennala's ongoing transformation starts when she enters, then refreshes
+  // at the start of her owner's turns. The printed text remains Ongoing.
+  if (minion.effectTiming !== "onPlay" && minion.effectTiming !== "onPlayAndOngoing" && minion.effectId !== "lunar_slime") return;
   // A suspend here leaves phase === "targeting"; applyAction returns and the
   // player answers with `choose_target` before anything else can happen.
   runEffect(state, minion, slotIndex, library, events);
@@ -550,6 +554,7 @@ function applyOnPlayEffects(
 function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, events: GameEvent[]): void {
   state.activePlayer = playerId;
   state.turnNumber += 1;
+  restoreExpiredTransforms(state, playerId, events);
   const player = state.players[playerId];
   player.turnsStarted += 1;
   player.relicMoves = 0;
@@ -852,6 +857,12 @@ function attackMinion(
   if (!defender.silenced) {
     if (hasEffect(defender, "freeze_attacker") && attackerAlive && survivingAttacker) {
       applyFreeze(state, defender, survivingAttacker, events);
+    }
+    if (hasEffect(defender, "chain_attacker") && attackerAlive && survivingAttacker) {
+      // Chained = 2 is one skipped owner turn in this engine: the counter is
+      // decremented at turn start before attacks are offered.
+      survivingAttacker.chained = Math.max(survivingAttacker.chained, 2);
+      events.push(effectEvent(`${defender.name} chains ${survivingAttacker.name} for 1 turn.`, defender));
     }
     if (hasEffect(defender, "kaku_discard")) discardRandom(state, playerId, events);
     // APR: whoever swung at it never swings again.
@@ -1550,6 +1561,13 @@ function runEffect(
         if (minion && minion.instanceId !== source.instanceId) applyFreeze(state, source, minion, events);
       }
     }
+  } else if (source.effectId === "freeze_all_enemies") {
+    for (const minion of enemy.board) {
+      if (minion) applyFreeze(state, source, minion, events);
+    }
+  } else if (source.effectId === "lunar_slime") {
+    const target = strongestEnemyMinion(state, source);
+    if (target) transformIntoLunarSlime(state, source, target, events);
   } else if (source.effectId === "silence_enemy") {
     if (picked && canDisable(state, source.owner, picked)) {
       picked.silenced = true;
@@ -2533,6 +2551,95 @@ function buffMinion(minion: MinionInstance, atk: number, hp: number): void {
   minion.atk += atk;
   minion.maxHp += hp;
   minion.hp += hp;
+}
+
+function strongestEnemyMinion(state: GameState, source: MinionInstance): MinionInstance | null {
+  return (
+    state.players[opponent(source.owner)].board
+      .filter((minion): minion is MinionInstance => Boolean(minion))
+      .sort((left, right) => right.atk - left.atk || right.maxHp - left.maxHp || left.playOrder - right.playOrder)[0] ?? null
+  );
+}
+
+function transformIntoLunarSlime(
+  state: GameState,
+  source: MinionInstance,
+  target: MinionInstance,
+  events: GameEvent[],
+): void {
+  if (!canDisable(state, source.owner, target)) {
+    events.push(effectEvent(`${target.name} resists the Lunar Slime transformation.`, target));
+    return;
+  }
+  if (target.temporaryTransform?.kind === "lunar_slime") {
+    target.temporaryTransform.expiresAtTurn = state.turnNumber + 2;
+    target.temporaryTransform.restoreOnPlayer = source.owner;
+    events.push(effectEvent(`${source.name} refreshes ${target.name} as a Lunar Slime.`, source));
+    return;
+  }
+
+  const original: TemporaryMinionTransform["original"] = {
+    name: target.name,
+    cost: target.cost,
+    atk: target.atk,
+    hp: target.hp,
+    maxHp: target.maxHp,
+    baseAtk: target.baseAtk,
+    baseHp: target.baseHp,
+    rarity: target.rarity,
+    camp: target.camp,
+    alignment: target.alignment,
+    keywords: [...target.keywords],
+    effectId: target.effectId,
+    effectTiming: target.effectTiming,
+    effect: target.effect,
+    origin: target.origin,
+    art: target.art,
+    silenced: target.silenced,
+    divineShield: target.divineShield,
+    stolenPassiveFrom: target.stolenPassiveFrom,
+    stolenPassiveText: target.stolenPassiveText,
+    gainedEffects: target.gainedEffects.map((effect) => ({ ...effect })),
+  };
+  target.temporaryTransform = {
+    kind: "lunar_slime",
+    expiresAtTurn: state.turnNumber + 2,
+    restoreOnPlayer: source.owner,
+    original,
+  };
+  target.name = "Lunar Slime";
+  target.cost = 1;
+  target.atk = 1;
+  target.hp = 1;
+  target.maxHp = 1;
+  target.baseAtk = 1;
+  target.baseHp = 1;
+  target.rarity = "Black";
+  target.camp = "Nature";
+  target.alignment = "Neutral";
+  target.keywords = [];
+  target.effectId = "none";
+  target.effectTiming = "none";
+  target.effect = "-";
+  target.origin = "Elden Ring";
+  target.silenced = false;
+  target.divineShield = false;
+  target.stolenPassiveFrom = null;
+  target.stolenPassiveText = null;
+  target.gainedEffects = [];
+  events.push(effectEvent(`${source.name} transforms ${original.name} into a 1/1 Lunar Slime.`, source));
+}
+
+function restoreExpiredTransforms(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
+  for (const minion of state.players.flatMap((player) => player.board)) {
+    const transform = minion?.temporaryTransform;
+    if (!minion || !transform || transform.restoreOnPlayer !== playerId || transform.expiresAtTurn > state.turnNumber) continue;
+    Object.assign(minion, transform.original);
+    minion.keywords = [...transform.original.keywords];
+    minion.gainedEffects = transform.original.gainedEffects.map((effect) => ({ ...effect }));
+    minion.temporaryTransform = null;
+    events.push(effectEvent(`${minion.name} returns from Lunar Slime form.`, minion));
+  }
 }
 
 function firstFriendlyByAlignment(player: PlayerState, alignment: string): MinionInstance | null {

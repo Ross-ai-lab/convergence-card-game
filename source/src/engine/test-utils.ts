@@ -48,6 +48,7 @@ export function spawnTestMinion(
     protectedSlot: false,
     delayedDestroySource: null,
     relic: null,
+    temporaryTransform: null,
     attackedBy: [],
     attackLocked: false,
     attackLockedUntilTurn: null,

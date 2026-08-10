@@ -43,9 +43,11 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // `hasEffect()` with no array to search, which blanks the game before it draws.
 // v11: Ascension Relics became ordinary shared-deck cards. Legacy satchels are
 // migrated into hand and the old rift pool is returned to the shared deck.
-const SAVE_VERSION = 11;
+// v12: MinionInstance gained temporary transformation state for Rennala's
+// Lunar Slime effect.
+const SAVE_VERSION = 12;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v10";
+const LEGACY_SAVE_KEY = "convergence.save.v11";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -95,11 +97,16 @@ export function loadGame(): SavedGame | null {
     if (typeof game.rngSeed !== "number" || typeof game.turnNumber !== "number") return null;
     if (typeof game.manaRamp !== "number" || game.manaRamp <= 0) return null;
     if (!Array.isArray(game.deck) || !Array.isArray(game.effectQueue)) return null;
-    if (parsed.version === SAVE_VERSION - 1) migrateLegacyRelics(game as LegacyGameState);
+    if (parsed.version === SAVE_VERSION - 1) {
+      migrateLegacyRelics(game as LegacyGameState);
+      migrateLegacyTransforms(game);
+    }
     const playerShapeOk = (player: SavedGame["game"]["players"][number]) =>
       Array.isArray(player?.board) &&
       player.board.length === 5 &&
-      player.board.every((minion) => minion === null || Array.isArray(minion.gainedEffects)) &&
+      player.board.every(
+        (minion) => minion === null || (Array.isArray(minion.gainedEffects) && "temporaryTransform" in minion),
+      ) &&
       Array.isArray(player.slotAuras) &&
       player.costReductions !== undefined &&
       "confusedUntilTurn" in player;
@@ -134,6 +141,14 @@ function migrateLegacyRelics(game: LegacyGameState): void {
   }
   game.deck.push(...(game.relicPool ?? []).map((relic) => relic.id));
   delete game.relicPool;
+}
+
+function migrateLegacyTransforms(game: GameState): void {
+  for (const player of game.players) {
+    for (const minion of player.board) {
+      if (minion && minion.temporaryTransform === undefined) minion.temporaryTransform = null;
+    }
+  }
 }
 
 export function clearSave(): void {

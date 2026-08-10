@@ -41,6 +41,57 @@ function attack(state: GameState, attackerSlot: number, targetSlot: number) {
 }
 
 describe("full-roster effects", () => {
+  it("Rennala (lunar_slime): transforms the strongest enemy and restores it when her turn returns", () => {
+    const state = mainState();
+    state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 5, hp: 6, maxHp: 6 });
+    state.players[1].board[1] = makeMinion("John Wick", 1, { atk: 3, hp: 8, maxHp: 8 });
+
+    const afterPlay = playCardFor(state, 0, "Rennala Queen of the Full Moon", 2);
+    const slime = afterPlay.players[1].board[0]!;
+    expect(slime.name).toBe("Lunar Slime");
+    expect(slime.atk).toBe(1);
+    expect(slime.maxHp).toBe(1);
+    expect(slime.effectId).toBe("none");
+    expect(afterPlay.players[1].board[1]?.name).toBe("John Wick");
+
+    afterPlay.players[0].board[2]!.silenced = true;
+    const restored = toMyNextTurn(afterPlay).players[1].board[0];
+    expect(restored?.name).toBe("John Wick");
+    expect(restored?.atk).toBe(5);
+    expect(restored?.maxHp).toBe(6);
+  });
+
+  it("Hypnos (chain_attacker): makes an attacker skip its next turn", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
+    state.players[1].board[0] = makeMinion("Hypnos", 1);
+
+    const afterAttack = attack(state, 0, 0);
+    expect(afterAttack.players[0].board[0]?.chained).toBe(2);
+
+    const nextOwnerTurn = toMyNextTurn(afterAttack);
+    expect(nextOwnerTurn.players[0].board[0]?.chained).toBe(1);
+    expect(getLegalActions(nextOwnerTurn, library)).not.toContainEqual({
+      type: "attack_minion",
+      player: 0,
+      attackerSlot: 0,
+      targetSlot: 0,
+    });
+  });
+
+  it("Dio Brando (freeze_all_enemies): freezes every enemy but not friendly minions", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    state.players[1].board[0] = makeMinion("John Wick", 1);
+    state.players[1].board[1] = makeMinion("John Wick", 1);
+
+    const after = playCardFor(state, 0, "Dio Brando", 2);
+
+    expect(after.players[0].board[0]?.frozen).toBe(false);
+    expect(after.players[1].board[0]?.frozen).toBe(true);
+    expect(after.players[1].board[1]?.frozen).toBe(true);
+  });
+
   it("Gol D. Roger offers three relics and adds the chosen one to hand", () => {
     const state = mainState();
     const offered = state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)).slice(0, 3);
@@ -229,13 +280,4 @@ describe("full-roster effects", () => {
     expect(playCardFor(state, 0, "Aizawa", 0).players[1].board[0]?.silenced).toBe(true);
   });
 
-  it("Rennala freezes every other minion, but not herself", () => {
-    const state = mainState();
-    state.players[0].board[1] = makeMinion("John Wick", 0);
-    state.players[1].board[0] = makeMinion("Death Star", 1);
-    const after = playCardFor(state, 0, "Rennala Queen of the Full Moon", 0);
-    expect(after.players[0].board[0]?.frozen).toBe(false);
-    expect(after.players[0].board[1]?.frozen).toBe(true);
-    expect(after.players[1].board[0]?.frozen).toBe(true);
-  });
 });
