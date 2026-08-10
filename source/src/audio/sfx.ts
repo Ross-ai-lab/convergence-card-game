@@ -717,6 +717,11 @@ export async function setTrack(track: Track | null): Promise<void> {
     // No track on disk — the game simply plays without music.
   } finally {
     musicLoading = false;
+    // A title-to-duel click can request the battle bed while the unlock path
+    // is still loading the menu bed. Do not lose that newer request.
+    if (!muted && ctx && musicGain && wantedTrack !== currentTrack && wantedTrack !== track) {
+      void setTrack(wantedTrack);
+    }
   }
 }
 
@@ -961,6 +966,7 @@ export function getStats() {
   return {
     ...stats,
     byName: { ...stats.byName },
+    current: currentTrack,
     ctxState: ctx ? ctx.state : "none",
     muted,
     musicPlaying: musicSource !== null,

@@ -1566,7 +1566,7 @@ function runEffect(
       if (minion) applyFreeze(state, source, minion, events);
     }
   } else if (source.effectId === "lunar_slime") {
-    const target = strongestEnemyMinion(state, source);
+    const target = randomEnemyMinion(state, source);
     if (target) transformIntoLunarSlime(state, source, target, events);
   } else if (source.effectId === "silence_enemy") {
     if (picked && canDisable(state, source.owner, picked)) {
@@ -2553,12 +2553,11 @@ function buffMinion(minion: MinionInstance, atk: number, hp: number): void {
   minion.hp += hp;
 }
 
-function strongestEnemyMinion(state: GameState, source: MinionInstance): MinionInstance | null {
-  return (
-    state.players[opponent(source.owner)].board
-      .filter((minion): minion is MinionInstance => Boolean(minion))
-      .sort((left, right) => right.atk - left.atk || right.maxHp - left.maxHp || left.playOrder - right.playOrder)[0] ?? null
+function randomEnemyMinion(state: GameState, source: MinionInstance): MinionInstance | null {
+  const candidates = state.players[opponent(source.owner)].board.filter(
+    (minion): minion is MinionInstance => Boolean(minion),
   );
+  return candidates.length > 0 ? candidates[rollInt(state, candidates.length)] : null;
 }
 
 function transformIntoLunarSlime(

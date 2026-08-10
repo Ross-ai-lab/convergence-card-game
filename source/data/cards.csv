@@ -98,7 +98,7 @@ c096,Dio Brando,5,4,4,Yellow,Magic,Evil,,freeze_all_enemies,onPlay,Battlecry: Fr
 c097,Elden Beast,5,4,5,Yellow,Nature,Neutral,,damage_magic_enemy_2,onPlay,Battlecry: Deal 2 DMG to an enemy magic minion,Legends carved into the Lands Between,Elden Ring,/card-art/raw/c097.webp
 c098,Big Mom,5,3,5,Purple,Magic,Evil,,devour_friendly,onPlay,"Battlecry: Destroy a friendly minion. Gain its ATK and HP, in addition to your own",Greed,One Piece,/card-art/raw/c098.webp
 c099,Fire Lord Ozai,5,4,3,Purple,Magic,Evil,,aoe_all_3,onPlay,Battlecry: Deal 3 damage to ALL other minions,Entitlement,Avatar,/card-art/raw/c099.webp
-c100,Rennala Queen of the Full Moon,5,2,5,Purple,Magic,Neutral,,lunar_slime,ongoing,Ongoing: Transform the strongest enemy minion into a 1/1 Lunar Slime until your next turn,The Moon,Elden Ring,/card-art/raw/c100.webp
+c100,Rennala Queen of the Full Moon,5,2,5,Purple,Magic,Neutral,,lunar_slime,ongoing,Ongoing: Transform a random enemy minion into a 1/1 Lunar Slime until your next turn,The Moon,Elden Ring,/card-art/raw/c100.webp
 c101,The 7 Heroic Spirits,5,3,6,Purple,Magic,Neutral,,double_damage_nature,passive,Passive: Deal 2x damage to Nature minions,Legends reborn,Fate,/card-art/raw/c101.webp
 c102,Dragon,5,3,5,Black,Nature,Neutral,Taunt,none,none,Taunt.,ROAR,Myth,/card-art/raw/c102.webp
 c103,Fort,5,4,5,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c103.webp

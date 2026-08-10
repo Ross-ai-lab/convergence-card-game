@@ -36,7 +36,7 @@ describe("card CSV data", () => {
     expect(changed.get("Gandalf the White")?.effect).toBe("Divine Shield. Battlecry: Give all friendly Good minions Divine Shield");
     expect(changed.get("Kaido")?.effect).toBe("Battlecry: Destroy an enemy Taunt minion");
     expect(changed.get("Rennala Queen of the Full Moon")?.effect).toBe(
-      "Ongoing: Transform the strongest enemy minion into a 1/1 Lunar Slime until your next turn",
+      "Ongoing: Transform a random enemy minion into a 1/1 Lunar Slime until your next turn",
     );
   });
 });

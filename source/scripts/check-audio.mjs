@@ -34,7 +34,21 @@ const check = (label, ok, detail) => {
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(900);
-// A real gesture is what unlocks the AudioContext.
+
+// Regression: the very first real gesture may be the Duel button itself. That
+// click unlocks audio and changes the screen at the same time, so the menu bed
+// and battle bed can race while their files are loading.
+await page.getByRole("button", { name: /Duel the|Start a hotseat duel/ }).first().click().catch(() => {});
+await page.waitForTimeout(2600);
+const directDuel = await page.evaluate(() => window.__sfx?.getStats() ?? { error: "SFX probe missing" });
+check(
+  "direct Duel starts battle music",
+  directDuel.current === "battle" && directDuel.musicPlaying,
+  `current=${directDuel.current}, playing=${directDuel.musicPlaying}`,
+);
+
+// A real gesture is what unlocks the AudioContext in browsers that do not use
+// the test runner's autoplay override.
 await page.mouse.click(640, 400);
 await page.waitForTimeout(600);
 

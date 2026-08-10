@@ -41,10 +41,11 @@ function attack(state: GameState, attackerSlot: number, targetSlot: number) {
 }
 
 describe("full-roster effects", () => {
-  it("Rennala (lunar_slime): transforms the strongest enemy and restores it when her turn returns", () => {
+  it("Rennala (lunar_slime): transforms a random enemy and restores it when her turn returns", () => {
     const state = mainState();
-    state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 5, hp: 6, maxHp: 6 });
-    state.players[1].board[1] = makeMinion("John Wick", 1, { atk: 3, hp: 8, maxHp: 8 });
+    state.rngSeed = 1;
+    state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 3, hp: 6, maxHp: 6 });
+    state.players[1].board[1] = makeMinion("John Wick", 1, { atk: 5, hp: 8, maxHp: 8 });
 
     const afterPlay = playCardFor(state, 0, "Rennala Queen of the Full Moon", 2);
     const slime = afterPlay.players[1].board[0]!;
@@ -57,7 +58,7 @@ describe("full-roster effects", () => {
     afterPlay.players[0].board[2]!.silenced = true;
     const restored = toMyNextTurn(afterPlay).players[1].board[0];
     expect(restored?.name).toBe("John Wick");
-    expect(restored?.atk).toBe(5);
+    expect(restored?.atk).toBe(3);
     expect(restored?.maxHp).toBe(6);
   });
 
