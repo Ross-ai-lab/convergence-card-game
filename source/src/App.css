@@ -536,9 +536,8 @@ button:disabled {
      budget on `.battlefield` below. Nothing inside the card was scaled to get
      here; it simply has a bigger slot to fill.
 
-     Whether the card actually reaches 224 depends on height: `--u` takes the
-     smaller of the width and height fits, so on a short window the card stays
-     5:7 and centres in the slot rather than stretching. */
+     The tracks stay wide enough to space five cards across the table, but each
+     actual slot is centred inside its track and keeps the card's 5:7 shape. */
   grid-template-columns: repeat(5, minmax(96px, 224px));
   /* 12 -> 24 -> 34. The doubling fixed cards reading as one continuous strip;
      34 is what the Taunt barricade needs, because it stands proud of the card
@@ -553,6 +552,11 @@ button:disabled {
   position: relative;
   min-width: 0;
   min-height: 0;
+  width: auto;
+  height: 100%;
+  aspect-ratio: 5 / 7;
+  align-self: center;
+  justify-self: center;
   padding: 0;
   border: 0;
   border-radius: 12px;
@@ -575,7 +579,7 @@ button:disabled {
 .board-slot.empty::before {
   content: "";
   position: absolute;
-  inset: 8% 6%;
+  inset: 6%;
   border: 2px dashed transparent;
   border-radius: 14px;
   background: radial-gradient(ellipse at 50% 55%, rgba(80, 50, 22, 0.05), rgba(96, 62, 26, 0.11) 72%);
@@ -600,11 +604,10 @@ button:disabled {
    EVERY state ring is drawn on `.cf-stage`, never on `.minion-wrap`.
 
    `.minion-wrap` is the SLOT box. `.cf-stage` is literally the card: exactly
-   750x1050 design units, and `.card-face` centres it. A slot is not 5:7, so the
-   card letterboxes inside it — and a ring painted on the wrap traced the slot
-   and left a fat gap above and below the card it was supposed to be outlining.
-   Drawing on `.cf-stage` also inherits the card's own corner radius for free,
-   so the ring follows the rounded corners instead of guessing at them.
+   750x1050 design units, and `.card-face` centres it. The slot is now 5:7 too,
+   so the card no longer letterboxes inside a wide square recess. Drawing on
+   `.cf-stage` also inherits the card's own corner radius for free, so the ring
+   follows the rounded corners instead of guessing at them.
 
    Each state repeats `var(--cf-drop)` at the end because `box-shadow` replaces
    the whole list — dropping it would delete the card's own drop shadow and make
@@ -655,7 +658,8 @@ button:disabled {
 /* --- minion layers: absolute wraps = definite sizes (see header note) --- */
 .minion-wrap {
   position: absolute;
-  inset: 4px 2px;
+  /* Keep the rendered card at the same 5:7 silhouette as its slot. */
+  inset: 2%;
   z-index: 1;
   animation: minion-arrive 0.3s cubic-bezier(0.18, 0.85, 0.3, 1.25);
 }
