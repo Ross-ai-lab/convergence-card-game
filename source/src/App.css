@@ -108,8 +108,9 @@ button:disabled {
 .top-strip {
   position: relative;
   z-index: 3;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas: "brand enemy system";
   align-items: center;
   gap: 10px;
   padding: 6px 4px 4px;
@@ -117,12 +118,18 @@ button:disabled {
 
 .brand-mini {
   display: flex;
+  grid-area: brand;
   gap: 8px;
   align-items: center;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.8rem;
+}
+
+.top-strip > .hero-plate.enemy {
+  grid-area: enemy;
+  justify-self: center;
 }
 
 .brand-mark {
@@ -159,7 +166,9 @@ button:disabled {
 
 .system-buttons {
   display: flex;
+  grid-area: system;
   gap: 6px;
+  justify-self: end;
 }
 
 .system-buttons button {
@@ -186,7 +195,7 @@ button:disabled {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   height: 100%;
   min-height: 0;
   border-radius: 0;
@@ -216,13 +225,6 @@ button:disabled {
   100% { transform: none; }
 }
 
-/* ---------------------------------------------------------------- enemy zone */
-.enemy-zone {
-  display: grid;
-  place-items: center;
-  padding: 0 0 2px; /* was 2px 0 6px — see the height budget on .battlefield */
-}
-
 /* ---------------------------------------------------------------- battlefield */
 .battlefield {
   position: relative;
@@ -235,7 +237,6 @@ button:disabled {
      stop spending the arena's height on air:
        row gap        8 -> 2   (a card now sits against the rift, as asked)
        padding      14 -> 4    top and bottom
-       enemy zone    8 -> 2    (below)
        command bar   8 -> 2    (below)
        enemy plate   about a third shorter (below)
      Roughly 60px back, which is ~30px per row, which is why the cards grew.
@@ -1565,13 +1566,9 @@ button:disabled {
   border-color: rgba(67, 205, 189, 0.55);
 }
 
-/* THE ENEMY PLATE IS ABOUT A THIRD SMALLER THAN YOURS, on purpose.
-   It is the only thing standing between the top of the arena and the top of the
-   window, so every pixel it occupies is a pixel the board cannot have — and it
-   carries the least information on screen: a name, a health number, a hand
-   count. Yours sits beside the hand at the bottom, where it costs the board
-   nothing, so it keeps full size. The asymmetry is the point; do not "fix" it by
-   matching them. */
+/* The opponent plate now lives in the top strip, where it shares the same visual
+   header as the controls and no longer consumes a separate board row. It stays
+   compact so the extra height becomes card space rather than a larger header. */
 .hero-plate.enemy {
   min-width: 172px;
   padding: 4px 9px;
@@ -3206,7 +3203,17 @@ button:disabled {
   }
 
   .top-strip {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand system"
+      "enemy enemy";
+    row-gap: 4px;
     padding: 0;
+  }
+
+  .top-strip .hero-plate.enemy {
+    grid-area: enemy;
+    justify-self: center;
   }
 
   .brand-mini strong {
@@ -3391,10 +3398,6 @@ button:disabled {
 @media (max-width: 620px) {
   .board-row {
     grid-auto-columns: 118px;
-  }
-
-  .enemy-zone {
-    padding: 0;
   }
 
   .hero-plate {

@@ -1309,6 +1309,19 @@ export default function App() {
             <span className="player-count-chip"><b>{playerCount.toLocaleString()}</b> played this game</span>
           ) : null}
         </div>
+        <HeroPlate
+          enemy
+          player={opponent}
+          cheatMode={game.cheatMode}
+          floats={floats.filter((f) => f.slot === "hero" && f.owner === opponentId)}
+          impacts={heroFx(opponentId)}
+          targetable={coreTargetable}
+          active={game.activePlayer === opponentId && game.phase !== "gameOver"}
+          thinking={botThinking}
+          onStrike={attackCore}
+          onRelicPreview={previewRelic}
+          onPreviewEnd={endPreview}
+        />
         <div className="system-buttons">
           <button type="button" onClick={restart}>Restart</button>
           <button
@@ -1367,22 +1380,6 @@ export default function App() {
           ) : null}
         </div>
         </header>
-
-        <section className="enemy-zone">
-          <HeroPlate
-            enemy
-            player={opponent}
-            cheatMode={game.cheatMode}
-            floats={floats.filter((f) => f.slot === "hero" && f.owner === opponentId)}
-            impacts={heroFx(opponentId)}
-            targetable={coreTargetable}
-            active={game.activePlayer === opponentId && game.phase !== "gameOver"}
-            thinking={botThinking}
-            onStrike={attackCore}
-            onRelicPreview={previewRelic}
-            onPreviewEnd={endPreview}
-          />
-        </section>
 
         <section className="battlefield">
           <BoardRow
