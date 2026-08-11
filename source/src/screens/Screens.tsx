@@ -184,35 +184,35 @@ export function TitleScreen({
           draggable={false}
           fetchPriority="high"
         />
-
-        <div className="duel-orbit" aria-label="Choose an opponent">
-          {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option) => {
-            const Icon = skillIcon[option];
-            return (
-              <button
-                key={option}
-                type="button"
-                className={`orbit-choice orbit-choice-${option}${option === skill ? " on" : ""}`}
-                onClick={() => {
-                  sfx.play("button");
-                  setSkill(option);
-                }}
-                aria-pressed={option === skill}
-                aria-label={`${SKILL_BLURB[option].title}: ${SKILL_BLURB[option].note}`}
-              >
-                <Icon size={option === skill ? 30 : 24} weight={option === skill ? "fill" : "regular"} aria-hidden="true" />
-                <span>{SKILL_BLURB[option].title}</span>
-              </button>
-            );
-          })}
-
-          <button type="button" className="duel-trigger" onClick={() => onStart({ kind: "bot", skill })}>
-            <span>Duel</span>
-            <small>{SKILL_BLURB[skill].title}</small>
-          </button>
-        </div>
       </div>
       <FloatingCardField />
+
+      <div className="duel-orbit" aria-label="Choose an opponent">
+        {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option) => {
+          const Icon = skillIcon[option];
+          return (
+            <button
+              key={option}
+              type="button"
+              className={`orbit-choice orbit-choice-${option}${option === skill ? " on" : ""}`}
+              onClick={() => {
+                sfx.play("button");
+                setSkill(option);
+              }}
+              aria-pressed={option === skill}
+              aria-label={`${SKILL_BLURB[option].title}: ${SKILL_BLURB[option].note}`}
+            >
+              <Icon size={option === skill ? 30 : 24} weight={option === skill ? "fill" : "regular"} aria-hidden="true" />
+              <span>{SKILL_BLURB[option].title}</span>
+            </button>
+          );
+        })}
+
+        <button type="button" className="duel-trigger" onClick={() => onStart({ kind: "bot", skill })}>
+          <span>Duel</span>
+          <small>{SKILL_BLURB[skill].title}</small>
+        </button>
+      </div>
       <div className="title-inner">
         <div className="title-brand">
           <h1 className="title-word">
