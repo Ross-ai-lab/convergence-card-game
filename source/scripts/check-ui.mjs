@@ -68,6 +68,30 @@ check(
   (await page.getByRole("button", { name: /relics/i }).count()) === 0,
   "no Relics control rendered",
 );
+
+// These four buttons live on the rift artwork, beneath the transparent title
+// layer. A full-screen decorative wrapper once caught their pointer events,
+// leaving the right-side buttons clickable while every duel control was dead.
+const difficultyClicks = [];
+for (const selector of [".orbit-choice-easy", ".orbit-choice-hard", ".orbit-choice-normal"]) {
+  await page.locator(selector).click({ timeout: 2000 }).catch(() => {});
+  difficultyClicks.push((await page.locator(selector).getAttribute("aria-pressed")) === "true");
+}
+check(
+  "all title difficulties receive clicks",
+  difficultyClicks.every(Boolean),
+  difficultyClicks.map((clicked) => clicked ? "clicked" : "BLOCKED").join(", "),
+);
+
+await page.locator(".duel-trigger").click({ timeout: 2000 }).catch(() => {});
+await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+check(
+  "the title Duel button starts a match",
+  (await page.locator(".hs-shell").count()) === 1,
+  (await page.locator(".hs-shell").count()) === 1 ? "board opened" : "BLOCKED",
+);
+
+await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.locator(".title-links").getByRole("button", { name: "Settings", exact: true }).click();
 check(
   "difficulty is not available inside Settings",
@@ -84,7 +108,8 @@ check(
  */
 async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /Start a hotseat/ }).first().click().catch(() => {});
+  await page.getByRole("button", { name: /2 players|Start a hotseat/i }).first().click();
+  await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 });
   // Wait for the test hook, not for a guessed 1100ms. It registers from inside a
   // DYNAMIC import, so the first load after a rebuild has to fetch and transform
   // that module first — and a fixed wait that is usually long enough is exactly

@@ -1486,6 +1486,7 @@
   padding: 0;
   display: block;
   text-align: center;
+  pointer-events: none;
 }
 
 .title-brand {
@@ -1546,6 +1547,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   box-shadow: 0 8px 24px rgba(4, 1, 10, 0.42);
+  pointer-events: auto;
 }
 
 .duel-orbit {
