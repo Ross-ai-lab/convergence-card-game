@@ -685,6 +685,28 @@ button:disabled {
   transform: translateX(-50%);
 }
 
+/* Effects granted by another minion stay attached to the recipient, so both
+   players can see exactly who received the temporary rule. */
+.granted-effect-display {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  z-index: 4;
+  width: min(280px, calc(100% + 30px));
+  padding: 4px 7px;
+  border: 1px solid rgba(67, 205, 189, 0.84);
+  border-radius: 6px;
+  color: #fff5e3;
+  background: rgba(11, 46, 43, 0.95);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45), 0 0 14px rgba(67, 205, 189, 0.2);
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
 .minion-wrap .card-face,
 .lunge-wrap .card-face,
 .ghost-wrap .card-face {
@@ -2771,13 +2793,12 @@ button:disabled {
   inset: 0;
   z-index: 2;
   background: repeating-linear-gradient(
-    34deg,
-    transparent 0 calc(58 * var(--u)),
-    rgba(0, 0, 0, 0.5) calc(58 * var(--u)) calc(62 * var(--u)),
-    rgba(206, 212, 220, 0.92) calc(62 * var(--u)) calc(72 * var(--u)),
-    rgba(88, 93, 100, 0.92) calc(72 * var(--u)) calc(78 * var(--u)),
-    rgba(0, 0, 0, 0.5) calc(78 * var(--u)) calc(82 * var(--u)),
-    transparent calc(82 * var(--u)) calc(140 * var(--u))
+    90deg,
+    rgba(0, 0, 0, 0.28) 0 calc(24 * var(--u)),
+    rgba(206, 212, 220, 0.96) calc(24 * var(--u)) calc(31 * var(--u)),
+    rgba(88, 93, 100, 0.98) calc(31 * var(--u)) calc(39 * var(--u)),
+    rgba(0, 0, 0, 0.62) calc(39 * var(--u)) calc(45 * var(--u)),
+    transparent calc(45 * var(--u)) calc(78 * var(--u))
   );
   filter: drop-shadow(0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.8));
 }
@@ -3712,6 +3733,39 @@ button:disabled {
   border-color: rgba(67, 205, 189, 0.6);
   background: rgba(67, 205, 189, 0.14);
   font-size: 1rem;
+}
+
+.prompt-card-choice {
+  width: clamp(116px, 16vw, 150px);
+  min-width: 0;
+  min-height: 0;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: rgba(67, 205, 189, 0.1);
+}
+
+.prompt-card-choice:hover:not(:disabled) {
+  background: rgba(67, 205, 189, 0.2);
+}
+
+.prompt-card-choice .card-face {
+  width: 100%;
+  height: clamp(165px, 22vw, 214px);
+  aspect-ratio: auto;
+}
+
+.prompt-card-choice > span {
+  max-width: 100%;
+  color: var(--ink);
+  overflow: hidden;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .target-prompt-art {

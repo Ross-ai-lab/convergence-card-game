@@ -1636,6 +1636,9 @@ function runEffect(
     const target = picked;
     if (target) {
       target.divineShield = true;
+      if (!target.gainedEffects.some((effect) => effect.text === "Passive: Divine Shield.")) {
+        target.gainedEffects.push({ effectId: "none", timing: "passive", text: "Passive: Divine Shield." });
+      }
       events.push(effectEvent(`${label} shields ${target.name}.`, source));
     }
   } else if (source.effectId === "give_dodge_half") {
@@ -1860,6 +1863,9 @@ function runEffect(
     const target = picked;
     if (target) {
       target.keywords.push("Taunt");
+      if (!target.gainedEffects.some((effect) => effect.text === "Passive: Taunt.")) {
+        target.gainedEffects.push({ effectId: "none", timing: "passive", text: "Passive: Taunt." });
+      }
       events.push(effectEvent(`${label} gives ${target.name} Taunt.`, source));
     }
   } else if (source.effectId === "alone_buff_5") {

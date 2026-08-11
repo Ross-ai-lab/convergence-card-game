@@ -2136,6 +2136,7 @@ function MinionFace({
   const atkClass = statClass(minion.atk, minion.baseAtk);
   const hpClass = minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp);
   const copiedPassive = minion.stolenPassiveText?.replace(/^Passive:\s*/i, "");
+  const grantedEffects = minion.gainedEffects.map((effect) => effect.text).filter(Boolean);
   return (
     <>
       <CardFace
@@ -2146,6 +2147,11 @@ function MinionFace({
         hpClass={hpClass}
         effect={minion.silenced ? "Silenced." : minion.effect}
       />
+      {grantedEffects.length ? (
+        <span className="granted-effect-display" role="status">
+          Granted effect: {grantedEffects.join(" • ")}
+        </span>
+      ) : null}
       {copiedPassive ? (
         <span className="copied-passive-display" role="status">
           Copied passive: {copiedPassive}
@@ -2393,11 +2399,18 @@ function TargetPrompt({
             <button
               type="button"
               key={option.value}
-              className="prompt-value"
+              className={library[option.value] ? "prompt-value prompt-card-choice" : "prompt-value"}
               disabled={botControlled}
               onClick={() => onChoose(choiceIndex)}
             >
-              {option.label}
+              {library[option.value] ? (
+                <>
+                  <CardFace card={playableFace(library[option.value])} />
+                  <span>{option.label}</span>
+                </>
+              ) : (
+                option.label
+              )}
             </button>
           ))}
         </div>

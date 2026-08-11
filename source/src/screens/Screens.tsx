@@ -15,7 +15,7 @@
  *                  both players can read each other's hand off the same screen.
  */
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 import "./Screens.css";
 import { sfx, type Bus, type Mix } from "../audio/sfx";
@@ -35,6 +35,57 @@ const FEATURED_CHARACTERS = FEATURED_NAMES.flatMap((name) => {
   const card = cards.find((entry) => entry.name === name);
   return card ? [{ name: card.name, art: card.art }] : [];
 });
+
+// A seeded scatter inspired by the bgfx pipeline: the cards are deliberately
+// placed around the full frame instead of in another neat row. Using existing
+// card art keeps the menu self-contained and makes the arena feel populated
+// before the first duel begins.
+const FLOATING_CARDS = Array.from({ length: 30 }, (_, index) => {
+  const card = cards[(index * 17 + 11) % cards.length];
+  const rotation = ((index * 47) % 32) - 16;
+  const scale = 0.72 + ((index * 29) % 42) / 100;
+  return {
+    id: `floating-card-${index}`,
+    art: card.art,
+    left: ((index * 37 + 7) % 112) - 6,
+    top: ((index * 61 + 3) % 112) - 6,
+    rotation,
+    endRotation: rotation + (index % 2 === 0 ? 7 : -7),
+    scale,
+    endScale: scale + 0.04,
+    delay: -((index * 13) % 18),
+    duration: 18 + (index % 7) * 4,
+    opacity: 0.08 + ((index * 11) % 9) / 100,
+  };
+});
+
+function FloatingCardField() {
+  return (
+    <div className="floating-card-field" aria-hidden="true">
+      {FLOATING_CARDS.map((card) => (
+        <img
+          key={card.id}
+          src={card.art}
+          alt=""
+          draggable={false}
+          style={
+            {
+              left: `${card.left}%`,
+              top: `${card.top}%`,
+              "--float-rot": `${card.rotation}deg`,
+              "--float-end-rot": `${card.endRotation}deg`,
+              "--float-scale": card.scale,
+              "--float-end-scale": card.endScale,
+              "--float-delay": `${card.delay}s`,
+              "--float-duration": `${card.duration}s`,
+              "--float-opacity": card.opacity,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
+}
 
 /** A starfield that does not need an asset, a canvas or a library. */
 function Rift() {
@@ -92,6 +143,7 @@ export function TitleScreen({
   return (
     <div className="title-screen">
       <Rift />
+      <FloatingCardField />
       <div className="title-inner">
         <p className="title-kicker">175 of fiction&rsquo;s greatest, pulled into one arena</p>
         <h1 className="title-word">
@@ -101,10 +153,6 @@ export function TitleScreen({
             </span>
           ))}
         </h1>
-
-        {playerCount !== null ? (
-          <p className="title-player-count"><b>{playerCount.toLocaleString()}</b> played this game</p>
-        ) : null}
 
         <div className="title-gallery" aria-label="Featured Convergence characters">
           {FEATURED_CHARACTERS.map((character) => (
@@ -158,6 +206,10 @@ export function TitleScreen({
             Settings
           </button>
         </div>
+
+        {playerCount !== null ? (
+          <p className="title-player-count"><b>{playerCount.toLocaleString()}</b> played this game</p>
+        ) : null}
       </div>
     </div>
   );
