@@ -16,6 +16,18 @@
  */
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  ArrowLeft,
+  Crown,
+  GearSix,
+  Lightning,
+  MusicNotes,
+  Sparkle,
+  SpeakerHigh,
+  SpeakerSlash,
+  Target,
+  UsersThree,
+} from "@phosphor-icons/react";
 
 import "./Screens.css";
 import { sfx, type Bus, type Mix } from "../audio/sfx";
@@ -30,31 +42,28 @@ const SKILL_BLURB: Record<BotSkill, { title: string; note: string }> = {
   hard: { title: "Ascendant", note: "Searches whole turns and answers what you are about to do." },
 };
 
-const FEATURED_NAMES = ["Neo", "Monkey D. Luffy", "Batman", "Dio Brando", "Walter White"];
-const FEATURED_CHARACTERS = FEATURED_NAMES.flatMap((name) => {
-  const card = cards.find((entry) => entry.name === name);
-  return card ? [{ name: card.name, art: card.art }] : [];
-});
-
 // A seeded scatter inspired by the bgfx pipeline: the cards are deliberately
 // placed around the full frame instead of in another neat row. Using existing
 // card art keeps the menu self-contained and makes the arena feel populated
 // before the first duel begins.
-const FLOATING_CARDS = Array.from({ length: 42 }, (_, index) => {
-  const card = cards[(index * 17 + 11) % cards.length];
-  const rotation = ((index * 47) % 32) - 16;
-  const scale = 0.72 + ((index * 29) % 42) / 100;
+const FLOATING_CARDS = Array.from({ length: 84 }, (_, index) => {
+  const card = cards[(index * 37 + 11) % cards.length];
+  const rotation = ((index * 47) % 42) - 21;
+  const scale = 0.66 + ((index * 29) % 58) / 100;
+  const depth = index % 5;
   return {
     id: `floating-card-${index}`,
     art: card.art,
-    left: ((index * 37 + 7) % 112) - 6,
-    top: ((index * 61 + 3) % 112) - 6,
+    left: ((index * 41 + 3) % 110) - 5,
+    top: ((index * 67 + 5) % 118) - 9,
     rotation,
     scale,
-    spin: `${((index * 53) % 440) - 220}deg`,
-    delay: -((index * 13) % 24),
-    duration: 6.4 + (index % 8) * 0.72,
-    opacity: 0.11 + ((index * 11) % 11) / 100,
+    spin: `${((index * 53) % 260) - 130}deg`,
+    delay: -((index * 17) % 38),
+    duration: 16 + (index % 9) * 1.35,
+    opacity: 0.24 + depth * 0.05,
+    blur: Math.max(0, 2.4 - depth * 0.55),
+    reverse: index % 4 === 0,
   };
 });
 
@@ -67,6 +76,8 @@ function FloatingCardField() {
           src={card.art}
           alt=""
           draggable={false}
+          loading="eager"
+          className={card.reverse ? "reverse" : undefined}
           style={
             {
               left: `${card.left}%`,
@@ -77,6 +88,7 @@ function FloatingCardField() {
               "--float-delay": `${card.delay}s`,
               "--float-duration": `${card.duration}s`,
               "--float-opacity": card.opacity,
+              "--float-blur": `${card.blur}px`,
             } as CSSProperties
           }
         />
@@ -85,7 +97,7 @@ function FloatingCardField() {
   );
 }
 
-/** A starfield that does not need an asset, a canvas or a library. */
+/** Existing hotseat-curtain ornament. The title screen uses the raster rift. */
 function Rift() {
   return (
     <div className="rift" aria-hidden="true">
@@ -97,7 +109,19 @@ function Rift() {
   );
 }
 
-function Overlay({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
+function Overlay({
+  title,
+  onClose,
+  children,
+  wide,
+  variant,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  wide?: boolean;
+  variant?: "settings";
+}) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -107,8 +131,15 @@ function Overlay({ title, onClose, children, wide }: { title: string; onClose: (
   }, [onClose]);
 
   return (
-    <div className="screen-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className={wide ? "screen-panel wide" : "screen-panel"} role="dialog" aria-label={title}>
+    <div
+      className={variant ? `screen-veil ${variant}-veil` : "screen-veil"}
+      onPointerDown={(event) => event.target === event.currentTarget && onClose()}
+    >
+      <section
+        className={`screen-panel${wide ? " wide" : ""}${variant ? ` ${variant}-panel` : ""}`}
+        role="dialog"
+        aria-label={title}
+      >
         <header className="screen-panel-top">
           <h2>{title}</h2>
           <button type="button" className="screen-x" onClick={onClose} aria-label="Close">
@@ -137,95 +168,76 @@ export function TitleScreen({
   onSettings: () => void;
 }) {
   const [skill, setSkill] = useState<BotSkill>("normal");
+  const skillIcon = {
+    easy: Sparkle,
+    normal: Target,
+    hard: Crown,
+  } satisfies Record<BotSkill, typeof Sparkle>;
 
   return (
     <div className="title-screen">
-      <Rift />
+      <div className="title-rift-stage">
+        <img
+          className="title-rift-backdrop"
+          src={`${import.meta.env.BASE_URL}menu-rift.png`}
+          alt=""
+          draggable={false}
+        />
+
+        <div className="duel-orbit" aria-label="Choose an opponent">
+          {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option) => {
+            const Icon = skillIcon[option];
+            return (
+              <button
+                key={option}
+                type="button"
+                className={`orbit-choice orbit-choice-${option}${option === skill ? " on" : ""}`}
+                onClick={() => {
+                  sfx.play("button");
+                  setSkill(option);
+                }}
+                aria-pressed={option === skill}
+                aria-label={`${SKILL_BLURB[option].title}: ${SKILL_BLURB[option].note}`}
+              >
+                <Icon size={option === skill ? 30 : 24} weight={option === skill ? "fill" : "regular"} aria-hidden="true" />
+                <span>{SKILL_BLURB[option].title}</span>
+              </button>
+            );
+          })}
+
+          <button type="button" className="duel-trigger" onClick={() => onStart({ kind: "bot", skill })}>
+            <span>Duel</span>
+            <small>{SKILL_BLURB[skill].title}</small>
+          </button>
+        </div>
+      </div>
       <FloatingCardField />
       <div className="title-inner">
-        <p className="title-kicker">175 of fiction&rsquo;s greatest, pulled into one arena</p>
-        <h1 className="title-word">
-          {"CONVERGENCE".split("").map((letter, index) => (
-            <span key={index} style={{ animationDelay: `${index * 55}ms` }}>
-              {letter}
-            </span>
-          ))}
-        </h1>
-
-        <div className="title-gallery" aria-label="Featured Convergence characters">
-          {FEATURED_CHARACTERS.map((character) => (
-            <div className="title-portrait" key={character.name}>
-              <img src={character.art} alt="" draggable={false} />
-              <span>{character.name}</span>
-            </div>
-          ))}
+        <div className="title-brand">
+          <h1 className="title-word">
+            {"CONVERGENCE".split("").map((letter, index) => (
+              <span key={index} style={{ animationDelay: `${index * 45}ms` }}>
+                {letter}
+              </span>
+            ))}
+          </h1>
+          <p className="title-kicker">175 worlds. One arena.</p>
         </div>
 
         {canContinue ? (
-          <button type="button" className="title-btn primary" onClick={onContinue}>
-            Continue your duel
+          <button type="button" className="continue-duel" onClick={onContinue}>
+            Continue duel
           </button>
         ) : null}
 
-        <div className="title-console" aria-label="Choose a game mode">
-          <div className="console-heading">
-            <span className="console-sigil" aria-hidden="true">✦</span>
-            <div>
-              <span className="console-eyebrow">Choose your arena</span>
-              <h2>Enter the rift</h2>
-            </div>
-            <span className="console-rule" aria-hidden="true" />
-          </div>
-
-          <div className="title-block title-block-alone">
-            <div className="mode-heading">
-              <span className="mode-index">01</span>
-              <div>
-                <h3>Play alone</h3>
-                <p>Pick an opponent and test your edge.</p>
-              </div>
-            </div>
-            <div className="skill-row">
-              {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option, index) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={option === skill ? "skill-chip on" : "skill-chip"}
-                  onClick={() => {
-                    sfx.play("button");
-                    setSkill(option);
-                  }}
-                  aria-pressed={option === skill}
-                >
-                  <span className="skill-index">0{index + 1}</span>
-                  <b>{SKILL_BLURB[option].title}</b>
-                  <span>{SKILL_BLURB[option].note}</span>
-                </button>
-              ))}
-            </div>
-            <button type="button" className="title-btn primary" onClick={() => onStart({ kind: "bot", skill })}>
-              Duel the {SKILL_BLURB[skill].title}
-              <span aria-hidden="true">↗</span>
-            </button>
-          </div>
-
-          <div className="title-block title-block-together">
-            <div className="mode-heading">
-              <span className="mode-index teal">02</span>
-              <div>
-                <h3>Play together</h3>
-                <p>Two players, one screen. The board hides while you swap seats.</p>
-              </div>
-            </div>
-            <button type="button" className="title-btn" onClick={() => onStart({ kind: "hotseat" })}>
-              Start a hotseat duel <span aria-hidden="true">↗</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="title-links">
-          <button type="button" onClick={onSettings}>
-            Settings
+        <div className="title-links title-actions">
+          <button type="button" className="hotseat-trigger" onClick={() => onStart({ kind: "hotseat" })}>
+            <UsersThree size={22} weight="fill" aria-hidden="true" />
+            <span>2 players</span>
+          </button>
+          <button type="button" className="settings-trigger" onClick={onSettings}>
+            <GearSix size={22} weight="fill" aria-hidden="true" />
+            <span>Settings</span>
           </button>
         </div>
 
@@ -336,53 +348,74 @@ export function SettingsPanel({
     setMix(sfx.getMix());
   };
 
-  const faders: Array<{ bus: Bus; label: string; note: string }> = [
-    { bus: "music", label: "Music", note: "The score, and each card's theme" },
-    { bus: "effects", label: "Effects", note: "Impacts, fanfares, the herald" },
+  const faders: Array<{ bus: Bus; label: string; note: string; icon: typeof MusicNotes }> = [
+    { bus: "music", label: "Music", note: "Score & card themes", icon: MusicNotes },
+    { bus: "effects", label: "Effects", note: "Impacts & fanfares", icon: Lightning },
   ];
 
   return (
-    <Overlay title="Settings" onClose={onClose}>
+    <Overlay title="Settings" onClose={onClose} variant="settings">
       <div className="settings">
-        <button
-          type="button"
-          className={muted ? "mute-row muted" : "mute-row"}
-          onClick={() => {
-            const now = sfx.toggleMuted();
-            setMuted(now);
-            if (!now) sfx.play("button");
-          }}
-          aria-pressed={!muted}
-        >
-          {muted ? "🔇 Sound is off" : "🔊 Sound is on"}
+        <div className={muted ? "settings-status muted" : "settings-status"}>
+          <span className="settings-status-icon" aria-hidden="true">
+            {muted ? <SpeakerSlash size={28} weight="fill" /> : <SpeakerHigh size={28} weight="fill" />}
+          </span>
+          <span className="settings-status-copy">
+            <small>Master audio</small>
+            <strong>{muted ? "Muted" : "Sound on"}</strong>
+          </span>
+          <button
+            type="button"
+            className="mute-row"
+            onClick={() => {
+              const now = sfx.toggleMuted();
+              setMuted(now);
+              if (!now) sfx.play("button");
+            }}
+            aria-pressed={muted}
+            aria-label={muted ? "Turn sound on" : "Mute sound"}
+          >
+            {muted ? "Enable" : "Mute"}
+          </button>
+        </div>
+
+        <div className="settings-mixer">
+          {faders.map((fader) => {
+            const Icon = fader.icon;
+            const percentage = Math.round(mix[fader.bus] * 100);
+            return (
+              <label key={fader.bus} className={muted ? "fader off" : "fader"}>
+                <span className="fader-icon" aria-hidden="true"><Icon size={22} weight="fill" /></span>
+                <span className="fader-copy">
+                  <span className="fader-top">
+                    <b>{fader.label}</b>
+                    <i>{percentage}</i>
+                  </span>
+                  <span className="fader-note">{fader.note}</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={percentage}
+                    disabled={muted}
+                    style={{ "--level": `${percentage}%` } as CSSProperties}
+                    aria-label={`${fader.label} volume`}
+                    onChange={(event) => slide(fader.bus, Number(event.target.value) / 100)}
+                    onPointerUp={() => {
+                      if (fader.bus === "music") sfx.playCardTheme("c025");
+                      else if (fader.bus === "effects") sfx.play("summonEpic");
+                    }}
+                  />
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        <button type="button" className="settings-menu-button" onClick={onMenu}>
+          <ArrowLeft size={19} weight="bold" aria-hidden="true" />
+          <span>Back to menu</span>
         </button>
-
-        {faders.map((fader) => (
-          <label key={fader.bus} className={muted ? "fader off" : "fader"}>
-            <span className="fader-top">
-              <b>{fader.label}</b>
-              <i>{Math.round(mix[fader.bus] * 100)}</i>
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={Math.round(mix[fader.bus] * 100)}
-              disabled={muted}
-              onChange={(event) => slide(fader.bus, Number(event.target.value) / 100)}
-              onPointerUp={() => {
-                if (fader.bus === "music") sfx.playCardTheme("c025");
-                else if (fader.bus === "effects") sfx.play("summonEpic");
-              }}
-            />
-            <span className="fader-note">{fader.note}</span>
-          </label>
-        ))}
-
-        <button type="button" className="title-btn" onClick={onMenu}>
-          Back to menu
-        </button>
-
       </div>
     </Overlay>
   );
