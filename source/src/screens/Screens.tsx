@@ -40,22 +40,33 @@ const FEATURED_CHARACTERS = FEATURED_NAMES.flatMap((name) => {
 // placed around the full frame instead of in another neat row. Using existing
 // card art keeps the menu self-contained and makes the arena feel populated
 // before the first duel begins.
-const FLOATING_CARDS = Array.from({ length: 30 }, (_, index) => {
+const FLOATING_CARDS = Array.from({ length: 42 }, (_, index) => {
   const card = cards[(index * 17 + 11) % cards.length];
   const rotation = ((index * 47) % 32) - 16;
   const scale = 0.72 + ((index * 29) % 42) / 100;
+  const signed = (multiplier: number, span: number) => ((index * multiplier) % span) - span / 2;
   return {
     id: `floating-card-${index}`,
     art: card.art,
     left: ((index * 37 + 7) % 112) - 6,
     top: ((index * 61 + 3) % 112) - 6,
     rotation,
-    endRotation: rotation + (index % 2 === 0 ? 7 : -7),
     scale,
-    endScale: scale + 0.04,
-    delay: -((index * 13) % 18),
-    duration: 18 + (index % 7) * 4,
-    opacity: 0.08 + ((index * 11) % 9) / 100,
+    x1: `${signed(23, 40)}vw`,
+    y1: `${signed(61, 34)}vh`,
+    x2: `${signed(47, 52)}vw`,
+    y2: `${signed(19, 44)}vh`,
+    x3: `${signed(71, 46)}vw`,
+    y3: `${signed(83, 38)}vh`,
+    r1: `${rotation + signed(31, 42)}deg`,
+    r2: `${rotation + signed(53, 68)}deg`,
+    r3: `${rotation + signed(79, 54)}deg`,
+    s1: scale + (index % 3 === 0 ? 0.1 : -0.04),
+    s2: scale + (index % 3 === 1 ? 0.13 : -0.06),
+    s3: scale + (index % 3 === 2 ? 0.09 : -0.03),
+    delay: -((index * 13) % 24),
+    duration: 6.4 + (index % 8) * 0.72,
+    opacity: 0.11 + ((index * 11) % 11) / 100,
   };
 });
 
@@ -73,9 +84,19 @@ function FloatingCardField() {
               left: `${card.left}%`,
               top: `${card.top}%`,
               "--float-rot": `${card.rotation}deg`,
-              "--float-end-rot": `${card.endRotation}deg`,
               "--float-scale": card.scale,
-              "--float-end-scale": card.endScale,
+              "--float-x1": card.x1,
+              "--float-y1": card.y1,
+              "--float-x2": card.x2,
+              "--float-y2": card.y2,
+              "--float-x3": card.x3,
+              "--float-y3": card.y3,
+              "--float-r1": card.r1,
+              "--float-r2": card.r2,
+              "--float-r3": card.r3,
+              "--float-s1": card.s1,
+              "--float-s2": card.s2,
+              "--float-s3": card.s3,
               "--float-delay": `${card.delay}s`,
               "--float-duration": `${card.duration}s`,
               "--float-opacity": card.opacity,
@@ -169,7 +190,7 @@ export function TitleScreen({
           </button>
         ) : null}
 
-        <div className="title-block">
+        <div className="title-block title-block-alone">
           <h3>Play alone</h3>
           <div className="skill-row">
             {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option) => (
@@ -193,7 +214,7 @@ export function TitleScreen({
           </button>
         </div>
 
-        <div className="title-block">
+        <div className="title-block title-block-together">
           <h3>Play together</h3>
           <p className="title-note">Two players, one screen. The board is hidden while you swap seats.</p>
           <button type="button" className="title-btn" onClick={() => onStart({ kind: "hotseat" })}>
