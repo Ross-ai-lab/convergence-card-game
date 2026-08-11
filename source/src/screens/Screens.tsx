@@ -10,7 +10,7 @@
  * in progress:
  *   TitleScreen  — the front door: continue, solo at three difficulties, hotseat.
  *   HowToPlay     — the rules, in the order they matter, in one quick guide.
- *   SettingsPanel— three faders and the difficulty, changeable mid-duel.
+ *   SettingsPanel— sound controls and a route back to the title screen.
  *   PassScreen   — the hotseat privacy curtain. Without it, hotseat is not a game:
  *                  both players can read each other's hand off the same screen.
  */
@@ -19,6 +19,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import "./Screens.css";
 import { sfx, type Bus, type Mix } from "../audio/sfx";
+import { cards } from "../data/cards";
 import type { BotSkill } from "../engine/bot";
 
 export type GameMode = { kind: "hotseat" } | { kind: "bot"; skill: BotSkill };
@@ -28,6 +29,12 @@ const SKILL_BLURB: Record<BotSkill, { title: string; note: string }> = {
   normal: { title: "Veteran", note: "Plays every single move correctly. Never sees the move after it." },
   hard: { title: "Ascendant", note: "Searches whole turns and answers what you are about to do." },
 };
+
+const FEATURED_NAMES = ["Neo", "Kizaru", "Batman", "Dio Brando", "Rennala Queen of the Full Moon"];
+const FEATURED_CHARACTERS = FEATURED_NAMES.flatMap((name) => {
+  const card = cards.find((entry) => entry.name === name);
+  return card ? [{ name: card.name, art: card.art }] : [];
+});
 
 /** A starfield that does not need an asset, a canvas or a library. */
 function Rift() {
@@ -98,6 +105,15 @@ export function TitleScreen({
         {playerCount !== null ? (
           <p className="title-player-count"><b>{playerCount.toLocaleString()}</b> played this game</p>
         ) : null}
+
+        <div className="title-gallery" aria-label="Featured Convergence characters">
+          {FEATURED_CHARACTERS.map((character) => (
+            <div className="title-portrait" key={character.name}>
+              <img src={character.art} alt="" draggable={false} />
+              <span>{character.name}</span>
+            </div>
+          ))}
+        </div>
 
         {canContinue ? (
           <button type="button" className="title-btn primary" onClick={onContinue}>
@@ -206,8 +222,8 @@ function HowToPlayContent() {
         <section>
           <h4>6. Use relics</h4>
           <p>
-            Relics are equipment. They die with their bearer. Click a relic badge, then one of your minions to pass it
-            across <b>once per turn</b>. The <b>◈ Relics</b> button shows what remains and who is wearing what.
+            Relics are cards in your hand. Play one onto a friendly minion to equip it, or click an attached relic badge
+            to pass it across <b>once per turn</b>. Relics die with their bearer unless their text says otherwise.
           </p>
         </section>
         <section>
@@ -234,13 +250,9 @@ export function HowToPlay({ onClose }: { onClose: () => void }) {
 export function SettingsPanel({
   onClose,
   onMenu,
-  mode,
-  onSkillChange,
 }: {
   onClose: () => void;
   onMenu: () => void;
-  mode: GameMode;
-  onSkillChange: (skill: BotSkill) => void;
 }) {
   const [mix, setMix] = useState<Mix>(() => sfx.getMix());
   const [muted, setMuted] = useState(() => sfx.isMuted());
@@ -292,27 +304,6 @@ export function SettingsPanel({
             <span className="fader-note">{fader.note}</span>
           </label>
         ))}
-
-        {mode.kind === "bot" ? (
-          <div className="setting-block">
-            <h4>Opponent</h4>
-            <div className="skill-row tight">
-              {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={option === mode.skill ? "skill-chip on" : "skill-chip"}
-                  onClick={() => onSkillChange(option)}
-                  aria-pressed={option === mode.skill}
-                >
-                  <b>{SKILL_BLURB[option].title}</b>
-                  <span>{SKILL_BLURB[option].note}</span>
-                </button>
-              ))}
-            </div>
-            <p className="title-note">Changing this takes effect on the opponent&rsquo;s next move.</p>
-          </div>
-        ) : null}
 
         <button type="button" className="title-btn" onClick={onMenu}>
           Back to menu

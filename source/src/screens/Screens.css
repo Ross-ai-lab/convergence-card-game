@@ -164,6 +164,75 @@
   font-size: 14px;
 }
 
+.title-gallery {
+  width: min(680px, 92vw);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+  margin: 2px 0 3px;
+}
+
+.title-portrait {
+  position: relative;
+  min-width: 0;
+  height: clamp(112px, 16vw, 156px);
+  overflow: hidden;
+  border: 1px solid rgba(240, 199, 103, 0.42);
+  border-radius: 12px;
+  background: #17101e;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32), inset 0 0 0 1px rgba(255, 246, 222, 0.08);
+  transform: translateY(0);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.title-portrait:nth-child(2) {
+  transform: translateY(10px);
+}
+
+.title-portrait:nth-child(4) {
+  transform: translateY(6px);
+}
+
+.title-portrait:hover {
+  transform: translateY(-7px) scale(1.04);
+  border-color: var(--gold);
+  box-shadow: 0 15px 34px rgba(0, 0, 0, 0.46), 0 0 22px rgba(240, 199, 103, 0.18);
+  z-index: 2;
+}
+
+.title-portrait img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 28%;
+  filter: saturate(1.08) contrast(1.04);
+}
+
+.title-portrait::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 38%, rgba(9, 6, 14, 0.08) 52%, rgba(9, 6, 14, 0.94) 100%);
+  pointer-events: none;
+}
+
+.title-portrait span {
+  position: absolute;
+  right: 5px;
+  bottom: 7px;
+  left: 5px;
+  z-index: 1;
+  overflow: hidden;
+  color: #fff5e3;
+  font-size: clamp(8px, 1.2vw, 10px);
+  font-weight: 900;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+}
+
 @keyframes letter-drop {
   from {
     opacity: 0;
@@ -618,6 +687,18 @@
 @media (max-width: 620px) {
   .skill-row {
     grid-template-columns: 1fr;
+  }
+  .title-gallery {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .title-portrait {
+    height: 98px;
+    border-radius: 8px;
+  }
+  .title-portrait:nth-child(2),
+  .title-portrait:nth-child(4) {
+    transform: none;
   }
   .title-inner {
     gap: 14px;

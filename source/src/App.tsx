@@ -270,7 +270,7 @@ export default function App() {
   // The front door. A restored duel still starts here rather than dumping a
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
-  const [overlay, setOverlay] = useState<null | "settings" | "relics" | "howToPlay">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay">(null);
   /**
    * Hotseat only: who the screen is currently cleared for. The curtain drops
    * whenever the turn passes to the other player, and stays down until they say
@@ -1331,16 +1331,6 @@ export default function App() {
             type="button"
             onClick={() => {
               sfx.play("button");
-              setOverlay("relics");
-            }}
-            title="What is left on the Ascension Relic shelf, and who is wearing what"
-          >
-            ◈ Relics
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              sfx.play("button");
               setOverlay("howToPlay");
             }}
             title="Learn the game in a few quick steps"
@@ -1693,18 +1683,12 @@ export default function App() {
       ) : null}
 
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "relics" ? <RelicShelf onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel
           onClose={() => setOverlay(null)}
           onMenu={() => {
             setOverlay(null);
             toTitle();
-          }}
-          mode={mode}
-          onSkillChange={(skill) => {
-            sfx.play("button");
-            setMode({ kind: "bot", skill });
           }}
         />
       ) : null}
@@ -2202,38 +2186,6 @@ function MinionFace({
         </span>
       ) : null}
     </>
-  );
-}
-
-/** A compact reference; the actual relic cards now live in the shared deck. */
-function RelicShelf({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="overlay" onClick={onClose}>
-      <section className="relic-shelf" onClick={(e) => e.stopPropagation()}>
-        <span>Ascension Relics</span>
-        <h2>Relic codex</h2>
-        <p className="shelf-note">
-          Relics are cards in the shared deck. Draw or discover one, then play it from your hand onto a friendly
-          minion by paying its mana cost. A minion carries one relic; attached relics are lost when it dies.
-        </p>
-        <ol className="shelf-list">
-          {relics.map((relic) => (
-            <li key={relic.id} className="shelf-item">
-              <img src={relic.art} alt="" draggable={false} />
-              <div>
-                <strong>{relic.name}</strong>
-                <p>{relic.effect}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-        <p className="shelf-note">
-          Reusable relics can be returned to their owner's hand once per turn from the bearer. One-shot relics stay
-          attached after they trigger.
-        </p>
-        <button type="button" className="primary" onClick={onClose}>Close</button>
-      </section>
-    </div>
   );
 }
 

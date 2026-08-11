@@ -61,6 +61,20 @@ async function mana() {
 const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
+// ---------------------------------------------------------- title-screen rules
+await page.goto(BASE, { waitUntil: "domcontentloaded" });
+check(
+  "title menu has no obsolete Relics button",
+  (await page.getByRole("button", { name: /relics/i }).count()) === 0,
+  "no Relics control rendered",
+);
+await page.locator(".title-links").getByRole("button", { name: "Settings", exact: true }).click();
+check(
+  "difficulty is not available inside Settings",
+  (await page.getByRole("dialog").getByText("Recruit", { exact: true }).count()) === 0,
+  "Settings contains sound controls only",
+);
+
 /**
  * Fresh duel. By default: cheat mode on, one minion placed and rested.
  *
