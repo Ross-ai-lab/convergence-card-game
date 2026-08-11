@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cards } from "../data/cards";
+import { cards, relics } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
 import type { GameState, MinionInstance, PlayerId } from "./types";
 import { spawnTestMinion } from "./test-utils";
@@ -35,6 +35,42 @@ function mainState(): GameState {
 }
 
 describe("Convergence engine", () => {
+  it("puts every roster card and relic into the shared draw pool exactly once", () => {
+    const state = createInitialGame(cards, "full-roster-audit", relics);
+    const drawableIds = [
+      ...state.players[0].hand,
+      ...state.players[1].hand,
+      ...state.deck,
+      ...state.bottomDeck,
+      ...state.discard,
+    ];
+    const expectedIds = [
+      ...cards.map((card) => card.id),
+      ...relics.filter((relic) => relic.relicId !== "none").map((relic) => relic.id),
+    ];
+
+    expect(cards).toHaveLength(175);
+    expect(relics).toHaveLength(21);
+    expect(drawableIds).toHaveLength(expectedIds.length);
+    expect(new Set(drawableIds)).toEqual(new Set(expectedIds));
+    for (const id of expectedIds) {
+      expect(drawableIds.filter((candidate) => candidate === id), `${id} should appear exactly once`).toHaveLength(1);
+    }
+  });
+
+  it("replays one shuffle from one seed and produces new orders from new seeds", () => {
+    const deckOrder = (seed: string) => {
+      const state = createInitialGame(cards, seed, relics);
+      return [...state.players[0].hand, ...state.players[1].hand, ...state.deck];
+    };
+
+    expect(deckOrder("repeatable-seed")).toEqual(deckOrder("repeatable-seed"));
+    const openingSequences = new Set(
+      Array.from({ length: 64 }, (_, index) => deckOrder(`fresh-duel-${index}`).slice(0, 12).join(",")),
+    );
+    expect(openingSequences.size).toBe(64);
+  });
+
   it("starts a hotseat game with the right hands, coins, and legal moves", () => {
     const state = createInitialGame(cards);
     const legal = getLegalActions(state, library);
@@ -45,6 +81,20 @@ describe("Convergence engine", () => {
     // affordable on turn 1 - that is intended (as in Hearthstone), not a bug.
     // What must always hold is that the player is never left with no move.
     expect(legal.length).toBeGreaterThan(0);
+  });
+
+  it("reuses a known legal-action list without changing action resolution", () => {
+    const state = createInitialGame(cards, "known-legal-actions");
+    const legal = getLegalActions(state, library);
+    const action = legal.find((candidate) => candidate.type === "end_turn");
+    expect(action).toBeDefined();
+    const normal = applyAction(state, action!, library);
+    expect(applyAction(state, action!, library, legal)).toEqual(normal);
+
+    const speculative = applyAction(state, action!, library, legal, false);
+    expect(speculative.state).toEqual(normal.state);
+    expect(speculative.events).toEqual(normal.events);
+    expect(speculative.legalActions).toEqual([]);
   });
 
   it("plays a card into an empty slot and spends mana", () => {

@@ -141,11 +141,6 @@ if (errors.length) {
   process.exit(1);
 }
 
-if (errors.length) {
-  console.error(errors.join(String.fromCharCode(10)));
-  process.exit(1);
-}
-
 console.log("Card data OK");
 console.log("Cards:", cards.length);
 console.log("Costs:", JSON.stringify(countBy(cards, "cost")));

@@ -172,7 +172,7 @@ await page.evaluate(() => window.__sfx.setMuted(false));
 await page.getByRole("button", { name: /Duel the|Start a hotseat/ }).first().click().catch(() => {});
 await page.waitForTimeout(1200);
 
-// Cheat mode first. Going first deals ONE card against ONE mana, and the roster
+// Cheat mode first. Going first deals TWO cards against ONE mana, and the roster
 // runs to 10 cost — without infinite mana this check is a coin flip on whether
 // the opening card happens to be affordable, which is how it failed the first
 // time it ran. The trigger under test is unaffected by how the card was paid for.

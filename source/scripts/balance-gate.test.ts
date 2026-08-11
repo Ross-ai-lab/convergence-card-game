@@ -188,7 +188,7 @@ describe("live fire — opening hands", () => {
 
   it("never gates on the turn-1 number, however bad it looks", () => {
     const metrics = healthy();
-    // Going first means one card and one mana: a dead first turn is the design.
+    // Going first means two cards and one mana: a dead first turn is the design.
     metrics.opening = { samples: 3000, deadThroughWindowPct: 2, deadTurnOnePct: 99 };
     expect(find(evaluate(metrics, config()), "dead-opening").state).toBe("pass");
   });

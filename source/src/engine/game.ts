@@ -140,13 +140,23 @@ export function createInitialGame(
   return state;
 }
 
-export function applyAction(state: GameState, action: GameAction, library: CardLibrary): ApplyResult {
-  const currentLegal = getLegalActions(state, library);
+export function applyAction(
+  state: GameState,
+  action: GameAction,
+  library: CardLibrary,
+  knownLegal?: readonly GameAction[],
+  includeNextLegal = true,
+): ApplyResult {
+  // Callers that already asked for this exact state's legal actions may reuse
+  // the list. The simulator and bot evaluate many legal candidates from one
+  // state; recomputing the same list for every candidate dominated their CPU
+  // time. Normal callers omit this argument and retain the defensive check.
+  const currentLegal = knownLegal ?? getLegalActions(state, library);
   if (!currentLegal.some((legal) => sameAction(legal, action))) {
     return {
       state,
       events: [{ kind: "warning", text: "That move is not legal right now.", player: action.player }],
-      legalActions: currentLegal,
+      legalActions: [...currentLegal],
     };
   }
 
@@ -200,7 +210,10 @@ export function applyAction(state: GameState, action: GameAction, library: CardL
   return {
     state: next,
     events,
-    legalActions: getLegalActions(next, library),
+    // Speculative bot branches only score the resulting state. They explicitly
+    // skip this eager list and compute it once if that branch is actually
+    // rolled forward; interactive callers retain the normal complete result.
+    legalActions: includeNextLegal ? getLegalActions(next, library) : [],
   };
 }
 

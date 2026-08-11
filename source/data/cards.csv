@@ -150,7 +150,7 @@ c148,Kurogiri,2,1,1,Purple,Magic,Evil,,chaos_aura,passive,Passive: All minions a
 c149,Lu Bu,2,1,1,Purple,Nature,Good,,copy_ally_atk,ongoing,Ongoing: Gain ATK from a random friendly minion on the board,"Match any man, then pass him.",Record of Ragnarok,/card-art/raw/c149.webp
 c150,Meleoron,2,1,1,Purple,Magic,Good,,anti_disable_aura,passive,Passive: Meleoron and friendly minions on both of his sides are immune to Silence and Freeze,True invisibility,HxH,/card-art/raw/c150.webp
 c151,Mr. Oliva,2,3,2,Purple,Nature,Neutral,,oliva_ward,passive,Passive: Can only be damaged by ATK of 2 and higher,Unchained,Baki,/card-art/raw/c151.webp
-c152,Stain,2,2,2,Purple,Magic,Good,,destroy_damaged_enemy,onPlay,Battlecry: Kill a damaged minion,No heroes,MHA,/card-art/raw/c152.webp
+c152,Stain,2,1,1,Purple,Magic,Good,,destroy_damaged_enemy,onPlay,Battlecry: Kill a damaged minion,No heroes,MHA,/card-art/raw/c152.webp
 c153,Black Ops,2,2,2,Black,Tech,Neutral,,none,none,-,Classified,Basic,/card-art/raw/c153.webp
 c154,Gravelord Nito,2,0,1,Black,Nature,Evil,,any_death_buff_2_1,passive,Passive: Gain +1/+1 when a minion dies,The first of the dead keeps the count.,Dark Souls,/card-art/raw/c154.webp
 c155,Margit the Fell Omen,2,1,1,Black,Nature,Evil,,buff_evil_ally_3_2_heal,ongoing,Ongoing: Give a friendly Evil minion +2/+1,The immovable,Elden Ring,/card-art/raw/c155.webp

@@ -90,21 +90,19 @@
         "How often a player can play NOTHING across their first N own turns — measured by asking",
         "the engine for legal moves, not by comparing costs, so The Coin, discounts and relics count.",
         "Owner ruling: gate on the 3-turn window (the real pathology). The turn-1 number is reported",
-        "beside it but never gated — going first means one card and one mana, so a dead first turn",
+        "beside it but never gated — going first means two cards and one mana, so a dead first turn",
         "is the design, not a defect.",
         "",
-        "MEASURED on 3000 openings at the current hand sizes of 2 and 3: 13.0% overall — 17.3% going",
-        "first, 8.8% going second. Re-baselined from 24 after the hand-size change; 24 was a guard on the",
-        "OLD hand sizes of 1 and 2, where the figure was 20.7%, and left in place it was far too loose to",
-        "catch anything.",
+        "LATEST FULL RUN on 3000 openings at the current hand sizes of 2 and 3: 17.3% overall",
+        "(519 openings). Re-baselined from 24 after the hand-size change; 24 was a guard on the old",
+        "hand sizes of 1 and 2, where the figure was 20.7%, and was too loose to catch a regression.",
         "",
-        "17 gives about four points of headroom over the measured 13.0% — enough that shuffle variation",
-        "will not trip it, tight enough that a rules change quietly undoing the hand-size fix goes red.",
+        "Owner ruling: accept up to 18%. This is deliberately close to the measured 17.3% baseline.",
         "Re-baseline this again after any change to hand size, the draw, or the cost curve."
       ],
       "enabled": true,
       "throughOwnTurns": 3,
-      "maxPct": 17
+      "maxPct": 18
     },
 
     "skillLadder": {

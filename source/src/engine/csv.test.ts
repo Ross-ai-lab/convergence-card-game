@@ -38,5 +38,6 @@ describe("card CSV data", () => {
     expect(changed.get("Rennala Queen of the Full Moon")?.effect).toBe(
       "Ongoing: Transform a random enemy minion into a 1/1 Lunar Slime until your next turn",
     );
+    expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
   });
 });

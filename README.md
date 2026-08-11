@@ -16,7 +16,7 @@ Convergence is a non-commercial browser card duel where 175 characters and force
 
 [Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/)
 
-No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses the full roster as a shared deck; there is no deck-building screen.
+No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **175 character cards plus 21 Ascension Relics** in one shared 196-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
 ## Rules at a glance
 
@@ -65,7 +65,7 @@ Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an
 
 ## Ascension Relics
 
-The current relic pool contains **21 relics**. Relics are equipment, not hand cards: card effects pull them from the rift and attach them to a minion.
+The current relic pool contains **21 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion that has no relic. Some character effects can also find or equip a relic directly.
 
 - A minion can carry one relic.
 - A relic dies with its bearer.
@@ -124,11 +124,45 @@ Use the development or preview server URL, not a `file://` URL. A white page can
 
 Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
 
+### README-only documentation policy
+
+This file is the single maintained project guide and knowledge-base page. Do not create another Markdown file anywhere in the Convergence project; add or revise the appropriate section here instead. `npm run validate:docs` enforces that rule, and the normal data-validation, test, build, and full-balance entry points run it automatically. The two README files inside ignored, locally downloaded production packages are frozen third-party-style package notes, not new project documentation; do not add more beside them.
+
 For a deployable update, build with `--base=./`, replace the generated `source/dist/` contents in `play/`, verify that `play/index.html` and its asset references are present, then commit and push the generated copy. GitHub Pages serves `play/` from the repository's published static site.
 
 ## Changing cards and effects
 
 For stats, wording, keywords, timing, or art paths, update the relevant `cards.csv` row, validate the data, run focused tests, and rebuild the playable copy when needed.
+
+### Effect-selection doctrine
+
+Every Convergence card should feel mechanically inseparable from the character, force, or object on its face. The ideal is that the effect makes sense when the name is revealed, and the name explains why the effect works that way. A mechanically useful effect is not enough if it could be pasted onto ten unrelated cards without changing its meaning.
+
+Choose effects by these criteria, in this order:
+
+1. **Start from the strongest lore anchor.** Identify the subject's signature power, behaviour, motive, relationship, weakness, or defining story role. Use the most recognisable anchor, not an obscure fact merely because it is easier to code.
+2. **Translate the fantasy into a game verb and condition.** Express what the subject does through targeting, timing, restrictions, risks, or board position. A good translation captures behaviour rather than copying a wiki sentence literally.
+3. **Demand a mechanical silhouette.** The combination of trigger, target, and consequence should distinguish the card from its cost peers. Repeated text is acceptable only when the shared mechanic genuinely describes each subject; never use it as filler or to complete a keyword quota.
+4. **Make the player enact the character.** Prefer effects that create an in-character decision or play pattern: isolation, sacrifice, protection, theft, adaptation, revenge, deception, domination, and so on. The player should feel the lore through a choice or condition, not only read it in flavour text.
+5. **Keep counterplay and clarity.** The opponent must be able to understand what happened and, where the fantasy allows, answer it. State the timing, legal target, duration, and edge cases precisely. Do not add invisible exceptions just to force a lore reference.
+6. **Lock the identity before balancing it.** Preserve the lore-shaped effect whenever possible, then tune ATK, HP, magnitude, duration, frequency, or conditions. Cost remains an in-fiction power ranking and is not a balance lever.
+7. **Use generic mechanics only when they are specifically true.** Taunt, Divine Shield, Freeze, or a plain stat gain are vocabulary, not finished concepts. They belong only when that exact mechanic expresses the subject; otherwise shape the effect with a character-specific trigger, target, limitation, or consequence.
+
+Use four acceptance tests before approving an effect:
+
+- **Flavour test:** Can its lore explain every important mechanical clause?
+- **Silhouette test:** Would changing the card's name make the effect feel wrong or noticeably less fitting?
+- **Play-pattern test:** Does it make the player behave like, plan around, or fear something associated with the subject?
+- **Truth test:** Do the printed words, timing, keywords, visuals, and engine resolution all describe the same rule?
+
+Canonical examples:
+
+- **Light Yagami —** kills a random enemy minion at the start of each of his controller's turns, translating the Death Note into effortless recurring killing.
+- **Stain —** kills a damaged minion; damage represents exposed blood, which is the condition that lets his blood-tasting ability disable a victim.
+- **Homelander —** gains +3/+3 when he is the only friendly minion, turning his ego and need to dominate the spotlight into an isolation reward.
+- **Kizaru —** begins with Divine Shield and regains it each turn, matching both the apparent invulnerability of his light body and the card's golden Light theme. This is a generic keyword used well because it is the character fantasy, not filler.
+
+The long-term target is **all cards passing these tests**. Boring copy-paste effects such as bare Taunt, bare Divine Shield, or unconditional `+2/+2` should be redesigned unless the simplicity itself is the most faithful expression of that card.
 
 For a behaviour change, update the printed CSV text and the engine branch together. Search the existing `EffectId` and `effectIds` definitions before adding an effect. Add a focused test that proves the new rule.
 
@@ -167,6 +201,20 @@ Conditions have distinct, composable visual channels:
 
 Keep status indicators large enough to survive real board-card size. Verify condition work on a populated board; the opening screen cannot prove board conditions, targeting, hand interaction, or settings behaviour. Load card art eagerly and resolve public asset paths through `resolvePublicAssetUrl` so the game works both at a domain root and under a project page path.
 
+### Title-menu design QA record
+
+The accepted title-menu direction uses the game’s real card art in a moving edge-to-edge field, an orbital difficulty selector, a violet rift, ivory-and-gold typography, and a cyan selected state. It replaced an earlier implementation whose floating cards left large gaps and whose entrance animation could freeze midway when a browser capture backgrounded the page.
+
+The final pass established these decisions:
+
+- Keep cards drifting inside distributed lanes; the accepted 1331 × 848 capture showed 63 of 84 cards visible with all 12 vertical lanes populated.
+- Keep the menu fully visible on first paint. The unstable screen and letter entrance animations were removed, while the ambient rift and card motion remain.
+- Place all three difficulty labels in the rift artwork’s normalized coordinate system so they stay on their intended slider segments across aspect ratios.
+- Preserve the exact Veteran and Duel hover bounds; hover changes only colour and glow.
+- Keep the controls smaller and less text-heavy than the previous menu, and make background cards visible without competing with them.
+
+Interaction verification covered Recruit, Veteran, and Ascendant selection; the selected Duel label; playable Veteran and two-player launches; Settings open/close/return; no overflow at 390 × 844 or 1005 × 397; and a clean browser console. The implementation passed production build, automated tests, and live-site verification. The original local evidence captures were `.preview/github-pages-final-1331x848.png` and `.preview/github-pages-settings-verified.png`; `.preview/` is disposable evidence and is not published.
+
 ## Balance, pacing, and bot
 
 Card cost is a fiction and canon assignment, not a balancing lever. Change stats, effect magnitude, timing, keywords, or global pacing instead.
@@ -175,9 +223,19 @@ Judge each card against its own cost tier, not against the whole-roster average.
 
 Balance checks must report inadequate samples, unset thresholds, disabled checks, and missing results as a skip or failure, never as a silent pass.
 
+### Full balance-command gate and runtime
+
+`npm run check:balance` is an expensive full-roster measurement, not a routine check. Never launch it unless the owner explicitly says to run `npm run check:balance` or otherwise explicitly authorises that full command. A request described as “a balance pass,” even when it lists card changes, is not authorisation. Do not run the full command for one changed card; use focused tests and data validation. Reserve it for a pass that changes many cards, global pacing, draw rules, bot valuation, or another system-wide balance lever.
+
+The measured full run on this machine with the former 1,500-duel sample took **11 minutes 28.2 seconds** wall-clock. Its self-play phase took 268 seconds, fuzz took 21 seconds, and the Ascendant skill ladder accounted for most of the remaining time. The harness now caps self-play at **1,000 duels**; based on the measured phase costs, a future owner-authorised full run should take roughly ten minutes. Replace that estimate with an observed 1,000-duel time after the next explicitly authorised run.
+
+Do not make the simulated rules, bot skill, or turn timing “10× faster” by simplifying them: that would measure a different game. Safe implementation optimisations may reuse already-computed legal actions and candidate results, and independent duels may eventually run across CPU workers if deterministic output and result ordering are preserved. The current harness applies the safe reuse optimisation; the Ascendant ladder remains the unavoidable dominant cost because it searches whole turns.
+
 ## Assets and audio
 
 `source/public/` is the runtime asset location. `materials/local-production/` contains optional rebuild tools for art, music, voice previews, and cast sheets; it is not required to play the included build. Large audio and card-production libraries are release downloads rather than normal clone requirements.
+
+The complete original audio collection is the separate [Convergence-Audio-Tracks.7z release download](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z), because it is larger than a practical GitHub Pages site.
 
 Use the tools under `materials/local-production/asset-tools/` for production rebuilds. For audio changes, run the browser analyser check with `npm run check:audio`; a UI counter or a `musicPlaying` flag can say music is active while the browser’s audio graph is silent. Keep synthetic voices original and do not clone real actors.
 

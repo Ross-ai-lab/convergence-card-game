@@ -36,6 +36,7 @@ import type {
 import { clearSave, loadGame, saveGame } from "./storage";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
+import { createDuelSeed } from "./duelSeed";
 import { HowToPlay, PassScreen, SettingsPanel, TitleScreen, type GameMode } from "./screens/Screens";
 
 type Selection =
@@ -261,7 +262,7 @@ export default function App() {
   // A duel in progress is restored from localStorage; anything unreadable or
   // from an older engine falls back to a fresh game (see storage.ts).
   const restored = useMemo(() => loadGame(), []);
-  const [game, setGame] = useState(() => restored?.game ?? createInitialGame(cards, "convergence-v1", relics));
+  const [game, setGame] = useState(() => restored?.game ?? createInitialGame(cards, createDuelSeed(), relics));
   const [events, setEvents] = useState<GameEvent[]>(() =>
     restored ? [...restored.events, { kind: "info" as const, text: "Duel restored from your last session." }] : [openingEvent],
   );
@@ -852,7 +853,7 @@ export default function App() {
     sfx.play("button");
     sfx.stopCardTheme();
     clearSave();
-    setGame(createInitialGame(cards, `convergence-${Date.now()}`, relics));
+    setGame(createInitialGame(cards, createDuelSeed(), relics));
     setHistory([]);
     setSelection(null);
     clearFx();
@@ -869,7 +870,7 @@ export default function App() {
     sfx.stopCardTheme();
     clearSave();
     setMode(next);
-    setGame(createInitialGame(cards, `convergence-${Date.now()}`, relics));
+    setGame(createInitialGame(cards, createDuelSeed(), relics));
     setHistory([]);
     setSelection(null);
     clearFx();

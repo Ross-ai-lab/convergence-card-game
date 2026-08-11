@@ -296,7 +296,7 @@ export function playOneGame(options: PlayOptions): GameResult {
 
     let action: GameAction | null = null;
     if (drivers[actor] === "bot") {
-      action = chooseBotAction(state, library, actor, skills[actor]);
+      action = chooseBotAction(state, library, actor, skills[actor], legal);
       if (action && !legal.some((candidate) => actionKey(candidate) === actionKey(action as GameAction))) {
         problems.push(`turn ${state.turnNumber}: the bot returned an action that is not legal — ${actionKey(action)}`);
         action = null;
@@ -318,7 +318,7 @@ export function playOneGame(options: PlayOptions): GameResult {
     const key = actionKey(action);
     let next: GameState;
     try {
-      const result = applyAction(state, action, library);
+      const result = applyAction(state, action, library, legal, false);
       next = result.state;
     } catch (error) {
       problems.push(`turn ${state.turnNumber}: applyAction THREW on ${key} — ${(error as Error).message}`);

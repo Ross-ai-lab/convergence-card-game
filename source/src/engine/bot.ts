@@ -170,9 +170,16 @@ function whoActs(state: GameState): PlayerId | null {
   return state.activePlayer;
 }
 
-/** A move's immediate score, plus the small structural nudges every skill shares. */
-function immediateScore(state: GameState, action: GameAction, library: CardLibrary, forId: PlayerId): number {
-  const result = applyAction(state, action, library);
+/** A move's resulting state and immediate score. Keeping both avoids applying the
+ * same candidate again when a rollout follows it. */
+function evaluateAction(
+  state: GameState,
+  action: GameAction,
+  library: CardLibrary,
+  forId: PlayerId,
+  knownLegal?: readonly GameAction[],
+): { state: GameState; score: number } {
+  const result = applyAction(state, action, library, knownLegal, false);
   let score = scoreState(result.state, forId);
   // Ending the turn hands over the initiative, so it has to genuinely beat every
   // other option rather than merely tie with it.
@@ -181,22 +188,29 @@ function immediateScore(state: GameState, action: GameAction, library: CardLibra
   // otherwise read as a loss. Cancel that so the bot banks it instead of
   // refusing to touch it all game.
   if (action.type === "use_coin") score += 1;
-  return score;
+  return { state: result.state, score };
 }
 
-function bestGreedy(state: GameState, library: CardLibrary, forId: PlayerId): GameAction | null {
+function bestGreedy(
+  state: GameState,
+  library: CardLibrary,
+  forId: PlayerId,
+): { action: GameAction; state: GameState } | null {
   const legal = getLegalActions(state, library);
   if (legal.length === 0) return null;
   let best: GameAction | null = null;
+  let bestState: GameState | null = null;
   let bestScore = -Infinity;
   for (const action of legal) {
-    const score = immediateScore(state, action, library, forId);
+    const evaluated = evaluateAction(state, action, library, forId, legal);
+    const score = evaluated.score;
     if (score > bestScore) {
       bestScore = score;
       best = action;
+      bestState = evaluated.state;
     }
   }
-  return best ?? legal[0];
+  return best && bestState ? { action: best, state: bestState } : null;
 }
 
 /**
@@ -210,12 +224,12 @@ function rolloutTurn(state: GameState, library: CardLibrary, playerId: PlayerId)
     if (current.phase === "gameOver") return current;
     const actor = whoActs(current);
     if (actor === null || actor !== playerId) return current;
-    const action = bestGreedy(current, library, playerId);
-    if (!action) return current;
-    const before = actionKey(action);
-    const next = applyAction(current, action, library).state;
+    const step = bestGreedy(current, library, playerId);
+    if (!step) return current;
+    const before = actionKey(step.action);
+    const next = step.state;
     // A move that changes nothing would spin here forever.
-    if (actionKey(action) === before && next === current) return current;
+    if (actionKey(step.action) === before && next === current) return current;
     current = next;
   }
   return current;
@@ -230,15 +244,19 @@ export function chooseBotAction(
   library: CardLibrary,
   botId: PlayerId = 1,
   skill: BotSkill = "normal",
+  knownLegal?: GameAction[],
 ): GameAction | null {
   if (state.phase === "gameOver") return null;
   if (whoActs(state) !== botId) return null;
 
-  const legal = getLegalActions(state, library);
+  // Simulation already asks the engine for legal actions to detect dead ends.
+  // Accepting that exact list avoids doing the same rules traversal twice on
+  // every simulated bot action; normal app callers simply omit it.
+  const legal = knownLegal ?? getLegalActions(state, library);
   if (legal.length === 0) return null;
   if (legal.length === 1) return legal[0];
 
-  const scored = legal.map((action) => ({ action, score: immediateScore(state, action, library, botId) }));
+  const scored = legal.map((action) => ({ action, ...evaluateAction(state, action, library, botId, legal) }));
 
   if (skill === "easy") {
     // A beginner opponent: mostly it does something, occasionally it does the
@@ -273,8 +291,7 @@ export function chooseBotAction(
   let bestScore = -Infinity;
 
   for (const candidate of shortlist) {
-    const afterMove = applyAction(state, candidate.action, library);
-    let projected = afterMove.state;
+    let projected = candidate.state;
     if (projected.phase !== "gameOver") {
       projected = rolloutTurn(projected, library, botId);
       const enemyId: PlayerId = botId === 0 ? 1 : 0;

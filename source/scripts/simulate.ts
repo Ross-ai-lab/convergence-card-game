@@ -13,7 +13,7 @@
  *
  * Usage:
  *   npm run sim                          both modes, default sizes
- *   npm run sim -- --games 5000          a bigger balance sample
+ *   npm run sim -- --games 1000          the largest permitted balance sample
  *   npm run sim -- --mode fuzz --games 400
  *   npm run sim -- --skill hard          how the roster looks under the strong bot
  *
@@ -54,12 +54,15 @@ function flag(name: string): boolean {
 }
 
 const MODE = arg("mode", "both");
-const GAMES = Number(arg("games", "1500"));
+/** Owner cap: full self-play samples never exceed 1,000 duels. */
+const MAX_GAMES = 1000;
+const GAMES = Number(arg("games", String(MAX_GAMES)));
 const FUZZ_GAMES = Number(arg("fuzz-games", String(Math.max(150, Math.round(GAMES / 6)))));
 const SKILL = arg("skill", "normal") as BotSkill;
 const SEED_PREFIX = arg("seed", "sim");
 const TURN_CAP = Number(arg("turncap", "120"));
-const CORE_HP = Number(arg("core-hp", "0")) || undefined;
+const CORE_HP_TEXT = arg("core-hp", "");
+const CORE_HP = CORE_HP_TEXT === "" ? undefined : Number(CORE_HP_TEXT);
 /** `--full` adds the bot ladder. Without it the three ladder checks SKIP loudly. */
 const FULL = flag("full");
 
@@ -73,12 +76,28 @@ const SNOWBALL_TURN = CONFIG.checks.snowball.atTurn;
 // A sample size that is zero or not a number would run no duels at all while the
 // hygiene checks happily reported "0 — PASS". They skip on null now, but a
 // mistyped --games is still worth refusing outright.
-if (!Number.isInteger(GAMES) || GAMES < 0) {
-  console.error(`--games must be a whole number, got "${arg("games", "")}"`);
+if (!Number.isInteger(GAMES) || GAMES < 1 || GAMES > MAX_GAMES) {
+  console.error(`--games must be a whole number from 1 to ${MAX_GAMES}, got "${arg("games", "")}"`);
+  process.exit(2);
+}
+if (!Number.isInteger(FUZZ_GAMES) || FUZZ_GAMES < 1 || FUZZ_GAMES > MAX_GAMES) {
+  console.error(`--fuzz-games must be a whole number from 1 to ${MAX_GAMES}, got "${arg("fuzz-games", "")}"`);
+  process.exit(2);
+}
+if (!Number.isInteger(TURN_CAP) || TURN_CAP < 1) {
+  console.error(`--turncap must be a positive whole number, got "${arg("turncap", "")}"`);
+  process.exit(2);
+}
+if (CORE_HP !== undefined && (!Number.isFinite(CORE_HP) || CORE_HP <= 0)) {
+  console.error(`--core-hp must be a positive number, got "${CORE_HP_TEXT}"`);
   process.exit(2);
 }
 if (!["both", "selfplay", "fuzz"].includes(MODE)) {
   console.error(`--mode must be one of both, selfplay, fuzz — got "${MODE}"`);
+  process.exit(2);
+}
+if (!["easy", "normal", "hard"].includes(SKILL)) {
+  console.error(`--skill must be one of easy, normal, hard — got "${SKILL}"`);
   process.exit(2);
 }
 
@@ -133,8 +152,8 @@ function openingStats(results: GameResult[], window: number) {
   let deadThroughWindow = 0;
   let turnOneSamples = 0;
   let deadTurnOne = 0;
-  // Split by seat, because the two openings are not the same hand: one card
-  // going first, two cards plus The Coin going second.
+  // Split by seat, because the two openings are not the same hand: two cards
+  // going first, three cards plus The Coin going second.
   const bySeat = [
     { samples: 0, dead: 0 },
     { samples: 0, dead: 0 },
@@ -636,7 +655,7 @@ ${gate.results
  <div class="kpi"><b>${sp.opening.samples}</b><span>openings sampled</span></div>
 </div>
 <p class="sub">Measured by asking the engine for legal moves, not by comparing costs, so The Coin,
-per-card discounts and relics all count. Going first means one card and one mana, so a dead first
+ per-card discounts and relics all count. Going first means two cards and one mana, so a dead first
 turn is the shape of the opening rather than a defect — the three-turn number is the one that matters.</p>
 
 <h2>Does an early lead decide it?</h2>
@@ -866,6 +885,10 @@ if (REPLAY) {
 
 if (flag("ladder")) {
   const override = Number(arg("ladder-games", "0"));
+  if (!Number.isInteger(override) || override < 0 || override > MAX_GAMES) {
+    console.error(`--ladder-games must be a whole number from 0 to ${MAX_GAMES}, got "${arg("ladder-games", "")}"`);
+    process.exit(2);
+  }
   const { table } = runLadder((key) => override || CONFIG.checks.skillLadder.games[key] || 150);
   writeFileSync(join(outDir, "ladder.json"), JSON.stringify(table, null, 1), "utf8");
   process.exit(0);
@@ -874,7 +897,20 @@ if (flag("ladder")) {
 if (flag("sweep")) {
   const values = arg("sweep-hp", "30,36,44,52").split(",").map(Number);
   const ramps = arg("sweep-ramp", "1,1.2,1.35,1.5").split(",").map(Number);
-  const table = runSweep(values, Number(arg("sweep-games", "400")), ramps);
+  const sweepGames = Number(arg("sweep-games", "400"));
+  if (values.length === 0 || values.some((value) => !Number.isFinite(value) || value <= 0)) {
+    console.error(`--sweep-hp must be a comma-separated list of positive numbers`);
+    process.exit(2);
+  }
+  if (ramps.length === 0 || ramps.some((ramp) => !Number.isFinite(ramp) || ramp <= 0)) {
+    console.error(`--sweep-ramp must be a comma-separated list of positive numbers`);
+    process.exit(2);
+  }
+  if (!Number.isInteger(sweepGames) || sweepGames < 1 || sweepGames > MAX_GAMES) {
+    console.error(`--sweep-games must be a whole number from 1 to ${MAX_GAMES}`);
+    process.exit(2);
+  }
+  const table = runSweep(values, sweepGames, ramps);
   writeFileSync(join(outDir, "sweep.json"), JSON.stringify(table, null, 1), "utf8");
   console.log("Sweep written to .preview/balance/sweep.json");
   process.exit(0);
