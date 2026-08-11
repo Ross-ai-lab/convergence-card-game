@@ -99,7 +99,7 @@
   animation: screen-in 320ms ease both;
 }
 
-/* Freeform, slow-moving card scatter. This uses the same seeded-scatter idea
+/* Freeform, one-direction card stream. This uses the same seeded-scatter idea
    as Pipelines/bgfx, but draws from the game's own card library so it ships
    with no extra background asset pack. */
 .floating-card-field {
@@ -120,27 +120,22 @@
   opacity: var(--float-opacity);
   filter: saturate(0.86) contrast(0.92) brightness(0.72);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
-  transform: rotate(var(--float-rot)) scale(var(--float-scale));
   will-change: transform;
-  animation: floating-card-drift var(--float-duration) cubic-bezier(0.45, 0.05, 0.55, 0.95) var(--float-delay) infinite;
+  animation: floating-card-drift var(--float-duration) linear var(--float-delay) infinite;
 }
 
 @keyframes floating-card-drift {
-  0%,
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 118vh, 0) rotate(var(--float-rot)) scale(var(--float-scale));
+  }
+  8%,
+  90% {
+    opacity: var(--float-opacity);
+  }
   100% {
-    transform: translate3d(0, 0, 0) rotate(var(--float-rot)) scale(var(--float-scale));
-  }
-  18% {
-    transform: translate3d(var(--float-x1), var(--float-y1), 0) rotate(var(--float-r1)) scale(var(--float-s1));
-  }
-  43% {
-    transform: translate3d(var(--float-x2), var(--float-y2), 0) rotate(var(--float-r2)) scale(var(--float-s2));
-  }
-  68% {
-    transform: translate3d(var(--float-x3), var(--float-y3), 0) rotate(var(--float-r3)) scale(var(--float-s3));
-  }
-  86% {
-    transform: translate3d(var(--float-x2), var(--float-y1), 0) rotate(var(--float-r1)) scale(var(--float-s1));
+    opacity: 0;
+    transform: translate3d(0, -142vh, 0) rotate(calc(var(--float-rot) + var(--float-spin))) scale(var(--float-scale));
   }
 }
 
@@ -196,11 +191,13 @@
 }
 
 .title-player-count {
+  position: fixed;
+  right: clamp(10px, 2vw, 32px);
+  bottom: clamp(10px, 2vh, 24px);
   display: inline-flex;
   align-items: baseline;
   gap: 0.35rem;
-  margin: auto 0 0;
-  align-self: flex-end;
+  margin: 0;
   padding: 6px 11px;
   color: var(--muted);
   font-size: 12px;
@@ -316,6 +313,213 @@
   display: flex;
   flex-direction: column;
   gap: 11px;
+}
+
+/* The mode selector is the menu's command deck: a single framed decision
+   surface with two distinct routes into the game, rather than two generic
+   boxes stacked on top of each other. */
+.title-console {
+  position: relative;
+  width: min(920px, 96vw);
+  margin-top: clamp(4px, 1vh, 12px);
+  padding: clamp(13px, 1.8vw, 20px);
+  overflow: hidden;
+  border: 1px solid rgba(240, 199, 103, 0.44);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(240, 199, 103, 0.1), transparent 30%),
+    linear-gradient(315deg, rgba(67, 205, 189, 0.08), transparent 35%),
+    rgba(12, 9, 19, 0.78);
+  box-shadow:
+    0 24px 58px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(255, 246, 222, 0.06),
+    inset 0 0 42px rgba(155, 119, 210, 0.1);
+}
+
+.title-console::before,
+.title-console::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  width: 180px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240, 199, 103, 0.65), transparent);
+  transform: rotate(-22deg);
+  pointer-events: none;
+}
+
+.title-console::before {
+  top: 18px;
+  right: -36px;
+}
+
+.title-console::after {
+  bottom: 14px;
+  left: -46px;
+  transform: rotate(22deg);
+  background: linear-gradient(90deg, transparent, rgba(67, 205, 189, 0.6), transparent);
+}
+
+.console-heading {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(90px, 220px);
+  gap: 12px;
+  align-items: center;
+  padding: 0 4px 13px;
+  border-bottom: 1px solid rgba(255, 246, 222, 0.14);
+  text-align: left;
+}
+
+.console-sigil {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: #1a120b;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff0b0, var(--gold-dark));
+  box-shadow: 0 0 22px rgba(240, 199, 103, 0.3);
+  font-size: 17px;
+}
+
+.console-eyebrow {
+  color: var(--teal);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.console-heading h2 {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: clamp(18px, 2.1vw, 25px);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.console-rule {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(240, 199, 103, 0.08), rgba(240, 199, 103, 0.72));
+}
+
+.title-console .title-block {
+  position: relative;
+  z-index: 1;
+  border-color: rgba(255, 246, 222, 0.17);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 246, 222, 0.08), rgba(255, 246, 222, 0.025));
+  padding: 14px;
+  gap: 12px;
+  box-shadow: inset 0 1px rgba(255, 246, 222, 0.08);
+}
+
+.title-console .title-block-alone {
+  margin-top: 13px;
+}
+
+.mode-heading {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  text-align: left;
+}
+
+.mode-index {
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.mode-index.teal {
+  color: var(--teal);
+}
+
+.mode-heading h3 {
+  color: var(--ink);
+  font-size: 15px;
+  letter-spacing: 0.16em;
+}
+
+.mode-heading p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.title-console .skill-row {
+  gap: 9px;
+}
+
+.title-console .skill-chip {
+  position: relative;
+  min-height: 78px;
+  overflow: hidden;
+  padding: 13px 34px 11px 12px;
+  border-color: rgba(255, 246, 222, 0.17);
+  background: rgba(9, 7, 14, 0.42);
+}
+
+.title-console .skill-chip::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(240, 199, 103, 0.5), transparent);
+  opacity: 0.5;
+}
+
+.title-console .skill-chip.on {
+  border-color: var(--gold);
+  background: linear-gradient(145deg, rgba(240, 199, 103, 0.2), rgba(240, 199, 103, 0.07));
+  box-shadow: inset 0 0 24px rgba(240, 199, 103, 0.08), 0 0 18px rgba(240, 199, 103, 0.08);
+}
+
+.skill-index {
+  position: absolute;
+  top: 9px;
+  right: 11px;
+  color: rgba(240, 199, 103, 0.58) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em;
+}
+
+.title-console .skill-chip > span:not(.skill-index) {
+  font-size: 11px;
+}
+
+.title-console .title-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.title-console .title-btn > span {
+  font-size: 18px;
+  line-height: 0.8;
+}
+
+.title-console .title-block-together {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  margin-top: 10px;
+  border-color: rgba(67, 205, 189, 0.26);
+  background: linear-gradient(135deg, rgba(67, 205, 189, 0.09), rgba(255, 246, 222, 0.025));
+}
+
+.title-console .title-block-together .title-btn {
+  min-width: 238px;
 }
 
 .title-block h3 {
@@ -759,9 +963,10 @@
   .title-gallery {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 5px;
+    margin-top: 6px;
   }
   .title-portrait {
-    height: 118px;
+    height: 94px;
     border-radius: 8px;
   }
   .title-portrait:nth-child(2) {
@@ -771,7 +976,79 @@
     transform: rotate(5deg) translateY(-4px) scale(1.03);
   }
   .title-inner {
-    gap: 9px;
+    gap: 5px;
+    padding-block: 5px;
+  }
+  .title-console {
+    margin-top: 3px;
+    padding: 8px;
+    border-radius: 16px;
+  }
+  .console-heading {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+    padding-bottom: 7px;
+  }
+  .console-rule {
+    display: none;
+  }
+  .console-sigil {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+  .console-eyebrow {
+    font-size: 8px;
+  }
+  .console-heading h2 {
+    font-size: 17px;
+  }
+  .title-console .title-block {
+    padding: 8px;
+    gap: 7px;
+    border-radius: 12px;
+  }
+  .title-console .title-block-alone {
+    margin-top: 7px;
+  }
+  .mode-heading {
+    gap: 7px;
+  }
+  .mode-index {
+    font-size: 11px;
+  }
+  .mode-heading h3 {
+    font-size: 13px;
+  }
+  .mode-heading p {
+    margin-top: 2px;
+    font-size: 9px;
+  }
+  .title-console .skill-chip {
+    min-height: 58px;
+    padding: 8px 30px 7px 9px;
+  }
+  .title-console .skill-row {
+    gap: 5px;
+  }
+  .title-console .skill-chip b {
+    font-size: 12px;
+  }
+  .title-console .skill-chip > span:not(.skill-index) {
+    font-size: 9.5px;
+  }
+  .title-console .title-block-together {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    margin-top: 7px;
+  }
+  .title-console .title-block-together .title-btn {
+    width: 100%;
+    min-width: 0;
+  }
+  .title-console .title-btn {
+    padding-block: 8px;
+    font-size: 13px;
   }
 }
 

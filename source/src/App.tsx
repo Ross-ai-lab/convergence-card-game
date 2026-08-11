@@ -1310,9 +1310,6 @@ export default function App() {
         <div className="brand-mini">
           <span className="brand-mark" />
           <strong>Convergence</strong>
-          {playerCount !== null ? (
-            <span className="player-count-chip"><b>{playerCount.toLocaleString()}</b> played this game</span>
-          ) : null}
         </div>
         <HeroPlate
           enemy

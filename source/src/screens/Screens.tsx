@@ -44,7 +44,6 @@ const FLOATING_CARDS = Array.from({ length: 42 }, (_, index) => {
   const card = cards[(index * 17 + 11) % cards.length];
   const rotation = ((index * 47) % 32) - 16;
   const scale = 0.72 + ((index * 29) % 42) / 100;
-  const signed = (multiplier: number, span: number) => ((index * multiplier) % span) - span / 2;
   return {
     id: `floating-card-${index}`,
     art: card.art,
@@ -52,18 +51,7 @@ const FLOATING_CARDS = Array.from({ length: 42 }, (_, index) => {
     top: ((index * 61 + 3) % 112) - 6,
     rotation,
     scale,
-    x1: `${signed(23, 40)}vw`,
-    y1: `${signed(61, 34)}vh`,
-    x2: `${signed(47, 52)}vw`,
-    y2: `${signed(19, 44)}vh`,
-    x3: `${signed(71, 46)}vw`,
-    y3: `${signed(83, 38)}vh`,
-    r1: `${rotation + signed(31, 42)}deg`,
-    r2: `${rotation + signed(53, 68)}deg`,
-    r3: `${rotation + signed(79, 54)}deg`,
-    s1: scale + (index % 3 === 0 ? 0.1 : -0.04),
-    s2: scale + (index % 3 === 1 ? 0.13 : -0.06),
-    s3: scale + (index % 3 === 2 ? 0.09 : -0.03),
+    spin: `${((index * 53) % 440) - 220}deg`,
     delay: -((index * 13) % 24),
     duration: 6.4 + (index % 8) * 0.72,
     opacity: 0.11 + ((index * 11) % 11) / 100,
@@ -85,18 +73,7 @@ function FloatingCardField() {
               top: `${card.top}%`,
               "--float-rot": `${card.rotation}deg`,
               "--float-scale": card.scale,
-              "--float-x1": card.x1,
-              "--float-y1": card.y1,
-              "--float-x2": card.x2,
-              "--float-y2": card.y2,
-              "--float-x3": card.x3,
-              "--float-y3": card.y3,
-              "--float-r1": card.r1,
-              "--float-r2": card.r2,
-              "--float-r3": card.r3,
-              "--float-s1": card.s1,
-              "--float-s2": card.s2,
-              "--float-s3": card.s3,
+              "--float-spin": card.spin,
               "--float-delay": `${card.delay}s`,
               "--float-duration": `${card.duration}s`,
               "--float-opacity": card.opacity,
@@ -190,36 +167,60 @@ export function TitleScreen({
           </button>
         ) : null}
 
-        <div className="title-block title-block-alone">
-          <h3>Play alone</h3>
-          <div className="skill-row">
-            {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option) => (
-              <button
-                key={option}
-                type="button"
-                className={option === skill ? "skill-chip on" : "skill-chip"}
-                onClick={() => {
-                  sfx.play("button");
-                  setSkill(option);
-                }}
-                aria-pressed={option === skill}
-              >
-                <b>{SKILL_BLURB[option].title}</b>
-                <span>{SKILL_BLURB[option].note}</span>
-              </button>
-            ))}
+        <div className="title-console" aria-label="Choose a game mode">
+          <div className="console-heading">
+            <span className="console-sigil" aria-hidden="true">✦</span>
+            <div>
+              <span className="console-eyebrow">Choose your arena</span>
+              <h2>Enter the rift</h2>
+            </div>
+            <span className="console-rule" aria-hidden="true" />
           </div>
-          <button type="button" className="title-btn primary" onClick={() => onStart({ kind: "bot", skill })}>
-            Duel the {SKILL_BLURB[skill].title}
-          </button>
-        </div>
 
-        <div className="title-block title-block-together">
-          <h3>Play together</h3>
-          <p className="title-note">Two players, one screen. The board is hidden while you swap seats.</p>
-          <button type="button" className="title-btn" onClick={() => onStart({ kind: "hotseat" })}>
-            Start a hotseat duel
-          </button>
+          <div className="title-block title-block-alone">
+            <div className="mode-heading">
+              <span className="mode-index">01</span>
+              <div>
+                <h3>Play alone</h3>
+                <p>Pick an opponent and test your edge.</p>
+              </div>
+            </div>
+            <div className="skill-row">
+              {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option, index) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={option === skill ? "skill-chip on" : "skill-chip"}
+                  onClick={() => {
+                    sfx.play("button");
+                    setSkill(option);
+                  }}
+                  aria-pressed={option === skill}
+                >
+                  <span className="skill-index">0{index + 1}</span>
+                  <b>{SKILL_BLURB[option].title}</b>
+                  <span>{SKILL_BLURB[option].note}</span>
+                </button>
+              ))}
+            </div>
+            <button type="button" className="title-btn primary" onClick={() => onStart({ kind: "bot", skill })}>
+              Duel the {SKILL_BLURB[skill].title}
+              <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+
+          <div className="title-block title-block-together">
+            <div className="mode-heading">
+              <span className="mode-index teal">02</span>
+              <div>
+                <h3>Play together</h3>
+                <p>Two players, one screen. The board hides while you swap seats.</p>
+              </div>
+            </div>
+            <button type="button" className="title-btn" onClick={() => onStart({ kind: "hotseat" })}>
+              Start a hotseat duel <span aria-hidden="true">↗</span>
+            </button>
+          </div>
         </div>
 
         <div className="title-links">
