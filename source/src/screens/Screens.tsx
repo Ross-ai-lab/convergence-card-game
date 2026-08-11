@@ -182,6 +182,7 @@ export function TitleScreen({
           src={`${import.meta.env.BASE_URL}menu-rift.png`}
           alt=""
           draggable={false}
+          fetchPriority="high"
         />
 
         <div className="duel-orbit" aria-label="Choose an opponent">
