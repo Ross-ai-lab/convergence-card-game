@@ -58,7 +58,7 @@ c056,Doomsday,9,8,9,Black,Nature,Evil,,camp_immunity_on_hit,passive,"Passive: Af
 c057,Ten Tails,9,5,6,Black,Magic,Evil,,destroy_small_4,onPlay,Battlecry: Destroy one minion with 4 or less HP of your choice,"The beast before beginnings, hungry for the end",Naruto,/card-art/raw/c057.webp
 c058,Kaido,8,5,5,Yellow,Nature,Evil,,destroy_enemy_taunt,onPlay,Battlecry: Destroy an enemy Taunt minion,Rules of the seas,One Piece,/card-art/raw/c058.webp
 c059,Korosensei,8,6,7,Yellow,Nature,Neutral,,mid_attack_only,passive,Passive: Can only be damaged by ATK of 4 and higher,Mach 20,Assasination Classroom,/card-art/raw/c059.webp
-c060,Monkey D. Luffy Gear 5,8,7,3,Yellow,Magic,Good,,invuln_with_good_ally,passive,Passive: invulnerable as long as you control another Good minion,Reality bends; laughter reigns,One Piece,/card-art/raw/c060.webp
+c060,Monkey D. Luffy,8,7,3,Yellow,Magic,Good,,invuln_with_good_ally,passive,Passive: invulnerable as long as you control another Good minion,Reality bends; laughter reigns,One Piece,/card-art/raw/c060.webp
 c061,Chaos,8,4,6,Purple,Tech,Neutral,,buff_all_friendly_4_neg1,ongoing,Ongoing: Give all friendly minions +3/-2,He gives gifts. He never mentions the cost,Hades,/card-art/raw/c061.webp
 c062,S-Class Heroes,8,4,7,Purple,Nature,Good,,buff_all_good_2,ongoing,Ongoing: Give +2/+2 to all good minions,The strongest team,OPM,/card-art/raw/c062.webp
 c063,Sans,8,5,6,Purple,Magic,Neutral,,confuse_enemies,onPlay,Battlecry: All enemy minions attack random enemy targets next turn,"HELLO, WORLD!",Undertale,/card-art/raw/c063.webp

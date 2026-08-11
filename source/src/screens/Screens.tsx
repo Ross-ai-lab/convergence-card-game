@@ -30,7 +30,7 @@ const SKILL_BLURB: Record<BotSkill, { title: string; note: string }> = {
   hard: { title: "Ascendant", note: "Searches whole turns and answers what you are about to do." },
 };
 
-const FEATURED_NAMES = ["Neo", "Kizaru", "Batman", "Dio Brando", "Rennala Queen of the Full Moon"];
+const FEATURED_NAMES = ["Neo", "Monkey D. Luffy", "Batman", "Dio Brando", "Walter White"];
 const FEATURED_CHARACTERS = FEATURED_NAMES.flatMap((name) => {
   const card = cards.find((entry) => entry.name === name);
   return card ? [{ name: card.name, art: card.art }] : [];
