@@ -1580,7 +1580,7 @@
   text-shadow: 0 2px 9px rgba(3, 1, 8, 0.95);
   box-shadow: none;
   pointer-events: auto;
-  transition: transform 180ms ease, color 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+  transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
 }
 
 .orbit-choice svg {
@@ -1589,7 +1589,8 @@
   filter: drop-shadow(0 0 7px currentColor);
 }
 
-.orbit-choice:hover {
+button.orbit-choice:hover:not(:disabled) {
+  transform: translate(-50%, -50%);
   color: #fff0bd;
   border-color: rgba(240, 199, 103, 0.5);
   background: rgba(37, 20, 45, 0.78);
@@ -1622,10 +1623,6 @@
   transform: translate(-50%, -50%);
 }
 
-.orbit-choice-normal:hover {
-  transform: translate(-50%, -50%);
-}
-
 .orbit-choice-hard {
   top: 46.5%;
   right: auto;
@@ -1652,7 +1649,7 @@
   text-transform: uppercase;
   box-shadow: 0 0 0 5px rgba(50, 24, 17, 0.86), 0 0 0 7px rgba(231, 183, 85, 0.72), 0 14px 42px rgba(5, 1, 12, 0.7), 0 0 34px rgba(240, 199, 103, 0.32);
   pointer-events: auto;
-  transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+  transition: background-color 180ms ease, box-shadow 180ms ease;
 }
 
 .duel-trigger span {
@@ -1670,7 +1667,7 @@
   letter-spacing: 0.18em;
 }
 
-.duel-trigger:hover {
+button.duel-trigger:hover:not(:disabled) {
   transform: translate(-50%, -50%);
   background: #d9a649;
   box-shadow: 0 0 0 5px rgba(50, 24, 17, 0.86), 0 0 0 7px rgba(255, 224, 153, 0.88), 0 20px 48px rgba(5, 1, 12, 0.74), 0 0 44px rgba(240, 199, 103, 0.48);

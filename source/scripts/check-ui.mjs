@@ -33,6 +33,7 @@
 import { launch } from "./browser.mjs";
 
 const BASE = process.argv[2] || "http://localhost:5177";
+const TITLE_ONLY = process.argv.includes("--title-only");
 const results = [];
 
 function check(name, ok, detail = "") {
@@ -83,6 +84,32 @@ check(
   difficultyClicks.map((clicked) => clicked ? "clicked" : "BLOCKED").join(", "),
 );
 
+async function measureTitleHoverDrifts() {
+  const drifts = [];
+  for (const selector of [".orbit-choice-easy", ".orbit-choice-normal", ".orbit-choice-hard", ".duel-trigger"]) {
+    await page.mouse.move(0, 0);
+    const before = await page.locator(selector).boundingBox();
+    let maxDrift = 0;
+    if (before) {
+      await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+      for (let frame = 0; frame < 6; frame += 1) {
+        await page.waitForTimeout(70);
+        const current = await page.locator(selector).boundingBox();
+        if (current) maxDrift = Math.max(maxDrift, Math.abs(current.x - before.x), Math.abs(current.y - before.y));
+      }
+    }
+    drifts.push({ selector, maxDrift });
+  }
+  return drifts;
+}
+
+const titleHoverDrifts = await measureTitleHoverDrifts();
+check(
+  "title duel controls stay still on hover",
+  titleHoverDrifts.every(({ maxDrift }) => maxDrift < 0.25),
+  titleHoverDrifts.map(({ selector, maxDrift }) => `${selector} ${maxDrift.toFixed(1)}px`).join(", "),
+);
+
 await page.locator(".duel-trigger").click({ timeout: 2000 }).catch(() => {});
 await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
 check(
@@ -98,6 +125,26 @@ check(
   (await page.getByRole("dialog").getByText("Recruit", { exact: true }).count()) === 0,
   "Settings contains sound controls only",
 );
+
+if (TITLE_ONLY) {
+  await page.setViewportSize({ width: 945, height: 720 });
+  await page.goto(BASE, { waitUntil: "domcontentloaded" });
+  const compactHoverDrifts = await measureTitleHoverDrifts();
+  check(
+    "compact title duel controls stay still on hover",
+    compactHoverDrifts.every(({ maxDrift }) => maxDrift < 0.25),
+    compactHoverDrifts.map(({ selector, maxDrift }) => `${selector} ${maxDrift.toFixed(1)}px`).join(", "),
+  );
+  await browser.close();
+  const titleFailures = results.filter((result) => !result.ok);
+  console.log("");
+  if (titleFailures.length) {
+    console.log(`${titleFailures.length} FAILED: ${titleFailures.map((result) => result.name).join(", ")}`);
+    process.exit(1);
+  }
+  console.log(`All ${results.length} title UI checks passed.`);
+  process.exit(0);
+}
 
 /**
  * Fresh duel. By default: cheat mode on, one minion placed and rested.
