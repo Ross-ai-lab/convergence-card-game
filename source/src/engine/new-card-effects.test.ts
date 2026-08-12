@@ -51,7 +51,9 @@ function endTurn(state: GameState, player: PlayerId): GameState {
 describe("2026 card replacements", () => {
   it("loads the requested stats, origins, keywords, timings, and effect IDs", () => {
     const expected: Record<string, Partial<(typeof cards)[number]>> = {
-      "The Watcher": { atk: 5, hp: 8, effectId: "watcher_reveal_hand", effectTiming: "passive" },
+      "The Watcher": { atk: 10, hp: 7, effectId: "watcher_reveal_hand", effectTiming: "passive" },
+      Whitebeard: { atk: 6, hp: 4, effectId: "aoe_all_3", effectTiming: "onPlay" },
+      "Dio Brando": { atk: 3, hp: 2, effectId: "freeze_all_enemies", effectTiming: "onPlay" },
       Sonic: { atk: 6, hp: 3, effectId: "charge", effectTiming: "none", keywords: ["Charge"] },
       "Isaac Netero": { atk: 4, hp: 4, effectId: "deathrattle_aoe_3", effectTiming: "deathrattle" },
       "Death Star": { atk: 7, hp: 6, origin: "Star Wars", effectId: "death_star_mark" },

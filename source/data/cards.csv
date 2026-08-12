@@ -44,7 +44,7 @@ c042,Giorno - Gold Experience Requiem,10,4,6,Yellow,Magic,Neutral,,slot_permanen
 c043,Doctor Manhattan,10,1,1,Purple,Nature,Neutral,,set_stats_choice,onPlay,Battlecry: Choose an enemy minion board slot. Minions on that slot have their stats permanently set to 1/1,Transcended,DCU,/card-art/raw/c043.webp
 c044,Mastered Ultra Instinct Goku,10,6,7,Purple,Magic,Good,Passive,evade_first_attack,passive,Passive: Evade the first attack targeting Goku each enemy turn.,Activate Universe Breathing Technique,Dragon Ball,/card-art/raw/c044.webp
 c045,Rick Prime,10,1,1,Purple,Nature,Neutral,,rick_return_all,onPlay,Battlecry: Return all other minions to their owners' hands.,What…,Rick and Morty,/card-art/raw/c045.webp
-c046,The Watcher,10,5,8,Purple,Magic,Neutral,Passive,watcher_reveal_hand,passive,Passive: Cannot attack. Your opponent's hand is revealed to you.,The Witness,MCU,/card-art/raw/c046.webp
+c046,The Watcher,10,10,7,Purple,Magic,Neutral,Passive,watcher_reveal_hand,passive,Passive: Cannot attack. Your opponent's hand is revealed to you.,The Witness,MCU,/card-art/raw/c046.webp
 c047,"Escanor ""The One""",9,7,7,Red,Magic,Good,,lone_burst_8,onPlay,"Battlecry: If you control no other minions, deal 8 DMG to an enemy minion of your choice","The Sun, incarnated",Seven Deadly Sins,/card-art/raw/c047.webp
 c048,Lelouch Lamperouge,9,5,9,Yellow,Magic,Good,,mind_control_4_delayed,onPlay,Battlecry: Gain control of a minion with 4 HP or less at the start of your next turn,Obey,Code Geass,/card-art/raw/c048.webp
 c049,Tempest's Guardian Lords,9,1,1,Yellow,Magic,Good,,tempest_guardian_lords,onPlayAndOngoing,Battlecry/Ongoing: Destroy a minion. Gain its stats. Ongoing: Gain +2/+1,Infinite growth,Tensura,/card-art/raw/c049.webp
@@ -63,7 +63,7 @@ c061,Chaos,8,4,6,Purple,Tech,Neutral,,buff_all_friendly_4_neg1,ongoing,Ongoing: 
 c062,S-Class Heroes,8,4,7,Purple,Nature,Good,,buff_all_good_2,ongoing,Ongoing: Give +2/+2 to all good minions,The strongest team,OPM,/card-art/raw/c062.webp
 c063,Sans,8,3,1,Purple,Magic,Neutral,Passive,dodge_75,passive,Passive: Evade 75% of attacks.,"HELLO, WORLD!",Undertale,/card-art/raw/c063.webp
 c064,Seven Deadly Sins,8,5,6,Purple,Magic,Good,,buff_magic_ally_3,ongoing,Ongoing: Give +3/+3 to one of your Magic type minion,The Magic Number,Seven Deadly Sins,/card-art/raw/c064.webp
-c065,Whitebeard,8,7,9,Purple,Magic,Neutral,,aoe_all_3,onPlay,Battlecry: Deal 3 DMG to ALL other minions,Split the World in two,One Piece,/card-art/raw/c065.webp
+c065,Whitebeard,8,6,4,Purple,Magic,Neutral,,aoe_all_3,onPlay,Battlecry: Deal 3 DMG to ALL other minions,Split the World in two,One Piece,/card-art/raw/c065.webp
 c066,Elder Centipede,8,7,7,Black,Nature,Evil,Chained;Taunt,none,none,Chained. Taunt. Taunt activates after the Chained period ends.,Billion year old,OPM,/card-art/raw/c066.webp
 c067,Hypnos,8,0,9,Black,Magic,Neutral,Taunt;Passive,chain_attacker,passive,Taunt. Passive: Enemy minions that attack this become Chained for 1 turn,He sleeps in his sleep,Hades,/card-art/raw/c067.webp
 c068,Star Destroyer,8,8,8,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c068.webp
@@ -94,7 +94,7 @@ c092,UFO,6,5,5,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c092.webp
 c093,Yoriichi Type Zero,6,5,4,Black,Tech,Neutral,,survivor_buff,passive,"Passive: Whenever a friendly minion survives a combat, it gains +2/+1.",Strongest puppet,Demon Slayer,/card-art/raw/c093.webp
 c094,Grand Master Oogway,5,2,2,Red,Magic,Good,Divine Shield;Passive,oogway_rescue,passive,"Divine Shield. Passive: Once per turn, when another friendly minion would die, return it to your hand instead and Chain Oogway for 1 turn.",Patience,Kung-Fu Panda,/card-art/raw/c094.webp
 c095,Kojiro Sasaki,5,2,6,Red,Nature,Good,Passive,evade_allies_33,passive,Passive: All other friendly minions have +33% chance to evade an attack (does not apply to himself),Spending infinity in the Astral made him on par with the Gods,RoR,/card-art/raw/c095.webp
-c096,Dio Brando,5,4,4,Yellow,Magic,Evil,,freeze_all_enemies,onPlay,Battlecry: Freeze all enemy minions,THE WORLD,JoJo,/card-art/raw/c096.webp
+c096,Dio Brando,5,3,2,Yellow,Magic,Evil,,freeze_all_enemies,onPlay,Battlecry: Freeze all enemy minions,THE WORLD,JoJo,/card-art/raw/c096.webp
 c097,Elden Beast,5,4,4,Yellow,Nature,Neutral,Passive,elden_beast_magic_atk,passive,Passive: All Magic minions have +2 ATK,Legends carved into the Lands Between,Elden Ring,/card-art/raw/c097.webp
 c098,Big Mom,5,3,5,Purple,Magic,Evil,,devour_friendly,onPlay,"Battlecry: Destroy a friendly minion. Gain its ATK and HP, in addition to your own",Greed,One Piece,/card-art/raw/c098.webp
 c099,Fire Lord Ozai,5,4,3,Purple,Magic,Evil,,aoe_all_3,onPlay,Battlecry: Deal 3 damage to ALL other minions,Entitlement,Avatar,/card-art/raw/c099.webp

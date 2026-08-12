@@ -207,10 +207,30 @@ describe("relic effects", () => {
     state.players[1].board[0] = makeMinion("Death Star", 1, { hp: 1, maxHp: 1, relic: relicByName("The Green Mask") });
     const deathStar = cardId("Death Star");
 
-    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    const targetInstanceId = state.players[1].board[0]!.instanceId;
+    const result = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
+    const after = result.state;
     expect(after.players[1].board[0]).toBeNull();
     expect(after.players[1].hand).toContain(deathStar);
     expect(after.discard).not.toContain(deathStar);
+    expect(result.events).toContainEqual(expect.objectContaining({ motion: "return", instanceId: targetInstanceId }));
+  });
+
+  it("Allspark Cube marks a captured kill as a return to hand", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0, {
+      atk: 99,
+      hp: 20,
+      maxHp: 20,
+      relic: relicByName("Allspark Cube"),
+    });
+    state.players[1].board[0] = makeMinion("Death Star", 1, { hp: 1, maxHp: 1 });
+    const targetInstanceId = state.players[1].board[0]!.instanceId;
+
+    const result = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
+
+    expect(result.state.players[0].hand).toContain(cardId("Death Star"));
+    expect(result.events).toContainEqual(expect.objectContaining({ motion: "return", instanceId: targetInstanceId }));
   });
 
   it("Infinity Castle hides its bearer from enemy targeting", () => {

@@ -211,10 +211,15 @@ describe("control and theft cards", () => {
     const state = mainState();
     state.players[0].board[1] = dummy("Death Star", 0);
     const deathStar = cardId("Death Star");
+    const targetInstanceId = state.players[0].board[1]!.instanceId;
 
-    const after = play(state, "Kuma", 0);
+    const next: GameState = { ...state, cheatMode: true, players: [...state.players] as GameState["players"] };
+    next.players[0] = { ...state.players[0], hand: [cardId("Kuma")] };
+    const result = applyAction(next, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library);
+    const after = result.state;
     expect(after.players[0].hand).toContain(deathStar);
     expect(after.players[0].costReductions[deathStar]).toBe(5);
+    expect(result.events).toContainEqual(expect.objectContaining({ motion: "return", instanceId: targetInstanceId }));
   });
 });
 

@@ -663,50 +663,6 @@ button:disabled {
   animation: minion-arrive 0.3s cubic-bezier(0.18, 0.85, 0.3, 1.25);
 }
 
-/* Chrollo's borrowed passive is a live rule, so it gets a small readable strip
-   beneath the card instead of being hidden inside the event log. */
-.copied-passive-display {
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 50%;
-  z-index: 4;
-  width: min(250px, calc(100% + 22px));
-  padding: 4px 7px;
-  border: 1px solid rgba(240, 199, 103, 0.72);
-  border-radius: 6px;
-  color: #fff5e3;
-  background: rgba(20, 13, 30, 0.94);
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
-  font-size: 0.64rem;
-  font-weight: 800;
-  line-height: 1.15;
-  text-align: center;
-  pointer-events: none;
-  transform: translateX(-50%);
-}
-
-/* Effects granted by another minion stay attached to the recipient, so both
-   players can see exactly who received the temporary rule. */
-.granted-effect-display {
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 50%;
-  z-index: 4;
-  width: min(280px, calc(100% + 30px));
-  padding: 4px 7px;
-  border: 1px solid rgba(67, 205, 189, 0.84);
-  border-radius: 6px;
-  color: #fff5e3;
-  background: rgba(11, 46, 43, 0.95);
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45), 0 0 14px rgba(67, 205, 189, 0.2);
-  font-size: 0.64rem;
-  font-weight: 800;
-  line-height: 1.15;
-  text-align: center;
-  pointer-events: none;
-  transform: translateX(-50%);
-}
-
 .minion-wrap .card-face,
 .lunge-wrap .card-face,
 .ghost-wrap .card-face {
@@ -754,7 +710,28 @@ button:disabled {
   z-index: 3;
   display: grid;
   pointer-events: none;
+}
+
+.ghost-wrap.dying {
   animation: ghost-out 0.62s cubic-bezier(0.36, 0, 0.28, 1) var(--fd, 0s) both;
+}
+
+/* A board-to-hand move is a retreat, not a death: the card compresses and
+   slips toward the owner's hand with a cool portal pulse instead of breaking
+   apart into grey debris. */
+.ghost-wrap.returning {
+  --return-y: 70px;
+  animation: return-to-hand 0.62s cubic-bezier(0.22, 0.78, 0.35, 1) var(--fd, 0s) both;
+}
+
+.ghost-wrap.returning-up {
+  --return-y: -70px;
+  --return-rotate: -5deg;
+}
+
+.ghost-wrap.returning-down {
+  --return-y: 70px;
+  --return-rotate: 5deg;
 }
 
 @keyframes minion-arrive {
@@ -848,6 +825,24 @@ button:disabled {
   }
 }
 
+@keyframes return-to-hand {
+  0% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.04) rotate(var(--return-rotate, 0deg));
+    filter: brightness(1.28) saturate(1.18);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(var(--return-y)) scale(0.38) rotate(var(--return-rotate, 0deg));
+    filter: brightness(1.2) saturate(1.35) blur(1.2px);
+  }
+}
+
 /* The flash + shockwave that sell the moment of the break. */
 .ghost-wrap::after {
   content: "";
@@ -868,6 +863,18 @@ button:disabled {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
   12% { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(5.4); border-width: 1px; }
+}
+
+@keyframes return-portal {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(4.2); border-width: 1px; }
+}
+
+@keyframes return-pip {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--pip-x)), calc(-50% + var(--pip-y))) scale(0.15); }
 }
 
 /* --- floating damage / heal numbers --- */
@@ -1679,6 +1686,38 @@ button:disabled {
   aspect-ratio: auto;
   pointer-events: none;
 }
+
+.ghost-wrap.returning::after {
+  width: 22px;
+  height: 22px;
+  border-color: rgba(133, 231, 255, 0.95);
+  box-shadow: 0 0 24px rgba(67, 205, 255, 0.85), 0 0 8px rgba(240, 199, 103, 0.72);
+  animation: return-portal 0.48s cubic-bezier(0.12, 0.75, 0.28, 1) var(--fd, 0s) both;
+}
+
+.return-burst {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.return-burst i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9aeaff;
+  box-shadow: 0 0 10px rgba(83, 221, 255, 0.95);
+  animation: return-pip 0.52s ease-out var(--fd, 0s) both;
+}
+
+.return-burst i:nth-child(1) { --pip-x: -44px; --pip-y: -18px; }
+.return-burst i:nth-child(2) { --pip-x: 36px; --pip-y: -28px; }
+.return-burst i:nth-child(3) { --pip-x: -32px; --pip-y: 26px; }
+.return-burst i:nth-child(4) { --pip-x: 42px; --pip-y: 20px; }
 
 .revealed-hand em {
   margin-left: 2px;
@@ -2859,13 +2898,17 @@ button:disabled {
   filter: drop-shadow(0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.8));
 }
 
-/* --- SILENCED: the voice goes out of it ----------------------------------- */
-.card-face.is-silenced .cf-art img {
-  filter: grayscale(0.85) brightness(0.72);
-}
-
+/* --- SILENCED: the voice goes out of it -----------------------------------
+   Silence belongs to the rules plaque. The portrait stays fully alive, while
+   the lower effect box receives the red cross. */
 .card-face.is-silenced .cf-fx {
-  background: linear-gradient(180deg, rgba(40, 36, 52, 0.5), rgba(20, 18, 26, 0.62));
+  left: calc(41 * var(--u));
+  right: calc(41 * var(--u));
+  top: calc(566 * var(--u));
+  bottom: calc(130 * var(--u));
+  border-radius: calc(16 * var(--u));
+  background: linear-gradient(180deg, rgba(40, 36, 52, 0.34), rgba(20, 18, 26, 0.48));
+  box-shadow: inset 0 0 0 calc(2 * var(--u)) rgba(120, 112, 138, 0.32);
 }
 
 .card-face.is-silenced .cf-fx::before,
@@ -2875,7 +2918,7 @@ button:disabled {
   left: 50%;
   top: 50%;
   z-index: 4;
-  width: 86%;
+  width: 92%;
   height: max(4px, calc(8 * var(--u)));
   border-radius: 999px;
   background: rgba(224, 49, 53, 0.95);
@@ -3116,6 +3159,24 @@ button:disabled {
 
 .hover-preview .card-face {
   min-height: 0;
+}
+
+/* Live copied/granted rules belong to the hover readout, not to the narrow
+   board slot where a neighbouring card can cover them. */
+.hover-extra-effect {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid rgba(240, 199, 103, 0.72);
+  border-radius: 7px;
+  color: #fff5e3;
+  background: rgba(20, 13, 30, 0.96);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45), 0 0 14px rgba(240, 199, 103, 0.16);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.18;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 @keyframes preview-in {

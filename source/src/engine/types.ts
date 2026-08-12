@@ -635,6 +635,8 @@ export interface GameEvent {
   player?: PlayerId;
   cardId?: string;
   instanceId?: string;
+  /** View-only motion hint for a minion leaving the board for a hand. */
+  motion?: "return";
 }
 
 export interface ApplyResult {

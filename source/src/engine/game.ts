@@ -820,15 +820,28 @@ function drawDirect(state: GameState, playerId: PlayerId, count: number, events:
   }
 }
 
-function putCardInHand(state: GameState, playerId: PlayerId, cardId: string, events: GameEvent[]): void {
+function putCardInHand(
+  state: GameState,
+  playerId: PlayerId,
+  cardId: string,
+  events: GameEvent[],
+  returningInstanceId?: string,
+): boolean {
   const player = state.players[playerId];
   if (player.hand.length >= handLimit) {
     state.discard.push(cardId);
     events.push({ kind: "draw", text: `${player.name}'s hand is full, so a card burns.`, player: playerId, cardId });
-    return;
+    return false;
   }
   player.hand.push(cardId);
-  events.push({ kind: "draw", text: `${player.name} adds a card to hand.`, player: playerId, cardId });
+  events.push({
+    kind: "draw",
+    text: `${player.name} adds a card to hand.`,
+    player: playerId,
+    cardId,
+    ...(returningInstanceId ? { instanceId: returningInstanceId, motion: "return" as const } : {}),
+  });
+  return true;
 }
 
 /** A core has one Aladdin-granted Divine Shield, just like a minion does. */
@@ -927,7 +940,7 @@ function attackMinion(
     }
     // Allspark Cube: the kill is taken home as a card.
     if (!defenderAlive && hasRelic(survivingAttacker, "capture_kill")) {
-      putCardInHand(state, playerId, defender.cardId, events);
+      putCardInHand(state, playerId, defender.cardId, events, defender.instanceId);
       events.push(effectEvent(`${survivingAttacker.name} captures ${defender.name}.`, survivingAttacker));
     }
   }
@@ -2267,7 +2280,7 @@ function runEffect(
     const slot = slotOf(state, target);
     if (target && slot >= 0) {
       enemy.board[slot] = null;
-      putCardInHand(state, enemyId, target.cardId, events);
+      putCardInHand(state, enemyId, target.cardId, events, target.instanceId);
       events.push(effectEvent(`${label} returns ${target.name} to hand.`, source));
     }
   } else if (source.effectId === "give_taunt") {
@@ -2382,7 +2395,7 @@ function runEffect(
     if (picked && slot >= 0) {
       const cardId = picked.cardId;
       player.board[slot] = null;
-      putCardInHand(state, source.owner, cardId, events);
+      putCardInHand(state, source.owner, cardId, events, picked.instanceId);
       player.costReductions[cardId] = (player.costReductions[cardId] ?? 0) + 5;
       events.push(effectEvent(`${label} sends ${picked.name} home; it returns 5 cheaper.`, source));
     }
@@ -2546,7 +2559,7 @@ function returnMinionsToHand(state: GameState, playerId: PlayerId, minions: Mini
     .filter(({ minion, slot }) => minion.owner === playerId && slot >= 0);
   for (const { minion, slot } of entries) {
     state.players[playerId].board[slot] = null;
-    putCardInHand(state, playerId, minion.cardId, events);
+    putCardInHand(state, playerId, minion.cardId, events, minion.instanceId);
   }
 }
 
@@ -2557,7 +2570,7 @@ function returnAllMinionsToHand(state: GameState, events: GameEvent[], excludedI
   for (const { owner, minion, slot } of entries) {
     if (minion.instanceId === excludedInstanceId) continue;
     state.players[owner].board[slot] = null;
-    putCardInHand(state, owner, minion.cardId, events);
+    putCardInHand(state, owner, minion.cardId, events, minion.instanceId);
   }
 }
 
@@ -3658,7 +3671,7 @@ function destroyAtSlot(
   state.players[playerId].board[slotIndex] = null;
   if (rescued) {
     events.push({ kind: "death", text: `${message} — The Green Mask sends it home.`, player: playerId, instanceId: minion.instanceId, cardId: minion.cardId });
-    putCardInHand(state, playerId, minion.cardId, events);
+    putCardInHand(state, playerId, minion.cardId, events, minion.instanceId);
   } else {
     state.discard.push(minion.cardId);
     events.push({ kind: "death", text: message, player: playerId, instanceId: minion.instanceId, cardId: minion.cardId });
@@ -3693,7 +3706,7 @@ function rescueWithOogway(state: GameState, playerId: PlayerId, slotIndex: numbe
     target.relic = null;
   }
   events.push({ kind: "death", text: `${target.name} would die, but Grand Master Oogway returns it to hand.`, player: playerId, instanceId: target.instanceId, cardId: target.cardId });
-  putCardInHand(state, playerId, target.cardId, events);
+  putCardInHand(state, playerId, target.cardId, events, target.instanceId);
   oogway.chained = Math.max(oogway.chained, 2);
   events.push(effectEvent(`${oogway.name} is Chained for 1 turn after saving ${target.name}.`, oogway));
   return true;
@@ -3835,7 +3848,7 @@ function resolveDeathrattle(
           state.discard.push(killer.relic.id);
           killer.relic = null;
         }
-        putCardInHand(state, dead.owner, killer.cardId, events);
+        putCardInHand(state, dead.owner, killer.cardId, events, killer.instanceId);
         events.push(effectEvent(`${dead.name} returns the surviving attacker, ${killer.name}, to hand.`, dead));
       }
     }

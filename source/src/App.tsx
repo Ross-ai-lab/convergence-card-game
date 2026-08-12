@@ -96,7 +96,16 @@ function playableFace(card: PlayableCard): CardFaceModel {
 // and next GameState after an action — the engine stays 100% untouched.
 type FloatNum = { id: number; owner: PlayerId; slot: number | "hero"; delta: number; delay: number };
 type Particle = { key: number; dx: number; dy: number; size: number; delay: number; rot: number; dur: number };
-type Ghost = { id: number; owner: PlayerId; slot: number; minion: MinionInstance; delay: number; particles: Particle[] };
+type Ghost = {
+  id: number;
+  owner: PlayerId;
+  slot: number;
+  minion: MinionInstance;
+  delay: number;
+  particles: Particle[];
+  motion: "death" | "return";
+  destinationOwner?: PlayerId;
+};
 type Lunge = { id: number; owner: PlayerId; slot: number; dx: number; dy: number } | null;
 type ImpactKind = "hit" | "heal" | "summon" | "buff" | "debuff" | "freeze" | "shield";
 type Impact = {
@@ -605,7 +614,7 @@ export default function App() {
 
   // Diff previous vs next state and spawn all transient FX for this action:
   // floating numbers, death ghosts, per-card impacts and the attacker lunge.
-  function spawnFx(prev: GameState, next: GameState, action: GameAction) {
+  function spawnFx(prev: GameState, next: GameState, action: GameAction, resultEvents: GameEvent[]) {
     const isStrike = action.type === "attack_minion" || action.type === "attack_core";
     const strikeDelay = isStrike ? STRIKE_DELAY : 0;
     const newFloats: FloatNum[] = [];
@@ -652,10 +661,18 @@ export default function App() {
         if (m) after.set(m.instanceId, { owner: p.id, slot, minion: m });
       }),
     );
+    const returningOwners = new Map<string, PlayerId>();
+    resultEvents.forEach((event) => {
+      if (event.motion === "return" && event.instanceId && event.player !== undefined) {
+        returningOwners.set(event.instanceId, event.player);
+      }
+    });
 
     before.forEach((entry, id) => {
       const now = after.get(id);
       if (!now) {
+        const destinationOwner = returningOwners.get(id);
+        const motion = destinationOwner === undefined ? "death" : "return";
         newGhosts.push({
           id: fxId.current++,
           owner: entry.owner,
@@ -663,6 +680,8 @@ export default function App() {
           minion: entry.minion,
           delay: strikeDelay,
           particles: makeParticles("death"),
+          motion,
+          destinationOwner,
         });
         return;
       }
@@ -734,7 +753,7 @@ export default function App() {
     }
     if (newGhosts.length) {
       setGhosts((cur) => [...cur, ...newGhosts]);
-      newGhosts.forEach((g, i) => sfx.play("death", g.delay + i * 0.07));
+      newGhosts.forEach((g, i) => sfx.play(g.motion === "return" ? "draw" : "death", g.delay + i * 0.07));
       const ids = new Set(newGhosts.map((g) => g.id));
       window.setTimeout(() => setGhosts((cur) => cur.filter((g) => !ids.has(g.id))), 760);
     }
@@ -828,7 +847,7 @@ export default function App() {
   function perform(action: GameAction) {
     const result = applyAction(game, action, library);
     if (result.state !== game) {
-      spawnFx(game, result.state, action);
+      spawnFx(game, result.state, action, result.events);
       if (result.state.activePlayer !== game.activePlayer && result.state.phase !== "gameOver") {
         sfx.play("turn", 0.05);
       }
@@ -957,6 +976,7 @@ export default function App() {
       hpClass: "",
       states: [],
       onBoard: false,
+      extraEffects: [],
       rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
     });
   }
@@ -966,6 +986,8 @@ export default function App() {
     sfx.hoverTick();
     const def = library[minion.cardId];
     const r = el.getBoundingClientRect();
+    const grantedEffects = minion.gainedEffects.map((effect) => effect.text).filter(Boolean);
+    const copiedPassive = minion.stolenPassiveText?.replace(/^Passive:\s*/i, "");
     setHover({
       face: minion,
       effect: minion.silenced ? "Silenced — the text box is blank." : minion.effect,
@@ -974,6 +996,12 @@ export default function App() {
       hpClass: minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp),
       states: minionStates(minion, game.players[minion.owner].board),
       onBoard: true,
+      extraEffects: minion.silenced
+        ? []
+        : [
+            ...(grantedEffects.length ? [`Granted effect: ${grantedEffects.join(" • ")}`] : []),
+            ...(copiedPassive ? [`Copied passive: ${copiedPassive}`] : []),
+          ],
       rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
     });
   }
@@ -994,6 +1022,7 @@ export default function App() {
       hpClass: "",
       states: [],
       onBoard: false,
+      extraEffects: [],
       rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
     });
   }
@@ -1710,6 +1739,7 @@ type HoverState = {
   hpClass: string;
   states: string[];
   onBoard: boolean;
+  extraEffects: string[];
   rect: { left: number; right: number; top: number; bottom: number };
 } | null;
 
@@ -1877,9 +1907,21 @@ function BoardRow({
               </span>
             ) : null}
             {slotGhosts.map((ghost) => (
-              <div className="ghost-wrap" key={ghost.id} style={{ "--fd": `${ghost.delay}s` } as CSSProperties}>
+              <div
+                className={[
+                  "ghost-wrap",
+                  ghost.motion === "return" ? "returning" : "dying",
+                  ghost.motion === "return"
+                    ? (ghost.destinationOwner === viewerId ? "returning-down" : "returning-up")
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                key={ghost.id}
+                style={{ "--fd": `${ghost.delay}s` } as CSSProperties}
+              >
                 <MinionFace minion={ghost.minion} />
-                <DeathBurst particles={ghost.particles} />
+                {ghost.motion === "return" ? <ReturnBurst /> : <DeathBurst particles={ghost.particles} />}
               </div>
             ))}
             <span className="fx-layer" aria-hidden="true">
@@ -1953,6 +1995,17 @@ function DeathBurst({ particles }: { particles: Particle[] }) {
           }
         />
       ))}
+    </span>
+  );
+}
+
+function ReturnBurst() {
+  return (
+    <span className="return-burst" aria-hidden="true">
+      <i />
+      <i />
+      <i />
+      <i />
     </span>
   );
 }
@@ -2142,8 +2195,6 @@ function MinionFace({
 }) {
   const atkClass = statClass(minion.atk, minion.baseAtk);
   const hpClass = minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp);
-  const copiedPassive = minion.stolenPassiveText?.replace(/^Passive:\s*/i, "");
-  const grantedEffects = minion.gainedEffects.map((effect) => effect.text).filter(Boolean);
   return (
     <>
       <CardFace
@@ -2154,16 +2205,6 @@ function MinionFace({
         hpClass={hpClass}
         effect={minion.silenced ? "Silenced." : minion.effect}
       />
-      {grantedEffects.length ? (
-        <span className="granted-effect-display" role="status">
-          Granted effect: {grantedEffects.join(" • ")}
-        </span>
-      ) : null}
-      {copiedPassive ? (
-        <span className="copied-passive-display" role="status">
-          Copied passive: {copiedPassive}
-        </span>
-      ) : null}
       {minion.relic ? (
         <span
           className={[
@@ -2561,7 +2602,7 @@ function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
   // Bigger than it used to be, and no text panel underneath: the face prints its
   // own effect and flavour now, so this IS the readable copy of the card.
   const width = 300;
-  const height = 440;
+  const height = hover.extraEffects.length ? 492 : 440;
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
   let left = hover.rect.right + 14;
@@ -2580,6 +2621,7 @@ function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
         states={hover.states}
         onBoard={hover.onBoard}
       />
+      {hover.extraEffects.length ? <span className="hover-extra-effect">{hover.extraEffects.join(" • ")}</span> : null}
     </aside>
   );
 }
