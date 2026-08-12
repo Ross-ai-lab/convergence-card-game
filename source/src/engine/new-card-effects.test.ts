@@ -62,6 +62,23 @@ describe("2026 card replacements", () => {
       "The Mask": { atk: 3, hp: 2, effectId: "mask_return_attacker", effectTiming: "deathrattle" },
       V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle" },
       "Time Bomb": { atk: 0, hp: 5, effectId: "time_bomb_ongoing_5", effectTiming: "ongoing", keywords: [] },
+      "G-Man": { atk: 3, hp: 6, effectId: "stasis_enemy", effectTiming: "onPlay", keywords: [] },
+      Superman: { atk: 6, hp: 6, effectId: "immune_nature_minions", effectTiming: "passive", keywords: ["Passive"] },
+      "Darth Vader": { atk: 3, hp: 2, effectId: "vader_chain_or_destroy", effectTiming: "onPlay", keywords: [] },
+      Dumbledore: { atk: 3, hp: 3, effectId: "deathrattle_good_buff_shield", effectTiming: "deathrattle", keywords: ["Deathrattle"] },
+      "General Grievous": { atk: 3, hp: 2, effectId: "grievous_on_kill_atk", effectTiming: "passive", keywords: ["Passive"] },
+      Buddha: { atk: 3, hp: 4, effectId: "buddha_purify", effectTiming: "onPlay", keywords: [] },
+      "Deep Sea King": { atk: 4, hp: 4, effectId: "invulnerable_if_frozen", effectTiming: "passive", keywords: ["Passive"] },
+      "Seven Deadly Sins": { atk: 4, hp: 5, effectId: "summon_sins", effectTiming: "onPlay", keywords: [] },
+      "Elder Centipede": { atk: 5, hp: 6, effectId: "self_buff_2", effectTiming: "ongoing", keywords: ["Ongoing"] },
+      "All Might": { atk: 4, hp: 5, effectId: "all_enemy_atk_down_2", effectTiming: "passive", keywords: ["Passive"] },
+      "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
+      King: { atk: 0, hp: 7, effectId: "king_attack_lock_random", effectTiming: "passive", keywords: ["Cannot Attack", "Passive"] },
+      "Dominion Authority": { atk: 4, hp: 5, effectId: "dominion_authority", effectTiming: "passive", keywords: ["Passive"] },
+      Kratos: { atk: 3, hp: 4, effectId: "kratos_chain_break", effectTiming: "passive", keywords: ["Chained"] },
+      "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"] },
+      "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
+      "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
     };
     for (const [name, fields] of Object.entries(expected)) {
       const card = cards.find((entry) => entry.name === name);
@@ -213,19 +230,15 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[1]?.hp).toBe(2);
   });
 
-  it("Grand Master Yoda silences the current and future enemy board permanently", () => {
+  it("Grand Master Yoda cannot attack and empowers the lowest-ATK friendly minion", () => {
     const state = mainState();
-    state.players[1].board[0] = minion("John Wick", 1);
+    state.players[0].board[0] = minion("John Wick", 0, { atk: 1, hp: 4, maxHp: 4 });
     const afterPlay = play(state, 0, "Grand Master Yoda", 1);
-    expect(afterPlay.players[1].board[0]?.silenced).toBe(true);
-    afterPlay.players[1].board[1] = minion("Zoro", 1);
-    const future = endTurn(afterPlay, 0);
-    expect(future.players[1].board[1]?.silenced).toBe(true);
-    future.players[0].board[1] = null;
-    future.players[1].board[2] = minion("Batman", 1);
-    const yodaGone = endTurn(future, 1);
-    expect(yodaGone.players[1].board[0]?.silenced).toBe(true);
-    expect(yodaGone.players[1].board[2]?.silenced).toBe(false);
+    expect(afterPlay.players[0].board[1]?.keywords).toContain("Cannot Attack");
+    expect(getLegalActions(afterPlay, library)).not.toContainEqual({ type: "attack_core", player: 0, attackerSlot: 1 });
+    const enemyTurn = endTurn(afterPlay, 0);
+    const empowered = endTurn(enemyTurn, 1);
+    expect(empowered.players[0].board[0]).toMatchObject({ atk: 3, maxHp: 6, hp: 6 });
   });
 
   it("GLaDOS continuously buffs adjacent Tech minions and loses the aura when gone", () => {
@@ -303,6 +316,186 @@ describe("2026 card replacements", () => {
     expect(skeletons.every((entry) => entry?.atk === 1 && entry?.hp === 1 && entry.keywords.includes("Taunt"))).toBe(true);
     expect(skeletons.every((entry) => entry?.art.endsWith("/token-skeleton.webp"))).toBe(true);
     expect(skeletons.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
+  });
+
+  it("G-Man stores an enemy in stasis and returns it after two turns", () => {
+    const state = mainState("g-man-stasis");
+    state.players[1].board[0] = minion("John Wick", 1);
+    state.players[1].board[2] = minion("Zoro", 1);
+    const asking = play(state, 0, "G-Man", 1);
+    const stasis = choose(asking, 1);
+    expect(stasis.players[1].board[2]).toBeNull();
+    expect(stasis.stasis).toHaveLength(1);
+    expect(stasis.stasis[0].returnAtTurn).toBe(stasis.turnNumber + 2);
+
+    const twoTurnsLater = endTurn(endTurn(stasis, 0), 1);
+    expect(twoTurnsLater.stasis).toHaveLength(0);
+    expect(twoTurnsLater.players[1].board[2]?.name).toBe("Zoro");
+  });
+
+  it("Darth Vader chains a target, then destroys it if it is already Chained", () => {
+    const state = mainState("vader-chain");
+    state.players[1].board[0] = minion("John Wick", 1);
+    const chained = play(state, 0, "Darth Vader", 1);
+    expect(chained.players[1].board[0]).toMatchObject({ atk: 1, chained: 2 });
+
+    const alreadyChained = mainState("vader-destroy");
+    alreadyChained.players[1].board[0] = minion("John Wick", 1, { chained: 2 });
+    const destroyed = play(alreadyChained, 0, "Darth Vader", 1);
+    expect(destroyed.players[1].board[0]).toBeNull();
+  });
+
+  it("Buddha makes the board Good and clears its listed negative statuses", () => {
+    const state = mainState("buddha-purify");
+    const dirty = {
+      alignment: "Evil" as const,
+      chained: 2,
+      frozen: true,
+      silenced: true,
+      markedBy: "mark-source",
+      markedForDeathAtTurn: 4,
+      delayedDestroySource: "delay-source",
+    };
+    state.players[0].board[0] = minion("John Wick", 0, dirty);
+    state.players[1].board[0] = minion("Zoro", 1, dirty);
+    const after = play(state, 0, "Buddha", 1);
+    for (const entry of after.players.flatMap((player) => player.board)) {
+      if (!entry) continue;
+      expect(entry.alignment).toBe("Good");
+      expect(entry.chained).toBe(0);
+      expect(entry.frozen).toBe(false);
+      expect(entry.silenced).toBe(false);
+      expect(entry.markedBy).toBeNull();
+      expect(entry.markedForDeathAtTurn).toBeNull();
+      expect(entry.delayedDestroySource).toBeNull();
+    }
+  });
+
+  it("Kiritsugu freezes and silences the chosen enemy", () => {
+    const state = mainState("kiritsugu");
+    state.players[1].board[0] = minion("John Wick", 1);
+    const after = play(state, 0, "Kiritsugu Emiya", 1);
+    expect(after.players[1].board[0]).toMatchObject({ frozen: true, silenced: true });
+  });
+
+  it("Dumbledore buffs friendly Good minions with a Deathrattle", () => {
+    const state = mainState("dumbledore-deathrattle");
+    state.players[0].board[0] = minion("Dumbledore", 0, { sleeping: false });
+    state.players[0].board[1] = minion("John Wick", 0, {
+      atk: 1,
+      hp: 2,
+      maxHp: 2,
+      alignment: "Good",
+      effectId: "none",
+      effectTiming: "none",
+      keywords: [],
+    });
+    state.players[1].board[0] = minion("Zoro", 1, { atk: 99, hp: 10, maxHp: 10, sleeping: false });
+    state.activePlayer = 1;
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[0].board[1]).toMatchObject({ atk: 2, hp: 3, maxHp: 3, divineShield: true });
+  });
+
+  it("General Grievous permanently gains the ATK of every minion he kills", () => {
+    const state = mainState("grievous-kill");
+    state.players[0].board[0] = minion("General Grievous", 0, { sleeping: false, hp: 10, maxHp: 10 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 4, hp: 1, maxHp: 1 });
+    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[1].board[0]).toBeNull();
+    expect(after.players[0].board[0]?.atk).toBe(7);
+  });
+
+  it("Superman ignores Nature damage and Deep Sea King is Invulnerable while anything is Frozen", () => {
+    const superman = mainState("superman-nature-immunity");
+    superman.players[1].board[0] = minion("Superman", 1);
+    superman.players[0].board[0] = minion("John Wick", 0, { camp: "Nature", atk: 5, hp: 10, maxHp: 10, sleeping: false });
+    const blocked = applyAction(superman, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(blocked.players[1].board[0]?.hp).toBe(6);
+
+    const deepSea = mainState("deep-sea-frozen");
+    deepSea.players[1].board[0] = minion("Deep Sea King", 1);
+    deepSea.players[0].board[0] = minion("John Wick", 0, { atk: 2, hp: 20, maxHp: 20, sleeping: false });
+    deepSea.players[0].board[1] = minion("Zoro", 0, { atk: 2, hp: 20, maxHp: 20, sleeping: false, frozen: true });
+    const blockedByFreeze = applyAction(deepSea, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(blockedByFreeze.players[1].board[0]?.hp).toBe(4);
+    blockedByFreeze.players[0].board[1]!.frozen = false;
+    const hit = applyAction(blockedByFreeze, { type: "attack_minion", player: 0, attackerSlot: 1, targetSlot: 0 }, library).state;
+    expect(hit.players[1].board[0]?.hp).toBe(2);
+  });
+
+  it("Seven Deadly Sins fills the board with unique-keyword Sin tokens and their new art", () => {
+    const after = play(mainState("sin-tokens"), 0, "Seven Deadly Sins", 0);
+    const sins = after.players[0].board.filter((entry) => entry?.name === "Sin");
+    expect(sins).toHaveLength(4);
+    expect(new Set(sins.flatMap((entry) => entry?.keywords ?? []))).toEqual(
+      new Set(["Taunt", "Divine Shield", "Charge", "Chained"]),
+    );
+    expect(sins.every((entry) => entry?.atk === 1 && entry?.hp === 1 && entry.art.endsWith("/token-sin.png"))).toBe(true);
+    expect(sins.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
+  });
+
+  it("Elder Centipede grows +2/+2 on its ongoing turn and All Might lowers enemy ATK", () => {
+    const elder = mainState("elder-centipede");
+    elder.players[0].board[0] = minion("Elder Centipede", 0);
+    const grown = endTurn(endTurn(elder, 0), 1);
+    expect(grown.players[0].board[0]).toMatchObject({ atk: 7, hp: 8, maxHp: 8 });
+
+    const might = mainState("all-might-aura");
+    might.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 5, maxHp: 5 });
+    const empowered = play(might, 0, "All Might", 0);
+    expect(empowered.players[1].board[0]?.atk).toBe(3);
+    empowered.players[0].board[0] = null;
+    const auraGone = applyAction(empowered, { type: "end_turn", player: 0 }, library).state;
+    expect(auraGone.players[1].board[0]?.atk).toBe(5);
+  });
+
+  it("King locks one random enemy attacker at the start of each enemy turn", () => {
+    const state = mainState("king-lock");
+    state.players[0].board[0] = minion("King", 0);
+    state.players[1].board[0] = minion("John Wick", 1, { sleeping: false });
+    state.players[1].board[1] = minion("Zoro", 1, { sleeping: false });
+    const enemyTurn = endTurn(state, 0);
+    const locked = enemyTurn.players[1].board.filter((entry) => entry?.attackLocked);
+    expect(locked).toHaveLength(1);
+    expect(locked[0]?.attackLockedUntilTurn).toBe(enemyTurn.turnNumber + 1);
+  });
+
+  it("Dominion Authority blocks enemy mind control and returns", () => {
+    const control = mainState("dominion-control");
+    control.players[1].board[0] = minion("Dominion Authority", 1);
+    control.players[1].board[1] = minion("John Wick", 1, { hp: 2, maxHp: 2 });
+    const asking = play(control, 0, "Illumi", 0);
+    const afterControl = asking.pendingTarget ? choose(asking, 0) : asking;
+    expect(afterControl.players[1].board[1]?.name).toBe("John Wick");
+    expect(afterControl.players[0].board.some((entry) => entry?.name === "John Wick")).toBe(false);
+
+    const returned = mainState("dominion-return");
+    returned.players[1].board[0] = minion("Dominion Authority", 1);
+    returned.players[1].board[1] = minion("John Wick", 1);
+    const afterReturn = play(returned, 0, "Rick Prime", 0);
+    expect(afterReturn.players[1].board[1]?.name).toBe("John Wick");
+  });
+
+  it("Kratos breaks his chains and gains +2/+2 when a friendly minion dies", () => {
+    const state = mainState("kratos-chain-break");
+    state.players[0].board[0] = minion("Kratos", 0, { chained: 2 });
+    state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 1 });
+    state.players[1].board[0] = minion("Zoro", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
+    state.activePlayer = 1;
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
+    expect(after.players[0].board[1]).toBeNull();
+    expect(after.players[0].board[0]).toMatchObject({ atk: 5, hp: 6, maxHp: 6, chained: 0 });
+  });
+
+  it("Nine Hashira makes every able friendly minion attack the chosen Evil target", () => {
+    const state = mainState("hashira-focus");
+    state.players[0].board[0] = minion("Zoro", 0, { sleeping: false, atk: 3, hp: 10, maxHp: 10 });
+    state.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", hp: 10, maxHp: 10 });
+    const after = play(state, 0, "Nine Hashira", 1);
+    expect(after.players[1].board[0]?.hp).toBe(4);
+    expect(after.players[0].board[0]?.attacksUsed).toBe(1);
+    expect(after.players[0].board[1]?.attacksUsed).toBe(1);
   });
 
   it("Voldemort sacrifices the lowest-HP ally instead of dying", () => {

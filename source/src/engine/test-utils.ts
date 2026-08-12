@@ -52,6 +52,7 @@ export function spawnTestMinion(
     attackedBy: [],
     attackLocked: false,
     attackLockedUntilTurn: null,
+    commandmentsTriggeredAtTurn: null,
     markedBy: null,
     markedForDeathAtTurn: null,
     untargetableUntilTurn: null,

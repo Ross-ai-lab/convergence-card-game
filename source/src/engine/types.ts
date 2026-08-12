@@ -31,7 +31,7 @@ export type EffectId =
   | "time_bomb_ongoing_5"
   | "harmony_buff"
   | "evil_invulnerable"
-  | "set_attack_zero"
+  | "set_attack_1"
   | "aoe_damage_2"
   | "godzilla_damage_burst"
   | "gain_divine_shield"
@@ -48,10 +48,10 @@ export type EffectId =
   | "high_attack_only"
   | "anti_good_grow"
   | "small_cannot_attack"
-  | "double_damage_nature"
+  | "damage_3x_nature"
   | "protect_slot"
   | "snap_balance"
-  | "triple_attack"
+  | "attack_3x"
   | "destroy_small_good"
   | "no_evil_buff"
   | "destroy_small_neutral"
@@ -62,12 +62,12 @@ export type EffectId =
   | "tech_buff"
   | "reveal_hand"
   | "reveal_enemy_draw"
-  | "set_hp_one"
+  | "set_hp_1"
   | "lone_evil_buff"
   // --- added 2026-07-12: effects for the full roster (onPlay/ongoing actives) ---
   | "self_buff_2"
   | "self_atk_3"
-  | "heal_five"
+  | "heal_5"
   | "heal_ally_full"
   | "heal_good_ally_full"
   | "aoe_all_1"
@@ -85,7 +85,7 @@ export type EffectId =
   | "chain_damage"
   | "reduce_atk_3"
   | "all_enemy_atk_down_2"
-  | "freeze_one"
+  | "freeze_enemy"
   | "freeze_all"
   | "freeze_all_enemies"
   | "lunar_slime"
@@ -104,12 +104,12 @@ export type EffectId =
   | "buff_all_magic_2_1"
   | "buff_all_nature_2_1"
   | "buff_all_tech_2_1"
-  | "buff_all_friendly_4_neg1"
+  | "buff_all_friendly_3_neg2"
   | "evil_count_buff"
   | "give_shield_ally"
   | "shield_all_friendly"
   | "shield_good_magic"
-  | "evil_two_shield"
+  | "evil_2_shield"
   | "restore_shield"
   | "damaged_ongoing_buff"
   | "lone_burst_8"
@@ -133,14 +133,14 @@ export type EffectId =
   | "tempest_guardian_lords"
   | "tempest_guardian_growth"
   // --- passive / reactive (checked inline, not run in runEffect) ---
-  | "double_attack"
+  | "attack_2x"
   | "mid_attack_only"
   | "oliva_ward"
   | "invuln_with_good_ally"
   | "invuln_if_alone"
   | "invuln_if_three_good"
-  | "dodge_half"
-  | "give_dodge_half"
+  | "dodge_50"
+  | "give_dodge_50"
   | "immune_magic_minions"
   | "immune_tech_minions"
   | "immune_nature_minions"
@@ -151,8 +151,8 @@ export type EffectId =
   | "on_survive_buff_1"
   | "on_survive_buff_2"
   | "friendly_death_buff_1_1"
-  | "any_death_buff_2_2"
-  | "any_death_buff_2_1"
+  | "nulgath_any_death_1_1"
+  | "nito_any_death_1_1"
   | "tech_death_buff"
   | "godrick_relic_on_kill"
   | "robocop_evil_bonus"
@@ -179,7 +179,7 @@ export type EffectId =
   | "alignment_shift"
   | "pressure_chosen_card"
   | "reveal_and_shuffle_chosen"
-  | "choose_two_discard_one"
+  | "choose_2_discard"
   | "freeze_or_kill"
   | "discover_relic_self"
   | "steal_magic_effects"
@@ -194,7 +194,7 @@ export type EffectId =
   | "watcher_reveal_hand"
   | "charge"
   | "copy_minion_effects"
-  | "double_neutral_atk_set_hp"
+  | "neutral_double_atk_hp_1"
   | "random_attacks_next_turn"
   | "mob_ascend"
   | "strange_duel"
@@ -234,7 +234,22 @@ export type EffectId =
   | "oogway_rescue"
   | "set_attack_highest_enemy"
   | "evade_allies_33"
-  | "korosensei_defense";
+  | "korosensei_defense"
+  // --- 2026-08 requested card replacements --------------------------------
+  | "stasis_enemy"
+  | "vader_chain_or_destroy"
+  | "deathrattle_good_buff_shield"
+  | "grievous_on_kill_atk"
+  | "buddha_purify"
+  | "invulnerable_if_frozen"
+  | "summon_sins"
+  | "yoda_lowest_atk_buff"
+  | "king_attack_lock_random"
+  | "dominion_authority"
+  | "kratos_chain_break"
+  | "ten_commandments_first_attack"
+  | "hashira_focus_attack"
+  | "freeze_and_silence_enemy";
 
 export interface CardDefinition {
   kind: "minion";
@@ -334,6 +349,8 @@ export interface MinionInstance {
   attackLocked: boolean;
   /** APR: the lock expires after the minion misses two of its own turns. */
   attackLockedUntilTurn: number | null;
+  /** Ten Commandments: this source has already chained one attacker this turn. */
+  commandmentsTriggeredAtTurn: number | null;
   /** Kento Nanami: the instance that marked this minion for death. */
   markedBy: string | null;
   /** Shigaraki: the turn on which the mark becomes lethal. */
@@ -592,9 +609,19 @@ export interface GameState {
   pendingTarget: PendingTarget | null;
   /** Knov's pocket room entries; optional for backwards-compatible saved/test states. */
   pocketRooms?: PocketRoom[];
+  /** G-Man's temporarily removed minions. */
+  stasis: StasisEntry[];
   effectQueue: QueuedEffect[];
   winner: PlayerId | "draw" | null;
   players: [PlayerState, PlayerState];
+}
+
+export interface StasisEntry {
+  minion: MinionInstance;
+  owner: PlayerId;
+  slot: number;
+  returnAtTurn: number;
+  sourceName: string;
 }
 
 export interface PocketRoom {

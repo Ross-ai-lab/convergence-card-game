@@ -80,7 +80,7 @@ describe("combat-reaction cards", () => {
 
   it("Mahoraga refuses a second swing from the same attacker", () => {
     const state = mainState();
-    state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, hp: 99, maxHp: 99, effectId: "double_attack" });
+    state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, hp: 99, maxHp: 99, effectId: "attack_2x" });
     state.players[1].board[0] = makeMinion("Mahoraga", 1, { hp: 99, maxHp: 99 });
 
     const after = attack(state, 0, 0);
@@ -151,12 +151,13 @@ describe("control and theft cards", () => {
     expect(later.players[0].board.some((minion) => minion?.name === "Death Star")).toBe(true);
   });
 
-  it("Ten Commandments chains a random enemy on its ongoing turn", () => {
+  it("Ten Commandments chains the first enemy minion to attack each turn", () => {
     const state = mainState();
-    state.players[1].board[0] = dummy("Death Star", 1);
-    const placed = play(state, "Ten Commandments", 1);
-    const after = toMyNextTurn(placed);
-    expect(after.players[1].board[0]?.chained).toBeGreaterThan(0);
+    state.players[1].board[1] = makeMinion("Ten Commandments", 1);
+    state.players[1].board[0] = dummy("Death Star", 1, { hp: 20, maxHp: 20 });
+    state.players[0].board[0] = dummy("Zoro", 0, { atk: 2, hp: 10, maxHp: 10 });
+    const after = attack(state, 0, 0);
+    expect(after.players[0].board[0]?.chained).toBeGreaterThan(0);
   });
 
   it("Doctor Octopus destroys a relic outright", () => {

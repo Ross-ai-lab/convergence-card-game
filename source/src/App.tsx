@@ -1885,6 +1885,7 @@ function BoardRow({
                     <MinionFace
                       minion={minion}
                       board={game.players[owner].board}
+                      allBoard={game.players.flatMap((player) => player.board)}
                       onRelicReturn={canReturnRelic ? () => onRelicReturn(slotIndex) : undefined}
                       onRelicPreview={onRelicPreview}
                       onRelicPreviewEnd={onPreview}
@@ -2179,12 +2180,14 @@ function CardFace({
 function MinionFace({
   minion,
   board,
+  allBoard,
   onRelicPreview,
   onRelicPreviewEnd,
   onRelicReturn,
 }: {
   minion: MinionInstance;
   board?: Array<MinionInstance | null>;
+  allBoard?: Array<MinionInstance | null>;
   /** Hovering the relic badge swaps the preview to the relic's own card. */
   onRelicPreview?: (relic: RelicInstance, el: HTMLElement) => void;
   /** Given only when returning this relic to hand is legal right now. */
@@ -2200,7 +2203,7 @@ function MinionFace({
       <CardFace
         card={minion}
         onBoard
-        states={minionStates(minion, board)}
+        states={minionStates(minion, board, allBoard)}
         atkClass={atkClass}
         hpClass={hpClass}
         effect={minion.silenced ? "Silenced." : minion.effect}
@@ -2277,7 +2280,11 @@ function CardArtwork({ card }: { card: CardFaceModel }) {
  * Taunt, a gold rim for Divine Shield, ice for Frozen. There is deliberately no
  * badge or chip anywhere: the artwork does the talking, the way it should.
  */
-function minionStates(minion: MinionInstance, board?: Array<MinionInstance | null>): string[] {
+function minionStates(
+  minion: MinionInstance,
+  board?: Array<MinionInstance | null>,
+  allBoard?: Array<MinionInstance | null>,
+): string[] {
   const effectIds = new Set([minion.effectId, ...minion.gainedEffects.map((effect) => effect.effectId)]);
   const otherGood = board?.some((other) => other && other.instanceId !== minion.instanceId && other.alignment === "Good") ?? false;
   const goodCount = board?.filter((other) => other?.alignment === "Good").length ?? 0;
@@ -2289,7 +2296,9 @@ function minionStates(minion: MinionInstance, board?: Array<MinionInstance | nul
         ? otherGood
         : effectIds.has("invuln_if_three_good")
           ? goodCount >= 3
-          : false);
+          : effectIds.has("invulnerable_if_frozen")
+            ? (allBoard ?? board)?.some((other) => other?.frozen) ?? false
+            : false);
   return [
     minion.sleeping ? "is-sleeping" : "",
     minion.chained > 0 ? "is-chained" : "",

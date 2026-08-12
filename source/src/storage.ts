@@ -48,9 +48,11 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // v13: Charge, Deathrattle, temporary untargetability, pocket rooms, and new
 // aura/mark state were added to the live rules.
 // v14: the requested card pass added hero shields and reactive/aura state.
-const SAVE_VERSION = 14;
+// v15: the replacement card pass added G-Man's stasis and Ten Commandments'
+// per-turn trigger marker.
+const SAVE_VERSION = 15;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v13";
+const LEGACY_SAVE_KEY = "convergence.save.v14";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -115,6 +117,7 @@ export function loadGame(): SavedGame | null {
       player.costReductions !== undefined &&
       "confusedUntilTurn" in player;
     if (!game.players.every(playerShapeOk)) return null;
+    if (!Array.isArray(game.stasis)) return null;
     if (game.phase === "gameOver") return null; // finished duels are not worth resuming
     // An unrecognisable mode falls back to hotseat rather than rejecting the whole
     // save — losing the difficulty is a shrug, losing the duel is not.
@@ -157,11 +160,13 @@ function migrateLegacyTransforms(game: GameState): void {
 
 function migrateLegacyMechanics(game: GameState): void {
   if (!game.pocketRooms) game.pocketRooms = [];
+  if (!Array.isArray(game.stasis)) game.stasis = [];
+  const stasisMinions = game.stasis.map((entry) => entry.minion);
   for (const player of game.players) {
     if (player.heroDivineShield === undefined) player.heroDivineShield = false;
     if (player.randomAttacksFromTurn === undefined) player.randomAttacksFromTurn = null;
     if (player.randomAttacksUntilTurn === undefined) player.randomAttacksUntilTurn = null;
-    for (const minion of player.board) {
+    for (const minion of [...player.board, ...stasisMinions]) {
       if (!minion) continue;
       if (minion.markedForDeathAtTurn === undefined) minion.markedForDeathAtTurn = null;
       if (minion.untargetableUntilTurn === undefined) minion.untargetableUntilTurn = null;
@@ -174,6 +179,7 @@ function migrateLegacyMechanics(game: GameState): void {
       if (minion.divineShieldAuraSources === undefined) minion.divineShieldAuraSources = [];
       if (minion.brokenAuraSources === undefined) minion.brokenAuraSources = [];
       if (minion.deathStarTarget === undefined) minion.deathStarTarget = null;
+      if (minion.commandmentsTriggeredAtTurn === undefined) minion.commandmentsTriggeredAtTurn = null;
     }
   }
 }
