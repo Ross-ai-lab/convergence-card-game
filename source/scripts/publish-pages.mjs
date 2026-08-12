@@ -1,4 +1,5 @@
 import { cp, mkdir, readFile, readdir, rm, stat } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -73,6 +74,41 @@ async function collectFiles(root, current = root) {
   return files.sort();
 }
 
+async function hashFile(path) {
+  const contents = await readFile(path);
+  return createHash("sha256").update(contents).digest("hex");
+}
+
+async function assertPublishedCopyMatchesBuild() {
+  const generatedFiles = await collectFiles(distDir);
+  const publishedFiles = await collectFiles(playDir);
+  const generatedSet = new Set(generatedFiles);
+  const publishedSet = new Set(publishedFiles);
+  const missing = generatedFiles.filter((file) => !publishedSet.has(file));
+  const extra = publishedFiles.filter((file) => !generatedSet.has(file));
+  const mismatched = [];
+
+  for (const file of generatedFiles) {
+    if (!publishedSet.has(file)) continue;
+    const [generatedHash, publishedHash] = await Promise.all([
+      hashFile(join(distDir, file)),
+      hashFile(join(playDir, file)),
+    ]);
+    if (generatedHash !== publishedHash) mismatched.push(file);
+  }
+
+  if (missing.length || extra.length || mismatched.length) {
+    const details = [
+      missing.length ? `missing: ${missing.join(", ")}` : "",
+      extra.length ? `extra: ${extra.join(", ")}` : "",
+      mismatched.length ? `different: ${mismatched.join(", ")}` : "",
+    ].filter(Boolean).join("; ");
+    throw new Error(`Published copy does not exactly match the generated build (${details})`);
+  }
+
+  return generatedFiles.length;
+}
+
 async function main() {
   await runNpm(["run", "validate:data"]);
   await runNpm(["run", "build", "--", "--base=./"]);
@@ -96,19 +132,11 @@ async function main() {
   const scriptPath = assertInside(publishedTarget, join(publishedTarget, scriptSrc), "Published JavaScript bundle");
   await assertFile(scriptPath, "Published JavaScript bundle");
 
-  const bundle = await readFile(scriptPath, "utf8");
-  if (!bundle.includes("The Watcher,10,10,7")) {
-    throw new Error("Published bundle does not contain Watcher 10/7");
-  }
-  if (bundle.includes("The Watcher,10,5,8")) {
-    throw new Error("Published bundle still contains stale Watcher 5/8");
-  }
+  const fileCount = await assertPublishedCopyMatchesBuild();
+  if (fileCount === 0) throw new Error("Published copy is empty");
 
-  const files = await collectFiles(publishedTarget);
-  if (files.length === 0) throw new Error("Published copy is empty");
-
-  console.log(`Published ${files.length} generated files to ${relative(projectDir, publishedTarget)}/`);
-  console.log(`Verified ${scriptSrc} contains The Watcher 10/7`);
+  console.log(`Published ${fileCount} generated files to ${relative(projectDir, publishedTarget)}/`);
+  console.log("Verified the published copy exactly matches the generated build");
 }
 
 main().catch((error) => {

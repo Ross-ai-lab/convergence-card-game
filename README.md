@@ -131,7 +131,7 @@ Run the relevant checks before calling a code change finished. Useful focused ch
 
 This file is the single maintained project guide and knowledge-base page. Do not create another Markdown file anywhere in the Convergence project; add or revise the appropriate section here instead. `npm run validate:docs` enforces that rule, and the normal data-validation, test, build, and full-balance entry points run it automatically. The two README files inside ignored, locally downloaded production packages are frozen third-party-style package notes, not new project documentation; do not add more beside them.
 
-For a deployable update, run `npm run publish:pages` from `source/`. That command validates the data, builds with `--base=./`, replaces the generated `source/dist/` contents in `play/`, and fails unless the published bundle contains the updated card data. After it succeeds, publish the generated copy. GitHub Pages serves `play/` from the repository's published static site.
+For a deployable update, run `npm run publish:pages` from `source/`. That command validates the data, builds with `--base=./`, replaces the generated `source/dist/` contents in `play/`, and fails unless every published file exactly matches the generated build. After it succeeds, publish the generated copy. GitHub Pages serves `play/` from the repository's published static site.
 
 ## Changing cards and effects
 
