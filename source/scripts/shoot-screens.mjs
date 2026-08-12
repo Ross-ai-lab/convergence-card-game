@@ -58,7 +58,11 @@ await shoot("03-settings");
 await page.keyboard.press("Escape");
 
 // --- a real board, against the bot, so minions actually arrive
-await page.getByRole("button", { name: /Duel the/ }).click();
+// Target the class, not the label. This control's accessible name is "Duel"
+// plus the selected difficulty, so the old `/Duel the/` matcher belonged to an
+// earlier title screen and had been silently timing out here — the same stale
+// label check-cardface.mjs already had to correct.
+await page.locator(".duel-trigger").first().click();
 await page.waitForTimeout(900);
 await shoot("04-board-opening");
 

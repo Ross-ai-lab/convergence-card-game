@@ -18,6 +18,7 @@
     "check:balance": "tsx scripts/simulate.ts --full",
     "check:audio": "node scripts/check-audio.mjs",
     "shoot": "node scripts/shoot-screens.mjs",
+    "shoot:card": "node scripts/shoot-card.mjs",
     "validate:data": "npm run validate:docs && node scripts/validate-cards.mjs",
     "prebuild": "npm run validate:docs",
     "check:ui": "node scripts/check-ui.mjs",
