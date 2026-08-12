@@ -24,8 +24,8 @@ const allowed = {
   rarity: new Set(["Red", "Yellow", "Purple", "Black"]),
   camp: new Set(["Magic", "Tech", "Nature"]),
   alignment: new Set(["Good", "Evil", "Neutral"]),
-  effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive"]),
-  keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Invulnerable"]),
+  effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive", "deathrattle"]),
+  keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Invulnerable", "Charge", "Deathrattle"]),
 };
 
 // --- printed-text rules ------------------------------------------------------
@@ -34,7 +34,7 @@ const allowed = {
 // the build fails instead of the card quietly lying to the player.
 
 /** Keywords the engine actually acts on, and which the card face draws. */
-const MECHANICAL = ["Taunt", "Divine Shield", "Chained"];
+const MECHANICAL = ["Taunt", "Divine Shield", "Chained", "Charge", "Deathrattle"];
 
 /**
  * The word a card must print for each timing.
@@ -52,14 +52,15 @@ const TIMING_WORD = {
   none: null,
   ongoing: "Ongoing",
   passive: "Passive",
+  deathrattle: "Deathrattle",
 };
 
 /** A card declares its own keywords as leading sentences ("Taunt. Divine Shield. "),
  *  then the timing word. Only the LEADING block counts as a declaration — The
  *  Driller's "Give another minion Taunt" is about someone else's Taunt, so a
  *  plain substring search would wave it through. */
-const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained)\.\s*)*)/;
-const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*(Battlecry\/Ongoing|Battlecry|Ongoing|Passive):\s/;
+const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained|Charge|Deathrattle)\.\s*)*)/;
+const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained|Charge)\.\s*)*(Battlecry\/Ongoing|Battlecry|Ongoing|Passive|Deathrattle):\s/;
 
 function checkPrintedText(card, line, errors) {
   const text = card.effect ?? "";
@@ -76,6 +77,8 @@ function checkPrintedText(card, line, errors) {
   }
 
   const declared = new Set((LEADING_KEYWORDS.exec(text)[1].match(/Divine Shield|Taunt|Chained/g) ?? []));
+  if (/^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*Deathrattle:\s/.test(text)) declared.add("Deathrattle");
+  if (/^Charge\.\s*/.test(text)) declared.add("Charge");
   const carried = new Set(
     (card.keywords ?? "").split(";").map((k) => k.trim()).filter((k) => MECHANICAL.includes(k)),
   );

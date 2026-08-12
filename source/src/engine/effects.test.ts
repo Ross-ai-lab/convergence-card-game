@@ -150,17 +150,13 @@ describe("full-roster effects", () => {
     expect(afterStrong.players[1].board[0]?.hp).toBe(printedHp - 4);
   });
 
-  it("Gordon Freeman (invuln_if_alone): untouchable alone, vulnerable with an ally", () => {
+  it("Gordon Freeman gains +2/+2 whenever he survives damage", () => {
     const alone = mainState();
-    alone.players[0].board[0] = makeMinion("John Wick", 0, { atk: 5, hp: 20, maxHp: 20 });
+    alone.players[0].board[0] = makeMinion("John Wick", 0, { atk: 1, hp: 20, maxHp: 20 });
     alone.players[1].board[0] = makeMinion("Gordon Freeman", 1);
-    expect(attack(alone, 0, 0).players[1].board[0]?.hp).toBe(4); // blocked
-
-    const paired = mainState();
-    paired.players[0].board[0] = makeMinion("John Wick", 0, { atk: 5, hp: 20, maxHp: 20 });
-    paired.players[1].board[0] = makeMinion("Gordon Freeman", 1);
-    paired.players[1].board[1] = makeMinion("John Wick", 1);
-    expect(attack(paired, 0, 0).players[1].board[0]).toBeNull(); // 4 hp - 5 dmg
+    const after = attack(alone, 0, 0).players[1].board[0]!;
+    expect(after.hp).toBe(4); // 3 - 1 + 2
+    expect(after.maxHp).toBe(5);
   });
 
   it("King (dodge_80): evades an incoming attack", () => {
@@ -266,13 +262,15 @@ describe("full-roster effects", () => {
     expect(after.players[1].board[0]).toBeNull();
   });
 
-  it("ongoing self-buff (Mob Psycho self_buff_2)", () => {
+  it("Mob Psycho ascends after returning three friendly minions", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Mob Psycho", 0);
-    // `+2 on the printed body`, not the literal 8 — his body changed in pass 5
-    // and the old assertion failed on a completely correct engine.
-    const base = state.players[0].board[0]!.atk;
-    expect(toMyNextTurn(state).players[0].board[0]?.atk).toBe(base + 2);
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    state.players[0].board[1] = makeMinion("Joker", 0);
+    state.players[0].board[2] = makeMinion("Zoro", 0);
+    const after = playCardFor(state, 0, "Mob Psycho", 3);
+    expect(after.players[0].board[3]?.atk).toBe(12);
+    expect(after.players[0].board[3]?.maxHp).toBe(12);
+    expect(after.players[0].hand).toEqual(expect.arrayContaining([cardId("John Wick"), cardId("Joker"), cardId("Zoro")]));
   });
 
   it("Battlecry silence (Aizawa silence_enemy) disables an enemy on arrival", () => {

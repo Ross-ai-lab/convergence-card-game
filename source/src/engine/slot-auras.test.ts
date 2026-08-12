@@ -157,20 +157,16 @@ describe("forced-random attacks", () => {
     expect(later.players[1].confusedUntilTurn! > later.turnNumber).toBe(false);
   });
 
-  it("Kurogiri fogs BOTH boards while it lives, and only while it lives", () => {
+  it("Kurogiri makes the next turn's attacks random", () => {
     const state = mainState("kurogiri");
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 1 });
-    state.players[1].board[0] = makeMinion("Kurogiri", 1, { hp: 1, maxHp: 1 });
-    state.players[1].board[1] = dummy("Death Star", 1, { hp: 30, maxHp: 30 });
+    state.players[1].board[0] = dummy("Death Star", 1, { hp: 30, maxHp: 30 });
+    const cast = playCardFor(state, 1, "Kurogiri", 1);
+    expect(cast.players[0].randomAttacksFromTurn).toBe(cast.turnNumber + 1);
 
-    const blind = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 1 }, library);
+    const nextTurn = endTurnAndDraw(cast, 1);
+    const blind = applyAction(nextTurn, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
     expect(blind.events.some((event) => event.text.includes("swings blindly"))).toBe(true);
-
-    // Silence it and the fog lifts.
-    const clear = { ...state };
-    clear.players[1].board[0] = makeMinion("Kurogiri", 1, { hp: 1, maxHp: 1, silenced: true });
-    const aimed = applyAction(clear, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 1 }, library);
-    expect(aimed.events.some((event) => event.text.includes("swings blindly"))).toBe(false);
   });
 
   it("a blind swing still respects Taunt rather than bypassing it", () => {
@@ -179,6 +175,8 @@ describe("forced-random attacks", () => {
     state.players[1].board[0] = makeMinion("Kurogiri", 1, { hp: 30, maxHp: 30 });
     state.players[1].board[1] = dummy("Death Star", 1, { hp: 30, maxHp: 30, keywords: ["Taunt"] });
     state.players[1].board[2] = dummy("Fort", 1, { hp: 30, maxHp: 30 });
+    state.players[0].randomAttacksFromTurn = state.turnNumber;
+    state.players[0].randomAttacksUntilTurn = state.turnNumber;
 
     const legal = getLegalActions(state, library).filter((action) => action.type === "attack_minion");
     expect(legal).toHaveLength(1); // only the Taunt is offered

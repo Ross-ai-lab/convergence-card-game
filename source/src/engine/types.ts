@@ -2,7 +2,7 @@ export type PlayerId = 0 | 1;
 export type Camp = "Magic" | "Tech" | "Nature";
 export type Alignment = "Good" | "Evil" | "Neutral";
 export type Rarity = "Red" | "Yellow" | "Purple" | "Black";
-export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "passive";
+export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "passive" | "deathrattle";
 
 export type Keyword =
   | "Passive"
@@ -12,7 +12,9 @@ export type Keyword =
   | "Freeze"
   | "Silence"
   | "Chained"
-  | "Invulnerable";
+  | "Invulnerable"
+  | "Charge"
+  | "Deathrattle";
 
 export type EffectId =
   | "none"
@@ -178,7 +180,31 @@ export type EffectId =
   | "slot_growth"
   | "confuse_enemies"
   | "chaos_aura"
-  | "foresight_draw";
+  | "foresight_draw"
+  // --- 2026-08 card pass ---------------------------------------------------
+  | "watcher_reveal_hand"
+  | "charge"
+  | "copy_minion_effects"
+  | "double_neutral_atk_set_hp"
+  | "random_attacks_next_turn"
+  | "mob_ascend"
+  | "strange_duel"
+  | "death_star_mark"
+  | "glados_adjacent_tech"
+  | "gordon_survive_damage"
+  | "deathrattle_aoe_3"
+  | "avengers_recruit_good"
+  | "doom_evil_slayer"
+  | "ragnaros_end_turn"
+  | "knov_pocket_room"
+  | "meleoron_protect_ally"
+  | "yoda_global_silence"
+  | "voldemort_phylactery"
+  | "rick_return_all"
+  | "shigaraki_decay"
+  | "ainz_skeleton_army"
+  | "heroic_relics"
+  | "elden_beast_magic_immune";
 
 export interface CardDefinition {
   kind: "minion";
@@ -280,6 +306,19 @@ export interface MinionInstance {
   attackLockedUntilTurn: number | null;
   /** Kento Nanami: the instance that marked this minion for death. */
   markedBy: string | null;
+  /** Shigaraki: the turn on which the mark becomes lethal. */
+  markedForDeathAtTurn?: number | null;
+  /** Doctor Strange: temporary untargetability and damage immunity. */
+  untargetableUntilTurn?: number | null;
+  /** Meleoron: the friendly minion protected while this source lives. */
+  protectedByMeleoron?: string | null;
+  /** GLaDOS: reversible stat/keyword contributions from live aura sources. */
+  auraBonuses?: Array<{ sourceId: string; atk: number; hp: number; keywords: Keyword[] }>;
+  /** Death Star: a target waiting for the next turn's resolution. */
+  deathStarTarget?:
+    | { kind: "core"; owner: PlayerId; resolveAtTurn: number }
+    | { kind: "minion"; owner: PlayerId; instanceId: string; resolveAtTurn: number }
+    | null;
   /** Doomsday: immunity to one Camp, until the named turn. */
   campImmunity: { camp: Camp; untilTurn: number } | null;
   /** Chrollo: whose passive this minion is currently wearing. */
@@ -309,6 +348,9 @@ export interface PlayerState {
   slotAuras: SlotAura[];
   /** Sans: every minion this player controls swings at random until this turn. */
   confusedUntilTurn: number | null;
+  /** Kurogiri: the one full turn in which every swing is random. */
+  randomAttacksFromTurn?: number | null;
+  randomAttacksUntilTurn?: number | null;
   /** Reusable attached relics may be returned to hand once during this turn. */
   relicMoves: number;
   fatigue: number;
@@ -323,7 +365,7 @@ export interface DrawChoice {
 }
 
 /** What a pending choice is asking the player to point at. */
-export type ChoiceKind = "board" | "slot" | "hand" | "option";
+export type ChoiceKind = "board" | "slot" | "hand" | "option" | "boardOrCore";
 
 // --------------------------------------------------------------------------
 // Slot auras. A curse or blessing laid on a POSITION rather than on a minion,
@@ -386,6 +428,8 @@ export interface PendingTarget {
   options: TargetOption[];
   handOptions: HandOption[];
   labelOptions: LabelOption[];
+  /** A board-or-core prompt adds the enemy core after the board options. */
+  coreOption?: boolean;
   step: number;
   priorOptions: TargetOption[];
   priorHandOptions: HandOption[];
@@ -396,7 +440,8 @@ export interface PendingTarget {
 export type ResolvedChoice =
   | { kind: "board"; target: TargetOption }
   | { kind: "hand"; hand: HandOption }
-  | { kind: "option"; option: LabelOption };
+  | { kind: "option"; option: LabelOption }
+  | { kind: "core"; owner: PlayerId };
 
 export type ResolvedChoiceWithProgress = ResolvedChoice & {
   step?: number;
@@ -502,9 +547,20 @@ export interface GameState {
   discard: string[];
   drawChoice: DrawChoice | null;
   pendingTarget: PendingTarget | null;
+  /** Knov's pocket room entries; optional for backwards-compatible saved/test states. */
+  pocketRooms?: PocketRoom[];
   effectQueue: QueuedEffect[];
   winner: PlayerId | "draw" | null;
   players: [PlayerState, PlayerState];
+}
+
+export interface PocketRoom {
+  owner: PlayerId;
+  friendly: MinionInstance;
+  friendlySlot: number;
+  enemy: MinionInstance;
+  enemySlot: number;
+  returnAtTurn: number;
 }
 
 export type GameAction =

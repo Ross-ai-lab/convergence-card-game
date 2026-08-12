@@ -13,7 +13,7 @@ import type {
 const rarities = new Set<Rarity>(["Red", "Yellow", "Purple", "Black"]);
 const camps = new Set<Camp>(["Magic", "Tech", "Nature"]);
 const alignments = new Set<Alignment>(["Good", "Evil", "Neutral"]);
-const timings = new Set<EffectTiming>(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive"]);
+const timings = new Set<EffectTiming>(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive", "deathrattle"]);
 const keywords = new Set<Keyword>([
   "Passive",
   "Ongoing",
@@ -23,6 +23,8 @@ const keywords = new Set<Keyword>([
   "Silence",
   "Chained",
   "Invulnerable",
+  "Charge",
+  "Deathrattle",
 ]);
 
 const effectIds = new Set<EffectId>([
@@ -189,6 +191,30 @@ const effectIds = new Set<EffectId>([
   "confuse_enemies",
   "chaos_aura",
   "foresight_draw",
+  // 2026-08 card pass
+  "watcher_reveal_hand",
+  "charge",
+  "copy_minion_effects",
+  "double_neutral_atk_set_hp",
+  "random_attacks_next_turn",
+  "mob_ascend",
+  "strange_duel",
+  "death_star_mark",
+  "glados_adjacent_tech",
+  "gordon_survive_damage",
+  "deathrattle_aoe_3",
+  "avengers_recruit_good",
+  "doom_evil_slayer",
+  "ragnaros_end_turn",
+  "knov_pocket_room",
+  "meleoron_protect_ally",
+  "yoda_global_silence",
+  "voldemort_phylactery",
+  "rick_return_all",
+  "shigaraki_decay",
+  "ainz_skeleton_army",
+  "heroic_relics",
+  "elden_beast_magic_immune",
 ]);
 
 const relicIds = new Set<RelicId>([

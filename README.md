@@ -26,7 +26,7 @@ No account or installation is required. The public site records only an aggregat
 - Your hand holds at most **10 cards**. A card drawn into a full hand burns and is discarded.
 - Play a hand card into one of **five board slots** by paying its cost. Effects that summon minions also need an open slot.
 - A minion is asleep for the turn it enters play and normally waits until its owner's next turn before attacking. A **Chained** minion is unavailable for its first two owner turns.
-- A minion can attack once per turn. A minion with **0 ATK** cannot attack.
+- A minion can attack once per turn. A minion with **0 ATK** can still attack, but deals no damage.
 - Combat is simultaneous: attacker and defender deal damage to each other, even when the attack kills the defender.
 - **Taunt** must be dealt with before attacks can reach the opposing core, unless an effect or relic explicitly bypasses that defence.
 - When the shared deck and its bottom-deck cards are empty, drawing causes escalating fatigue damage: 1, then 2, then 3, and so on.
@@ -43,10 +43,12 @@ Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an
 - **Ongoing** — happens at the start of its owner's turn while the minion is active.
 - **Passive** — continuously applies while the minion is active; it does not trigger a second time.
 - **Battlecry/Ongoing** — the same effect happens on arrival and again at the start of its owner's turns.
+- **Deathrattle** — triggers after the minion dies, unless it was Silenced.
 
 ### Conditions and keywords
 
 - **Chained** — unavailable for the first two owner turns; it cannot attack or run Ongoing effects until the chains break.
+- **Charge** — may attack on the same turn it is summoned or brought under a new player's control.
 - **Taunt** — the enemy must deal with this minion before attacking your core.
 - **Divine Shield** — blocks the next damage instance, then the gold shield disappears.
 - **Freeze** — the minion loses its next turn, then thaws after sitting out that turn.
@@ -58,6 +60,7 @@ Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an
 - **Protected slot** — a board position is protected from targeting, Silence, Freeze, and damage. The protection belongs to the slot, not permanently to the minion occupying it.
 - **Immune** — the named damage type cannot hurt the minion while the immunity is active.
 - **Marked** — a delayed effect is waiting on the minion; the card text explains when it resolves.
+- **Untargetable** — attacks and effects cannot choose the minion while the condition lasts. A minion that is also damage-immune cannot lose HP during that window.
 
 “Destroy” kills a minion directly rather than dealing damage. “Gain stats” adds ATK and maximum/current HP to the recipient. “Summon” creates or brings a minion onto an open slot. “Lose ATK” permanently reduces ATK, never below zero. Copy effects that say **copy a passive** copy Passive or Ongoing text, not Battlecry.
 
@@ -194,10 +197,10 @@ Conditions have distinct, composable visual channels:
 - Frozen uses ice treatment.
 - Chained draws chains only across artwork.
 - Sleeping shows drifting `z` glyphs.
-- Silenced greys and blanks rules text.
+- Silenced greys and blanks rules text, with a red cross over the effect box.
 - Protected and Adapted use teal or camp glow.
 - Attack Locked greys the ATK gem.
-- Marked uses a red pulse.
+- Marked uses a red pulse and remains visible until its delayed resolution.
 
 Keep status indicators large enough to survive real board-card size. Verify condition work on a populated board; the opening screen cannot prove board conditions, targeting, hand interaction, or settings behaviour. Load card art eagerly and resolve public asset paths through `resolvePublicAssetUrl` so the game works both at a domain root and under a project page path.
 

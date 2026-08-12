@@ -1632,6 +1632,44 @@ button:disabled {
   font-size: 0.6rem;
 }
 
+/* The Watcher replaces the opponent's card backs with a readable, compact
+   face-up strip. It stays inside the opponent plate so the information has a
+   clear owner and never leaks into the player's private hand. */
+.revealed-hand {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 180px;
+  overflow: hidden;
+  padding-right: 10px;
+}
+
+.revealed-hand-card {
+  display: block;
+  flex: 0 0 25px;
+  width: 25px;
+  height: 36px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 226, 150, 0.65);
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(255, 226, 150, 0.22);
+}
+
+.revealed-hand-card .card-face {
+  width: 25px;
+  height: 36px;
+  aspect-ratio: auto;
+  pointer-events: none;
+}
+
+.revealed-hand em {
+  margin-left: 2px;
+  color: rgba(255, 236, 190, 0.86);
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
 /* Whose turn it is, held for the whole turn rather than only announced at the
    moment it changes. The banner is the event; this is the state. */
 .hero-plate.active {
@@ -2812,6 +2850,26 @@ button:disabled {
   background: linear-gradient(180deg, rgba(40, 36, 52, 0.5), rgba(20, 18, 26, 0.62));
 }
 
+.card-face.is-silenced .cf-fx::before,
+.card-face.is-silenced .cf-fx::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  width: 86%;
+  height: max(4px, calc(8 * var(--u)));
+  border-radius: 999px;
+  background: rgba(224, 49, 53, 0.95);
+  box-shadow: 0 0 max(8px, calc(14 * var(--u))) rgba(224, 49, 53, 0.72);
+  transform: translate(-50%, -50%) rotate(18deg);
+  pointer-events: none;
+}
+
+.card-face.is-silenced .cf-fx::after {
+  transform: translate(-50%, -50%) rotate(-18deg);
+}
+
 /* --- PROTECTED: a guarding dome over the top ------------------------------ */
 .card-face.is-protected .cf-fx {
   background: radial-gradient(ellipse 120% 60% at 50% 0%, rgba(67, 205, 189, 0.42), transparent 62%);
@@ -3733,6 +3791,12 @@ button:disabled {
   border-color: rgba(67, 205, 189, 0.6);
   background: rgba(67, 205, 189, 0.14);
   font-size: 1rem;
+}
+
+.prompt-core-choice {
+  border-color: rgba(255, 94, 96, 0.85);
+  background: rgba(190, 48, 56, 0.2);
+  color: #ffe7d4;
 }
 
 .prompt-card-choice {

@@ -583,6 +583,10 @@ export default function App() {
   }, [game, library, screen, viewerId]);
   const opponentId = otherPlayer(viewerId);
   const opponent = game.players[opponentId];
+  const opponentHandRevealed = viewer.board.some(
+    (minion) => minion && minion.effectId === "watcher_reveal_hand" && !minion.silenced && minion.chained === 0,
+  );
+  const revealedOpponentHand = opponentHandRevealed ? opponent.hand : undefined;
   const myTurn = game.activePlayer === viewerId;
   // Every affordance and click reads this. Empty while the opponent is thinking,
   // so nothing lights up and nothing can be clicked on their behalf.
@@ -1321,6 +1325,8 @@ export default function App() {
           targetable={coreTargetable}
           active={game.activePlayer === opponentId && game.phase !== "gameOver"}
           thinking={botThinking}
+          revealedHand={revealedOpponentHand}
+          library={library}
           onStrike={attackCore}
         />
         <div className="system-buttons">
@@ -1782,7 +1788,8 @@ function BoardRow({
         // highlight reads differently from an attack target on purpose.
         // "slot" prompts point at a POSITION, so empty slots are choosable too.
         const boardPrompt =
-          pendingTarget !== null && (pendingTarget.kind === "board" || pendingTarget.kind === "slot")
+          pendingTarget !== null &&
+          (pendingTarget.kind === "board" || pendingTarget.kind === "slot" || pendingTarget.kind === "boardOrCore")
             ? pendingTarget
             : null;
         const auras = game.players[owner].slotAuras.filter((aura) => aura.slot === slotIndex);
@@ -2238,8 +2245,11 @@ function minionStates(minion: MinionInstance, board?: Array<MinionInstance | nul
     minion.divineShield ? "is-shielded" : "",
     minion.invulnerableUntilTurn !== null || activeInvulnerable ? "is-invulnerable" : "",
     minion.protectedSlot ? "is-protected" : "",
-    minion.attackLocked ? "is-locked" : "",
-    minion.markedBy ? "is-marked" : "",
+    minion.attackLocked ||
+    (!minion.silenced && (effectIds.has("watcher_reveal_hand") || effectIds.has("ragnaros_end_turn")))
+      ? "is-locked"
+      : "",
+    minion.markedBy || minion.markedForDeathAtTurn !== null && minion.markedForDeathAtTurn !== undefined ? "is-marked" : "",
     minion.campImmunity ? "is-adapted" : "",
   ].filter(Boolean);
 }
@@ -2253,6 +2263,8 @@ function HeroPlate({
   targetable = false,
   active = false,
   thinking = false,
+  revealedHand,
+  library,
   onStrike,
 }: {
   player: GameState["players"][number];
@@ -2265,6 +2277,8 @@ function HeroPlate({
   active?: boolean;
   /** The practice opponent is mid-move. Only ever true on the enemy plate. */
   thinking?: boolean;
+  revealedHand?: string[];
+  library?: CardLibrary;
   onStrike?: () => void;
 }) {
   const wasHit = floats.some((f) => f.delta < 0);
@@ -2303,7 +2317,19 @@ function HeroPlate({
           </span>
         </strong>
       </span>
-      {enemy ? (
+      {enemy && revealedHand && library ? (
+        <span className="revealed-hand" title="The Watcher reveals this hand">
+          {revealedHand.map((cardId, index) => {
+            const card = library[cardId];
+            return card ? (
+              <span key={`${cardId}-${index}`} className="revealed-hand-card">
+                <CardFace card={playableFace(card)} />
+              </span>
+            ) : null;
+          })}
+          <em>{revealedHand.length}</em>
+        </span>
+      ) : enemy ? (
         <span className="hand-backs" title={`${player.hand.length} cards in hand`}>
           {Array.from({ length: backs }, (_, i) => (
             <span key={i} className="card-back" style={{ marginLeft: i === 0 ? 0 : -9 }} />
@@ -2356,7 +2382,7 @@ function TargetPrompt({
   const card = library[pending.sourceCardId];
   const hint = botControlled
     ? "The practice bot is choosing…"
-    : pending.kind === "board"
+    : pending.kind === "board" || pending.kind === "boardOrCore"
       ? `Click a highlighted minion — ${pending.options.length} legal targets.`
       : pending.kind === "hand"
         ? "Their hand, face up. Pick one."
@@ -2388,6 +2414,19 @@ function TargetPrompt({
               {library[option.cardId] ? <CardFace card={playableFace(library[option.cardId])} /> : null}
             </button>
           ))}
+        </div>
+      ) : null}
+
+      {pending.kind === "boardOrCore" && pending.coreOption ? (
+        <div className="prompt-values">
+          <button
+            type="button"
+            className="prompt-value prompt-core-choice"
+            disabled={botControlled}
+            onClick={() => onChoose(pending.options.length)}
+          >
+            Enemy Core
+          </button>
         </div>
       ) : null}
 

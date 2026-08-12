@@ -212,14 +212,14 @@ describe("Convergence engine", () => {
     const state = mainState();
     state.activePlayer = 1;
     state.players[0].turnsStarted = 1;
-    state.players[0].board[0] = makeMinion("Mob Psycho", 0, { playOrder: 1 });
+    state.players[0].board[0] = makeMinion("Flowey", 0, { playOrder: 1 });
     state.players[0].board[1] = makeMinion("Carnage Kabuto", 0, { playOrder: 2 });
     // With the draw step gone, the turn's Ongoing effects resolve inside end_turn.
     const resolved = applyAction(state, { type: "end_turn", player: 1 }, library);
     const effectTexts = resolved.events.filter((event) => event.kind === "effect").map((event) => event.text);
-    expect(effectTexts[0]).toContain("Mob Psycho");
+    expect(effectTexts[0]).toContain("Flowey");
     expect(effectTexts.some((text) => text.includes("Carnage Kabuto"))).toBe(true);
-    expect(effectTexts.indexOf(effectTexts.find((t) => t.includes("Mob Psycho"))!))
+    expect(effectTexts.indexOf(effectTexts.find((t) => t.includes("Flowey"))!))
       .toBeLessThan(effectTexts.indexOf(effectTexts.find((t) => t.includes("Carnage Kabuto"))!));
   });
 
@@ -316,13 +316,13 @@ describe("attacking the enemy core", () => {
     expect(after.players[0].board[0]?.hp).toBe(after.players[0].board[0]?.maxHp);
   });
 
-  it("refuses a 0-ATK minion entirely", () => {
+  it("allows a 0-ATK minion to attack for no damage", () => {
     const state = mainState();
     state.activePlayer = 0;
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 0 });
     state.players[1].board[0] = dummy("Death Star", 1);
     const legal = getLegalActions(state, library);
-    expect(legal.some((action) => action.type === "attack_core")).toBe(false);
-    expect(legal.some((action) => action.type === "attack_minion")).toBe(false);
+    expect(legal.some((action) => action.type === "attack_core")).toBe(true);
+    expect(legal.some((action) => action.type === "attack_minion")).toBe(true);
   });
 });

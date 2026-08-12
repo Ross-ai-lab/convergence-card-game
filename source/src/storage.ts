@@ -45,9 +45,11 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // migrated into hand and the old rift pool is returned to the shared deck.
 // v12: MinionInstance gained temporary transformation state for Rennala's
 // Lunar Slime effect.
-const SAVE_VERSION = 12;
+// v13: Charge, Deathrattle, temporary untargetability, pocket rooms, and new
+// aura/mark state were added to the live rules.
+const SAVE_VERSION = 13;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v11";
+const LEGACY_SAVE_KEY = "convergence.save.v12";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -100,6 +102,7 @@ export function loadGame(): SavedGame | null {
     if (parsed.version === SAVE_VERSION - 1) {
       migrateLegacyRelics(game as LegacyGameState);
       migrateLegacyTransforms(game);
+      migrateLegacyMechanics(game);
     }
     const playerShapeOk = (player: SavedGame["game"]["players"][number]) =>
       Array.isArray(player?.board) &&
@@ -147,6 +150,22 @@ function migrateLegacyTransforms(game: GameState): void {
   for (const player of game.players) {
     for (const minion of player.board) {
       if (minion && minion.temporaryTransform === undefined) minion.temporaryTransform = null;
+    }
+  }
+}
+
+function migrateLegacyMechanics(game: GameState): void {
+  if (!game.pocketRooms) game.pocketRooms = [];
+  for (const player of game.players) {
+    if (player.randomAttacksFromTurn === undefined) player.randomAttacksFromTurn = null;
+    if (player.randomAttacksUntilTurn === undefined) player.randomAttacksUntilTurn = null;
+    for (const minion of player.board) {
+      if (!minion) continue;
+      if (minion.markedForDeathAtTurn === undefined) minion.markedForDeathAtTurn = null;
+      if (minion.untargetableUntilTurn === undefined) minion.untargetableUntilTurn = null;
+      if (minion.protectedByMeleoron === undefined) minion.protectedByMeleoron = null;
+      if (minion.auraBonuses === undefined) minion.auraBonuses = [];
+      if (minion.deathStarTarget === undefined) minion.deathStarTarget = null;
     }
   }
 }

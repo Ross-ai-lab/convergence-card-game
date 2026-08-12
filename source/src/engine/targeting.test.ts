@@ -144,7 +144,7 @@ describe("targeted effects", () => {
   });
 
   it("cards that explicitly say random do not open a targeting prompt", () => {
-    for (const name of ["Darth Vader", "Ragnaros"]) {
+    for (const name of ["Darth Vader"]) {
       const state = mainState(`random-${name}`);
       state.players[1].board[0] = dummy("John Wick", 1, { alignment: name === "Darth Vader" ? "Good" : "Neutral", hp: 1, maxHp: 2 });
       state.players[1].board[2] = dummy("Zoro", 1, { alignment: name === "Darth Vader" ? "Good" : "Neutral", hp: 1, maxHp: 2 });
@@ -192,19 +192,19 @@ describe("targeted effects", () => {
   it("holds the rest of the turn's ongoing effects behind the prompt", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Seven Deadly Sins", 0, { playOrder: 1 }); // ongoing + targeted: asks first
-    state.players[0].board[1] = makeMinion("Mob Psycho", 0, { playOrder: 2 }); // ongoing self_buff_2, no prompt
+    state.players[0].board[1] = makeMinion("Carnage Kabuto", 0, { playOrder: 2 }); // ongoing self-buff, no prompt
     state.players[0].board[2] = dummy("Zoro", 0, { alignment: "Good", camp: "Magic" });
     state.players[0].board[3] = dummy("John Wick", 0, { alignment: "Good", camp: "Magic" });
 
     const asking = toMyNextTurn(state);
     expect(asking.phase).toBe("targeting");
-    expect(asking.players[0].board[1]?.atk).toBe(5); // Mob Psycho has NOT fired yet
+    expect(asking.players[0].board[1]?.atk).toBe(3); // Carnage has NOT fired yet
 
     const zoroIndex = asking.pendingTarget!.options.findIndex((option) => option.slot === 2);
     const resumed = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: zoroIndex }, library).state;
     expect(resumed.phase).toBe("main");
     expect(resumed.players[0].board[2]?.atk).toBe(6); // Zoro took the +3/+3
-    expect(resumed.players[0].board[1]?.atk).toBe(7); // and Mob Psycho's own +2 landed after it
+    expect(resumed.players[0].board[1]?.atk).toBe(6); // and Carnage's own +3 landed after it
     expect(resumed.effectQueue).toHaveLength(0);
   });
 });

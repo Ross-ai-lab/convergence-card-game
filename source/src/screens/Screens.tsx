@@ -277,8 +277,8 @@ function HowToPlayContent() {
           <h4>3. Fight smart</h4>
           <p>
             A minion sleeps on the turn it arrives and normally attacks once per turn. Combat is <b>simultaneous</b>:
-            the defender hits back even if it dies. <b>Chained</b> minions wait two owner turns, and a minion with
-            <b> 0 ATK</b> cannot attack.
+            the defender hits back even if it dies. <b>Chained</b> minions wait two owner turns, while <b>Charge</b>
+            minions can attack immediately. A minion with <b>0 ATK</b> can attack, but deals no damage.
           </p>
         </section>
         <section>
@@ -289,7 +289,7 @@ function HowToPlayContent() {
             <li><span className="swatch ring-blue" /> affordable card</li>
             <li><span className="swatch ring-teal" /> selected</li>
           </ul>
-          <p className="title-note">Wall = Taunt · gold rim = Divine Shield · ice = Frozen · chains = Chained.</p>
+          <p className="title-note">Wall = Taunt · gold rim = Divine Shield · ice = Frozen · chains = Chained · red cross = Silenced.</p>
         </section>
       </div>
       <section>
@@ -298,11 +298,14 @@ function HowToPlayContent() {
           <p><b>Battlecry</b> — happens once when played.</p>
           <p><b>Ongoing</b> — happens at the start of its owner&rsquo;s turn.</p>
           <p><b>Passive</b> — stays active while the minion is on board.</p>
+          <p><b>Charge</b> — may attack on the same turn it is summoned or changes controller.</p>
+          <p><b>Deathrattle</b> — triggers after the minion dies, unless it was Silenced.</p>
           <p><b>Silence</b> — removes printed effects and keywords; stats stay.</p>
           <p><b>Freeze</b> — the minion misses its next turn.</p>
           <p><b>Divine Shield</b> — blocks the next damage instance.</p>
           <p><b>Destroy</b> — removes a minion directly, without dealing damage.</p>
           <p><b>Target</b> — a chosen minion, card, or board slot.</p>
+          <p><b>Untargetable</b> — attacks and effects cannot choose the minion while it lasts.</p>
         </div>
       </section>
       <div className="rules-split">
