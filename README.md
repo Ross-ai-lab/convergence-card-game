@@ -139,6 +139,19 @@ For a deployable update, run `npm run publish:pages` from `source/`. That comman
 
 For stats, wording, keywords, timing, or art paths, update the relevant `cards.csv` row, validate the data, run focused tests, and rebuild the playable copy when needed.
 
+### Card wording is uniform, and that is a mechanical requirement
+
+Printed effect text uses one vocabulary across the whole roster. This is not a style preference. Two cards that do the same thing in different words read as two different cards, and that is exactly how Nulgath and Gravelord Nito ran the identical rule under two effect ids for the entire balance history without anyone noticing, and how Whitebeard's sweep ended up on Fire Lord Ozai three mana cheaper. The duplicate report in `validate-cards.mjs` compares normalised printed text precisely so that a rule written twice becomes visible, and wording drift is the one thing that blinds it.
+
+The rules:
+
+- **`damage`, never `DMG`.** One word for the concept.
+- **`Destroy` is the action; `kills` only appears in a trigger** describing combat that already happened, as in "whenever this minion kills a minion". Never `Kill a minion` as an instruction.
+- **Digits for counts a player must evaluate** (`Deal 3 damage`, `2 or more Evil minions`, `Chained for 1 turn`). Where the word is really an article, write `a` or `an` (`Silence an enemy minion`), not `one`.
+- **No shouting.** `all other minions`, not `ALL other minions`.
+- **Every effect ends as a sentence**, with a full stop.
+- **Effect ids spell magnitudes as digits and must match the printed number.** `validate-cards.mjs` fails the build when a digit in the id is missing from the text, so renaming the id is part of changing a magnitude, not an afterthought.
+
 ### Effect-selection doctrine
 
 Every Convergence card should feel mechanically inseparable from the character, force, or object on its face. The ideal is that the effect makes sense when the name is revealed, and the name explains why the effect works that way. A mechanically useful effect is not enough if it could be pasted onto ten unrelated cards without changing its meaning.

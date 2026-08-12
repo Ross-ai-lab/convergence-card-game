@@ -208,7 +208,7 @@ describe("full-roster effects", () => {
     expect(attack(state, 0, 0).players[1].board[0]?.hp).toBe(2); // 4 - 2, no multiplier
   });
 
-  it("Nulgath (nulgath_any_death_1_1): grows whenever a minion dies", () => {
+  it("Nulgath (nulgath_any_death_2_2): grows whenever a minion dies", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Nulgath", 0);
     state.players[0].board[1] = makeMinion("John Wick", 0, { atk: 5, hp: 20, maxHp: 20 });
@@ -222,6 +222,53 @@ describe("full-roster effects", () => {
     const grown = after.players[0].board[0]!;
     expect(grown.atk).toBeGreaterThan(before.atk);
     expect(grown.maxHp).toBeGreaterThan(before.maxHp);
+  });
+
+  it("Nulgath and Gravelord Nito are no longer the same card", () => {
+    // These two ran the identical rule under two different effect ids for the
+    // whole balance history, which made them one card charged at 6 mana and at
+    // 2. The separation is the point of the difference in magnitude, so assert
+    // that they DIVERGE rather than asserting either number — a future pass may
+    // move both, and only "they are not equal" must survive it.
+    const growthOf = (name: string) => {
+      const state = mainState();
+      state.players[0].board[0] = makeMinion(name, 0);
+      state.players[0].board[1] = makeMinion("John Wick", 0, { atk: 5, hp: 20, maxHp: 20 });
+      state.players[1].board[0] = makeMinion("John Wick", 1);
+      const before = state.players[0].board[0]!;
+      const after = attack(state, 1, 0).players[0].board[0]!;
+      return { atk: after.atk - before.atk, hp: after.maxHp - before.maxHp };
+    };
+
+    const nulgath = growthOf("Nulgath");
+    const nito = growthOf("Gravelord Nito");
+    expect(nulgath.atk).toBeGreaterThan(nito.atk);
+    expect(nulgath.hp).toBeGreaterThan(nito.hp);
+  });
+
+  it("Fire Lord Ozai (aoe_all_2): deals 2 to every other minion, not 3", () => {
+    // Ozai and Whitebeard shared one effect id, so Ozai was Whitebeard's sweep
+    // three mana cheaper. The number is what separates them now, which makes it
+    // worth pinning exactly rather than as "some damage".
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0, { hp: 9, maxHp: 9 });
+    state.players[1].board[0] = makeMinion("John Wick", 1, { hp: 9, maxHp: 9 });
+
+    const after = playCardFor(state, 0, "Fire Lord Ozai", 2);
+    expect(after.players[0].board[0]?.hp).toBe(7);
+    expect(after.players[1].board[0]?.hp).toBe(7);
+    expect(after.players[0].board[2]?.name).toBe("Fire Lord Ozai"); // spares itself
+  });
+
+  it("Domovoy (draw_relic): puts an Ascension Relic in hand with no prompt", () => {
+    const state = mainState();
+    const relicIds = new Set(relics.map((relic) => relic.id));
+
+    const after = playCardFor(state, 0, "Domovoy", 2);
+    expect(after.pendingTarget).toBeFalsy(); // random, never a choice
+    const drawn = after.players[0].hand.filter((cardId) => relicIds.has(cardId));
+    expect(drawn).toHaveLength(1);
+    expect(after.deck).not.toContain(drawn[0]);
   });
 
   it("Homelander is Invulnerable while he is your only minion", () => {

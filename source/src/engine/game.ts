@@ -1735,6 +1735,21 @@ function runEffect(
   } else if (source.effectId === "draw_card") {
     drawDirect(state, source.owner, 1, events);
     events.push(effectEvent(`${label} draws a card.`, source));
+  } else if (source.effectId === "draw_relic") {
+    // A random relic, not a choice. Gol D. Roger and Indiana Jones already offer
+    // the pick-one-of-three version, and the house spirit is not a treasure
+    // hunter — it turns up with something useful and no ceremony.
+    //
+    // The randomness runs through the seeded RNG like everything else, never
+    // Math.random, so a duel replays identically from its seed.
+    const available = relicsInDeck(state, library);
+    if (available.length) {
+      const choice = available[Math.floor(nextRandom(state) * available.length) % available.length];
+      const relic = takeRelicFromDeckToHand(state, source.owner, choice.id, library, events);
+      if (relic) events.push(effectEvent(`${label} turns up ${relic.name}.`, source));
+    } else {
+      events.push(effectEvent(`${label} finds no relic left.`, source));
+    }
   } else if (source.effectId === "freeze_two") {
     const firstChoice = chosen?.priorOptions?.[0] ?? pickedSlot;
     if (!firstChoice) return false;
@@ -4260,21 +4275,25 @@ function reactToDeath(state: GameState, dead: MinionInstance, deadOwner: PlayerI
         minion.chained = 0;
         buffMinion(minion, 2, 2);
         events.push(effectEvent(`${minion.name} breaks its chains and gains +2/+2.`, minion));
-      } else if (minion.effectId === "nulgath_any_death_1_1") {
-        // +1/+1, via +1/+2 (pass 5) from +2/+2. Unbounded growth off EVERY death
-        // on BOTH boards, so the opponent's own trades feed it, and the body is
-        // already 1/1 with nothing left to cut. Pass 5's half-measure measured
-        // 61.4% against a 50.3% bracket, so pass 6 finished the job and landed on
-        // the branch below's number — Gravelord Nito, identical effect, 47.7%
-        // against 48.5% and stable there since pass 3.
+      } else if (minion.effectId === "nulgath_any_death_2_2") {
+        // +2/+2 by OWNER RULING, and this is a deliberate reversal of two
+        // measured nerfs rather than a fresh tuning decision. Read this before
+        // touching the number again:
         //
-        // Cutting the same card in two consecutive passes is normally how a card
-        // gets destroyed (see APR). What makes it safe here is that a full
-        // 1500-duel run sits BETWEEN the two cuts: the danger is an unmeasured
-        // chain, not a second change. If this undershoots, the next move is a
-        // body buff — there is no third nerf available.
-        buffMinion(minion, 1, 1);
-        events.push(effectEvent(`${minion.name} feeds on death (+1/+1).`, minion));
+        //   +2/+2 was the ORIGINAL value and measured 65.1% against a 50.1%
+        //   bracket — the worst outlier in the roster at the time. Pass 5 cut it
+        //   to +1/+2, which still measured 61.4% against 50.3%. Pass 6 cut it to
+        //   +1/+1 to match Gravelord Nito, who runs the same shape one branch
+        //   below and sits at 47.7% against 48.5%, stable since pass 3.
+        //
+        // So this restores the number that two separate 1500-duel runs found to
+        // be too strong. It is also what SEPARATES Nulgath from Nito, who were
+        // otherwise the same card under two labels. The card was asked for at
+        // this strength knowing the history; if a balance run confirms the old
+        // 65% figure, the honest lever is the body or the trigger, not a third
+        // trip back to +1/+1.
+        buffMinion(minion, 2, 2);
+        events.push(effectEvent(`${minion.name} feeds on death (+2/+2).`, minion));
       } else if (minion.effectId === "nito_any_death_1_1") {
         // +1/+1, down from +2/+1 (pass 3): 62.3% vs a 48.2% bracket off the
         // smallest body in the game. It counts EVERY death on BOTH boards with

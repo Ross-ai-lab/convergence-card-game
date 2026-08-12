@@ -197,30 +197,66 @@ if (errors.length) {
 // calls repeated text acceptable only when it describes each subject, and this
 // list is how that judgement gets made instead of skipped.
 function reportSharedEffects(all) {
-  const byEffect = new Map();
-  for (const card of all) {
-    const effectId = card.effectId?.trim();
-    if (!effectId || effectId === "none") continue;
-    if (!byEffect.has(effectId)) byEffect.set(effectId, []);
-    byEffect.get(effectId).push(card.name);
-  }
+  const withEffects = all.filter((card) => card.effectId?.trim() && card.effectId.trim() !== "none");
 
-  const shared = [...byEffect.entries()]
-    .filter(([, cardNames]) => cardNames.length > 1)
-    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+  const group = (keyOf) => {
+    const buckets = new Map();
+    for (const card of withEffects) {
+      const key = keyOf(card);
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(card);
+    }
+    return [...buckets.entries()]
+      .filter(([, cards]) => cards.length > 1)
+      .sort((a, b) => b[1].length - a[1].length || String(a[0]).localeCompare(String(b[0])));
+  };
 
-  if (!shared.length) {
+  const byLabel = group((card) => card.effectId.trim());
+
+  // The label is only half the question. Nulgath and Gravelord Nito ran the
+  // identical rule under two different ids for the whole balance history, and
+  // grouping by label waved them through every time — the duplicate was found by
+  // hand, which is exactly the kind of check that stops happening.
+  //
+  // Normalising the printed text catches that case. It only works because the
+  // roster's wording is kept deliberately uniform (see the README's card wording
+  // rules): one verb for destruction, digits for counts, no shouting, every
+  // effect ending as a sentence. Wording drift is what would blind this half.
+  const normalise = (text) =>
+    (text ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9+\-/ ]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const byText = group((card) => normalise(card.effect)).filter(
+    ([, cards]) => new Set(cards.map((card) => card.effectId.trim())).size > 1,
+  );
+
+  if (!byLabel.length && !byText.length) {
     console.log("Shared effects: none");
     return;
   }
 
-  const cardCount = shared.reduce((total, [, cardNames]) => total + cardNames.length, 0);
-  console.log(
-    `Shared effects: ${shared.length} effect${shared.length === 1 ? "" : "s"} printed on ${cardCount} cards ` +
-      `(review each pair against the effect-selection doctrine; this is never a build failure)`,
-  );
-  for (const [effectId, cardNames] of shared) {
-    console.log(`  ${effectId}: ${cardNames.join(", ")}`);
+  if (byLabel.length) {
+    const cardCount = byLabel.reduce((total, [, cards]) => total + cards.length, 0);
+    console.log(
+      `Shared effects: ${byLabel.length} effect${byLabel.length === 1 ? "" : "s"} printed on ${cardCount} cards ` +
+        `(review each against the effect-selection doctrine; this is never a build failure)`,
+    );
+    for (const [effectId, cards] of byLabel) {
+      console.log(`  ${effectId}: ${cards.map((card) => card.name).join(", ")}`);
+    }
+  }
+
+  if (byText.length) {
+    console.log(
+      `Same rule under DIFFERENT labels: ${byText.length} ` +
+        `(the label hides these; the printed text does not)`,
+    );
+    for (const [, cards] of byText) {
+      console.log(`  ${cards.map((card) => `${card.name} [${card.effectId.trim()}]`).join(", ")}`);
+      console.log(`      "${cards[0].effect}"`);
+    }
   }
 }
 
