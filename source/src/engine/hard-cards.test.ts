@@ -101,16 +101,19 @@ describe("combat-reaction cards", () => {
     expect(second.players[1].board[0]?.hp).toBe(hpAfterFirst); // the second blow bounces
   });
 
-  it("Kojiro Sasaki soaks the attacks aimed at his allies", () => {
+  it("Kojiro Sasaki gives other friendly minions 33% evasion", () => {
     const state = mainState();
-    state.players[0].board[0] = dummy("Zoro", 0, { atk: 1 });
-    state.players[1].board[0] = dummy("Death Star", 1);
+    state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, hp: 99, maxHp: 99 });
+    state.players[1].board[0] = dummy("Death Star", 1, { hp: 10, maxHp: 10 });
     state.players[1].board[1] = makeMinion("Kojiro Sasaki", 1);
+    state.rngSeed = 1;
+    const evaded = attack(state, 0, 0);
+    expect(evaded.players[1].board[0]?.hp).toBe(10);
 
-    const targets = getLegalActions(state, library)
-      .filter((action) => action.type === "attack_minion")
-      .map((action) => (action.type === "attack_minion" ? action.targetSlot : -1));
-    expect(targets).toEqual([1]); // only Kojiro may be hit
+    const second = { ...evaded, activePlayer: 0 as PlayerId, rngSeed: 12345 };
+    second.players[0].board[0]!.attacksUsed = 0;
+    const landed = attack(second, 0, 0);
+    expect(landed.players[1].board[0]?.hp).toBe(9);
   });
 
   it("Yoriichi sharpens the friendly minions that live through a fight", () => {
@@ -148,17 +151,12 @@ describe("control and theft cards", () => {
     expect(later.players[0].board.some((minion) => minion?.name === "Death Star")).toBe(true);
   });
 
-  it("Ten Commandments strips a relic off an enemy and adds it to hand", () => {
+  it("Ten Commandments chains a random enemy on its ongoing turn", () => {
     const state = mainState();
-    const relic = relics.find((entry) => state.deck.includes(entry.id));
-    if (!relic) throw new Error("No relic in test deck");
-    const attached = { id: relic.id, relicId: relic.relicId, name: relic.name, effect: relic.effect, art: relic.art };
-    state.players[1].board[0] = dummy("Death Star", 1, { relic: attached });
-
-    const after = play(state, "Ten Commandments", 1);
-    expect(after.players[1].board[0]?.relic).toBeNull();
-    expect(after.players[0].hand).toContain(attached.id);
-    expect(after.players[0].board[1]?.relic).toBeNull();
+    state.players[1].board[0] = dummy("Death Star", 1);
+    const placed = play(state, "Ten Commandments", 1);
+    const after = toMyNextTurn(placed);
+    expect(after.players[1].board[0]?.chained).toBeGreaterThan(0);
   });
 
   it("Doctor Octopus destroys a relic outright", () => {
@@ -195,16 +193,18 @@ describe("control and theft cards", () => {
     expect(dead.players[1].board[0]?.effectId).toBe("attack_once_ever");
   });
 
-  it("Kento Nanami collects +2/+2 when his mark dies", () => {
+  it("Kento Nanami marks a weak point and doubles his next attack", () => {
     const state = mainState();
-    state.players[1].board[0] = dummy("Death Star", 1, { hp: 1, maxHp: 1 });
+    state.players[1].board[0] = dummy("Death Star", 1, { atk: 0, hp: 10, maxHp: 10 });
+    state.players[1].board[1] = dummy("John Wick", 1, { atk: 0, hp: 10, maxHp: 10 });
 
-    const marked = play(state, "Kento Nanami", 0);
-    expect(marked.players[1].board[0]?.markedBy).toBeTruthy();
-
-    marked.players[0].board[1] = dummy("Zoro", 0, { atk: 99 });
-    const collected = attack({ ...marked, activePlayer: 0 as PlayerId }, 1, 0);
-    expect(collected.players[0].board[0]?.atk).toBe(4); // Nanami is a 2/2
+    const placed = play(state, "Kento Nanami", 0);
+    const asking = toMyNextTurn(placed);
+    expect(asking.pendingTarget?.kind).toBe("board");
+    const choice = asking.pendingTarget!.options.findIndex((option) => option.owner === 1 && option.slot === 0);
+    const marked = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: choice }, library).state;
+    const attacked = attack(marked, 0, 0);
+    expect(attacked.players[1].board[0]?.hp).toBe(6);
   });
 
   it("Kuma bounces an ally home and discounts it by 5", () => {
@@ -264,15 +264,15 @@ describe("choice-driven cards", () => {
     expect(after.players[0].board[0]?.maxHp).toBe(before.maxHp + 1);
   });
 
-  it("V steals the highest-cost card in the opponent's hand", () => {
+  it("V destroys a random Evil minion from either side on death", () => {
     const state = mainState();
-    state.players[1].hand = [cardId("Death Star"), cardId("Zoro")];
-
-    const after = play(state, "V", 0);
-    expect(after.phase).toBe("main");
-    expect(after.pendingTarget).toBeNull();
-    expect(after.players[0].hand).toContain(cardId("Death Star"));
-    expect(after.players[1].hand).toEqual([cardId("Zoro")]);
+    state.players[0].board[0] = makeMinion("V", 0, { hp: 1, maxHp: 1 });
+    state.players[0].board[1] = dummy("Aizen", 0);
+    state.players[1].board[0] = dummy("Zoro", 1, { atk: 99, sleeping: false });
+    state.activePlayer = 1;
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[0].board[1]).toBeNull();
   });
 
   it("Joker chooses two cards, then discards one of them", () => {

@@ -25,7 +25,7 @@ const allowed = {
   camp: new Set(["Magic", "Tech", "Nature"]),
   alignment: new Set(["Good", "Evil", "Neutral"]),
   effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive", "deathrattle"]),
-  keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Invulnerable", "Charge", "Deathrattle"]),
+  keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Invulnerable", "Charge", "Deathrattle", "Cannot Attack"]),
 };
 
 // --- printed-text rules ------------------------------------------------------
@@ -34,7 +34,7 @@ const allowed = {
 // the build fails instead of the card quietly lying to the player.
 
 /** Keywords the engine actually acts on, and which the card face draws. */
-const MECHANICAL = ["Taunt", "Divine Shield", "Chained", "Charge", "Deathrattle"];
+const MECHANICAL = ["Taunt", "Divine Shield", "Chained", "Charge", "Deathrattle", "Cannot Attack"];
 
 /**
  * The word a card must print for each timing.
@@ -59,8 +59,8 @@ const TIMING_WORD = {
  *  then the timing word. Only the LEADING block counts as a declaration — The
  *  Driller's "Give another minion Taunt" is about someone else's Taunt, so a
  *  plain substring search would wave it through. */
-const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained|Charge|Deathrattle)\.\s*)*)/;
-const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained|Charge)\.\s*)*(Battlecry\/Ongoing|Battlecry|Ongoing|Passive|Deathrattle):\s/;
+const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained|Charge|Deathrattle|Cannot attack)\.\s*)*)/;
+const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained|Charge|Cannot attack)\.\s*)*(Battlecry\/Ongoing|Battlecry|Ongoing|Passive|Deathrattle):\s/;
 
 function checkPrintedText(card, line, errors) {
   const text = card.effect ?? "";
@@ -76,7 +76,11 @@ function checkPrintedText(card, line, errors) {
     );
   }
 
-  const declared = new Set((LEADING_KEYWORDS.exec(text)[1].match(/Divine Shield|Taunt|Chained/g) ?? []));
+  const declared = new Set(
+    (LEADING_KEYWORDS.exec(text)[1].match(/Divine Shield|Taunt|Chained|Cannot attack/g) ?? []).map((keyword) =>
+      keyword === "Cannot attack" ? "Cannot Attack" : keyword,
+    ),
+  );
   if (/^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*Deathrattle:\s/.test(text)) declared.add("Deathrattle");
   if (/^Charge\.\s*/.test(text)) declared.add("Charge");
   const carried = new Set(

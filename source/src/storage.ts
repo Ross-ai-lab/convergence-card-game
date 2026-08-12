@@ -47,9 +47,10 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // Lunar Slime effect.
 // v13: Charge, Deathrattle, temporary untargetability, pocket rooms, and new
 // aura/mark state were added to the live rules.
-const SAVE_VERSION = 13;
+// v14: the requested card pass added hero shields and reactive/aura state.
+const SAVE_VERSION = 14;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v12";
+const LEGACY_SAVE_KEY = "convergence.save.v13";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -157,6 +158,7 @@ function migrateLegacyTransforms(game: GameState): void {
 function migrateLegacyMechanics(game: GameState): void {
   if (!game.pocketRooms) game.pocketRooms = [];
   for (const player of game.players) {
+    if (player.heroDivineShield === undefined) player.heroDivineShield = false;
     if (player.randomAttacksFromTurn === undefined) player.randomAttacksFromTurn = null;
     if (player.randomAttacksUntilTurn === undefined) player.randomAttacksUntilTurn = null;
     for (const minion of player.board) {
@@ -165,6 +167,12 @@ function migrateLegacyMechanics(game: GameState): void {
       if (minion.untargetableUntilTurn === undefined) minion.untargetableUntilTurn = null;
       if (minion.protectedByMeleoron === undefined) minion.protectedByMeleoron = null;
       if (minion.auraBonuses === undefined) minion.auraBonuses = [];
+      if (minion.evadedAttackAtTurn === undefined) minion.evadedAttackAtTurn = null;
+      if (minion.weakPointTargetId === undefined) minion.weakPointTargetId = null;
+      if (minion.weakPointReady === undefined) minion.weakPointReady = false;
+      if (minion.rescueUsedAtTurn === undefined) minion.rescueUsedAtTurn = null;
+      if (minion.divineShieldAuraSources === undefined) minion.divineShieldAuraSources = [];
+      if (minion.brokenAuraSources === undefined) minion.brokenAuraSources = [];
       if (minion.deathStarTarget === undefined) minion.deathStarTarget = null;
     }
   }

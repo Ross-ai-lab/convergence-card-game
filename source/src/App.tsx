@@ -2307,6 +2307,7 @@ function HeroPlate({
     active && !targetable ? "active" : "",
     thinking ? "thinking" : "",
     targetable ? "targetable" : "",
+    player.heroDivineShield ? "is-shielded" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -2365,7 +2366,7 @@ function HeroPlate({
           {cheatMode ? "∞" : `${player.mana}/${player.maxMana}`}
         </span>
       ) : null}
-      <span className="health-gem" title={`Core: ${player.health} health`}>
+      <span className="health-gem" title={`Core: ${player.health} health${player.heroDivineShield ? " — Divine Shield" : ""}`}>
         {player.health}
       </span>
       <span className="fx-layer" aria-hidden="true">

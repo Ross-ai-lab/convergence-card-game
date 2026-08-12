@@ -6,7 +6,7 @@ c004,Bigfoot,2,2,2,Black,Nature,Neutral,Passive,dodge_half,passive,Passive: Evad
 c005,Batman,2,1,2,Purple,Tech,Good,,freeze_or_kill,onPlay,"Battlecry: Freeze an enemy. If it is already Frozen, kill it.",Preparation beats power.,DCU,/card-art/raw/c005.webp
 c006,Sandworm,2,1,3,Black,Nature,Neutral,Taunt;Passive,small_attack_ward,passive,Taunt. Passive: Cannot be damaged by minions with 2 or less ATK.,The desert itself has teeth.,Dune,/card-art/raw/c006.webp
 c007,Pandora's Actor,2,2,2,Red,Magic,Good,,copy_minion_effects,onPlay,Battlecry: Choose another minion. Become it. HP and ATK are not copied.,Every role is useful.,Overlord,/card-art/raw/c007.webp
-c008,T-1000,6,4,5,Purple,Tech,Neutral,Passive,immune_nature_minions,passive,Passive: Immune to Nature minions.,It remembers its shape.,Terminator,/card-art/raw/c008.webp
+c008,T-1000,6,4,5,Purple,Tech,Neutral,Ongoing,heal_self_full,ongoing,Ongoing: Fully heal yourself,It remembers its shape.,Terminator,/card-art/raw/c008.webp
 c009,Time Bomb,6,0,5,Yellow,Tech,Good,,time_bomb_ongoing_5,ongoing,Ongoing: Deal 5 damage to all enemy minions and itself.,Timer is T-1.,Loki,/card-art/raw/c009.webp
 c010,Avatar Aang,6,2,2,Red,Magic,Good,,harmony_buff,ongoing,Ongoing: Gain +1/+1 for each different camp on the board.,The last airbender gathers the table.,Avatar,/card-art/raw/c010.webp
 c011,Thirteen Lords of Chaos,6,6,7,Purple,Magic,Evil,,evil_invulnerable,onPlay,Battlecry: Choose a friendly Evil minion. It becomes Invulnerable until your next turn.,Reality picks a side.,AQW,/card-art/raw/c011.webp
@@ -42,26 +42,26 @@ c040,Toji,6,5,3,Purple,Nature,Neutral,Passive,immune_magic_minions,passive,Passi
 c041,Bill Cipher,10,6,6,Yellow,Magic,Evil,,slot_random_attacks,onPlay,Battlecry: Choose 1 enemy minion board slot. Minions on that board slot can only attack randomly,Chaos was his homeland for millenia,Gravity Falls,/card-art/raw/c041.webp
 c042,Giorno - Gold Experience Requiem,10,4,6,Yellow,Magic,Neutral,,slot_permanent_silence,onPlay,Battlecry: Choose 1 enemy minion board slot. Enemy minions on that board slot are permanently silenced,Cause and Effect,JoJo,/card-art/raw/c042.webp
 c043,Doctor Manhattan,10,1,1,Purple,Nature,Neutral,,set_stats_choice,onPlay,Battlecry: Choose an enemy minion board slot. Minions on that slot have their stats permanently set to 1/1,Transcended,DCU,/card-art/raw/c043.webp
-c044,Mastered Ultra Instinct Goku,10,7,7,Purple,Magic,Good,,slot_growth,onPlay,Battlecry: Choose 1 friendly minion board slot. Minions on that board slot gain +2/2 at the start of your turn,Activate Universe Breathing Technique,Dragon Ball,/card-art/raw/c044.webp
+c044,Mastered Ultra Instinct Goku,10,6,7,Purple,Magic,Good,Passive,evade_first_attack,passive,Passive: Evade the first attack targeting Goku each enemy turn.,Activate Universe Breathing Technique,Dragon Ball,/card-art/raw/c044.webp
 c045,Rick Prime,10,1,1,Purple,Nature,Neutral,,rick_return_all,onPlay,Battlecry: Return all other minions to their owners' hands.,What…,Rick and Morty,/card-art/raw/c045.webp
 c046,The Watcher,10,5,8,Purple,Magic,Neutral,Passive,watcher_reveal_hand,passive,Passive: Cannot attack. Your opponent's hand is revealed to you.,The Witness,MCU,/card-art/raw/c046.webp
 c047,"Escanor ""The One""",9,7,7,Red,Magic,Good,,lone_burst_8,onPlay,"Battlecry: If you control no other minions, deal 8 DMG to an enemy minion of your choice","The Sun, incarnated",Seven Deadly Sins,/card-art/raw/c047.webp
 c048,Lelouch Lamperouge,9,5,9,Yellow,Magic,Good,,mind_control_4_delayed,onPlay,Battlecry: Gain control of a minion with 4 HP or less at the start of your next turn,Obey,Code Geass,/card-art/raw/c048.webp
 c049,Tempest's Guardian Lords,9,1,1,Yellow,Magic,Good,,tempest_guardian_lords,onPlayAndOngoing,Battlecry/Ongoing: Destroy a minion. Gain its stats. Ongoing: Gain +2/+1,Infinite growth,Tensura,/card-art/raw/c049.webp
-c050,Aizen,9,5,5,Purple,Magic,Evil,Divine Shield,restore_shield,ongoing,"Divine Shield. Ongoing: If this minion's Divine Shield has been broken, restore it",All part of the plan,Bleach,/card-art/raw/c050.webp
+c050,Aizen,9,4,4,Purple,Magic,Evil,Deathrattle,aizen_deathrattle,deathrattle,Deathrattle: Reborn-50% chance. Silence and chain your killer,All part of the plan,Bleach,/card-art/raw/c050.webp
 c051,Boros,9,6,8,Purple,Tech,Evil,,heal_five,ongoing,Ongoing: Heal 5 HP,Strongest of his Universe,OPM,/card-art/raw/c051.webp
 c052,Dormammu,9,6,6,Purple,Magic,Evil,,reshuffle_hand,onPlay,Battlecry: Shuffle your hand into your deck; draw that many cards,I've come to bargain,MCU,/card-art/raw/c052.webp
 c053,Mob Psycho,9,5,5,Purple,Magic,Good,,mob_ascend,onPlay,"Battlecry: If three or more friendly minions are on the board, return them to your hand and set Mob's stats to 12/12.",A quiet storm,Mob Psycho,/card-art/raw/c053.webp
-c054,Morpheus,9,8,10,Purple,Magic,Good,,replace_allies_from_deck,onPlay,"Battlecry: Replace all other friendly minions, with random ones from the deck. The replaced minions are destroyed and the new minions are summoned in the same slots",He doesn't offer truth—only the courage to face it,Matrix,/card-art/raw/c054.webp
+c054,Morpheus,9,1,1,Purple,Magic,Good,,morpheus_choice,onPlay,"Battlecry: Heal all minions and give them Divine Shield or destroy all minions.",He doesn't offer truth—only the courage to face it,Matrix,/card-art/raw/c054.webp
 c055,Death Star,9,7,6,Black,Tech,Neutral,,death_star_mark,onPlay,"Battlecry: Mark an enemy minion or the enemy core. Death Star cannot attack this turn. At the start of your next turn, if Death Star survives, destroy the marked minion or deal 12 damage to the marked core.",The ultimate weapon.,Star Wars,/card-art/raw/c055.webp
 c056,Doomsday,9,8,9,Black,Nature,Evil,,camp_immunity_on_hit,passive,"Passive: After it is attacked, gain immunity to that enemies Camp type of attack for the next 2 enemy turns","Death is his only teacher, and he has learned well",DCU,/card-art/raw/c056.webp
 c057,Ten Tails,9,5,6,Black,Magic,Evil,,destroy_small_4,onPlay,Battlecry: Destroy one minion with 4 or less HP of your choice,"The beast before beginnings, hungry for the end",Naruto,/card-art/raw/c057.webp
 c058,Kaido,8,5,5,Yellow,Nature,Evil,,destroy_enemy_taunt,onPlay,Battlecry: Destroy an enemy Taunt minion,Rules of the seas,One Piece,/card-art/raw/c058.webp
-c059,Korosensei,8,6,7,Yellow,Nature,Neutral,,mid_attack_only,passive,Passive: Can only be damaged by ATK of 4 and higher,Mach 20,Assasination Classroom,/card-art/raw/c059.webp
+c059,Korosensei,8,4,4,Yellow,Nature,Neutral,Passive,korosensei_defense,passive,Passive: Evade 20% of attacks. Can only be damaged by ATK of 4 and higher,Mach 20,Assasination Classroom,/card-art/raw/c059.webp
 c060,Monkey D. Luffy,8,7,3,Yellow,Magic,Good,,invuln_with_good_ally,passive,Passive: invulnerable as long as you control another Good minion,Reality bends; laughter reigns,One Piece,/card-art/raw/c060.webp
 c061,Chaos,8,4,6,Purple,Tech,Neutral,,buff_all_friendly_4_neg1,ongoing,Ongoing: Give all friendly minions +3/-2,He gives gifts. He never mentions the cost,Hades,/card-art/raw/c061.webp
 c062,S-Class Heroes,8,4,7,Purple,Nature,Good,,buff_all_good_2,ongoing,Ongoing: Give +2/+2 to all good minions,The strongest team,OPM,/card-art/raw/c062.webp
-c063,Sans,8,5,6,Purple,Magic,Neutral,,confuse_enemies,onPlay,Battlecry: All enemy minions attack random enemy targets next turn,"HELLO, WORLD!",Undertale,/card-art/raw/c063.webp
+c063,Sans,8,3,1,Purple,Magic,Neutral,Passive,dodge_75,passive,Passive: Evade 75% of attacks.,"HELLO, WORLD!",Undertale,/card-art/raw/c063.webp
 c064,Seven Deadly Sins,8,5,6,Purple,Magic,Good,,buff_magic_ally_3,ongoing,Ongoing: Give +3/+3 to one of your Magic type minion,The Magic Number,Seven Deadly Sins,/card-art/raw/c064.webp
 c065,Whitebeard,8,7,9,Purple,Magic,Neutral,,aoe_all_3,onPlay,Battlecry: Deal 3 DMG to ALL other minions,Split the World in two,One Piece,/card-art/raw/c065.webp
 c066,Elder Centipede,8,7,7,Black,Nature,Evil,Chained;Taunt,none,none,Chained. Taunt. Taunt activates after the Chained period ends.,Billion year old,OPM,/card-art/raw/c066.webp
@@ -70,12 +70,12 @@ c068,Star Destroyer,8,8,8,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/
 c069,Isaac Netero,7,4,4,Red,Magic,Good,Divine Shield;Deathrattle,deathrattle_aoe_3,deathrattle,Divine Shield. Deathrattle: Deal 3 damage to all enemy minions.,Each prayer strikes harder than any fist,HxH,/card-art/raw/c069.webp
 c070,Vergil & Dante & Nero,7,3,5,Red,Magic,Neutral,,double_attack,passive,Passive: This minion can attack two times per turn,Infinite potential,Devil May Cry,/card-art/raw/c070.webp
 c071,All for One,7,4,5,Yellow,Magic,Evil,,copy_and_trigger,onPlay,Battlecry: Copy and trigger effect of an enemy minion,A Collector,MHA,/card-art/raw/c071.webp
-c072,Aladdin Lamp,7,5,4,Purple,Magic,Good,,steal_chosen,onPlay,Battlecry: Choose and steal a card in your opponent's hand,What does thy wish,Aladdin,/card-art/raw/c072.webp
-c073,All Might,7,5,5,Purple,Magic,Good,,heal_ally_full,onPlay,Battlecry: Restore one friendly minion of your choice to full health,Number One,MHA,/card-art/raw/c073.webp
-c074,Grand Master Yoda,7,3,6,Purple,Nature,Good,Passive,yoda_global_silence,passive,Passive: All enemy minions are silenced.,Nine centuries of learning,Star Wars,/card-art/raw/c074.webp
+c072,Aladdin Lamp,7,5,4,Purple,Magic,Good,,aladdin_wish,onPlay,Battlecry: Make a wish.,What does thy wish,Aladdin,/card-art/raw/c072.webp
+c073,All Might,7,4,4,Purple,Magic,Good,,heal_all_friendly_full,onPlay,Battlecry: Restore all friendly minions to full health,Number One,MHA,/card-art/raw/c073.webp
+c074,Grand Master Yoda,7,2,5,Purple,Nature,Good,Passive,yoda_global_silence,passive,Passive: All enemy minions are silenced.,Nine centuries of learning,Star Wars,/card-art/raw/c074.webp
 c075,Ultron Prime,7,3,5,Purple,Tech,Evil,,tech_death_buff,passive,Passive: This minion gains +2/+2 for each friendly 'Tech' minion that dies,He decided the most efficient protection was elimination,MCU,/card-art/raw/c075.webp
 c076,Godzilla,7,4,5,Black,Nature,Neutral,Passive,godzilla_damage_burst,passive,Passive: Deal 2 damage to all enemies each time you take damage.,Laser breathing,Godzilla,/card-art/raw/c076.webp
-c077,King,7,4,1,Black,Nature,Good,,dodge_80,passive,Passive: Evades 80% of incoming attacks,Luckiest man alive,OPM,/card-art/raw/c077.webp
+c077,King,7,4,1,Black,Nature,Good,,none,none,-,Luckiest man alive,OPM,/card-art/raw/c077.webp
 c078,UFO Fleet,7,7,7,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c078.webp
 c079,Nulgath,6,1,1,Red,Magic,Neutral,,any_death_buff_2_2,passive,"Passive: Whenever any minion dies, this minion gains +1/+1",He bargains in the deepest of shadows,AQW,/card-art/raw/c079.webp
 c080,Gandalf the White,6,2,2,Yellow,Magic,Good,Divine Shield,shield_all_friendly,onPlay,Divine Shield. Battlecry: Give all friendly Good minions Divine Shield,An incarnated angel,Lord of the Rings,/card-art/raw/c080.webp
@@ -89,20 +89,20 @@ c087,Founding Titan,6,4,5,Black,Nature,Neutral,Taunt;Passive,taunt_aura,passive,
 c088,Homelander,6,4,4,Black,Nature,Neutral,Passive,invuln_if_alone,passive,Passive: This minion is Invulnerable if it is your only minion on the board.,Central casting,The Boys,/card-art/raw/c088.webp
 c089,Kratos,6,4,4,Black,Magic,Neutral,Chained,gain_relic,ongoing,Chained. Ongoing: Gain an Ascension Relic after being Unchained,He killed the gods of his world,God of War Game,/card-art/raw/c089.webp
 c090,Shigaraki,6,4,4,Black,Magic,Evil,Passive,shigaraki_decay,passive,"Passive: Whenever Shigaraki damages a minion, mark it. At the start of your next turn, it dies.",Revenge,MHA,/card-art/raw/c090.webp
-c091,Ten Commandments,6,4,5,Black,Magic,Evil,,steal_relic,onPlay,Battlecry: Steal any 'Ascension Relics' in your opponents hand,Their reputation preceded them by centuries,Seven Deadly Sins,/card-art/raw/c091.webp
+c091,Ten Commandments,6,4,5,Black,Magic,Evil,Ongoing,chain_random_enemy,ongoing,Ongoing: Chain a random enemy minion,Their reputation preceded them by centuries,Seven Deadly Sins,/card-art/raw/c091.webp
 c092,UFO,6,5,5,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c092.webp
 c093,Yoriichi Type Zero,6,5,4,Black,Tech,Neutral,,survivor_buff,passive,"Passive: Whenever a friendly minion survives a combat, it gains +2/+1.",Strongest puppet,Demon Slayer,/card-art/raw/c093.webp
-c094,Grand Master Oogway,5,2,2,Red,Magic,Good,Divine Shield,silence_enemy,onPlay,Divine Shield. Battlecry: Silence one enemy minion of your choice,Patience,Kung-Fu Panda,/card-art/raw/c094.webp
-c095,Kojiro Sasaki,5,2,7,Red,Nature,Good,,redirect_attacks,passive,"Passive: When an enemy minion attacks another one of your minions, you can choose to direct the attack to yourself",Spending infinity in the Astral made him on par with the Gods,RoR,/card-art/raw/c095.webp
+c094,Grand Master Oogway,5,2,2,Red,Magic,Good,Divine Shield;Passive,oogway_rescue,passive,"Divine Shield. Passive: Once per turn, when another friendly minion would die, return it to your hand instead and Chain Oogway for 1 turn.",Patience,Kung-Fu Panda,/card-art/raw/c094.webp
+c095,Kojiro Sasaki,5,2,6,Red,Nature,Good,Passive,evade_allies_33,passive,Passive: All other friendly minions have +33% chance to evade an attack (does not apply to himself),Spending infinity in the Astral made him on par with the Gods,RoR,/card-art/raw/c095.webp
 c096,Dio Brando,5,4,4,Yellow,Magic,Evil,,freeze_all_enemies,onPlay,Battlecry: Freeze all enemy minions,THE WORLD,JoJo,/card-art/raw/c096.webp
-c097,Elden Beast,5,4,5,Yellow,Nature,Neutral,,none,none,-,Legends carved into the Lands Between,Elden Ring,/card-art/raw/c097.webp
+c097,Elden Beast,5,4,4,Yellow,Nature,Neutral,Passive,elden_beast_magic_atk,passive,Passive: All Magic minions have +2 ATK,Legends carved into the Lands Between,Elden Ring,/card-art/raw/c097.webp
 c098,Big Mom,5,3,5,Purple,Magic,Evil,,devour_friendly,onPlay,"Battlecry: Destroy a friendly minion. Gain its ATK and HP, in addition to your own",Greed,One Piece,/card-art/raw/c098.webp
 c099,Fire Lord Ozai,5,4,3,Purple,Magic,Evil,,aoe_all_3,onPlay,Battlecry: Deal 3 damage to ALL other minions,Entitlement,Avatar,/card-art/raw/c099.webp
 c100,Rennala Queen of the Full Moon,5,2,5,Purple,Magic,Neutral,,lunar_slime,ongoing,Ongoing: Transform a random enemy minion into a 1/1 Lunar Slime until your next turn,The Moon,Elden Ring,/card-art/raw/c100.webp
 c101,The 7 Heroic Spirits,2,2,2,Purple,Magic,Neutral,,heroic_relics,onPlay,Battlecry: All of your minions gain a random Ascension Relic.,Legends reborn,Fate,/card-art/raw/c101.webp
 c102,Dragon,5,3,5,Black,Nature,Neutral,Taunt,none,none,Taunt.,ROAR,Myth,/card-art/raw/c102.webp
 c103,Fort,5,4,5,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c103.webp
-c104,GLaDOS,5,2,5,Black,Tech,Neutral,Passive,glados_adjacent_tech,passive,Passive: Adjacent friendly Tech minions have Taunt and +2/+2.,The test continues,Portal,/card-art/raw/c104.webp
+c104,GLaDOS,5,2,3,Black,Tech,Neutral,Passive;Cannot Attack,glados_adjacent_tech,passive,Cannot attack. Passive: Adjacent friendly Tech minions have Taunt and +2/+2.,The test continues,Portal,/card-art/raw/c104.webp
 c105,The Driller,5,4,4,Black,Tech,Evil,Taunt,give_taunt,onPlay,Taunt. Battlecry: Give another minion Taunt,Latest design,MCU,/card-art/raw/c105.webp
 c106,Transformers,5,2,5,Black,Tech,Good,,consume_all_friendly_tech,onPlay,Battlecry: Consume all friendly Tech minions and gain their stats and effects,Cybertronian,Transformers,/card-art/raw/c106.webp
 c107,Chrollo,4,3,5,Yellow,Magic,Evil,,steal_passive,onPlay,Battlecry: Copy a passive from a minion. That minion loses the passive as long as Chrollo is alive,A poisonous spider,HxH,/card-art/raw/c107.webp
@@ -113,12 +113,12 @@ c111,Doctor Octopus,4,4,4,Purple,Tech,Neutral,,destroy_relic,onPlay,Battlecry: D
 c112,Gyoro Gyoro,4,1,4,Purple,Magic,Evil,,buff_evil_ally_2,ongoing,Ongoing: Give +2/+2 to a friendly Evil minion of your choice,Puppet's puppet-master,OPM,/card-art/raw/c112.webp
 c113,Kite,4,1,2,Purple,Magic,Good,,dice_buff,ongoing,Ongoing: Roll a dice to gain from +1/+1 to +3/+3,Spin the wheel,HxH,/card-art/raw/c113.webp
 c114,Lord Voldemort,4,4,4,Purple,Magic,Evil,Passive,voldemort_phylactery,passive,"Passive: Any time Voldemort would die, destroy the lowest-HP other friendly minion instead and restore Voldemort to full HP. If he is alone, he dies normally.",Seven horcruxes,Harry Potter,/card-art/raw/c114.webp
-c115,One-Eyed Owl,4,6,4,Purple,Nature,Evil,Chained,none,none,Chained.,All seeing eye,Tokyo Ghoul,/card-art/raw/c115.webp
-c116,The Mask,4,3,2,Purple,Magic,Neutral,,none,none,-,"True nature, revealed",The Mask,/card-art/raw/c116.webp
+c115,One-Eyed Owl,4,6,5,Purple,Nature,Evil,Chained,none,none,Chained.,All seeing eye,Tokyo Ghoul,/card-art/raw/c115.webp
+c116,The Mask,4,3,2,Purple,Magic,Neutral,Deathrattle,mask_return_attacker,deathrattle,"Deathrattle: If the attacking enemy minion survived, put it into your hand","True nature, revealed",The Mask,/card-art/raw/c116.webp
 c117,Albion,4,4,5,Black,Nature,Evil,Chained,none,none,Chained.,Mountain-tall,Seven Deadly Sins,/card-art/raw/c117.webp
 c118,Battleship,4,4,4,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c118.webp
 c119,Carnage Kabuto,4,3,2,Black,Nature,Evil,,self_atk_3,ongoing,Ongoing: Gain +3 ATK,Maximum evolution,OPM,/card-art/raw/c119.webp
-c120,Fantastic Four,4,3,3,Black,Magic,Good,,chain_damage,onPlay,"Battlecry: Choose an enemy minion and deal 1 DMG. If it dies, choose another enemy minion and deal 3 DMG",4,MCU,/card-art/raw/c120.webp
+c120,Fantastic Four,4,1,1,Black,Magic,Good,Passive,fantastic_four_aura,passive,"Passive: Your first 4 board slots from left to right gain 4 different effects: Taunt; Divine Shield; +2 ATK; +2 HP.",4,MCU,/card-art/raw/c120.webp
 c121,Shifu with the Furious Five,4,3,3,Black,Nature,Good,,shifu_shield,passive,"Passive: Whenever you play a Good friendly minion, it gains Divine Shield",Resilience,Kung-Fu Panda,/card-art/raw/c121.webp
 c122,Wall of Flesh,4,3,5,Black,Nature,Evil,Taunt,none,none,Taunt.,A living barricade,Terraria,/card-art/raw/c122.webp
 c123,Darkwing,3,2,2,Red,Magic,Good,,kill_back,passive,Passive: The minion which kills this minion also dies right after,He knew the cost,Invincible,/card-art/raw/c123.webp
@@ -130,11 +130,11 @@ c128,The Five Convicts,3,3,3,Yellow,Nature,Evil,,freeze_opposing,onPlay,Battlecr
 c129,Dabi,3,3,3,Purple,Magic,Evil,,aoe_all_1,onPlay,Battlecry: Deal 1 DMG to ALL other minions,He burns with anger,MHA,/card-art/raw/c129.webp
 c130,Godrick the Grafted,3,2,2,Purple,Nature,Evil,,godrick_graft,onPlay,Battlecry: Kill a friendly minion to gain its stats and effects.,Grafted,Elden Ring,/card-art/raw/c130.webp
 c131,Illumi,3,2,2,Purple,Magic,Evil,,mind_control_2,onPlay,Battlecry: Gain control of a minion with 2 HP or less,Control,HxH,/card-art/raw/c131.webp
-c132,Kento Nanami,3,2,2,Purple,Magic,Good,,mark_for_death,onPlay,"Battlecry: Choose an enemy minion; when that minion dies, gain +2/2 if you are alive",7:3 Ratio Technique,Jujutsu Kaisen,/card-art/raw/c132.webp
+c132,Kento Nanami,3,2,2,Purple,Magic,Good,Ongoing,weak_point_mark,ongoing,"Ongoing: Mark a chosen enemy's weak point. Nanami's next attack against it deals double damage.",7:3 Ratio Technique,Jujutsu Kaisen,/card-art/raw/c132.webp
 c133,Kuma,3,2,3,Purple,Tech,Good,,bounce_friendly_discount,onPlay,Battlecry: Return a friendly minion to your hand. It costs 5 less the next time it is played this game (minimum 1),Weapon,One Piece,/card-art/raw/c133.webp
 c134,Tai Lung,3,4,3,Purple,Nature,Evil,Chained,none,none,Chained.,Imprisoned for 20 years,Kung-Fu Panda,/card-art/raw/c134.webp
 c135,APR,3,0,3,Black,Magic,Evil,Taunt;Passive,attack_lock,passive,"Taunt. Passive: After the enemy minion attacks this minion, it can't attack for 2 turns",Taxes,HxH,/card-art/raw/c135.webp
-c136,Cthulhu,3,2,2,Black,Magic,Neutral,Passive,immune_tech_minions,passive,Passive: Immune to Tech minions.,He dreams,Myth,/card-art/raw/c136.webp
+c136,Cthulhu,3,3,4,Black,Magic,Neutral,Chained;Passive,immune_tech_minions,passive,Chained. Passive: Immune to Tech minions.,He dreams,Myth,/card-art/raw/c136.webp
 c137,Giant Crystal,3,1,1,Black,Magic,Neutral,Divine Shield,buff_all_magic_2_1,ongoing,Divine Shield. Ongoing: Give all other friendly Magic minions +2/+1,Spawnpoint,Core,/card-art/raw/c137.webp
 c138,Giant Tree,3,1,1,Black,Nature,Neutral,,buff_all_nature_2_1,ongoing,Ongoing: Give all other friendly Nature minions +2/+1,Older than the roots it feeds.,Core,/card-art/raw/c138.webp
 c139,Modern Tank,3,3,3,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c139.webp
@@ -147,13 +147,13 @@ c145,Kaku Kaioh,2,1,4,Yellow,Nature,Good,,double_damage_nature,passive,Passive: 
 c146,Kiritsugu Emiya,2,1,2,Yellow,Nature,Neutral,,freeze_one,onPlay,Battlecry: Freeze an enemy minion,He walks alone,Fate,/card-art/raw/c146.webp
 c147,Kureo Mado,2,1,2,Yellow,Tech,Good,,freeze_one,onPlay,Battlecry: Freeze an enemy minion,Mad hunter,Tokyo Ghoul,/card-art/raw/c147.webp
 c148,Kurogiri,2,1,1,Purple,Magic,Evil,,random_attacks_next_turn,onPlay,Battlecry: All minions attack randomly next turn.,Every exit leads somewhere else.,MHA,/card-art/raw/c148.webp
-c149,Lu Bu,2,1,1,Purple,Nature,Good,,copy_ally_atk,ongoing,Ongoing: Gain ATK from a random friendly minion on the board,"Match any man, then pass him.",Record of Ragnarok,/card-art/raw/c149.webp
+c149,Lu Bu,2,2,1,Purple,Nature,Good,Charge,highest_atk_only,none,Charge. Lu Bu can only attack the highest-ATK enemy if one exists,"Match any man, then pass him.",Record of Ragnarok,/card-art/raw/c149.webp
 c150,Meleoron,2,0,1,Purple,Magic,Good,,meleoron_protect_ally,passive,"Passive: Choose a friendly minion. It ignores Taunt and cannot be targeted as long as Meleoron is alive.",True invisibility,HxH,/card-art/raw/c150.webp
 c151,Mr. Oliva,2,3,2,Purple,Nature,Neutral,,oliva_ward,passive,Passive: Can only be damaged by ATK of 2 and higher,Unchained,Baki,/card-art/raw/c151.webp
 c152,Stain,2,1,1,Purple,Magic,Good,,destroy_damaged_enemy,onPlay,Battlecry: Kill a damaged minion,No heroes,MHA,/card-art/raw/c152.webp
 c153,Black Ops,2,2,2,Black,Tech,Neutral,,none,none,-,Classified,Basic,/card-art/raw/c153.webp
 c154,Gravelord Nito,2,0,1,Black,Nature,Evil,,any_death_buff_2_1,passive,Passive: Gain +1/+1 when a minion dies,The first of the dead keeps the count.,Dark Souls,/card-art/raw/c154.webp
-c155,Margit the Fell Omen,2,1,1,Black,Nature,Evil,,buff_evil_ally_3_2_heal,ongoing,Ongoing: Give a friendly Evil minion +2/+1,The immovable,Elden Ring,/card-art/raw/c155.webp
+c155,Margit the Fell Omen,2,1,1,Black,Nature,Evil,Deathrattle,deathrattle_summon_morgott,deathrattle,"Deathrattle: Summon Morgott, the Omen King (2/1)",The immovable,Elden Ring,/card-art/raw/c155.webp
 c156,Ouken,2,3,2,Black,Magic,Evil,,copy_ally_hp,ongoing,Ongoing: Copy HP of any friendly minion on the board,Immortality cost him everything,Ranking of Kings,/card-art/raw/c156.webp
 c157,Pillar Men,2,2,4,Black,Nature,Evil,Chained,none,none,Chained.,They outwaited the sun.,JoJo,/card-art/raw/c157.webp
 c158,The Nameless King,2,2,3,Black,Nature,Neutral,,alignment_shift,onPlay,"Battlecry: Choose a new Alignment (Good, Evil, or Neutral). All of your minions on the board immediately adopt this Alignment",A crown he threw away.,Elden Ring,/card-art/raw/c158.webp
@@ -161,7 +161,7 @@ c159,Indiana Jones,1,1,1,Red,Nature,Good,,discover_relic_self,onPlay,Battlecry: 
 c160,Domovoy,1,1,1,Yellow,Nature,Good,,draw_card,ongoing,Ongoing: Draw a card,The house spirit,Basic,/card-art/raw/c160.webp
 c161,Flowey,1,1,1,Yellow,Magic,Evil,,buff_all_evil_1,ongoing,Ongoing: Give +1/+1 to all other friendly Evil minions,Friendliness is a face you put on.,Undertale,/card-art/raw/c161.webp
 c162,Kagaya Ubuyashiki,1,1,1,Yellow,Nature,Good,,buff_all_good_1,ongoing,Ongoing: Give +1/+1 to all other friendly Good minions,Leadership,Demon Slayer,/card-art/raw/c162.webp
-c163,Angstrom Levy,1,0,1,Purple,Tech,Neutral,,buff_neutral_tech_ally_2,ongoing,Ongoing: Give one friendly Neutral Tech minion +2/+2,Universe,Invincible,/card-art/raw/c163.webp
+c163,Angstrom Levy,1,1,1,Purple,Tech,Neutral,,replace_same_cost_random,onPlay,"Battlecry: Choose any minion. Put it on the bottom of the deck and summon a random minion of the same cost into its slot.",Universe,Invincible,/card-art/raw/c163.webp
 c164,Dr. Heinz Doofenshmirtz,1,1,2,Purple,Tech,Neutral,,doof_coinflip,ongoing,Ongoing: 50% to die and 50% to gain +3/+3,Your doom will be unnecessarily complicated,Phineas and Ferb universe,/card-art/raw/c164.webp
 c165,Mugen & Jin,1,1,2,Purple,Nature,Neutral,,ally_atk_1,onPlay,Battlecry: Gain +1 ATK if you have another friendly minion on the board,"Two blades, one road, no agreement.",Samurai Champloo,/card-art/raw/c165.webp
 c166,Sir Nighteye,1,1,1,Purple,Magic,Good,Passive,reveal_enemy_draw,passive,Passive: See which card your enemy draws,He has already watched this end.,MHA,/card-art/raw/c166.webp
@@ -170,7 +170,7 @@ c168,Walter White,1,1,1,Purple,Nature,Neutral,,double_neutral_atk_set_hp,onPlay,
 c169,An Order of Heavy Knights,1,1,1,Black,Nature,Neutral,,none,none,-,Honor. Duty,Basic,/card-art/raw/c169.webp
 c170,Davy Jones,1,1,2,Black,Nature,Evil,Taunt,none,none,Taunt.,Captain of the drowned,Pirates of the Caribbean,/card-art/raw/c170.webp
 c171,Goblins,1,2,1,Black,Nature,Evil,Taunt,none,none,Taunt.,"Many, loud, briefly in the way.",Basic,/card-art/raw/c171.webp
-c172,Mr. Poopybutthole,1,1,2,Black,Nature,Neutral,,give_taunt,onPlay,Battlecry: Give a minion Taunt,He was there the whole time,Rick and Morty,/card-art/raw/c172.webp
+c172,Mr. Poopybutthole,1,1,1,Black,Nature,Neutral,Deathrattle,reborn_75,deathrattle,Deathrattle: Reborn-75% chance,He was there the whole time,Rick and Morty,/card-art/raw/c172.webp
 c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,ongoing,Ongoing: Draw 1 card,The smartest thing here is a mouse.,MHA,/card-art/raw/c173.webp
-c174,Shibukawa,1,1,1,Black,Nature,Neutral,Divine Shield,silence_enemy,onPlay,Divine Shield. Battlecry: Silence one enemy minion of your choice,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
-c175,V,1,1,1,Black,Nature,Evil,,steal_costliest,onPlay,Battlecry: Steal the highest-cost card in your opponent's hand.,V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
+c174,Shibukawa,1,1,1,Black,Nature,Neutral,Ongoing,set_attack_highest_enemy,ongoing,Ongoing: Set Shibukawa's ATK equal to the highest ATK enemy minion,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
+c175,V,1,1,1,Black,Nature,Evil,Deathrattle,deathrattle_random_evil,deathrattle,"Deathrattle: Destroy a random Evil minion, no matter friendly or not",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp

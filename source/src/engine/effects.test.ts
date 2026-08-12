@@ -133,21 +133,20 @@ describe("full-roster effects", () => {
     ]);
   });
 
-  it("Korosensei (mid_attack_only): ignores ATK < 4, takes ATK >= 4", () => {
+  it("Korosensei: ignores weak attacks and evades 20% of stronger attacks", () => {
+    const printedHp = cards.find((card) => card.name === "Korosensei")!.hp;
     const weak = mainState();
     weak.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
-    weak.players[1].board[0] = makeMinion("Korosensei", 1);
-    // Read off the printed card rather than a literal — his body moved in the
-    // balance pass and the rule under test is the damage threshold, not his HP.
-    const printedHp = cards.find((card) => card.name === "Korosensei")!.hp;
+    weak.players[1].board[0] = makeMinion("Korosensei", 1, { hp: printedHp + 2, maxHp: printedHp + 2 });
     const afterWeak = attack(weak, 0, 0);
-    expect(afterWeak.players[1].board[0]?.hp).toBe(printedHp); // undamaged
+    expect(afterWeak.players[1].board[0]?.hp).toBe(printedHp + 2); // undamaged
 
     const strong = mainState();
+    strong.rngSeed = 12345;
     strong.players[0].board[0] = makeMinion("John Wick", 0, { atk: 4, hp: 20, maxHp: 20 });
-    strong.players[1].board[0] = makeMinion("Korosensei", 1);
+    strong.players[1].board[0] = makeMinion("Korosensei", 1, { hp: printedHp + 2, maxHp: printedHp + 2 });
     const afterStrong = attack(strong, 0, 0);
-    expect(afterStrong.players[1].board[0]?.hp).toBe(printedHp - 4);
+    expect(afterStrong.players[1].board[0]?.hp).toBe(printedHp - 2);
   });
 
   it("Gordon Freeman gains +2/+2 whenever he survives damage", () => {
@@ -159,11 +158,11 @@ describe("full-roster effects", () => {
     expect(after.maxHp).toBe(5);
   });
 
-  it("King (dodge_80): evades an incoming attack", () => {
+  it("Sans (dodge_75): evades an incoming attack", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
-    state.players[1].board[0] = makeMinion("King", 1);
-    // This deterministic lower-bound RNG value takes the 80% evasion branch
+    state.players[1].board[0] = makeMinion("Sans", 1);
+    // This deterministic lower-bound RNG value takes the 75% evasion branch
     // without making the test probabilistic. The defender still retaliates.
     state.rngSeed = 1;
     const after = attack(state, 0, 0);

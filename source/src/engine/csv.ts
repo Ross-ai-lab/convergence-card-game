@@ -25,6 +25,7 @@ const keywords = new Set<Keyword>([
   "Invulnerable",
   "Charge",
   "Deathrattle",
+  "Cannot Attack",
 ]);
 
 const effectIds = new Set<EffectId>([
@@ -222,6 +223,28 @@ const effectIds = new Set<EffectId>([
   "shigaraki_decay",
   "ainz_skeleton_army",
   "heroic_relics",
+  // requested card updates
+  "morpheus_choice",
+  "aladdin_wish",
+  "fantastic_four_aura",
+  "evade_first_attack",
+  "heal_all_friendly_full",
+  "heal_self_full",
+  "deathrattle_summon_morgott",
+  "replace_same_cost_random",
+  "deathrattle_random_evil",
+  "highest_atk_only",
+  "aizen_deathrattle",
+  "chain_random_enemy",
+  "weak_point_mark",
+  "dodge_75",
+  "reborn_75",
+  "mask_return_attacker",
+  "elden_beast_magic_atk",
+  "oogway_rescue",
+  "set_attack_highest_enemy",
+  "evade_allies_33",
+  "korosensei_defense",
 ]);
 
 const relicIds = new Set<RelicId>([

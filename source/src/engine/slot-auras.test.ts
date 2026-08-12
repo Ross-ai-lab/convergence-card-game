@@ -46,8 +46,6 @@ function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
   }
   return next;
 }
-const toMyNextTurn = (state: GameState): GameState => endTurnAndDraw(endTurnAndDraw(state, 0), 1);
-
 /** Answers a pending slot prompt by naming a board position. */
 function chooseSlot(state: GameState, owner: PlayerId, slot: number): GameState {
   const index = state.pendingTarget!.options.findIndex((option) => option.owner === owner && option.slot === slot);
@@ -100,25 +98,17 @@ describe("slot auras", () => {
     expect(arrived.players[1].board[1]?.silenced).toBe(true);
   });
 
-  it("Goku's blessing feeds whoever stands in the slot, every turn", () => {
+  it("Goku evades the first attack targeting him each enemy turn", () => {
     const state = mainState();
-    const asking = playCardFor(state, 0, "Mastered Ultra Instinct Goku", 0);
-    expect(asking.pendingTarget?.options.every((option) => option.owner === 0)).toBe(true);
-    const blessed = chooseSlot(asking, 0, 3);
-    expect(blessed.players[0].slotAuras[0]).toMatchObject({ slot: 3, auraId: "slot_grow_2" });
+    state.players[0].board[0] = makeMinion("Mastered Ultra Instinct Goku", 0, { sleeping: false });
+    state.players[1].board[0] = dummy("Zoro", 1, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
+    state.players[1].board[1] = dummy("Fort", 1, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
+    state.activePlayer = 1;
 
-    blessed.players[0].board[3] = dummy("Zoro", 0); // a 3/3
-    const grown = toMyNextTurn(blessed);
-    expect(grown.players[0].board[3]?.atk).toBe(5);
-    expect(grown.players[0].board[3]?.maxHp).toBe(5);
-  });
-
-  it("an empty blessed slot simply does nothing", () => {
-    const state = mainState();
-    const asking = playCardFor(state, 0, "Mastered Ultra Instinct Goku", 0);
-    const blessed = chooseSlot(asking, 0, 4);
-    expect(() => toMyNextTurn(blessed)).not.toThrow();
-    expect(toMyNextTurn(blessed).players[0].board[4]).toBeNull();
+    const first = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(first.players[0].board[0]?.hp).toBe(7);
+    const second = applyAction(first, { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 0 }, library).state;
+    expect(second.players[0].board[0]?.hp).toBe(6);
   });
 });
 
@@ -141,20 +131,15 @@ describe("forced-random attacks", () => {
     expect(hurt).toHaveLength(1); // exactly one victim, not necessarily the named one
   });
 
-  it("Sans blinds the enemy board for a turn, then it clears", () => {
+  it("Sans evades 75% of attacks", () => {
     const state = mainState("sans");
-    state.players[1].board[0] = dummy("Zoro", 1, { atk: 1 });
-
-    const cast = playCardFor(state, 0, "Sans", 0);
-    expect(cast.players[1].confusedUntilTurn).toBeGreaterThan(cast.turnNumber);
-
-    const theirTurn = endTurnAndDraw(cast, 0);
-    const swing = applyAction(theirTurn, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library);
-    expect(swing.events.some((event) => event.text.includes("swings blindly"))).toBe(true);
-
-    // Two turns later the fog is gone.
-    const later = endTurnAndDraw(endTurnAndDraw(swing.state, 1), 0);
-    expect(later.players[1].confusedUntilTurn! > later.turnNumber).toBe(false);
+    state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
+    state.players[1].board[0] = makeMinion("Sans", 1);
+    state.activePlayer = 0;
+    state.rngSeed = 1;
+    const swing = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
+    expect(swing.state.players[1].board[0]?.hp).toBe(1);
+    expect(swing.events.some((event) => event.text.includes("evades the attack"))).toBe(true);
   });
 
   it("Kurogiri makes the next turn's attacks random", () => {

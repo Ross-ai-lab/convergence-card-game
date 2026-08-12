@@ -56,9 +56,9 @@ describe("2026 card replacements", () => {
       "Isaac Netero": { atk: 4, hp: 4, effectId: "deathrattle_aoe_3", effectTiming: "deathrattle" },
       "Death Star": { atk: 7, hp: 6, origin: "Star Wars", effectId: "death_star_mark" },
       "The 7 Heroic Spirits": { cost: 2, atk: 2, hp: 2, effectId: "heroic_relics" },
-      "Aladdin Lamp": { atk: 5, hp: 4, effectId: "steal_chosen", effectTiming: "onPlay" },
-      "The Mask": { atk: 3, hp: 2, effectId: "none", effectTiming: "none", effect: "-" },
-      V: { effectId: "steal_costliest", effectTiming: "onPlay" },
+      "Aladdin Lamp": { atk: 5, hp: 4, effectId: "aladdin_wish", effectTiming: "onPlay" },
+      "The Mask": { atk: 3, hp: 2, effectId: "mask_return_attacker", effectTiming: "deathrattle" },
+      V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle" },
       "Time Bomb": { atk: 0, hp: 5, effectId: "time_bomb_ongoing_5", effectTiming: "ongoing", keywords: [] },
     };
     for (const [name, fields] of Object.entries(expected)) {
@@ -77,12 +77,46 @@ describe("2026 card replacements", () => {
     expect(getLegalActions(zero, library)).toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
   });
 
-  it("V steals the highest-cost card without opening a hand-choice prompt", () => {
+  it("V destroys a random Evil minion from either side when it dies", () => {
     const state = mainState();
-    state.players[1].hand = [cardId("Batman"), cardId("Thanos"), cardId("John Wick")];
-    const after = play(state, 0, "V", 0);
-    expect(after.players[0].hand).toContain(cardId("Thanos"));
-    expect(after.players[1].hand).toEqual([cardId("Batman"), cardId("John Wick")]);
+    state.players[0].board[0] = minion("V", 0, { hp: 1, maxHp: 1 });
+    state.players[0].board[1] = minion("Aizen", 0, { effectId: "none", effectTiming: "none", keywords: [] });
+    state.players[1].board[0] = minion("Zoro", 1, { atk: 99, sleeping: false });
+    state.activePlayer = 1;
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[0].board[1]).toBeNull();
+  });
+
+  it("Morpheus offers the two pill choices", () => {
+    const state = mainState();
+    state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 3 });
+    state.players[1].board[0] = minion("Zoro", 1, { hp: 1, maxHp: 3 });
+    const asking = play(state, 0, "Morpheus", 0);
+    expect(asking.pendingTarget?.labelOptions).toHaveLength(2);
+    const healed = choose(asking, 0);
+    expect(healed.players[0].board[1]).toMatchObject({ hp: 3, divineShield: true });
+    expect(healed.players[1].board[0]).toMatchObject({ hp: 3, divineShield: true });
+
+    const redState = mainState("morpheus-red");
+    redState.players[0].board[1] = minion("John Wick", 0);
+    redState.players[1].board[0] = minion("Zoro", 1);
+    const red = choose(play(redState, 0, "Morpheus", 0), 1);
+    expect(red.players.every((player) => player.board.every((minion) => minion === null))).toBe(true);
+  });
+
+  it("Aladdin can give the hero a Divine Shield", () => {
+    const state = mainState();
+    const asking = play(state, 0, "Aladdin Lamp", 0);
+    const shielded = choose(asking, 0);
+    expect(shielded.players[0].heroDivineShield).toBe(true);
+
+    shielded.players[1].board[0] = minion("Zoro", 1, { sleeping: false, atk: 5 });
+    shielded.activePlayer = 1;
+    const before = shielded.players[0].health;
+    const hit = applyAction(shielded, { type: "attack_core", player: 1, attackerSlot: 0 }, library).state;
+    expect(hit.players[0].health).toBe(before);
+    expect(hit.players[0].heroDivineShield).toBe(false);
   });
 
   it("Time Bomb deals 5 to enemy minions and itself on its owner's turn", () => {
@@ -203,6 +237,26 @@ describe("2026 card replacements", () => {
     expect(refreshed.players[0].board[0]).toMatchObject({ atk: 2, maxHp: 2 });
   });
 
+  it("Fantastic Four assigns its four effects left-to-right and loses them when killed", () => {
+    const state = mainState();
+    for (const slot of [0, 1, 2, 3]) state.players[0].board[slot] = minion("John Wick", 0, { effectId: "none", effectTiming: "none", keywords: [] });
+    const placed = play(state, 0, "Fantastic Four", 4);
+    expect(placed.players[0].board[0]?.keywords).toContain("Taunt");
+    expect(placed.players[0].board[1]?.divineShield).toBe(true);
+    expect(placed.players[0].board[2]?.atk).toBe(4);
+    expect(placed.players[0].board[3]?.maxHp).toBe(4);
+
+    placed.players[0].board[0]!.keywords = [];
+    placed.players[1].board[0] = minion("Zoro", 1, { atk: 99, sleeping: false, hp: 99, maxHp: 99 });
+    placed.activePlayer = 1;
+    const after = applyAction(placed, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 4 }, library).state;
+    expect(after.players[0].board[4]).toBeNull();
+    expect(after.players[0].board[0]?.keywords).not.toContain("Taunt");
+    expect(after.players[0].board[1]?.divineShield).toBe(false);
+    expect(after.players[0].board[2]?.atk).toBe(2);
+    expect(after.players[0].board[3]?.maxHp).toBe(2);
+  });
+
   it("Ragnaros fires at the end of its controller's turn", () => {
     const state = mainState();
     state.players[0].board[0] = minion("Ragnaros", 0, { sleeping: false });
@@ -269,7 +323,7 @@ describe("2026 card replacements", () => {
     expect(after.players[1].hand).toContain(cardId("John Wick"));
   });
 
-  it("Toji blocks Magic, while Elden Beast no longer has that immunity", () => {
+  it("Toji blocks Magic, while Elden Beast buffs Magic ATK", () => {
     const blocked = mainState("toji-magic");
     blocked.players[0].board[0] = minion("Pandora's Actor", 0, { sleeping: false, atk: 5, hp: 20, maxHp: 20 });
     blocked.players[1].board[0] = minion("Toji", 1);
@@ -280,21 +334,23 @@ describe("2026 card replacements", () => {
     elder.players[0].board[0] = minion("Pandora's Actor", 0, { sleeping: false, atk: 1, hp: 20, maxHp: 20 });
     elder.players[1].board[0] = minion("Elden Beast", 1);
     const elderHit = applyAction(elder, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(elderHit.players[1].board[0]?.hp).toBe(4);
+    expect(elderHit.players[1].board[0]?.hp).toBe(3);
   });
 
-  it("Cthulhu and T-1000 are immune to their requested minion camps", () => {
+  it("Cthulhu keeps Tech immunity, while T-1000 heals on its ongoing turn", () => {
     const tech = mainState("cthulhu-tech");
     tech.players[0].board[0] = minion("Modern Tank", 0, { sleeping: false, atk: 5, hp: 20, maxHp: 20 });
     tech.players[1].board[0] = minion("Cthulhu", 1);
     const cthulhuHit = applyAction(tech, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(cthulhuHit.players[1].board[0]?.hp).toBe(2);
+    expect(cthulhuHit.players[1].board[0]?.hp).toBe(4);
 
     const nature = mainState("t1000-nature");
-    nature.players[0].board[0] = minion("John Wick", 0, { sleeping: false, camp: "Nature", atk: 5, hp: 20, maxHp: 20 });
+    nature.players[0].board[0] = minion("John Wick", 0, { sleeping: false, camp: "Nature", atk: 1, hp: 20, maxHp: 20 });
     nature.players[1].board[0] = minion("T-1000", 1);
     const t1000Hit = applyAction(nature, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(t1000Hit.players[1].board[0]?.hp).toBe(5);
+    expect(t1000Hit.players[1].board[0]?.hp).toBe(4);
+    const healed = endTurn(t1000Hit, 0);
+    expect(healed.players[1].board[0]?.hp).toBe(5);
   });
 
   it("Godrick kills a friendly minion and keeps its stats and persistent effects", () => {

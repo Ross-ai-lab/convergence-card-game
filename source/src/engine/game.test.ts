@@ -260,12 +260,12 @@ describe("attacking the enemy core", () => {
     expect(coreAttacks(state)).toHaveLength(0);
   });
 
-  it("is blocked by Kojiro Sasaki soaking his side", () => {
+  it("is legal past Kojiro Sasaki, whose new passive is evasion rather than redirection", () => {
     const state = mainState();
     state.activePlayer = 0;
     state.players[0].board[0] = dummy("Zoro", 0);
     state.players[1].board[0] = makeMinion("Kojiro Sasaki", 1);
-    expect(coreAttacks(state)).toHaveLength(0);
+    expect(coreAttacks(state)).toHaveLength(1);
   });
 
   it("is blocked for a frozen or sleeping minion, guard or no guard", () => {

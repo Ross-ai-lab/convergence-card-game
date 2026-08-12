@@ -14,7 +14,8 @@ export type Keyword =
   | "Chained"
   | "Invulnerable"
   | "Charge"
-  | "Deathrattle";
+  | "Deathrattle"
+  | "Cannot Attack";
 
 export type EffectId =
   | "none"
@@ -211,7 +212,29 @@ export type EffectId =
   | "rick_return_all"
   | "shigaraki_decay"
   | "ainz_skeleton_army"
-  | "heroic_relics";
+  | "heroic_relics"
+  // --- requested card updates ---------------------------------------------
+  | "morpheus_choice"
+  | "aladdin_wish"
+  | "fantastic_four_aura"
+  | "evade_first_attack"
+  | "heal_all_friendly_full"
+  | "heal_self_full"
+  | "deathrattle_summon_morgott"
+  | "replace_same_cost_random"
+  | "deathrattle_random_evil"
+  | "highest_atk_only"
+  | "aizen_deathrattle"
+  | "chain_random_enemy"
+  | "weak_point_mark"
+  | "dodge_75"
+  | "reborn_75"
+  | "mask_return_attacker"
+  | "elden_beast_magic_atk"
+  | "oogway_rescue"
+  | "set_attack_highest_enemy"
+  | "evade_allies_33"
+  | "korosensei_defense";
 
 export interface CardDefinition {
   kind: "minion";
@@ -319,8 +342,19 @@ export interface MinionInstance {
   untargetableUntilTurn?: number | null;
   /** Meleoron: the friendly minion protected while this source lives. */
   protectedByMeleoron?: string | null;
-  /** GLaDOS: reversible stat/keyword contributions from live aura sources. */
-  auraBonuses?: Array<{ sourceId: string; atk: number; hp: number; keywords: Keyword[] }>;
+  /** Reversible stat/keyword contributions from live aura sources. */
+  auraBonuses?: Array<{ sourceId: string; atk: number; hp: number; keywords: Keyword[]; divineShield?: boolean }>;
+  /** Mastered Ultra Instinct Goku: the turn in which its first attack was evaded. */
+  evadedAttackAtTurn?: number | null;
+  /** Kento Nanami: the marked victim and whether the next hit is still primed. */
+  weakPointTargetId?: string | null;
+  weakPointReady?: boolean;
+  /** Grand Master Oogway: one rescue per turn. */
+  rescueUsedAtTurn?: number | null;
+  /** Fantastic Four: live slot-1 Divine Shield contributions. */
+  divineShieldAuraSources?: string[];
+  /** Fantastic Four: a shield broken while its source remains alive. */
+  brokenAuraSources?: string[];
   /** Death Star: a target waiting for the next turn's resolution. */
   deathStarTarget?:
     | { kind: "core"; owner: PlayerId; resolveAtTurn: number }
@@ -340,6 +374,8 @@ export interface PlayerState {
   id: PlayerId;
   name: string;
   health: number;
+  /** Aladdin Lamp: one Divine Shield for this player's core. */
+  heroDivineShield?: boolean;
   maxMana: number;
   mana: number;
   coins: number;
