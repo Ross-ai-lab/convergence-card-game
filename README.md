@@ -152,6 +152,14 @@ The rules:
 - **Every effect ends as a sentence**, with a full stop.
 - **Effect ids spell magnitudes as digits and must match the printed number.** `validate-cards.mjs` fails the build when a digit in the id is missing from the text, so renaming the id is part of changing a magnitude, not an afterthought.
 
+### Any card or balance change ships to the live site in the same session
+
+**A stat, effect, keyword, cost or wording change is not finished until the published copy carries it.** Run `npm run publish:pages`, then commit and push the generated `play/` copy, so the change is live at <https://ross-ai-lab.github.io/convergence-card-game/play/> where the owner actually plays. Do this without being asked, every time, as the last step of the change.
+
+The reason is that the owner never runs this project. He plays the published URL and nothing else, so a change that exists only in `source/` has not reached the only person it was made for. Worse, it reads as done in every report and every test run: the suite passes, the data validates, the card is correct in the CSV, and the game he opens is unchanged. Two sessions in a row left card changes sitting unpublished on exactly that reasoning.
+
+Balance passes are the sharpest case, because their whole purpose is to change how the game feels to play. A tuning pass that nobody can play has bought nothing, and the next measurement will be taken against a build the player never saw.
+
 ### Effect-selection doctrine
 
 Every Convergence card should feel mechanically inseparable from the character, force, or object on its face. The ideal is that the effect makes sense when the name is revealed, and the name explains why the effect works that way. A mechanically useful effect is not enough if it could be pasted onto ten unrelated cards without changing its meaning.
