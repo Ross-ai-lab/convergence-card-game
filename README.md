@@ -276,6 +276,7 @@ When changing a rule, add or update a focused test and make the card text agree 
 - [Official lore and roster guide](https://ross-ai-lab.github.io/convergence-card-game/materials/Convergence-Official-Lore.html)
 - [Card statistics workbook](materials/Convergence%20card%20stat%20excel%20sheet.xlsx)
 - [Raw card artwork](https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/raw-card-art)
+- Skeleton token artwork: [Skeleton Warrior by Clint Bellanger](https://opengameart.org/content/skeleton-warrior-0), adapted from the CC BY 3.0 sprite sheet.
 - [Original audio-track collection](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z)
 - [Rendered card-production library](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Card-Production.7z)
 - [Project roadmap](docs/Convergence%20Browser%20Game%20Roadmap.html)

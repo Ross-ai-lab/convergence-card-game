@@ -1452,8 +1452,8 @@ function runEffect(
     }
     events.push(effectEvent(`${label} fills the next turn with random attacks.`, source));
   } else if (source.effectId === "rick_return_all") {
-    returnAllMinionsToHand(state, events);
-    events.push(effectEvent(`${label} sends every minion back to its owner's hand.`, source));
+    returnAllMinionsToHand(state, events, source.instanceId);
+    events.push(effectEvent(`${label} sends every other minion back to its owner's hand.`, source));
   } else if (source.effectId === "ainz_skeleton_army") {
     summonSkeletons(state, source, events);
   } else if (source.effectId === "heroic_relics") {
@@ -2285,11 +2285,12 @@ function returnMinionsToHand(state: GameState, playerId: PlayerId, minions: Mini
   }
 }
 
-function returnAllMinionsToHand(state: GameState, events: GameEvent[]): void {
+function returnAllMinionsToHand(state: GameState, events: GameEvent[], excludedInstanceId?: string): void {
   const entries = state.players.flatMap((player) =>
     player.board.map((minion, slot) => (minion ? { owner: player.id, minion, slot } : null)).filter(Boolean),
   ) as Array<{ owner: PlayerId; minion: MinionInstance; slot: number }>;
   for (const { owner, minion, slot } of entries) {
+    if (minion.instanceId === excludedInstanceId) continue;
     state.players[owner].board[slot] = null;
     putCardInHand(state, owner, minion.cardId, events);
   }
@@ -2329,7 +2330,7 @@ function summonSkeletons(state: GameState, source: MinionInstance, events: GameE
     effect: "Taunt.",
     flavor: "A servant of the Great Tomb.",
     origin: "Overlord",
-    art: source.art,
+    art: source.art.replace(/[^/]+$/, "token-skeleton.webp"),
   };
   let summoned = 0;
   for (let slot = 0; slot < boardSize; slot += 1) {

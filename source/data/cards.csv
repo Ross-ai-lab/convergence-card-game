@@ -43,7 +43,7 @@ c041,Bill Cipher,10,6,6,Yellow,Magic,Evil,,slot_random_attacks,onPlay,Battlecry:
 c042,Giorno - Gold Experience Requiem,10,4,6,Yellow,Magic,Neutral,,slot_permanent_silence,onPlay,Battlecry: Choose 1 enemy minion board slot. Enemy minions on that board slot are permanently silenced,Cause and Effect,JoJo,/card-art/raw/c042.webp
 c043,Doctor Manhattan,10,1,1,Purple,Nature,Neutral,,set_stats_choice,onPlay,Battlecry: Choose an enemy minion board slot. Minions on that slot have their stats permanently set to 1/1,Transcended,DCU,/card-art/raw/c043.webp
 c044,Mastered Ultra Instinct Goku,10,7,7,Purple,Magic,Good,,slot_growth,onPlay,Battlecry: Choose 1 friendly minion board slot. Minions on that board slot gain +2/2 at the start of your turn,Activate Universe Breathing Technique,Dragon Ball,/card-art/raw/c044.webp
-c045,Rick Prime,10,1,1,Purple,Nature,Neutral,,rick_return_all,onPlay,Battlecry: Return all minions to their owners' hands.,What…,Rick and Morty,/card-art/raw/c045.webp
+c045,Rick Prime,10,1,1,Purple,Nature,Neutral,,rick_return_all,onPlay,Battlecry: Return all other minions to their owners' hands.,What…,Rick and Morty,/card-art/raw/c045.webp
 c046,The Watcher,10,5,8,Purple,Magic,Neutral,Passive,watcher_reveal_hand,passive,Passive: Cannot attack. Your opponent's hand is revealed to you.,The Witness,MCU,/card-art/raw/c046.webp
 c047,"Escanor ""The One""",9,7,7,Red,Magic,Good,,lone_burst_8,onPlay,"Battlecry: If you control no other minions, deal 8 DMG to an enemy minion of your choice","The Sun, incarnated",Seven Deadly Sins,/card-art/raw/c047.webp
 c048,Lelouch Lamperouge,9,5,9,Yellow,Magic,Good,,mind_control_4_delayed,onPlay,Battlecry: Gain control of a minion with 4 HP or less at the start of your next turn,Obey,Code Geass,/card-art/raw/c048.webp

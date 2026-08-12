@@ -224,6 +224,8 @@ describe("2026 card replacements", () => {
     const skeletons = after.players[0].board.filter((entry) => entry?.name === "Skeleton");
     expect(skeletons).toHaveLength(4);
     expect(skeletons.every((entry) => entry?.atk === 1 && entry?.hp === 1 && entry.keywords.includes("Taunt"))).toBe(true);
+    expect(skeletons.every((entry) => entry?.art.endsWith("/token-skeleton.webp"))).toBe(true);
+    expect(skeletons.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
   });
 
   it("Voldemort sacrifices the lowest-HP ally instead of dying", () => {
@@ -240,9 +242,9 @@ describe("2026 card replacements", () => {
     const state = mainState();
     state.players[1].board[0] = minion("John Wick", 1);
     const after = play(state, 0, "Rick Prime", 0);
-    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[0].board[0]?.name).toBe("Rick Prime");
     expect(after.players[1].board[0]).toBeNull();
-    expect(after.players[0].hand).toContain(cardId("Rick Prime"));
+    expect(after.players[0].hand).not.toContain(cardId("Rick Prime"));
     expect(after.players[1].hand).toContain(cardId("John Wick"));
   });
 

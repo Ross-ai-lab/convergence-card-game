@@ -1327,6 +1327,8 @@ export default function App() {
           thinking={botThinking}
           revealedHand={revealedOpponentHand}
           library={library}
+          onCardPreview={previewCard}
+          onCardPreviewEnd={endPreview}
           onStrike={attackCore}
         />
         <div className="system-buttons">
@@ -2186,10 +2188,20 @@ function MinionFace({
                 }
               : undefined
           }
-          onMouseEnter={onRelicPreview ? (e) => onRelicPreview(minion.relic!, e.currentTarget) : undefined}
+          onMouseEnter={
+            onRelicPreview
+              ? (e) => {
+                  e.stopPropagation();
+                  onRelicPreview(minion.relic!, e.currentTarget);
+                }
+              : undefined
+          }
           onMouseLeave={
             onRelicPreviewEnd
-              ? (e) => onRelicPreviewEnd(minion, e.currentTarget.parentElement ?? e.currentTarget)
+              ? (e) => {
+                  e.stopPropagation();
+                  onRelicPreviewEnd(minion, e.currentTarget.parentElement ?? e.currentTarget);
+                }
               : undefined
           }
         >
@@ -2265,6 +2277,8 @@ function HeroPlate({
   thinking = false,
   revealedHand,
   library,
+  onCardPreview,
+  onCardPreviewEnd,
   onStrike,
 }: {
   player: GameState["players"][number];
@@ -2279,6 +2293,8 @@ function HeroPlate({
   thinking?: boolean;
   revealedHand?: string[];
   library?: CardLibrary;
+  onCardPreview?: (card: PlayableCard, el: HTMLElement) => void;
+  onCardPreviewEnd?: () => void;
   onStrike?: () => void;
 }) {
   const wasHit = floats.some((f) => f.delta < 0);
@@ -2295,14 +2311,15 @@ function HeroPlate({
     .filter(Boolean)
     .join(" ");
   const backs = Math.min(player.hand.length, 10);
+  const canStrike = enemy && targetable && Boolean(onStrike);
   return (
     <button
       type="button"
       className={classes}
       data-hero={player.id}
-      onClick={targetable ? onStrike : undefined}
-      disabled={enemy ? !targetable : true}
-      title={enemy && targetable ? "Strike the enemy hero!" : undefined}
+      onClick={canStrike ? onStrike : undefined}
+      aria-disabled={canStrike ? undefined : true}
+      title={canStrike ? "Strike the enemy hero!" : undefined}
     >
       <span className="hero-sigil" title={`${player.name}'s sigil`}>
         <HeroSigil playerId={player.id} />
@@ -2322,7 +2339,13 @@ function HeroPlate({
           {revealedHand.map((cardId, index) => {
             const card = library[cardId];
             return card ? (
-              <span key={`${cardId}-${index}`} className="revealed-hand-card">
+              <span
+                key={`${cardId}-${index}`}
+                className="revealed-hand-card"
+                title={card.name}
+                onMouseEnter={onCardPreview ? (e) => onCardPreview(card, e.currentTarget) : undefined}
+                onMouseLeave={onCardPreviewEnd}
+              >
                 <CardFace card={playableFace(card)} />
               </span>
             ) : null;
