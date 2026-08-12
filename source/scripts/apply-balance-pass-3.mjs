@@ -23,6 +23,18 @@
  * text would make the card lie and change nothing. Those are marked `codeToo`.
  */
 
+// EFFECT LABELS HAVE BEEN RENAMED SINCE THIS PASS RAN. The codeToo notes below
+// quote the labels as they read at the time, deliberately, because this file is
+// a record of what was done and not a description of the code today. Current
+// names for the labels this pass touched:
+//
+//   buff_all_friendly_4_neg1  ->  buff_all_friendly_3_neg2
+//   any_death_buff_2_1        ->  nito_any_death_1_1
+//
+// Grep the current name, not the one printed below. Bigfoot's entry is the one
+// exception that WAS rewritten in place (dodge_half -> dodge_50): it assigns a
+// live effectId rather than describing one, so leaving the old name there would
+// have written a label the engine no longer knows if this pass were ever rerun.
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -84,9 +96,9 @@ const CHANGES = {
 
   // ---------------------------------------------------------------- BUFFS
   Bigfoot: {
-    effectId: "dodge_half",
+    effectId: "dodge_50",
     effect: "Passive: Evades half of incoming attacks.",
-    why: "33.6% vs 48.2% at a 67.6% play rate — played constantly and losing, which is a weak card rather than an ignored one. The real defect: `evasive` makes a minion UNABLE TO ATTACK, and Bigfoot has no Taunt, so nothing obliges the enemy to attack it either. Its printed ATK was decoration and its HP defended nothing. Pass 1 raised the HP to 5 for exactly this card and the win rate did not move — proof the body was never the lever. `dodge_half` is the identical 50% evade minus the attack ban, so the cryptid can finally contest the board. Deliberately NOT given Taunt: a 5 HP wall with a 50% dodge that must be attacked is effectively 10 HP of unavoidable wall, which is the shape that took APR to 73.9%.",
+    why: "33.6% vs 48.2% at a 67.6% play rate — played constantly and losing, which is a weak card rather than an ignored one. The real defect: `evasive` makes a minion UNABLE TO ATTACK, and Bigfoot has no Taunt, so nothing obliges the enemy to attack it either. Its printed ATK was decoration and its HP defended nothing. Pass 1 raised the HP to 5 for exactly this card and the win rate did not move — proof the body was never the lever. `dodge_50` is the identical 50% evade minus the attack ban, so the cryptid can finally contest the board. Deliberately NOT given Taunt: a 5 HP wall with a 50% dodge that must be attacked is effectively 10 HP of unavoidable wall, which is the shape that took APR to 73.9%.",
   },
   "Time Bomb": {
     keywords: "Taunt",

@@ -185,7 +185,30 @@ describe("full-roster effects", () => {
     expect(attack(state, 0, 0).players[1].board[0]).toBeNull(); // 2 * 3 = 6 > 5
   });
 
-  it("Nulgath (any_death_buff_2_2): grows whenever a minion dies", () => {
+  it("Kaku Kaioh (damage_3x_nature): triples damage into Nature", () => {
+    // This card printed "4x" while the code did 2x, and nothing caught it for
+    // the whole balance history because no test read the multiplier at all.
+    // Both halves are asserted here: the kill proves it is at least 3x, and the
+    // survivor proves it is not 4x.
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Kaku Kaioh", 0, { atk: 2, hp: 20, maxHp: 20 });
+    state.players[1].board[0] = makeMinion("Dragon", 1); // 3/5 Nature
+    expect(attack(state, 0, 0).players[1].board[0]).toBeNull(); // 2 * 3 = 6 > 5
+
+    const nearMiss = mainState();
+    nearMiss.players[0].board[0] = makeMinion("Kaku Kaioh", 0, { atk: 2, hp: 20, maxHp: 20 });
+    nearMiss.players[1].board[0] = makeMinion("Dragon", 1, { hp: 7, maxHp: 7 });
+    expect(attack(nearMiss, 0, 0).players[1].board[0]?.hp).toBe(1); // 7 - 6, not 7 - 8
+  });
+
+  it("Kaku Kaioh (damage_3x_nature): deals normal damage into other camps", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Kaku Kaioh", 0, { atk: 2, hp: 20, maxHp: 20 });
+    state.players[1].board[0] = makeMinion("Cthulhu", 1); // 3/4 Magic
+    expect(attack(state, 0, 0).players[1].board[0]?.hp).toBe(2); // 4 - 2, no multiplier
+  });
+
+  it("Nulgath (nulgath_any_death_1_1): grows whenever a minion dies", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Nulgath", 0);
     state.players[0].board[1] = makeMinion("John Wick", 0, { atk: 5, hp: 20, maxHp: 20 });

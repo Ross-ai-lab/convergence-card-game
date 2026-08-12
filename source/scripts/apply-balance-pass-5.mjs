@@ -33,6 +33,14 @@
  * gets destroyed. It stays on the watchlist.
  */
 
+// EFFECT LABELS HAVE BEEN RENAMED SINCE THIS PASS RAN. The codeToo notes below
+// quote the labels as they read at the time, deliberately, because this file is
+// a record of what was done and not a description of the code today. Current
+// name for the label this pass touched:
+//
+//   any_death_buff_2_2  ->  nulgath_any_death_1_1
+//
+// Grep the current name, not the one printed below.
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

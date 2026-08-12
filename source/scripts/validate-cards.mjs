@@ -104,6 +104,45 @@ function checkPrintedText(card, line, errors) {
   }
 }
 
+/**
+ * An effectId is an internal label. The player never sees it, so when its
+ * numbers drift away from the card's printed numbers nothing visibly breaks and
+ * nobody notices. Five labels had drifted before this rule existed, and the cost
+ * is not cosmetic: a session that reads `set_attack_zero` and trusts it will
+ * "fix" an engine branch that was correct, or take a balance measurement against
+ * a magnitude the card never had.
+ *
+ * The rule is deliberately narrow so it can be a hard error with no judgement in
+ * it: every run of digits in the label must appear as a number in the printed
+ * text. `buff_all_nature_2_1` must print a 2 and a 1 somewhere. Nothing here
+ * cares about word order, sign, or what the numbers mean.
+ *
+ * WHAT IT DOES NOT COVER: labels that spell a magnitude as a word. Those were
+ * converted to digits so this rule reaches them, and the four that remain
+ * (`heal_self_full`, `heal_all_friendly_full`, `heal_good_ally_full`,
+ * `fantastic_four_aura`) carry no magnitude that can drift — "full" is always
+ * 100% and the "four" in Fantastic Four is the team's name. If a new label
+ * spells a number as a word, this rule will not see it. Write digits.
+ */
+function checkLabelNumbers(card, line, errors) {
+  const effectId = (card.effectId ?? "").trim();
+  if (!effectId || effectId === "none") return;
+
+  const labelNumbers = effectId.match(/\d+/g);
+  if (!labelNumbers) return;
+
+  const textNumbers = new Set((card.effect ?? "").match(/\d+/g) ?? []);
+  const missing = [...new Set(labelNumbers)].filter((number) => !textNumbers.has(number));
+  if (missing.length) {
+    errors.push(
+      `Line ${line}: ${card.name}'s effectId "${effectId}" contains ${missing.join(" and ")}, ` +
+        `but its printed text does not: "${card.effect}". ` +
+        `The label and the card must agree — rename the label to the printed number, ` +
+        `or fix the text if the engine is the thing that changed.`,
+    );
+  }
+}
+
 const cards = readCards();
 const errors = [];
 const ids = new Set();
@@ -132,6 +171,7 @@ for (const [index, card] of cards.entries()) {
     }
   }
   checkPrintedText(card, line, errors);
+  checkLabelNumbers(card, line, errors);
 
   if (!card.art || !card.art.startsWith("/card-art/")) {
     errors.push(`Line ${line}: art must point at /card-art/...`);
@@ -148,8 +188,45 @@ if (errors.length) {
   process.exit(1);
 }
 
+// --- shared-effect report (warning, never an error) ---------------------------
+// Two cards may legitimately share an effectId when the mechanic genuinely
+// describes both of them, so this can never fail the build. It exists because
+// the opposite case is invisible: an effect written for one character and then
+// borrowed to fill a second card reads as filler, and nothing in the data says
+// which of the two it was written for. The README's effect-selection doctrine
+// calls repeated text acceptable only when it describes each subject, and this
+// list is how that judgement gets made instead of skipped.
+function reportSharedEffects(all) {
+  const byEffect = new Map();
+  for (const card of all) {
+    const effectId = card.effectId?.trim();
+    if (!effectId || effectId === "none") continue;
+    if (!byEffect.has(effectId)) byEffect.set(effectId, []);
+    byEffect.get(effectId).push(card.name);
+  }
+
+  const shared = [...byEffect.entries()]
+    .filter(([, cardNames]) => cardNames.length > 1)
+    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+
+  if (!shared.length) {
+    console.log("Shared effects: none");
+    return;
+  }
+
+  const cardCount = shared.reduce((total, [, cardNames]) => total + cardNames.length, 0);
+  console.log(
+    `Shared effects: ${shared.length} effect${shared.length === 1 ? "" : "s"} printed on ${cardCount} cards ` +
+      `(review each pair against the effect-selection doctrine; this is never a build failure)`,
+  );
+  for (const [effectId, cardNames] of shared) {
+    console.log(`  ${effectId}: ${cardNames.join(", ")}`);
+  }
+}
+
 console.log("Card data OK");
 console.log("Cards:", cards.length);
 console.log("Costs:", JSON.stringify(countBy(cards, "cost")));
 console.log("Rarities:", JSON.stringify(countBy(cards, "rarity")));
 console.log("Camps:", JSON.stringify(countBy(cards, "camp")));
+reportSharedEffects(cards);

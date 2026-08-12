@@ -576,7 +576,7 @@ async function targetingCheck(label, cardName, choiceSelector) {
   );
 }
 
-// Kiritsugu's freeze_one is an enemy-side board pick with no filter, so any
+// Kiritsugu's freeze_enemy is an enemy-side board pick with no filter, so any
 // enemy minion is a legal target — the most reliable board prompt in the roster.
 await targetingCheck(
   "a BOARD-target battlecry asks, then resolves",

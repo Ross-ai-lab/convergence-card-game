@@ -26,6 +26,15 @@
  * body BUFF, not a third nerf.
  */
 
+// EFFECT LABELS HAVE BEEN RENAMED SINCE THIS PASS RAN. The codeToo note below
+// quotes the label as it read at the time, deliberately, because this file is a
+// record of what was done and not a description of the code today. Current
+// names for the two labels named in this pass:
+//
+//   any_death_buff_2_2  ->  nulgath_any_death_1_1
+//   any_death_buff_2_1  ->  nito_any_death_1_1   (the Nito branch this pass cites)
+//
+// Grep the current name, not the one printed below.
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
