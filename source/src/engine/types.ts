@@ -27,10 +27,12 @@ export type EffectId =
   | "deal_enemy_core"
   | "heal_self"
   | "aoe_damage_3"
+  | "time_bomb_ongoing_5"
   | "harmony_buff"
   | "evil_invulnerable"
   | "set_attack_zero"
   | "aoe_damage_2"
+  | "godzilla_damage_burst"
   | "gain_divine_shield"
   | "absorb_left_stats"
   | "damaged_self_buff"
@@ -41,6 +43,7 @@ export type EffectId =
   | "kill_random_enemy"
   | "destroy_enemy_taunt"
   | "destroy_and_gain_stats"
+  | "godrick_graft"
   | "high_attack_only"
   | "anti_good_grow"
   | "small_cannot_attack"
@@ -126,6 +129,8 @@ export type EffectId =
   | "alone_buff_5"
   | "ally_atk_1"
   | "taunt_aura"
+  | "tempest_guardian_lords"
+  | "tempest_guardian_growth"
   // --- passive / reactive (checked inline, not run in runEffect) ---
   | "double_attack"
   | "mid_attack_only"
@@ -135,6 +140,9 @@ export type EffectId =
   | "invuln_if_three_good"
   | "dodge_half"
   | "give_dodge_half"
+  | "immune_magic_minions"
+  | "immune_tech_minions"
+  | "immune_nature_minions"
   | "immune_nature_tech"
   | "dodge_80"
   | "freeze_attacker"
@@ -203,8 +211,7 @@ export type EffectId =
   | "rick_return_all"
   | "shigaraki_decay"
   | "ainz_skeleton_army"
-  | "heroic_relics"
-  | "elden_beast_magic_immune";
+  | "heroic_relics";
 
 export interface CardDefinition {
   kind: "minion";

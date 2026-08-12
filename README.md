@@ -162,7 +162,7 @@ Canonical examples:
 
 - **Light Yagami —** kills a random enemy minion at the start of each of his controller's turns, translating the Death Note into effortless recurring killing.
 - **Stain —** kills a damaged minion; damage represents exposed blood, which is the condition that lets his blood-tasting ability disable a victim.
-- **Homelander —** gains +3/+3 when he is the only friendly minion, turning his ego and need to dominate the spotlight into an isolation reward.
+- **Homelander —** becomes Invulnerable while he is your only minion, turning his ego and need to dominate the spotlight into a defensive isolation reward.
 - **Kizaru —** begins with Divine Shield and regains it each turn, matching both the apparent invulnerability of his light body and the card's golden Light theme. This is a generic keyword used well because it is the character fantasy, not filler.
 
 The long-term target is **all cards passing these tests**. Boring copy-paste effects such as bare Taunt, bare Divine Shield, or unconditional `+2/+2` should be redesigned unless the simplicity itself is the most faithful expression of that card.
@@ -171,7 +171,7 @@ For a behaviour change, update the printed CSV text and the engine branch togeth
 
 When an effect is changed, replace the old effect and its old keywords or timing unless the request explicitly says to retain them. Do not silently append a new effect to an existing Taunt, Chained, Divine Shield, or other rule.
 
-Whenever proposing new effects for cards, always list each card’s current/old effect alongside the proposed ideas before suggesting a replacement.
+Whenever a user asks to recommend effects for a minion or recommend minions for an effect, always use a table listing each minion’s name, mana, ATK/HP, old effect verbatim, and the new proposal (new effect or new minion).
 
 Printed timing must match play. For every target or choice, specify whether it selects a minion, board slot, hand card, or random legal object. Test no-valid-target, cancellation, opponent-turn, and resolution behaviour where relevant.
 

@@ -56,6 +56,10 @@ describe("2026 card replacements", () => {
       "Isaac Netero": { atk: 4, hp: 4, effectId: "deathrattle_aoe_3", effectTiming: "deathrattle" },
       "Death Star": { atk: 7, hp: 6, origin: "Star Wars", effectId: "death_star_mark" },
       "The 7 Heroic Spirits": { cost: 2, atk: 2, hp: 2, effectId: "heroic_relics" },
+      "Aladdin Lamp": { atk: 5, hp: 4, effectId: "steal_chosen", effectTiming: "onPlay" },
+      "The Mask": { atk: 3, hp: 2, effectId: "none", effectTiming: "none", effect: "-" },
+      V: { effectId: "steal_costliest", effectTiming: "onPlay" },
+      "Time Bomb": { atk: 0, hp: 5, effectId: "time_bomb_ongoing_5", effectTiming: "ongoing", keywords: [] },
     };
     for (const [name, fields] of Object.entries(expected)) {
       const card = cards.find((entry) => entry.name === name);
@@ -71,6 +75,23 @@ describe("2026 card replacements", () => {
     const zero = mainState("zero-attack");
     zero.players[0].board[0] = minion("Meleoron", 0, { sleeping: false, atk: 0 });
     expect(getLegalActions(zero, library)).toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
+  });
+
+  it("V steals the highest-cost card without opening a hand-choice prompt", () => {
+    const state = mainState();
+    state.players[1].hand = [cardId("Batman"), cardId("Thanos"), cardId("John Wick")];
+    const after = play(state, 0, "V", 0);
+    expect(after.players[0].hand).toContain(cardId("Thanos"));
+    expect(after.players[1].hand).toEqual([cardId("Batman"), cardId("John Wick")]);
+  });
+
+  it("Time Bomb deals 5 to enemy minions and itself on its owner's turn", () => {
+    const state = mainState();
+    state.players[0].board[0] = minion("Time Bomb", 0);
+    state.players[1].board[0] = minion("John Wick", 1, { hp: 10, maxHp: 10 });
+    const after = endTurn(endTurn(state, 0), 1);
+    expect(after.players[1].board[0]?.hp).toBe(5);
+    expect(after.players[0].board[0]).toBeNull();
   });
 
   it("Pandora copies a minion's effects and keywords without copying stats", () => {
@@ -219,7 +240,7 @@ describe("2026 card replacements", () => {
     expect(nextShigarakiTurn.players[1].board[0]).toBeNull();
   });
 
-  it("Ainz fills every open slot with Taunt Skeletons", () => {
+  it("Ainz fills every open slot with distinct-art Taunt Skeletons", () => {
     const after = play(mainState(), 0, "Ainz Ooal Gown", 0);
     const skeletons = after.players[0].board.filter((entry) => entry?.name === "Skeleton");
     expect(skeletons).toHaveLength(4);
@@ -238,7 +259,7 @@ describe("2026 card replacements", () => {
     expect(after.players[1].board[1]).toBeNull();
   });
 
-  it("Rick Prime returns every minion, including itself, to its owner's hand", () => {
+  it("Rick Prime returns all other minions while staying on the board", () => {
     const state = mainState();
     state.players[1].board[0] = minion("John Wick", 1);
     const after = play(state, 0, "Rick Prime", 0);
@@ -248,18 +269,85 @@ describe("2026 card replacements", () => {
     expect(after.players[1].hand).toContain(cardId("John Wick"));
   });
 
-  it("Elden Beast cannot be damaged by Magic and does not take Magic retaliation", () => {
-    const magicAttack = mainState("elden-magic");
-    magicAttack.players[0].board[0] = minion("Pandora's Actor", 0, { sleeping: false, atk: 5 });
-    magicAttack.players[1].board[0] = minion("Elden Beast", 1, { divineShield: false });
-    const blocked = applyAction(magicAttack, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(blocked.players[1].board[0]?.hp).toBe(5);
+  it("Toji blocks Magic, while Elden Beast no longer has that immunity", () => {
+    const blocked = mainState("toji-magic");
+    blocked.players[0].board[0] = minion("Pandora's Actor", 0, { sleeping: false, atk: 5, hp: 20, maxHp: 20 });
+    blocked.players[1].board[0] = minion("Toji", 1);
+    const tojiHit = applyAction(blocked, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(tojiHit.players[1].board[0]?.hp).toBe(3);
 
-    const eldensTurn = mainState("elden-strike");
-    eldensTurn.players[0].board[0] = minion("Elden Beast", 0, { sleeping: false });
-    eldensTurn.players[1].board[0] = minion("Pandora's Actor", 1, { hp: 5, maxHp: 5 });
-    const struck = applyAction(eldensTurn, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(struck.players[0].board[0]?.hp).toBe(5);
-    expect(struck.players[1].board[0]?.hp).toBe(1);
+    const elder = mainState("elder-no-magic-immunity");
+    elder.players[0].board[0] = minion("Pandora's Actor", 0, { sleeping: false, atk: 1, hp: 20, maxHp: 20 });
+    elder.players[1].board[0] = minion("Elden Beast", 1);
+    const elderHit = applyAction(elder, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(elderHit.players[1].board[0]?.hp).toBe(4);
+  });
+
+  it("Cthulhu and T-1000 are immune to their requested minion camps", () => {
+    const tech = mainState("cthulhu-tech");
+    tech.players[0].board[0] = minion("Modern Tank", 0, { sleeping: false, atk: 5, hp: 20, maxHp: 20 });
+    tech.players[1].board[0] = minion("Cthulhu", 1);
+    const cthulhuHit = applyAction(tech, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(cthulhuHit.players[1].board[0]?.hp).toBe(2);
+
+    const nature = mainState("t1000-nature");
+    nature.players[0].board[0] = minion("John Wick", 0, { sleeping: false, camp: "Nature", atk: 5, hp: 20, maxHp: 20 });
+    nature.players[1].board[0] = minion("T-1000", 1);
+    const t1000Hit = applyAction(nature, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(t1000Hit.players[1].board[0]?.hp).toBe(5);
+  });
+
+  it("Godrick kills a friendly minion and keeps its stats and persistent effects", () => {
+    const state = mainState();
+    state.players[0].board[1] = minion("Gordon Freeman", 0);
+    const asking = play(state, 0, "Godrick the Grafted", 0);
+    const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 0 && option.slot === 1) ?? -1;
+    const after = targetIndex >= 0 ? choose(asking, targetIndex) : asking;
+    const godrick = after.players[0].board[0];
+    expect(after.players[0].board[1]).toBeNull();
+    expect(godrick).toMatchObject({ atk: 5, hp: 5, maxHp: 5, effectId: "none", effectTiming: "passive" });
+    expect(godrick?.gainedEffects).toEqual([
+      expect.objectContaining({ effectId: "gordon_survive_damage", timing: "passive" }),
+    ]);
+  });
+
+  it("Godzilla retaliates with damage to enemy minions and the enemy core", () => {
+    const state = mainState();
+    const coreBefore = state.players[1].health;
+    state.players[0].board[0] = minion("John Wick", 0, { sleeping: false, atk: 1, hp: 10, maxHp: 10 });
+    state.players[1].board[0] = minion("Godzilla", 1);
+    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[1].board[0]?.hp).toBe(4);
+    expect(after.players[0].board[0]?.hp).toBe(4);
+    expect(after.players[0].health).toBe(coreBefore - 2);
+  });
+
+  it("Tempest's Guardian Lords keeps its sacrifice Battlecry and gains +2/+1 ongoing", () => {
+    const state = mainState();
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 2, hp: 3, maxHp: 3 });
+    const asking = play(state, 0, "Tempest's Guardian Lords", 1);
+    const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 1 && option.slot === 0) ?? -1;
+    const after = targetIndex >= 0 ? choose(asking, targetIndex) : asking;
+    const tempest = after.players[0].board[1];
+    expect(after.players[1].board[0]).toBeNull();
+    expect(tempest).toMatchObject({ atk: 3, hp: 4, maxHp: 4, effectId: "none", effectTiming: "ongoing" });
+    expect(tempest?.gainedEffects).toEqual([
+      expect.objectContaining({ effectId: "tempest_guardian_growth", timing: "ongoing" }),
+    ]);
+
+    const nextOwnerTurn = endTurn(endTurn(after, 0), 1);
+    expect(nextOwnerTurn.players[0].board[1]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
+  });
+
+  it("Founding Titan gives Taunt to every friendly minion, including later arrivals", () => {
+    const state = mainState();
+    state.players[0].board[1] = minion("John Wick", 0);
+    const after = play(state, 0, "Founding Titan", 0);
+    expect(after.players[0].board[0]?.keywords).toContain("Taunt");
+    expect(after.players[0].board[1]?.keywords).toContain("Taunt");
+
+    after.players[0].board[2] = minion("John Wick", 0);
+    const refreshed = endTurn(after, 0);
+    expect(refreshed.players[0].board[2]?.keywords).toContain("Taunt");
   });
 });

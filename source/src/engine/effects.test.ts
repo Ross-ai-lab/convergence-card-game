@@ -202,15 +202,20 @@ describe("full-roster effects", () => {
     expect(grown.maxHp).toBeGreaterThan(before.maxHp);
   });
 
-  it("Homelander (alone_buff_5, Battlecry/Ongoing): +3/+3 when played alone", () => {
-    const state = mainState();
-    state.players[0].hand = [cardId("Homelander")];
-    state.players[0].mana = 10;
+  it("Homelander is Invulnerable while he is your only minion", () => {
     const printed = cards.find((card) => card.name === "Homelander")!;
-    const after = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library).state;
-    // Read the base off the card — the rule under test is the +3/+3, not his body.
-    expect(after.players[0].board[0]?.atk).toBe(printed.atk + 3);
-    expect(after.players[0].board[0]?.maxHp).toBe(printed.hp + 3);
+    const alone = mainState();
+    alone.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
+    alone.players[1].board[0] = makeMinion("Homelander", 1);
+    const blocked = attack(alone, 0, 0);
+    expect(blocked.players[1].board[0]?.hp).toBe(printed.hp);
+
+    const crowded = mainState();
+    crowded.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
+    crowded.players[1].board[0] = makeMinion("Homelander", 1);
+    crowded.players[1].board[1] = makeMinion("John Wick", 1);
+    const exposed = attack(crowded, 0, 0);
+    expect(exposed.players[1].board[0]?.hp).toBe(printed.hp - 3);
   });
 
   // --- ongoing effects fire at the start of the owner's turn ---

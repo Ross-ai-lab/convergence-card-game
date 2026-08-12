@@ -70,7 +70,7 @@ describe("relic cards in the shared deck", () => {
 
   it("hands a gained relic to its finder without auto-equipping it", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Toji", 0); // ongoing: gain an Ascension Relic
+    state.players[0].board[0] = makeMinion("Gilgamesh", 0); // ongoing: gain an Ascension Relic
     const available = new Set(state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)));
 
     const after = toMyNextTurn(state);
@@ -82,7 +82,7 @@ describe("relic cards in the shared deck", () => {
 
   it("never auto-equips a second gained relic onto another ally", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Toji", 0, {
+    state.players[0].board[0] = makeMinion("Gilgamesh", 0, {
       relic: relicByName("Elder wand"),
     });
     state.players[0].board[1] = makeMinion("Mob Psycho", 0);
@@ -98,7 +98,7 @@ describe("relic effects", () => {
   it("plays a relic from hand onto exactly the chosen bearer and charges its cost", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Mob Psycho", 0);
-    state.players[0].board[1] = makeMinion("Toji", 0);
+    state.players[0].board[1] = makeMinion("Gilgamesh", 0);
     state.players[0].hand = [relicByName("Elder wand").id];
     state.players[0].mana = 2;
     const action = getLegalActions(state, library).find((candidate) => candidate.type === "play_relic");

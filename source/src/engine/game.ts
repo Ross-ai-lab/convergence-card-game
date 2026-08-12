@@ -873,10 +873,7 @@ function attackMinion(
   // It is the one thing in the game that suspends simultaneous combat, and only
   // on the bearer's own swing — it is still hit normally on the enemy's turn.
   if (!hasRelic(attacker, "no_retaliation")) {
-    const eldensNoRetaliation =
-      hasEffect(attacker, "elden_beast_magic_immune") && !attacker.silenced && defender.camp === "Magic";
-    if (!eldensNoRetaliation) dealMinionDamage(state, playerId, attackerSlot, defender.atk, defender, events);
-    else events.push(effectEvent(`${attacker.name} strikes from beyond Magic — no retaliation.`, attacker));
+    dealMinionDamage(state, playerId, attackerSlot, defender.atk, defender, events);
   } else {
     events.push(effectEvent(`${attacker.name} strikes from outside space — no retaliation.`, attacker));
   }
@@ -1024,6 +1021,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   destroy_enemy: { side: "enemy", prompt: "Destroy an enemy minion" },
   destroy_enemy_taunt: { side: "enemy", prompt: "Destroy an enemy Taunt minion", filter: (m) => hasKeyword(m, "Taunt") },
   destroy_and_gain_stats: { side: "any", prompt: "Destroy a minion and gain its stats" },
+  godrick_graft: { side: "friendly", prompt: "Kill a friendly minion and gain its stats and effects" },
   destroy_damaged_enemy: { side: "enemy", prompt: "Destroy a wounded enemy", filter: (m) => m.hp < m.maxHp },
   chain_damage: { side: "enemy", prompt: "Choose an enemy minion to take 1 damage" },
   devour_small: { side: "enemy", prompt: "Devour a small enemy", filter: (m) => m.atk <= 3 && m.hp <= 3 },
@@ -1365,7 +1363,30 @@ function runEffect(
     if (kind === "boardOrCore" && !picked && pickedCoreOwner === null) return false;
   }
 
-  if (source.effectId === "copy_minion_effects") {
+  // Tempest combines a one-shot sacrifice with a persistent growth effect.
+  // It asks only when a legal victim exists; the ongoing half still attaches
+  // when Tempest enters an otherwise empty board.
+  if (source.effectId === "tempest_guardian_lords" && !chosen) {
+    const next = requestChoice(state, source, { side: "any", prompt: "Destroy a minion and gain its stats" }, library);
+    if (next === "asked") return true;
+    if (next) return runEffect(state, source, sourceSlot, library, events, next);
+  }
+
+  if (source.effectId === "tempest_guardian_lords") {
+    const target = chosen?.kind === "board" ? state.players[chosen.target.owner].board[chosen.target.slot] : null;
+    if (target) {
+      const gainedAtk = target.atk;
+      const gainedHp = target.hp;
+      destroyInstance(state, target.owner, target.instanceId, events, `${source.name} destroys ${target.name}`);
+      buffMinion(source, gainedAtk, gainedHp);
+      events.push(effectEvent(`${label} gains ${gainedAtk}/${gainedHp} from ${target.name}.`, source));
+    }
+    if (!source.gainedEffects.some((effect) => effect.effectId === "tempest_guardian_growth")) {
+      source.gainedEffects.push({ effectId: "tempest_guardian_growth", timing: "ongoing", text: "Ongoing: Gain +2/+1" });
+    }
+    source.effectId = "none";
+    source.effectTiming = "ongoing";
+  } else if (source.effectId === "copy_minion_effects") {
     if (picked) copyMinionEffects(source, picked, events);
   } else if (source.effectId === "double_neutral_atk_set_hp") {
     if (picked) {
@@ -1488,6 +1509,11 @@ function runEffect(
     events.push(effectEvent(`${label} heals 3 HP.`, source));
   } else if (source.effectId === "aoe_damage_3") {
     damageAllEnemies(state, source, 3, events);
+  } else if (source.effectId === "time_bomb_ongoing_5") {
+    damageAllEnemies(state, source, 5, events);
+    const sourceSlot = slotOf(state, source);
+    if (sourceSlot >= 0) dealMinionDamage(state, source.owner, sourceSlot, 5, source, events, true);
+    events.push(effectEvent(`${label} deals 5 damage to all enemy minions and itself.`, source));
   } else if (source.effectId === "aoe_damage_2") {
     damageAllEnemies(state, source, 2, events);
   } else if (source.effectId === "harmony_buff") {
@@ -1631,6 +1657,9 @@ function runEffect(
   } else if (source.effectId === "copy_passive") {
     buffMinion(source, 1, 1);
     events.push(effectEvent(`${label} copies a fragment of power.`, source));
+  } else if (source.effectId === "tempest_guardian_growth") {
+    buffMinion(source, 2, 1);
+    events.push(effectEvent(`${label} grows +2/+1.`, source));
   } else if (source.effectId === "self_buff_2") {
     buffMinion(source, 2, 2);
     events.push(effectEvent(`${label} grows +2/+2.`, source));
@@ -1669,6 +1698,26 @@ function runEffect(
       destroyInstance(state, picked.owner, picked.instanceId, events, `${source.name} destroys ${picked.name}`);
       buffMinion(source, gainedAtk, gainedHp);
       events.push(effectEvent(`${label} gains ${gainedAtk}/${gainedHp} from ${picked.name}.`, source));
+    }
+  } else if (source.effectId === "godrick_graft") {
+    if (picked) {
+      const gainedAtk = picked.atk;
+      const gainedHp = picked.hp;
+      const gainedEffects = copyPersistentMinionTraits(source, picked);
+      destroyInstance(state, picked.owner, picked.instanceId, events, `${source.name} kills ${picked.name} for grafting`);
+      buffMinion(source, gainedAtk, gainedHp);
+      source.effectId = "none";
+      source.effectTiming = source.gainedEffects.some((effect) => effect.timing === "ongoing")
+        ? "ongoing"
+        : source.gainedEffects.some((effect) => effect.timing === "passive")
+          ? "passive"
+          : "none";
+      events.push(
+        effectEvent(
+          `${label} gains ${gainedAtk}/${gainedHp}${gainedEffects ? " and the minion's effects" : ""}.`,
+          source,
+        ),
+      );
     }
   } else if (source.effectId === "destroy_all_small") {
     for (let slot = 0; slot < boardSize; slot += 1) {
@@ -2275,6 +2324,33 @@ function copyMinionEffects(source: MinionInstance, target: MinionInstance, event
   events.push(effectEvent(`${source.name} becomes a copy of the chosen minion's effects without copying its stats.`, source));
 }
 
+/** Transfer the persistent parts of a sacrificed minion without replaying its Battlecry. */
+function copyPersistentMinionTraits(source: MinionInstance, target: MinionInstance): number {
+  if (hasKeyword(target, "Taunt") && !hasKeyword(source, "Taunt")) source.keywords.push("Taunt");
+  if (target.divineShield || hasKeyword(target, "Divine Shield")) {
+    source.divineShield = true;
+    if (!hasKeyword(source, "Divine Shield")) source.keywords.push("Divine Shield");
+  }
+
+  const effects: Array<{ effectId: EffectId; timing: "passive" | "ongoing"; text: string }> = [];
+  if (
+    target.effectId !== "none" &&
+    (target.effectTiming === "passive" || target.effectTiming === "ongoing" || target.effectTiming === "onPlayAndOngoing")
+  ) {
+    const timing: "passive" | "ongoing" = target.effectTiming === "onPlayAndOngoing" ? "ongoing" : target.effectTiming;
+    effects.push({ effectId: target.effectId, timing, text: target.effect });
+  }
+  effects.push(...target.gainedEffects);
+
+  let copied = 0;
+  for (const effect of effects) {
+    if (effect.effectId === "none" || hasEffect(source, effect.effectId)) continue;
+    source.gainedEffects.push({ effectId: effect.effectId, timing: effect.timing, text: effect.text });
+    copied += 1;
+  }
+  return copied;
+}
+
 function returnMinionsToHand(state: GameState, playerId: PlayerId, minions: MinionInstance[], events: GameEvent[]): void {
   const entries = minions
     .map((minion) => ({ minion, slot: slotOf(state, minion) }))
@@ -2448,7 +2524,15 @@ function refreshPassiveAuras(state: GameState): void {
       target.auraBonuses = [];
     }
     for (const source of board) {
-      if (!source || source.silenced || !hasEffect(source, "glados_adjacent_tech")) continue;
+      if (!source || source.silenced) continue;
+      if (hasEffect(source, "taunt_aura")) {
+        for (const target of board) {
+          if (!target || hasKeyword(target, "Taunt")) continue;
+          target.keywords.push("Taunt");
+          target.auraBonuses!.push({ sourceId: source.instanceId, atk: 0, hp: 0, keywords: ["Taunt"] });
+        }
+      }
+      if (!hasEffect(source, "glados_adjacent_tech")) continue;
       const sourceSlot = board.findIndex((entry) => entry?.instanceId === source.instanceId);
       for (const targetSlot of [sourceSlot - 1, sourceSlot + 1]) {
         const target = board[targetSlot];
@@ -2799,13 +2883,35 @@ function processEffectQueue(state: GameState, library: CardLibrary, events: Game
   }
 }
 
-function damageAllEnemies(state: GameState, source: MinionInstance, amount: number, events: GameEvent[]): void {
+function damageAllEnemies(
+  state: GameState,
+  source: MinionInstance,
+  amount: number,
+  events: GameEvent[],
+  godzillaPath: ReadonlySet<string> = new Set(),
+): void {
   const enemyId = opponent(source.owner);
   for (let slotIndex = 0; slotIndex < boardSize; slotIndex += 1) {
     if (state.players[enemyId].board[slotIndex]) {
-      dealMinionDamage(state, enemyId, slotIndex, amount, source, events, true);
+      // Each target is its own branch of a reactive chain. Copying the path
+      // prevents Godzillas from ping-ponging forever without suppressing a
+      // second, separate hit later in the same area effect.
+      dealMinionDamage(state, enemyId, slotIndex, amount, source, events, true, new Set(godzillaPath));
     }
   }
+}
+
+function damageAllEnemiesAndCore(
+  state: GameState,
+  source: MinionInstance,
+  amount: number,
+  events: GameEvent[],
+  godzillaPath: ReadonlySet<string>,
+): void {
+  damageAllEnemies(state, source, amount, events, godzillaPath);
+  const enemyId = opponent(source.owner);
+  state.players[enemyId].health -= amount;
+  events.push(effectEvent(`${source.name} deals ${amount} damage to all enemies and the enemy core.`, source));
 }
 
 function dealMinionDamage(
@@ -2816,6 +2922,7 @@ function dealMinionDamage(
   source: MinionInstance,
   events: GameEvent[],
   effectDamage = false,
+  godzillaPath: ReadonlySet<string> = new Set(),
 ): void {
   const target = state.players[owner].board[slotIndex];
   if (!target || amount <= 0) return;
@@ -2830,6 +2937,16 @@ function dealMinionDamage(
   }
   target.hp -= amount;
   events.push({ kind: "damage", text: `${target.name} takes ${amount} damage.`, player: owner, instanceId: target.instanceId });
+  if (
+    target.hp > 0 &&
+    hasEffect(target, "godzilla_damage_burst") &&
+    !target.silenced &&
+    !godzillaPath.has(target.instanceId)
+  ) {
+    const nextPath = new Set(godzillaPath);
+    nextPath.add(target.instanceId);
+    damageAllEnemiesAndCore(state, target, 2, events, nextPath);
+  }
   if (target.hp > 0 && hasEffect(target, "gordon_survive_damage") && !target.silenced) {
     buffMinion(target, 2, 2);
     events.push(effectEvent(`${target.name} survives the hit and grows +2/+2.`, target));
@@ -2890,8 +3007,16 @@ function canDamage(
     events.push(effectEvent(`${target.name} is immune to ${source.camp} damage.`, target));
     return false;
   }
-  if (hasEffect(target, "elden_beast_magic_immune") && source.camp === "Magic" && !target.silenced) {
-    events.push(effectEvent(`${target.name} is immune to Magic.`, target));
+  if (hasEffect(target, "immune_magic_minions") && source.camp === "Magic" && !target.silenced) {
+    events.push(effectEvent(`${target.name} is immune to Magic minions.`, target));
+    return false;
+  }
+  if (hasEffect(target, "immune_tech_minions") && source.camp === "Tech" && !target.silenced) {
+    events.push(effectEvent(`${target.name} is immune to Tech minions.`, target));
+    return false;
+  }
+  if (hasEffect(target, "immune_nature_minions") && source.camp === "Nature" && !target.silenced) {
+    events.push(effectEvent(`${target.name} is immune to Nature minions.`, target));
     return false;
   }
   if (hasRelic(target, "philosophers_stone") && state.activePlayer === target.owner) {

@@ -264,16 +264,15 @@ describe("choice-driven cards", () => {
     expect(after.players[0].board[0]?.maxHp).toBe(before.maxHp + 1);
   });
 
-  it("V inherits John Wick's hand-pressure Battlecry", () => {
+  it("V steals the highest-cost card in the opponent's hand", () => {
     const state = mainState();
     state.players[1].hand = [cardId("Death Star"), cardId("Zoro")];
 
-    const asking = play(state, "V", 0);
-    expect(asking.phase).toBe("targeting");
-    expect(asking.pendingTarget?.kind).toBe("hand");
-    expect(asking.players[0].board[0]?.divineShield).toBe(false);
-    expect(asking.players[0].board[0]?.keywords).not.toContain("Divine Shield");
-    expect(asking.players[0].board[0]?.keywords).not.toContain("Taunt");
+    const after = play(state, "V", 0);
+    expect(after.phase).toBe("main");
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[0].hand).toContain(cardId("Death Star"));
+    expect(after.players[1].hand).toEqual([cardId("Zoro")]);
   });
 
   it("Joker chooses two cards, then discards one of them", () => {
