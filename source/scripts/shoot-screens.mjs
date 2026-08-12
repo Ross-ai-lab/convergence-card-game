@@ -47,17 +47,16 @@ await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(1400);
 await shoot("01-title");
 
-// --- the rules overlay
-await page.getByRole("button", { name: "How to play" }).click();
-await shoot("02-how-to-play");
-await page.keyboard.press("Escape");
-
-// --- settings
-await page.getByRole("button", { name: "Sound & settings" }).click();
-await shoot("03-settings");
-await page.keyboard.press("Escape");
-
 // --- a real board, against the bot, so minions actually arrive
+//
+// THE DUEL STARTS FIRST, before the overlay shots below, and that ordering is
+// load-bearing. "How to play" and "Sound & settings" are DUEL TOOLBAR buttons.
+// They exist in the DOM while the title screen is up, so Playwright resolves
+// them happily and then spends its whole timeout reporting `<div
+// class="title-screen"> intercepts pointer events` — an error that reads like a
+// z-index bug in the game and is really a script clicking a control that is not
+// on screen yet.
+//
 // Target the class, not the label. This control's accessible name is "Duel"
 // plus the selected difficulty, so the old `/Duel the/` matcher belonged to an
 // earlier title screen and had been silently timing out here — the same stale
@@ -65,6 +64,22 @@ await page.keyboard.press("Escape");
 await page.locator(".duel-trigger").first().click();
 await page.waitForTimeout(900);
 await shoot("04-board-opening");
+
+// --- the rules overlay
+await page.getByRole("button", { name: "How to play" }).click();
+await shoot("02-how-to-play");
+await page.keyboard.press("Escape");
+
+// --- settings
+// Match the VISIBLE text, not the tooltip. This button's markup is
+// `title="Sound and settings"` wrapping the text `⚙ Settings`, and a button's
+// accessible name comes from its text content — the title is only a fallback
+// for a button that has none. Matching the tooltip therefore resolves nothing
+// at all and burns the full timeout without ever naming the real cause.
+await page.getByRole("button", { name: /Settings/i }).click();
+await shoot("03-settings");
+await page.keyboard.press("Escape");
+await page.waitForTimeout(300);
 
 // Let the duel run itself for a while: the bot plays its side, and clicking end
 // turn drives ours. This is the only way to reach a POPULATED board, which is
@@ -382,9 +397,14 @@ await page.waitForTimeout(500);
 }
 
 // --- the hotseat curtain, which only exists between two human turns
-await page.getByRole("button", { name: "Menu" }).first().click();
-await page.waitForTimeout(500);
-await page.getByRole("button", { name: "Start a hotseat duel" }).click();
+// Reload to reach the title screen rather than navigating back through the UI.
+// There is no "Menu" button any more — returning to the title is now buried
+// inside the settings overlay — and a two-step click path through a menu that
+// keeps being redesigned is exactly what left this script broken. A reload has
+// no route to go stale.
+await page.goto(BASE, { waitUntil: "domcontentloaded" });
+await page.waitForTimeout(1400);
+await page.locator(".hotseat-trigger").first().click();
 await page.waitForTimeout(700);
 const end = page.getByRole("button", { name: /End Turn/i }).first();
 if (await end.count()) await end.click().catch(() => {});
