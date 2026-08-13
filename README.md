@@ -14,7 +14,9 @@ Convergence is a non-commercial browser card duel where 175 characters and force
 - **Veteran** — plays each move correctly but does not plan beyond it.
 - **Ascendant** — searches a full turn and answers likely plans.
 
-[Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/)
+[Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/play/)
+
+**Owner play location:** Play only through the public [GitHub Pages game URL](https://ross-ai-lab.github.io/convergence-card-game/play/). The local `play/` folder is a generated deployment artifact for building and publishing; it is not the owner's play location.
 
 No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **175 character cards plus 21 Ascension Relics** in one shared 196-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
@@ -104,7 +106,7 @@ The board communicates conditions visually: a wall means Taunt, a gold rim means
 - `source/data/relics.csv` is the relic authority.
 - `source/src/engine/` is the authority for game behaviour. React and CSS files under `source/src/` are the interface authority.
 - `source/src/textfit.ts` controls measured card-text fitting. The current effect-text upper cap is 64 design units; flavour text is capped at 32, but the real rendered size is chosen by measurement.
-- `play/` is the generated static game served to players. Build it from `source/`; do not hand-edit it.
+- `play/` is the generated static game copied into the repository for GitHub Pages. Build it from `source/`; do not hand-edit it. The owner plays only through the public `/play/` URL above, never from this local folder.
 - `docs/Convergence Browser Game Roadmap.html` is useful for design direction and browsing, but its embedded roster can lag behind the live CSV.
 - `materials/local-production/` contains optional rebuild tools and source libraries. It is not required to play the included build.
 - `counter/` is the small aggregate player-count service used by the public landing page.
