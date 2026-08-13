@@ -171,10 +171,11 @@ function handStep(count: number): number {
 const STRIKE_DELAY = 0.18;
 // The practice bot is Player Two, and it thinks fast enough to be invisible —
 // these pauses exist so a human can watch what it did, not because it is slow.
-// Slot auras are permanent and invisible otherwise, so the board wears them.
+// Slot auras are permanent, so the board wears both their label and colour.
 const AURA_LABEL: Record<SlotAuraId, string> = {
   random_attacks: "RANDOM",
   slot_silence: "SILENCED",
+  slot_grow_1: "+1/+1",
   slot_grow_2: "+2/+2",
   slot_protected: "SAFE",
   slot_stats_one: "1/1",
@@ -182,9 +183,19 @@ const AURA_LABEL: Record<SlotAuraId, string> = {
 const AURA_TEXT: Record<SlotAuraId, string> = {
   random_attacks: "a minion here can only attack at random",
   slot_silence: "a minion here is silenced",
+  slot_grow_1: "a minion here gains +1/+1 at the start of your turn",
   slot_grow_2: "a minion here gains +2/+2 at the start of your turn",
   slot_protected: "minions here cannot be targeted, silenced, or frozen; attacks can still hit them",
   slot_stats_one: "minions here are permanently set to 1/1",
+};
+/** Each permanent board-slot effect gets its own visible ring colour. */
+const AURA_COLOR: Record<SlotAuraId, string> = {
+  random_attacks: "#f0c767",
+  slot_silence: "#b47cff",
+  slot_grow_1: "#ff8a65",
+  slot_grow_2: "#35d6c2",
+  slot_protected: "#52b6ff",
+  slot_stats_one: "#ff5f6d",
 };
 
 const BOT_ID: PlayerId = 1;
@@ -1825,12 +1836,22 @@ function BoardRow({
             ? pendingTarget
             : null;
         const auras = game.players[owner].slotAuras.filter((aura) => aura.slot === slotIndex);
+        const auraColors = auras.map((aura) => AURA_COLOR[aura.auraId]);
+        const auraStyle = auraColors.length
+          ? ({
+              "--slot-aura-primary": auraColors[0],
+              "--slot-aura-rings": auraColors
+                .map((color, index) => `0 0 0 ${2 + index * 3}px ${color}`)
+                .join(", "),
+            } as CSSProperties)
+          : undefined;
         const canBeChosen =
           boardPrompt !== null &&
           boardPrompt.options.some((option) => option.owner === owner && option.slot === slotIndex);
         const classes = [
           "board-slot",
           minion ? "occupied" : "empty",
+          auras.length ? "has-slot-aura" : "",
           canPlace ? "placeable" : "",
           canTarget ? "targetable" : "",
           canAttack ? "ready" : "",
@@ -1859,6 +1880,7 @@ function BoardRow({
             type="button"
             key={slotIndex}
             className={classes}
+            style={auraStyle}
             data-slot={`${owner}-${slotIndex}`}
             onClick={() => onSlot(owner, slotIndex)}
             onPointerDown={(e) => onDragStart(e, slotIndex, Boolean(canAttack))}

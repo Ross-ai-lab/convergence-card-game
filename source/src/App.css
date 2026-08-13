@@ -3615,7 +3615,19 @@ button:disabled {
 }
 
 /* Slot auras: a permanent mark on the POSITION, so it has to be visible whether
-   or not anything is standing there. */
+   or not anything is standing there. The outer ring is the position's colour
+   code; the small chip above it keeps the exact effect readable. */
+.board-slot.has-slot-aura::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border: 2px solid var(--slot-aura-primary);
+  border-radius: 12px;
+  box-shadow: var(--slot-aura-rings);
+  pointer-events: none;
+}
+
 .slot-auras {
   position: absolute;
   top: 3px;
@@ -3650,10 +3662,28 @@ button:disabled {
   background: rgba(60, 30, 105, 0.9);
 }
 
+.slot-aura.slot_grow_1 {
+  color: #ffe0d5;
+  border-color: rgba(255, 138, 101, 0.9);
+  background: rgba(125, 48, 30, 0.9);
+}
+
 .slot-aura.slot_grow_2 {
   color: #c8f7ef;
   border-color: rgba(67, 205, 189, 0.85);
   background: rgba(10, 75, 68, 0.9);
+}
+
+.slot-aura.slot_protected {
+  color: #d7efff;
+  border-color: rgba(82, 182, 255, 0.9);
+  background: rgba(14, 70, 112, 0.9);
+}
+
+.slot-aura.slot_stats_one {
+  color: #ffe0e3;
+  border-color: rgba(255, 95, 109, 0.9);
+  background: rgba(120, 28, 42, 0.9);
 }
 
 /* The relic strapped to a minion, centered along the bottom so it does not

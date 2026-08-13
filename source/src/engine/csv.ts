@@ -50,6 +50,7 @@ const effectIds = new Set<EffectId>([
   "absorb_left_stats",
   "damaged_self_buff",
   "gain_relic",
+  "equip_random_relic",
   "copy_passive",
   "anti_disable_aura",
   "destroy_weakest",
@@ -171,6 +172,7 @@ const effectIds = new Set<EffectId>([
   "shifu_shield",
   // the hard cards
   "steal_relic",
+  "steal_hand_relic",
   "choose_relic",
   "destroy_relic",
   "kill_back",
@@ -197,6 +199,7 @@ const effectIds = new Set<EffectId>([
   // slot auras and forced-random attacks
   "slot_random_attacks",
   "slot_permanent_silence",
+  "slot_growth_1",
   "slot_growth",
   "confuse_enemies",
   "chaos_aura",
@@ -260,6 +263,7 @@ const effectIds = new Set<EffectId>([
   "ten_commandments_first_attack",
   "hashira_focus_attack",
   "freeze_and_silence_enemy",
+  "dumbledore_cleanse",
 ]);
 
 const relicIds = new Set<RelicId>([

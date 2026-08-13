@@ -211,6 +211,7 @@ export function applyAction(
   enforceSlotAuras(next, events);
   refreshPassiveAuras(next);
   enforceGlobalSilence(next, events);
+  enforceDumbledoreCleansing(next, events);
   sweepDeaths(next, events);
   checkGameOver(next, events);
   return {
@@ -767,15 +768,16 @@ function resolveUpkeep(state: GameState, playerId: PlayerId, library: CardLibrar
     }
   }
 
-  // Ultra Instinct Goku's blessing feeds whoever is standing in the marked slot.
+  // Permanent slot-growth blessings feed whoever is standing in the marked slot.
   for (const aura of player.slotAuras) {
-    if (aura.auraId !== "slot_grow_2") continue;
+    if (aura.auraId !== "slot_grow_1" && aura.auraId !== "slot_grow_2") continue;
     const minion = player.board[aura.slot];
     if (!minion) continue;
-    buffMinion(minion, 2, 2);
+    const amount = aura.auraId === "slot_grow_1" ? 1 : 2;
+    buffMinion(minion, amount, amount);
     events.push({
       kind: "effect",
-      text: `${minion.name} grows on ${aura.sourceName}'s blessing (+2/+2).`,
+      text: `${minion.name} grows on ${aura.sourceName}'s blessing (+${amount}/+${amount}).`,
       player: playerId,
       instanceId: minion.instanceId,
     });
@@ -1129,7 +1131,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   },
   protect_slot: { kind: "slot", side: "friendly", prompt: "Protect a friendly minion board slot" },
   tech_buff: { side: "friendly", prompt: "Upgrade a friendly Tech minion", filter: (m) => m.camp === "Tech", includeSelf: true },
-  heal_ally_full: { side: "friendly", prompt: "Fully heal an ally" },
+  heal_ally_full: { side: "friendly", prompt: "Fully heal a friendly minion", includeSelf: true },
   heal_good_ally_full: { side: "friendly", prompt: "Fully heal a Good ally", filter: (m) => m.alignment === "Good" },
   buff_good_ally_3: { side: "friendly", prompt: "Give a Good ally +2/+2", filter: (m) => m.alignment === "Good" },
   buff_magic_ally_3: { side: "friendly", prompt: "Give a Magic ally +3/+3", filter: (m) => m.camp === "Magic" },
@@ -1173,6 +1175,12 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   copy_minion_effects: { side: "any", prompt: "Choose another minion to become" },
   knov_pocket_room: { side: "friendly", prompt: "Choose a friendly minion for the pocket room", includeSelf: false },
   steal_relic: { side: "enemy", prompt: "Take an enemy minion's Ascension Relic", filter: (m) => m.relic !== null },
+  steal_hand_relic: {
+    kind: "hand",
+    side: "enemy",
+    prompt: "Choose an Ascension Relic in the enemy hand to steal",
+    handFilter: (card) => isRelicCard(card),
+  },
   destroy_relic: { side: "enemy", prompt: "Destroy an enemy minion's Ascension Relic", filter: (m) => m.relic !== null },
   mark_for_death: { side: "enemy", prompt: "Mark an enemy minion for death", filter: (m) => m.markedBy === null },
   mind_control_2: { side: "enemy", prompt: "Seize an enemy minion with 2 or less HP", filter: (m) => m.hp <= 2 },
@@ -1232,6 +1240,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   // --- slot auras: pick a POSITION, empty or not; the mark is permanent ---
   slot_random_attacks: { kind: "slot", side: "enemy", prompt: "Curse an enemy slot — minions there attack at random, forever" },
   slot_permanent_silence: { kind: "slot", side: "enemy", prompt: "Silence an enemy slot — minions there are silenced, forever" },
+  slot_growth_1: { kind: "slot", side: "friendly", prompt: "Bless one of your slots — minions there gain +1/+1 every turn" },
   slot_growth: { kind: "slot", side: "friendly", prompt: "Bless one of your slots — minions there gain +2/+2 every turn" },
   reveal_and_shuffle_chosen: {
     kind: "hand",
@@ -1732,6 +1741,8 @@ function runEffect(
     summonSins(state, source, events);
   } else if (source.effectId === "heroic_relics") {
     grantRandomRelicsToBoard(state, source, library, events);
+  } else if (source.effectId === "equip_random_relic") {
+    equipRandomRelic(state, source, library, events);
   } else if (source.effectId === "draw_card") {
     drawDirect(state, source.owner, 1, events);
     events.push(effectEvent(`${label} draws a card.`, source));
@@ -2214,7 +2225,7 @@ function runEffect(
     }
   } else if (source.effectId === "steal_random") {
     stealCard(state, source, enemy, (hand) => (hand.length ? rollInt(state, hand.length) : -1), events);
-  } else if (source.effectId === "steal_chosen") {
+  } else if (source.effectId === "steal_chosen" || source.effectId === "steal_hand_relic") {
     if (pickedHand) stealCard(state, source, enemy, () => pickedHand.index, events);
   } else if (source.effectId === "steal_costliest") {
     stealCard(state, source, enemy, (hand) => costliestIndex(hand, library), events);
@@ -2570,6 +2581,7 @@ function runEffect(
   } else if (
     source.effectId === "slot_random_attacks" ||
     source.effectId === "slot_permanent_silence" ||
+    source.effectId === "slot_growth_1" ||
     source.effectId === "slot_growth"
   ) {
     const auraId: SlotAuraId =
@@ -2577,7 +2589,9 @@ function runEffect(
         ? "random_attacks"
         : source.effectId === "slot_permanent_silence"
           ? "slot_silence"
-          : "slot_grow_2";
+          : source.effectId === "slot_growth_1"
+            ? "slot_grow_1"
+            : "slot_grow_2";
     if (pickedSlot) layAura(state, pickedSlot, auraId, source, events);
   } else if (source.effectId === "confuse_enemies") {
     // Sans. Their whole board swings blind through their next turn.
@@ -2817,6 +2831,17 @@ function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, libr
     granted += 1;
   }
   events.push(effectEvent(`${source.name} grants Ascension Relics to ${granted} friendly minion${granted === 1 ? "" : "s"}.`, source));
+}
+
+function equipRandomRelic(state: GameState, source: MinionInstance, library: CardLibrary, events: GameEvent[]): void {
+  const available = relicsInDeck(state, library);
+  if (available.length === 0) {
+    events.push(effectEvent(`${source.name} finds no Ascension Relic.`, source));
+    return;
+  }
+  const relic = available[rollInt(state, available.length)];
+  if (!relic || !removeCardFromDrawPile(state, relic.id)) return;
+  equipRelic(state, source, createRelicInstance(relic), events);
 }
 
 function resolvePocketRooms(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
@@ -3064,6 +3089,26 @@ function enforceGlobalSilence(state: GameState, events: GameEvent[]): void {
       if (!minion || minion.silenced) continue;
       minion.silenced = true;
       events.push(effectEvent(`${minion.name} is silenced by Grand Master Yoda.`, minion));
+    }
+  }
+}
+
+/** Dumbledore's passive both blocks new disables and removes existing ones. */
+function enforceDumbledoreCleansing(state: GameState, events: GameEvent[]): void {
+  for (const owner of [0, 1] as PlayerId[]) {
+    const board = state.players[owner].board;
+    const protector = board.find((minion) => minion && hasEffect(minion, "dumbledore_cleanse") && !minion.silenced);
+    if (!protector) continue;
+    for (const minion of board) {
+      if (!minion) continue;
+      const wasSilenced = minion.silenced;
+      const wasFrozen = minion.frozen;
+      if (!wasSilenced && !wasFrozen && !minion.thawPending) continue;
+      minion.silenced = false;
+      minion.frozen = false;
+      minion.thawPending = false;
+      if (wasFrozen) minion.attacksUsed = 0;
+      events.push(effectEvent(`${protector.name} cleanses ${minion.name} of Silence and Freeze.`, protector));
     }
   }
 }
@@ -3842,6 +3887,10 @@ function canDisable(state: GameState, sourceOwner: PlayerId, target: MinionInsta
   if (target.protectedSlot || isSlotProtected(state, target)) return false;
   if (isUntargetable(state, target)) return false;
   if (hasRelic(target, "immune_disable")) return false; // Anti-magic Mask
+  const dumbledore = state.players[target.owner].board.some(
+    (minion) => minion && hasEffect(minion, "dumbledore_cleanse") && !minion.silenced,
+  );
+  if (dumbledore) return false;
   const friendlyAura = state.players[target.owner].board.some(
     (minion) => minion && hasEffect(minion, "anti_disable_aura") && !minion.silenced,
   );

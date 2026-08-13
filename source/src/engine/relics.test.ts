@@ -60,6 +60,20 @@ function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
 const toMyNextTurn = (state: GameState): GameState => endTurnAndDraw(endTurnAndDraw(state, 0), 1);
 
 describe("relic cards in the shared deck", () => {
+  it("Gilgamesh equips one random Ascension Relic on arrival", () => {
+    const state = mainState("gilgamesh-equip");
+    const available = new Set(state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)));
+    const after = playCardFor(state, 0, "Gilgamesh");
+    const equipped = after.players[0].board[0]?.relic;
+
+    expect(after.players[0].board[0]).toMatchObject({ name: "Gilgamesh", baseAtk: 5, baseHp: 5 });
+    expect(equipped).not.toBeNull();
+    expect(available.has(equipped?.id ?? "")).toBe(true);
+    expect(after.players[0].hand).not.toContain(equipped?.id);
+    expect(after.deck).not.toContain(equipped?.id);
+    expect(after.bottomDeck).not.toContain(equipped?.id);
+  });
+
   it("puts every relic card in the shared deck", () => {
     const state = mainState();
     const relicIds = relics.map((relic) => relic.id);
@@ -68,29 +82,14 @@ describe("relic cards in the shared deck", () => {
     expect(mainState("other-seed").deck).not.toEqual(state.deck);
   });
 
-  it("hands a gained relic to its finder without auto-equipping it", () => {
-    const state = mainState();
-    state.players[0].board[0] = makeMinion("Gilgamesh", 0); // ongoing: gain an Ascension Relic
-    const available = new Set(state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)));
+  it("keeps Gilgamesh's random relic equipped through later turns", () => {
+    const state = mainState("gilgamesh-stays-equipped");
+    const after = playCardFor(state, 0, "Gilgamesh");
+    const equippedId = after.players[0].board[0]?.relic?.id;
+    expect(equippedId).toBeTruthy();
 
-    const after = toMyNextTurn(state);
-    const gained = after.players[0].hand.find((cardId) => available.has(cardId));
-    expect(gained).toBeTruthy();
-    expect(after.players[0].board[0]?.relic).toBeNull();
-    expect(after.deck).not.toContain(gained);
-  });
-
-  it("never auto-equips a second gained relic onto another ally", () => {
-    const state = mainState();
-    state.players[0].board[0] = makeMinion("Gilgamesh", 0, {
-      relic: relicByName("Elder wand"),
-    });
-    state.players[0].board[1] = makeMinion("Mob Psycho", 0);
-
-    const after = toMyNextTurn(state);
-    expect(after.players[0].board[0]?.relic?.name).toBe("Elder wand");
-    expect(after.players[0].board[1]?.relic).toBeNull();
-    expect(after.players[0].hand.some((cardId) => relics.some((relic) => relic.id === cardId))).toBe(true);
+    const later = toMyNextTurn(after);
+    expect(later.players[0].board[0]?.relic?.id).toBe(equippedId);
   });
 });
 

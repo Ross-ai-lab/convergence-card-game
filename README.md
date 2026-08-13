@@ -154,7 +154,7 @@ The rules:
 
 ### Any card or balance change ships to the live site in the same session
 
-**A stat, effect, keyword, cost or wording change is not finished until the published copy carries it.** Run `npm run publish:pages`, then commit and push the generated `play/` copy, so the change is live at <https://ross-ai-lab.github.io/convergence-card-game/play/> where the owner actually plays. Do this without being asked, every time, as the last step of the change.
+**A stat, effect, keyword, cost or wording change is not finished until the published copy carries it.** Run `npm run publish:pages`, then commit and push the generated `play/` copy to the GitHub repository, so the change is live at <https://ross-ai-lab.github.io/convergence-card-game/play/> where the owner actually plays. This applies to every balance pass as well: update both the local `play/` copy and the GitHub repository in the same session. Do this without being asked, every time, as the last step of the change.
 
 The reason is that the owner never runs this project. He plays the published URL and nothing else, so a change that exists only in `source/` has not reached the only person it was made for. Worse, it reads as done in every report and every test run: the suite passes, the data validates, the card is correct in the CSV, and the game he opens is unchanged. Two sessions in a row left card changes sitting unpublished on exactly that reasoning.
 
@@ -203,6 +203,7 @@ Printed timing must match play. For every target or choice, specify whether it s
 - Keep the engine deterministic. Randomness comes from game state and its seeded RNG, never `Math.random()` in the engine.
 - Taunt is enforced through legal targets. Divine Shield is a breakable state. Invulnerable prevents damage. These are gameplay rules with visible card states, not text-only decoration.
 - Slot auras and protected slots belong to the board position, not the minion occupying it. Replacement and movement must preserve the intended slot rule.
+- Every permanent effect that chooses a board slot must recolour that slot with a unique effect colour. Keep the small effect label above the slot, and keep both markers when a slot has multiple permanent effects.
 - When the saved minion shape changes, bump `SAVE_VERSION` and extend save validation. Otherwise old saves can restore incomplete objects and leave the game blank.
 - Relics are equipment instances: one per minion, destroyed with their bearer, and moved at most once per turn. Moving a relic must not re-trigger one-shot equip logic.
 - The bot evaluates legal actions on a throwaway state. A new effect usually needs no separate bot branch, but bot valuation changes affect balance measurements and need a fresh balance run.

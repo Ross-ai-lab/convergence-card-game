@@ -14,7 +14,7 @@ describe("card CSV data", () => {
     expect(keywords.has("Divine Shield")).toBe(true);
     expect(keywords.has("Taunt")).toBe(true);
     expect(effectIds.has("kill_random_enemy")).toBe(true);
-    expect(effectIds.has("gain_relic")).toBe(true);
+    expect(effectIds.has("equip_random_relic")).toBe(true);
     expect(effectIds.has("freeze_or_kill")).toBe(true);
   });
 
@@ -35,9 +35,13 @@ describe("card CSV data", () => {
     expect(changed.get("Gandalf the White")?.keywords).toContain("Divine Shield");
     expect(changed.get("Gandalf the White")?.effect).toBe("Divine Shield. Battlecry: Give all friendly Good minions Divine Shield.");
     expect(changed.get("Kaido")?.effect).toBe("Battlecry: Destroy an enemy Taunt minion.");
-    expect(changed.get("Rennala Queen of the Full Moon")?.effect).toBe(
-      "Ongoing: Transform a random enemy minion into a 1/1 Lunar Slime until your next turn.",
-    );
+    expect(changed.get("Rennala Queen of the Full Moon")).toMatchObject({
+      atk: 2,
+      hp: 4,
+      effectId: "heal_all_friendly_full",
+      effectTiming: "onPlay",
+      effect: "Battlecry: Restore all friendly minions to full health.",
+    });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
   });
 });

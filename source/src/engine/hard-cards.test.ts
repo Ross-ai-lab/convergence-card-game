@@ -128,6 +128,32 @@ describe("combat-reaction cards", () => {
   });
 });
 
+describe("hand-targeting cards", () => {
+  it("Davy Jones steals exactly one Ascension Relic from the enemy hand", () => {
+    const state = mainState();
+    const relicId = relics[0].id;
+    const secondRelicId = relics[1].id;
+    const otherCardId = cardId("Zoro");
+    state.players[1].hand = [relicId, secondRelicId, otherCardId];
+
+    const asking = play(state, "Davy Jones");
+    expect(asking.players[0].board[0]).toMatchObject({ name: "Davy Jones", atk: 1, hp: 1, keywords: [] });
+    expect(asking.pendingTarget?.kind).toBe("hand");
+    expect(asking.pendingTarget?.handOptions).toEqual([
+      { owner: 1, index: 0, cardId: relicId },
+      { owner: 1, index: 1, cardId: secondRelicId },
+    ]);
+
+    const stolen = applyAction(
+      asking,
+      { type: "choose_target", player: 0, choiceIndex: 0 },
+      library,
+    ).state;
+    expect(stolen.players[1].hand).toEqual([secondRelicId, otherCardId]);
+    expect(stolen.players[0].hand).toContain(relicId);
+  });
+});
+
 describe("control and theft cards", () => {
   it("Illumi takes a wounded enemy for himself", () => {
     const state = mainState();

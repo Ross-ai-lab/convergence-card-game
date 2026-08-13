@@ -41,25 +41,17 @@ function attack(state: GameState, attackerSlot: number, targetSlot: number) {
 }
 
 describe("full-roster effects", () => {
-  it("Rennala (lunar_slime): transforms a random enemy and restores it when her turn returns", () => {
+  it("Rennala (heal_all_friendly_full): restores every friendly minion on arrival", () => {
     const state = mainState();
-    state.rngSeed = 1;
-    state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 3, hp: 6, maxHp: 6 });
-    state.players[1].board[1] = makeMinion("John Wick", 1, { atk: 5, hp: 8, maxHp: 8 });
+    state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 1, maxHp: 6 });
+    state.players[0].board[1] = makeMinion("Zoro", 0, { atk: 5, hp: 2, maxHp: 5 });
+    state.players[1].board[0] = makeMinion("John Wick", 1, { hp: 1, maxHp: 6 });
 
     const afterPlay = playCardFor(state, 0, "Rennala Queen of the Full Moon", 2);
-    const slime = afterPlay.players[1].board[0]!;
-    expect(slime.name).toBe("Lunar Slime");
-    expect(slime.atk).toBe(1);
-    expect(slime.maxHp).toBe(1);
-    expect(slime.effectId).toBe("none");
-    expect(afterPlay.players[1].board[1]?.name).toBe("John Wick");
-
-    afterPlay.players[0].board[2]!.silenced = true;
-    const restored = toMyNextTurn(afterPlay).players[1].board[0];
-    expect(restored?.name).toBe("John Wick");
-    expect(restored?.atk).toBe(3);
-    expect(restored?.maxHp).toBe(6);
+    expect(afterPlay.players[0].board[0]).toMatchObject({ hp: 6, maxHp: 6 });
+    expect(afterPlay.players[0].board[1]).toMatchObject({ hp: 5, maxHp: 5 });
+    expect(afterPlay.players[0].board[2]).toMatchObject({ name: "Rennala Queen of the Full Moon", hp: 4, maxHp: 4 });
+    expect(afterPlay.players[1].board[0]).toMatchObject({ hp: 1, maxHp: 6 });
   });
 
   it("Hypnos (chain_attacker): makes an attacker skip its next turn", () => {

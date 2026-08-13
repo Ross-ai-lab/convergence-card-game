@@ -54,6 +54,20 @@ function chooseSlot(state: GameState, owner: PlayerId, slot: number): GameState 
 }
 
 describe("slot auras", () => {
+  it("Floor Guardians marks a friendly slot and grows whoever stands there by +1/+1", () => {
+    const state = mainState();
+    state.players[0].board[2] = dummy("Zoro", 0, { atk: 3, hp: 3, maxHp: 3 });
+
+    const asking = playCardFor(state, 0, "Floor Guardians", 0);
+    const marked = chooseSlot(asking, 0, 2);
+    expect(marked.players[0].slotAuras).toEqual([{ slot: 2, auraId: "slot_grow_1", sourceName: "Floor Guardians" }]);
+    expect(marked.players[0].board[2]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
+
+    const nextPlayer = endTurnAndDraw(marked, 0);
+    const grown = endTurnAndDraw(nextPlayer, 1);
+    expect(grown.players[0].board[2]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
+  });
+
   it("offers every position, empty ones included", () => {
     const state = mainState();
     const asking = playCardFor(state, 0, "Giorno - Gold Experience Requiem", 0);

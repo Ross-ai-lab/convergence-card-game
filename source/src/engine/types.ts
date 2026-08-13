@@ -39,6 +39,7 @@ export type EffectId =
   | "absorb_left_stats"
   | "damaged_self_buff"
   | "gain_relic"
+  | "equip_random_relic"
   | "copy_passive"
   | "anti_disable_aura"
   | "destroy_weakest"
@@ -161,6 +162,7 @@ export type EffectId =
   | "shifu_shield"
   // --- the hard cards, wired once relics, hand targeting and value choices existed ---
   | "steal_relic"
+  | "steal_hand_relic"
   | "choose_relic"
   | "destroy_relic"
   | "kill_back"
@@ -187,6 +189,7 @@ export type EffectId =
   // --- the last five: slot auras and forced-random attacks ---
   | "slot_random_attacks"
   | "slot_permanent_silence"
+  | "slot_growth_1"
   | "slot_growth"
   | "confuse_enemies"
   | "chaos_aura"
@@ -250,7 +253,8 @@ export type EffectId =
   | "kratos_chain_break"
   | "ten_commandments_first_attack"
   | "hashira_focus_attack"
-  | "freeze_and_silence_enemy";
+  | "freeze_and_silence_enemy"
+  | "dumbledore_cleanse";
 
 export interface CardDefinition {
   kind: "minion";
@@ -438,6 +442,7 @@ export type ChoiceKind = "board" | "slot" | "hand" | "option" | "boardOrCore";
 export type SlotAuraId =
   | "random_attacks" // Bill Cipher — a minion here can only attack at random
   | "slot_silence" // Giorno GER — a minion here is silenced the moment it lands
+  | "slot_grow_1" // Floor Guardians — a minion here gains +1/+1 each of your turns
   | "slot_grow_2" // Ultra Instinct Goku — a minion here gains +2/+2 each of your turns
   | "slot_protected" // Neo — minions here cannot be targeted, silenced, or frozen
   | "slot_stats_one"; // Doctor Manhattan — minions here are permanently 1/1
