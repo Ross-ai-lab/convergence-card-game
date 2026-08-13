@@ -48,6 +48,8 @@ export function spawnTestMinion(
     protectedSlot: false,
     delayedDestroySource: null,
     relic: null,
+    relic2: null,
+    suppressArrivalTheme: false,
     temporaryTransform: null,
     attackedBy: [],
     attackLocked: false,

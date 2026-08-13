@@ -64,6 +64,16 @@ describe("combat-reaction cards", () => {
     expect(after.players[0].board[0]).toBeNull(); // the killer went too
   });
 
+  it("Darkwing also kills a defender when it dies on retaliation", () => {
+    const state = mainState("darkwing-attacker");
+    state.players[0].board[0] = makeMinion("Darkwing", 0, { atk: 2, sleeping: false, hp: 1, maxHp: 1 });
+    state.players[1].board[0] = dummy("Zoro", 1, { atk: 1, hp: 10, maxHp: 10, sleeping: false });
+
+    const after = attack(state, 0, 0);
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[1].board[0]).toBeNull();
+  });
+
   it("APR ends the attacking minion's war for good", () => {
     const state = mainState();
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, hp: 99, maxHp: 99 });

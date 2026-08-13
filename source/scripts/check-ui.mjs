@@ -416,8 +416,12 @@ await newBoard({ place: false });
 // pointer has to actually travel with gaps between moves.
 await newBoard({ place: false });
 {
+  // The shared deck contains relics and targeted battlecries. Inject a vanilla
+  // minion so this pointer path always tests a card-to-empty-slot drag.
+  await page.evaluate(() => window.__debug?.giveCard("Modern Tank"));
+  await page.locator(".hand-card").last().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
   const before = await page.locator(".board-slot.occupied").count();
-  const card = page.locator(".hand-card").first();
+  const card = page.locator(".hand-card").last();
   // A slot only gains `.placeable` once a card is SELECTED, and nothing is
   // selected before a drag starts — so target a plain slot on our own half of
   // the board (the lower one) instead of waiting for a class that cannot exist.
@@ -566,6 +570,9 @@ async function targetingCheck(label, cardName, choiceSelector) {
   const choice = page.locator(choiceSelector);
   await choice.first().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
   const offered = await choice.count();
+  const choiceDescriptions = choiceSelector.includes("prompt-value")
+    ? await page.locator(".prompt-card-choice .cf-desc p").evaluateAll((nodes) => nodes.map((node) => node.textContent?.trim() ?? ""))
+    : [];
   if (offered) await choice.first().click().catch(() => {});
   await page.waitForTimeout(900);
 
@@ -574,6 +581,13 @@ async function targetingCheck(label, cardName, choiceSelector) {
     shown && offered > 0 && (await page.locator(".target-prompt").count()) === 0,
     `${given}: shown ${shown}, ${offered} choice(s), cleared`,
   );
+  if (choiceSelector.includes("prompt-value")) {
+    check(
+      "card choices show their full effect text",
+      choiceDescriptions.length === offered && choiceDescriptions.every((text) => text.length > 0),
+      `${choiceDescriptions.length}/${offered} choice cards include rules text`,
+    );
+  }
 }
 
 // Kiritsugu's freeze_enemy is an enemy-side board pick with no filter, so any

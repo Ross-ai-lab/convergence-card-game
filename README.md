@@ -42,8 +42,8 @@ Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an
 ### Timing words
 
 - **Battlecry** — happens once when the minion enters play.
-- **Ongoing** — happens at the start of its owner's turn while the minion is active.
-- **Passive** — continuously applies while the minion is active; it does not trigger a second time.
+- **Ongoing** — happens at the start of its owner's turn while the minion is active. An enemy's Ongoing effect therefore waits for that enemy's next turn; it does not fire on the opponent's intervening turn.
+- **Passive** — continuously applies while the minion is active; it does not trigger a second time. A Passive aura is transient: if its source leaves the board or is Silenced, its granted stats/keywords disappear with it.
 - **Battlecry/Ongoing** — the same effect happens on arrival and again at the start of its owner's turns.
 - **Deathrattle** — triggers after the minion dies, unless it was Silenced.
 
@@ -70,9 +70,11 @@ Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an
 
 ## Ascension Relics
 
-The current relic pool contains **21 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion that has no relic. Some character effects can also find or equip a relic directly.
+The current relic pool contains **21 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
 
-- A minion can carry one relic.
+- A minion can carry up to two relics. The first and second slots are independent;
+  a full bearer cannot accept a third, and moving one relic does not move or
+  re-trigger the other.
 - A relic dies with its bearer.
 - A relic that can be moved may be passed to another friendly minion by clicking its badge and then the recipient. This is limited to once per player's turn.
 - Some relics spend themselves when they arrive and cannot be passed.
@@ -135,7 +137,7 @@ To look at a specific card after changing its text, stats or art, run `node scri
 
 This file is the single maintained project guide and knowledge-base page. Do not create another Markdown file anywhere in the Convergence project; add or revise the appropriate section here instead. `npm run validate:docs` enforces that rule, and the normal data-validation, test, build, and full-balance entry points run it automatically. The two README files inside ignored, locally downloaded production packages are frozen third-party-style package notes, not new project documentation; do not add more beside them.
 
-For a deployable update, run `npm run publish:pages` from `source/`. That command validates the data, builds with `--base=./`, replaces the generated `source/dist/` contents in `play/`, and fails unless every published file exactly matches the generated build. After it succeeds, publish the generated copy. GitHub Pages serves `play/` from the repository's published static site.
+For a deployable update, run `npm run publish:pages` from `source/`. That command validates the data, builds with `--base=./`, replaces the generated `source/dist/` contents in `play/`, and fails unless every published file exactly matches the generated build. After it succeeds, publish the generated copy to the GitHub repository. GitHub Pages serves `play/` from the repository's published static site.
 
 ## Changing cards and effects
 
@@ -154,9 +156,11 @@ The rules:
 - **Every effect ends as a sentence**, with a full stop.
 - **Effect ids spell magnitudes as digits and must match the printed number.** `validate-cards.mjs` fails the build when a digit in the id is missing from the text, so renaming the id is part of changing a magnitude, not an afterthought.
 
-### Any card or balance change ships to the live site in the same session
+### Any card or balance change must be published to GitHub in the same session
 
-**A stat, effect, keyword, cost or wording change is not finished until the published copy carries it.** Run `npm run publish:pages`, then commit and push the generated `play/` copy to the GitHub repository, so the change is live at <https://ross-ai-lab.github.io/convergence-card-game/play/> where the owner actually plays. This applies to every balance pass as well: update both the local `play/` copy and the GitHub repository in the same session. Do this without being asked, every time, as the last step of the change.
+**Every balance change must be published to GitHub before it can be reported as done.** This includes any change to ATK, HP, mana cost, effect, keyword, timing, wording, card art, or the engine rule that makes a card behave differently. A source edit or a local build is not a finished change because the owner plays only the public site.
+
+For every card or balance change, run `npm run publish:pages` from `source/`, then commit and push the generated `play/` copy to the GitHub repository. Finally, verify that <https://ross-ai-lab.github.io/convergence-card-game/play/> serves the new bundle. This publication step is mandatory, applies to every balance pass, and must happen in the same session without waiting for a separate request.
 
 The reason is that the owner never runs this project. He plays the published URL and nothing else, so a change that exists only in `source/` has not reached the only person it was made for. Worse, it reads as done in every report and every test run: the suite passes, the data validates, the card is correct in the CSV, and the game he opens is unchanged. Two sessions in a row left card changes sitting unpublished on exactly that reasoning.
 
@@ -196,7 +200,7 @@ For a behaviour change, update the printed CSV text and the engine branch togeth
 
 When an effect is changed, replace the old effect and its old keywords or timing unless the request explicitly says to retain them. Do not silently append a new effect to an existing Taunt, Chained, Divine Shield, or other rule.
 
-Whenever a user asks to recommend effects for a minion or recommend minions for an effect, always use a table listing each minion’s name, mana, ATK/HP, old effect verbatim, and the new proposal (new effect or new minion).
+Whenever a user asks to recommend effects for a minion or recommend minions for an effect, always use one complete table for the whole answer. Every row must include the minion’s name, mana, ATK/HP, old effect verbatim, and every new proposal requested (for example, all 3 replacement effects). Do not put a separate old-only table before the recommendations, and do not move the new effects into prose where mana, stats, or the old text can go missing. If the user selects replacements, keep the selected new effect, replacement stats, and implementation status in that same all-cards table.
 
 Printed timing must match play. For every target or choice, specify whether it selects a minion, board slot, hand card, or random legal object. Test no-valid-target, cancellation, opponent-turn, and resolution behaviour where relevant.
 
@@ -204,10 +208,15 @@ Printed timing must match play. For every target or choice, specify whether it s
 
 - Keep the engine deterministic. Randomness comes from game state and its seeded RNG, never `Math.random()` in the engine.
 - Taunt is enforced through legal targets. Divine Shield is a breakable state. Invulnerable prevents damage. These are gameplay rules with visible card states, not text-only decoration.
+- Passive stat/keyword auras are derived from live sources through `auraBonuses`. Refresh removes each source's contribution before reapplying live auras, so a dead or Silenced source cannot leave a stale buff behind. Use this reversible path for effects such as Giant Tree and Chaos; do not use a permanent `buffMinion` call for a Passive aura.
+- Reborn is a return, not a fresh play: every reborn minion suppresses its
+  arrival card theme so an Ouken-style loop never repeats its music.
 - Slot auras and protected slots belong to the board position, not the minion occupying it. Replacement and movement must preserve the intended slot rule.
 - Every permanent effect that chooses a board slot must recolour that slot with a unique effect colour. Keep the small effect label above the slot, and keep both markers when a slot has multiple permanent effects.
 - When the saved minion shape changes, bump `SAVE_VERSION` and extend save validation. Otherwise old saves can restore incomplete objects and leave the game blank.
-- Relics are equipment instances: one per minion, destroyed with their bearer, and moved at most once per turn. Moving a relic must not re-trigger one-shot equip logic.
+- Relics are equipment instances: up to two per minion, destroyed with their
+  bearer, and moved at most once per turn. Moving a relic must not re-trigger
+  one-shot equip logic.
 - The bot evaluates legal actions on a throwaway state. A new effect usually needs no separate bot branch, but bot valuation changes affect balance measurements and need a fresh balance run.
 
 The engine’s central contract is `applyAction(state, action, library) -> { state, events, legalActions }`. An action outside the legal-action list is rejected without changing the state. Targeting pauses the game in a target-selection state so human and bot choices follow the same route and survive saving, cloning, and undo.
@@ -216,6 +225,8 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 
 Cards are DOM-rendered by `CardFace` and CSS, using a 750 × 1050 design coordinate system. Keep full card faces readable in hand and on the board. Text fitting must use `source/src/textfit.ts`, which measures the real fonts and finds the largest size that fits the box; the 64/32 caps are upper bounds, not a substitute for measurement.
 
+Choice prompts that offer cards or Ascension Relics must show the complete readable card face, including its rules text, cost, and stats where applicable. Names and artwork alone are never enough to make a choice.
+
 Conditions have distinct, composable visual channels:
 
 - Divine Shield uses a gold rim.
@@ -223,7 +234,8 @@ Conditions have distinct, composable visual channels:
 - Frozen uses ice treatment.
 - Chained draws chains only across artwork.
 - Sleeping shows drifting `z` glyphs.
-- Silenced greys and blanks rules text, with a red cross over the effect box.
+- Silenced greys and blanks the rules text (without placeholder words), with a
+  red cross over the effect box.
 - Protected and Adapted use teal or camp glow.
 - Attack Locked greys the ATK gem.
 - Marked uses a red pulse and remains visible until its delayed resolution.
@@ -303,6 +315,8 @@ When changing a rule, add or update a focused test and make the card text agree 
 - [Card statistics workbook](materials/Convergence%20card%20stat%20excel%20sheet.xlsx)
 - [Raw card artwork](https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/raw-card-art)
 - Skeleton token artwork: [Skeleton Warrior by Clint Bellanger](https://opengameart.org/content/skeleton-warrior-0), adapted from the CC BY 3.0 sprite sheet.
+- TIE Fighter token art: owner-supplied `source/public/card-art/raw/token-tie-fighter.png`.
+- Morgott token art: owner-supplied `source/public/card-art/raw/token-morgott.png`.
 - [Original audio-track collection](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z)
 - [Rendered card-production library](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Card-Production.7z)
 - [Project roadmap](docs/Convergence%20Browser%20Game%20Roadmap.html)

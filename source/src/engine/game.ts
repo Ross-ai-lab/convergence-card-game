@@ -203,7 +203,7 @@ export function applyAction(
   } else if (action.type === "use_coin") {
     spendCoin(next, action.player, events);
   } else if (action.type === "return_relic") {
-    returnRelicToHand(next, action.player, action.slotIndex, events);
+    returnRelicToHand(next, action.player, action.slotIndex, events, action.relicIndex);
   }
 
   // Slot marks are permanent and position-based, so they are re-applied after
@@ -266,9 +266,15 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
   // attach themselves automatically.
   if (player.relicMoves < RELIC_MOVES_PER_TURN) {
     player.board.forEach((bearer, slotIndex) => {
-      if (bearer && relicCanMove(bearer.relic) && player.hand.length < handLimit) {
-        actions.push({ type: "return_relic", player: player.id, slotIndex });
-      }
+      if (!bearer || player.hand.length >= handLimit) return;
+      [0, 1].forEach((relicIndex) => {
+        const relic = relicAt(bearer, relicIndex);
+        if (relic && relicCanMove(relic)) {
+          actions.push(relicIndex === 0
+            ? { type: "return_relic", player: player.id, slotIndex }
+            : { type: "return_relic", player: player.id, slotIndex, relicIndex });
+        }
+      });
     });
   }
 
@@ -279,7 +285,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
       if (isMinionCard(card) && !slot) {
         actions.push({ type: "play_card", player: player.id, handIndex, slotIndex });
       }
-      if (isRelicCard(card) && slot && !slot.relic) {
+      if (isRelicCard(card) && slot && hasFreeRelicSlot(slot)) {
         actions.push({ type: "play_relic", player: player.id, handIndex, slotIndex });
       }
     });
@@ -297,7 +303,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
   player.board.forEach((minion, attackerSlot) => {
     if (!minion || !canAttack(minion)) return;
     const ignoresGuards = hasRelic(minion, "ignore_defences");
-    const ignoresTaunt = hasEffect(minion, "charge_ignore_taunt") && !minion.silenced;
+    const ignoresTaunt = tauntBypassActive(minion);
     const forced = ignoresGuards ? [] : bodyguard ? [bodyguard] : ignoresTaunt ? [] : tauntTargets;
     const possibleTargets = forced.length
       ? forced
@@ -338,7 +344,7 @@ export function actionKey(action: GameAction): string {
   if (action.type === "attack_core") return `${action.type}:${action.player}:${action.attackerSlot}`;
   if (action.type === "choose_draw") return `${action.type}:${action.player}:${action.choiceIndex}`;
   if (action.type === "choose_target") return `${action.type}:${action.player}:${action.choiceIndex}`;
-  if (action.type === "return_relic") return `${action.type}:${action.player}:${action.slotIndex}`;
+  if (action.type === "return_relic") return `${action.type}:${action.player}:${action.slotIndex}:${action.relicIndex ?? 0}`;
   return `${action.type}:${action.player}`;
 }
 
@@ -489,7 +495,7 @@ function playRelic(
   const cardId = player.hand[handIndex];
   const relic = library[cardId];
   const bearer = player.board[slotIndex];
-  if (!isRelicCard(relic) || !bearer || bearer.relic) return;
+  if (!isRelicCard(relic) || !bearer || !hasFreeRelicSlot(bearer)) return;
   player.hand.splice(handIndex, 1);
   if (!state.cheatMode) player.mana -= effectiveCost(player, relic);
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
@@ -551,6 +557,8 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     protectedSlot: false,
     delayedDestroySource: null,
     relic: null,
+    relic2: null,
+    suppressArrivalTheme: false,
     temporaryTransform: null,
     attackedBy: [],
     attackLocked: false,
@@ -788,17 +796,19 @@ function resolveUpkeep(state: GameState, playerId: PlayerId, library: CardLibrar
   }
 
   for (const minion of player.board) {
-    if (!minion?.relic) continue;
-    // Devil Fruit feeds its bearer every turn.
-    if (minion.relic.relicId === "ongoing_grow_2") {
-      buffMinion(minion, 2, 2);
-      events.push(effectEvent(`${minion.name} grows on the Devil Fruit (+2/+2).`, minion));
-    }
-    // Queen's Cocoon opens.
-    if (minion.relic.relicId === "cocoon" && minion.relic.readyOnTurn !== undefined && minion.relic.readyOnTurn <= state.turnNumber) {
-      minion.relic.readyOnTurn = undefined;
-      buffMinion(minion, 3, 3);
-      events.push(effectEvent(`${minion.name} emerges from the Cocoon (+3/+3).`, minion));
+    if (!minion) continue;
+    for (const relic of attachedRelics(minion)) {
+      // Devil Fruit feeds its bearer every turn.
+      if (relic.relicId === "ongoing_grow_2") {
+        buffMinion(minion, 2, 1);
+        events.push(effectEvent(`${minion.name} grows on the Devil Fruit (+2/+1).`, minion));
+      }
+      // Queen's Cocoon opens.
+      if (relic.relicId === "cocoon" && relic.readyOnTurn !== undefined && relic.readyOnTurn <= state.turnNumber) {
+        relic.readyOnTurn = undefined;
+        buffMinion(minion, 3, 3);
+        events.push(effectEvent(`${minion.name} emerges from the Cocoon (+3/+3).`, minion));
+      }
     }
   }
 }
@@ -986,10 +996,6 @@ function attackMinion(
       defender.campImmunity = { camp: attacker.camp, untilTurn: state.turnNumber + 2 };
       events.push(effectEvent(`${defender.name} adapts to ${attacker.camp}.`, defender));
     }
-    // Darkwing: the blade that kills it takes its killer along.
-    if (hasEffect(defender, "kill_back") && !defenderAlive && attackerAlive && survivingAttacker) {
-      destroyInstance(state, playerId, survivingAttacker.instanceId, events, `${defender.name} drags ${survivingAttacker.name} down`);
-    }
     if (defenderAlive && hasEffect(defender, "on_survive_buff_1")) {
       buffMinion(defender, 1, 1);
       events.push(effectEvent(`${defender.name} survives combat and gains +1/+1.`, defender));
@@ -1137,7 +1143,8 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   protect_slot: { kind: "slot", side: "friendly", prompt: "Protect a friendly minion board slot" },
   tech_buff: { side: "friendly", prompt: "Upgrade a friendly Tech minion", filter: (m) => m.camp === "Tech", includeSelf: true },
   heal_ally_full: { side: "friendly", prompt: "Fully heal a friendly minion", includeSelf: true },
-  bounce_friendly: { side: "friendly", prompt: "Return a friendly minion to your hand", includeSelf: true },
+  // Cecil may return an ally, but never himself.
+  bounce_friendly: { side: "friendly", prompt: "Return another friendly minion to your hand", includeSelf: false },
   rebirth_friendly_dead: {
     kind: "option",
     side: "friendly",
@@ -1193,12 +1200,12 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   // --- the hard cards ---
   copy_minion_effects: { side: "any", prompt: "Choose another minion to become" },
   knov_pocket_room: { side: "friendly", prompt: "Choose a friendly minion for the pocket room", includeSelf: false },
-  steal_relic: { side: "enemy", prompt: "Take an enemy minion's Ascension Relic", filter: (m) => m.relic !== null },
+  steal_relic: { side: "enemy", prompt: "Take an enemy minion's Ascension Relic", filter: (m) => hasAnyRelic(m) },
   steal_and_equip_relic: {
     side: "enemy",
     prompt: "Take an enemy minion's Ascension Relic",
-    filter: (m) => m.relic !== null,
-    enabled: (_state, source) => source.relic === null,
+    filter: (m) => hasAnyRelic(m),
+    enabled: (_state, source) => hasFreeRelicSlot(source),
   },
   steal_hand_relic: {
     kind: "hand",
@@ -1206,7 +1213,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
     prompt: "Choose an Ascension Relic in the enemy hand to steal",
     handFilter: (card) => isRelicCard(card),
   },
-  destroy_relic: { side: "enemy", prompt: "Destroy an enemy minion's Ascension Relic", filter: (m) => m.relic !== null },
+  destroy_relic: { side: "enemy", prompt: "Destroy an enemy minion's Ascension Relic", filter: (m) => hasAnyRelic(m) },
   mark_for_death: { side: "enemy", prompt: "Mark an enemy minion for death", filter: (m) => m.markedBy === null },
   mind_control_2: { side: "enemy", prompt: "Seize an enemy minion with 2 or less HP", filter: (m) => m.hp <= 2 },
   mind_control_4_delayed: {
@@ -1307,7 +1314,7 @@ function attackTargetable(state: GameState, minion: MinionInstance): boolean {
 }
 
 function isUntargetable(state: GameState, minion: MinionInstance): boolean {
-  if (minion.relic?.relicId === "untargetable") return true;
+  if (hasRelic(minion, "untargetable")) return true;
   if (minion.untargetableUntilTurn !== null && minion.untargetableUntilTurn !== undefined && minion.untargetableUntilTurn > state.turnNumber) return true;
   if (minion.protectedByMeleoron) {
     return state.players[minion.owner].board.some(
@@ -1463,10 +1470,7 @@ function replaceWithRandomSameCost(state: GameState, target: MinionInstance, lib
   if (slot < 0) return;
   const owner = target.owner;
   state.players[owner].board[slot] = null;
-  if (target.relic) {
-    state.discard.push(target.relic.id);
-    target.relic = null;
-  }
+  discardAttachedRelics(state, target);
   state.bottomDeck.push(target.cardId);
   const candidates = [...state.deck, ...state.bottomDeck].filter((cardId) => {
     const card = library[cardId];
@@ -1679,6 +1683,7 @@ function runEffect(
       const discardIndex = state.discard.indexOf(deadId);
       if (discardIndex >= 0) state.discard.splice(discardIndex, 1);
       const reborn = createMinion(card, source.owner, state);
+      reborn.suppressArrivalTheme = true;
       player.board[slot] = reborn;
       events.push(effectEvent(`${label} Rebirths ${reborn.name}.`, source));
     }
@@ -1843,6 +1848,8 @@ function runEffect(
     summonSkeletons(state, source, events);
   } else if (source.effectId === "summon_sins") {
     summonSins(state, source, events);
+  } else if (source.effectId === "star_destroyer_tie_fighters") {
+    summonTieFighters(state, source, events);
   } else if (source.effectId === "heroic_relics") {
     grantRandomRelicsToBoard(state, source, library, events);
   } else if (source.effectId === "equip_random_relic") {
@@ -2254,19 +2261,9 @@ function runEffect(
   } else if (source.effectId === "buff_all_magic_2_1") {
     buffAllAllies(player, source, (minion) => minion.camp === "Magic", 2, 1, false);
     events.push(effectEvent(`${label} empowers Magic allies.`, source));
-  } else if (source.effectId === "buff_all_nature_2_1") {
-    buffAllAllies(player, source, (minion) => minion.camp === "Nature", 2, 1, false);
-    events.push(effectEvent(`${label} empowers Nature allies.`, source));
   } else if (source.effectId === "buff_all_tech_2_1") {
     buffAllAllies(player, source, (minion) => minion.camp === "Tech", 2, 1, false);
     events.push(effectEvent(`${label} empowers Tech allies.`, source));
-  } else if (source.effectId === "buff_all_friendly_3_neg2") {
-    // +3/-2, down from +3/-1 (pass 3) and +4/-1 before that: board-wide ATK
-    // every turn measured 64.5% against a 51.8% bracket. The ATK is the card;
-    // the HP cost is what makes it a bargain, so the cost is what goes up.
-    for (const minion of player.board) if (minion) buffMinion(minion, 3, -2);
-    sweepDeaths(state, events);
-    events.push(effectEvent(`${label} gives power at a cost.`, source));
   } else if (source.effectId === "evil_count_buff") {
     const count = friendlyOthers(player, source).filter((minion) => minion.alignment === "Evil").length;
     if (count > 0) {
@@ -2489,8 +2486,8 @@ function runEffect(
     if (coinFlip(state)) {
       destroyInstance(state, source.owner, source.instanceId, events, `${label} loses the coin flip`);
     } else {
-      buffMinion(source, 3, 3);
-      events.push(effectEvent(`${label} wins the coin flip for +3/+3.`, source));
+      buffMinion(source, 2, 1);
+      events.push(effectEvent(`${label} wins the coin flip for +2/+1.`, source));
     }
   } else if (source.effectId === "bounce_enemy") {
     const target = picked;
@@ -2507,10 +2504,7 @@ function runEffect(
     const slot = slotOf(state, target);
     if (target && slot >= 0) {
       player.board[slot] = null;
-      if (target.relic) {
-        state.discard.push(target.relic.id);
-        target.relic = null;
-      }
+      discardAttachedRelics(state, target);
       putCardInHand(state, player.id, target.cardId, events, target.instanceId);
       events.push(effectEvent(`${label} returns ${target.name} to hand.`, source));
     }
@@ -2581,23 +2575,29 @@ function runEffect(
     // Ten Commandments takes the attached relic as a card. It never equips the
     // stolen card automatically; the controller must spend mana and choose a
     // bearer on a later action.
-    if (picked?.relic) {
-      const stolen = picked.relic;
-      unequipRelic(picked);
+    if (picked && hasAnyRelic(picked)) {
+      const relicIndex = firstRelicIndex(picked);
+      const stolen = relicAt(picked, relicIndex);
+      if (!stolen) return false;
+      unequipRelic(picked, relicIndex);
       events.push(effectEvent(`${label} tears ${stolen.name} from ${picked.name}.`, source));
       putCardInHand(state, source.owner, stolen.id, events);
     }
   } else if (source.effectId === "steal_and_equip_relic") {
-    if (picked?.relic && !source.relic) {
-      const stolen = picked.relic;
-      unequipRelic(picked);
-      source.relic = stolen;
+    if (picked && hasAnyRelic(picked) && hasFreeRelicSlot(source)) {
+      const relicIndex = firstRelicIndex(picked);
+      const stolen = relicAt(picked, relicIndex);
+      if (!stolen) return false;
+      unequipRelic(picked, relicIndex);
+      equipRelic(state, source, stolen, events);
       events.push(effectEvent(`${label} takes ${stolen.name} from ${picked.name} and equips it.`, source));
     }
   } else if (source.effectId === "destroy_relic") {
-    if (picked?.relic) {
-      const lost = picked.relic;
-      unequipRelic(picked);
+    if (picked && hasAnyRelic(picked)) {
+      const relicIndex = firstRelicIndex(picked);
+      const lost = relicAt(picked, relicIndex);
+      if (!lost) return false;
+      unequipRelic(picked, relicIndex);
       state.discard.push(lost.id);
       events.push(effectEvent(`${label} destroys ${picked.name}'s ${lost.name}.`, source));
     }
@@ -2937,9 +2937,40 @@ function summonSins(state: GameState, source: MinionInstance, events: GameEvent[
   }
 }
 
+function summonTieFighters(state: GameState, source: MinionInstance, events: GameEvent[]): void {
+  const tieFighter: CardDefinition = {
+    kind: "minion",
+    id: "token:tie-fighter",
+    name: "TIE Fighter",
+    cost: 1,
+    atk: 1,
+    hp: 1,
+    rarity: "Black",
+    camp: "Tech",
+    alignment: "Evil",
+    keywords: ["Charge"],
+    effectId: "none",
+    effectTiming: "none",
+    effect: "Charge.",
+    flavor: "Twin ion engines scream through the void.",
+    origin: "Star Wars",
+    art: "/card-art/raw/token-tie-fighter.png",
+  };
+  const player = state.players[source.owner];
+  let summoned = 0;
+  for (let slot = 0; slot < boardSize; slot += 1) {
+    if (player.board[slot]) continue;
+    player.board[slot] = createMinion(tieFighter, source.owner, state);
+    summoned += 1;
+  }
+  if (summoned > 0) {
+    events.push(effectEvent(`${source.name} deploys ${summoned} 1/1 TIE Fighter${summoned === 1 ? "" : "s"} with Charge.`, source));
+  }
+}
+
 function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, library: CardLibrary, events: GameEvent[]): void {
   const bearers = state.players[source.owner].board.filter(
-    (minion): minion is MinionInstance => Boolean(minion && !minion.relic),
+    (minion): minion is MinionInstance => Boolean(minion && hasFreeRelicSlot(minion)),
   );
   const available = relicsInDeck(state, library).map((relic) => relic.id);
   let granted = 0;
@@ -3158,6 +3189,18 @@ function refreshPassiveAuras(state: GameState): void {
           }
         }
       }
+      if (hasEffect(source, "buff_all_nature_2_1")) {
+        // Giant Tree is an aura, not a bank of permanent start-of-turn buffs.
+        // Its Nature allies therefore lose the contribution as soon as the
+        // Tree leaves play or is silenced.
+        for (const target of board) {
+          if (!target || target.instanceId === source.instanceId || target.camp !== "Nature") continue;
+          target.atk += 2;
+          target.maxHp += 1;
+          target.hp += 1;
+          target.auraBonuses!.push({ sourceId: source.instanceId, atk: 2, hp: 1, keywords: [] });
+        }
+      }
       if (!hasEffect(source, "glados_adjacent_tech")) continue;
       const sourceSlot = board.findIndex((entry) => entry?.instanceId === source.instanceId);
       for (const targetSlot of [sourceSlot - 1, sourceSlot + 1]) {
@@ -3171,18 +3214,58 @@ function refreshPassiveAuras(state: GameState): void {
       }
     }
   }
+  const battleships = ([0, 1] as PlayerId[]).flatMap((owner) =>
+    state.players[owner].board.filter(
+      (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "battleship_tech_aura")),
+    ),
+  );
+  for (const source of battleships) {
+    for (const targetBoard of state.players.map((player) => player.board)) {
+      for (const target of targetBoard) {
+        if (!target || target.camp !== "Tech") continue;
+        target.atk += 1;
+        target.maxHp += 1;
+        target.hp += 1;
+        target.auraBonuses = target.auraBonuses ?? [];
+        target.auraBonuses.push({ sourceId: source.instanceId, atk: 1, hp: 1, keywords: [] });
+      }
+    }
+  }
   const eldenBeasts = ([0, 1] as PlayerId[]).flatMap((owner) =>
     state.players[owner].board.filter(
       (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "elden_beast_magic_atk")),
     ),
   );
   for (const source of eldenBeasts) {
-    for (const owner of [0, 1] as PlayerId[]) {
-      for (const target of state.players[owner].board) {
-        if (!target || target.camp !== "Magic") continue;
-        target.atk += 2;
+    for (const target of state.players[source.owner].board) {
+      if (!target || target.camp !== "Magic") continue;
+      target.atk += 2;
+      target.auraBonuses = target.auraBonuses ?? [];
+      target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 0, keywords: [] });
+    }
+  }
+  const chaosSources = ([0, 1] as PlayerId[]).flatMap((owner) =>
+    state.players[owner].board.filter(
+      (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "buff_all_friendly_3_neg2")),
+    ),
+  );
+  for (const source of chaosSources) {
+    for (const targetBoard of state.players.map((player) => player.board)) {
+      for (const target of targetBoard) {
+        if (!target) continue;
+        // Chaos is global, but the -2 HP side of the aura is never allowed to
+        // reduce a minion below 1 maximum/current HP.
+        const hpDelta = Math.max(1 - target.maxHp, -2);
+        const wasAlive = target.hp > 0;
+        target.atk += 3;
+        target.maxHp += hpDelta;
+        // Chaos may not be the thing that kills a living minion, but it must
+        // never resurrect one that was already at 0 HP and is waiting for the
+        // action's death sweep.
+        target.hp += hpDelta;
+        if (wasAlive) target.hp = Math.max(1, target.hp);
         target.auraBonuses = target.auraBonuses ?? [];
-        target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 0, keywords: [] });
+        target.auraBonuses.push({ sourceId: source.instanceId, atk: 3, hp: hpDelta, keywords: [] });
       }
     }
   }
@@ -3194,9 +3277,13 @@ function refreshPassiveAuras(state: GameState): void {
   for (const source of allMightSources) {
     for (const target of state.players[opponent(source.owner)].board) {
       if (!target) continue;
-      target.atk -= 2;
+      // ATK is never a negative state, even if an imported/older save already
+      // contains one before this aura is refreshed.
+      target.atk = Math.max(0, target.atk);
+      const reduction = Math.min(2, target.atk);
+      target.atk -= reduction;
       target.auraBonuses = target.auraBonuses ?? [];
-      target.auraBonuses.push({ sourceId: source.instanceId, atk: -2, hp: 0, keywords: [] });
+      target.auraBonuses.push({ sourceId: source.instanceId, atk: -reduction, hp: 0, keywords: [] });
     }
   }
 }
@@ -3252,8 +3339,9 @@ function grantRelic(state: GameState, playerId: PlayerId, source: MinionInstance
 }
 
 function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstance, events: GameEvent[]): void {
-  if (bearer.relic) return;
-  bearer.relic = relic;
+  const slot = bearer.relic === null ? 0 : bearer.relic2 === null || bearer.relic2 === undefined ? 1 : -1;
+  if (slot < 0) return;
+  setRelicAt(bearer, slot, relic);
   events.push({ kind: "effect", text: `${bearer.name} equips ${relic.name}.`, player: bearer.owner, instanceId: bearer.instanceId });
   // One-shot relics fire the moment they are strapped on.
   if (relic.relicId === "double_stats") {
@@ -3265,18 +3353,16 @@ function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstan
   } else if (relic.relicId === "heal_full_now") {
     bearer.hp = bearer.maxHp;
   } else if (relic.relicId === "monster_cell") {
-    buffMinion(bearer, 4, 4);
-    bearer.effectId = "none";
-    bearer.effectTiming = "none";
-    bearer.divineShield = false;
+    buffMinion(bearer, 3, 2);
+    bearer.silenced = true;
   } else if (relic.relicId === "cocoon") {
     bearer.chained = Math.max(bearer.chained, 1);
     relic.readyOnTurn = state.turnNumber + 2;
   }
 }
 
-function unequipRelic(bearer: MinionInstance): void {
-  bearer.relic = null;
+function unequipRelic(bearer: MinionInstance, relicIndex = 0): void {
+  setRelicAt(bearer, relicIndex, null);
 }
 
 /** How many reusable Ascension Relics a player may return to hand per turn. */
@@ -3290,7 +3376,7 @@ export const RELIC_MOVES_PER_TURN = 1;
  */
 const ONE_SHOT_RELICS = new Set(["double_stats", "bearer_divine_shield", "heal_full_now", "monster_cell", "cocoon"]);
 
-export function relicCanMove(relic: RelicInstance | null): boolean {
+export function relicCanMove(relic: RelicInstance | null | undefined): boolean {
   return Boolean(relic && !ONE_SHOT_RELICS.has(relic.relicId));
 }
 
@@ -3298,16 +3384,17 @@ export function relicCanMove(relic: RelicInstance | null): boolean {
  * Return a reusable attached relic to its owner's hand. Re-playing it later is
  * intentional and costs mana, so moving it cannot silently re-fire a one-shot.
  */
-function returnRelicToHand(state: GameState, playerId: PlayerId, slotIndex: number, events: GameEvent[]): void {
+function returnRelicToHand(state: GameState, playerId: PlayerId, slotIndex: number, events: GameEvent[], relicIndex?: number): void {
   const player = state.players[playerId];
   const bearer = player.board[slotIndex];
-  if (!bearer || !bearer.relic) return;
-  if (!relicCanMove(bearer.relic)) return;
+  if (!bearer) return;
+  const index = relicIndex ?? firstRelicIndex(bearer, (relic) => relicCanMove(relic));
+  const relic = index >= 0 ? relicAt(bearer, index) : null;
+  if (!relic || !relicCanMove(relic)) return;
   if (player.relicMoves >= RELIC_MOVES_PER_TURN) return;
   if (player.hand.length >= handLimit) return;
 
-  const relic = bearer.relic;
-  bearer.relic = null;
+  unequipRelic(bearer, index);
   player.relicMoves += 1;
   putCardInHand(state, playerId, relic.id, events);
   events.push({
@@ -3319,7 +3406,7 @@ function returnRelicToHand(state: GameState, playerId: PlayerId, slotIndex: numb
 }
 
 function hasRelic(minion: MinionInstance | null | undefined, relicId: string): boolean {
-  return Boolean(minion && minion.relic && minion.relic.relicId === relicId);
+  return Boolean(minion && attachedRelics(minion).some((relic) => relic.relicId === relicId));
 }
 
 function hasDominionAuthority(state: GameState, owner: PlayerId): boolean {
@@ -3371,11 +3458,14 @@ function layAura(
   source: MinionInstance,
   events: GameEvent[],
 ): void {
+  // A slot mark is committed only after the targeting answer has been applied.
+  // Keeping this guard here makes a future multi-step effect unable to leak a
+  // provisional/random marker into the board while its prompt is still open.
+  if (state.phase === "targeting" || state.pendingTarget) return;
   const board = state.players[target.owner];
   const existing = board.slotAuras.find((aura) => aura.slot === target.slot && aura.auraId === auraId);
-  if (!existing) {
-    board.slotAuras.push({ slot: target.slot, auraId, sourceName: source.name });
-  }
+  if (existing) return;
+  board.slotAuras.push({ slot: target.slot, auraId, sourceName: source.name });
   events.push(effectEvent(`${source.name} marks ${board.name}'s slot ${target.slot + 1} — permanently.`, source));
   enforceSlotAuras(state, events);
 }
@@ -3442,7 +3532,7 @@ export function attacksRandomly(state: GameState, attacker: MinionInstance): boo
 function randomAttackTarget(state: GameState, attacker: MinionInstance): number | "core" | null {
   const enemy = state.players[opponent(attacker.owner)];
   const ignoresGuards = hasRelic(attacker, "ignore_defences");
-  const ignoresTaunt = hasEffect(attacker, "charge_ignore_taunt") && !attacker.silenced;
+  const ignoresTaunt = tauntBypassActive(attacker);
   const bodyguard = enemy.board.findIndex(
     (minion) => minion && attackTargetable(state, minion) && hasEffect(minion, "redirect_attacks") && !minion.silenced,
   );
@@ -3661,12 +3751,12 @@ function modifyIncoming(
   target: MinionInstance,
   amount: number,
 ): number {
-  const relic = target.relic?.relicId;
-  if (relic === "half_from_nature" && source.camp === "Nature") return Math.floor(amount / 2);
-  if (relic === "half_from_tech" && source.camp === "Tech") return Math.floor(amount / 2);
-  if (relic === "half_from_magic" && source.camp === "Magic") return Math.floor(amount / 2);
+  const relics = attachedRelics(target);
+  if (relics.some((relic) => relic.relicId === "half_from_nature") && source.camp === "Nature") return Math.floor(amount / 2);
+  if (relics.some((relic) => relic.relicId === "half_from_tech") && source.camp === "Tech") return Math.floor(amount / 2);
+  if (relics.some((relic) => relic.relicId === "half_from_magic") && source.camp === "Magic") return Math.floor(amount / 2);
   // Philosopher's Stone: untouchable on your own turn, brittle on theirs.
-  if (relic === "philosophers_stone" && state.activePlayer !== target.owner) return amount * 2;
+  if (relics.some((relic) => relic.relicId === "philosophers_stone") && state.activePlayer !== target.owner) return amount * 2;
   return amount;
 }
 
@@ -3876,6 +3966,10 @@ function hasEffect(minion: MinionInstance, effectId: EffectId): boolean {
   return minion.effectId === effectId || minion.gainedEffects.some((effect) => effect.effectId === effectId);
 }
 
+function tauntBypassActive(minion: MinionInstance): boolean {
+  return !minion.silenced && (hasEffect(minion, "charge_ignore_taunt") || hasEffect(minion, "black_ops_ignore_taunt"));
+}
+
 function isSlotProtected(state: GameState, minion: MinionInstance): boolean {
   const slot = slotOf(state, minion);
   return slot >= 0 && hasSlotAura(state, minion.owner, slot, "slot_protected");
@@ -3885,6 +3979,45 @@ function buffMinion(minion: MinionInstance, atk: number, hp: number): void {
   minion.atk += atk;
   minion.maxHp += hp;
   minion.hp += hp;
+}
+
+/**
+ * Minions have two independent Ascension Relic straps. `relic` remains the
+ * first slot for save and test compatibility; `relic2` is the new second slot.
+ */
+function attachedRelics(minion: MinionInstance): RelicInstance[] {
+  return [minion.relic, minion.relic2 ?? null].filter((relic): relic is RelicInstance => relic !== null);
+}
+
+function relicAt(minion: MinionInstance, index: number): RelicInstance | null {
+  return index === 0 ? minion.relic : minion.relic2 ?? null;
+}
+
+function setRelicAt(minion: MinionInstance, index: number, relic: RelicInstance | null): void {
+  if (index === 0) minion.relic = relic;
+  else minion.relic2 = relic;
+}
+
+function firstRelicIndex(minion: MinionInstance, predicate: (relic: RelicInstance) => boolean = () => true): number {
+  for (const index of [0, 1]) {
+    const relic = relicAt(minion, index);
+    if (relic && predicate(relic)) return index;
+  }
+  return -1;
+}
+
+function hasAnyRelic(minion: MinionInstance | null | undefined): boolean {
+  return Boolean(minion && (minion.relic || minion.relic2));
+}
+
+function hasFreeRelicSlot(minion: MinionInstance): boolean {
+  return minion.relic === null || minion.relic2 === null || minion.relic2 === undefined;
+}
+
+function discardAttachedRelics(state: GameState, minion: MinionInstance): void {
+  for (const relic of attachedRelics(minion)) state.discard.push(relic.id);
+  minion.relic = null;
+  minion.relic2 = null;
 }
 
 function randomEnemyMinion(state: GameState, source: MinionInstance): MinionInstance | null {
@@ -4128,12 +4261,9 @@ function destroyAtSlot(
     (state.players[playerId].deadMinions ??= []).push(minion.cardId);
     events.push({ kind: "death", text: message, player: playerId, instanceId: minion.instanceId, cardId: minion.cardId });
   }
-  // A relic dies with its bearer. It is a card again only in the discard pile;
-  // nothing puts it into a satchel or onto another minion automatically.
-  if (minion.relic) {
-    state.discard.push(minion.relic.id);
-    minion.relic = null;
-  }
+  // Relics die with their bearer. They are cards again only in the discard pile;
+  // nothing puts them into a satchel or onto another minion automatically.
+  discardAttachedRelics(state, minion);
   resolveDeathrattle(state, minion, killer, slotIndex, events);
   releaseStolenPassive(state, minion, events);
   reactToDeath(state, minion, playerId, events);
@@ -4153,10 +4283,7 @@ function rescueWithOogway(state: GameState, playerId: PlayerId, slotIndex: numbe
   if (!oogway) return false;
   oogway.rescueUsedAtTurn = state.turnNumber;
   state.players[playerId].board[slotIndex] = null;
-  if (target.relic) {
-    state.discard.push(target.relic.id);
-    target.relic = null;
-  }
+  discardAttachedRelics(state, target);
   events.push({ kind: "death", text: `${target.name} would die, but Grand Master Oogway returns it to hand.`, player: playerId, instanceId: target.instanceId, cardId: target.cardId });
   putCardInHand(state, playerId, target.cardId, events, target.instanceId);
   oogway.chained = Math.max(oogway.chained, 2);
@@ -4201,11 +4328,28 @@ function resolveDeathrattle(
         effect: "-",
         flavor: "The omen king returns.",
         origin: dead.origin,
-        art: dead.art,
+        art: "/card-art/raw/token-morgott.png",
       };
       const summoned = createMinion(morgott, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Morgott, the Omen King.`, dead));
+    }
+  } else if (dead.effectId === "kill_back") {
+    // Darkwing's text is a real Deathrattle: the minion that dealt the lethal
+    // blow is the killer, regardless of which side initiated combat. Resolve it
+    // here so attacking into Darkwing and Darkwing dying on the retaliation path
+    // behave identically.
+    const killerAlive = Boolean(
+      killer &&
+        killer.owner !== dead.owner &&
+        state.players[killer.owner].board.some((minion) => minion?.instanceId === killer.instanceId),
+    );
+    if (killer && killerAlive) {
+      const killerSlot = slotOf(state, killer);
+      if (killerSlot >= 0) {
+        destroyAtSlot(state, killer.owner, killerSlot, events, `${dead.name} drags ${killer.name} down`, null);
+        events.push(effectEvent(`${dead.name}'s Deathrattle destroys ${killer.name}.`, dead));
+      }
     }
   } else if (dead.effectId === "deathrattle_summon_galactus") {
     const slot = state.players[dead.owner].board[deadSlot]
@@ -4263,6 +4407,7 @@ function resolveDeathrattle(
         art: dead.art,
       };
       const reborn = createMinion(rebornCard, dead.owner, state);
+      reborn.suppressArrivalTheme = true;
       reborn.hp = 1;
       reborn.maxHp = Math.max(1, reborn.maxHp);
       reborn.chained = Math.max(reborn.chained, 2);
@@ -4304,6 +4449,7 @@ function resolveDeathrattle(
           art: dead.art,
         };
         const reborn = createMinion(rebornCard, dead.owner, state);
+        reborn.suppressArrivalTheme = true;
         reborn.hp = 1;
         reborn.divineShield = false;
         reborn.keywords = [];
@@ -4345,6 +4491,7 @@ function resolveDeathrattle(
           art: dead.art,
         };
         const reborn = createMinion(rebornCard, dead.owner, state);
+        reborn.suppressArrivalTheme = true;
         reborn.hp = 1;
         reborn.divineShield = false;
         reborn.keywords = [];
@@ -4369,10 +4516,7 @@ function resolveDeathrattle(
       const killerSlot = slotOf(state, killer);
       if (killerSlot >= 0) {
         state.players[killer.owner].board[killerSlot] = null;
-        if (killer.relic) {
-          state.discard.push(killer.relic.id);
-          killer.relic = null;
-        }
+        discardAttachedRelics(state, killer);
         putCardInHand(state, dead.owner, killer.cardId, events, killer.instanceId);
         events.push(effectEvent(`${dead.name} returns the surviving attacker, ${killer.name}, to hand.`, dead));
       }

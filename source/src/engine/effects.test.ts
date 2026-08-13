@@ -154,7 +154,7 @@ describe("full-roster effects", () => {
     expect(after.maxHp).toBe(5);
   });
 
-  it("Sans (dodge_75): evades an incoming attack", () => {
+  it("Sans (dodge_80): evades an incoming attack", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
     state.players[1].board[0] = makeMinion("Sans", 1);
@@ -308,6 +308,14 @@ describe("full-roster effects", () => {
     const afterDeath = applyAction(afterPlay, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(afterDeath.players[0].board[0]).toBeNull();
     expect(afterDeath.players[0].health).toBe(60);
+  });
+
+  it("Flowey stays alive through an unopposed turn", () => {
+    const state = mainState();
+    state.players[0].health = 60;
+    const afterPlay = playCardFor(state, 0, "Flowey", 0);
+    const afterTurn = toMyNextTurn(afterPlay);
+    expect(afterTurn.players[0].board[0]).toMatchObject({ name: "Flowey", hp: 1, maxHp: 1 });
   });
 
   it("Kizaru starts with Divine Shield and restores it on his owner's turn", () => {

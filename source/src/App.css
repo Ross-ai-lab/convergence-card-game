@@ -1564,6 +1564,7 @@ button:disabled {
 /* ---------------------------------------------------------------- hero plates */
 .hero-plate {
   position: relative;
+  isolation: isolate;
   display: flex;
   gap: 10px;
   align-items: center;
@@ -1600,8 +1601,57 @@ button:disabled {
 }
 
 .hero-plate.is-shielded {
+  overflow: visible;
   border-color: rgba(111, 224, 255, 0.95);
-  box-shadow: 0 0 0 2px rgba(111, 224, 255, 0.28), 0 10px 28px rgba(0, 0, 0, 0.45), inset 0 0 18px rgba(111, 224, 255, 0.16);
+  box-shadow:
+    0 0 0 2px rgba(111, 224, 255, 0.28),
+    0 0 22px rgba(67, 205, 255, 0.82),
+    0 0 48px rgba(54, 151, 255, 0.42),
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    inset 0 0 18px rgba(111, 224, 255, 0.16);
+}
+
+/* A core Divine Shield is a state of the whole hero, not merely a blue
+   health-gem border. The translucent shell sits outside the plate while the
+   plate's contents remain crisp and readable inside it. */
+.hero-plate.is-shielded::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  z-index: 0;
+  border: 2px solid rgba(184, 244, 255, 0.96);
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, rgba(205, 250, 255, 0.22), transparent 34%, rgba(57, 165, 255, 0.14)),
+    radial-gradient(ellipse at 50% 0%, rgba(237, 255, 255, 0.28), transparent 62%);
+  box-shadow:
+    inset 0 0 18px rgba(186, 247, 255, 0.42),
+    0 0 10px rgba(193, 249, 255, 0.92),
+    0 0 30px rgba(64, 190, 255, 0.7),
+    0 0 58px rgba(56, 140, 255, 0.36);
+  pointer-events: none;
+  animation: hero-shield-bubble 2.4s ease-in-out infinite;
+}
+
+.hero-plate.is-shielded::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(157, 235, 255, 0.16), transparent 46%, rgba(38, 137, 235, 0.12));
+  box-shadow: inset 0 0 20px rgba(128, 227, 255, 0.2);
+  pointer-events: none;
+}
+
+.hero-plate.is-shielded > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes hero-shield-bubble {
+  0%, 100% { opacity: 0.82; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.018); }
 }
 
 /* The opponent plate now lives in the top strip, where it shares the same visual
@@ -2413,10 +2463,9 @@ button:disabled {
   text-shadow: 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.7);
 }
 
-/* A silenced minion's text box really is blank on the table, so it is blank here. */
+/* Silence removes the words. The red cross remains the only mark in the box. */
 .card-face.is-silenced .cf-desc p {
-  color: rgba(255, 255, 255, 0.45);
-  font-style: italic;
+  display: none;
 }
 
 /* --- flavour + origin ------------------------------------------------------ */
@@ -2735,7 +2784,7 @@ button:disabled {
    you read the board at a glance, not by reading words on it.
 
    The channels are kept separate so conditions can stack without fighting:
-     inner ring   .cf-stage::before   Taunt (a barrier INSIDE the card edge)
+     inner ring   .cf-stage box-shadow Taunt (a barrier INSIDE the card edge)
      outer rim    .cf-stage::after    Divine Shield / Invulnerable / Marked
      full wash    .cf-fx              Frozen / Silenced / Adapted / Protected
      overlay      .cf-fx::before      Chains
@@ -2770,34 +2819,20 @@ button:disabled {
    It went too far the other way next: 88 units proud, plus a gold shield icon
    on the corner. At 88 the barricade reached into the 24px gap between slots and
    crowded both neighbours, and the shield was a second thing competing for the
-   same corner. BOTH were pulled back (owner ruling): the barricade is 56 units,
-   the gap between slots went 24 -> 34, and the shield is gone entirely.
+   same corner. BOTH were pulled back (owner ruling): the barricade is now a
+   slim 7-unit inset, and the shield is gone entirely.
 
    What carries it is contrast and material, not size: dark iron with a lit top
    edge and a hard shadow, against a light table and a dark card frame. The
    artwork is never covered — that is not a lever here or anywhere. */
-.card-face.kw-taunt::before {
-  content: "";
-  grid-area: 1 / 1;
-  z-index: 0;                       /* BEHIND the card. The art must stay clean. */
-  width: calc(862 * var(--u));      /* card is 750 wide  -> 56 units proud each side */
-  height: calc(1162 * var(--u));    /* card is 1050 tall -> 56 units proud top and bottom */
-  pointer-events: none;
-  border-radius: calc(26 * var(--u));
-  clip-path: polygon(
-    0% 4%, 4% 0%, 18% 0%, 20% 3%, 34% 3%, 36% 0%, 64% 0%, 66% 3%, 80% 3%, 82% 0%, 96% 0%, 100% 4%,
-    100% 38%, 89% 45%, 100% 52%,
-    100% 96%, 96% 100%, 4% 100%, 0% 96%,
-    0% 52%, 11% 45%, 0% 38%
-  );
-  background:
-    repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.06) 0 calc(9 * var(--u)), rgba(0, 0, 0, 0.16) calc(9 * var(--u)) calc(19 * var(--u))),
-    linear-gradient(157deg, #8e9aa6 0%, #59626d 18%, #333a43 48%, #1b2027 76%, #6f7a86 100%);
+.card-face.kw-taunt .cf-stage {
+  /* Keep the guard inside the card's own clip box. The old oversized pseudo-
+     element was visually heavy at the bottom and got clipped by .cf-stage. */
   box-shadow:
-    inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(0, 0, 0, 0.95),
-    inset 0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(230, 240, 255, 0.5),
-    inset 0 calc(-14 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.8),
-    0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
+    inset 0 0 0 calc(7 * var(--u)) rgba(176, 194, 211, 0.96),
+    inset 0 0 0 calc(10 * var(--u)) rgba(19, 26, 35, 0.94),
+    inset 0 calc(4 * var(--u)) calc(9 * var(--u)) rgba(239, 247, 255, 0.5),
+    0 calc(4 * var(--u)) calc(12 * var(--u)) rgba(0, 0, 0, 0.78);
 }
 
 /* --- DIVINE SHIELD: a bright golden bubble around the whole card -----------
@@ -2838,6 +2873,24 @@ button:disabled {
     0 0 max(52px, calc(70 * var(--u))) rgba(56, 140, 255, 0.58),
     inset 0 0 max(18px, calc(28 * var(--u))) rgba(180, 240, 255, 0.55),
     0 calc(12 * var(--u)) calc(28 * var(--u)) rgba(0, 0, 0, 0.42);
+}
+
+/* The rim is not enough on a busy board. A live Invulnerable card carries a
+   cool blue wash over both art and rules, so the condition reads before text. */
+.card-face.is-invulnerable .cf-art img {
+  filter: saturate(0.82) hue-rotate(8deg) brightness(1.05);
+}
+
+.card-face.is-invulnerable .cf-fx {
+  /* This wash is deliberately on the card surface, not only on the stage's
+     outer shadow. It must remain visible when `.board-slot.ready` adds its
+     green attack halo, so the two states communicate at the same time. */
+  background:
+    linear-gradient(180deg, rgba(117, 220, 255, 0.46), rgba(28, 116, 232, 0.58)),
+    linear-gradient(135deg, rgba(115, 225, 255, 0.18), rgba(31, 97, 210, 0.2));
+  box-shadow:
+    inset 0 0 0 max(2px, calc(4 * var(--u))) rgba(177, 242, 255, 0.98),
+    inset 0 0 max(24px, calc(38 * var(--u))) rgba(46, 156, 255, 0.72);
 }
 
 @keyframes invulnerable-bubble {
@@ -3706,6 +3759,10 @@ button:disabled {
   pointer-events: auto;
 }
 
+/* Two straps share the bottom rail without covering the HP gem. */
+.relic-badge-0 { left: 41%; }
+.relic-badge-1 { left: 59%; }
+
 /* Relics with no minion to carry them yet. They used to be a bare count; now
    each one is its own little chip you can hover to read the whole card. */
 .hero-relics {
@@ -3909,7 +3966,10 @@ button:disabled {
 }
 
 .prompt-card-choice {
-  width: clamp(116px, 16vw, 150px);
+  /* Choice cards are decision surfaces, not thumbnails. Keep them above the
+     compact-card breakpoint so the rules plaque remains readable in a three-
+     option relic/card discover prompt. */
+  width: clamp(216px, 22vw, 240px);
   min-width: 0;
   min-height: 0;
   padding: 4px;
@@ -3926,19 +3986,48 @@ button:disabled {
 
 .prompt-card-choice .card-face {
   width: 100%;
-  height: clamp(165px, 22vw, 214px);
-  aspect-ratio: auto;
+  height: auto;
+  aspect-ratio: 5 / 7;
 }
 
-.prompt-card-choice > span {
-  max-width: 100%;
-  color: var(--ink);
-  overflow: hidden;
-  font-size: 0.7rem;
-  font-weight: 900;
-  line-height: 1.1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* The card face's own banner, rules plaque, rails and origin are the label.
+   These overrides intentionally outrank the under-200px compact tier, which is
+   appropriate for hand tokens but would make a choice prompt art-only. */
+.prompt-card-choice .cf-desc,
+.prompt-card-choice .cf-flavor,
+.prompt-card-choice .cf-rail {
+  display: flex;
+}
+
+.prompt-card-choice .cf-origin {
+  display: block;
+}
+
+/* Keep the printed geometry even on a narrow viewport where the container
+   query could otherwise switch a choice face into the art-only token tier. */
+.prompt-card-choice .cf-art {
+  height: calc(492 * var(--u));
+  bottom: auto;
+}
+
+.prompt-card-choice .cf-name {
+  padding: 0 calc(8 * var(--u));
+  font-size: calc(min(46, var(--cf-namefit)) * var(--u));
+}
+
+.prompt-card-choice .cf-mana {
+  right: calc(2 * var(--u));
+  left: auto;
+  width: calc(84 * var(--u));
+  height: calc(84 * var(--u));
+  font-size: calc(40 * var(--u));
+}
+
+.prompt-card-choice .cf-atk,
+.prompt-card-choice .cf-hp {
+  width: calc(72 * var(--u));
+  height: calc(72 * var(--u));
+  font-size: calc(40 * var(--u));
 }
 
 .target-prompt-art {

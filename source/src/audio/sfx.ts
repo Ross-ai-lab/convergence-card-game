@@ -38,6 +38,7 @@ export type SfxName =
   | "draw"
   | "mana"
   | "coin"
+  | "relicEquip"
   | "button"
   | "hover"
   | "win"
@@ -561,6 +562,29 @@ function render(name: SfxName, t: number): void {
       metal({ t, dur: 0.8, gain: 0.06, carrier: 1320, ratio: 2.41, index: 4, pan: 0.1, send: 0.6 });
       metal({ t: t + 0.03, dur: 0.6, gain: 0.035, carrier: 1980, ratio: 3.02, index: 3, pan: -0.15, send: 0.6 });
       break;
+
+    // Ascension Relics are a goal moment: a low stadium thump, then a bright
+    // four-note climb and a short shimmer as the equipment locks into place.
+    case "relicEquip": {
+      duck(0.5, 0.7);
+      taiko(t, 0.3, 0, 155, 43, 0.55);
+      osc({ type: "sine", f0: 86, f1: 42, t, dur: 0.65, gain: 0.22, attack: 0.003, send: 0.22 });
+      [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+        metal({
+          t: t + index * 0.1,
+          dur: 0.78,
+          gain: 0.065,
+          carrier: frequency,
+          ratio: 2.01,
+          index: 3.2,
+          pan: (index - 1.5) * 0.12,
+          send: 0.7,
+        });
+      });
+      swell(t + 0.04, [261.63, 329.63, 392, 523.25], 0.95, 0.06, 0.56, 2600);
+      crash(t + 0.28, 0.72, 0.045, 0.62);
+      break;
+    }
 
     case "button":
       noise({ t, dur: 0.03, gain: 0.07, type: "bandpass", f0: 1800, q: 1.5, send: 0.12 });

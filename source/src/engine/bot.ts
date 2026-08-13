@@ -95,7 +95,7 @@ function minionValue(minion: MinionInstance, state: GameState): number {
   if (minion.attackLocked) value -= minion.atk * 0.5;
   if (minion.markedBy) value -= minion.hp * 0.4;
   if (minion.atk === 0) value -= 1.5; // cannot attack at all
-  if (minion.relic) value += 2.5;
+  if (minion.relic || minion.relic2) value += 2.5;
 
   return value;
 }

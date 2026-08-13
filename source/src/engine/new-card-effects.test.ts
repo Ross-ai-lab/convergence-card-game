@@ -58,11 +58,44 @@ describe("2026 card replacements", () => {
       Sonic: { atk: 6, hp: 3, effectId: "charge", effectTiming: "none", keywords: ["Charge"] },
       "Isaac Netero": { atk: 4, hp: 4, effectId: "deathrattle_aoe_3", effectTiming: "deathrattle" },
       "Death Star": { atk: 7, hp: 6, origin: "Star Wars", effectId: "death_star_mark" },
+      "Star Destroyer": {
+        cost: 8,
+        atk: 5,
+        hp: 5,
+        effectId: "star_destroyer_tie_fighters",
+        effectTiming: "onPlay",
+        effect: "Battlecry: Summon 1/1 TIE Fighters with Charge.",
+      },
+      Battleship: {
+        cost: 4,
+        atk: 4,
+        hp: 4,
+        effectId: "battleship_tech_aura",
+        effectTiming: "passive",
+        keywords: ["Passive"],
+        effect: "Passive: All Tech minions have +1/+1.",
+      },
+      "Black Ops": {
+        cost: 2,
+        atk: 2,
+        hp: 2,
+        effectId: "black_ops_ignore_taunt",
+        effectTiming: "passive",
+        keywords: ["Passive"],
+        effect: "Passive: Ignore Taunt.",
+      },
+      "The Five Convicts": { cost: 3, atk: 5, hp: 1, keywords: ["Taunt"], effectId: "none", effectTiming: "none", effect: "Taunt." },
+      "Doctor Octopus": { cost: 4, atk: 3, hp: 3, effectId: "destroy_relic", effectTiming: "onPlay" },
       "The 7 Heroic Spirits": { cost: 2, atk: 2, hp: 2, effectId: "heroic_relics" },
       "Aladdin Lamp": { atk: 5, hp: 4, effectId: "aladdin_wish", effectTiming: "onPlay" },
       "The Mask": { atk: 3, hp: 2, effectId: "mask_return_attacker", effectTiming: "deathrattle" },
       V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle" },
       "Time Bomb": { atk: 0, hp: 5, effectId: "time_bomb_ongoing_5", effectTiming: "ongoing", keywords: [] },
+      Chaos: { effectTiming: "passive", keywords: ["Passive"], effectId: "buff_all_friendly_3_neg2", effect: "Passive: All minions have +3/-2 (minimum 1 HP)." },
+      "Giant Tree": { effectTiming: "passive", keywords: ["Passive"], effectId: "buff_all_nature_2_1", effect: "Passive: All other friendly Nature minions have +2/+1." },
+      "Elden Beast": { camp: "Magic", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: All friendly Magic minions have +2 ATK." },
+      Darkwing: { effectTiming: "deathrattle", keywords: ["Deathrattle"], effectId: "kill_back", effect: "Deathrattle: The minion which kills this minion also dies right after." },
+      "Dr. Heinz Doofenshmirtz": { effect: "Ongoing: 50% to die and 50% to gain +2/+1." },
       "G-Man": { atk: 3, hp: 6, effectId: "stasis_enemy", effectTiming: "onPlay", keywords: [] },
       Superman: { atk: 6, hp: 6, effectId: "superman_damage_cap_3", effectTiming: "passive", keywords: ["Passive"] },
       "Darth Vader": { atk: 3, hp: 2, effectId: "vader_chain_or_destroy", effectTiming: "onPlay", keywords: [] },
@@ -78,11 +111,14 @@ describe("2026 card replacements", () => {
       "Seven Deadly Sins": { atk: 4, hp: 5, effectId: "summon_sins", effectTiming: "onPlay", keywords: [] },
       "Elder Centipede": { atk: 5, hp: 6, effectId: "self_buff_2", effectTiming: "ongoing", keywords: ["Ongoing"] },
       "All Might": { atk: 4, hp: 5, effectId: "all_enemy_atk_down_2", effectTiming: "passive", keywords: ["Passive"] },
+      Sans: { effectId: "dodge_80", effect: "Passive: Evade 80% of attacks." },
+      Musashi: { atk: 2, hp: 1 },
+      Illumi: { atk: 1, hp: 1 },
       "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
       King: { atk: 0, hp: 7, effectId: "king_attack_lock_random", effectTiming: "passive", keywords: ["Cannot Attack", "Passive"] },
       "Dominion Authority": { atk: 4, hp: 5, effectId: "dominion_authority", effectTiming: "passive", keywords: ["Passive"] },
       Kratos: { atk: 3, hp: 4, effectId: "kratos_chain_break", effectTiming: "passive", keywords: ["Chained"] },
-      "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"] },
+      "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: The first enemy minion to attack each turn is Chained for 1 turn." },
       "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
       "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
     };
@@ -135,6 +171,7 @@ describe("2026 card replacements", () => {
 
     const asking = play(state, 0, "Cecil", 0);
     expect(asking.players[0].board[0]).toMatchObject({ keywords: [], divineShield: false });
+    expect(asking.pendingTarget?.options).not.toContainEqual({ owner: 0, slot: 0 });
     const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 0 && option.slot === 1) ?? -1;
     expect(targetIndex).toBeGreaterThanOrEqual(0);
     const returned = choose(asking, targetIndex);
@@ -202,6 +239,83 @@ describe("2026 card replacements", () => {
     const after = endTurn(endTurn(state, 0), 1);
     expect(after.players[1].board[0]?.hp).toBe(5);
     expect(after.players[0].board[0]).toBeNull();
+  });
+
+  it("Time Bomb waits for an enemy controller's next turn, not the opponent's intervening turn", () => {
+    const state = mainState("time-bomb-enemy-turn");
+    state.activePlayer = 1;
+    state.players[1].board[0] = minion("Time Bomb", 1);
+    state.players[0].board[0] = minion("John Wick", 0, { hp: 10, maxHp: 10 });
+
+    const myTurn = endTurn(state, 1);
+    expect(myTurn.activePlayer).toBe(0);
+    expect(myTurn.players[0].board[0]?.hp).toBe(10);
+    expect(myTurn.players[1].board[0]).not.toBeNull();
+
+    const enemyTurn = endTurn(myTurn, 0);
+    expect(enemyTurn.activePlayer).toBe(1);
+    expect(enemyTurn.players[0].board[0]?.hp).toBe(5);
+    expect(enemyTurn.players[1].board[0]).toBeNull();
+  });
+
+  it("Margit summons Morgott with his dedicated token art", () => {
+    const state = mainState("morgott-token-art");
+    state.players[0].board[0] = minion("Margit the Fell Omen", 0, { hp: 1, maxHp: 1 });
+    state.players[1].board[0] = minion("Zoro", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
+    state.activePlayer = 1;
+
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toMatchObject({ name: "Morgott, the Omen King", art: "/card-art/raw/token-morgott.png" });
+  });
+
+  it("Giant Tree's Nature aura is removed when the Tree leaves play", () => {
+    const state = mainState("giant-tree-transient");
+    state.players[0].board[1] = minion("Zoro", 0, { camp: "Nature", atk: 3, hp: 3, maxHp: 3 });
+    const withTree = play(state, 0, "Giant Tree", 0);
+    expect(withTree.players[0].board[1]).toMatchObject({ atk: 5, hp: 4, maxHp: 4 });
+
+    withTree.players[1].board[0] = minion("Zoro", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
+    const afterDeath = applyAction({ ...withTree, activePlayer: 1 }, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(afterDeath.players[0].board[0]).toBeNull();
+    expect(afterDeath.players[0].board[1]).toMatchObject({ atk: 3, maxHp: 3 });
+  });
+
+  it("Chaos is a global transient aura and never lowers max/current HP below 1", () => {
+    const state = mainState("chaos-transient");
+    state.players[0].board[1] = minion("Zoro", 0, { atk: 2, hp: 2, maxHp: 2 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 1, hp: 1, maxHp: 1 });
+    const chaotic = play(state, 0, "Chaos", 2);
+    expect(chaotic.players[0].board[1]).toMatchObject({ atk: 5, hp: 1, maxHp: 1 });
+    expect(chaotic.players[1].board[0]).toMatchObject({ atk: 4, hp: 1, maxHp: 1 });
+    expect(chaotic.players[0].board[2]).toMatchObject({ atk: 7, hp: 4, maxHp: 4 });
+
+    chaotic.players[1].board[1] = minion("Zoro", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
+    const restored = applyAction({ ...chaotic, activePlayer: 1 }, { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 2 }, library).state;
+    expect(restored.players[0].board[2]).toBeNull();
+    expect(restored.players[0].board[1]).toMatchObject({ atk: 2, maxHp: 2 });
+    expect(restored.players[1].board[0]).toMatchObject({ atk: 1, maxHp: 1 });
+
+    // A minion already at 0 HP is still waiting for the sweep; Chaos must not
+    // turn that dead body back into a 1-HP minion while its aura refreshes.
+    chaotic.players[1].board[1] = minion("Zoro", 1, { hp: 0, maxHp: 3 });
+    const swept = applyAction({ ...chaotic, activePlayer: 1 }, { type: "end_turn", player: 1 }, library).state;
+    expect(swept.players[1].board[1]).toBeNull();
+  });
+
+  it("Dr. Heinz's winning coin flip grants +2/+1", () => {
+    for (let offset = 0; offset < 1000; offset += 1) {
+      const seed = 0x80000000 + offset;
+      const state = mainState(`heinz-${seed}`);
+      state.rngSeed = seed;
+      state.players[0].board[0] = minion("Dr. Heinz Doofenshmirtz", 0);
+      const after = endTurn(endTurn(state, 0), 1);
+      const heinz = after.players[0].board[0];
+      if (heinz && heinz.atk > 1) {
+        expect(heinz).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
+        return;
+      }
+    }
+    throw new Error("No winning Dr. Heinz coin flip found in deterministic seed sweep");
   });
 
   it("Pandora copies a minion's effects and keywords without copying stats", () => {
@@ -479,6 +593,38 @@ describe("2026 card replacements", () => {
     expect(sins.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
   });
 
+  it("Black Ops ignores Taunt, Battleship buffs all Tech, and Star Destroyer deploys Charge TIE Fighters", () => {
+    const blackOps = mainState("black-ops-taunt");
+    blackOps.players[0].board[0] = minion("Black Ops", 0, { sleeping: false });
+    blackOps.players[1].board[0] = minion("John Wick", 1, { keywords: ["Taunt"], sleeping: false });
+    blackOps.players[1].board[1] = minion("Zoro", 1, { sleeping: false });
+    const attacks = getLegalActions(blackOps, library).filter((action) => action.type === "attack_minion");
+    expect(attacks.map((action) => action.type === "attack_minion" ? action.targetSlot : -1)).toEqual([0, 1]);
+
+    const tech = mainState("battleship-aura");
+    tech.players[0].board[1] = minion("John Wick", 0, { camp: "Tech", atk: 2, hp: 2, maxHp: 2 });
+    tech.players[0].board[2] = minion("Zoro", 0, { atk: 2, hp: 3, maxHp: 3 });
+    tech.players[1].board[0] = minion("John Wick", 1, { camp: "Tech", atk: 3, hp: 3, maxHp: 3 });
+    const buffed = play(tech, 0, "Battleship", 0);
+    expect(buffed.players[0].board[0]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
+    expect(buffed.players[0].board[1]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
+    expect(buffed.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
+    expect(buffed.players[1].board[0]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
+    buffed.players[0].board[0]!.silenced = true;
+    const auraRemoved = applyAction(buffed, { type: "end_turn", player: 0 }, library).state;
+    expect(auraRemoved.players[0].board[0]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
+    expect(auraRemoved.players[0].board[1]).toMatchObject({ atk: 2, hp: 2, maxHp: 2 });
+    expect(auraRemoved.players[1].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
+
+    const destroyer = play(mainState("star-destroyer-tokens"), 0, "Star Destroyer", 0);
+    const fighters = destroyer.players[0].board.slice(1).filter((entry): entry is MinionInstance => Boolean(entry));
+    expect(destroyer.players[0].board[0]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
+    expect(fighters).toHaveLength(4);
+    expect(fighters.every((fighter) => fighter.name === "TIE Fighter" && fighter.atk === 1 && fighter.hp === 1)).toBe(true);
+    expect(fighters.every((fighter) => fighter.keywords.includes("Charge") && fighter.sleeping === false)).toBe(true);
+    expect(fighters.every((fighter) => fighter.art.endsWith("/token-tie-fighter.png"))).toBe(true);
+  });
+
   it("Elder Centipede grows +2/+2 on its ongoing turn and All Might lowers enemy ATK", () => {
     const elder = mainState("elder-centipede");
     elder.players[0].board[0] = minion("Elder Centipede", 0);
@@ -489,8 +635,11 @@ describe("2026 card replacements", () => {
     might.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 5, maxHp: 5 });
     const empowered = play(might, 0, "All Might", 0);
     expect(empowered.players[1].board[0]?.atk).toBe(3);
-    empowered.players[0].board[0] = null;
-    const auraGone = applyAction(empowered, { type: "end_turn", player: 0 }, library).state;
+    empowered.players[1].board[1] = minion("John Wick", 1, { atk: 0, hp: 5, maxHp: 5 });
+    const clamped = applyAction(empowered, { type: "end_turn", player: 0 }, library).state;
+    expect(clamped.players[1].board[1]?.atk).toBe(0);
+    clamped.players[0].board[0] = null;
+    const auraGone = applyAction(clamped, { type: "end_turn", player: 1 }, library).state;
     expect(auraGone.players[1].board[0]?.atk).toBe(5);
   });
 
@@ -562,7 +711,7 @@ describe("2026 card replacements", () => {
     expect(after.players[1].hand).toContain(cardId("John Wick"));
   });
 
-  it("Toji blocks Magic, while Elden Beast buffs Magic ATK", () => {
+  it("Toji blocks Magic, while Elden Beast buffs only friendly Magic ATK", () => {
     const blocked = mainState("toji-magic");
     blocked.players[0].board[0] = minion("Pandora's Actor", 0, { sleeping: false, atk: 5, hp: 20, maxHp: 20 });
     blocked.players[1].board[0] = minion("Toji", 1);
@@ -572,8 +721,12 @@ describe("2026 card replacements", () => {
     const elder = mainState("elder-no-magic-immunity");
     elder.players[0].board[0] = minion("Pandora's Actor", 0, { sleeping: false, atk: 1, hp: 20, maxHp: 20 });
     elder.players[1].board[0] = minion("Elden Beast", 1);
+    elder.players[1].board[1] = minion("Pandora's Actor", 1, { atk: 1, hp: 20, maxHp: 20 });
     const elderHit = applyAction(elder, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(elderHit.players[1].board[0]?.hp).toBe(3);
+    expect(elderHit.players[1].board[0]?.atk).toBe(6);
+    expect(elderHit.players[1].board[1]?.atk).toBe(3);
+    expect(elderHit.players[0].board[0]?.atk).toBe(1);
   });
 
   it("Cthulhu keeps Tech immunity, while T-1000 heals on its ongoing turn", () => {
@@ -661,7 +814,15 @@ describe("2026 card replacements", () => {
     state.players[1].board[0] = minion("John Wick", 1, { atk: 9, sleeping: false, hp: 20, maxHp: 20 });
     state.activePlayer = 1;
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(after.players[0].board[0]).toMatchObject({ name: "Ouken", atk: 2, hp: 1, maxHp: 1, chained: 2, effectId: "ouken_reborn" });
+    expect(after.players[0].board[0]).toMatchObject({
+      name: "Ouken",
+      atk: 2,
+      hp: 1,
+      maxHp: 1,
+      chained: 2,
+      effectId: "ouken_reborn",
+      suppressArrivalTheme: true,
+    });
   });
 
   it("Kureo Mado steals an attached relic and equips it without leaving it on the victim", () => {

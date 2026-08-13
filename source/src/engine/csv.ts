@@ -275,6 +275,9 @@ const effectIds = new Set<EffectId>([
   "hashira_focus_attack",
   "freeze_and_silence_enemy",
   "dumbledore_cleanse",
+  "black_ops_ignore_taunt",
+  "battleship_tech_aura",
+  "star_destroyer_tie_fighters",
 ]);
 
 const relicIds = new Set<RelicId>([

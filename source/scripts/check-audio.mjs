@@ -38,7 +38,8 @@ await page.waitForTimeout(900);
 // Regression: the very first real gesture may be the Duel button itself. That
 // click unlocks audio and changes the screen at the same time, so the menu bed
 // and battle bed can race while their files are loading.
-await page.getByRole("button", { name: /Duel the|Start a hotseat duel/ }).first().click().catch(() => {});
+await page.locator(".duel-trigger").click({ timeout: 5000 }).catch(() => {});
+await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
 await page.waitForTimeout(2600);
 const directDuel = await page.evaluate(() => window.__sfx?.getStats() ?? { error: "SFX probe missing" });
 check(
@@ -169,7 +170,9 @@ check(
 // request ever fires. The counter below is the right instrument — it counts the
 // trigger, while audibility is proven separately by the analyser probes above.
 await page.evaluate(() => window.__sfx.setMuted(false));
-await page.getByRole("button", { name: /Duel the|Start a hotseat/ }).first().click().catch(() => {});
+await page.goto(BASE, { waitUntil: "domcontentloaded" });
+await page.locator(".duel-trigger").click({ timeout: 5000 }).catch(() => {});
+await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
 await page.waitForTimeout(1200);
 
 // Cheat mode first. Going first deals TWO cards against ONE mana, and the roster

@@ -108,6 +108,36 @@ describe("relic effects", () => {
     expect(after.players[0].board[1]?.relic).toBeNull();
   });
 
+  it("allows two Ascension Relics on one minion, but no third", () => {
+    const state = mainState("two-relic-slots");
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0);
+
+    const first = playRelicFor(state, 0, "Elder wand", 0);
+    const second = playRelicFor(first, 0, "Tesseract", 0);
+    expect(second.players[0].board[0]?.relic?.name).toBe("Elder wand");
+    expect(second.players[0].board[0]?.relic2?.name).toBe("Tesseract");
+    second.players[0].hand = [relicByName("One Ring").id];
+    expect(getLegalActions(second, library)).not.toContainEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 });
+
+    // The second slot keeps its real index, so it can still be returned even
+    // when the first slot is occupied.
+    second.players[0].hand = [];
+    const secondReturn = getLegalActions(second, library).find(
+      (action) => action.type === "return_relic" && action.relicIndex === 1,
+    );
+    expect(secondReturn).toEqual({ type: "return_relic", player: 0, slotIndex: 0, relicIndex: 1 });
+    const returned = applyAction(second, secondReturn!, library).state;
+    expect(returned.players[0].board[0]?.relic?.name).toBe("Elder wand");
+    expect(returned.players[0].board[0]?.relic2).toBeNull();
+    expect(returned.players[0].hand).toEqual([relicByName("Tesseract").id]);
+  });
+
+  it("ships the requested relic costs and stat changes", () => {
+    expect(relics.find((relic) => relic.name === "White Whistle")?.cost).toBe(2);
+    expect(relics.find((relic) => relic.name === "Devil Fruit")).toMatchObject({ cost: 2, effect: expect.stringContaining("+2/+1") });
+    expect(relics.find((relic) => relic.name === "Monster Cell")).toMatchObject({ cost: 2, effect: "The bearer gains +3/+2. It gets silenced" });
+  });
+
   it("returns reusable relics to hand once per turn, but never re-fires them automatically", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Mob Psycho", 0, { relic: relicByName("Elder wand") });

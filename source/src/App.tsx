@@ -92,6 +92,13 @@ function playableFace(card: PlayableCard): CardFaceModel {
   return isRelicCard(card) ? relicFace(card) : card;
 }
 
+function attachedRelics(minion: MinionInstance): Array<{ relic: RelicInstance; index: number }> {
+  return [
+    { relic: minion.relic, index: 0 },
+    { relic: minion.relic2 ?? null, index: 1 },
+  ].filter((entry): entry is { relic: RelicInstance; index: number } => entry.relic !== null);
+}
+
 // Transient view-only effects. All of them are derived by diffing the previous
 // and next GameState after an action — the engine stays 100% untouched.
 type FloatNum = { id: number; owner: PlayerId; slot: number | "hero"; delta: number; delay: number };
@@ -577,7 +584,9 @@ export default function App() {
             const board = [...players[owner].board];
             const bearer = board[slotIndex];
             if (!bearer) return current;
-            board[slotIndex] = { ...bearer, relic };
+            board[slotIndex] = bearer.relic
+              ? { ...bearer, relic2: bearer.relic2 ?? relic }
+              : { ...bearer, relic };
             players[owner] = { ...players[owner], board };
             return { ...current, players };
           });
@@ -678,6 +687,12 @@ export default function App() {
         returningOwners.set(event.instanceId, event.player);
       }
     });
+    // Equipping an Ascension Relic is a deliberate power-spike moment, not a
+    // normal card-play click. One fanfare per action keeps mass-equipping cards
+    // celebratory without turning them into a stack of overlapping stings.
+    if (resultEvents.some((event) => event.kind === "effect" && /\bequips\b/i.test(event.text))) {
+      sfx.play("relicEquip", 0.05);
+    }
 
     before.forEach((entry, id) => {
       const now = after.get(id);
@@ -732,8 +747,9 @@ export default function App() {
       }
     });
 
-    if (arrivals.length > 0) {
-      const speaker = arrivals.reduce((best, minion) =>
+    const thematicArrivals = arrivals.filter((minion) => !minion.suppressArrivalTheme);
+    if (thematicArrivals.length > 0) {
+      const speaker = thematicArrivals.reduce((best, minion) =>
         RARITY_WEIGHT[minion.rarity] > RARITY_WEIGHT[best.rarity] ||
         (RARITY_WEIGHT[minion.rarity] === RARITY_WEIGHT[best.rarity] && minion.cost > best.cost)
           ? minion
@@ -1001,7 +1017,7 @@ export default function App() {
     const copiedPassive = minion.stolenPassiveText?.replace(/^Passive:\s*/i, "");
     setHover({
       face: minion,
-      effect: minion.silenced ? "Silenced — the text box is blank." : minion.effect,
+      effect: minion.silenced ? "" : minion.effect,
       flavor: def ? def.flavor : "",
       atkClass: statClass(minion.atk, minion.baseAtk),
       hpClass: minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp),
@@ -1129,8 +1145,10 @@ export default function App() {
     }
   }
 
-  function returnRelic(slotIndex: number) {
-    const action = uiActions.find((candidate) => candidate.type === "return_relic" && candidate.slotIndex === slotIndex);
+  function returnRelic(slotIndex: number, relicIndex = 0) {
+    const action = uiActions.find(
+      (candidate) => candidate.type === "return_relic" && candidate.slotIndex === slotIndex && (candidate.relicIndex ?? 0) === relicIndex,
+    );
     if (action) perform(action);
   }
 
@@ -1786,7 +1804,7 @@ function BoardRow({
   selection: Selection;
   onSlot: (owner: PlayerId, slotIndex: number) => void;
   /** Return a reusable attached relic to the owner's hand. */
-  onRelicReturn: (slotIndex: number) => void;
+  onRelicReturn: (slotIndex: number, relicIndex?: number) => void;
   ghosts: Ghost[];
   floats: FloatNum[];
   impacts: Impact[];
@@ -1824,7 +1842,7 @@ function BoardRow({
         const canReturnRelic =
           owner === viewerId &&
           minion !== null &&
-          minion.relic !== null &&
+          attachedRelics(minion).length > 0 &&
           legalActions.some((action) => action.type === "return_relic" && action.slotIndex === slotIndex);
         const isLunging = lunge !== null && lunge.owner === owner && lunge.slot === slotIndex;
         // A targeted effect is waiting: only its legal victims light up, and the
@@ -1908,7 +1926,7 @@ function BoardRow({
                       minion={minion}
                       board={game.players[owner].board}
                       allBoard={game.players.flatMap((player) => player.board)}
-                      onRelicReturn={canReturnRelic ? () => onRelicReturn(slotIndex) : undefined}
+                      onRelicReturn={canReturnRelic ? (relicIndex) => onRelicReturn(slotIndex, relicIndex) : undefined}
                       onRelicPreview={onRelicPreview}
                       onRelicPreviewEnd={onPreview}
                     />
@@ -2147,7 +2165,10 @@ function CardFace({
   // and it only became visible when board minions started showing their rules.
   // A vanilla minion gets no panel at all and spends the space on its artwork.
   const text = rawText.trim() === "-" ? "" : rawText;
-  const blank = text.trim().length === 0;
+  // Silence blanks only the rules copy. Keep the normal plaque, flavour and
+  // rails in place so the red cross is the sole mark inside an otherwise
+  // familiar card; vanilla stat-only cards still use the compact blank layout.
+  const blank = text.trim().length === 0 && !states.includes("is-silenced");
   const quote = flavor ?? card.flavor ?? "";
   const fit = {
     "--cf-namefit": fitOneLine(card.name, NAME_BOX, NAME_CEILING),
@@ -2212,8 +2233,8 @@ function MinionFace({
   allBoard?: Array<MinionInstance | null>;
   /** Hovering the relic badge swaps the preview to the relic's own card. */
   onRelicPreview?: (relic: RelicInstance, el: HTMLElement) => void;
-  /** Given only when returning this relic to hand is legal right now. */
-  onRelicReturn?: () => void;
+  /** Given only when returning an attached relic to hand is legal right now. */
+  onRelicReturn?: (relicIndex: number) => void;
   /** Leaving it puts the minion back under the pointer, so the preview never
    *  goes blank while the pointer is still inside the slot. */
   onRelicPreviewEnd?: (minion: MinionInstance, el: HTMLElement) => void;
@@ -2228,12 +2249,14 @@ function MinionFace({
         states={minionStates(minion, board, allBoard)}
         atkClass={atkClass}
         hpClass={hpClass}
-        effect={minion.silenced ? "Silenced." : minion.effect}
+        effect={minion.silenced ? "" : minion.effect}
       />
-      {minion.relic ? (
+      {attachedRelics(minion).map(({ relic, index }) => (
         <span
+          key={`${relic.id}-${index}`}
           className={[
             "relic-badge",
+            `relic-badge-${index}`,
             onRelicPreview ? "peekable" : "",
             onRelicReturn ? "movable" : "",
           ]
@@ -2241,8 +2264,8 @@ function MinionFace({
             .join(" ")}
           title={
             onRelicReturn
-              ? `${minion.relic.name} — ${minion.relic.effect}\n\nClick to return it to your hand (once a turn).`
-              : `${minion.relic.name} — ${minion.relic.effect}`
+              ? `${relic.name} — ${relic.effect}\n\nClick to return it to your hand (once a turn).`
+              : `${relic.name} — ${relic.effect}`
           }
           onPointerDown={
             onRelicReturn
@@ -2250,7 +2273,7 @@ function MinionFace({
                   // Stops the board's own drag/arm handler seeing this press.
                   e.stopPropagation();
                   e.preventDefault();
-                  onRelicReturn();
+                  onRelicReturn(index);
                 }
               : undefined
           }
@@ -2258,7 +2281,7 @@ function MinionFace({
             onRelicPreview
               ? (e) => {
                   e.stopPropagation();
-                  onRelicPreview(minion.relic!, e.currentTarget);
+                  onRelicPreview(relic, e.currentTarget);
                 }
               : undefined
           }
@@ -2271,9 +2294,9 @@ function MinionFace({
               : undefined
           }
         >
-          <img src={minion.relic.art} alt="" draggable={false} />
+          <img src={relic.art} alt="" draggable={false} />
         </span>
-      ) : null}
+      ))}
     </>
   );
 }
@@ -2327,7 +2350,7 @@ function minionStates(
     minion.frozen ? "is-frozen" : "",
     minion.silenced ? "is-silenced" : "",
     minion.divineShield ? "is-shielded" : "",
-    minion.invulnerableUntilTurn !== null || activeInvulnerable ? "is-invulnerable" : "",
+    typeof minion.invulnerableUntilTurn === "number" || activeInvulnerable ? "is-invulnerable" : "",
     minion.protectedSlot ? "is-protected" : "",
     minion.attackLocked ||
     (!minion.silenced && (effectIds.has("watcher_reveal_hand") || effectIds.has("ragnaros_end_turn")))
@@ -2535,15 +2558,10 @@ function TargetPrompt({
               className={library[option.value] ? "prompt-value prompt-card-choice" : "prompt-value"}
               disabled={botControlled}
               onClick={() => onChoose(choiceIndex)}
+              title={library[option.value] ? `${option.label}: ${library[option.value].effect}` : option.label}
+              aria-label={library[option.value] ? `${option.label}. ${library[option.value].effect}` : option.label}
             >
-              {library[option.value] ? (
-                <>
-                  <CardFace card={playableFace(library[option.value])} />
-                  <span>{option.label}</span>
-                </>
-              ) : (
-                option.label
-              )}
+              {library[option.value] ? <CardFace card={playableFace(library[option.value])} /> : option.label}
             </button>
           ))}
         </div>

@@ -59,6 +59,9 @@ describe("slot auras", () => {
     state.players[0].board[2] = dummy("Zoro", 0, { atk: 3, hp: 3, maxHp: 3 });
 
     const asking = playCardFor(state, 0, "Floor Guardians", 0);
+    expect(asking.phase).toBe("targeting");
+    expect(asking.pendingTarget?.kind).toBe("slot");
+    expect(asking.players[0].slotAuras).toEqual([]);
     const marked = chooseSlot(asking, 0, 2);
     expect(marked.players[0].slotAuras).toEqual([{ slot: 2, auraId: "slot_grow_1", sourceName: "Floor Guardians" }]);
     expect(marked.players[0].board[2]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
@@ -145,7 +148,7 @@ describe("forced-random attacks", () => {
     expect(hurt).toHaveLength(1); // exactly one victim, not necessarily the named one
   });
 
-  it("Sans evades 75% of attacks", () => {
+  it("Sans evades 80% of attacks", () => {
     const state = mainState("sans");
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
     state.players[1].board[0] = makeMinion("Sans", 1);
@@ -153,7 +156,7 @@ describe("forced-random attacks", () => {
     state.rngSeed = 1;
     const swing = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
     expect(swing.state.players[1].board[0]?.hp).toBe(1);
-    expect(swing.events.some((event) => event.text.includes("evades the attack"))).toBe(true);
+    expect(swing.events.some((event) => event.text.includes("slips away"))).toBe(true);
   });
 
   it("Kurogiri makes the next turn's attacks random", () => {

@@ -265,7 +265,11 @@ export type EffectId =
   | "ten_commandments_first_attack"
   | "hashira_focus_attack"
   | "freeze_and_silence_enemy"
-  | "dumbledore_cleanse";
+  | "dumbledore_cleanse"
+  // --- Star Wars / Tech card replacements ---------------------------------
+  | "black_ops_ignore_taunt"
+  | "battleship_tech_aura"
+  | "star_destroyer_tie_fighters";
 
 export interface CardDefinition {
   kind: "minion";
@@ -355,8 +359,12 @@ export interface MinionInstance {
   invulnerableUntilTurn: number | null;
   protectedSlot: boolean;
   delayedDestroySource: string | null;
-  /** The Ascension Relic strapped to this minion, if any. Dies with it. */
+  /** The first Ascension Relic strapped to this minion, if any. Dies with it. */
   relic: RelicInstance | null;
+  /** The optional second Ascension Relic slot. Older saves may omit it. */
+  relic2?: RelicInstance | null;
+  /** Reborn minions arrive without replaying their card's arrival music. */
+  suppressArrivalTheme?: boolean;
   /** A temporary transformation that restores at the named player's next turn. */
   temporaryTransform: TemporaryMinionTransform | null;
   /** Mahoraga: every attacker that has already swung at this minion. */
@@ -663,7 +671,7 @@ export type GameAction =
   | { type: "choose_draw"; player: PlayerId; choiceIndex: number }
   | { type: "choose_target"; player: PlayerId; choiceIndex: number }
   | { type: "use_coin"; player: PlayerId }
-  | { type: "return_relic"; player: PlayerId; slotIndex: number };
+  | { type: "return_relic"; player: PlayerId; slotIndex: number; relicIndex?: number };
 
 export type GameEventKind =
   | "info"
