@@ -11,5 +11,9 @@ export default defineConfig({
     pool: "forks",
     fileParallelism: false,
     maxWorkers: 1,
+    // Writes the effect-coverage trace, and only when CONVERGENCE_EFFECT_TRACE
+    // is set — otherwise it registers one exit handler and does nothing. Kept
+    // out of src/ so that `node:fs` stays out of the engine's module graph.
+    setupFiles: ["./scripts/trace-setup.ts"],
   },
 });
