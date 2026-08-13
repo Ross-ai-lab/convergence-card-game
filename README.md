@@ -209,6 +209,7 @@ Printed timing must match play. For every target or choice, specify whether it s
 - Keep the engine deterministic. Randomness comes from game state and its seeded RNG, never `Math.random()` in the engine.
 - Taunt is enforced through legal targets. Divine Shield is a breakable state. Invulnerable prevents damage. These are gameplay rules with visible card states, not text-only decoration.
 - Passive stat/keyword auras are derived from live sources through `auraBonuses`. Refresh removes each source's contribution before reapplying live auras, so a dead or Silenced source cannot leave a stale buff behind. Use this reversible path for effects such as Giant Tree and Chaos; do not use a permanent `buffMinion` call for a Passive aura.
+- Passive status effects are transient too. Track the live source of a Passive Silence (for example, Gojo); when that source dies, leaves the board, or is Silenced, remove its Silence and restore the affected minions' effects. Do not turn a Passive aura into a permanent mutation.
 - Reborn is a return, not a fresh play: every reborn minion suppresses its
   arrival card theme so an Ouken-style loop never repeats its music.
 - Slot auras and protected slots belong to the board position, not the minion occupying it. Replacement and movement must preserve the intended slot rule.
@@ -241,6 +242,23 @@ Conditions have distinct, composable visual channels:
 - Marked uses a red pulse and remains visible until its delayed resolution.
 
 Keep status indicators large enough to survive real board-card size. Verify condition work on a populated board; the opening screen cannot prove board conditions, targeting, hand interaction, or settings behaviour. Load card art eagerly and resolve public asset paths through `resolvePublicAssetUrl` so the game works both at a domain root and under a project page path.
+
+### Visual design changes require close-up and full-screen QA
+
+Any visual design change — including a card frame, keyword treatment, animation,
+badge, status tint, spacing, or board layout — must be inspected in the running
+game at both scales before it is considered done:
+
+1. **Close-up:** inspect the whole card face and its edges at readable zoom. Check
+   clipping, legibility, layering, and whether the treatment actually looks good.
+2. **Full screen:** inspect the populated board at the normal play viewport. Check
+   recognition at board-card size, neighbour collisions, status stacking, and
+   attack/target affordances.
+
+If the result is even slightly unsatisfying at either scale, redesign or improve
+it and repeat both inspections. A passing build or a technically present CSS
+class is not visual approval; the agent must look at the result itself before
+publishing it.
 
 ### Title-menu design QA record
 

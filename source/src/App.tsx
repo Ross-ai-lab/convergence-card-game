@@ -110,7 +110,7 @@ type Ghost = {
   minion: MinionInstance;
   delay: number;
   particles: Particle[];
-  motion: "death" | "return";
+  motion: "death" | "return" | "stasis";
   destinationOwner?: PlayerId;
 };
 type Lunge = { id: number; owner: PlayerId; slot: number; dx: number; dy: number } | null;
@@ -218,7 +218,7 @@ function rand(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-function makeParticles(kind: ImpactKind | "death", camp?: Camp): Particle[] {
+function makeParticles(kind: ImpactKind | "death" | "stasis", camp?: Camp): Particle[] {
   const out: Particle[] = [];
   const push = (dx: number, dy: number, size: number, delay: number, rot: number, dur: number) =>
     out.push({ key: out.length, dx, dy, size, delay, rot, dur });
@@ -272,6 +272,15 @@ function makeParticles(kind: ImpactKind | "death", camp?: Camp): Particle[] {
       const a = rand(0, Math.PI * 2);
       const d = rand(16, 46);
       push(Math.cos(a) * d, Math.sin(a) * d, rand(4, 7), rand(0, 0.12), 45, rand(0.5, 0.7));
+    }
+  } else if (kind === "stasis") {
+    // Stasis is suspension, not destruction: a small cyan lattice contracts
+    // around the card while square motes hang in place instead of flying out
+    // as death debris.
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      const d = rand(42, 78);
+      push(Math.cos(a) * d, Math.sin(a) * d * 0.72, rand(3, 6), rand(0, 0.18), rand(0, 90), rand(0.65, 0.95));
     }
   } else {
     // death: debris thrown outward, gravity applied by the shard-fly keyframe
@@ -682,10 +691,12 @@ export default function App() {
       }),
     );
     const returningOwners = new Map<string, PlayerId>();
+    const stasisIds = new Set<string>();
     resultEvents.forEach((event) => {
       if (event.motion === "return" && event.instanceId && event.player !== undefined) {
         returningOwners.set(event.instanceId, event.player);
       }
+      if (event.motion === "stasis" && event.instanceId) stasisIds.add(event.instanceId);
     });
     // Equipping an Ascension Relic is a deliberate power-spike moment, not a
     // normal card-play click. One fanfare per action keeps mass-equipping cards
@@ -698,14 +709,14 @@ export default function App() {
       const now = after.get(id);
       if (!now) {
         const destinationOwner = returningOwners.get(id);
-        const motion = destinationOwner === undefined ? "death" : "return";
+        const motion = stasisIds.has(id) ? "stasis" : destinationOwner === undefined ? "death" : "return";
         newGhosts.push({
           id: fxId.current++,
           owner: entry.owner,
           slot: entry.slot,
           minion: entry.minion,
           delay: strikeDelay,
-          particles: makeParticles("death"),
+          particles: makeParticles(motion === "stasis" ? "stasis" : "death"),
           motion,
           destinationOwner,
         });
@@ -780,7 +791,9 @@ export default function App() {
     }
     if (newGhosts.length) {
       setGhosts((cur) => [...cur, ...newGhosts]);
-      newGhosts.forEach((g, i) => sfx.play(g.motion === "return" ? "draw" : "death", g.delay + i * 0.07));
+      newGhosts.forEach((g, i) =>
+        sfx.play(g.motion === "stasis" ? "freeze" : g.motion === "return" ? "draw" : "death", g.delay + i * 0.07),
+      );
       const ids = new Set(newGhosts.map((g) => g.id));
       window.setTimeout(() => setGhosts((cur) => cur.filter((g) => !ids.has(g.id))), 760);
     }
@@ -1951,7 +1964,7 @@ function BoardRow({
               <div
                 className={[
                   "ghost-wrap",
-                  ghost.motion === "return" ? "returning" : "dying",
+                  ghost.motion === "stasis" ? "stasis" : ghost.motion === "return" ? "returning" : "dying",
                   ghost.motion === "return"
                     ? (ghost.destinationOwner === viewerId ? "returning-down" : "returning-up")
                     : "",
@@ -1962,7 +1975,7 @@ function BoardRow({
                 style={{ "--fd": `${ghost.delay}s` } as CSSProperties}
               >
                 <MinionFace minion={ghost.minion} />
-                {ghost.motion === "return" ? <ReturnBurst /> : <DeathBurst particles={ghost.particles} />}
+                {ghost.motion === "stasis" ? <StasisBurst particles={ghost.particles} /> : ghost.motion === "return" ? <ReturnBurst /> : <DeathBurst particles={ghost.particles} />}
               </div>
             ))}
             <span className="fx-layer" aria-hidden="true">
@@ -2047,6 +2060,30 @@ function ReturnBurst() {
       <i />
       <i />
       <i />
+    </span>
+  );
+}
+
+function StasisBurst({ particles }: { particles: Particle[] }) {
+  return (
+    <span className="stasis-burst" aria-hidden="true">
+      <span className="stasis-ring stasis-ring-one" />
+      <span className="stasis-ring stasis-ring-two" />
+      {particles.map((p) => (
+        <i
+          key={p.key}
+          style={
+            {
+              "--dx": `${p.dx}px`,
+              "--dy": `${p.dy}px`,
+              "--ps": `${p.size}px`,
+              "--pd": `${p.delay}s`,
+              "--pr": `${p.rot}deg`,
+              "--pt": `${p.dur}s`,
+            } as CSSProperties
+          }
+        />
+      ))}
     </span>
   );
 }

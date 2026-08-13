@@ -22,7 +22,8 @@
     "validate:data": "npm run validate:docs && node scripts/validate-cards.mjs",
     "prebuild": "npm run validate:docs",
     "check:ui": "node scripts/check-ui.mjs",
-    "check:cardface": "node scripts/check-cardface.mjs"
+    "check:cardface": "node scripts/check-cardface.mjs",
+    "check:coverage": "node scripts/check-effect-coverage.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

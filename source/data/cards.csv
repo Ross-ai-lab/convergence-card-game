@@ -59,7 +59,7 @@ c057,Ten Tails,9,7,5,Black,Magic,Evil,,chain_all_minions,onPlay,Battlecry: Chain
 c058,Kaido,8,5,5,Yellow,Nature,Evil,,destroy_enemy_taunt,onPlay,Battlecry: Destroy an enemy Taunt minion.,Rules of the seas,One Piece,/card-art/raw/c058.webp
 c059,Korosensei,8,4,4,Yellow,Nature,Neutral,Passive,korosensei_defense,passive,Passive: Evade 20% of attacks. Can only be damaged by ATK of 4 and higher.,Mach 20,Assasination Classroom,/card-art/raw/c059.webp
 c060,Monkey D. Luffy,8,7,3,Yellow,Magic,Good,,invuln_with_good_ally,passive,Passive: invulnerable as long as you control another Good minion.,Reality bends; laughter reigns,One Piece,/card-art/raw/c060.webp
-c061,Chaos,8,4,6,Purple,Tech,Neutral,Passive,buff_all_friendly_3_neg2,passive,Passive: All minions have +3/-2 (minimum 1 HP).,He gives gifts. He never mentions the cost,Hades,/card-art/raw/c061.webp
+c061,Chaos,8,4,6,Purple,Tech,Neutral,Passive,buff_all_friendly_3_neg2,passive,Passive: All other minions have +3/-2 (minimum 1 HP).,He gives gifts. He never mentions the cost,Hades,/card-art/raw/c061.webp
 c062,S-Class Heroes,8,4,7,Purple,Nature,Good,,buff_all_good_2,ongoing,Ongoing: Give +2/+2 to all good minions.,The strongest team,OPM,/card-art/raw/c062.webp
 c063,Sans,8,3,1,Purple,Magic,Neutral,Passive,dodge_80,passive,Passive: Evade 80% of attacks.,"HELLO, WORLD!",Undertale,/card-art/raw/c063.webp
 c064,Seven Deadly Sins,8,4,5,Purple,Magic,Good,,summon_sins,onPlay,"Battlecry: Fill your empty slots with 1/1 Sin minions. Each enters with a different keyword at random: Taunt, Divine Shield, Charge, Chained.",The Magic Number,Seven Deadly Sins,/card-art/raw/c064.webp
@@ -116,10 +116,10 @@ c114,Lord Voldemort,4,4,4,Purple,Magic,Evil,Passive,voldemort_phylactery,passive
 c115,One-Eyed Owl,4,6,5,Purple,Nature,Evil,Chained,none,none,Chained.,All seeing eye,Tokyo Ghoul,/card-art/raw/c115.webp
 c116,The Mask,4,3,2,Purple,Magic,Neutral,Deathrattle,mask_return_attacker,deathrattle,"Deathrattle: If the attacking enemy minion survived, put it into your hand.","True nature, revealed",The Mask,/card-art/raw/c116.webp
 c117,Albion,4,4,5,Black,Nature,Evil,Chained,none,none,Chained.,Mountain-tall,Seven Deadly Sins,/card-art/raw/c117.webp
-c118,Battleship,4,4,4,Black,Tech,Neutral,Passive,battleship_tech_aura,passive,Passive: All Tech minions have +1/+1.,-,Basic,/card-art/raw/c118.webp
+c118,Battleship,4,4,4,Black,Tech,Neutral,Passive,battleship_tech_aura,passive,Passive: All friendly minions have +1/+1.,-,Basic,/card-art/raw/c118.webp
 c119,Carnage Kabuto,4,3,2,Black,Nature,Evil,,self_atk_3,ongoing,Ongoing: Gain +3 ATK.,Maximum evolution,OPM,/card-art/raw/c119.webp
 c120,Fantastic Four,4,1,1,Black,Magic,Good,Passive,fantastic_four_aura,passive,"Passive: Your first 4 board slots from left to right gain 4 different effects: Taunt; Divine Shield; +2 ATK; +2 HP.",4,MCU,/card-art/raw/c120.webp
-c121,Shifu with the Furious Five,4,3,3,Black,Nature,Good,,shifu_shield,passive,"Passive: Whenever you play a Good friendly minion, it gains Divine Shield.",Resilience,Kung-Fu Panda,/card-art/raw/c121.webp
+c121,Furious Five,4,3,3,Black,Nature,Good,,shifu_shield,passive,"Passive: Whenever you play a Good friendly minion, it gains Divine Shield.",Resilience,Kung-Fu Panda,/card-art/raw/c121.webp
 c122,Wall of Flesh,4,3,5,Black,Nature,Evil,Taunt,none,none,Taunt.,A living barricade,Terraria,/card-art/raw/c122.webp
 c123,Darkwing,3,2,2,Red,Magic,Good,Deathrattle,kill_back,deathrattle,Deathrattle: The minion which kills this minion also dies right after.,He knew the cost,Invincible,/card-art/raw/c123.webp
 c124,Knov,3,1,1,Red,Magic,Good,,knov_pocket_room,onPlay,"Battlecry: Choose a friendly and an enemy minion to place in the pocket room, removing them from the board. After 2 turns, return the minion with the higher ATK.",The Room,HxH,/card-art/raw/c124.webp
@@ -161,7 +161,7 @@ c159,Indiana Jones,1,1,1,Red,Nature,Good,,discover_relic_self,onPlay,Battlecry: 
 c160,Domovoy,1,1,1,Yellow,Nature,Good,,draw_relic,onPlay,Battlecry: Draw an Ascension Relic.,The house spirit,Basic,/card-art/raw/c160.webp
 c161,Flowey,1,0,1,Yellow,Magic,Evil,Deathrattle,flowey_save_load,deathrattle,"Battlecry: Save your core's current HP. Deathrattle: Set your core to the saved HP",Friendliness is a face you put on.,Undertale,/card-art/raw/c161.webp
 c162,Kagaya Ubuyashiki,1,1,1,Yellow,Nature,Good,,buff_all_good_1,ongoing,Ongoing: Give +1/+1 to all other friendly Good minions.,Leadership,Demon Slayer,/card-art/raw/c162.webp
-c163,Angstrom Levy,1,1,1,Purple,Tech,Neutral,,replace_same_cost_random,onPlay,"Battlecry: Choose any minion. Put it on the bottom of the deck and summon a random minion of the same cost into its slot.",Universe,Invincible,/card-art/raw/c163.webp
+c163,Angstrom Levy,1,1,1,Purple,Tech,Neutral,,replace_same_cost_random,onPlay,"Battlecry: Choose another minion. Put it on the bottom of the deck and summon a random minion of the same cost into its slot.",Universe,Invincible,/card-art/raw/c163.webp
 c164,Dr. Heinz Doofenshmirtz,1,1,2,Purple,Tech,Neutral,,doof_coinflip,ongoing,Ongoing: 50% to die and 50% to gain +2/+1.,Your doom will be unnecessarily complicated,Phineas and Ferb universe,/card-art/raw/c164.webp
 c165,Mugen & Jin,1,1,2,Purple,Nature,Neutral,,ally_atk_1,onPlay,Battlecry: Gain +1 ATK if you have another friendly minion on the board.,"Two blades, one road, no agreement.",Samurai Champloo,/card-art/raw/c165.webp
 c166,Sir Nighteye,1,1,1,Purple,Magic,Good,Passive,reveal_enemy_draw,passive,Passive: See which card your enemy draws.,He has already watched this end.,MHA,/card-art/raw/c166.webp

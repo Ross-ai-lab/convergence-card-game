@@ -45,7 +45,7 @@ const WORST = [
   "Dr. Heinz Doofenshmirtz",
   // A MEDIAN card too. Worst cases alone tell you nothing about the size a
   // typical card actually renders at, which is the number worth watching.
-  "Shifu with the Furious Five",
+  "Furious Five",
   "Kojiro Sasaki",
   "The Nameless King",
 ];

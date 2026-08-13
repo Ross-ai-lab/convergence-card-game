@@ -73,7 +73,7 @@ describe("2026 card replacements", () => {
         effectId: "battleship_tech_aura",
         effectTiming: "passive",
         keywords: ["Passive"],
-        effect: "Passive: All Tech minions have +1/+1.",
+        effect: "Passive: All friendly minions have +1/+1.",
       },
       "Black Ops": {
         cost: 2,
@@ -91,7 +91,7 @@ describe("2026 card replacements", () => {
       "The Mask": { atk: 3, hp: 2, effectId: "mask_return_attacker", effectTiming: "deathrattle" },
       V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle" },
       "Time Bomb": { atk: 0, hp: 5, effectId: "time_bomb_ongoing_5", effectTiming: "ongoing", keywords: [] },
-      Chaos: { effectTiming: "passive", keywords: ["Passive"], effectId: "buff_all_friendly_3_neg2", effect: "Passive: All minions have +3/-2 (minimum 1 HP)." },
+      Chaos: { effectTiming: "passive", keywords: ["Passive"], effectId: "buff_all_friendly_3_neg2", effect: "Passive: All other minions have +3/-2 (minimum 1 HP)." },
       "Giant Tree": { effectTiming: "passive", keywords: ["Passive"], effectId: "buff_all_nature_2_1", effect: "Passive: All other friendly Nature minions have +2/+1." },
       "Elden Beast": { camp: "Magic", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: All friendly Magic minions have +2 ATK." },
       Darkwing: { effectTiming: "deathrattle", keywords: ["Deathrattle"], effectId: "kill_back", effect: "Deathrattle: The minion which kills this minion also dies right after." },
@@ -150,7 +150,7 @@ describe("2026 card replacements", () => {
     expect(cleansed.players[0].board[1]?.silenced).toBe(false);
   });
 
-  it("Gojo silences enemy minions now and as they arrive", () => {
+  it("Gojo silences enemy minions while alive, then releases them when he dies", () => {
     const state = mainState();
     state.players[1].board[0] = minion("John Wick", 1);
     state.players[1].board[1] = minion("Zoro", 1);
@@ -162,6 +162,17 @@ describe("2026 card replacements", () => {
 
     const later = play(afterPlay, 1, "John Wick", 2);
     expect(later.players[1].board[2]?.silenced).toBe(true);
+
+    later.players[1].board[3] = minion("Zoro", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
+    const afterGojoDies = applyAction(
+      { ...later, activePlayer: 1 },
+      { type: "attack_minion", player: 1, attackerSlot: 3, targetSlot: 2 },
+      library,
+    ).state;
+    expect(afterGojoDies.players[0].board[2]).toBeNull();
+    expect(afterGojoDies.players[1].board[0]?.silenced).toBe(false);
+    expect(afterGojoDies.players[1].board[1]?.silenced).toBe(false);
+    expect(afterGojoDies.players[1].board[2]?.silenced).toBe(false);
   });
 
   it("Cecil returns the chosen friendly minion to hand", () => {
@@ -178,6 +189,20 @@ describe("2026 card replacements", () => {
     expect(returned.players[0].board[1]).toBeNull();
     expect(returned.players[0].hand).toContain(cardId("John Wick"));
     expect(returned.players[0].board[2]).toMatchObject({ hp: 2, maxHp: 3 });
+  });
+
+  it("Angstrom Levy cannot replace himself", () => {
+    const state = mainState("angstrom-no-self");
+    state.players[0].board[1] = minion("John Wick", 0);
+    state.players[1].board[0] = minion("Zoro", 1);
+    const asking = play(state, 0, "Angstrom Levy", 0);
+    expect(asking.pendingTarget?.options).not.toContainEqual({ owner: 0, slot: 0 });
+    expect(asking.pendingTarget?.options).toEqual(
+      expect.arrayContaining([
+        { owner: 0, slot: 1 },
+        { owner: 1, slot: 0 },
+      ]),
+    );
   });
 
   it("lets Charge attack immediately and lets 0 ATK declare an attack", () => {
@@ -280,14 +305,14 @@ describe("2026 card replacements", () => {
     expect(afterDeath.players[0].board[1]).toMatchObject({ atk: 3, maxHp: 3 });
   });
 
-  it("Chaos is a global transient aura and never lowers max/current HP below 1", () => {
+  it("Chaos buffs every other minion globally and never lowers max/current HP below 1", () => {
     const state = mainState("chaos-transient");
     state.players[0].board[1] = minion("Zoro", 0, { atk: 2, hp: 2, maxHp: 2 });
     state.players[1].board[0] = minion("John Wick", 1, { atk: 1, hp: 1, maxHp: 1 });
     const chaotic = play(state, 0, "Chaos", 2);
     expect(chaotic.players[0].board[1]).toMatchObject({ atk: 5, hp: 1, maxHp: 1 });
     expect(chaotic.players[1].board[0]).toMatchObject({ atk: 4, hp: 1, maxHp: 1 });
-    expect(chaotic.players[0].board[2]).toMatchObject({ atk: 7, hp: 4, maxHp: 4 });
+    expect(chaotic.players[0].board[2]).toMatchObject({ atk: 4, hp: 6, maxHp: 6 });
 
     chaotic.players[1].board[1] = minion("Zoro", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
     const restored = applyAction({ ...chaotic, activePlayer: 1 }, { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 2 }, library).state;
@@ -500,7 +525,9 @@ describe("2026 card replacements", () => {
     state.players[1].board[0] = minion("John Wick", 1);
     state.players[1].board[2] = minion("Zoro", 1);
     const asking = play(state, 0, "G-Man", 1);
-    const stasis = choose(asking, 1);
+    const picked = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: 1 }, library);
+    expect(picked.events).toEqual(expect.arrayContaining([expect.objectContaining({ motion: "stasis" })]));
+    const stasis = picked.state;
     expect(stasis.players[1].board[2]).toBeNull();
     expect(stasis.stasis).toHaveLength(1);
     expect(stasis.stasis[0].returnAtTurn).toBe(stasis.turnNumber + 2);
@@ -593,7 +620,7 @@ describe("2026 card replacements", () => {
     expect(sins.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
   });
 
-  it("Black Ops ignores Taunt, Battleship buffs all Tech, and Star Destroyer deploys Charge TIE Fighters", () => {
+  it("Black Ops ignores Taunt, Battleship buffs all friendly minions, and Star Destroyer deploys Charge TIE Fighters", () => {
     const blackOps = mainState("black-ops-taunt");
     blackOps.players[0].board[0] = minion("Black Ops", 0, { sleeping: false });
     blackOps.players[1].board[0] = minion("John Wick", 1, { keywords: ["Taunt"], sleeping: false });
@@ -608,12 +635,13 @@ describe("2026 card replacements", () => {
     const buffed = play(tech, 0, "Battleship", 0);
     expect(buffed.players[0].board[0]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
     expect(buffed.players[0].board[1]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
-    expect(buffed.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
-    expect(buffed.players[1].board[0]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
+    expect(buffed.players[0].board[2]).toMatchObject({ atk: 3, hp: 4, maxHp: 4 });
+    expect(buffed.players[1].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
     buffed.players[0].board[0]!.silenced = true;
     const auraRemoved = applyAction(buffed, { type: "end_turn", player: 0 }, library).state;
     expect(auraRemoved.players[0].board[0]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
     expect(auraRemoved.players[0].board[1]).toMatchObject({ atk: 2, hp: 2, maxHp: 2 });
+    expect(auraRemoved.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
     expect(auraRemoved.players[1].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
 
     const destroyer = play(mainState("star-destroyer-tokens"), 0, "Star Destroyer", 0);

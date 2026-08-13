@@ -43,6 +43,7 @@ export function spawnTestMinion(
     frozen: false,
     thawPending: false,
     silenced: false,
+    passiveSilenceSources: [],
     divineShield: card.keywords.includes("Divine Shield"),
     invulnerableUntilTurn: null,
     protectedSlot: false,

@@ -1,4 +1,5 @@
 import { isMinionCard, isRelicCard } from "./types";
+import { traceEffect } from "./trace";
 import type {
   ApplyResult,
   Alignment,
@@ -478,7 +479,7 @@ function playCard(
     )
   ) {
     minion.divineShield = true;
-    events.push(effectEvent(`${minion.name} gains Divine Shield from Shifu.`, minion));
+    events.push(effectEvent(`${minion.name} gains Divine Shield from Furious Five.`, minion));
   }
   applyOnPlayEffects(state, minion, slotIndex, library, events);
 }
@@ -552,6 +553,7 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     frozen: false,
     thawPending: false,
     silenced: false,
+    passiveSilenceSources: [],
     divineShield: hasKeyword(card, "Divine Shield"),
     invulnerableUntilTurn: null,
     protectedSlot: false,
@@ -1196,7 +1198,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
       { label: "Gain a random Ascension Relic", value: "random_relic" },
     ],
   },
-  replace_same_cost_random: { side: "any", prompt: "Choose any minion", includeSelf: true },
+  replace_same_cost_random: { side: "any", prompt: "Choose another minion", includeSelf: false },
   // --- the hard cards ---
   copy_minion_effects: { side: "any", prompt: "Choose another minion to become" },
   knov_pocket_room: { side: "friendly", prompt: "Choose a friendly minion for the pocket room", includeSelf: false },
@@ -1520,6 +1522,8 @@ function runEffect(
   const enemy = state.players[enemyId];
   const label = `${source.name}:`;
 
+  traceEffect(source.effectId);
+
   if (source.effectId === "discover_relic_self" || source.effectId === "choose_relic") {
     if (chosen?.kind !== "option") {
       const next = requestChoice(
@@ -1712,7 +1716,13 @@ function runEffect(
         returnAtTurn: state.turnNumber + 2,
         sourceName: source.name,
       });
-      events.push(effectEvent(`${label} puts ${picked.name} into stasis for two turns.`, source));
+      events.push({
+        kind: "effect",
+        text: `${label} puts ${picked.name} into stasis for two turns.`,
+        player: source.owner,
+        instanceId: picked.instanceId,
+        motion: "stasis",
+      });
     } else if (picked) {
       events.push(effectEvent(`${picked.name} resists stasis.`, picked));
     }
@@ -2787,6 +2797,7 @@ function copyMinionEffects(source: MinionInstance, target: MinionInstance, event
   source.origin = target.origin;
   source.art = target.art;
   source.silenced = target.silenced;
+  source.passiveSilenceSources = [...(target.passiveSilenceSources ?? [])];
   source.divineShield = target.divineShield;
   source.gainedEffects = target.gainedEffects.map((effect) => ({ ...effect }));
   source.atk = keepStats.atk;
@@ -3220,15 +3231,13 @@ function refreshPassiveAuras(state: GameState): void {
     ),
   );
   for (const source of battleships) {
-    for (const targetBoard of state.players.map((player) => player.board)) {
-      for (const target of targetBoard) {
-        if (!target || target.camp !== "Tech") continue;
-        target.atk += 1;
-        target.maxHp += 1;
-        target.hp += 1;
-        target.auraBonuses = target.auraBonuses ?? [];
-        target.auraBonuses.push({ sourceId: source.instanceId, atk: 1, hp: 1, keywords: [] });
-      }
+    for (const target of state.players[source.owner].board) {
+      if (!target) continue;
+      target.atk += 1;
+      target.maxHp += 1;
+      target.hp += 1;
+      target.auraBonuses = target.auraBonuses ?? [];
+      target.auraBonuses.push({ sourceId: source.instanceId, atk: 1, hp: 1, keywords: [] });
     }
   }
   const eldenBeasts = ([0, 1] as PlayerId[]).flatMap((owner) =>
@@ -3252,7 +3261,7 @@ function refreshPassiveAuras(state: GameState): void {
   for (const source of chaosSources) {
     for (const targetBoard of state.players.map((player) => player.board)) {
       for (const target of targetBoard) {
-        if (!target) continue;
+        if (!target || target.instanceId === source.instanceId) continue;
         // Chaos is global, but the -2 HP side of the aura is never allowed to
         // reduce a minion below 1 maximum/current HP.
         const hpDelta = Math.max(1 - target.maxHp, -2);
@@ -3289,16 +3298,48 @@ function refreshPassiveAuras(state: GameState): void {
 }
 
 function enforceGlobalSilence(state: GameState, events: GameEvent[]): void {
+  const liveGojoIds = new Set(
+    state.players.flatMap((player) =>
+      player.board
+        .filter((minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "yoda_global_silence")))
+        .map((minion) => minion.instanceId),
+    ),
+  );
+
+  // Gojo's Silence is an aura, not a permanent mutation. Remove only the
+  // sources that are no longer live; a minion that was already silenced by a
+  // separate effect was never claimed by this aura and stays silenced.
+  for (const player of state.players) {
+    for (const minion of player.board) {
+      if (!minion || !minion.passiveSilenceSources?.length) continue;
+      const remaining = minion.passiveSilenceSources.filter((sourceId) => liveGojoIds.has(sourceId));
+      if (remaining.length === minion.passiveSilenceSources.length) continue;
+      minion.passiveSilenceSources = remaining;
+      if (remaining.length === 0) {
+        minion.silenced = false;
+        events.push(effectEvent(`${minion.name} is no longer silenced by Gojo.`, minion));
+      }
+    }
+  }
+
   for (const owner of [0, 1] as PlayerId[]) {
-    const yoda = state.players[owner].board.some(
-      (minion) => minion && hasEffect(minion, "yoda_global_silence") && !minion.silenced,
+    const gojos = state.players[owner].board.filter(
+      (minion): minion is MinionInstance => Boolean(minion && hasEffect(minion, "yoda_global_silence") && !minion.silenced),
     );
-    if (!yoda) continue;
+    if (gojos.length === 0) continue;
     const enemy = state.players[opponent(owner)];
     for (const minion of enemy.board) {
-      if (!minion || minion.silenced) continue;
+      if (!minion) continue;
+      const sources = new Set(minion.passiveSilenceSources ?? []);
+      // A pre-existing non-Gojo Silence is not owned by this aura. Once a
+      // minion is marked by Gojo, however, all live Gojo sources are retained
+      // so removing one of several Gojo cards cannot release it too early.
+      if (minion.silenced && sources.size === 0) continue;
+      for (const gojo of gojos) sources.add(gojo.instanceId);
+      const wasSilenced = minion.silenced;
       minion.silenced = true;
-      events.push(effectEvent(`${minion.name} is silenced by Grand Master Yoda.`, minion));
+      minion.passiveSilenceSources = [...sources];
+      if (!wasSilenced) events.push(effectEvent(`${minion.name} is silenced by Gojo.`, gojos[0]));
     }
   }
 }
@@ -3963,7 +4004,12 @@ function hasKeyword(card: Pick<CardDefinition | MinionInstance, "keywords">, key
 }
 
 function hasEffect(minion: MinionInstance, effectId: EffectId): boolean {
-  return minion.effectId === effectId || minion.gainedEffects.some((effect) => effect.effectId === effectId);
+  const held = minion.effectId === effectId || minion.gainedEffects.some((effect) => effect.effectId === effectId);
+  // Only a TRUE answer counts as the effect having been exercised. Recording
+  // every question instead would mark a passive as covered because some other
+  // card asked whether this minion had it, which is the opposite of the truth.
+  if (held) traceEffect(effectId);
+  return held;
 }
 
 function tauntBypassActive(minion: MinionInstance): boolean {
@@ -4066,6 +4112,7 @@ function transformIntoLunarSlime(
     origin: target.origin,
     art: target.art,
     silenced: target.silenced,
+    passiveSilenceSources: [...(target.passiveSilenceSources ?? [])],
     divineShield: target.divineShield,
     stolenPassiveFrom: target.stolenPassiveFrom,
     stolenPassiveText: target.stolenPassiveText,
@@ -4093,6 +4140,7 @@ function transformIntoLunarSlime(
   target.effect = "-";
   target.origin = "Elden Ring";
   target.silenced = false;
+  target.passiveSilenceSources = [];
   target.divineShield = false;
   target.stolenPassiveFrom = null;
   target.stolenPassiveText = null;
@@ -4664,6 +4712,12 @@ function reactToDeath(state: GameState, dead: MinionInstance, deadOwner: PlayerI
   for (const playerId of [0, 1] as PlayerId[]) {
     for (const minion of state.players[playerId].board) {
       if (!minion || minion.silenced || minion.instanceId === dead.instanceId) continue;
+      // The five death reactions below compare `minion.effectId` directly rather
+      // than going through hasEffect, so they would be invisible to the coverage
+      // trace. Recording here marks a death-reaction effect as exercised whenever
+      // a death is resolved while its owner is on the board, which is the moment
+      // its branch is genuinely reachable.
+      traceEffect(minion.effectId);
       if (playerId === deadOwner && hasEffect(minion, "kratos_chain_break") && minion.chained > 0) {
         minion.chained = 0;
         buffMinion(minion, 2, 2);

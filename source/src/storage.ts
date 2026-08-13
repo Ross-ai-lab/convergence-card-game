@@ -50,9 +50,11 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // v14: the requested card pass added hero shields and reactive/aura state.
 // v15: the replacement card pass added G-Man's stasis and Ten Commandments'
 // per-turn trigger marker.
-const SAVE_VERSION = 15;
+// v16: MinionInstance gained passiveSilenceSources so Gojo's Silence aura can
+// be removed when Gojo leaves play.
+const SAVE_VERSION = 16;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v14";
+const LEGACY_SAVE_KEY = "convergence.save.v15";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -180,6 +182,7 @@ function migrateLegacyMechanics(game: GameState): void {
       if (minion.brokenAuraSources === undefined) minion.brokenAuraSources = [];
       if (minion.deathStarTarget === undefined) minion.deathStarTarget = null;
       if (minion.commandmentsTriggeredAtTurn === undefined) minion.commandmentsTriggeredAtTurn = null;
+      if (minion.passiveSilenceSources === undefined) minion.passiveSilenceSources = [];
     }
   }
 }

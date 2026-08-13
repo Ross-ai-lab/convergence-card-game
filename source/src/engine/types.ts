@@ -308,6 +308,7 @@ export interface MinionTransformSnapshot {
   origin: string;
   art: string;
   silenced: boolean;
+  passiveSilenceSources: string[];
   divineShield: boolean;
   stolenPassiveFrom: string | null;
   stolenPassiveText: string | null;
@@ -355,6 +356,8 @@ export interface MinionInstance {
    */
   thawPending: boolean;
   silenced: boolean;
+  /** Gojo's live aura sources; removed when those passive sources leave play. */
+  passiveSilenceSources: string[];
   divineShield: boolean;
   invulnerableUntilTurn: number | null;
   protectedSlot: boolean;
@@ -691,8 +694,8 @@ export interface GameEvent {
   player?: PlayerId;
   cardId?: string;
   instanceId?: string;
-  /** View-only motion hint for a minion leaving the board for a hand. */
-  motion?: "return";
+  /** View-only motion hint for a minion leaving the board. */
+  motion?: "return" | "stasis";
 }
 
 export interface ApplyResult {

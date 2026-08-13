@@ -734,6 +734,31 @@ button:disabled {
   --return-rotate: 5deg;
 }
 
+/* G-Man's stasis is suspension, not a death: the card folds into a cold
+   dimensional cell while cyan motes orbit it. It deliberately never uses the
+   death shard animation or the death shockwave. */
+.ghost-wrap.stasis {
+  animation: stasis-collapse 0.82s cubic-bezier(0.2, 0.72, 0.25, 1) var(--fd, 0s) both;
+}
+
+.ghost-wrap.stasis .card-face {
+  animation: stasis-card 0.82s ease-in var(--fd, 0s) both;
+  filter: saturate(0.72) hue-rotate(120deg) brightness(1.12);
+}
+
+@keyframes stasis-collapse {
+  0% { opacity: 1; transform: none; filter: drop-shadow(0 0 0 rgba(95, 225, 255, 0)); }
+  22% { opacity: 1; transform: scale(1.015); filter: drop-shadow(0 0 15px rgba(83, 220, 255, 0.9)); }
+  58% { opacity: 0.92; transform: scale(0.88) rotateY(12deg); filter: drop-shadow(0 0 25px rgba(83, 220, 255, 0.95)); }
+  100% { opacity: 0; transform: scale(0.18) rotateY(70deg); filter: drop-shadow(0 0 8px rgba(83, 220, 255, 0.5)); }
+}
+
+@keyframes stasis-card {
+  0%, 20% { clip-path: inset(0 round 10px); }
+  55% { clip-path: inset(8% 12% round 18px); }
+  100% { clip-path: inset(46% 43% round 22px); }
+}
+
 @keyframes minion-arrive {
   0% {
     opacity: 0;
@@ -863,6 +888,21 @@ button:disabled {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
   12% { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(5.4); border-width: 1px; }
+}
+
+.ghost-wrap.stasis::after {
+  width: 32px;
+  height: 32px;
+  border-color: rgba(143, 241, 255, 0.98);
+  border-radius: 8px;
+  box-shadow: 0 0 28px rgba(63, 211, 255, 0.95), inset 0 0 12px rgba(178, 249, 255, 0.8);
+  animation: stasis-cell 0.78s cubic-bezier(0.16, 0.75, 0.25, 1) var(--fd, 0s) both;
+}
+
+@keyframes stasis-cell {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.35) rotate(0deg); }
+  22% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(3.8) rotate(45deg); border-width: 1px; }
 }
 
 @keyframes return-portal {
@@ -1768,6 +1808,57 @@ button:disabled {
 .return-burst i:nth-child(2) { --pip-x: 36px; --pip-y: -28px; }
 .return-burst i:nth-child(3) { --pip-x: -32px; --pip-y: 26px; }
 .return-burst i:nth-child(4) { --pip-x: 42px; --pip-y: 20px; }
+
+.stasis-burst {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.stasis-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52%;
+  height: 52%;
+  border: 2px solid rgba(119, 234, 255, 0.85);
+  border-radius: 12px;
+  box-shadow: 0 0 16px rgba(44, 200, 255, 0.72), inset 0 0 12px rgba(44, 200, 255, 0.45);
+  transform: translate(-50%, -50%) rotate(45deg) scale(0.45);
+  animation: stasis-ring 0.82s ease-out var(--fd, 0s) both;
+}
+
+.stasis-ring-two {
+  width: 38%;
+  height: 38%;
+  border-color: rgba(210, 249, 255, 0.86);
+  animation-delay: calc(var(--fd, 0s) + 0.08s);
+}
+
+.stasis-burst i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--ps, 5px);
+  height: var(--ps, 5px);
+  border-radius: 1px;
+  background: #baf6ff;
+  box-shadow: 0 0 10px rgba(91, 224, 255, 0.95);
+  animation: stasis-mote var(--pt, 0.8s) ease-out calc(var(--fd, 0s) + var(--pd, 0s)) both;
+}
+
+@keyframes stasis-ring {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(45deg) scale(0.35); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(135deg) scale(1.65); }
+}
+
+@keyframes stasis-mote {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.35) rotate(var(--pr, 0deg)); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.1) rotate(var(--pr, 0deg)); }
+}
 
 .revealed-hand em {
   margin-left: 2px;
@@ -2800,75 +2891,31 @@ button:disabled {
   border-radius: calc(12 * var(--u));
 }
 
-/* --- TAUNT: a steel plate the minion is SET INTO ---------------------------
-   Checked against Hearthstone directly: a Taunt minion's artwork is 100% visible.
-   The shield is a thick metal frame AROUND the portrait, proud of it on every
-   side with small angular nubs, so the silhouette changes. It never covers the
-   character. An earlier version here laid a big grey shield ON TOP of the art and
-   swallowed half the card — do not go back to that. */
-/* TAUNT HAS TO BE READABLE ACROSS THE BOARD, not findable on inspection.
-
-   The original was a light-grey slab 44 units proud, sitting BEHIND the card so
-   the art stayed clean. Three things were wrong at once: 44 units is about 13
-   real pixels at board size, mid-grey on a parchment table is almost no
-   contrast, and something hiding behind the card is the one place the eye never
-   goes. The symptom was a player repeatedly trying to attack past a Taunt and
-   not understanding the refusal — the worst thing a board can do, because the
-   rule is invisible and the refusal is silent.
-
-   It went too far the other way next: 88 units proud, plus a gold shield icon
-   on the corner. At 88 the barricade reached into the 24px gap between slots and
-   crowded both neighbours, and the shield was a second thing competing for the
-   same corner. The replacement keeps the guard INSIDE the card: two thick iron
-   side rails and a short battlement across the top. It is visible at board size,
-   never covers the portrait, and leaves the attack gems completely clear. */
-.card-face.kw-taunt:not(.is-silenced) .cf-fx {
-  /* Side rails are an actual barrier, not a low-contrast shadow that disappears
-     behind the green "ready to attack" ring. The centre stays transparent. */
-  background:
-    linear-gradient(90deg, rgba(225, 237, 246, 0.98) 0%, rgba(97, 115, 132, 0.98) 22%, rgba(23, 31, 40, 0.98) 100%) left / calc(26 * var(--u)) 100% no-repeat,
-    linear-gradient(270deg, rgba(225, 237, 246, 0.98) 0%, rgba(97, 115, 132, 0.98) 22%, rgba(23, 31, 40, 0.98) 100%) right / calc(26 * var(--u)) 100% no-repeat;
-  box-shadow:
-    inset 0 0 0 calc(3 * var(--u)) rgba(222, 239, 252, 0.82),
-    inset 0 0 0 calc(8 * var(--u)) rgba(17, 24, 32, 0.92),
-    inset 0 0 calc(16 * var(--u)) rgba(10, 16, 22, 0.38);
-}
-
-/* The top battlement makes the side rails read as one guard. It starts under
-   the name banner, never over the card title or the rules plaque. */
-.card-face.kw-taunt:not(.is-silenced) .cf-stage::before {
+/* --- TAUNT: the original steel plate behind the card ----------------------
+   Taunt is a silhouette, not a label. The artwork and rules remain untouched;
+   the dark iron plate sits behind the card and is proud on every side. */
+.card-face.kw-taunt::before {
   content: "";
-  position: absolute;
-  /* The name banner stays completely readable. The guard begins immediately
-     under it and bites only a few pixels into the top of the portrait. */
-  top: calc(65 * var(--u));
-  left: calc(14 * var(--u));
-  right: calc(14 * var(--u));
-  height: calc(30 * var(--u));
-  z-index: 7;
-  border: calc(3 * var(--u)) solid rgba(222, 239, 252, 0.92);
-  border-radius: calc(7 * var(--u));
-  background:
-    repeating-linear-gradient(110deg, rgba(255, 255, 255, 0.18) 0 calc(9 * var(--u)), rgba(0, 0, 0, 0.16) calc(9 * var(--u)) calc(18 * var(--u))),
-    linear-gradient(180deg, #637487, #202a35 74%);
-  box-shadow:
-    inset 0 calc(2 * var(--u)) 0 rgba(255, 255, 255, 0.46),
-    0 calc(3 * var(--u)) calc(8 * var(--u)) rgba(0, 0, 0, 0.76);
-  clip-path: polygon(
-    0 0, 18% 0, 20% 32%, 36% 32%, 38% 0, 62% 0, 64% 32%, 80% 32%, 82% 0, 100% 0,
-    96% 100%, 4% 100%
-  );
+  grid-area: 1 / 1;
+  z-index: 0;
+  width: calc(862 * var(--u));
+  height: calc(1162 * var(--u));
   pointer-events: none;
-}
-
-/* The normal ready-to-attack halo is still allowed, but the card's own Taunt
-   rails remain visible because they are drawn on the card surface above it. */
-.board-slot.occupied.ready .minion-wrap .card-face.kw-taunt:not(.is-silenced) .cf-stage {
+  border-radius: calc(26 * var(--u));
+  clip-path: polygon(
+    0% 4%, 4% 0%, 18% 0%, 20% 3%, 34% 3%, 36% 0%, 64% 0%, 66% 3%, 80% 3%, 82% 0%, 96% 0%, 100% 4%,
+    100% 38%, 89% 45%, 100% 52%,
+    100% 96%, 96% 100%, 4% 100%, 0% 96%,
+    0% 52%, 11% 45%, 0% 38%
+  );
+  background:
+    repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.06) 0 calc(9 * var(--u)), rgba(0, 0, 0, 0.16) calc(9 * var(--u)) calc(19 * var(--u))),
+    linear-gradient(157deg, #8e9aa6 0%, #59626d 18%, #333a43 48%, #1b2027 76%, #6f7a86 100%);
   box-shadow:
-    0 0 0 5px rgba(86, 226, 122, 0.95),
-    0 0 22px 6px rgba(70, 200, 110, 0.65),
-    0 0 46px 12px rgba(70, 200, 110, 0.35),
-    var(--cf-drop);
+    inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(0, 0, 0, 0.95),
+    inset 0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(230, 240, 255, 0.5),
+    inset 0 calc(-14 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.8),
+    0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
 }
 
 /* --- DIVINE SHIELD: a bright golden bubble around the whole card -----------
@@ -3795,9 +3842,11 @@ button:disabled {
   pointer-events: auto;
 }
 
-/* Two straps share the bottom rail without covering the HP gem. */
-.relic-badge-0 { left: 41%; }
+/* One relic is centered. Only when the second badge exists do the two share
+   the rail and move left/right to clear the HP gem. */
+.relic-badge-0 { left: 50%; }
 .relic-badge-1 { left: 59%; }
+.minion-wrap:has(.relic-badge-1) .relic-badge-0 { left: 41%; }
 
 /* Relics with no minion to carry them yet. They used to be a bare count; now
    each one is its own little chip you can hover to read the whole card. */
