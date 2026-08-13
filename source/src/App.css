@@ -2819,20 +2819,56 @@ button:disabled {
    It went too far the other way next: 88 units proud, plus a gold shield icon
    on the corner. At 88 the barricade reached into the 24px gap between slots and
    crowded both neighbours, and the shield was a second thing competing for the
-   same corner. BOTH were pulled back (owner ruling): the barricade is now a
-   slim 7-unit inset, and the shield is gone entirely.
-
-   What carries it is contrast and material, not size: dark iron with a lit top
-   edge and a hard shadow, against a light table and a dark card frame. The
-   artwork is never covered — that is not a lever here or anywhere. */
-.card-face.kw-taunt .cf-stage {
-  /* Keep the guard inside the card's own clip box. The old oversized pseudo-
-     element was visually heavy at the bottom and got clipped by .cf-stage. */
+   same corner. The replacement keeps the guard INSIDE the card: two thick iron
+   side rails and a short battlement across the top. It is visible at board size,
+   never covers the portrait, and leaves the attack gems completely clear. */
+.card-face.kw-taunt:not(.is-silenced) .cf-fx {
+  /* Side rails are an actual barrier, not a low-contrast shadow that disappears
+     behind the green "ready to attack" ring. The centre stays transparent. */
+  background:
+    linear-gradient(90deg, rgba(225, 237, 246, 0.98) 0%, rgba(97, 115, 132, 0.98) 22%, rgba(23, 31, 40, 0.98) 100%) left / calc(26 * var(--u)) 100% no-repeat,
+    linear-gradient(270deg, rgba(225, 237, 246, 0.98) 0%, rgba(97, 115, 132, 0.98) 22%, rgba(23, 31, 40, 0.98) 100%) right / calc(26 * var(--u)) 100% no-repeat;
   box-shadow:
-    inset 0 0 0 calc(7 * var(--u)) rgba(176, 194, 211, 0.96),
-    inset 0 0 0 calc(10 * var(--u)) rgba(19, 26, 35, 0.94),
-    inset 0 calc(4 * var(--u)) calc(9 * var(--u)) rgba(239, 247, 255, 0.5),
-    0 calc(4 * var(--u)) calc(12 * var(--u)) rgba(0, 0, 0, 0.78);
+    inset 0 0 0 calc(3 * var(--u)) rgba(222, 239, 252, 0.82),
+    inset 0 0 0 calc(8 * var(--u)) rgba(17, 24, 32, 0.92),
+    inset 0 0 calc(16 * var(--u)) rgba(10, 16, 22, 0.38);
+}
+
+/* The top battlement makes the side rails read as one guard. It starts under
+   the name banner, never over the card title or the rules plaque. */
+.card-face.kw-taunt:not(.is-silenced) .cf-stage::before {
+  content: "";
+  position: absolute;
+  /* The name banner stays completely readable. The guard begins immediately
+     under it and bites only a few pixels into the top of the portrait. */
+  top: calc(65 * var(--u));
+  left: calc(14 * var(--u));
+  right: calc(14 * var(--u));
+  height: calc(30 * var(--u));
+  z-index: 7;
+  border: calc(3 * var(--u)) solid rgba(222, 239, 252, 0.92);
+  border-radius: calc(7 * var(--u));
+  background:
+    repeating-linear-gradient(110deg, rgba(255, 255, 255, 0.18) 0 calc(9 * var(--u)), rgba(0, 0, 0, 0.16) calc(9 * var(--u)) calc(18 * var(--u))),
+    linear-gradient(180deg, #637487, #202a35 74%);
+  box-shadow:
+    inset 0 calc(2 * var(--u)) 0 rgba(255, 255, 255, 0.46),
+    0 calc(3 * var(--u)) calc(8 * var(--u)) rgba(0, 0, 0, 0.76);
+  clip-path: polygon(
+    0 0, 18% 0, 20% 32%, 36% 32%, 38% 0, 62% 0, 64% 32%, 80% 32%, 82% 0, 100% 0,
+    96% 100%, 4% 100%
+  );
+  pointer-events: none;
+}
+
+/* The normal ready-to-attack halo is still allowed, but the card's own Taunt
+   rails remain visible because they are drawn on the card surface above it. */
+.board-slot.occupied.ready .minion-wrap .card-face.kw-taunt:not(.is-silenced) .cf-stage {
+  box-shadow:
+    0 0 0 5px rgba(86, 226, 122, 0.95),
+    0 0 22px 6px rgba(70, 200, 110, 0.65),
+    0 0 46px 12px rgba(70, 200, 110, 0.35),
+    var(--cf-drop);
 }
 
 /* --- DIVINE SHIELD: a bright golden bubble around the whole card -----------
