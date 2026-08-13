@@ -584,7 +584,7 @@ await targetingCheck(
   ".board-slot.choosable",
 );
 
-// Batman freezes one chosen enemy, or kills it when it is already Frozen.
+// Batman chooses a victim, then chooses one of his three gadgets.
 await newBoard({ place: false });
 {
   const ready = await page.evaluate(() => Boolean(window.__debug));
@@ -602,10 +602,14 @@ await newBoard({ place: false });
     await page.locator(".board-slot.placeable").first().click();
     await page.locator(".board-slot.choosable").first().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
     const firstOffered = await page.locator(".board-slot.choosable").count();
-    if (firstOffered) await page.locator(".board-slot.choosable").first().click();
+    if (firstOffered) {
+      await page.locator(".board-slot.choosable").first().click();
+      await page.getByRole("button", { name: "Freeze it", exact: true }).waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+      await page.getByRole("button", { name: "Freeze it", exact: true }).click().catch(() => {});
+    }
     await page.waitForTimeout(700);
     check(
-      "Batman asks for a freeze target",
+      "Batman asks for a victim and gadget",
       firstOffered === 3 &&
         (await page.locator(".target-prompt").count()) === 0 &&
         (await page.locator(".board-slot .card-face.is-frozen").count()) === 1,

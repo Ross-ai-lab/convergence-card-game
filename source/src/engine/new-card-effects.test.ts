@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
 import { spawnTestMinion } from "./test-utils";
-import type { GameState, MinionInstance, PlayerId } from "./types";
+import type { GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
 
 const library = makeCardLibrary(cards, relics);
 
@@ -64,12 +64,12 @@ describe("2026 card replacements", () => {
       V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle" },
       "Time Bomb": { atk: 0, hp: 5, effectId: "time_bomb_ongoing_5", effectTiming: "ongoing", keywords: [] },
       "G-Man": { atk: 3, hp: 6, effectId: "stasis_enemy", effectTiming: "onPlay", keywords: [] },
-      Superman: { atk: 6, hp: 6, effectId: "immune_nature_minions", effectTiming: "passive", keywords: ["Passive"] },
+      Superman: { atk: 6, hp: 6, effectId: "superman_damage_cap_3", effectTiming: "passive", keywords: ["Passive"] },
       "Darth Vader": { atk: 3, hp: 2, effectId: "vader_chain_or_destroy", effectTiming: "onPlay", keywords: [] },
       Dumbledore: { atk: 2, hp: 4, effectId: "dumbledore_cleanse", effectTiming: "passive", keywords: ["Passive"] },
       Gojo: { atk: 4, hp: 8, effectId: "yoda_global_silence", effectTiming: "passive", keywords: ["Passive"] },
-      "Rennala Queen of the Full Moon": { atk: 2, hp: 4, effectId: "heal_all_friendly_full", effectTiming: "onPlay", keywords: [] },
-      Cecil: { atk: 1, hp: 1, effectId: "heal_ally_full", effectTiming: "onPlay", keywords: [] },
+      "Rennala Queen of the Full Moon": { atk: 2, hp: 3, effectId: "rebirth_friendly_dead", effectTiming: "onPlay", keywords: [] },
+      Cecil: { atk: 1, hp: 1, effectId: "bounce_friendly", effectTiming: "onPlay", keywords: [] },
       "Giorno - Gold Experience Requiem": { atk: 5, hp: 8, effectId: "slot_permanent_silence", effectTiming: "onPlay", keywords: [] },
       Avengers: { atk: 4, hp: 4, effectId: "invuln_with_good_ally", effectTiming: "passive", keywords: ["Passive"] },
       "General Grievous": { atk: 3, hp: 2, effectId: "grievous_on_kill_atk", effectTiming: "passive", keywords: ["Passive"] },
@@ -128,7 +128,7 @@ describe("2026 card replacements", () => {
     expect(later.players[1].board[2]?.silenced).toBe(true);
   });
 
-  it("Cecil fully heals the chosen friendly minion without Divine Shield", () => {
+  it("Cecil returns the chosen friendly minion to hand", () => {
     const state = mainState();
     state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 6 });
     state.players[0].board[2] = minion("Zoro", 0, { hp: 2, maxHp: 3 });
@@ -137,9 +137,10 @@ describe("2026 card replacements", () => {
     expect(asking.players[0].board[0]).toMatchObject({ keywords: [], divineShield: false });
     const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 0 && option.slot === 1) ?? -1;
     expect(targetIndex).toBeGreaterThanOrEqual(0);
-    const healed = choose(asking, targetIndex);
-    expect(healed.players[0].board[1]).toMatchObject({ hp: 6, maxHp: 6 });
-    expect(healed.players[0].board[2]).toMatchObject({ hp: 2, maxHp: 3 });
+    const returned = choose(asking, targetIndex);
+    expect(returned.players[0].board[1]).toBeNull();
+    expect(returned.players[0].hand).toContain(cardId("John Wick"));
+    expect(returned.players[0].board[2]).toMatchObject({ hp: 2, maxHp: 3 });
   });
 
   it("lets Charge attack immediately and lets 0 ATK declare an attack", () => {
@@ -449,12 +450,12 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[0]?.atk).toBe(7);
   });
 
-  it("Superman ignores Nature damage and Deep Sea King is Invulnerable while anything is Frozen", () => {
-    const superman = mainState("superman-nature-immunity");
+  it("Superman caps incoming damage at 3 and Deep Sea King is Invulnerable while anything is Frozen", () => {
+    const superman = mainState("superman-damage-cap");
     superman.players[1].board[0] = minion("Superman", 1);
     superman.players[0].board[0] = minion("John Wick", 0, { camp: "Nature", atk: 5, hp: 10, maxHp: 10, sleeping: false });
     const blocked = applyAction(superman, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(blocked.players[1].board[0]?.hp).toBe(6);
+    expect(blocked.players[1].board[0]?.hp).toBe(3);
 
     const deepSea = mainState("deep-sea-frozen");
     deepSea.players[1].board[0] = minion("Deep Sea King", 1);
@@ -616,21 +617,74 @@ describe("2026 card replacements", () => {
     expect(after.players[0].health).toBe(coreBefore - 2);
   });
 
-  it("Tempest's Guardian Lords keeps its sacrifice Battlecry and gains +2/+1 ongoing", () => {
+  it("Rimuru Tempest keeps its sacrifice Battlecry and gains +2/+1 ongoing", () => {
     const state = mainState();
     state.players[1].board[0] = minion("John Wick", 1, { atk: 2, hp: 3, maxHp: 3 });
-    const asking = play(state, 0, "Tempest's Guardian Lords", 1);
+    const asking = play(state, 0, "Rimuru Tempest", 1);
     const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 1 && option.slot === 0) ?? -1;
     const after = targetIndex >= 0 ? choose(asking, targetIndex) : asking;
     const tempest = after.players[0].board[1];
     expect(after.players[1].board[0]).toBeNull();
     expect(tempest).toMatchObject({ atk: 3, hp: 4, maxHp: 4, effectId: "none", effectTiming: "ongoing" });
     expect(tempest?.gainedEffects).toEqual([
-      expect.objectContaining({ effectId: "tempest_guardian_growth", timing: "ongoing" }),
+      expect.objectContaining({ effectId: "rimuru_tempest_growth", timing: "ongoing" }),
     ]);
 
     const nextOwnerTurn = endTurn(endTurn(after, 0), 1);
     expect(nextOwnerTurn.players[0].board[1]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
+  });
+
+  it("Silver Surfer summons a Taunt Galactus on death", () => {
+    const state = mainState("silver-surfer-galactus");
+    state.players[0].board[0] = minion("Silver Surfer", 0, { hp: 1, maxHp: 1, chained: 0 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 9, sleeping: false, hp: 20, maxHp: 20 });
+    state.activePlayer = 1;
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toMatchObject({ name: "Galactus", atk: 5, hp: 5, maxHp: 5 });
+    expect(after.players[0].board[0]?.keywords).toContain("Taunt");
+    expect(after.players[0].board[0]?.art).toBe("/card-art/raw/galactus.webp");
+  });
+
+  it("Ten Tails chains every minion on both boards", () => {
+    const state = mainState("ten-tails-chain");
+    state.players[0].board[0] = minion("John Wick", 0);
+    state.players[1].board[0] = minion("Zoro", 1);
+    const after = play(state, 0, "Ten Tails", 1);
+    expect(after.players[0].board[0]?.chained).toBe(2);
+    expect(after.players[0].board[1]?.chained).toBe(2);
+    expect(after.players[1].board[0]?.chained).toBe(2);
+  });
+
+  it("Ouken endlessly Reborns as a Chained 2/1", () => {
+    const state = mainState("ouken-reborn");
+    state.players[0].board[0] = minion("Ouken", 0, { hp: 1, maxHp: 1, chained: 0 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 9, sleeping: false, hp: 20, maxHp: 20 });
+    state.activePlayer = 1;
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toMatchObject({ name: "Ouken", atk: 2, hp: 1, maxHp: 1, chained: 2, effectId: "ouken_reborn" });
+  });
+
+  it("Kureo Mado steals an attached relic and equips it without leaving it on the victim", () => {
+    const state = mainState("kureo-relic");
+    const relicDef = relics.find((relic) => relic.id === "r001")!;
+    const attached: RelicInstance = {
+      id: relicDef.id,
+      relicId: relicDef.relicId,
+      name: relicDef.name,
+      effect: relicDef.effect,
+      art: relicDef.art,
+    };
+    state.players[1].board[0] = minion("John Wick", 1, { relic: attached });
+    const after = play(state, 0, "Kureo Mado", 1);
+    expect(after.players[1].board[0]?.relic).toBeNull();
+    expect(after.players[0].board[1]?.relic).toMatchObject({ id: "r001", name: relicDef.name });
+  });
+
+  it("Nyan's Charge ignores Taunt when selecting an attack target", () => {
+    const state = mainState("nyan-ignore-taunt");
+    state.players[0].board[0] = minion("Nyan", 0, { sleeping: false });
+    state.players[1].board[0] = minion("Dragon", 1, { keywords: ["Taunt"] });
+    expect(getLegalActions(state, library)).toContainEqual({ type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 });
   });
 
   it("Founding Titan gives Taunt to every friendly minion, including later arrivals", () => {

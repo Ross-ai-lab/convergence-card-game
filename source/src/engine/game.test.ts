@@ -212,14 +212,14 @@ describe("Convergence engine", () => {
     const state = mainState();
     state.activePlayer = 1;
     state.players[0].turnsStarted = 1;
-    state.players[0].board[0] = makeMinion("Flowey", 0, { playOrder: 1 });
+    state.players[0].board[0] = makeMinion("Boros", 0, { playOrder: 1 });
     state.players[0].board[1] = makeMinion("Carnage Kabuto", 0, { playOrder: 2 });
     // With the draw step gone, the turn's Ongoing effects resolve inside end_turn.
     const resolved = applyAction(state, { type: "end_turn", player: 1 }, library);
     const effectTexts = resolved.events.filter((event) => event.kind === "effect").map((event) => event.text);
-    expect(effectTexts[0]).toContain("Flowey");
+    expect(effectTexts[0]).toContain("Boros");
     expect(effectTexts.some((text) => text.includes("Carnage Kabuto"))).toBe(true);
-    expect(effectTexts.indexOf(effectTexts.find((t) => t.includes("Flowey"))!))
+    expect(effectTexts.indexOf(effectTexts.find((t) => t.includes("Boros"))!))
       .toBeLessThan(effectTexts.indexOf(effectTexts.find((t) => t.includes("Carnage Kabuto"))!));
   });
 

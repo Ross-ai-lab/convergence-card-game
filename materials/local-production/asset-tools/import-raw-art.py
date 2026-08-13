@@ -32,7 +32,8 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from art_import_helpers import find_art, trim_letterbox
 
-ROOT = Path(__file__).resolve().parents[2]
+# asset-tools -> local-production -> materials -> project root
+ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "source"
 OUT_DIR = PROJECT / "public" / "card-art" / "raw"
 

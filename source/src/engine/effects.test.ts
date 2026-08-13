@@ -41,17 +41,21 @@ function attack(state: GameState, attackerSlot: number, targetSlot: number) {
 }
 
 describe("full-roster effects", () => {
-  it("Rennala (heal_all_friendly_full): restores every friendly minion on arrival", () => {
+  it("Rennala (rebirth_friendly_dead): summons a friendly minion that died this game", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 1, maxHp: 6 });
-    state.players[0].board[1] = makeMinion("Zoro", 0, { atk: 5, hp: 2, maxHp: 5 });
-    state.players[1].board[0] = makeMinion("John Wick", 1, { hp: 1, maxHp: 6 });
-
+    const zoroId = cardId("Zoro");
+    const johnWickId = cardId("John Wick");
+    state.players[0].deadMinions = [zoroId, johnWickId];
+    state.discard.push(zoroId, johnWickId);
     const afterPlay = playCardFor(state, 0, "Rennala Queen of the Full Moon", 2);
-    expect(afterPlay.players[0].board[0]).toMatchObject({ hp: 6, maxHp: 6 });
-    expect(afterPlay.players[0].board[1]).toMatchObject({ hp: 5, maxHp: 5 });
-    expect(afterPlay.players[0].board[2]).toMatchObject({ name: "Rennala Queen of the Full Moon", hp: 4, maxHp: 4 });
-    expect(afterPlay.players[1].board[0]).toMatchObject({ hp: 1, maxHp: 6 });
+    expect(afterPlay.pendingTarget?.kind).toBe("option");
+    expect(afterPlay.pendingTarget?.labelOptions).toEqual([
+      { label: "Zoro", value: zoroId },
+      { label: "John Wick", value: johnWickId },
+    ]);
+    const afterChoice = applyAction(afterPlay, { type: "choose_target", player: 0, choiceIndex: 0 }, library).state;
+    expect(afterChoice.players[0].board[0]).toMatchObject({ name: "Zoro", atk: 3, hp: 3, maxHp: 3 });
+    expect(afterChoice.players[0].deadMinions).toEqual([johnWickId]);
   });
 
   it("Hypnos (chain_attacker): makes an attacker skip its next turn", () => {
@@ -177,27 +181,14 @@ describe("full-roster effects", () => {
     expect(attack(state, 0, 0).players[1].board[0]).toBeNull(); // 2 * 3 = 6 > 5
   });
 
-  it("Kaku Kaioh (damage_3x_nature): triples damage into Nature", () => {
-    // This card printed "4x" while the code did 2x, and nothing caught it for
-    // the whole balance history because no test read the multiplier at all.
-    // Both halves are asserted here: the kill proves it is at least 3x, and the
-    // survivor proves it is not 4x.
+  it("Kaku Kaioh (kaku_evade_counter): evades and reflects the attacker's ATK", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Kaku Kaioh", 0, { atk: 2, hp: 20, maxHp: 20 });
-    state.players[1].board[0] = makeMinion("Dragon", 1); // 3/5 Nature
-    expect(attack(state, 0, 0).players[1].board[0]).toBeNull(); // 2 * 3 = 6 > 5
-
-    const nearMiss = mainState();
-    nearMiss.players[0].board[0] = makeMinion("Kaku Kaioh", 0, { atk: 2, hp: 20, maxHp: 20 });
-    nearMiss.players[1].board[0] = makeMinion("Dragon", 1, { hp: 7, maxHp: 7 });
-    expect(attack(nearMiss, 0, 0).players[1].board[0]?.hp).toBe(1); // 7 - 6, not 7 - 8
-  });
-
-  it("Kaku Kaioh (damage_3x_nature): deals normal damage into other camps", () => {
-    const state = mainState();
-    state.players[0].board[0] = makeMinion("Kaku Kaioh", 0, { atk: 2, hp: 20, maxHp: 20 });
-    state.players[1].board[0] = makeMinion("Cthulhu", 1); // 3/4 Magic
-    expect(attack(state, 0, 0).players[1].board[0]?.hp).toBe(2); // 4 - 2, no multiplier
+    state.rngSeed = 1;
+    state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 10, maxHp: 10, sleeping: false });
+    state.players[1].board[0] = makeMinion("Kaku Kaioh", 1, { hp: 10, maxHp: 10 });
+    const after = attack(state, 0, 0);
+    expect(after.players[1].board[0]?.hp).toBe(10);
+    expect(after.players[0].board[0]?.hp).toBe(6);
   });
 
   it("Nulgath (nulgath_any_death_2_2): grows whenever a minion dies", () => {
@@ -306,11 +297,17 @@ describe("full-roster effects", () => {
     ).toBe(true);
   });
 
-  it("ongoing buff (Flowey buff_all_evil_1) rallies Evil allies", () => {
+  it("Flowey (flowey_save_load) restores the saved core HP when it dies", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Flowey", 0);
-    state.players[0].board[1] = makeMinion("Wall of Flesh", 0); // 3/5 Evil
-    expect(toMyNextTurn(state).players[0].board[1]?.atk).toBe(4);
+    state.players[0].health = 60;
+    const afterPlay = playCardFor(state, 0, "Flowey", 0);
+    expect(afterPlay.players[0].board[0]?.savedCoreHealth).toBe(60);
+    afterPlay.players[0].health = 25;
+    afterPlay.players[1].board[0] = makeMinion("John Wick", 1, { atk: 99, sleeping: false });
+    afterPlay.activePlayer = 1;
+    const afterDeath = applyAction(afterPlay, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(afterDeath.players[0].board[0]).toBeNull();
+    expect(afterDeath.players[0].health).toBe(60);
   });
 
   it("Kizaru starts with Divine Shield and restores it on his owner's turn", () => {

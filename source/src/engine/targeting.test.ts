@@ -42,6 +42,12 @@ function mainState(seed = "targeting-tests"): GameState {
   return state;
 }
 
+function choose(state: GameState, choiceIndex: number): GameState {
+  const pending = state.pendingTarget;
+  if (!pending) throw new Error("Expected a pending target");
+  return applyAction(state, { type: "choose_target", player: pending.player, choiceIndex }, library).state;
+}
+
 function protectFriendlySlotWithNeo(state: GameState, slot: number): GameState {
   const asking = playCardFor(state, 1, "Neo", 4);
   const choiceIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 1 && option.slot === slot) ?? -1;
@@ -118,18 +124,24 @@ describe("targeted effects", () => {
     expect(chosen.players[1].board[0]?.frozen).toBe(false); // the old engine always hit this one
   });
 
-  it("Batman freezes an enemy, but kills it if it is already Frozen", () => {
-    const frozenState = mainState("batman-kill-frozen");
-    frozenState.players[1].board[0] = dummy("John Wick", 1, { frozen: true });
-    const killed = playCardFor(frozenState, 0, "Batman", 1);
-    expect(killed.pendingTarget).toBeNull();
-    expect(killed.players[1].board[0]).toBeNull();
-
-    const openState = mainState("batman-freeze-open");
-    openState.players[1].board[0] = dummy("John Wick", 1);
-    const frozen = playCardFor(openState, 0, "Batman", 1);
-    expect(frozen.pendingTarget).toBeNull();
+  it("Batman chooses a gadget for the enemy minion", () => {
+    const freezeState = mainState("batman-freeze");
+    freezeState.players[1].board[0] = dummy("John Wick", 1);
+    const freezePrompt = playCardFor(freezeState, 0, "Batman", 1);
+    expect(freezePrompt.pendingTarget?.kind).toBe("option");
+    expect(freezePrompt.pendingTarget?.labelOptions.map((option) => option.value)).toEqual(["freeze", "silence", "weaken"]);
+    const frozen = choose(freezePrompt, 0);
     expect(frozen.players[1].board[0]?.frozen).toBe(true);
+
+    const silenceState = mainState("batman-silence");
+    silenceState.players[1].board[0] = dummy("John Wick", 1);
+    const silenced = choose(playCardFor(silenceState, 0, "Batman", 1), 1);
+    expect(silenced.players[1].board[0]?.silenced).toBe(true);
+
+    const weakenState = mainState("batman-weaken");
+    weakenState.players[1].board[0] = dummy("John Wick", 1, { atk: 5 });
+    const weakened = choose(playCardFor(weakenState, 0, "Batman", 1), 2);
+    expect(weakened.players[1].board[0]?.atk).toBe(2);
   });
 
   it("Musashi kills all damaged enemy minions", () => {

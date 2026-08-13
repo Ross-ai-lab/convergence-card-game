@@ -15,7 +15,7 @@ describe("card CSV data", () => {
     expect(keywords.has("Taunt")).toBe(true);
     expect(effectIds.has("kill_random_enemy")).toBe(true);
     expect(effectIds.has("equip_random_relic")).toBe(true);
-    expect(effectIds.has("freeze_or_kill")).toBe(true);
+    expect(effectIds.has("batman_gadget_choice")).toBe(true);
   });
 
   it("resolves public artwork from both root and folder-hosted builds", () => {
@@ -37,10 +37,10 @@ describe("card CSV data", () => {
     expect(changed.get("Kaido")?.effect).toBe("Battlecry: Destroy an enemy Taunt minion.");
     expect(changed.get("Rennala Queen of the Full Moon")).toMatchObject({
       atk: 2,
-      hp: 4,
-      effectId: "heal_all_friendly_full",
+      hp: 3,
+      effectId: "rebirth_friendly_dead",
       effectTiming: "onPlay",
-      effect: "Battlecry: Restore all friendly minions to full health.",
+      effect: "Battlecry: Rebirth a friendly minion that died this game",
     });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
   });

@@ -68,7 +68,9 @@ function checkPrintedText(card, line, errors) {
   const match = PRINTED_TIMING.exec(text);
   const printed = match ? match[1] : null;
   const expected = TIMING_WORD[card.effectTiming];
-  if (printed !== expected) {
+  const floweyDualTiming = card.effectId === "flowey_save_load" &&
+    /^Battlecry:\s.+\bDeathrattle:\s/.test(text);
+  if (!floweyDualTiming && printed !== expected) {
     const says = printed ? `"${printed}:"` : "no timing word";
     const want = expected ? `"${expected}:"` : "no timing word (stat-only cards print none)";
     errors.push(
@@ -82,6 +84,7 @@ function checkPrintedText(card, line, errors) {
     ),
   );
   if (/^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*Deathrattle:\s/.test(text)) declared.add("Deathrattle");
+  if (card.effectId === "flowey_save_load" && /\bDeathrattle:\s/.test(text)) declared.add("Deathrattle");
   if (/^Charge\.\s*/.test(text)) declared.add("Charge");
   const carried = new Set(
     (card.keywords ?? "").split(";").map((k) => k.trim()).filter((k) => MECHANICAL.includes(k)),

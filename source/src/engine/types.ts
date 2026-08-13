@@ -58,6 +58,8 @@ export type EffectId =
   | "no_evil_buff"
   | "destroy_small_neutral"
   | "summon_chained"
+  | "deathrattle_summon_galactus"
+  | "chain_all_minions"
   | "freeze_opposing"
   | "delayed_destroy"
   | "freeze_and_weaken"
@@ -71,6 +73,8 @@ export type EffectId =
   | "self_atk_3"
   | "heal_5"
   | "heal_ally_full"
+  | "bounce_friendly"
+  | "rebirth_friendly_dead"
   | "heal_good_ally_full"
   | "aoe_all_1"
   | "aoe_all_2"
@@ -132,8 +136,8 @@ export type EffectId =
   | "alone_buff_5"
   | "ally_atk_1"
   | "taunt_aura"
-  | "tempest_guardian_lords"
-  | "tempest_guardian_growth"
+  | "rimuru_tempest"
+  | "rimuru_tempest_growth"
   // --- passive / reactive (checked inline, not run in runEffect) ---
   | "attack_2x"
   | "mid_attack_only"
@@ -160,6 +164,13 @@ export type EffectId =
   | "robocop_evil_bonus"
   | "kaku_discard"
   | "shifu_shield"
+  | "kaku_evade_counter"
+  | "superman_damage_cap_3"
+  | "charge_ignore_taunt"
+  | "batman_gadget_choice"
+  | "steal_and_equip_relic"
+  | "flowey_save_load"
+  | "ouken_reborn"
   // --- the hard cards, wired once relics, hand targeting and value choices existed ---
   | "steal_relic"
   | "steal_hand_relic"
@@ -390,6 +401,8 @@ export interface MinionInstance {
   stolenPassiveText: string | null;
   /** Yubaba/Nyan: passive or ongoing effects granted by another card. */
   gainedEffects: Array<{ effectId: EffectId; timing: "passive" | "ongoing"; text: string }>;
+  /** Flowey: the core HP captured by its Battlecry, restored on death. */
+  savedCoreHealth?: number | null;
 }
 
 export interface PlayerState {
@@ -418,6 +431,8 @@ export interface PlayerState {
   randomAttacksUntilTurn?: number | null;
   /** Reusable attached relics may be returned to hand once during this turn. */
   relicMoves: number;
+  /** Card ids of friendly minions that have died this game, in death order. */
+  deadMinions?: string[];
   fatigue: number;
   turnsStarted: number;
 }
