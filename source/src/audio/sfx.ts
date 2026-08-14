@@ -946,7 +946,7 @@ export function playAnnouncer(clip: string, delay = 0): void {
   })();
 }
 
-/** Plays the licensed, CC0 JRPG battle intro used when a duel begins. */
+/** Plays the licensed, CC0 JRPG trailer cue used when a duel begins. */
 export function playOpeningCue(delay = 0): void {
   if (muted || mix.effects <= 0) return;
   unlock();
@@ -955,7 +955,7 @@ export function playOpeningCue(delay = 0): void {
     let buffer = openingCueBuffer;
     if (!buffer) {
       try {
-        const response = await fetch(`${import.meta.env.BASE_URL}audio/stings/opening-jrpg-battle.ogg`);
+        const response = await fetch(`${import.meta.env.BASE_URL}audio/stings/opening-jrpg-trailer.ogg`);
         if (!response.ok || !ctx) {
           openingCueMiss = true;
           return;
@@ -972,10 +972,10 @@ export function playOpeningCue(delay = 0): void {
     source.buffer = buffer;
     const gain = ctx.createGain();
     // The opening cue should add drama without overpowering the battle bed.
-    gain.gain.value = 0.45;
+    gain.gain.value = 0.35;
     source.connect(gain);
     gain.connect(sfxBus);
-    duck(0.22, Math.min(3.2, buffer.duration + 0.15));
+    duck(0.22, Math.min(THEME_DUCK_CEILING, buffer.duration + 0.15));
     source.start(ctx.currentTime + Math.max(0, delay));
   })();
 }

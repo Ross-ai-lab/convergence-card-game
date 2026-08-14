@@ -105,7 +105,7 @@ The opening is driven by one React phase clock plus several CSS animations. The 
 | 6,970 ms | `mana` | 570 ms phase | Starts immediately after the circle window. Each full mana pip fills for 465 ms with a 67.5 ms stagger. |
 | 7,540 ms | `exit` | 315 ms | Fades out the remaining intro veil. Controls unlock at about 7,855 ms; opening card flights continue without blocking input. |
 
-The opening uses the licensed `opening-jrpg-battle.ogg` cue instead of the spoken `duel_begin` line. It is a 1.62-second CC0 intro from HydroGene's [JRPG Epic Rock Battle Theme #1](https://opengameart.org/content/jrpg-epic-rock-battle-theme-1), converted to Ogg for the browser. Ambient effects are separate from the phase clock. The intro breathes for 10.2 seconds and its diagonal light sweep loops every 3 seconds. The permanent battlefield seam has a right-running sweep of 3 seconds and a left-running sweep of 13 seconds. Those seam sweeps are not the large intro circle. The circle rules live in `source/src/screens/Screens.css`; card flights and mana rules live in `source/src/App.css`; phase timers and the opening cue trigger live in `source/src/App.tsx` and `source/src/audio/sfx.ts`.
+The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spoken `duel_begin` line. It is a 4.9-second CC0 cut—about three times the previous 1.62-second cue—from SubspaceAudio (Juhani Junkala)'s [JRPG Trailer / Theme](https://opengameart.org/content/jrpg-trailer-theme), converted to Ogg for the browser and played at 0.35 gain. Ambient effects are separate from the phase clock. The intro breathes for 10.2 seconds and its diagonal light sweep loops every 3 seconds. The permanent battlefield seam has a right-running sweep of 3 seconds and a left-running sweep of 13 seconds. Those seam sweeps are not the large intro circle. The circle rules live in `source/src/screens/Screens.css`; card flights and mana rules live in `source/src/App.css`; phase timers and the opening cue trigger live in `source/src/App.tsx` and `source/src/audio/sfx.ts`.
 
 ### During a duel
 
@@ -339,6 +339,8 @@ When changing a rule, add or update a focused test and make the card text agree 
 ## Development lessons
 
 - A card’s text and its resolution can live in different places. Update CSV, engine, and a focused test together so the card does what it says.
+- Assert every printed number exactly. Do not settle for “damage happened,” “the list is non-empty,” or “the stat changed”; assert the exact damage, stat, multiplier, event text, and affected targets, and update the expected number whenever the card changes.
+- Re-read test assumptions whenever card text, engine timing, or helper setup changes. Reset counters, advance turns explicitly, and assert the expiration boundary so an unrelated once-per-turn limit or stale turn counter cannot make a test pass without checking its intended rule.
 - When replacing a card effect, treat it as a full definition replacement: remove every obsolete keyword and every obsolete keyword sentence from the CSV row unless the new effect explicitly retains that rule. Before calling the change finished, compare the new keywords, timing, and printed text with the requested effect so stale Taunt, Divine Shield, Chained, Passive, or similar rules cannot survive by accident.
 - Re-measure a balance pass before making its next adjustment. A successful buff can overshoot into the roster’s next outlier.
 - Tune the lever that controls the behaviour. Health does not fix a card whose targeting, keyword, or bot valuation is the real issue.
