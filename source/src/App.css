@@ -468,7 +468,7 @@ button:disabled {
 }
 
 .rift-sweep.a {
-  animation: rift-run-right 9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  animation: rift-run-right 3s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
 .rift-sweep.b {
