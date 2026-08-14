@@ -523,6 +523,16 @@ function createRelicInstance(relic: RelicDefinition): RelicInstance {
 }
 
 function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): MinionInstance {
+  // Some effects are implemented by a keyword rather than a runEffect branch.
+  // Charge is the current example: the engine resolves it by setting `sleeping`
+  // below, so the effect recorder needs to see that resolution here.
+  if (
+    card.effectId !== "none" &&
+    card.keywords.some((keyword) => keyword.toLowerCase() === card.effectId.toLowerCase())
+  ) {
+    traceEffect(card.effectId);
+  }
+
   const instance: MinionInstance = {
     instanceId: `m${state.nextInstance}`,
     cardId: card.id,
@@ -4383,6 +4393,9 @@ function resolveDeathrattle(
   events: GameEvent[],
 ): void {
   if (dead.silenced || (dead.effectTiming !== "deathrattle" && dead.effectId !== "flowey_save_load")) return;
+  // The dead minion is already out of its board slot when this function runs,
+  // so reactToDeath cannot discover its own effect. Record it at resolution.
+  traceEffect(dead.effectId);
   if (dead.effectId === "deathrattle_good_buff_shield") {
     for (const ally of state.players[dead.owner].board) {
       if (!ally || ally.alignment !== "Good") continue;

@@ -1356,3 +1356,185 @@ describe("2026 card replacements", () => {
     expect(withoutShield.players[0].board[2]?.divineShield).toBe(false);
   });
 });
+
+describe("direct effect reachability", () => {
+  it("Bigfoot evades exactly the printed 50% of incoming attacks", () => {
+    const evades = mainState("bigfoot-evades");
+    evades.rngSeed = 1;
+    evades.players[0].board[0] = minion("John Wick", 0, {
+      atk: 3,
+      hp: 10,
+      maxHp: 10,
+      sleeping: false,
+      effectId: "none",
+      effectTiming: "none",
+      keywords: [],
+    });
+    evades.players[1].board[0] = minion("Bigfoot", 1, { hp: 5, maxHp: 5 });
+    evades.activePlayer = 0;
+    const evaded = applyAction(evades, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(evaded.players[1].board[0]?.hp).toBe(5);
+
+    const lands = mainState("bigfoot-lands");
+    lands.rngSeed = 12345;
+    lands.players[0].board[0] = minion("John Wick", 0, {
+      atk: 3,
+      hp: 10,
+      maxHp: 10,
+      sleeping: false,
+      effectId: "none",
+      effectTiming: "none",
+      keywords: [],
+    });
+    lands.players[1].board[0] = minion("Bigfoot", 1, { hp: 5, maxHp: 5 });
+    lands.activePlayer = 0;
+    const landed = applyAction(lands, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(landed.players[1].board[0]?.hp).toBe(2);
+  });
+
+  it("Sandworm ignores exactly 2 ATK and takes exact damage from 3 ATK", () => {
+    const weak = mainState("sandworm-weak");
+    weak.players[0].board[0] = minion("John Wick", 0, {
+      atk: 2,
+      hp: 10,
+      maxHp: 10,
+      sleeping: false,
+      effectId: "none",
+      effectTiming: "none",
+      keywords: [],
+    });
+    weak.players[1].board[0] = minion("Sandworm", 1, { hp: 5, maxHp: 5 });
+    const ignored = applyAction(weak, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(ignored.players[1].board[0]?.hp).toBe(5);
+
+    const strong = mainState("sandworm-strong");
+    strong.players[0].board[0] = minion("John Wick", 0, {
+      atk: 3,
+      hp: 10,
+      maxHp: 10,
+      sleeping: false,
+      effectId: "none",
+      effectTiming: "none",
+      keywords: [],
+    });
+    strong.players[1].board[0] = minion("Sandworm", 1, { hp: 5, maxHp: 5 });
+    const damaged = applyAction(strong, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(damaged.players[1].board[0]?.hp).toBe(2);
+  });
+
+  it("The Watcher cannot attack while its passive reveals the enemy hand", () => {
+    const state = mainState("watcher-passive");
+    state.players[0].board[0] = minion("The Watcher", 0, { sleeping: false });
+    state.players[1].board[0] = minion("John Wick", 1);
+    const attacks = getLegalActions(state, library).filter(
+      (action) => action.type === "attack_core" || action.type === "attack_minion",
+    );
+    expect(attacks).toEqual([]);
+  });
+
+  it("Eye of Sauron reveals the exact random card name from the enemy hand", () => {
+    const state = mainState("eye-reveal");
+    state.rngSeed = 1;
+    state.players = [...state.players] as GameState["players"];
+    state.players[0] = { ...state.players[0], hand: [cardId("Eye of Sauron")] };
+    state.players[1] = { ...state.players[1], hand: [cardId("Saitama"), cardId("Zoro")] };
+    const result = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library);
+    expect(result.events).toContainEqual(
+      expect.objectContaining({ text: "Eye of Sauron: reveals Saitama in the enemy hand." }),
+    );
+  });
+
+  it("Aizen has the printed 50% Reborn chance and always silences and chains the killer", () => {
+    const success = mainState("aizen-reborn");
+    success.rngSeed = 1;
+    success.players[0].board[0] = minion("Aizen", 0, { hp: 1, maxHp: 1 });
+    success.players[1].board[0] = minion("John Wick", 1, {
+      atk: 5,
+      hp: 10,
+      maxHp: 10,
+      sleeping: false,
+      effectId: "none",
+      effectTiming: "none",
+      keywords: [],
+    });
+    success.activePlayer = 1;
+    const reborn = applyAction(success, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(reborn.players[0].board[0]).toMatchObject({ name: "Aizen", hp: 1, maxHp: 4, effectId: "none" });
+    expect(reborn.players[1].board[0]).toMatchObject({ silenced: true, chained: 2 });
+
+    const failure = mainState("aizen-no-reborn");
+    failure.rngSeed = 12345;
+    failure.players[0].board[0] = minion("Aizen", 0, { hp: 1, maxHp: 1 });
+    failure.players[1].board[0] = minion("John Wick", 1, {
+      atk: 5,
+      hp: 10,
+      maxHp: 10,
+      sleeping: false,
+      effectId: "none",
+      effectTiming: "none",
+      keywords: [],
+    });
+    failure.activePlayer = 1;
+    const gone = applyAction(failure, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(gone.players[0].board[0]).toBeNull();
+    expect(gone.players[1].board[0]).toMatchObject({ silenced: true, chained: 2 });
+  });
+
+  it("Kaido destroys the enemy Taunt minion and leaves a non-Taunt minion alive", () => {
+    const state = mainState("kaido-taunt");
+    state.players[1].board[0] = minion("The Five Convicts", 1);
+    state.players[1].board[1] = minion("John Wick", 1);
+    const asking = play(state, 0, "Kaido", 2);
+    const after = asking.pendingTarget ? choose(asking, 0) : asking;
+    expect(after.players[1].board[0]).toBeNull();
+    expect(after.players[1].board[1]?.name).toBe("John Wick");
+  });
+
+  it("Whitebeard deals exactly 3 damage to every other minion", () => {
+    const state = mainState("whitebeard-aoe");
+    state.players[0].board[0] = minion("John Wick", 0, { hp: 9, maxHp: 9, effectId: "none", effectTiming: "none", keywords: [] });
+    state.players[1].board[0] = minion("Zoro", 1, { hp: 9, maxHp: 9, effectId: "none", effectTiming: "none", keywords: [] });
+    const after = play(state, 0, "Whitebeard", 2);
+    expect(after.players[0].board[0]?.hp).toBe(6);
+    expect(after.players[1].board[0]?.hp).toBe(6);
+    expect(after.players[0].board[2]?.hp).toBe(4);
+  });
+
+  it("Gandalf the White gives Divine Shield to every friendly Good minion only", () => {
+    const state = mainState("gandalf-shields");
+    state.players[0].board[0] = minion("John Wick", 0, { alignment: "Good", divineShield: false });
+    state.players[0].board[1] = minion("Zoro", 0, { alignment: "Evil", divineShield: false });
+    const after = play(state, 0, "Gandalf the White", 2);
+    expect(after.players[0].board[0]?.divineShield).toBe(true);
+    expect(after.players[0].board[1]?.divineShield).toBe(false);
+    expect(after.players[0].board[2]?.divineShield).toBe(true);
+  });
+
+  it("The Mask returns the surviving attacker to its hand after death", () => {
+    const state = mainState("mask-return");
+    state.players[0].board[0] = minion("John Wick", 0, {
+      atk: 99,
+      hp: 10,
+      maxHp: 10,
+      sleeping: false,
+      effectId: "none",
+      effectTiming: "none",
+      keywords: [],
+    });
+    state.players[1].board[0] = minion("The Mask", 1, { hp: 1, maxHp: 1 });
+    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[1].board[0]).toBeNull();
+    expect(after.players[1].hand).toContain(cardId("John Wick"));
+  });
+
+  it("Stain destroys a damaged enemy and leaves a full-health enemy alive", () => {
+    const state = mainState("stain-damaged");
+    state.players[1].board[0] = minion("John Wick", 1, { hp: 5, maxHp: 5 });
+    state.players[1].board[1] = minion("Zoro", 1, { hp: 2, maxHp: 3 });
+    const asking = play(state, 0, "Stain", 2);
+    const after = asking.pendingTarget ? choose(asking, 0) : asking;
+    expect(after.players[1].board[0]?.name).toBe("John Wick");
+    expect(after.players[1].board[1]).toBeNull();
+  });
+});

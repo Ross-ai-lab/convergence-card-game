@@ -48,7 +48,10 @@ import { readCards } from "./card-tools.mjs";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const TRACE = join(ROOT, ".preview", "effect-trace.txt");
 const ENGINE = join(ROOT, "src", "engine", "game.ts");
-const TEST_GLOB = join(ROOT, "src", "engine");
+const TEST_DIR = join(ROOT, "src", "engine");
+// Vitest's CLI matcher expects slash-separated globs, including on Windows.
+const TEST_GLOB = "src/engine";
+const SLOW_SIMULATION_TEST = "src/engine/pacing.test.ts";
 
 mkdirSync(dirname(TRACE), { recursive: true });
 rmSync(TRACE, { force: true });
@@ -89,23 +92,36 @@ const unreachable = [...rosterEffects.keys()].filter(
   (effectId) => !engineSource.includes(`"${effectId}"`) && !keywordDriven.has(effectId),
 );
 
-// --- run the suite with tracing on ------------------------------------------
-console.log("Running the test suite with effect tracing on. This takes a couple of minutes.\n");
+// --- run focused engine tests with tracing on -------------------------------
+// The pacing file is a long bot/soak simulation. It protects duel length and
+// bot behavior, but it is not a focused card-effect assertion suite. Running it
+// here made this report spend minutes exploring random card combinations, and
+// then fail only because tracing pushed two pacing cases beyond their timeout.
+// Focused tests must carry this report; if an effect is only reached by pacing,
+// it should appear below as NEVER RAN and receive a direct test.
+console.log("Running focused engine tests with effect tracing on.\n");
 const run = spawnSync(
   process.execPath,
-  [join(ROOT, "node_modules", "vitest", "vitest.mjs"), "run", TEST_GLOB],
+  [
+    join(ROOT, "node_modules", "vitest", "vitest.mjs"),
+    "run",
+    TEST_GLOB,
+    "--exclude",
+    SLOW_SIMULATION_TEST,
+  ],
   {
     cwd: ROOT,
-    stdio: ["ignore", "pipe", "pipe"],
+    // Vitest's fork workers can keep inherited pipe handles alive on Windows,
+    // making spawnSync wait roughly two minutes after the focused tests finish.
+    // Inherit the output so the runner exits with the worker tree normally and
+    // still shows Vitest's failure details directly to the caller.
+    stdio: "inherit",
     env: { ...process.env, CONVERGENCE_EFFECT_TRACE: TRACE },
-    encoding: "utf8",
   },
 );
 
 if (run.status !== 0) {
   console.error("The test suite failed, so coverage would be measured against a broken run.");
-  console.error(String(run.stdout ?? "").slice(-2000));
-  console.error(String(run.stderr ?? "").slice(-2000));
   process.exit(1);
 }
 
@@ -136,9 +152,9 @@ if (!traced.size) {
 // its effect id, because that is how you set the card up and how you find it
 // again afterwards. A bulk simulation never does. So the real signal is: the
 // engine ran this effect, and no test anywhere mentions it.
-const testSource = readdirSync(TEST_GLOB)
+const testSource = readdirSync(TEST_DIR)
   .filter((file) => file.endsWith(".test.ts"))
-  .map((file) => readFileSync(join(TEST_GLOB, file), "utf8"))
+  .map((file) => readFileSync(join(TEST_DIR, file), "utf8"))
   .join("\n");
 
 const namedInTests = (effectId) =>
