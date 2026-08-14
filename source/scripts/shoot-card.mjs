@@ -218,6 +218,7 @@ try {
   // longer exists.
   await page.locator(".duel-trigger").first().click();
   await page.waitForFunction(() => Boolean(window.__debug?.place), null, { timeout: 20_000 });
+  await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 9000 }).catch(() => {});
 
   const written = [];
   for (const name of wanted) {

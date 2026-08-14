@@ -611,6 +611,240 @@
   font-weight: 700;
 }
 
+/* ---------------------------------------------------------------- duel opening */
+
+.duel-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: auto;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(155, 119, 210, 0.24), transparent 28%),
+    linear-gradient(160deg, rgba(18, 10, 30, 0.98), rgba(8, 6, 15, 0.98));
+  animation: duel-intro-in 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.duel-intro::before,
+.duel-intro::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.duel-intro::before {
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 0 26%, rgba(240, 199, 103, 0.08) 27%, transparent 38%),
+    linear-gradient(90deg, transparent 0 48%, rgba(67, 205, 189, 0.12) 49%, rgba(240, 199, 103, 0.16) 50%, rgba(155, 119, 210, 0.12) 51%, transparent 52%);
+  filter: blur(1px);
+  animation: duel-intro-breath 3.4s ease-in-out infinite;
+}
+
+.duel-intro::after {
+  background:
+    linear-gradient(115deg, transparent 0 45%, rgba(255, 240, 190, 0.1) 49%, transparent 53%),
+    linear-gradient(295deg, transparent 0 45%, rgba(67, 205, 189, 0.1) 49%, transparent 53%);
+  opacity: 0.8;
+  transform: scale(1.2);
+  animation: duel-intro-sweep 2.8s cubic-bezier(0.2, 0.8, 0.3, 1) infinite;
+}
+
+.duel-intro-reveal,
+.duel-intro-draw,
+.duel-intro-mana,
+.duel-intro-exit {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(155, 119, 210, 0.16), transparent 26%),
+    linear-gradient(180deg, rgba(13, 8, 21, 0.34), rgba(8, 6, 14, 0.12));
+}
+
+.duel-intro-exit {
+  opacity: 0;
+  transition: opacity 420ms ease;
+}
+
+.duel-intro-rift {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(58vmin, 700px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(240, 199, 103, 0.48);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 245, 213, 0.8) 0%, rgba(240, 199, 103, 0.22) 9%, rgba(155, 119, 210, 0.12) 34%, transparent 68%);
+  box-shadow:
+    0 0 22px rgba(240, 199, 103, 0.54),
+    0 0 80px rgba(155, 119, 210, 0.24),
+    inset 0 0 38px rgba(67, 205, 189, 0.16);
+  transform: translate(-50%, -50%) scale(0.45) rotate(-12deg);
+  animation: duel-rift-arrive 1.35s cubic-bezier(0.16, 0.9, 0.22, 1) both, duel-rift-spin 18s linear 1.2s infinite;
+}
+
+.duel-intro-rift::before,
+.duel-intro-rift::after {
+  content: "";
+  position: absolute;
+  inset: 11%;
+  border: 1px solid rgba(67, 205, 189, 0.56);
+  border-radius: 50%;
+  mask: linear-gradient(90deg, #000 0 24%, transparent 24% 42%, #000 42% 72%, transparent 72%);
+  -webkit-mask: linear-gradient(90deg, #000 0 24%, transparent 24% 42%, #000 42% 72%, transparent 72%);
+  animation: duel-rift-spin 10s linear infinite reverse;
+}
+
+.duel-intro-rift::after {
+  inset: 25%;
+  border-color: rgba(240, 199, 103, 0.72);
+  transform: rotate(38deg);
+  animation-duration: 7s;
+}
+
+.duel-intro-copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  width: min(640px, 90vw);
+  padding: 24px;
+  text-align: center;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9);
+  animation: duel-copy-arrive 900ms 120ms cubic-bezier(0.16, 0.9, 0.2, 1) both;
+}
+
+.duel-intro-prelude .duel-intro-copy {
+  transform: translateY(8vh);
+}
+
+.duel-intro-reveal .duel-intro-copy {
+  animation-name: duel-copy-reveal;
+}
+
+.duel-intro-draw .duel-intro-copy,
+.duel-intro-mana .duel-intro-copy,
+.duel-intro-exit .duel-intro-copy {
+  position: absolute;
+  top: clamp(11%, 13vh, 17%);
+  left: 50%;
+  width: auto;
+  min-width: min(340px, 82vw);
+  padding: 12px 22px;
+  transform: translateX(-50%);
+  animation-name: duel-copy-draw;
+}
+
+.duel-intro-kicker {
+  margin: 0;
+  color: #74e4de;
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: clamp(11px, 1.2vw, 16px);
+  font-weight: 800;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+}
+
+.duel-intro-copy h2 {
+  margin: 0;
+  color: #fff0c4;
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: clamp(42px, 8vw, 92px);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.duel-intro-draw .duel-intro-copy h2,
+.duel-intro-mana .duel-intro-copy h2,
+.duel-intro-exit .duel-intro-copy h2 {
+  font-size: clamp(24px, 3.2vw, 42px);
+}
+
+.duel-intro-detail {
+  margin: 0;
+  color: rgba(255, 240, 196, 0.76);
+  font-size: clamp(12px, 1.3vw, 17px);
+  letter-spacing: 0.08em;
+}
+
+.duel-intro-progress {
+  display: flex;
+  gap: 9px;
+  margin-top: 5px;
+}
+
+.duel-intro-progress span {
+  width: 24px;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(255, 240, 196, 0.22);
+  box-shadow: 0 0 9px transparent;
+  transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.duel-intro-progress span.active {
+  background: #f0c767;
+  box-shadow: 0 0 14px rgba(240, 199, 103, 0.8);
+  transform: scaleX(1.12);
+}
+
+.duel-intro-mode {
+  color: rgba(255, 240, 196, 0.5);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+@keyframes duel-intro-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes duel-intro-breath {
+  0%, 100% { opacity: 0.48; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes duel-intro-sweep {
+  0% { opacity: 0; transform: scale(0.9) rotate(0deg); }
+  26% { opacity: 0.8; }
+  100% { opacity: 0; transform: scale(1.2) rotate(14deg); }
+}
+
+@keyframes duel-rift-arrive {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.16) rotate(-42deg); }
+  52% { opacity: 1; transform: translate(-50%, -50%) scale(1.06) rotate(8deg); }
+  100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+}
+
+@keyframes duel-rift-spin {
+  to { rotate: 360deg; }
+}
+
+@keyframes duel-copy-arrive {
+  from { opacity: 0; transform: translateY(28px) scale(0.92); filter: blur(8px); }
+  58% { opacity: 1; transform: translateY(-3px) scale(1.02); filter: blur(0); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: none; }
+}
+
+@keyframes duel-copy-reveal {
+  from { opacity: 0; transform: translateY(18px) scale(0.94); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: none; }
+}
+
+@keyframes duel-copy-draw {
+  from { opacity: 0; transform: translate(-50%, -10px) scale(0.92); filter: blur(4px); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); filter: none; }
+}
+
 /* ---------------------------------------------------------------- overlays */
 
 .screen-veil {

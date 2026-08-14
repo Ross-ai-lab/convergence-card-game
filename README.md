@@ -156,11 +156,11 @@ The rules:
 - **Every effect ends as a sentence**, with a full stop.
 - **Effect ids spell magnitudes as digits and must match the printed number.** `validate-cards.mjs` fails the build when a digit in the id is missing from the text, so renaming the id is part of changing a magnitude, not an afterthought.
 
-### Any card or balance change must be published to GitHub in the same session
+### Every game change must be published to GitHub in the same session
 
-**Every balance change must be published to GitHub before it can be reported as done.** This includes any change to ATK, HP, mana cost, effect, keyword, timing, wording, card art, or the engine rule that makes a card behave differently. A source edit or a local build is not a finished change because the owner plays only the public site.
+**Every change to the game must be published to GitHub before it can be reported as done.** This includes changes to cards, balance, engine rules, interface, animations, audio, assets, or any other runtime behaviour. A source edit or a local build is not a finished change because the owner plays only the public site.
 
-For every card or balance change, run `npm run publish:pages` from `source/`, then commit and push the generated `play/` copy to the GitHub repository. Finally, verify that <https://ross-ai-lab.github.io/convergence-card-game/play/> serves the new bundle. This publication step is mandatory, applies to every balance pass, and must happen in the same session without waiting for a separate request.
+For every game change, run `npm run publish:pages` from `source/`, then commit and push the generated `play/` copy to the GitHub repository. Finally, verify that <https://ross-ai-lab.github.io/convergence-card-game/play/> serves the new bundle. This publication step is mandatory for every game change and must happen in the same session without waiting for a separate request.
 
 The reason is that the owner never runs this project. He plays the published URL and nothing else, so a change that exists only in `source/` has not reached the only person it was made for. Worse, it reads as done in every report and every test run: the suite passes, the data validates, the card is correct in the CSV, and the game he opens is unchanged. Two sessions in a row left card changes sitting unpublished on exactly that reasoning.
 

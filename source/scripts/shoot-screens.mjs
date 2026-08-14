@@ -62,7 +62,7 @@ await shoot("01-title");
 // earlier title screen and had been silently timing out here — the same stale
 // label check-cardface.mjs already had to correct.
 await page.locator(".duel-trigger").first().click();
-await page.waitForTimeout(900);
+await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 9000 }).catch(() => {});
 await shoot("04-board-opening");
 
 // --- the rules overlay

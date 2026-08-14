@@ -37,7 +37,15 @@ import { clearSave, loadGame, saveGame } from "./storage";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
-import { HowToPlay, PassScreen, SettingsPanel, TitleScreen, type GameMode } from "./screens/Screens";
+import {
+  DuelIntro,
+  HowToPlay,
+  PassScreen,
+  SettingsPanel,
+  TitleScreen,
+  type DuelIntroPhase,
+  type GameMode,
+} from "./screens/Screens";
 
 type Selection =
   | { kind: "hand"; handIndex: number }
@@ -135,7 +143,17 @@ type Impact = {
  * attacker lunge uses, and the reason the flight lands where the card actually
  * goes at any window size.
  */
-type Flight = { id: number; fx0: number; fy0: number; fx1: number; fy1: number; mine: boolean };
+type Flight = {
+  id: number;
+  fx0: number;
+  fy0: number;
+  fx1: number;
+  fy1: number;
+  mine: boolean;
+  opening?: boolean;
+  delayMs?: number;
+};
+type DuelIntroState = { id: number; phase: DuelIntroPhase; mode: GameMode };
 /** Which crystals just changed, and in which direction. */
 type ManaFx = { id: number; kind: "spend" | "refill"; from: number; to: number } | null;
 // A Mythic landing is the loudest moment in a duel, so it takes the whole screen.
@@ -307,6 +325,7 @@ export default function App() {
   // The front door. A restored duel still starts here rather than dumping a
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
+  const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
   const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery">(null);
   /**
    * Hotseat only: who the screen is currently cleared for. The curtain drops
@@ -369,6 +388,45 @@ export default function App() {
     onFontsReady(() => refit((n) => n + 1));
   }, []);
 
+  // A fresh duel has a complete opening state immediately, but the player
+  // should experience that state arriving in beats. The intro is view-only:
+  // it never changes the engine state, it only unlocks the already-created
+  // board after the rift, opening deal, and mana reveal have landed.
+  useEffect(() => {
+    if (!duelIntro) return;
+    const { id, phase } = duelIntro;
+    const moveTo = (nextPhase: DuelIntroPhase) => {
+      setDuelIntro((current) => (current && current.id === id ? { ...current, phase: nextPhase } : current));
+    };
+
+    if (phase === "prelude") {
+      const timer = window.setTimeout(() => moveTo("reveal"), 620);
+      return () => window.clearTimeout(timer);
+    }
+    if (phase === "reveal") {
+      sfx.play("turn", 0.08);
+      const timer = window.setTimeout(() => moveTo("draw"), 560);
+      return () => window.clearTimeout(timer);
+    }
+    if (phase === "draw") {
+      const frame = window.requestAnimationFrame(() => {
+        spawnOpeningDeal();
+      });
+      const timer = window.setTimeout(() => moveTo("mana"), 1_560);
+      return () => {
+        window.cancelAnimationFrame(frame);
+        window.clearTimeout(timer);
+      };
+    }
+    if (phase === "mana") {
+      sfx.play("mana", 0.08);
+      const timer = window.setTimeout(() => moveTo("exit"), 760);
+      return () => window.clearTimeout(timer);
+    }
+    const timer = window.setTimeout(() => setDuelIntro((current) => (current?.id === id ? null : current)), 420);
+    return () => window.clearTimeout(timer);
+  }, [duelIntro]);
+
   // Persist after every change. A finished duel is not worth resuming, so the
   // slot is cleared instead of holding a game-over screen forever.
   useEffect(() => {
@@ -380,12 +438,12 @@ export default function App() {
   // it walks through draw picks and targeting prompts exactly like a human does
   // and the animations get to play between its moves.
   useEffect(() => {
-    if (mode.kind !== "bot" || screen !== "playing") return;
+    if (mode.kind !== "bot" || screen !== "playing" || duelIntro) return;
     const action = chooseBotAction(game, library, BOT_ID, mode.skill);
     if (!action) return;
     const timer = window.setTimeout(() => perform(action), game.phase === "main" ? BOT_DELAY_MS : BOT_FIRST_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [game, mode, screen, library]);
+  }, [game, mode, screen, library, duelIntro]);
 
   // Hotseat: the moment the active player changes, the seat is stale and the
   // curtain has to come back down. Reading it off the state rather than off the
@@ -441,7 +499,7 @@ export default function App() {
    * bigger letters, and a banner sweeping behind a closed door is just noise.
    */
   useEffect(() => {
-    if (screen !== "playing" || game.phase === "gameOver" || curtainUp) return;
+    if (screen !== "playing" || game.phase === "gameOver" || curtainUp || duelIntro) return;
     const mine = game.activePlayer === viewerId;
     const text = vsBot
       ? mine
@@ -452,7 +510,7 @@ export default function App() {
     setBanner(marker);
     const timer = window.setTimeout(() => setBanner((cur) => (cur && cur.id === marker.id ? null : cur)), 1500);
     return () => window.clearTimeout(timer);
-  }, [game.activePlayer, game.phase, screen, curtainUp, viewerId, vsBot]);
+  }, [game.activePlayer, game.phase, screen, curtainUp, viewerId, vsBot, duelIntro]);
 
   // The crystal animation is a one-shot; letting it sit in state would re-apply
   // its classes to whatever pips happen to be in that range on a later turn.
@@ -628,7 +686,7 @@ export default function App() {
   const myTurn = game.activePlayer === viewerId;
   // Every affordance and click reads this. Empty while the opponent is thinking,
   // so nothing lights up and nothing can be clicked on their behalf.
-  const uiActions = myTurn ? legalActions : [];
+  const uiActions = myTurn && !duelIntro ? legalActions : [];
 
   function clearFx() {
     setFloats([]);
@@ -639,6 +697,52 @@ export default function App() {
     setToast(null);
     setHover(null);
     setDrag(null);
+    setFlights([]);
+    setManaFx(null);
+    setBanner(null);
+  }
+
+  /** Sends the already-dealt opening hand out of the deck in a single deal. */
+  function spawnOpeningDeal() {
+    const pile = document.querySelector<HTMLElement>(".deck-pile");
+    const pileBox = pile?.getBoundingClientRect();
+    if (!pileBox) return;
+
+    const startX = pileBox.left + pileBox.width / 2 - 27;
+    const startY = pileBox.top + pileBox.height / 2 - 37;
+    const myTargets = Array.from(document.querySelectorAll<HTMLElement>(".hand-card"));
+    const enemyTarget = document.querySelector<HTMLElement>(`[data-hero="${opponentId}"]`);
+    const targetBox = enemyTarget?.getBoundingClientRect();
+    const flights: Flight[] = [];
+
+    const addFlight = (target: DOMRect, mine: boolean, delayMs: number) => {
+      flights.push({
+        id: fxId.current++,
+        fx0: startX,
+        fy0: startY,
+        fx1: target.left + target.width / 2 - 27,
+        fy1: target.top + target.height / 2 - 37,
+        mine,
+        opening: true,
+        delayMs,
+      });
+    };
+
+    myTargets.slice(0, game.players[viewerId].hand.length).forEach((card, index) => {
+      addFlight(card.getBoundingClientRect(), true, index * 210);
+    });
+
+    if (targetBox) {
+      Array.from({ length: game.players[opponentId].hand.length }, (_, index) => {
+        addFlight(targetBox, false, 110 + index * 210);
+      });
+    }
+
+    if (!flights.length) return;
+    setFlights((current) => [...current, ...flights]);
+    flights.forEach((flight) => sfx.play("draw", (flight.delayMs ?? 0) / 1000));
+    const ids = new Set(flights.map((flight) => flight.id));
+    window.setTimeout(() => setFlights((current) => current.filter((flight) => !ids.has(flight.id))), 2_100);
   }
 
   // Diff previous vs next state and spawn all transient FX for this action:
@@ -916,6 +1020,7 @@ export default function App() {
     sfx.play("button");
     sfx.stopCardTheme();
     clearSave();
+    setDuelIntro(null);
     setGame(createInitialGame(cards, createDuelSeed(), relics));
     setHistory([]);
     setSelection(null);
@@ -932,6 +1037,7 @@ export default function App() {
     sfx.unlock();
     sfx.stopCardTheme();
     clearSave();
+    setDuelIntro({ id: fxId.current++, phase: "prelude", mode: next });
     setMode(next);
     setGame(createInitialGame(cards, createDuelSeed(), relics));
     setHistory([]);
@@ -955,6 +1061,7 @@ export default function App() {
   function toTitle() {
     sfx.play("button");
     sfx.stopCardTheme();
+    setDuelIntro(null);
     setScreen("title");
   }
 
@@ -1072,6 +1179,7 @@ export default function App() {
   }
 
   function onHandCard(handIndex: number) {
+    if (duelIntro) return;
     if (game.phase !== "main") {
       setSelection(null);
       return;
@@ -1110,6 +1218,7 @@ export default function App() {
   }
 
   function onBoardSlot(owner: PlayerId, slotIndex: number) {
+    if (duelIntro) return;
     const minion = game.players[owner].board[slotIndex];
 
     if (game.phase === "targeting") {
@@ -1167,6 +1276,7 @@ export default function App() {
 
   // ------------------------------------------------------------- drag & drop
   function startHandDrag(e: React.PointerEvent<HTMLElement>, handIndex: number, playable: boolean) {
+    if (duelIntro) return;
     // TOUCH HAS NO HOVER, and a hand card does not print its rules text — it is
     // 96px wide on a phone, where the text would be about five pixels. So the
     // only way to read a card you are holding was a hover that a finger cannot
@@ -1189,6 +1299,7 @@ export default function App() {
   }
 
   function startAttackDrag(e: React.PointerEvent<HTMLElement>, slotIndex: number, canAttack: boolean) {
+    if (duelIntro) return;
     if (game.phase !== "main" || !canAttack) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     try {
@@ -1358,7 +1469,7 @@ export default function App() {
       // the overlays run their own Escape handler.
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
-      if (overlay || curtainUp || pendingTarget || game.phase === "drawChoice") return;
+      if (overlay || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice") return;
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
 
       if (event.key === " " || event.key === "Enter") {
@@ -1375,13 +1486,22 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, overlay, curtainUp, pendingTarget, game, endTurnAction, history.length]);
+  }, [screen, overlay, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length]);
 
   return (
     <main className={drag?.active ? "hs-shell grabbing" : "hs-shell"}>
       <div className="table-glow" aria-hidden="true" />
 
-      <div className={shaking ? "table-frame shaking" : "table-frame"}>
+      <div
+        className={[
+          "table-frame",
+          shaking ? "shaking" : "",
+          duelIntro ? "duel-opening" : "",
+          duelIntro ? `duel-opening-${duelIntro.phase}` : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <header className="top-strip">
         <div className="brand-mini">
           <span className="brand-mark" />
@@ -1558,6 +1678,7 @@ export default function App() {
                 // middle rises, so nothing can ever go below the fan's own
                 // bottom edge however many cards are held.
                 "--ty": `${(Math.abs(handIndex - mid) - mid) * lift}px`,
+                "--intro-index": `${handIndex}`,
                 zIndex: handIndex + 1,
                 // The overlap is COMPUTED so the fan always fits its column.
                 //
@@ -1626,11 +1747,11 @@ export default function App() {
                         key={`${manaFx?.id ?? 0}-${i}`}
                         className={classes}
                         style={
-                          spent
-                            ? ({ "--mi": manaFx.from - 1 - i } as CSSProperties)
-                            : refill
-                              ? ({ "--mi": i - manaFx.from } as CSSProperties)
-                              : undefined
+                          {
+                            ...(spent ? { "--mi": manaFx.from - 1 - i } : {}),
+                            ...(refill ? { "--mi": i - manaFx.from } : {}),
+                            ...(duelIntro?.phase === "mana" ? { "--intro-mana-index": i } : {}),
+                          } as CSSProperties
                         }
                       />
                     );
@@ -1669,7 +1790,13 @@ export default function App() {
       {flights.map((flight) => (
         <div
           key={flight.id}
-          className={flight.mine ? "draw-flight" : "draw-flight theirs"}
+          className={[
+            "draw-flight",
+            flight.mine ? "" : "theirs",
+            flight.opening ? "opening" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           aria-hidden="true"
           style={
             {
@@ -1677,6 +1804,7 @@ export default function App() {
               "--fy0": `${flight.fy0}px`,
               "--fx1": `${flight.fx1}px`,
               "--fy1": `${flight.fy1}px`,
+              "--flight-delay": `${flight.delayMs ?? 0}ms`,
             } as CSSProperties
           }
         >
@@ -1745,6 +1873,8 @@ export default function App() {
         />
       ) : null}
 
+      {duelIntro ? <DuelIntro phase={duelIntro.phase} mode={duelIntro.mode} /> : null}
+
       {screen === "title" ? (
         <TitleScreen
           canContinue={game.phase !== "gameOver" && game.turnNumber > 1}
@@ -1752,6 +1882,7 @@ export default function App() {
           onContinue={() => {
             sfx.play("button");
             sfx.unlock();
+            setDuelIntro(null);
             setScreen("playing");
           }}
           onStart={beginDuel}
@@ -2970,4 +3101,3 @@ function statClass(current: number, base: number): string {
   if (current < base) return "is-hurt";
   return "";
 }
-
