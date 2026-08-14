@@ -665,7 +665,7 @@
 
 .duel-intro-exit {
   opacity: 0;
-  transition: opacity 1260ms ease;
+  transition: opacity 630ms ease;
 }
 
 .duel-intro-rift {

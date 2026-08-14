@@ -420,10 +420,10 @@ export default function App() {
     }
     if (phase === "mana") {
       sfx.play("mana", 0.08);
-      const timer = window.setTimeout(() => moveTo("exit"), 2_280);
+      const timer = window.setTimeout(() => moveTo("exit"), 1_140);
       return () => window.clearTimeout(timer);
     }
-    const timer = window.setTimeout(() => setDuelIntro((current) => (current?.id === id ? null : current)), 1_260);
+    const timer = window.setTimeout(() => setDuelIntro((current) => (current?.id === id ? null : current)), 630);
     return () => window.clearTimeout(timer);
   }, [duelIntro]);
 
