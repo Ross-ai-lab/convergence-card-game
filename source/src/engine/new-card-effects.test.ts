@@ -887,4 +887,472 @@ describe("2026 card replacements", () => {
     const refreshed = endTurn(after, 0);
     expect(refreshed.players[0].board[2]?.keywords).toContain("Taunt");
   });
+
+  it("Saitama ignores ATK damage below 5 but takes exactly 5", () => {
+    const weak = mainState("saitama-four");
+    weak.players[1].board[0] = minion("Saitama", 1);
+    weak.players[0].board[0] = minion("John Wick", 0, { atk: 4, hp: 20, maxHp: 20, sleeping: false });
+    const blocked = applyAction(weak, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(blocked.players[1].board[0]?.hp).toBe(10);
+    expect(blocked.players[0].board[0]?.hp).toBe(10);
+
+    const threshold = mainState("saitama-five");
+    threshold.players[1].board[0] = minion("Saitama", 1);
+    threshold.players[0].board[0] = minion("John Wick", 0, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
+    const hit = applyAction(threshold, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(hit.players[1].board[0]?.hp).toBe(5);
+    expect(hit.players[0].board[0]?.hp).toBe(10);
+  });
+
+  it("Thanos destroys one random minion per side and discards one card per player", () => {
+    const state = mainState("thanos-snap");
+    state.players[0].hand = [cardId("Thanos"), cardId("Zoro")];
+    state.players[1].hand = [cardId("Zoro")];
+    state.players[1].board[0] = minion("John Wick", 1);
+
+    const after = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library).state;
+    expect(after.players[0].board.every((entry) => entry === null)).toBe(true);
+    expect(after.players[1].board.every((entry) => entry === null)).toBe(true);
+    expect(after.players[0].hand).toEqual([]);
+    expect(after.players[1].hand).toEqual([]);
+    expect(after.discard).toEqual([cardId("Thanos"), cardId("John Wick"), cardId("Zoro"), cardId("Zoro")]);
+  });
+
+  it("Doom Slayer deals exactly triple damage to Evil minions and heals 3 after a kill", () => {
+    const wounded = mainState("doom-triple");
+    wounded.players[0].board[0] = minion("Doom Slayer", 0, { sleeping: false });
+    wounded.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 1, hp: 10, maxHp: 10 });
+    const nineDamage = applyAction(wounded, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(nineDamage.players[1].board[0]?.hp).toBe(1);
+    expect(nineDamage.players[0].board[0]?.hp).toBe(5);
+
+    const kill = mainState("doom-kill-heal");
+    kill.players[0].board[0] = minion("Doom Slayer", 0, { sleeping: false, hp: 2, maxHp: 6 });
+    kill.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 1, hp: 8, maxHp: 8 });
+    const healed = applyAction(kill, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(healed.players[1].board[0]).toBeNull();
+    expect(healed.players[0].board[0]).toMatchObject({ hp: 4, maxHp: 6 });
+  });
+
+  it("Flash can attack exactly 3 times for 12 total core damage", () => {
+    let state = mainState("flash-three-attacks");
+    state.players[0].board[0] = minion("Flash", 0, { sleeping: false });
+
+    for (let attack = 0; attack < 3; attack += 1) {
+      expect(getLegalActions(state, library)).toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
+      state = applyAction(state, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
+    }
+
+    expect(state.players[1].health).toBe(64);
+    expect(state.players[0].board[0]?.attacksUsed).toBe(3);
+    expect(getLegalActions(state, library)).not.toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
+  });
+
+  it("Meruem destroys every enemy minion at 2 HP or less and leaves 3 HP alive", () => {
+    const state = mainState("meruem-small-minions");
+    state.players[1].board[0] = minion("John Wick", 1, { hp: 2, maxHp: 2 });
+    state.players[1].board[1] = minion("Zoro", 1, { hp: 1, maxHp: 1 });
+    state.players[1].board[2] = minion("Saitama", 1, { hp: 3, maxHp: 3 });
+
+    const after = play(state, 0, "Meruem", 0);
+    expect(after.players[1].board[0]).toBeNull();
+    expect(after.players[1].board[1]).toBeNull();
+    expect(after.players[1].board[2]).toMatchObject({ hp: 3, maxHp: 3 });
+  });
+
+  it("Escanor The One deals exactly 8 damage only when he controls no other minions", () => {
+    const alone = mainState("escanor-lone-burst");
+    alone.players[1].board[0] = minion("John Wick", 1, { hp: 10, maxHp: 10 });
+    alone.players[1].board[1] = minion("Zoro", 1, { hp: 10, maxHp: 10 });
+    const asking = play(alone, 0, 'Escanor "The One"', 0);
+    const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 1 && option.slot === 0) ?? -1;
+    expect(targetIndex).toBeGreaterThanOrEqual(0);
+    const after = choose(asking, targetIndex);
+    expect(after.players[1].board[0]?.hp).toBe(2);
+    expect(after.players[1].board[1]?.hp).toBe(10);
+
+    const crowded = mainState("escanor-not-alone");
+    crowded.players[0].board[2] = minion("John Wick", 0);
+    crowded.players[1].board[0] = minion("John Wick", 1, { hp: 10, maxHp: 10 });
+    const noBurst = play(crowded, 0, 'Escanor "The One"', 0);
+    expect(noBurst.pendingTarget).toBeNull();
+    expect(noBurst.players[1].board[0]?.hp).toBe(10);
+  });
+
+  it("Dormammu reshuffles exactly the cards left in hand and draws that many", () => {
+    const state = mainState("dormammu-reshuffle");
+    state.players[0].hand = [cardId("Dormammu"), cardId("John Wick"), cardId("Zoro")];
+    state.deck = [cardId("Saitama"), cardId("Flash"), cardId("Thanos")];
+
+    const after = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library).state;
+    expect(after.players[0].hand).toEqual([cardId("Saitama"), cardId("Flash")]);
+    expect(after.bottomDeck).toEqual([cardId("John Wick"), cardId("Zoro")]);
+    expect(after.deck).toEqual([cardId("Thanos")]);
+  });
+
+  it("Conquest gains exactly +2/+2 for each enemy Good minion", () => {
+    const state = mainState("conquest-good-count");
+    state.players[0].board[0] = minion("Conquest", 0);
+    state.players[1].board[0] = minion("John Wick", 1, { alignment: "Good" });
+    state.players[1].board[1] = minion("Zoro", 1, { alignment: "Good" });
+    state.players[1].board[2] = minion("John Wick", 1, { alignment: "Evil", atk: 2, hp: 2, maxHp: 2 });
+
+    const after = endTurn(endTurn(state, 0), 1);
+    expect(after.players[0].board[0]).toMatchObject({ atk: 10, hp: 10, maxHp: 10 });
+    expect(after.players[1].board[2]).toMatchObject({ atk: 2, hp: 2, maxHp: 2 });
+  });
+
+  it("S-Class Heroes gives exactly +2/+2 to every Good minion, including itself", () => {
+    const state = mainState("s-class-good-buff");
+    state.players[0].board[0] = minion("S-Class Heroes", 0);
+    state.players[0].board[1] = minion("John Wick", 0, { alignment: "Good", atk: 2, hp: 3, maxHp: 3 });
+    state.players[0].board[2] = minion("Zoro", 0, { alignment: "Evil", atk: 2, hp: 3, maxHp: 3 });
+
+    const after = endTurn(endTurn(state, 0), 1);
+    expect(after.players[0].board[0]).toMatchObject({ atk: 6, hp: 9, maxHp: 9 });
+    expect(after.players[0].board[1]).toMatchObject({ atk: 4, hp: 5, maxHp: 5 });
+    expect(after.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
+  });
+
+  it("Marshall D. Teach copies one persistent effect from each side", () => {
+    const state = mainState("marshall-copy-passives");
+    state.players[0].board[1] = minion("Saitama", 0);
+    state.players[1].board[0] = minion("Flash", 1);
+    state.players[1].board[1] = minion("John Wick", 1, { atk: 4, hp: 20, maxHp: 20, sleeping: false });
+
+    const afterPlay = play(state, 0, "Marshall D. Teach", 0);
+    const afterCopy = endTurn(endTurn(afterPlay, 0), 1);
+    const teach = afterCopy.players[0].board[0];
+    expect(teach?.gainedEffects).toHaveLength(2);
+    expect(teach?.gainedEffects.map((effect) => effect.effectId).sort()).toEqual(["attack_3x", "small_cannot_attack"]);
+
+    const blocked = applyAction(
+      { ...afterCopy, activePlayer: 1 },
+      { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 0 },
+      library,
+    ).state;
+    expect(blocked.players[0].board[0]?.hp).toBe(5);
+    expect(blocked.players[1].board[1]?.hp).toBe(15);
+  });
+
+  it("All for One copies Dabi's effect and triggers its exact 1 damage sweep", () => {
+    const state = mainState("all-for-one-dabi");
+    state.players[0].board[1] = minion("John Wick", 0, { hp: 10, maxHp: 10 });
+    state.players[1].board[0] = minion("Dabi", 1, { hp: 10, maxHp: 10 });
+
+    const after = play(state, 0, "All for One", 0);
+    expect(after.players[0].board[0]?.hp).toBe(5);
+    expect(after.players[0].board[1]?.hp).toBe(9);
+    expect(after.players[1].board[0]?.hp).toBe(9);
+  });
+
+  it("Ultron Prime gains exactly +2/+2 for each friendly Tech minion that dies", () => {
+    const state = mainState("ultron-tech-deaths");
+    state.players[0].board[0] = minion("Ultron Prime", 0);
+    state.players[0].board[1] = minion("Modern Tank", 0, { camp: "Tech", hp: 1, maxHp: 1 });
+    state.players[0].board[2] = minion("Modern Tank", 0, { camp: "Tech", hp: 1, maxHp: 1 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
+    state.players[1].board[1] = minion("Zoro", 1, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
+    state.activePlayer = 1;
+
+    const first = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
+    expect(first.players[0].board[0]).toMatchObject({ atk: 5, hp: 7, maxHp: 7 });
+    const second = applyAction(first, { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 2 }, library).state;
+    expect(second.players[0].board[0]).toMatchObject({ atk: 7, hp: 9, maxHp: 9 });
+  });
+
+  it("Thirteen Lords of Chaos makes an Evil ally Invulnerable until the next owner turn", () => {
+    const state = mainState("chaos-invulnerable");
+    state.players[0].board[1] = minion("John Wick", 0, { alignment: "Evil", hp: 10, maxHp: 10 });
+    const asking = play(state, 0, "Thirteen Lords of Chaos", 0);
+    const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 0 && option.slot === 1) ?? -1;
+    expect(targetIndex).toBeGreaterThanOrEqual(0);
+    const afterPlay = choose(asking, targetIndex);
+    const protectedAlly = afterPlay.players[0].board[1];
+    expect(protectedAlly).toMatchObject({ invulnerableUntilTurn: afterPlay.turnNumber + 2 });
+
+    afterPlay.players[1].board[0] = minion("Zoro", 1, { atk: 3, hp: 20, maxHp: 20, sleeping: false });
+    const blocked = applyAction(endTurn(afterPlay, 0), { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
+    expect(blocked.players[0].board[1]?.hp).toBe(10);
+
+    const nextOwnerTurn = endTurn(blocked, 1);
+    const nextEnemyTurn = endTurn(nextOwnerTurn, 0);
+    const hit = applyAction(nextEnemyTurn, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
+    expect(hit.players[0].board[1]?.hp).toBe(7);
+  });
+
+  it("Big Mom gains exactly the devoured friendly minion's ATK and HP", () => {
+    const state = mainState("big-mom-devour");
+    state.players[0].board[2] = minion("John Wick", 0, { atk: 2, hp: 4, maxHp: 4 });
+
+    const after = play(state, 0, "Big Mom", 0);
+    expect(after.players[0].board[2]).toBeNull();
+    expect(after.players[0].board[0]).toMatchObject({ atk: 5, hp: 9, maxHp: 9 });
+  });
+
+  it("Grand Master Oogway rescues one dying ally per turn and Chains for 1 turn", () => {
+    const state = mainState("oogway-rescue");
+    state.players[0].board[0] = minion("Grand Master Oogway", 0);
+    state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 1 });
+    state.players[0].board[2] = minion("Zoro", 0, { hp: 1, maxHp: 1 });
+    state.players[0].hand = [];
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
+    state.players[1].board[1] = minion("Zoro", 1, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
+    state.activePlayer = 1;
+
+    const first = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
+    expect(first.players[0].board[0]).toMatchObject({ divineShield: true, chained: 2, rescueUsedAtTurn: first.turnNumber });
+    expect(first.players[0].board[1]).toBeNull();
+    expect(first.players[0].hand).toContain(cardId("John Wick"));
+
+    const second = applyAction(first, { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 2 }, library).state;
+    expect(second.players[0].board[2]).toBeNull();
+    expect(second.players[0].hand).not.toContain(cardId("Zoro"));
+  });
+
+  it("The Driller keeps Taunt and gives Taunt to another friendly minion", () => {
+    const state = mainState("driller-taunt");
+    state.players[0].board[1] = minion("John Wick", 0);
+
+    const after = play(state, 0, "The Driller", 0);
+    expect(after.players[0].board[0]?.keywords).toContain("Taunt");
+    expect(after.players[0].board[1]?.keywords).toContain("Taunt");
+    expect(after.players[0].board[1]?.gainedEffects).toContainEqual(
+      expect.objectContaining({ effectId: "none", timing: "passive", text: "Passive: Taunt." }),
+    );
+  });
+
+  it("Po gains exactly +1/+1 after surviving an attack and a defense", () => {
+    const state = mainState("po-survives");
+    state.players[0].board[0] = minion("Po", 0, { sleeping: false });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 1, hp: 10, maxHp: 10 });
+    state.players[1].board[1] = minion("Zoro", 1, { atk: 1, hp: 10, maxHp: 10, sleeping: false });
+
+    const afterAttack = applyAction(
+      state,
+      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(afterAttack.players[0].board[0]).toMatchObject({ atk: 4, hp: 3, maxHp: 4 });
+
+    const afterDefense = applyAction(
+      endTurn(afterAttack, 0),
+      { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 0 },
+      library,
+    ).state;
+    expect(afterDefense.players[0].board[0]).toMatchObject({ atk: 5, hp: 3, maxHp: 5 });
+  });
+
+  it("Gyoro Gyoro gives exactly +2/+2 to the chosen Evil ally", () => {
+    const state = mainState("gyoro-evil-buff");
+    state.players[0].board[0] = minion("Gyoro Gyoro", 0);
+    state.players[0].board[1] = minion("John Wick", 0, { alignment: "Evil", atk: 2, hp: 2, maxHp: 2 });
+    state.players[0].board[2] = minion("Zoro", 0, { alignment: "Evil", atk: 3, hp: 3, maxHp: 3 });
+    state.players[0].board[3] = minion("John Wick", 0, { alignment: "Good", atk: 2, hp: 2, maxHp: 2 });
+
+    const asking = endTurn(endTurn(state, 0), 1);
+    const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 0 && option.slot === 1) ?? -1;
+    expect(targetIndex).toBeGreaterThanOrEqual(0);
+    const after = choose(asking, targetIndex);
+    expect(after.players[0].board[1]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
+    expect(after.players[0].board[2]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
+    expect(after.players[0].board[3]).toMatchObject({ atk: 2, hp: 2, maxHp: 2 });
+  });
+
+  it("Spider-Man Freezes an enemy and halves its ATK with exact rounding", () => {
+    const state = mainState("spider-man-freeze-weaken");
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 10, maxHp: 10 });
+
+    const after = play(state, 0, "Spider-Man", 0);
+    expect(after.players[1].board[0]).toMatchObject({ frozen: true, atk: 3, hp: 10 });
+  });
+
+  it("Yubaba silences every enemy Magic minion and gains their persistent effects", () => {
+    const state = mainState("yubaba-magic-effects");
+    state.players[1].board[0] = minion("Flash", 1);
+    state.players[1].board[1] = minion("Giant Crystal", 1);
+    state.players[1].board[2] = minion("Doom Slayer", 1);
+
+    const after = play(state, 0, "Yubaba", 0);
+    expect(after.players[1].board[0]?.silenced).toBe(true);
+    expect(after.players[1].board[1]?.silenced).toBe(true);
+    expect(after.players[1].board[2]?.silenced).toBe(false);
+    expect(after.players[0].board[0]?.gainedEffects.map((effect) => effect.effectId).sort()).toEqual([
+      "attack_3x",
+      "buff_all_magic_2_1",
+    ]);
+    expect(after.players[0].board[0]).toMatchObject({ divineShield: true, effectId: "none", effectTiming: "ongoing" });
+  });
+
+  it("Yujiro destroys the chosen enemy minion", () => {
+    const state = mainState("yujiro-destroy");
+    state.players[1].board[0] = minion("John Wick", 1);
+
+    const after = play(state, 0, "Yujiro", 0);
+    expect(after.players[1].board[0]).toBeNull();
+    expect(after.discard).toContain(cardId("John Wick"));
+  });
+
+  it("Giant Crystal gives exactly +2/+1 to other friendly Magic minions", () => {
+    const state = mainState("giant-crystal-magic-buff");
+    state.players[0].board[0] = minion("Giant Crystal", 0);
+    state.players[0].board[1] = minion("Flash", 0, { atk: 4, hp: 6, maxHp: 6 });
+    state.players[0].board[2] = minion("John Wick", 0, { camp: "Nature", atk: 2, hp: 3, maxHp: 3 });
+
+    const after = endTurn(endTurn(state, 0), 1);
+    expect(after.players[0].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1, divineShield: true });
+    expect(after.players[0].board[1]).toMatchObject({ atk: 6, hp: 7, maxHp: 7 });
+    expect(after.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
+  });
+
+  it("Tech Hub gives exactly +2/+1 to other friendly Tech minions", () => {
+    const state = mainState("tech-hub-tech-buff");
+    state.players[0].board[0] = minion("Tech Hub", 0);
+    state.players[0].board[1] = minion("Modern Tank", 0, { atk: 3, hp: 3, maxHp: 3 });
+    state.players[0].board[2] = minion("John Wick", 0, { camp: "Nature", atk: 2, hp: 3, maxHp: 3 });
+
+    const after = endTurn(endTurn(state, 0), 1);
+    expect(after.players[0].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1, divineShield: true });
+    expect(after.players[0].board[1]).toMatchObject({ atk: 5, hp: 4, maxHp: 4 });
+    expect(after.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
+  });
+
+  it("Gums devours an enemy at the exact 3/3 limit and gains its stats", () => {
+    const state = mainState("gums-devour-small");
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 3, hp: 3, maxHp: 3 });
+    state.players[1].board[1] = minion("Zoro", 1, { atk: 4, hp: 3, maxHp: 3 });
+
+    const after = play(state, 0, "Gums", 0);
+    expect(after.players[1].board[0]).toBeNull();
+    expect(after.players[1].board[1]).toMatchObject({ atk: 4, hp: 3, maxHp: 3 });
+    expect(after.players[0].board[0]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
+  });
+
+  it("Dabi deals exactly 1 damage to every other minion", () => {
+    const state = mainState("dabi-one-damage");
+    state.players[0].board[1] = minion("John Wick", 0, { hp: 10, maxHp: 10 });
+    state.players[1].board[0] = minion("Zoro", 1, { hp: 10, maxHp: 10 });
+
+    const after = play(state, 0, "Dabi", 0);
+    expect(after.players[0].board[0]).toMatchObject({ hp: 3, maxHp: 3 });
+    expect(after.players[0].board[1]?.hp).toBe(9);
+    expect(after.players[1].board[0]?.hp).toBe(9);
+  });
+
+  it("Mr. Oliva ignores ATK 1 but takes exact ATK 2 damage", () => {
+    const weak = mainState("oliva-one-attack");
+    weak.players[1].board[0] = minion("Mr. Oliva", 1, { hp: 5, maxHp: 5 });
+    weak.players[0].board[0] = minion("John Wick", 0, { atk: 1, hp: 20, maxHp: 20, sleeping: false });
+    const blocked = applyAction(weak, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(blocked.players[1].board[0]?.hp).toBe(5);
+
+    const threshold = mainState("oliva-two-attack");
+    threshold.players[1].board[0] = minion("Mr. Oliva", 1, { hp: 5, maxHp: 5 });
+    threshold.players[0].board[0] = minion("John Wick", 0, { atk: 2, hp: 20, maxHp: 20, sleeping: false });
+    const hit = applyAction(threshold, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(hit.players[1].board[0]?.hp).toBe(3);
+  });
+
+  it("Lu Bu can attack only the enemy with the highest ATK", () => {
+    const state = mainState("lu-bu-highest-attack");
+    state.players[0].board[0] = minion("Lu Bu", 0, { sleeping: false });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 4, hp: 10, maxHp: 10 });
+    state.players[1].board[1] = minion("Zoro", 1, { atk: 6, hp: 10, maxHp: 10 });
+
+    expect(getLegalActions(state, library).filter(
+      (action) => action.type === "attack_minion" && action.player === 0 && action.attackerSlot === 0,
+    )).toEqual([{ type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 1 }]);
+  });
+
+  it("Mr. Poopybutthole Reborns at the printed 75% branch and can fail the 25% branch", () => {
+    const success = mainState("reborn-0");
+    success.players[0].board[0] = minion("Mr. Poopybutthole", 0, { hp: 1, maxHp: 1 });
+    success.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
+    success.activePlayer = 1;
+    const reborn = applyAction(success, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(reborn.players[0].board[0]).toMatchObject({
+      name: "Mr. Poopybutthole",
+      atk: 1,
+      hp: 1,
+      maxHp: 1,
+      suppressArrivalTheme: true,
+    });
+
+    const failure = mainState("reborn-fail-2");
+    failure.players[0].board[0] = minion("Mr. Poopybutthole", 0, { hp: 1, maxHp: 1 });
+    failure.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
+    failure.activePlayer = 1;
+    const notReborn = applyAction(failure, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(notReborn.players[0].board[0]).toBeNull();
+    expect(notReborn.discard).toContain(cardId("Mr. Poopybutthole"));
+  });
+
+  it("Nezu draws exactly 1 extra card on its ongoing turn", () => {
+    const state = mainState("nezu-draw-one");
+    state.players[0].board[0] = minion("Nezu", 0);
+    state.players[0].hand = [];
+    state.players[1].hand = [];
+    state.deck = [cardId("Thanos"), cardId("John Wick"), cardId("Zoro")];
+
+    const after = endTurn(endTurn(state, 0), 1);
+    expect(after.players[0].hand).toEqual([cardId("John Wick"), cardId("Zoro")]);
+    expect(after.deck).toEqual([]);
+  });
+
+  it("Shibukawa sets its ATK exactly to the highest enemy ATK", () => {
+    const state = mainState("shibukawa-highest-enemy");
+    state.players[0].board[0] = minion("Shibukawa", 0);
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 7, hp: 10, maxHp: 10 });
+    state.players[1].board[1] = minion("Zoro", 1, { atk: 3, hp: 10, maxHp: 10 });
+
+    const after = endTurn(endTurn(state, 0), 1);
+    expect(after.players[0].board[0]?.atk).toBe(7);
+  });
+
+  it("Mugen & Jin gains exactly +1 ATK only with another friendly minion", () => {
+    const together = mainState("mugen-jin-ally");
+    together.players[0].board[1] = minion("John Wick", 0);
+    const withAlly = play(together, 0, "Mugen & Jin", 0);
+    expect(withAlly.players[0].board[0]).toMatchObject({ atk: 2, hp: 2 });
+
+    const alone = mainState("mugen-jin-alone");
+    const byItself = play(alone, 0, "Mugen & Jin", 0);
+    expect(byItself.players[0].board[0]).toMatchObject({ atk: 1, hp: 2 });
+  });
+
+  it("Kagaya Ubuyashiki gives exactly +1/+1 to other friendly Good minions", () => {
+    const state = mainState("kagaya-good-aura");
+    state.players[0].board[0] = minion("Kagaya Ubuyashiki", 0);
+    state.players[0].board[1] = minion("Saitama", 0, { alignment: "Good", atk: 2, hp: 3, maxHp: 3 });
+    state.players[0].board[2] = minion("John Wick", 0, { alignment: "Evil", atk: 2, hp: 3, maxHp: 3 });
+    state.players[1].board[0] = minion("Saitama", 1, { alignment: "Good", atk: 2, hp: 3, maxHp: 3 });
+
+    const after = endTurn(endTurn(state, 0), 1);
+    expect(after.players[0].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
+    expect(after.players[0].board[1]).toMatchObject({ atk: 3, hp: 4, maxHp: 4 });
+    expect(after.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
+    expect(after.players[1].board[0]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
+  });
+
+  it("Sir Nighteye reveals the exact card name the enemy draws", () => {
+    const state = mainState("sir-nighteye-reveal");
+    state.players[0].board[0] = minion("Sir Nighteye", 0);
+    state.players[1].hand = [];
+    state.deck = [cardId("Saitama")];
+
+    const result = applyAction(state, { type: "end_turn", player: 0 }, library);
+    expect(result.state.players[1].hand).toEqual([cardId("Saitama")]);
+    expect(result.events).toContainEqual(expect.objectContaining({ text: "Sir Nighteye sees Player Two draw Saitama." }));
+  });
+
+  it("Furious Five gives Divine Shield to Good minions but not Evil minions when played", () => {
+    const state = mainState("furious-five-shield");
+    state.players[0].board[0] = minion("Furious Five", 0);
+
+    const withShield = play(state, 0, "Kagaya Ubuyashiki", 1);
+    expect(withShield.players[0].board[1]?.divineShield).toBe(true);
+
+    const withoutShield = play(withShield, 0, "Gums", 2);
+    expect(withoutShield.players[0].board[2]?.divineShield).toBe(false);
+  });
 });

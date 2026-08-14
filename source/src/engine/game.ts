@@ -2056,8 +2056,28 @@ function runEffect(
     discardRandom(state, enemyId, events);
     events.push(effectEvent(`${label} pressures the enemy hand.`, source));
   } else if (source.effectId === "copy_passive") {
-    buffMinion(source, 1, 1);
-    events.push(effectEvent(`${label} copies a fragment of power.`, source));
+    const copied: string[] = [];
+    for (const donor of player.board) {
+      if (!donor || donor.instanceId === source.instanceId || donor.silenced) continue;
+      const effect = persistentEffects(donor).find(
+        (candidate) => !source.gainedEffects.some((existing) => existing.effectId === candidate.effectId),
+      );
+      if (!effect) continue;
+      source.gainedEffects.push({ ...effect });
+      copied.push(donor.name);
+      break;
+    }
+    for (const donor of enemy.board) {
+      if (!donor || donor.silenced) continue;
+      const effect = persistentEffects(donor).find(
+        (candidate) => !source.gainedEffects.some((existing) => existing.effectId === candidate.effectId),
+      );
+      if (!effect) continue;
+      source.gainedEffects.push({ ...effect });
+      copied.push(donor.name);
+      break;
+    }
+    events.push(effectEvent(`${label} copies ${copied.length} persistent effects.`, source));
   } else if (source.effectId === "rimuru_tempest_growth") {
     buffMinion(source, 2, 1);
     events.push(effectEvent(`${label} grows +2/+1.`, source));
@@ -2244,7 +2264,7 @@ function runEffect(
       events.push(effectEvent(`${label} empowers ${picked.name}.`, source));
     }
   } else if (source.effectId === "buff_all_good_2") {
-    buffAllAllies(player, source, (minion) => minion.alignment === "Good", 2, 2, false);
+    buffAllAllies(player, source, (minion) => minion.alignment === "Good", 2, 2, true);
     events.push(effectEvent(`${label} empowers all Good allies.`, source));
   } else if (source.effectId === "buff_evil_ally_3_2_heal") {
     const target = picked;
@@ -2807,6 +2827,22 @@ function copyMinionEffects(source: MinionInstance, target: MinionInstance, event
   source.baseHp = keepStats.baseHp;
   if (hasKeyword(source, "Charge")) source.sleeping = false;
   events.push(effectEvent(`${source.name} becomes a copy of the chosen minion's effects without copying its stats.`, source));
+}
+
+function persistentEffects(minion: MinionInstance): Array<{ effectId: EffectId; timing: "passive" | "ongoing"; text: string }> {
+  const effects: Array<{ effectId: EffectId; timing: "passive" | "ongoing"; text: string }> = [];
+  if (
+    minion.effectId !== "none" &&
+    (minion.effectTiming === "passive" || minion.effectTiming === "ongoing" || minion.effectTiming === "onPlayAndOngoing")
+  ) {
+    effects.push({
+      effectId: minion.effectId,
+      timing: minion.effectTiming === "onPlayAndOngoing" ? "ongoing" : minion.effectTiming,
+      text: minion.effect,
+    });
+  }
+  effects.push(...minion.gainedEffects);
+  return effects.filter((effect) => effect.effectId !== "none");
 }
 
 /** Transfer the persistent parts of a sacrificed minion without replaying its Battlecry. */
