@@ -156,15 +156,13 @@ type Flight = {
 type DuelIntroState = { id: number; phase: DuelIntroPhase };
 
 // Keep this schedule aligned with the opening animation table in the project
-// README. The 1.89s settle phase is the remaining time after the 3s circle /
-// draw window and the 570ms mana reveal, ending exactly when the last opening
-// card flight finishes.
+// README. The intro ends after the mana reveal; opening card flights continue
+// as pointer-free visual polish instead of blocking the first action.
 const DUEL_INTRO_TIMINGS = {
   preludeMs: 1_860,
   revealMs: 1_680,
-  drawMs: 3_000,
+  drawMs: 3_430,
   manaMs: 570,
-  settleMs: 1_890,
   exitMs: 315,
 } as const;
 /** Which crystals just changed, and in which direction. */
@@ -433,11 +431,7 @@ export default function App() {
     }
     if (phase === "mana") {
       sfx.play("mana", 0.08);
-      const timer = window.setTimeout(() => moveTo("settle"), DUEL_INTRO_TIMINGS.manaMs);
-      return () => window.clearTimeout(timer);
-    }
-    if (phase === "settle") {
-      const timer = window.setTimeout(() => moveTo("exit"), DUEL_INTRO_TIMINGS.settleMs);
+      const timer = window.setTimeout(() => moveTo("exit"), DUEL_INTRO_TIMINGS.manaMs);
       return () => window.clearTimeout(timer);
     }
     const timer = window.setTimeout(
@@ -1049,7 +1043,7 @@ export default function App() {
     setSeatedPlayer(0);
     setLethal(0);
     heraldSaid.current = new Set();
-    sfx.playAnnouncer("duel_begin", 0.35);
+    sfx.play("openingEpic", 0.35);
     setEvents([{ kind: "info", text: "A new shared deck is prepared." }]);
   }
 
@@ -1067,7 +1061,7 @@ export default function App() {
     clearFx();
     setSeatedPlayer(0);
     heraldSaid.current = new Set();
-    sfx.playAnnouncer("duel_begin", 0.35);
+    sfx.play("openingEpic", 0.35);
     setEvents([
       {
         kind: "info",

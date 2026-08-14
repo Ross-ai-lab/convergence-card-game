@@ -37,6 +37,7 @@ export type SfxName =
   | "invalid"
   | "draw"
   | "mana"
+  | "openingEpic"
   | "coin"
   | "relicEquip"
   | "button"
@@ -557,6 +558,32 @@ function render(name: SfxName, t: number): void {
       osc({ type: "sine", f0: 1320, f1: 840, t: t + 0.03, dur: 0.14, gain: 0.018, attack: 0.006, send: 0.5 });
       noise({ t, dur: 0.12, gain: 0.022, type: "highpass", f0: 3800, f1: 6800, send: 0.4 });
       break;
+
+    // The opening rift gets its own one-shot cue. It is deliberately not one
+    // of the normal turn, summon, victory, or defeat sounds: a deep convergence
+    // swell, asymmetric metal constellation, and a delayed impact announce the
+    // duel without spoken narration.
+    case "openingEpic": {
+      duck(0.34, 1.55);
+      riser(t, 0.72, 0.14);
+      osc({ type: "sine", f0: 58, f1: 24, t, dur: 1.9, gain: 0.32, attack: 0.004, send: 0.3 });
+      swell(t + 0.66, [110, 155.56, 207.65, 311.13, 466.16], 1.7, 0.082, 0.72, 3600);
+      taiko(t + 0.72, 0.58, 0, 192, 34, 1.05);
+      crash(t + 0.76, 1.25, 0.085, 0.82);
+      [233.08, 349.23, 523.25, 783.99].forEach((frequency, index) =>
+        metal({
+          t: t + 0.82 + index * 0.12,
+          dur: 1.45,
+          gain: 0.055,
+          carrier: frequency,
+          ratio: 2.718,
+          index: 6.2,
+          pan: (index - 1.5) * 0.18,
+          send: 0.82,
+        }),
+      );
+      break;
+    }
 
     case "coin":
       metal({ t, dur: 0.8, gain: 0.06, carrier: 1320, ratio: 2.41, index: 4, pan: 0.1, send: 0.6 });

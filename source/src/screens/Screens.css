@@ -616,7 +616,8 @@
 .duel-intro {
   /* These mirror DUEL_INTRO_TIMINGS.preludeMs + revealMs and drawMs in App.tsx. */
   --duel-rift-draw-delay: 3.54s;
-  --duel-rift-draw-window: 3s;
+  --duel-rift-draw-window: 3.43s;
+  --duel-rift-spin-arc: 288deg;
   position: fixed;
   inset: 0;
   z-index: 90;
@@ -660,7 +661,6 @@
 .duel-intro-reveal,
 .duel-intro-draw,
 .duel-intro-mana,
-.duel-intro-settle,
 .duel-intro-exit {
   background:
     radial-gradient(circle at 50% 48%, rgba(155, 119, 210, 0.16), transparent 26%),
@@ -684,7 +684,6 @@
 }
 
 .duel-intro-mana .duel-intro-rift-stage,
-.duel-intro-settle .duel-intro-rift-stage,
 .duel-intro-exit .duel-intro-rift-stage {
   opacity: 0;
 }
@@ -754,7 +753,7 @@
 }
 
 @keyframes duel-rift-spin {
-  to { rotate: 360deg; }
+  to { rotate: var(--duel-rift-spin-arc); }
 }
 
 /* ---------------------------------------------------------------- overlays */
