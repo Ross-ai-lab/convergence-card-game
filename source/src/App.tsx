@@ -307,7 +307,7 @@ export default function App() {
   // The front door. A restored duel still starts here rather than dumping a
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery">(null);
   /**
    * Hotseat only: who the screen is currently cleared for. The curtain drops
    * whenever the turn passes to the other player, and stays down until they say
@@ -1756,10 +1756,12 @@ export default function App() {
           }}
           onStart={beginDuel}
           onSettings={() => setOverlay("settings")}
+          onGallery={() => setOverlay("gallery")}
         />
       ) : null}
 
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
+      {overlay === "gallery" ? <CardGallery onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel
           onClose={() => setOverlay(null)}
@@ -2167,6 +2169,98 @@ const RULES_CEILING = 64;
 const FLAVOR_CEILING = 32;
 const NAME_CEILING = 46;
 const NAME_CEILING_COMPACT = 72;
+
+/**
+ * Every card in the game, on one page.
+ *
+ * It draws through the same `CardFace` the board draws through, from the same
+ * `cards` and `relics` the engine loads, so it CANNOT go stale. Change a card's
+ * text and the gallery already shows the new text; add a card and it appears.
+ * That is the entire reason it is a screen inside the game rather than a folder
+ * of exported pictures — a picture is right on the day it was taken and quietly
+ * wrong forever after, with nothing to say so.
+ *
+ * Cards are shown as printed: no board state, no live buffs, no conditions.
+ */
+function CardGallery({ onClose }: { onClose: () => void }) {
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const needle = query.trim().toLowerCase();
+  const entries = useMemo(() => {
+    const all = [
+      ...cards.map((card) => ({ key: card.id, face: playableFace(card) })),
+      ...relics.map((relic) => ({ key: relic.id, face: relicFace(relic) })),
+    ];
+    if (!needle) return all;
+    // Search everything printed on the face. Looking for "freeze" should find
+    // the cards that freeze, not only the ones with Freeze in their name.
+    return all.filter((entry) =>
+      [
+        entry.face.name,
+        entry.face.effect,
+        entry.face.origin,
+        entry.face.camp,
+        entry.face.alignment,
+        entry.face.rarity,
+        entry.face.flavor ?? "",
+        (entry.face.keywords ?? []).join(" "),
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle),
+    );
+  }, [needle]);
+
+  return (
+    <div
+      className="screen-veil gallery-veil"
+      onPointerDown={(event) => event.target === event.currentTarget && onClose()}
+    >
+      {/* Deliberately NOT `wide`. That class sets its own 760px width at the same
+          specificity as anything here can reach, and it is defined in a stylesheet
+          that loads later, so it wins on source order and squeezes the grid to
+          three columns. Leaving it off means nothing competes. */}
+      <section className="screen-panel gallery-panel" role="dialog" aria-label="Card gallery">
+        <header className="screen-panel-top">
+          <h2>Card gallery</h2>
+          <input
+            className="gallery-search"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search name, rules, origin…"
+            aria-label="Search the gallery"
+          />
+          <span className="gallery-count">{entries.length}</span>
+          <button type="button" className="screen-x" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </header>
+        <div className="screen-panel-body gallery-body">
+          {entries.length ? (
+            <div className="gallery-grid">
+              {entries.map((entry) => (
+                <div className="gallery-cell" key={entry.key}>
+                  <CardFace card={entry.face} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="gallery-empty">Nothing matches “{query}”.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
 
 function CardFace({
   card,

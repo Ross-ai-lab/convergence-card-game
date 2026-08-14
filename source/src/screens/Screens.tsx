@@ -18,6 +18,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import {
   ArrowLeft,
+  Cards,
   Crown,
   GearSix,
   Lightning,
@@ -160,12 +161,14 @@ export function TitleScreen({
   onContinue,
   onStart,
   onSettings,
+  onGallery,
 }: {
   canContinue: boolean;
   playerCount: number | null;
   onContinue: () => void;
   onStart: (mode: GameMode) => void;
   onSettings: () => void;
+  onGallery: () => void;
 }) {
   const [skill, setSkill] = useState<BotSkill>("normal");
   const skillIcon = {
@@ -235,6 +238,10 @@ export function TitleScreen({
           <button type="button" className="hotseat-trigger" onClick={() => onStart({ kind: "hotseat" })}>
             <UsersThree size={22} weight="fill" aria-hidden="true" />
             <span>2 players</span>
+          </button>
+          <button type="button" className="gallery-trigger" onClick={onGallery}>
+            <Cards size={22} weight="fill" aria-hidden="true" />
+            <span>Cards</span>
           </button>
           <button type="button" className="settings-trigger" onClick={onSettings}>
             <GearSix size={22} weight="fill" aria-hidden="true" />

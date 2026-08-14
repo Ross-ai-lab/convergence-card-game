@@ -4440,3 +4440,97 @@ button:disabled {
   100% { opacity: 0; transform: translate(-50%, -56%) scale(0.98); }
 }
 
+
+/* ---------------------------------------------------------------------------
+   Card gallery — every card in the game, on one page.
+
+   It reuses `.screen-veil` / `.screen-panel` so it sits in the same furniture as
+   the rules and settings overlays. The only new work is the grid, and the fixed
+   card WIDTH is the load-bearing part: `.card-face` is `container-type: size`,
+   so its internals lay themselves out from the box it is given. Give the cells a
+   real width and every card composes exactly as it would anywhere else.
+--------------------------------------------------------------------------- */
+
+/* Two classes deep on purpose: `.screen-panel.wide` already sets a 760px width,
+   which beats a single-class selector and squeezed the grid to three columns. */
+.screen-panel.gallery-panel {
+  width: min(1480px, 96vw);
+  height: min(92vh, 1100px);
+}
+
+.gallery-panel .screen-panel-top {
+  gap: 12px;
+  align-items: center;
+}
+
+.gallery-search {
+  margin-left: auto;
+  min-width: 0;
+  width: min(320px, 40vw);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 236, 190, 0.28);
+  background: rgba(18, 14, 26, 0.72);
+  color: #f6ecd8;
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.gallery-search::placeholder {
+  color: rgba(246, 236, 216, 0.45);
+}
+
+.gallery-search:focus-visible {
+  outline: 2px solid rgba(120, 226, 255, 0.7);
+  outline-offset: 1px;
+}
+
+.gallery-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+  color: rgba(246, 236, 216, 0.66);
+  padding: 0 2px;
+}
+
+.gallery-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(216px, 1fr));
+  gap: 20px;
+  padding: 4px 2px 18px;
+}
+
+/* The cell owns the aspect ratio so the row heights stay even whatever the art
+   does; 750x1050 is the card's own design coordinate system. */
+.gallery-cell {
+  aspect-ratio: 750 / 1050;
+  min-width: 0;
+}
+
+.gallery-cell .card-face {
+  width: 100%;
+  height: 100%;
+}
+
+.gallery-empty {
+  padding: 28px 4px;
+  color: rgba(246, 236, 216, 0.7);
+}
+
+/* NEVER let a cell fall below the card's compact-layout threshold.
+   `.card-face` switches to the board-minion layout under roughly 200px and DROPS
+   THE RULES TEXT — correct for a minion on a crowded board, and the exact
+   opposite of what a gallery is for. Two 150px columns on a phone produced rows
+   of cards with no text at all and stat gems swollen over the art. One wide
+   column keeps every card fully readable, which is worth more here than fitting
+   two per row. */
+@media (max-width: 620px) {
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+}

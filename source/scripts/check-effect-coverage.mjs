@@ -1,5 +1,5 @@
 /**
- * Which card effects does the test suite never actually exercise?
+ * Which card effects does the engine run without any test checking the result?
  *
  *   npm run check:coverage
  *
@@ -10,35 +10,37 @@
  * data file was right, the type list was right, the printed text was right, and
  * the one number that decided combat was wrong — because no test ever read it.
  *
- * That bug is not really about Kaku Kaioh. It is about the class of effects
- * nobody has ever made fire. This report names them, so the next wrong number
- * gets found by a list instead of by luck.
+ * WHAT THIS MEASURES, AND THE VERSION THAT WAS WRONG
+ * --------------------------------------------------
+ * The first cut of this script asked "does each effect ever FIRE under test".
+ * That question returns 100% and is worthless: the pacing suite plays thousands
+ * of bot games and drags the whole roster through the engine. Kaku Kaioh's
+ * broken multiplier fired constantly for years. **Firing is not checking.**
+ *
+ * So the measure is: the engine ran this effect, and no test file anywhere
+ * mentions the card or its effect id. A test that asserts something about a card
+ * must refer to it — that is how you place the card and how you find it again —
+ * while a bulk simulation never names anything. The gap between "ran" and
+ * "named" is the list worth having.
+ *
+ * It is a heuristic in one direction only: a test could name a card and assert
+ * nothing useful, so this can over-credit. It cannot under-credit, which is the
+ * safe way round for a report whose job is to hand you a to-do list.
  *
  * HOW IT WORKS
  * ------------
- * The engine records each effect that RESOLVES when `CONVERGENCE_EFFECT_TRACE`
- * points at a file (see src/engine/trace.ts). This script runs the real test
- * suite with that switched on, unions what every forked worker recorded, and
- * subtracts it from the roster.
+ * The engine records each effect that resolves when `CONVERGENCE_EFFECT_TRACE`
+ * points at a file (src/engine/trace.ts, written out by scripts/trace-setup.ts).
+ * This script runs the real suite with that switched on and unions what every
+ * forked worker recorded.
  *
- * Reachability is checked separately and matters just as much: an effect id that
- * appears on a card but has no branch in the engine does nothing at all, and a
- * card that does nothing looks identical to a card whose test is merely missing.
- *
- * READING THE OUTPUT
- * ------------------
- * `NEVER EXERCISED` is the real list. Each line is a card whose rules text has
- * never been proven to match its behaviour.
- *
- * `NOT TRACED, BUT NAMED IN A TEST` is the honest caveat. A few effects resolve
- * through paths the trace does not sit on, so this group is "probably covered,
- * check by hand" rather than a finding. It exists so that a gap in the
- * instrumentation shows up as a question instead of as a false accusation — a
- * coverage tool that quietly over-reports is worse than none.
+ * Reachability is checked separately: an effect id with no branch in the engine
+ * and no matching keyword does nothing at all, and a card that does nothing looks
+ * identical to a card whose test is merely missing.
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readCards } from "./card-tools.mjs";
@@ -62,13 +64,29 @@ for (const card of cards) {
 }
 
 // --- what the engine can actually do ----------------------------------------
-// A branch is `effectId === "x"`, `hasEffect(m, "x")` or a membership list. Any
-// mention of the quoted id inside the engine counts as reachable; the point is
-// to separate "no branch at all" from "branch exists, nothing tests it", not to
-// parse control flow.
+// Any mention of the quoted id inside the engine counts as reachable; the point
+// is to separate "no branch at all" from "branch exists, nothing checks it", not
+// to parse control flow.
+//
+// KEYWORD-DRIVEN EFFECTS ARE NOT ORPHANS. Sonic carries the effect id `charge`
+// and no branch anywhere reads that string, because Charge is implemented off
+// the KEYWORD column instead (`hasKeyword(card, "Charge")`). The id is a label
+// for a rule the engine really does run, so flagging it as a card that "does
+// nothing" is a false accusation — and a false accusation in a report like this
+// is expensive, because the natural response is to go and "fix" working code.
 const engineSource = readFileSync(ENGINE, "utf8");
+const keywordDriven = new Set(
+  cards
+    .filter((card) => {
+      const effectId = (card.effectId ?? "").trim();
+      if (!effectId || effectId === "none") return false;
+      const keywords = (card.keywords ?? "").split(";").map((word) => word.trim().toLowerCase());
+      return keywords.includes(effectId.toLowerCase());
+    })
+    .map((card) => card.effectId.trim()),
+);
 const unreachable = [...rosterEffects.keys()].filter(
-  (effectId) => !engineSource.includes(`"${effectId}"`),
+  (effectId) => !engineSource.includes(`"${effectId}"`) && !keywordDriven.has(effectId),
 );
 
 // --- run the suite with tracing on ------------------------------------------
@@ -105,29 +123,40 @@ if (!traced.size) {
   process.exit(1);
 }
 
-// --- does a test at least NAME the card? ------------------------------------
-const testSource = spawnSync(
-  process.platform === "win32" ? "cmd.exe" : "sh",
-  process.platform === "win32"
-    ? ["/d", "/s", "/c", `type "${join(TEST_GLOB, "*.test.ts")}"`]
-    : ["-c", `cat "${join(TEST_GLOB, "*.test.ts")}"`],
-  { encoding: "utf8" },
-).stdout ?? "";
+// --- does any test NAME the card, or is it only swept up by a simulation? ----
+//
+// THIS IS THE QUESTION THAT MATTERS, and the first version of this script got it
+// wrong. Asking "does this effect ever fire under test" returns 100% and means
+// nothing, because the pacing suite plays thousands of bot games and drags every
+// card in the roster through the engine at some point. Kaku Kaioh's broken
+// multiplier fired constantly for the whole balance history. Firing is not
+// checking.
+//
+// A test that ASSERTS something about a card has to refer to it — by name, or by
+// its effect id, because that is how you set the card up and how you find it
+// again afterwards. A bulk simulation never does. So the real signal is: the
+// engine ran this effect, and no test anywhere mentions it.
+const testSource = readdirSync(TEST_GLOB)
+  .filter((file) => file.endsWith(".test.ts"))
+  .map((file) => readFileSync(join(TEST_GLOB, file), "utf8"))
+  .join("\n");
 
 const namedInTests = (effectId) =>
   testSource.includes(effectId) || rosterEffects.get(effectId).some((name) => testSource.includes(name));
 
 // --- verdict ----------------------------------------------------------------
-const missing = [...rosterEffects.keys()].filter((effectId) => !traced.has(effectId));
-const neverExercised = missing.filter((effectId) => !namedInTests(effectId));
-const probablyCovered = missing.filter((effectId) => namedInTests(effectId));
+const all = [...rosterEffects.keys()];
+const neverFired = all.filter((effectId) => !traced.has(effectId));
+const firedButUnchecked = all.filter((effectId) => traced.has(effectId) && !namedInTests(effectId));
+const checked = all.filter((effectId) => namedInTests(effectId));
 
-const total = rosterEffects.size;
-const covered = total - missing.length;
-const percent = ((covered / total) * 100).toFixed(1);
+const total = all.length;
+const percent = ((checked.length / total) * 100).toFixed(1);
 
 console.log(`\nEffects on cards: ${total}`);
-console.log(`Exercised by the suite: ${covered} (${percent}%)`);
+console.log(`Named by at least one test: ${checked.length} (${percent}%)`);
+console.log(`Ran, but no test refers to them: ${firedButUnchecked.length}`);
+console.log(`Never ran at all: ${neverFired.length}`);
 
 if (unreachable.length) {
   console.log(`\n=== NO ENGINE BRANCH (${unreachable.length}) — these cards do nothing at all ===`);
@@ -136,21 +165,22 @@ if (unreachable.length) {
   }
 }
 
-console.log(`\n=== NEVER EXERCISED (${neverExercised.length}) ===`);
-if (!neverExercised.length) console.log("  none — every card effect fires at least once under test");
-for (const effectId of neverExercised.sort()) {
-  console.log(`  ${effectId}: ${rosterEffects.get(effectId).join(", ")}`);
-}
-
-if (probablyCovered.length) {
-  console.log(`\n=== NOT TRACED, BUT NAMED IN A TEST (${probablyCovered.length}) — check by hand ===`);
-  for (const effectId of probablyCovered.sort()) {
+if (neverFired.length) {
+  console.log(`\n=== NEVER RAN (${neverFired.length}) — not even a simulation reached these ===`);
+  for (const effectId of neverFired.sort()) {
     console.log(`  ${effectId}: ${rosterEffects.get(effectId).join(", ")}`);
   }
 }
 
-// A report, not a gate. Nobody is going to write 158 tests today, and a check
-// that fails the build every single run gets muted within a week, which would
-// cost the report the one job it has. It exits non-zero only for the case that
-// is unambiguously a bug: a card wired to an effect the engine cannot run.
+console.log(`\n=== RAN BUT NOTHING CHECKS THEM (${firedButUnchecked.length}) ===`);
+console.log(`    This is the Kaku Kaioh list: the engine runs these, and no test asserts what they do.`);
+if (!firedButUnchecked.length) console.log("  none");
+for (const effectId of firedButUnchecked.sort()) {
+  console.log(`  ${effectId}: ${rosterEffects.get(effectId).join(", ")}`);
+}
+
+// A report, not a gate. Nobody is writing 100 tests today, and a check that goes
+// red on every run gets muted within a week, which would cost the report the one
+// job it has. It exits non-zero only for the unambiguous bug: a card wired to an
+// effect the engine cannot run at all.
 process.exitCode = unreachable.length ? 1 : 0;
