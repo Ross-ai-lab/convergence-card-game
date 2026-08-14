@@ -412,7 +412,7 @@ export default function App() {
       const frame = window.requestAnimationFrame(() => {
         spawnOpeningDeal();
       });
-      const timer = window.setTimeout(() => moveTo("mana"), 4_680);
+      const timer = window.setTimeout(() => moveTo("mana"), 5_460);
       return () => {
         window.cancelAnimationFrame(frame);
         window.clearTimeout(timer);
