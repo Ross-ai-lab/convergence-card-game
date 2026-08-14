@@ -1043,7 +1043,7 @@ export default function App() {
     setSeatedPlayer(0);
     setLethal(0);
     heraldSaid.current = new Set();
-    sfx.play("openingEpic", 0.35);
+    sfx.playOpeningCue(0.35);
     setEvents([{ kind: "info", text: "A new shared deck is prepared." }]);
   }
 
@@ -1061,7 +1061,7 @@ export default function App() {
     clearFx();
     setSeatedPlayer(0);
     heraldSaid.current = new Set();
-    sfx.play("openingEpic", 0.35);
+    sfx.playOpeningCue(0.35);
     setEvents([
       {
         kind: "info",

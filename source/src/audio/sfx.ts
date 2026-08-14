@@ -37,7 +37,6 @@ export type SfxName =
   | "invalid"
   | "draw"
   | "mana"
-  | "openingEpic"
   | "coin"
   | "relicEquip"
   | "button"
@@ -141,6 +140,8 @@ const themeMisses = new Set<string>();
 let themeSource: AudioBufferSourceNode | null = null;
 /** Rises on every request so a slow decode can tell it has been superseded. */
 let themeToken = 0;
+let openingCueBuffer: AudioBuffer | null = null;
+let openingCueMiss = false;
 
 function loadMix(): Mix {
   try {
@@ -559,32 +560,6 @@ function render(name: SfxName, t: number): void {
       noise({ t, dur: 0.12, gain: 0.022, type: "highpass", f0: 3800, f1: 6800, send: 0.4 });
       break;
 
-    // The opening rift gets its own one-shot cue. It is deliberately not one
-    // of the normal turn, summon, victory, or defeat sounds: a deep convergence
-    // swell, asymmetric metal constellation, and a delayed impact announce the
-    // duel without spoken narration.
-    case "openingEpic": {
-      duck(0.34, 1.55);
-      riser(t, 0.72, 0.14);
-      osc({ type: "sine", f0: 58, f1: 24, t, dur: 1.9, gain: 0.32, attack: 0.004, send: 0.3 });
-      swell(t + 0.66, [110, 155.56, 207.65, 311.13, 466.16], 1.7, 0.082, 0.72, 3600);
-      taiko(t + 0.72, 0.58, 0, 192, 34, 1.05);
-      crash(t + 0.76, 1.25, 0.085, 0.82);
-      [233.08, 349.23, 523.25, 783.99].forEach((frequency, index) =>
-        metal({
-          t: t + 0.82 + index * 0.12,
-          dur: 1.45,
-          gain: 0.055,
-          carrier: frequency,
-          ratio: 2.718,
-          index: 6.2,
-          pan: (index - 1.5) * 0.18,
-          send: 0.82,
-        }),
-      );
-      break;
-    }
-
     case "coin":
       metal({ t, dur: 0.8, gain: 0.06, carrier: 1320, ratio: 2.41, index: 4, pan: 0.1, send: 0.6 });
       metal({ t: t + 0.03, dur: 0.6, gain: 0.035, carrier: 1980, ratio: 3.02, index: 3, pan: -0.15, send: 0.6 });
@@ -963,6 +938,39 @@ export function playAnnouncer(clip: string, delay = 0): void {
   })();
 }
 
+/** Plays the licensed, CC0 JRPG battle intro used when a duel begins. */
+export function playOpeningCue(delay = 0): void {
+  if (muted || mix.effects <= 0) return;
+  unlock();
+  if (!ctx || !sfxBus || openingCueMiss) return;
+  void (async () => {
+    let buffer = openingCueBuffer;
+    if (!buffer) {
+      try {
+        const response = await fetch(`${import.meta.env.BASE_URL}audio/stings/opening-jrpg-battle.ogg`);
+        if (!response.ok || !ctx) {
+          openingCueMiss = true;
+          return;
+        }
+        buffer = await ctx.decodeAudioData(await response.arrayBuffer());
+        openingCueBuffer = buffer;
+      } catch {
+        openingCueMiss = true;
+        return;
+      }
+    }
+    if (!ctx || !sfxBus || muted) return;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.9;
+    source.connect(gain);
+    gain.connect(sfxBus);
+    duck(0.22, Math.min(3.2, buffer.duration + 0.15));
+    source.start(ctx.currentTime + Math.max(0, delay));
+  })();
+}
+
 /** Warms the cache for cards the player is about to be able to play. */
 export function prefetchCardThemes(cardIds: string[]): void {
   if (muted || !ctx) return;
@@ -1046,6 +1054,7 @@ export const sfx = {
   summonSoundFor,
   playCardTheme,
   playAnnouncer,
+  playOpeningCue,
   stopCardTheme,
   prefetchCardThemes,
   getMix,
