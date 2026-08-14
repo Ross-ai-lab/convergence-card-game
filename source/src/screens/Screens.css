@@ -668,6 +668,22 @@
   transition: opacity 315ms ease;
 }
 
+.duel-intro-rift-stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.duel-intro-draw .duel-intro-rift-stage {
+  animation: duel-rift-draw-window 3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.duel-intro-mana .duel-intro-rift-stage,
+.duel-intro-exit .duel-intro-rift-stage {
+  opacity: 0;
+}
+
 .duel-intro-rift {
   position: absolute;
   left: 50%;
@@ -683,7 +699,7 @@
     0 0 80px rgba(155, 119, 210, 0.24),
     inset 0 0 38px rgba(67, 205, 189, 0.16);
   transform: translate(-50%, -50%) scale(0.45) rotate(-12deg);
-  animation: duel-rift-arrive 4.05s cubic-bezier(0.16, 0.9, 0.22, 1) both, duel-rift-spin 54s linear 3.6s infinite;
+  animation: duel-rift-arrive 4.05s cubic-bezier(0.16, 0.9, 0.22, 1) both, duel-rift-spin 3s linear 3.54s 1 both;
 }
 
 .duel-intro-rift::before,
@@ -695,14 +711,14 @@
   border-radius: 50%;
   mask: linear-gradient(90deg, #000 0 24%, transparent 24% 42%, #000 42% 72%, transparent 72%);
   -webkit-mask: linear-gradient(90deg, #000 0 24%, transparent 24% 42%, #000 42% 72%, transparent 72%);
-  animation: duel-rift-spin 30s linear infinite reverse;
+  animation: duel-rift-spin 3s linear 3.54s 1 both reverse;
 }
 
 .duel-intro-rift::after {
   inset: 25%;
   border-color: rgba(240, 199, 103, 0.72);
   transform: rotate(38deg);
-  animation-duration: 21s;
+  animation-duration: 3s;
 }
 
 @keyframes duel-intro-in {
@@ -719,6 +735,11 @@
   0% { opacity: 0; transform: scale(0.9) rotate(0deg); }
   26% { opacity: 0.8; }
   100% { opacity: 0; transform: scale(1.2) rotate(14deg); }
+}
+
+@keyframes duel-rift-draw-window {
+  0%, 68% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.08); }
 }
 
 @keyframes duel-rift-arrive {

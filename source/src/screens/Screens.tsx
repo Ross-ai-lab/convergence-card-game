@@ -262,7 +262,9 @@ export function TitleScreen({
 export function DuelIntro({ phase }: { phase: DuelIntroPhase }) {
   return (
     <div className={`duel-intro duel-intro-${phase}`} aria-hidden="true">
-      <div className="duel-intro-rift" aria-hidden="true" />
+      <div className="duel-intro-rift-stage" aria-hidden="true">
+        <div className="duel-intro-rift" aria-hidden="true" />
+      </div>
     </div>
   );
 }
