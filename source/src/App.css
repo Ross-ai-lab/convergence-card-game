@@ -236,7 +236,7 @@ button:disabled {
   opacity: 0.22;
   filter: blur(4px) saturate(0.7);
   transform: scale(1.018);
-  transition: opacity 560ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 560ms ease, transform 560ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 1680ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 1680ms ease, transform 1680ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .table-frame.duel-opening-reveal .top-strip,
@@ -257,7 +257,7 @@ button:disabled {
 
 .table-frame.duel-opening-draw .hand-card {
   pointer-events: none;
-  animation: opening-hand-arrive 720ms cubic-bezier(0.16, 0.9, 0.22, 1) calc(120ms + var(--intro-index, 0) * 210ms) both;
+  animation: opening-hand-arrive 2160ms cubic-bezier(0.16, 0.9, 0.22, 1) calc(360ms + var(--intro-index, 0) * 630ms) both;
 }
 
 .table-frame.duel-opening-prelude .mana-pip,
@@ -268,7 +268,11 @@ button:disabled {
 }
 
 .table-frame.duel-opening-mana .mana-pip.full {
-  animation: opening-mana-fill 620ms cubic-bezier(0.16, 0.9, 0.22, 1) calc(var(--intro-mana-index, 0) * 90ms) both;
+  animation: opening-mana-fill 1860ms cubic-bezier(0.16, 0.9, 0.22, 1) calc(var(--intro-mana-index, 0) * 270ms) both;
+}
+
+.table-frame.duel-opening-draw .deck-pile.drawing .card-back:nth-child(3) {
+  animation-duration: 1.26s;
 }
 
 @keyframes opening-hand-arrive {
@@ -1468,7 +1472,7 @@ button:disabled {
 .draw-flight.opening {
   z-index: 92;
   animation-name: opening-draw-fly;
-  animation-duration: 0.86s;
+  animation-duration: 2.58s;
   animation-timing-function: cubic-bezier(0.16, 0.9, 0.22, 1);
 }
 

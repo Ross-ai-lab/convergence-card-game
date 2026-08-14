@@ -70,7 +70,7 @@ await page.getByRole("button", { name: /2 players|Start a hotseat/i }).first().c
 await page
   .waitForFunction(() => Boolean(window.__debug), null, { timeout: 15000 })
   .catch(() => {});
-await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 9000 }).catch(() => {});
+await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
 
 const planted = await page.evaluate((names) => {
   if (!window.__debug) return false;

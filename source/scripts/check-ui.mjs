@@ -157,7 +157,7 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /2 players|Start a hotseat/i }).first().click();
   await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 });
-  await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 9000 });
+  await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 });
   // Wait for the test hook, not for a guessed 1100ms. It registers from inside a
   // DYNAMIC import, so the first load after a rebuild has to fetch and transform
   // that module first — and a fixed wait that is usually long enough is exactly

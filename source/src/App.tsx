@@ -153,7 +153,7 @@ type Flight = {
   opening?: boolean;
   delayMs?: number;
 };
-type DuelIntroState = { id: number; phase: DuelIntroPhase; mode: GameMode };
+type DuelIntroState = { id: number; phase: DuelIntroPhase };
 /** Which crystals just changed, and in which direction. */
 type ManaFx = { id: number; kind: "spend" | "refill"; from: number; to: number } | null;
 // A Mythic landing is the loudest moment in a duel, so it takes the whole screen.
@@ -400,19 +400,19 @@ export default function App() {
     };
 
     if (phase === "prelude") {
-      const timer = window.setTimeout(() => moveTo("reveal"), 620);
+      const timer = window.setTimeout(() => moveTo("reveal"), 1_860);
       return () => window.clearTimeout(timer);
     }
     if (phase === "reveal") {
       sfx.play("turn", 0.08);
-      const timer = window.setTimeout(() => moveTo("draw"), 560);
+      const timer = window.setTimeout(() => moveTo("draw"), 1_680);
       return () => window.clearTimeout(timer);
     }
     if (phase === "draw") {
       const frame = window.requestAnimationFrame(() => {
         spawnOpeningDeal();
       });
-      const timer = window.setTimeout(() => moveTo("mana"), 1_560);
+      const timer = window.setTimeout(() => moveTo("mana"), 4_680);
       return () => {
         window.cancelAnimationFrame(frame);
         window.clearTimeout(timer);
@@ -420,10 +420,10 @@ export default function App() {
     }
     if (phase === "mana") {
       sfx.play("mana", 0.08);
-      const timer = window.setTimeout(() => moveTo("exit"), 760);
+      const timer = window.setTimeout(() => moveTo("exit"), 2_280);
       return () => window.clearTimeout(timer);
     }
-    const timer = window.setTimeout(() => setDuelIntro((current) => (current?.id === id ? null : current)), 420);
+    const timer = window.setTimeout(() => setDuelIntro((current) => (current?.id === id ? null : current)), 1_260);
     return () => window.clearTimeout(timer);
   }, [duelIntro]);
 
@@ -729,12 +729,12 @@ export default function App() {
     };
 
     myTargets.slice(0, game.players[viewerId].hand.length).forEach((card, index) => {
-      addFlight(card.getBoundingClientRect(), true, index * 210);
+      addFlight(card.getBoundingClientRect(), true, index * 630);
     });
 
     if (targetBox) {
       Array.from({ length: game.players[opponentId].hand.length }, (_, index) => {
-        addFlight(targetBox, false, 110 + index * 210);
+        addFlight(targetBox, false, 330 + index * 630);
       });
     }
 
@@ -742,7 +742,7 @@ export default function App() {
     setFlights((current) => [...current, ...flights]);
     flights.forEach((flight) => sfx.play("draw", (flight.delayMs ?? 0) / 1000));
     const ids = new Set(flights.map((flight) => flight.id));
-    window.setTimeout(() => setFlights((current) => current.filter((flight) => !ids.has(flight.id))), 2_100);
+    window.setTimeout(() => setFlights((current) => current.filter((flight) => !ids.has(flight.id))), 6_300);
   }
 
   // Diff previous vs next state and spawn all transient FX for this action:
@@ -1037,7 +1037,7 @@ export default function App() {
     sfx.unlock();
     sfx.stopCardTheme();
     clearSave();
-    setDuelIntro({ id: fxId.current++, phase: "prelude", mode: next });
+    setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setMode(next);
     setGame(createInitialGame(cards, createDuelSeed(), relics));
     setHistory([]);
@@ -1873,7 +1873,7 @@ export default function App() {
         />
       ) : null}
 
-      {duelIntro ? <DuelIntro phase={duelIntro.phase} mode={duelIntro.mode} /> : null}
+      {duelIntro ? <DuelIntro phase={duelIntro.phase} /> : null}
 
       {screen === "title" ? (
         <TitleScreen

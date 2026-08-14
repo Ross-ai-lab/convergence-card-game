@@ -258,54 +258,11 @@ export function TitleScreen({
   );
 }
 
-// The opening is a short ceremony over the live board. It names the chosen
-// opponent while the interface underneath reveals itself in separate beats.
-export function DuelIntro({ phase, mode }: { phase: DuelIntroPhase; mode: GameMode }) {
-  const skillTitle = mode.kind === "bot" ? SKILL_BLURB[mode.skill].title : "Hotseat";
-  const copy: Record<DuelIntroPhase, { kicker: string; title: string; detail: string }> = {
-    prelude: {
-      kicker: "The rift opens",
-      title: "Convergence",
-      detail: "Two worlds are answering.",
-    },
-    reveal: {
-      kicker: "The arena takes shape",
-      title: skillTitle,
-      detail: mode.kind === "bot" ? "A practice opponent enters the far side." : "Two players meet at the seam.",
-    },
-    draw: {
-      kicker: "The deck remembers",
-      title: "Opening hand",
-      detail: "The first cards cross the rift.",
-    },
-    mana: {
-      kicker: "Power gathers",
-      title: "Mana awakens",
-      detail: "Your first turn is ready.",
-    },
-    exit: {
-      kicker: "The duel begins",
-      title: skillTitle,
-      detail: "Choose your first move.",
-    },
-  };
-  const current = copy[phase];
-  const modeLabel = mode.kind === "bot" ? `Solo · ${skillTitle}` : "Two players · Hotseat";
-
+// The opening is a text-free visual ceremony over the live board.
+export function DuelIntro({ phase }: { phase: DuelIntroPhase }) {
   return (
-    <div className={`duel-intro duel-intro-${phase}`} role="status" aria-live="polite" aria-label={current.detail}>
+    <div className={`duel-intro duel-intro-${phase}`} aria-hidden="true">
       <div className="duel-intro-rift" aria-hidden="true" />
-      <div className="duel-intro-copy">
-        <p className="duel-intro-kicker">{current.kicker}</p>
-        <h2>{current.title}</h2>
-        <p className="duel-intro-detail">{current.detail}</p>
-        <div className="duel-intro-progress" aria-hidden="true">
-          {(["prelude", "reveal", "draw", "mana"] as DuelIntroPhase[]).map((step) => (
-            <span key={step} className={step === phase ? "active" : undefined} />
-          ))}
-        </div>
-        <span className="duel-intro-mode">{modeLabel}</span>
-      </div>
     </div>
   );
 }

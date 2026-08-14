@@ -40,7 +40,7 @@ await page.waitForTimeout(900);
 // and battle bed can race while their files are loading.
 await page.locator(".duel-trigger").click({ timeout: 5000 }).catch(() => {});
 await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
-await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 9000 }).catch(() => {});
+await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
 await page.waitForTimeout(2600);
 const directDuel = await page.evaluate(() => window.__sfx?.getStats() ?? { error: "SFX probe missing" });
 check(
@@ -174,7 +174,7 @@ await page.evaluate(() => window.__sfx.setMuted(false));
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.locator(".duel-trigger").click({ timeout: 5000 }).catch(() => {});
 await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
-await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 9000 }).catch(() => {});
+await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
 await page.waitForTimeout(1200);
 
 // Cheat mode first. Going first deals TWO cards against ONE mana, and the roster
