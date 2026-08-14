@@ -86,6 +86,28 @@ The current relic pool contains **21 relics**. Relics are equipment cards: they 
 
 The title screen offers **Continue your duel** when a live duel was saved in that browser, solo play at one of the three bot levels, and a two-player hotseat duel. A duel is saved locally after state changes; completed duels are not offered for resuming. Hotseat uses a privacy curtain while the screen is passed so the next player cannot see the previous player's hand.
 
+### Opening duel animation timeline
+
+The opening is driven by one React phase clock plus several CSS animations. The phase clock keeps controls disabled until the opening deal has finished. The circle's 3-second draw window and the `drawMs: 3_000` value in `source/src/App.tsx` must stay aligned. The `settle` phase is intentional: it covers the remaining card-flight time after mana has already appeared, so there is no silent wait before mana and no early input while cards are still moving.
+
+| Relative time | Phase or animation | Length and delay | What it controls |
+|---:|---|---|---|
+| 0 ms | `prelude` | 1,860 ms | Dims and blurs the board before the reveal. |
+| 0 ms | `duel-intro-in` | 1,380 ms | Fades in the full-screen intro veil. |
+| 0 ms | `duel-rift-arrive` | 4,050 ms | Expands and settles the large centered circle. It changes scale and rotation, not horizontal position. |
+| 1,860 ms | `reveal` | 1,680 ms | Sharpens the board and plays the short reveal beat. |
+| 3,540 ms | `draw` | 3,000 ms | Starts the opening card deal and the circle's 3-second visual window. |
+| 3,540 ms | `duel-rift-spin` | 3,000 ms, one iteration | Completes one full rotation of the outer circle and both masked rings. The outer ring starts after the 3,540 ms prelude-plus-reveal delay. |
+| 3,540 ms | `duel-rift-draw-window` | 3,000 ms | Holds the circle, then fades it out by the mana handoff. |
+| 3,540 ms | `opening-draw-fly` | 3,870 ms per card | Flies each opening card from the deck. Player delays are 0, 630, 1,260 ms; opponent delays are 330, 960, 1,590 ms. The last flight ends 5,460 ms after draw starts. |
+| 3,540 ms | `opening-hand-arrive` | 3,240 ms per hand card | Settles the cards into the fan. The first delay is 360 ms, then each hand index adds 630 ms. |
+| 3,540 ms | `deck-kick` | 1,890 ms in the opening draw | Gives the third deck card its opening-deal response. |
+| 6,540 ms | `mana` | 570 ms phase | Starts immediately after the circle window. Each full mana pip fills for 465 ms with a 67.5 ms stagger. |
+| 7,110 ms | `settle` | 1,890 ms | Waits for the last opening card flight to finish at 9,000 ms. Mana is already visible during this hold. |
+| 9,000 ms | `exit` | 315 ms | Fades out the remaining intro veil. Controls unlock at about 9,315 ms. |
+
+Ambient effects are separate from the phase clock. The intro breathes for 10.2 seconds and its diagonal light sweep loops every 3 seconds. The permanent battlefield seam has a right-running sweep of 3 seconds and a left-running sweep of 13 seconds. Those seam sweeps are not the large intro circle. The circle rules live in `source/src/screens/Screens.css`; card flights and mana rules live in `source/src/App.css`; phase timers live in `source/src/App.tsx`.
+
 ### During a duel
 
 - Click or drag a hand card onto an empty slot to play it.

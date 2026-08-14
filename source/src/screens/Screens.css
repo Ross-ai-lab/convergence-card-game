@@ -614,6 +614,9 @@
 /* ---------------------------------------------------------------- duel opening */
 
 .duel-intro {
+  /* These mirror DUEL_INTRO_TIMINGS.preludeMs + revealMs and drawMs in App.tsx. */
+  --duel-rift-draw-delay: 3.54s;
+  --duel-rift-draw-window: 3s;
   position: fixed;
   inset: 0;
   z-index: 90;
@@ -657,6 +660,7 @@
 .duel-intro-reveal,
 .duel-intro-draw,
 .duel-intro-mana,
+.duel-intro-settle,
 .duel-intro-exit {
   background:
     radial-gradient(circle at 50% 48%, rgba(155, 119, 210, 0.16), transparent 26%),
@@ -676,10 +680,11 @@
 }
 
 .duel-intro-draw .duel-intro-rift-stage {
-  animation: duel-rift-draw-window 3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  animation: duel-rift-draw-window var(--duel-rift-draw-window) cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
 .duel-intro-mana .duel-intro-rift-stage,
+.duel-intro-settle .duel-intro-rift-stage,
 .duel-intro-exit .duel-intro-rift-stage {
   opacity: 0;
 }
@@ -699,7 +704,7 @@
     0 0 80px rgba(155, 119, 210, 0.24),
     inset 0 0 38px rgba(67, 205, 189, 0.16);
   transform: translate(-50%, -50%) scale(0.45) rotate(-12deg);
-  animation: duel-rift-arrive 4.05s cubic-bezier(0.16, 0.9, 0.22, 1) both, duel-rift-spin 3s linear 3.54s 1 both;
+  animation: duel-rift-arrive 4.05s cubic-bezier(0.16, 0.9, 0.22, 1) both, duel-rift-spin var(--duel-rift-draw-window) linear var(--duel-rift-draw-delay) 1 both;
 }
 
 .duel-intro-rift::before,
@@ -711,14 +716,14 @@
   border-radius: 50%;
   mask: linear-gradient(90deg, #000 0 24%, transparent 24% 42%, #000 42% 72%, transparent 72%);
   -webkit-mask: linear-gradient(90deg, #000 0 24%, transparent 24% 42%, #000 42% 72%, transparent 72%);
-  animation: duel-rift-spin 3s linear 3.54s 1 both reverse;
+  animation: duel-rift-spin var(--duel-rift-draw-window) linear var(--duel-rift-draw-delay) 1 both reverse;
 }
 
 .duel-intro-rift::after {
   inset: 25%;
   border-color: rgba(240, 199, 103, 0.72);
   transform: rotate(38deg);
-  animation-duration: 3s;
+  animation-duration: var(--duel-rift-draw-window);
 }
 
 @keyframes duel-intro-in {

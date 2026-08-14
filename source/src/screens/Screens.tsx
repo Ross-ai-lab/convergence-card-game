@@ -36,7 +36,7 @@ import { cards } from "../data/cards";
 import type { BotSkill } from "../engine/bot";
 
 export type GameMode = { kind: "hotseat" } | { kind: "bot"; skill: BotSkill };
-export type DuelIntroPhase = "prelude" | "reveal" | "draw" | "mana" | "exit";
+export type DuelIntroPhase = "prelude" | "reveal" | "draw" | "mana" | "settle" | "exit";
 
 const SKILL_BLURB: Record<BotSkill, { title: string; note: string }> = {
   easy: { title: "Recruit", note: "Plays one move ahead, badly, and will let you win." },

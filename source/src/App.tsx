@@ -154,6 +154,19 @@ type Flight = {
   delayMs?: number;
 };
 type DuelIntroState = { id: number; phase: DuelIntroPhase };
+
+// Keep this schedule aligned with the opening animation table in the project
+// README. The 1.89s settle phase is the remaining time after the 3s circle /
+// draw window and the 570ms mana reveal, ending exactly when the last opening
+// card flight finishes.
+const DUEL_INTRO_TIMINGS = {
+  preludeMs: 1_860,
+  revealMs: 1_680,
+  drawMs: 3_000,
+  manaMs: 570,
+  settleMs: 1_890,
+  exitMs: 315,
+} as const;
 /** Which crystals just changed, and in which direction. */
 type ManaFx = { id: number; kind: "spend" | "refill"; from: number; to: number } | null;
 // A Mythic landing is the loudest moment in a duel, so it takes the whole screen.
@@ -400,19 +413,19 @@ export default function App() {
     };
 
     if (phase === "prelude") {
-      const timer = window.setTimeout(() => moveTo("reveal"), 1_860);
+      const timer = window.setTimeout(() => moveTo("reveal"), DUEL_INTRO_TIMINGS.preludeMs);
       return () => window.clearTimeout(timer);
     }
     if (phase === "reveal") {
       sfx.play("turn", 0.08);
-      const timer = window.setTimeout(() => moveTo("draw"), 1_680);
+      const timer = window.setTimeout(() => moveTo("draw"), DUEL_INTRO_TIMINGS.revealMs);
       return () => window.clearTimeout(timer);
     }
     if (phase === "draw") {
       const frame = window.requestAnimationFrame(() => {
         spawnOpeningDeal();
       });
-      const timer = window.setTimeout(() => moveTo("mana"), 5_460);
+      const timer = window.setTimeout(() => moveTo("mana"), DUEL_INTRO_TIMINGS.drawMs);
       return () => {
         window.cancelAnimationFrame(frame);
         window.clearTimeout(timer);
@@ -420,10 +433,17 @@ export default function App() {
     }
     if (phase === "mana") {
       sfx.play("mana", 0.08);
-      const timer = window.setTimeout(() => moveTo("exit"), 570);
+      const timer = window.setTimeout(() => moveTo("settle"), DUEL_INTRO_TIMINGS.manaMs);
       return () => window.clearTimeout(timer);
     }
-    const timer = window.setTimeout(() => setDuelIntro((current) => (current?.id === id ? null : current)), 315);
+    if (phase === "settle") {
+      const timer = window.setTimeout(() => moveTo("exit"), DUEL_INTRO_TIMINGS.settleMs);
+      return () => window.clearTimeout(timer);
+    }
+    const timer = window.setTimeout(
+      () => setDuelIntro((current) => (current?.id === id ? null : current)),
+      DUEL_INTRO_TIMINGS.exitMs,
+    );
     return () => window.clearTimeout(timer);
   }, [duelIntro]);
 
