@@ -803,11 +803,18 @@ export function stopMusic(): void {
  * Only one theme sounds at a time. A turn that lands three minions should read
  * as three arrivals, not a pile-up, so a new summon cuts the previous sting.
  */
+const CARD_THEME_ID = /^c\d+$/;
+
+function isCardThemeId(cardId: string): boolean {
+  return CARD_THEME_ID.test(cardId);
+}
+
 function themeUrl(cardId: string): string {
   return `${import.meta.env.BASE_URL}audio/stings/${cardId}.ogg`;
 }
 
 async function loadTheme(cardId: string): Promise<AudioBuffer | null> {
+  if (!isCardThemeId(cardId)) return null;
   const cached = themeCache.get(cardId);
   if (cached) return cached;
   if (themeMisses.has(cardId) || !ctx) return null;
@@ -849,6 +856,7 @@ export function stopCardTheme(): void {
  * two do not start on the same frame and smear into each other.
  */
 export function playCardTheme(cardId: string, delay = 0): void {
+  if (!isCardThemeId(cardId)) return;
   if (muted || mix.music <= 0) return;
   unlock();
   if (!ctx || !themeBus) return;
@@ -963,7 +971,8 @@ export function playOpeningCue(delay = 0): void {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     const gain = ctx.createGain();
-    gain.gain.value = 0.9;
+    // The opening cue should add drama without overpowering the battle bed.
+    gain.gain.value = 0.45;
     source.connect(gain);
     gain.connect(sfxBus);
     duck(0.22, Math.min(3.2, buffer.duration + 0.15));
@@ -974,7 +983,7 @@ export function playOpeningCue(delay = 0): void {
 /** Warms the cache for cards the player is about to be able to play. */
 export function prefetchCardThemes(cardIds: string[]): void {
   if (muted || !ctx) return;
-  for (const cardId of cardIds.slice(0, 6)) {
+  for (const cardId of cardIds.filter(isCardThemeId).slice(0, 6)) {
     if (!themeCache.has(cardId) && !themeMisses.has(cardId)) void loadTheme(cardId);
   }
 }

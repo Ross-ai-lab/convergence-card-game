@@ -315,6 +315,8 @@ Do not make the simulated rules, bot skill, or turn timing “10× faster” by 
 
 `source/public/` is the runtime asset location. `materials/local-production/` contains optional rebuild tools for art, music, voice previews, and cast sheets; it is not required to play the included build. Large audio and card-production libraries are release downloads rather than normal clone requirements.
 
+Card-theme stings are the `c###.ogg` files in `source/public/audio/stings/`, one for each of the 175 entries in `source/data/cards.csv`. Relics use `r###` IDs and are intentionally not part of that theme set, even though relics share the deck and can appear in hand; audio prefetch must filter relic IDs rather than request `audio/stings/r###.ogg`.
+
 The complete original audio collection is the separate [Convergence-Audio-Tracks.7z release download](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z), because it is larger than a practical GitHub Pages site.
 
 Use the tools under `materials/local-production/asset-tools/` for production rebuilds. For audio changes, run the browser analyser check with `npm run check:audio`; a UI counter or a `musicPlaying` flag can say music is active while the browser’s audio graph is silent. Keep synthetic voices original and do not clone real actors.
