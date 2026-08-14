@@ -1018,9 +1018,10 @@ export default function App() {
 
   function restart() {
     sfx.play("button");
+    sfx.unlock();
     sfx.stopCardTheme();
     clearSave();
-    setDuelIntro(null);
+    setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setGame(createInitialGame(cards, createDuelSeed(), relics));
     setHistory([]);
     setSelection(null);
@@ -1028,6 +1029,7 @@ export default function App() {
     setSeatedPlayer(0);
     setLethal(0);
     heraldSaid.current = new Set();
+    sfx.playAnnouncer("duel_begin", 0.35);
     setEvents([{ kind: "info", text: "A new shared deck is prepared." }]);
   }
 
