@@ -44,4 +44,10 @@ describe("card CSV data", () => {
     });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
   });
+
+  it("loads Luffy's chained-minion rescue Battlecry", () => {
+    expect(cards.find((card) => card.name === "Monkey D. Luffy")?.effect).toBe(
+      "Battlecry: Free all friendly Chained minions. They may attack immediately and gain Divine Shield.",
+    );
+  });
 });

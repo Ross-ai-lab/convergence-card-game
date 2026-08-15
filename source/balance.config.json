@@ -93,9 +93,9 @@
         "beside it but never gated — going first means two cards and one mana, so a dead first turn",
         "is the design, not a defect.",
         "",
-        "LATEST FULL RUN on 3000 openings at the current hand sizes of 2 and 3: 17.3% overall",
-        "(519 openings). Re-baselined from 24 after the hand-size change; 24 was a guard on the old",
-        "hand sizes of 1 and 2, where the figure was 20.7%, and was too loose to catch a regression.",
+        "LATEST FULL RUN on 2000 openings at the current hand sizes of 3 and 3: 14.3% overall",
+        "(286 openings). Re-baselined after the opening-hand change; the earlier 17.3% measurement",
+        "used 2 and 3 cards, while the older 24% guard was based on hand sizes of 1 and 2.",
         "",
         "Owner ruling: accept up to 18%. This is deliberately close to the measured 17.3% baseline.",
         "Re-baseline this again after any change to hand size, the draw, or the cost curve."

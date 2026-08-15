@@ -152,8 +152,8 @@ function openingStats(results: GameResult[], window: number) {
   let deadThroughWindow = 0;
   let turnOneSamples = 0;
   let deadTurnOne = 0;
-  // Split by seat, because the two openings are not the same hand: two cards
-  // going first, three cards plus The Coin going second.
+  // Split by seat, because the second player keeps The Coin even though both
+  // seats now open with three cards.
   const bySeat = [
     { samples: 0, dead: 0 },
     { samples: 0, dead: 0 },

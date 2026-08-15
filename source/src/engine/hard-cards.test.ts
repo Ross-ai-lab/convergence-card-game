@@ -74,7 +74,7 @@ describe("combat-reaction cards", () => {
     expect(after.players[1].board[0]).toBeNull();
   });
 
-  it("APR ends the attacking minion's war for good", () => {
+  it("APR locks the attacking minion for exactly two of its turns", () => {
     const state = mainState();
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, hp: 99, maxHp: 99 });
     state.players[1].board[0] = makeMinion("APR", 1, { hp: 99, maxHp: 99 });
@@ -82,10 +82,28 @@ describe("combat-reaction cards", () => {
     const after = attack(state, 0, 0);
     const attacker = after.players[0].board[0];
     expect(attacker?.attackLocked).toBe(true);
-    // And that really removes it from the legal-move list.
+    expect(attacker?.attackLockedUntilTurn).toBe(after.turnNumber + 6);
+
+    // And that really removes it from the legal-move list while the lock is
+    // active. Reset the spent swing so this assertion tests APR, not the normal
+    // once-per-turn attack limit.
     const fresh = { ...after, activePlayer: 0 as PlayerId };
     fresh.players[0].board[0]!.attacksUsed = 0;
     expect(getLegalActions(fresh, library).some((action) => action.type === "attack_minion")).toBe(false);
+
+    // turnNumber advances once per player's turn. APR therefore skips the
+    // attacker's next two owner turns and releases it on the third.
+    let released = fresh;
+    for (const player of [0, 1, 0, 1, 0, 1] as PlayerId[]) {
+      released = endTurnAndDraw(released, player);
+    }
+    expect(released.players[0].board[0]?.attackLocked).toBe(false);
+    expect(getLegalActions(released, library)).toContainEqual({
+      type: "attack_minion",
+      player: 0,
+      attackerSlot: 0,
+      targetSlot: 0,
+    });
   });
 
   it("Mahoraga refuses a second swing from the same attacker", () => {
@@ -96,6 +114,7 @@ describe("combat-reaction cards", () => {
     const after = attack(state, 0, 0);
     expect(after.players[1].board[0]?.attackedBy).toHaveLength(1);
     const second = { ...after, activePlayer: 0 as PlayerId };
+    second.players[0].board[0]!.attacksUsed = 0;
     expect(getLegalActions(second, library).some((action) => action.type === "attack_minion")).toBe(false);
   });
 
@@ -107,8 +126,23 @@ describe("combat-reaction cards", () => {
     const after = attack(state, 0, 0);
     expect(after.players[1].board[0]?.campImmunity?.camp).toBe("Magic");
     const hpAfterFirst = after.players[1].board[0]!.hp;
-    const second = attack({ ...after, activePlayer: 0 as PlayerId }, 0, 0);
-    expect(second.players[1].board[0]?.hp).toBe(hpAfterFirst); // the second blow bounces
+    const nextEnemyTurn = endTurnAndDraw(endTurnAndDraw(after, 0), 1);
+    expect(getLegalActions(nextEnemyTurn, library)).toContainEqual({
+      type: "attack_minion",
+      player: 0,
+      attackerSlot: 0,
+      targetSlot: 0,
+    });
+    const firstBlocked = attack(nextEnemyTurn, 0, 0);
+    expect(firstBlocked.players[1].board[0]?.hp).toBe(hpAfterFirst);
+
+    const followingEnemyTurn = endTurnAndDraw(endTurnAndDraw(firstBlocked, 0), 1);
+    const secondBlocked = attack(followingEnemyTurn, 0, 0);
+    expect(secondBlocked.players[1].board[0]?.hp).toBe(hpAfterFirst);
+
+    const immunityExpired = endTurnAndDraw(endTurnAndDraw(secondBlocked, 0), 1);
+    const landed = attack(immunityExpired, 0, 0);
+    expect(landed.players[1].board[0]?.hp).toBe(hpAfterFirst - 1);
   });
 
   it("Kojiro Sasaki gives other friendly minions 33% evasion", () => {
@@ -193,7 +227,7 @@ describe("control and theft cards", () => {
     state.players[1].board[0] = dummy("Death Star", 1, { hp: 20, maxHp: 20 });
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 2, hp: 10, maxHp: 10 });
     const after = attack(state, 0, 0);
-    expect(after.players[0].board[0]?.chained).toBeGreaterThan(0);
+    expect(after.players[0].board[0]?.chained).toBe(2);
   });
 
   it("Doctor Octopus destroys a relic outright", () => {
@@ -306,17 +340,6 @@ describe("choice-driven cards", () => {
     expect(after.players[0].board[0]?.maxHp).toBe(before.maxHp + 1);
   });
 
-  it("V destroys a random Evil minion from either side on death", () => {
-    const state = mainState();
-    state.players[0].board[0] = makeMinion("V", 0, { hp: 1, maxHp: 1 });
-    state.players[0].board[1] = dummy("Aizen", 0);
-    state.players[1].board[0] = dummy("Zoro", 1, { atk: 99, sleeping: false });
-    state.activePlayer = 1;
-    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(after.players[0].board[0]).toBeNull();
-    expect(after.players[0].board[1]).toBeNull();
-  });
-
   it("Joker chooses two cards, then discards one of them", () => {
     const state = mainState();
     state.players[1].hand = [cardId("Death Star"), cardId("Zoro")];
@@ -341,7 +364,7 @@ describe("choice-driven cards", () => {
     const asking = play(state, "Indiana Jones", 0);
     expect(asking.phase).toBe("targeting");
     expect(asking.pendingTarget?.kind).toBe("option");
-    expect(asking.pendingTarget?.labelOptions).toHaveLength(3);
+    expect(asking.pendingTarget?.labelOptions.map((option) => option.value)).toEqual(offered);
 
     const after = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: 0 }, library).state;
     expect(after.pendingTarget).toBeNull();

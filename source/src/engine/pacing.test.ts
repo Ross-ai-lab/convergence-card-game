@@ -31,15 +31,24 @@ function playOut(seed: string, skills: [BotSkill, BotSkill], cap = 200): GameSta
 
 /** Max mana on the Nth turn a single player starts. */
 function manaCurve(turns: number): number[] {
-  let state = createInitialGame(cards, "curve", relics);
+  // This helper measures resource pacing, not duel lethality. Give the
+  // simulated cores enough room to reach the requested player-turn count.
+  let state = createInitialGame(cards, "curve", relics, { startingHealth: 1000 });
   const curve: number[] = [];
+  let playerTurns = 0;
+  let recordedTurnsStarted = 0;
   let guard = 0;
-  while (curve.length < turns && guard < 4000) {
+  while (playerTurns < turns && guard < 4000) {
     guard += 1;
     if (state.phase === "gameOver") break;
-    if (state.activePlayer === 0 && state.phase === "main") {
-      const last = curve[curve.length - 1];
-      if (state.players[0].maxMana !== last) curve.push(state.players[0].maxMana);
+    if (
+      state.activePlayer === 0 &&
+      state.phase === "main" &&
+      state.players[0].turnsStarted > recordedTurnsStarted
+    ) {
+      curve.push(state.players[0].maxMana);
+      playerTurns += 1;
+      recordedTurnsStarted = state.players[0].turnsStarted;
     }
     const actor: PlayerId =
       state.phase === "drawChoice" && state.drawChoice
@@ -63,6 +72,7 @@ describe("pacing", () => {
     // 10 must be reachable as a turn's full mana.
     const curve = manaCurve(12);
     expect(curve.slice(0, 10)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(curve).toHaveLength(12);
   });
 
   it("still puts 10 mana inside a real duel", () => {
@@ -71,10 +81,13 @@ describe("pacing", () => {
     const finished = playOut("length", ["normal", "normal"]);
     expect(finished.phase).toBe("gameOver");
     expect(finished.turnNumber).toBeGreaterThan(16);
+    expect(finished.players.some((player) => player.maxMana === 10)).toBe(true);
   }, 30_000);
 
   it("never exceeds the 10 mana cap", () => {
-    for (const mana of manaCurve(14)) expect(mana).toBeLessThanOrEqual(10);
+    const curve = manaCurve(14);
+    expect(curve).toHaveLength(14);
+    for (const mana of curve) expect(mana).toBeLessThanOrEqual(10);
   });
 
   it("honours an explicit setup, so the simulator can sweep the dials", () => {
@@ -118,10 +131,7 @@ describe("the bot", () => {
     for (const skill of skills) {
       const a = playOut(`det-${skill}`, [skill, skill]);
       const b = playOut(`det-${skill}`, [skill, skill]);
-      expect(a.winner).toBe(b.winner);
-      expect(a.turnNumber).toBe(b.turnNumber);
-      expect(a.players[0].health).toBe(b.players[0].health);
-      expect(a.players[1].health).toBe(b.players[1].health);
+      expect(a).toEqual(b);
     }
   }, 60_000);
 

@@ -74,13 +74,13 @@ describe("Convergence engine", () => {
   it("starts a hotseat game with the right hands, coins, and legal moves", () => {
     const state = createInitialGame(cards);
     const legal = getLegalActions(state, library);
-    expect(state.players[0].hand).toHaveLength(2);
-    expect(state.players[1].hand).toHaveLength(3); // plus The Coin, for going second
+    expect(state.players[0].hand).toHaveLength(3);
+    expect(state.players[1].hand).toHaveLength(3); // both start with 3; player two also keeps The Coin
     expect(state.players[1].coins).toBe(1);
     // The deck is genuinely shuffled, so an opening hand may hold nothing
     // affordable on turn 1 - that is intended (as in Hearthstone), not a bug.
     // What must always hold is that the player is never left with no move.
-    expect(legal.length).toBeGreaterThan(0);
+    expect(legal).toContainEqual({ type: "end_turn", player: 0 });
   });
 
   it("reuses a known legal-action list without changing action resolution", () => {
@@ -302,7 +302,7 @@ describe("attacking the enemy core", () => {
 
     // And the turn after, it swings normally.
     state = toMain(applyAction(state, { type: "end_turn", player: 1 }, library).state);
-    expect(coreAttacks(state).length).toBeGreaterThan(0);
+    expect(coreAttacks(state)).toHaveLength(1);
   });
 
   it("deals exactly the attacker's ATK, with no retaliation", () => {

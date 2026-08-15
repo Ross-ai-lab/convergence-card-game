@@ -80,6 +80,21 @@ describe("targeted effects", () => {
     expect(silencePrompt.players[1].board[1]?.silenced).toBe(false);
   });
 
+  it("Neo also blocks Chained effects while leaving ordinary removal targetable", () => {
+    const state = protectFriendlySlotWithNeo(mainState("neo-chain"), 1);
+    state.players[1].board[1] = dummy("John Wick", 1);
+    state.players[1].board[2] = dummy("Zoro", 1);
+
+    const chainPrompt = playCardFor(state, 0, "Darth Vader", 0);
+    expect(chainPrompt.pendingTarget?.options.some((option) => option.slot === 1)).toBe(false);
+    expect(chainPrompt.pendingTarget?.options.every((option) => option.slot !== 1)).toBe(true);
+
+    const damaged = protectFriendlySlotWithNeo(mainState("neo-removal"), 1);
+    damaged.players[1].board[1] = dummy("John Wick", 1, { hp: 2, maxHp: 3 });
+    const removed = playCardFor(damaged, 0, "Musashi", 0);
+    expect(removed.players[1].board[1]).toBeNull();
+  });
+
   it("lets combat kill a minion inside Neo's protected slot", () => {
     const state = protectFriendlySlotWithNeo(mainState("neo-combat"), 1);
     state.activePlayer = 0;
@@ -167,7 +182,7 @@ describe("targeted effects", () => {
     ]);
     const chosen = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: 1 }, library).state;
     expect(chosen.players[1].board[2]?.atk).toBe(1);
-    expect(chosen.players[1].board[2]?.chained).toBeGreaterThan(0);
+    expect(chosen.players[1].board[2]?.chained).toBe(2);
     expect(chosen.players[1].board[0]?.chained).toBe(0);
   });
 
@@ -185,7 +200,7 @@ describe("targeted effects", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("Hypnos", 1, { atk: 0 });
 
-    const after = playCardFor(state, 0, "GLaDOS", 1); // reduce_atk_3 needs an enemy with ATK
+    const after = playCardFor(state, 0, "Stain", 1); // destroy_damaged_enemy needs a damaged enemy
     expect(after.phase).toBe("main");
     expect(after.pendingTarget).toBeNull();
   });
@@ -196,9 +211,9 @@ describe("targeted effects", () => {
     state.players[0].board[2] = dummy("Zoro", 0);
     state.players[1].board[0] = dummy("John Wick", 1);
 
-    const after = playCardFor(state, 0, "Knov", 0); // Battlecry: give an ally Divine Shield
+    const after = playCardFor(state, 0, "Knov", 0); // Battlecry: choose a friendly minion for the pocket room
     expect(after.pendingTarget?.options.every((option) => option.owner === 0)).toBe(true);
-    // Knov itself already has Divine Shield, so it is not among its own options.
+    // The source is excluded from its own pocket-room choice.
     expect(after.pendingTarget?.options).toEqual([
       { owner: 0, slot: 1 },
       { owner: 0, slot: 2 },
@@ -279,13 +294,16 @@ describe("practice bot", () => {
   it("only ever returns a move the engine already called legal", () => {
     let state = mainState();
     state.activePlayer = 1;
+    let moves = 0;
     for (let step = 0; step < 40 && state.phase !== "gameOver"; step += 1) {
       const action = chooseBotAction(state, library, 1);
       if (!action) break;
+      moves += 1;
       const legal = getLegalActions(state, library);
       expect(legal.some((candidate) => JSON.stringify(candidate) === JSON.stringify(action))).toBe(true);
       state = applyAction(state, action, library).state;
     }
+    expect(moves).toBeGreaterThan(0);
   });
 
   it("develops its board rather than passing the turn away", () => {

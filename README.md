@@ -59,7 +59,7 @@ Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an
 - **Evade** — gives the minion a chance to avoid an incoming attack. The percentage is printed on the card.
 - **Sleep** — the normal one-turn delay after play. It is separate from Chained.
 - **Attack Locked** — the minion cannot attack until the printed lock duration ends; its attack gem is greyed out.
-- **Protected slot** — a board position is protected from targeting, Silence, Freeze, and damage. The protection belongs to the slot, not permanently to the minion occupying it.
+- **Protected slot** — a board position protects its minions from Silence, Freeze, and Chained effects. It does not stop ordinary targeting, removal, or combat damage. The protection belongs to the slot, not permanently to the minion occupying it.
 - **Immune** — the named damage type cannot hurt the minion while the immunity is active.
 - **Marked** — a delayed effect is waiting on the minion; the card text explains when it resolves.
 - **Untargetable** — attacks and effects cannot choose the minion while the condition lasts. A minion that is also damage-immune cannot lose HP during that window.
@@ -109,6 +109,7 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 
 ### During a duel
 
+- Each player starts with three cards. The second player also receives **The Coin**, which spends for +1 mana that turn.
 - Click or drag a hand card onto an empty slot to play it.
 - Click or drag a ready minion onto an enemy minion or the enemy core to attack.
 - Press **Space** or **Enter** to end the turn.

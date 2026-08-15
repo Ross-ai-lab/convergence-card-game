@@ -127,6 +127,8 @@ export type EffectId =
   | "reshuffle_hand"
   | "discard_draw_2"
   | "consume_tech_card"
+  | "consume_tech_5_hp"
+  | "consume_nature_4_hp"
   | "consume_all_friendly_tech"
   | "dice_buff"
   | "doof_dice"
@@ -266,6 +268,12 @@ export type EffectId =
   | "hashira_focus_attack"
   | "freeze_and_silence_enemy"
   | "dumbledore_cleanse"
+  | "dark_dimension_banish"
+  | "strange_bargain"
+  | "reveal_top_deck"
+  | "free_chained_shield"
+  | "meruem_kill_copy"
+  | "deathrattle_summon_drakath"
   // --- Star Wars / Tech card replacements ---------------------------------
   | "black_ops_ignore_taunt"
   | "battleship_tech_aura"
@@ -431,6 +439,8 @@ export interface PlayerState {
   pendingControl: { instanceId: string; fromPlayer: PlayerId; dueTurn: number } | null;
   /** Kuma: per-card discounts, keyed by card id. */
   costReductions: Record<string, number>;
+  /** Doctor Strange: mana removed from this player's next turn. */
+  manaPenaltyNextTurn: number;
   /** Hand-pressure effects: a card this player must play by `dueTurn` or lose. */
   pressured: { cardId: string; dueTurn: number } | null;
   /** Permanent marks on this player's board positions. */
@@ -643,6 +653,8 @@ export interface GameState {
   pocketRooms?: PocketRoom[];
   /** G-Man's temporarily removed minions. */
   stasis: StasisEntry[];
+  /** Dormammu's minions banished until the source dies. */
+  darkDimension: DarkDimensionEntry[];
   effectQueue: QueuedEffect[];
   winner: PlayerId | "draw" | null;
   players: [PlayerState, PlayerState];
@@ -653,6 +665,14 @@ export interface StasisEntry {
   owner: PlayerId;
   slot: number;
   returnAtTurn: number;
+  sourceName: string;
+}
+
+export interface DarkDimensionEntry {
+  minion: MinionInstance;
+  owner: PlayerId;
+  slot: number;
+  sourceInstanceId: string;
   sourceName: string;
 }
 

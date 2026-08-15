@@ -25,8 +25,8 @@
  * almost every run — the card has to BE in your hand and there has to be a legal
  * target — which is coverage in name only. The hook removes the luck.
  *
- * Cheat mode is turned on for most scenarios on purpose. Going first deals TWO
- * cards against ONE mana and the roster runs to cost 10, so without it many of
+ * Cheat mode is turned on for most scenarios on purpose. The roster runs to
+ * cost 10, so without it many of
  * these checks are a coin flip on whether the opening hand is affordable —
  * which is how the audio harness failed the first time it ran.
  */

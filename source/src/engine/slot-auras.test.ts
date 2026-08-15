@@ -144,8 +144,9 @@ describe("forced-random attacks", () => {
 
     const after = applyAction(swinging, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library);
     expect(after.events.some((event) => event.text.includes("swings blindly"))).toBe(true);
-    const hurt = after.state.players[0].board.filter((minion) => minion && minion.hp < minion.maxHp);
-    expect(hurt).toHaveLength(1); // exactly one victim, not necessarily the named one
+    expect(after.state.players[0].board[0]?.hp).toBe(5); // the seeded blind roll chose Bill Cipher
+    expect(after.state.players[0].board[1]?.hp).toBe(30); // it did not land where the action aimed
+    expect(after.state.players[0].board[2]?.hp).toBe(30);
   });
 
   it("Sans evades 80% of attacks", () => {
@@ -184,7 +185,7 @@ describe("forced-random attacks", () => {
     expect(legal).toHaveLength(1); // only the Taunt is offered
 
     const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 1 }, library).state;
-    expect(after.players[1].board[1]!.hp).toBeLessThan(30); // the roll had one legal answer
+    expect(after.players[1].board[1]!.hp).toBe(29); // the roll had one legal answer
     expect(after.players[1].board[2]!.hp).toBe(30);
   });
 });

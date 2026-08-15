@@ -52,9 +52,11 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // per-turn trigger marker.
 // v16: MinionInstance gained passiveSilenceSources so Gojo's Silence aura can
 // be removed when Gojo leaves play.
-const SAVE_VERSION = 16;
+// v17: Doctor Strange's next-turn mana penalty and Dormammu's persistent Dark
+// Dimension banishment zone became part of GameState.
+const SAVE_VERSION = 17;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v15";
+const LEGACY_SAVE_KEY = "convergence.save.v16";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -120,6 +122,7 @@ export function loadGame(): SavedGame | null {
       "confusedUntilTurn" in player;
     if (!game.players.every(playerShapeOk)) return null;
     if (!Array.isArray(game.stasis)) return null;
+    if (!Array.isArray(game.darkDimension)) return null;
     if (game.phase === "gameOver") return null; // finished duels are not worth resuming
     // An unrecognisable mode falls back to hotseat rather than rejecting the whole
     // save — losing the difficulty is a shrug, losing the duel is not.
@@ -163,12 +166,15 @@ function migrateLegacyTransforms(game: GameState): void {
 function migrateLegacyMechanics(game: GameState): void {
   if (!game.pocketRooms) game.pocketRooms = [];
   if (!Array.isArray(game.stasis)) game.stasis = [];
+  if (!Array.isArray(game.darkDimension)) game.darkDimension = [];
   const stasisMinions = game.stasis.map((entry) => entry.minion);
+  const darkDimensionMinions = game.darkDimension.map((entry) => entry.minion);
   for (const player of game.players) {
     if (player.heroDivineShield === undefined) player.heroDivineShield = false;
     if (player.randomAttacksFromTurn === undefined) player.randomAttacksFromTurn = null;
     if (player.randomAttacksUntilTurn === undefined) player.randomAttacksUntilTurn = null;
-    for (const minion of [...player.board, ...stasisMinions]) {
+    if (player.manaPenaltyNextTurn === undefined) player.manaPenaltyNextTurn = 0;
+    for (const minion of [...player.board, ...stasisMinions, ...darkDimensionMinions]) {
       if (!minion) continue;
       if (minion.markedForDeathAtTurn === undefined) minion.markedForDeathAtTurn = null;
       if (minion.untargetableUntilTurn === undefined) minion.untargetableUntilTurn = null;

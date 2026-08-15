@@ -158,7 +158,7 @@ describe("full-roster effects", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
     state.players[1].board[0] = makeMinion("Sans", 1);
-    // This deterministic lower-bound RNG value takes the 75% evasion branch
+    // This deterministic lower-bound RNG value takes the 80% evasion branch
     // without making the test probabilistic. The defender still retaliates.
     state.rngSeed = 1;
     const after = attack(state, 0, 0);
@@ -178,7 +178,9 @@ describe("full-roster effects", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("RoboCop", 0, { atk: 2, hp: 20, maxHp: 20 });
     state.players[1].board[0] = makeMinion("Wall of Flesh", 1); // 3/5 Evil
-    expect(attack(state, 0, 0).players[1].board[0]).toBeNull(); // 2 * 3 = 6 > 5
+    const result = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
+    expect(result.state.players[1].board[0]).toBeNull(); // 2 * 3 = 6 > 5
+    expect(result.events).toContainEqual(expect.objectContaining({ text: "Wall of Flesh takes 6 damage." }));
   });
 
   it("Kaku Kaioh (kaku_evade_counter): evades and reflects the attacker's ATK", () => {
@@ -196,23 +198,18 @@ describe("full-roster effects", () => {
     state.players[0].board[0] = makeMinion("Nulgath", 0);
     state.players[0].board[1] = makeMinion("John Wick", 0, { atk: 5, hp: 20, maxHp: 20 });
     state.players[1].board[0] = makeMinion("John Wick", 1);
-    // Read the growth off the state, never off a literal. This test asserted
-    // `atk === 3` and broke the moment pass 5 changed the buff, which reads
-    // exactly like a real regression and is not one — the rule under test is
-    // "one death makes it grow", not the size of one particular pass's number.
     const before = state.players[0].board[0]!;
     const after = attack(state, 1, 0); // slot-1 attacker kills the enemy
     const grown = after.players[0].board[0]!;
-    expect(grown.atk).toBeGreaterThan(before.atk);
-    expect(grown.maxHp).toBeGreaterThan(before.maxHp);
+    expect(grown.atk).toBe(before.atk + 2);
+    expect(grown.maxHp).toBe(before.maxHp + 2);
   });
 
   it("Nulgath and Gravelord Nito are no longer the same card", () => {
     // These two ran the identical rule under two different effect ids for the
     // whole balance history, which made them one card charged at 6 mana and at
-    // 2. The separation is the point of the difference in magnitude, so assert
-    // that they DIVERGE rather than asserting either number — a future pass may
-    // move both, and only "they are not equal" must survive it.
+    // 2. Pin both printed magnitudes so a future effect-label or engine change
+    // cannot make the cards silently converge again.
     const growthOf = (name: string) => {
       const state = mainState();
       state.players[0].board[0] = makeMinion(name, 0);
@@ -223,10 +220,8 @@ describe("full-roster effects", () => {
       return { atk: after.atk - before.atk, hp: after.maxHp - before.maxHp };
     };
 
-    const nulgath = growthOf("Nulgath");
-    const nito = growthOf("Gravelord Nito");
-    expect(nulgath.atk).toBeGreaterThan(nito.atk);
-    expect(nulgath.hp).toBeGreaterThan(nito.hp);
+    expect(growthOf("Nulgath")).toEqual({ atk: 2, hp: 2 });
+    expect(growthOf("Gravelord Nito")).toEqual({ atk: 1, hp: 1 });
   });
 
   it("Fire Lord Ozai (aoe_all_2): deals 2 to every other minion, not 3", () => {
@@ -248,7 +243,7 @@ describe("full-roster effects", () => {
     const relicIds = new Set(relics.map((relic) => relic.id));
 
     const after = playCardFor(state, 0, "Domovoy", 2);
-    expect(after.pendingTarget).toBeFalsy(); // random, never a choice
+    expect(after.pendingTarget).toBeNull(); // random, never a choice
     const drawn = after.players[0].hand.filter((cardId) => relicIds.has(cardId));
     expect(drawn).toHaveLength(1);
     expect(after.deck).not.toContain(drawn[0]);
