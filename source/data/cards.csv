@@ -66,7 +66,7 @@ c064,Seven Deadly Sins,8,4,5,Purple,Magic,Good,,summon_sins,onPlay,"Battlecry: F
 c065,Whitebeard,8,6,4,Purple,Magic,Neutral,,aoe_all_3,onPlay,Battlecry: Deal 3 damage to all other minions.,Split the World in two,One Piece,/card-art/raw/c065.webp
 c066,Elder Centipede,8,5,6,Black,Nature,Evil,Ongoing,self_buff_2,ongoing,Ongoing: Gain +2/+2.,Billion year old,OPM,/card-art/raw/c066.webp
 c067,Hypnos,8,0,9,Black,Magic,Neutral,Taunt;Passive,chain_attacker,passive,Taunt. Passive: Enemy minions that attack this become Chained for 1 turn.,He sleeps in his sleep,Hades,/card-art/raw/c067.webp
-c068,Star Destroyer,8,5,5,Black,Tech,Neutral,,star_destroyer_tie_fighters,onPlay,Battlecry: Summon 1/1 TIE Fighters with Charge.,-,Basic,/card-art/raw/c068.webp
+c068,Star Destroyer,8,5,5,Black,Tech,Neutral,,star_destroyer_tie_fighters,onPlay,Battlecry: Summon two 1/1 TIE Fighters with Charge.,-,Basic,/card-art/raw/c068.webp
 c069,Isaac Netero,7,4,4,Red,Magic,Good,Divine Shield;Deathrattle,deathrattle_aoe_3,deathrattle,Divine Shield. Deathrattle: Deal 3 damage to all enemy minions.,Each prayer strikes harder than any fist,HxH,/card-art/raw/c069.webp
 c070,Vergil & Dante & Nero,7,3,5,Red,Magic,Neutral,,attack_2x,passive,Passive: This minion can attack 2 times per turn.,Infinite potential,Devil May Cry,/card-art/raw/c070.webp
 c071,All for One,7,4,5,Yellow,Magic,Evil,,copy_and_trigger,onPlay,Battlecry: Copy and trigger effect of an enemy minion.,A Collector,MHA,/card-art/raw/c071.webp

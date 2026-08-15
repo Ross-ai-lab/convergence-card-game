@@ -3353,11 +3353,11 @@ function summonTieFighters(state: GameState, source: MinionInstance, events: Gam
     effect: "Charge.",
     flavor: "Twin ion engines scream through the void.",
     origin: "Star Wars",
-    art: "/card-art/raw/token-tie-fighter.png",
+    art: source.art.replace(/[^/]+$/, "token-tie-fighter.png"),
   };
   const player = state.players[source.owner];
   let summoned = 0;
-  for (let slot = 0; slot < boardSize; slot += 1) {
+  for (let slot = 0; slot < boardSize && summoned < 2; slot += 1) {
     if (player.board[slot]) continue;
     player.board[slot] = createMinion(tieFighter, source.owner, state);
     summoned += 1;

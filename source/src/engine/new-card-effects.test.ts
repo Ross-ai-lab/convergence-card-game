@@ -64,7 +64,7 @@ describe("2026 card replacements", () => {
         hp: 5,
         effectId: "star_destroyer_tie_fighters",
         effectTiming: "onPlay",
-        effect: "Battlecry: Summon 1/1 TIE Fighters with Charge.",
+        effect: "Battlecry: Summon two 1/1 TIE Fighters with Charge.",
       },
       Battleship: {
         cost: 4,
@@ -671,7 +671,7 @@ describe("2026 card replacements", () => {
     expect(sins.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
   });
 
-  it("Black Ops ignores Taunt, Battleship buffs friendly Tech, and Star Destroyer deploys Charge TIE Fighters", () => {
+  it("Black Ops ignores Taunt, Battleship buffs friendly Tech, and Star Destroyer deploys two Charge TIE Fighters", () => {
     const blackOps = mainState("black-ops-taunt");
     blackOps.players[0].board[0] = minion("Black Ops", 0, { sleeping: false });
     blackOps.players[1].board[0] = minion("John Wick", 1, { keywords: ["Taunt"], sleeping: false });
@@ -698,7 +698,7 @@ describe("2026 card replacements", () => {
     const destroyer = play(mainState("star-destroyer-tokens"), 0, "Star Destroyer", 0);
     const fighters = destroyer.players[0].board.slice(1).filter((entry): entry is MinionInstance => Boolean(entry));
     expect(destroyer.players[0].board[0]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
-    expect(fighters).toHaveLength(4);
+    expect(fighters).toHaveLength(2);
     expect(fighters.every((fighter) => fighter.name === "TIE Fighter" && fighter.atk === 1 && fighter.hp === 1)).toBe(true);
     expect(fighters.every((fighter) => fighter.keywords.includes("Charge") && fighter.sleeping === false)).toBe(true);
     expect(fighters.every((fighter) => fighter.art.endsWith("/token-tie-fighter.png"))).toBe(true);
