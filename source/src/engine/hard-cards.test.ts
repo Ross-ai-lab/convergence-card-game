@@ -126,6 +126,7 @@ describe("combat-reaction cards", () => {
     const after = attack(state, 0, 0);
     expect(after.players[1].board[0]?.campImmunity?.camp).toBe("Magic");
     const hpAfterFirst = after.players[1].board[0]!.hp;
+    expect(after.players[1].board[0]?.campImmunity?.untilTurn).toBe(after.turnNumber + 8);
     const nextEnemyTurn = endTurnAndDraw(endTurnAndDraw(after, 0), 1);
     expect(getLegalActions(nextEnemyTurn, library)).toContainEqual({
       type: "attack_minion",
@@ -140,7 +141,11 @@ describe("combat-reaction cards", () => {
     const secondBlocked = attack(followingEnemyTurn, 0, 0);
     expect(secondBlocked.players[1].board[0]?.hp).toBe(hpAfterFirst);
 
-    const immunityExpired = endTurnAndDraw(endTurnAndDraw(secondBlocked, 0), 1);
+    const thirdEnemyTurn = endTurnAndDraw(endTurnAndDraw(secondBlocked, 0), 1);
+    const thirdBlocked = attack(thirdEnemyTurn, 0, 0);
+    expect(thirdBlocked.players[1].board[0]?.hp).toBe(hpAfterFirst);
+
+    const immunityExpired = endTurnAndDraw(endTurnAndDraw(thirdBlocked, 0), 1);
     const landed = attack(immunityExpired, 0, 0);
     expect(landed.players[1].board[0]?.hp).toBe(hpAfterFirst - 1);
   });
@@ -264,18 +269,16 @@ describe("control and theft cards", () => {
     expect(dead.players[1].board[0]?.effectId).toBe("attack_once_ever");
   });
 
-  it("Kento Nanami marks a weak point and doubles his next attack", () => {
+  it("Kento Nanami sets the chosen enemy minion's HP to 1", () => {
     const state = mainState();
     state.players[1].board[0] = dummy("Death Star", 1, { atk: 0, hp: 10, maxHp: 10 });
     state.players[1].board[1] = dummy("John Wick", 1, { atk: 0, hp: 10, maxHp: 10 });
 
-    const placed = play(state, "Kento Nanami", 0);
-    const asking = toMyNextTurn(placed);
+    const asking = play(state, "Kento Nanami", 0);
     expect(asking.pendingTarget?.kind).toBe("board");
     const choice = asking.pendingTarget!.options.findIndex((option) => option.owner === 1 && option.slot === 0);
-    const marked = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: choice }, library).state;
-    const attacked = attack(marked, 0, 0);
-    expect(attacked.players[1].board[0]?.hp).toBe(6);
+    const after = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: choice }, library).state;
+    expect(after.players[1].board[0]?.hp).toBe(1);
   });
 
   it("Kuma bounces an ally home and discounts it by 5", () => {

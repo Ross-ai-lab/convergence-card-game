@@ -222,10 +222,10 @@ describe("targeted effects", () => {
 
   it("holds the rest of the turn's ongoing effects behind the prompt", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Vegapunk", 0, { playOrder: 1 }); // ongoing + targeted: asks first
+    state.players[0].board[0] = makeMinion("Gyoro Gyoro", 0, { playOrder: 1 }); // ongoing + targeted: asks first
     state.players[0].board[1] = makeMinion("Carnage Kabuto", 0, { playOrder: 2 }); // ongoing self-buff, no prompt
-    state.players[0].board[2] = dummy("Zoro", 0, { alignment: "Good", camp: "Tech" });
-    state.players[0].board[3] = dummy("John Wick", 0, { alignment: "Good", camp: "Tech" });
+    state.players[0].board[2] = dummy("Zoro", 0, { alignment: "Evil" });
+    state.players[0].board[3] = dummy("John Wick", 0, { alignment: "Evil" });
 
     const asking = toMyNextTurn(state);
     expect(asking.phase).toBe("targeting");

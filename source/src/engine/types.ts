@@ -80,6 +80,7 @@ export type EffectId =
   | "reveal_hand"
   | "reveal_enemy_draw"
   | "set_hp_1"
+  | "set_all_enemy_hp_1"
   | "lone_evil_buff"
   // --- added 2026-07-12: effects for the full roster (onPlay/ongoing actives) ---
   | "self_buff_2"
@@ -287,6 +288,13 @@ export type EffectId =
   | "free_chained_shield"
   | "meruem_kill_copy"
   | "deathrattle_summon_drakath"
+  | "avatar_aang_awakened"
+  | "chaos_random_summon"
+  | "copy_minion_to_hand"
+  | "discover_tech_card"
+  | "transform_random_allies_up"
+  | "devolve_enemy_minions"
+  | "slot_permanent_chain"
   // --- Star Wars / Tech card replacements ---------------------------------
   | "black_ops_ignore_taunt"
   | "battleship_tech_aura"
@@ -492,7 +500,8 @@ export type ChoiceKind = "board" | "slot" | "hand" | "option" | "boardOrCore";
 // --------------------------------------------------------------------------
 export type SlotAuraId =
   | "random_attacks" // Bill Cipher — a minion here can only attack at random
-  | "slot_silence" // Giorno GER — a minion here is silenced the moment it lands
+  | "slot_silence" // Legacy slot-silence mark — a minion here is silenced
+  | "slot_chain" // Giorno GER — a minion here is permanently Chained
   | "slot_grow_1" // Floor Guardians — a minion here gains +1/+1 each of your turns
   | "slot_grow_2" // Ultra Instinct Goku — a minion here gains +2/+2 each of your turns
   | "slot_protected" // Neo — minions here cannot be targeted, silenced, or frozen

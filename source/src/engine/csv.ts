@@ -78,6 +78,7 @@ const effectIds = new Set<EffectId>([
   "reveal_hand",
   "reveal_enemy_draw",
   "set_hp_1",
+  "set_all_enemy_hp_1",
   "lone_evil_buff",
   // added 2026-07-12 — full-roster effects
   "self_buff_2",
@@ -212,6 +213,7 @@ const effectIds = new Set<EffectId>([
   // slot auras and forced-random attacks
   "slot_random_attacks",
   "slot_permanent_silence",
+  "slot_permanent_chain",
   "slot_growth_1",
   "slot_growth",
   "confuse_enemies",
@@ -283,6 +285,12 @@ const effectIds = new Set<EffectId>([
   "free_chained_shield",
   "meruem_kill_copy",
   "deathrattle_summon_drakath",
+  "avatar_aang_awakened",
+  "chaos_random_summon",
+  "copy_minion_to_hand",
+  "discover_tech_card",
+  "transform_random_allies_up",
+  "devolve_enemy_minions",
   "black_ops_ignore_taunt",
   "battleship_tech_aura",
   "star_destroyer_tie_fighters",

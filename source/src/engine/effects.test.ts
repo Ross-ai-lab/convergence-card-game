@@ -323,7 +323,7 @@ describe("full-roster effects", () => {
   it("Light Yagami (kill_random_enemy): kills an enemy at the start of its owner's turn", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Light Yagami", 0);
-    state.players[1].board[0] = makeMinion("Avatar Aang", 1, { divineShield: true });
+    state.players[1].board[0] = makeMinion("John Wick", 1, { divineShield: true });
     const after = toMyNextTurn(state);
     expect(after.players[1].board[0]).toBeNull();
   });

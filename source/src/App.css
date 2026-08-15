@@ -4739,6 +4739,18 @@ button:disabled {
   animation: toast-life 1.5s ease-out forwards;
 }
 
+.board-toast.bargain-popup {
+  min-width: min(520px, calc(100vw - 32px));
+  padding: 18px 28px;
+  border-width: 3px;
+  border-color: rgba(255, 224, 137, 0.96);
+  background: linear-gradient(160deg, rgba(68, 35, 10, 0.98), rgba(28, 16, 8, 0.98));
+  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.72), 0 0 42px rgba(240, 199, 103, 0.48);
+  font-size: clamp(1.1rem, 2.4vw, 1.55rem);
+  line-height: 1.2;
+  text-align: center;
+}
+
 @keyframes toast-life {
   0% { opacity: 0; transform: translate(-50%, -40%) scale(0.94); }
   14% { opacity: 1; transform: translate(-50%, -50%) scale(1); }

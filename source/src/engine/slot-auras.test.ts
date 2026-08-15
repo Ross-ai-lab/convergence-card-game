@@ -80,19 +80,19 @@ describe("slot auras", () => {
     expect(asking.pendingTarget?.options).toEqual([0, 1, 2, 3, 4].map((slot) => ({ owner: 1, slot })));
   });
 
-  it("Giorno silences whoever is standing there, and whoever arrives later", () => {
+  it("Giorno permanently Chains whoever is standing there, and whoever arrives later", () => {
     const state = mainState();
     state.players[1].board[2] = dummy("Zoro", 1);
 
     const asking = playCardFor(state, 0, "Giorno - Gold Experience Requiem", 0);
     const marked = chooseSlot(asking, 1, 2);
-    expect(marked.players[1].slotAuras).toEqual([{ slot: 2, auraId: "slot_silence", sourceName: "Giorno - Gold Experience Requiem" }]);
-    expect(marked.players[1].board[2]?.silenced).toBe(true);
+    expect(marked.players[1].slotAuras).toEqual([{ slot: 2, auraId: "slot_chain", sourceName: "Giorno - Gold Experience Requiem" }]);
+    expect(marked.players[1].board[2]?.chained).toBe(2);
 
-    // A fresh minion walking into the cursed slot is silenced on arrival.
+    // A fresh minion walking into the cursed slot is Chained on arrival.
     marked.players[1].board[2] = null;
     const arrived = playCardFor(marked, 1, "Mob Psycho", 2);
-    expect(arrived.players[1].board[2]?.silenced).toBe(true);
+    expect(arrived.players[1].board[2]?.chained).toBe(2);
   });
 
   it("outlives the minion that laid it — the whole point", () => {
@@ -112,7 +112,7 @@ describe("slot auras", () => {
 
     dead.players[1].board[1] = null;
     const arrived = playCardFor(dead, 1, "Mob Psycho", 1);
-    expect(arrived.players[1].board[1]?.silenced).toBe(true);
+    expect(arrived.players[1].board[1]?.chained).toBe(2);
   });
 
   it("Goku evades the first attack targeting him each enemy turn", () => {

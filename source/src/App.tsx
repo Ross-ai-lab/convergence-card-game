@@ -156,6 +156,7 @@ type Flight = {
   delayMs?: number;
 };
 type DuelIntroState = { id: number; phase: DuelIntroPhase };
+type BoardToast = { id: number; text: string; durationMs: number; tone: "normal" | "bargain" };
 
 // Keep this schedule aligned with the opening animation table in the project
 // README. The intro ends after the mana reveal; opening card flights continue
@@ -213,6 +214,7 @@ const STRIKE_DELAY = 0.18;
 const AURA_LABEL: Record<SlotAuraId, string> = {
   random_attacks: "RANDOM",
   slot_silence: "SILENCED",
+  slot_chain: "CHAINED",
   slot_grow_1: "+1/+1",
   slot_grow_2: "+2/+2",
   slot_protected: "SAFE",
@@ -221,6 +223,7 @@ const AURA_LABEL: Record<SlotAuraId, string> = {
 const AURA_TEXT: Record<SlotAuraId, string> = {
   random_attacks: "a minion here can only attack at random",
   slot_silence: "a minion here is silenced",
+  slot_chain: "a minion here is permanently Chained",
   slot_grow_1: "a minion here gains +1/+1 at the start of your turn",
   slot_grow_2: "a minion here gains +2/+2 at the start of your turn",
   slot_protected: "minions here cannot be targeted, silenced, or frozen; attacks can still hit them",
@@ -230,6 +233,7 @@ const AURA_TEXT: Record<SlotAuraId, string> = {
 const AURA_COLOR: Record<SlotAuraId, string> = {
   random_attacks: "#f0c767",
   slot_silence: "#b47cff",
+  slot_chain: "#6ed7ff",
   slot_grow_1: "#ff8a65",
   slot_grow_2: "#35d6c2",
   slot_protected: "#52b6ff",
@@ -355,7 +359,7 @@ export default function App() {
   const [impacts, setImpacts] = useState<Impact[]>([]);
   const [lunge, setLunge] = useState<Lunge>(null);
   const [splash, setSplash] = useState<Splash>(null);
-  const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
+  const [toast, setToast] = useState<BoardToast | null>(null);
   const [shaking, setShaking] = useState(false);
   /** Cards in flight from the deck pile. Measured off the real elements. */
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -1009,6 +1013,10 @@ export default function App() {
   }
 
   function perform(action: GameAction) {
+    const bargainChoice =
+      action.type === "choose_target" && game.pendingTarget?.effectId === "strange_bargain"
+        ? game.pendingTarget.labelOptions[action.choiceIndex]?.label
+        : undefined;
     const result = applyAction(game, action, library);
     if (result.state !== game) {
       spawnFx(game, result.state, action, result.events);
@@ -1032,6 +1040,7 @@ export default function App() {
       setGame(result.state);
       setSelection(null);
       setHover(null);
+      if (bargainChoice) showToast(`Doctor Strange's bargain chosen: ${bargainChoice}`, 3000, "bargain");
     }
     setEvents((items) => [...items, ...result.events].slice(-80));
   }
@@ -1233,10 +1242,10 @@ export default function App() {
   }
 
   /** One short line in the middle of the board, then gone. */
-  function showToast(text: string) {
-    const next = { id: fxId.current++, text };
+  function showToast(text: string, durationMs = 1500, tone: BoardToast["tone"] = "normal") {
+    const next = { id: fxId.current++, text, durationMs, tone };
     setToast(next);
-    window.setTimeout(() => setToast((cur) => (cur && cur.id === next.id ? null : cur)), 1500);
+    window.setTimeout(() => setToast((cur) => (cur && cur.id === next.id ? null : cur)), durationMs);
   }
 
   function onBoardSlot(owner: PlayerId, slotIndex: number) {
@@ -1866,7 +1875,12 @@ export default function App() {
       {lethal ? <div key={lethal} className="lethal-flash" aria-hidden="true" /> : null}
 
       {toast ? (
-        <div className="board-toast" key={toast.id} role="status">
+        <div
+          className={toast.tone === "bargain" ? "board-toast bargain-popup" : "board-toast"}
+          key={toast.id}
+          role="status"
+          style={{ animationDuration: `${toast.durationMs}ms` }}
+        >
           {toast.text}
         </div>
       ) : null}

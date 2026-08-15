@@ -26,6 +26,11 @@ import type {
 
 export type CardLibrary = Record<string, PlayableCard>;
 
+// Deathrattles resolve below the effect runner, where the original card
+// library is otherwise out of scope. Keep the library attached to the cloned
+// action state without serializing it into saves or replay data.
+const libraryByState = new WeakMap<GameState, CardLibrary>();
+
 const boardSize = 5;
 const handLimit = 10;
 /**
@@ -174,6 +179,7 @@ export function applyAction(
   }
 
   const next = cloneState(state);
+  libraryByState.set(next, library);
   const events: GameEvent[] = [];
 
   if (action.type === "choose_hero_power") {
@@ -1191,14 +1197,14 @@ function attackMinion(
       survivingAttacker.attackLockedUntilTurn = state.turnNumber + 6;
       events.push(effectEvent(`${defender.name} stops ${survivingAttacker.name} for two turns.`, defender));
     }
-    // Doomsday: it adapts to whatever hit it and shrugs that Camp off for two turns.
+    // Doomsday: it adapts to whatever hit it and shrugs that Camp off for three turns.
     // A hit that is already absorbed by Doomsday's current adaptation must not
     // restart the timer, or a repeated same-Camp attacker could never wear it off.
     if (hasEffect(defender, "camp_immunity_on_hit") && defenderAlive && !alreadyAdapted) {
       // turnNumber advances once per player's turn. The attacking player gets
-      // another turn after two half-turns, so two of that player's turns end
-      // six half-turns after the hit (the same clock APR uses).
-      defender.campImmunity = { camp: attacker.camp, untilTurn: state.turnNumber + 6 };
+      // another turn after two half-turns, so three of that player's turns end
+      // eight half-turns after the hit.
+      defender.campImmunity = { camp: attacker.camp, untilTurn: state.turnNumber + 8 };
       events.push(effectEvent(`${defender.name} adapts to ${attacker.camp}.`, defender));
     }
     if (defenderAlive && hasEffect(defender, "on_survive_buff_1")) {
@@ -1318,6 +1324,12 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   stasis_enemy: { side: "enemy", prompt: "Choose an enemy minion to put into stasis" },
   vader_chain_or_destroy: { side: "enemy", prompt: "Choose an enemy minion for Darth Vader" },
   set_hp_1: { side: "enemy", prompt: "Set an enemy minion's HP to 1" },
+  copy_minion_to_hand: {
+    side: "any",
+    prompt: "Choose a minion to copy into your hand",
+    includeSelf: true,
+    filter: (m) => !m.cardId.startsWith("token:"),
+  },
   freeze_enemy: { side: "enemy", prompt: "Freeze an enemy minion" },
   freeze_and_weaken: { side: "enemy", prompt: "Freeze an enemy and halve its ATK" },
   silence_enemy: { side: "enemy", prompt: "Silence an enemy minion", filter: (m) => !m.silenced },
@@ -1426,6 +1438,15 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
       { label: "Gain a random Ascension Relic", value: "random_relic" },
     ],
   },
+  discover_tech_card: {
+    kind: "option",
+    side: "friendly",
+    prompt: "Choose 1 of 3 Tech cards from the deck",
+    values: (state, _source, library) =>
+      techCardsInDeck(state, library)
+        .slice(0, 3)
+        .map((card) => ({ label: card.name, value: card.id })),
+  },
   replace_same_cost_random: { side: "any", prompt: "Choose another minion", includeSelf: false },
   // --- the hard cards ---
   copy_minion_effects: { side: "any", prompt: "Choose another minion to become" },
@@ -1502,6 +1523,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   // --- slot auras: pick a POSITION, empty or not; the mark is permanent ---
   slot_random_attacks: { kind: "slot", side: "enemy", prompt: "Curse an enemy slot — minions there attack at random, forever" },
   slot_permanent_silence: { kind: "slot", side: "enemy", prompt: "Silence an enemy slot — minions there are silenced, forever" },
+  slot_permanent_chain: { kind: "slot", side: "enemy", prompt: "Chain an enemy slot — minions there are Chained, forever" },
   slot_growth_1: { kind: "slot", side: "friendly", prompt: "Bless one of your slots — minions there gain +1/+1 every turn" },
   slot_growth: { kind: "slot", side: "friendly", prompt: "Bless one of your slots — minions there gain +2/+2 every turn" },
   reveal_and_shuffle_chosen: {
@@ -1656,6 +1678,17 @@ function relicsInDeck(state: GameState, library: CardLibrary): RelicDefinition[]
     .filter((card): card is RelicDefinition => isRelicCard(card));
 }
 
+/** Tech minion cards available to Vegapunk, in shared-deck order, without duplicate offers. */
+function techCardsInDeck(state: GameState, library: CardLibrary): CardDefinition[] {
+  const seen = new Set<string>();
+  return [...state.deck, ...state.bottomDeck].flatMap((cardId) => {
+    const card = library[cardId];
+    if (!isMinionCard(card) || card.camp !== "Tech" || seen.has(card.id)) return [];
+    seen.add(card.id);
+    return [card];
+  });
+}
+
 function removeCardFromDrawPile(state: GameState, cardId: string): boolean {
   const deckIndex = state.deck.indexOf(cardId);
   if (deckIndex >= 0) {
@@ -1710,6 +1743,30 @@ function summonRandomCostFromDeck(
   const summoned = createMinion(card, playerId, state);
   player.board[slot] = summoned;
   events.push({ kind: "effect", text: `${player.name} summons ${summoned.name} from the deck.`, player: playerId, cardId, instanceId: summoned.instanceId });
+}
+
+function summonRandomMinionFromDeck(
+  state: GameState,
+  source: MinionInstance,
+  library: CardLibrary,
+  events: GameEvent[],
+  preferredSlot?: number,
+): void {
+  const player = state.players[source.owner];
+  const slot =
+    preferredSlot !== undefined && preferredSlot >= 0 && preferredSlot < player.board.length && !player.board[preferredSlot]
+      ? preferredSlot
+      : player.board.findIndex((entry) => !entry);
+  if (slot < 0) return;
+  const candidates = [...state.deck, ...state.bottomDeck].filter((cardId) => isMinionCard(library[cardId]));
+  if (candidates.length === 0) return;
+  const cardId = candidates[rollInt(state, candidates.length)];
+  if (!cardId || !removeCardFromDrawPile(state, cardId)) return;
+  const card = library[cardId];
+  if (!isMinionCard(card)) return;
+  const summoned = createMinion(card, source.owner, state);
+  player.board[slot] = summoned;
+  events.push(effectEvent(`${source.name} summons ${summoned.name} from the deck.`, source));
 }
 
 function replaceWithRandomSameCost(state: GameState, target: MinionInstance, library: CardLibrary, events: GameEvent[]): void {
@@ -2150,6 +2207,8 @@ function runEffect(
     summonSins(state, source, events);
   } else if (source.effectId === "star_destroyer_tie_fighters") {
     summonTieFighters(state, source, events);
+  } else if (source.effectId === "chaos_random_summon") {
+    summonRandomMinionFromDeck(state, source, library, events);
   } else if (source.effectId === "heroic_relics") {
     grantRandomRelicsToBoard(state, source, library, events);
   } else if (source.effectId === "equip_random_relic") {
@@ -2334,8 +2393,24 @@ function runEffect(
   } else if (source.effectId === "set_hp_1") {
     const target = picked;
     if (target) {
-      target.hp = Math.min(target.hp, 1);
+      target.hp = 1;
       events.push(effectEvent(`${label} sets ${target.name}'s HP to 1.`, source));
+    }
+  } else if (source.effectId === "set_all_enemy_hp_1") {
+    let affected = 0;
+    for (const minion of enemy.board) {
+      if (!minion) continue;
+      minion.hp = 1;
+      affected += 1;
+    }
+    events.push(effectEvent(`${label} sets ${affected} enemy minion${affected === 1 ? "'s" : "s'"} HP to 1.`, source));
+  } else if (source.effectId === "copy_minion_to_hand") {
+    if (picked) {
+      const card = library[picked.cardId];
+      if (isMinionCard(card)) {
+        putCardInHand(state, source.owner, card.id, events);
+        events.push(effectEvent(`${label} puts a copy of ${picked.name} into your hand.`, source));
+      }
     }
   } else if (source.effectId === "lone_evil_buff") {
     const evilCount = player.board.filter((minion) => minion?.alignment === "Evil").length;
@@ -2392,9 +2467,15 @@ function runEffect(
   } else if (source.effectId === "heal_5") {
     source.hp = Math.min(source.maxHp, source.hp + 5);
     events.push(effectEvent(`${label} heals 5 HP.`, source));
-  } else if (source.effectId === "heal_all_friendly_full") {
+  } else if (source.effectId === "heal_all_friendly_full" || source.effectId === "avatar_aang_awakened") {
     for (const minion of player.board) if (minion) minion.hp = minion.maxHp;
     events.push(effectEvent(`${label} restores all friendly minions.`, source));
+  } else if (source.effectId === "discover_tech_card") {
+    const card = pickedValue ? library[pickedValue] : undefined;
+    if (pickedValue && isMinionCard(card) && card.camp === "Tech" && removeCardFromDrawPile(state, pickedValue)) {
+      putCardInHand(state, source.owner, pickedValue, events);
+      events.push(effectEvent(`${label} draws ${card.name}.`, source));
+    }
   } else if (source.effectId === "heal_self_full") {
     source.hp = source.maxHp;
     events.push(effectEvent(`${label} fully heals itself.`, source));
@@ -3019,6 +3100,28 @@ function runEffect(
       replaced += 1;
     }
     if (replaced > 0) events.push(effectEvent(`${label} remakes ${replaced} of your minions.`, source));
+  } else if (source.effectId === "transform_random_allies_up") {
+    const targets = player.board.filter((minion): minion is MinionInstance => Boolean(minion));
+    const transformed = targets.reduce(
+      (count, target) => count + (transformMinionFromPool(state, source, target, 1, library, events) ? 1 : 0),
+      0,
+    );
+    events.push(effectEvent(`${label} transforms ${transformed} friendly minion${transformed === 1 ? "" : "s"}.`, source));
+  } else if (source.effectId === "devolve_enemy_minions") {
+    const targets = enemy.board.filter((minion): minion is MinionInstance => Boolean(minion));
+    let transformed = 0;
+    for (const target of targets) {
+      if (blockedByDominionAuthority(state, source, target.owner)) {
+        events.push(effectEvent(`${target.name} is protected by Dominion Authority.`, target));
+        continue;
+      }
+      if (isSlotProtected(state, target) || !canDisable(state, source.owner, target)) {
+        events.push(effectEvent(`${target.name} resists the devolution.`, target));
+        continue;
+      }
+      if (transformMinionFromPool(state, source, target, -1, library, events)) transformed += 1;
+    }
+    events.push(effectEvent(`${label} devolves ${transformed} enemy minion${transformed === 1 ? "" : "s"}.`, source));
   } else if (source.effectId === "set_stats_choice") {
     if (pickedSlot) layAura(state, pickedSlot, "slot_stats_one", source, events);
   } else if (source.effectId === "alignment_shift") {
@@ -3034,6 +3137,7 @@ function runEffect(
   } else if (
     source.effectId === "slot_random_attacks" ||
     source.effectId === "slot_permanent_silence" ||
+    source.effectId === "slot_permanent_chain" ||
     source.effectId === "slot_growth_1" ||
     source.effectId === "slot_growth"
   ) {
@@ -3042,9 +3146,11 @@ function runEffect(
         ? "random_attacks"
         : source.effectId === "slot_permanent_silence"
           ? "slot_silence"
-          : source.effectId === "slot_growth_1"
-            ? "slot_grow_1"
-            : "slot_grow_2";
+          : source.effectId === "slot_permanent_chain"
+            ? "slot_chain"
+            : source.effectId === "slot_growth_1"
+              ? "slot_grow_1"
+              : "slot_grow_2";
     if (pickedSlot) layAura(state, pickedSlot, auraId, source, events);
   } else if (source.effectId === "confuse_enemies") {
     // Sans. Their whole board swings blind through their next turn.
@@ -3242,6 +3348,30 @@ function summonRandomGoodFromDeck(state: GameState, source: MinionInstance, libr
   const summoned = createMinion(card, source.owner, state);
   state.players[source.owner].board[slot] = summoned;
   events.push(effectEvent(`${source.name} recruits ${summoned.name} from the deck.`, source));
+}
+
+function transformMinionFromPool(
+  state: GameState,
+  source: MinionInstance,
+  target: MinionInstance,
+  costDelta: number,
+  library: CardLibrary,
+  events: GameEvent[],
+): boolean {
+  const slot = slotOf(state, target);
+  if (slot < 0) return false;
+  const candidates = Object.values(library).filter(
+    (card): card is CardDefinition => isMinionCard(card) && card.cost === target.cost + costDelta,
+  );
+  if (candidates.length === 0) return false;
+  const replacement = candidates[rollInt(state, candidates.length)];
+  if (!replacement) return false;
+  discardAttachedRelics(state, target);
+  const transformed = createMinion(replacement, target.owner, state);
+  transformed.suppressArrivalTheme = true;
+  state.players[target.owner].board[slot] = transformed;
+  events.push(effectEvent(`${source.name} transforms ${target.name} into ${transformed.name}.`, source));
+  return true;
 }
 
 function summonSkeletons(state: GameState, source: MinionInstance, events: GameEvent[]): void {
@@ -3953,6 +4083,18 @@ function enforceSlotAuras(state: GameState, events: GameEvent[]): void {
         minion.atk = 1;
         minion.maxHp = 1;
         minion.hp = 1;
+      }
+      if (aura.auraId === "slot_chain") {
+        if (minion && minion.chained === 0 && !isSlotProtected(state, minion)) {
+          minion.chained = 2;
+          events.push({
+            kind: "effect",
+            text: `${minion.name} is permanently Chained by the mark on slot ${aura.slot + 1}.`,
+            player: playerId,
+            instanceId: minion.instanceId,
+          });
+        }
+        continue;
       }
       if (aura.auraId !== "slot_silence") continue;
       if (minion && !minion.silenced && !isSlotProtected(state, minion)) {
@@ -4784,7 +4926,10 @@ function resolveDeathrattle(
   deadSlot: number,
   events: GameEvent[],
 ): void {
-  if (dead.silenced || (dead.effectTiming !== "deathrattle" && dead.effectId !== "flowey_save_load")) return;
+  if (
+    dead.silenced ||
+    (dead.effectTiming !== "deathrattle" && dead.effectId !== "flowey_save_load" && dead.effectId !== "avatar_aang_awakened" && dead.effectId !== "chaos_random_summon")
+  ) return;
   // The dead minion is already out of its board slot when this function runs,
   // so reactToDeath cannot discover its own effect. Record it at resolution.
   traceEffect(dead.effectId);
@@ -4894,6 +5039,36 @@ function resolveDeathrattle(
       state.players[dead.owner].board[slot] = summoned;
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Galactus.`, dead));
     }
+  } else if (dead.effectId === "avatar_aang_awakened") {
+    const slot = state.players[dead.owner].board[deadSlot]
+      ? state.players[dead.owner].board.findIndex((minion) => !minion)
+      : deadSlot;
+    if (slot >= 0) {
+      const awakened: CardDefinition = {
+        kind: "minion",
+        id: "token:awakened",
+        name: "Awakened",
+        cost: 6,
+        atk: 6,
+        hp: 3,
+        rarity: "Red",
+        camp: "Magic",
+        alignment: "Good",
+        keywords: [],
+        effectId: "none",
+        effectTiming: "none",
+        effect: "-",
+        flavor: "The Avatar's spirit wakes.",
+        origin: dead.origin,
+        art: "/card-art/raw/token-awakened.webp",
+      };
+      const summoned = createMinion(awakened, dead.owner, state);
+      state.players[dead.owner].board[slot] = summoned;
+      events.push(effectEvent(`${dead.name}'s Deathrattle summons Awakened.`, dead));
+    }
+  } else if (dead.effectId === "chaos_random_summon") {
+    const library = libraryByState.get(state);
+    if (library) summonRandomMinionFromDeck(state, dead, library, events, deadSlot);
   } else if (dead.effectId === "flowey_save_load") {
     if (dead.savedCoreHealth !== null && dead.savedCoreHealth !== undefined) {
       state.players[dead.owner].health = dead.savedCoreHealth;
