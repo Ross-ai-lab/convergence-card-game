@@ -1,4 +1,5 @@
 import { isMinionCard, isRelicCard } from "./types";
+import { HERO_POWER_COST, HERO_POWER_IDS, heroPowerDefinition } from "./hero-powers";
 import { traceEffect } from "./trace";
 import type {
   ApplyResult,
@@ -10,6 +11,7 @@ import type {
   GameEvent,
   GameState,
   HandOption,
+  HeroPowerId,
   LabelOption,
   MinionInstance,
   PlayerId,
@@ -110,7 +112,7 @@ export function createInitialGame(
   );
   const players: [PlayerState, PlayerState] = [makePlayer(0, "Player One", health), makePlayer(1, "Player Two", health)];
   const state: GameState = {
-    phase: "main",
+    phase: "heroPowerChoice",
     activePlayer: 0,
     turnNumber: 1,
     cheatMode: false,
@@ -123,6 +125,10 @@ export function createInitialGame(
     discard: [],
     drawChoice: null,
     pendingTarget: null,
+    heroPowerChoicePlayer: 0,
+    heroPowerOptions: [[], []],
+    heroPowers: [null, null],
+    heroPowerUsed: [false, false],
     pocketRooms: [],
     stasis: [],
     darkDimension: [],
@@ -138,6 +144,12 @@ export function createInitialGame(
   drawDirect(state, 0, 3, []);
   drawDirect(state, 1, 3, []);
   players[1].coins = 1;
+  const gameplaySeed = state.rngSeed;
+  state.heroPowerOptions = [chooseHeroPowerOffers(state), chooseHeroPowerOffers(state)];
+  // The offer is seeded from the duel, but drafting it must not consume a roll
+  // that a card effect or combat will later expect. This keeps the old replay
+  // stream stable while still making the two offers deterministic per duel.
+  state.rngSeed = gameplaySeed;
   return state;
 }
 
@@ -164,7 +176,11 @@ export function applyAction(
   const next = cloneState(state);
   const events: GameEvent[] = [];
 
-  if (action.type === "play_card") {
+  if (action.type === "choose_hero_power") {
+    chooseHeroPower(next, action.player, action.choiceIndex, events);
+  } else if (action.type === "use_hero_power") {
+    useHeroPower(next, action.player, events);
+  } else if (action.type === "play_card") {
     playCard(next, action.player, action.handIndex, action.slotIndex, library, events);
   } else if (action.type === "play_relic") {
     playRelic(next, action.player, action.handIndex, action.slotIndex, library, events);
@@ -226,6 +242,14 @@ export function applyAction(
 
 export function getLegalActions(state: GameState, library: CardLibrary): GameAction[] {
   if (state.phase === "gameOver") return [];
+  if (state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null) {
+    const player = state.heroPowerChoicePlayer;
+    return (state.heroPowerOptions[player] ?? []).map((_power, choiceIndex) => ({
+      type: "choose_hero_power" as const,
+      player,
+      choiceIndex,
+    }));
+  }
   if (state.phase === "targeting") {
     const pending = state.pendingTarget;
     if (!pending) return [];
@@ -259,6 +283,10 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
 
   if (player.coins > 0) {
     actions.push({ type: "use_coin", player: player.id });
+  }
+
+  if (heroPowerIsUsable(state, player.id)) {
+    actions.push({ type: "use_hero_power", player: player.id });
   }
 
   // A non-one-shot relic may be returned to hand once during its owner's turn.
@@ -330,6 +358,130 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
   return actions;
 }
 
+function heroPowerTargetOptions(state: GameState, playerId: PlayerId, powerId: HeroPowerId): TargetOption[] {
+  const definition = heroPowerDefinition(powerId);
+  if (!definition || definition.target === "none") return [];
+  const owner = definition.target === "friendly" ? playerId : opponent(playerId);
+  return state.players[owner].board.flatMap((minion, slot) => {
+    if (!minion || isUntargetable(state, minion)) return [];
+    if (owner !== playerId && !enemyTargetable(state, minion)) return [];
+    return [{ owner, slot }];
+  });
+}
+
+function heroPowerIsUsable(state: GameState, playerId: PlayerId): boolean {
+  const powerId = state.heroPowers[playerId];
+  if (!powerId || state.heroPowerUsed[playerId]) return false;
+  if (!state.cheatMode && state.players[playerId].mana < HERO_POWER_COST) return false;
+  const definition = heroPowerDefinition(powerId);
+  if (!definition) return false;
+  return definition.target === "none" || heroPowerTargetOptions(state, playerId, powerId).length > 0;
+}
+
+function chooseHeroPower(state: GameState, playerId: PlayerId, choiceIndex: number, events: GameEvent[]): void {
+  if (state.heroPowerChoicePlayer !== playerId) return;
+  const selected = state.heroPowerOptions[playerId]?.[choiceIndex];
+  if (!selected) return;
+  state.heroPowers[playerId] = selected;
+  state.heroPowerChoicePlayer = playerId === 0 ? 1 : null;
+  state.phase = playerId === 0 ? "heroPowerChoice" : "main";
+  events.push({
+    kind: "effect",
+    text: `${state.players[playerId].name} chooses ${heroPowerDefinition(selected)?.name ?? "a Hero Power"}.`,
+    player: playerId,
+  });
+}
+
+function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
+  const powerId = state.heroPowers[playerId];
+  const definition = heroPowerDefinition(powerId);
+  if (!powerId || !definition || !heroPowerIsUsable(state, playerId)) return;
+  const player = state.players[playerId];
+  if (!state.cheatMode) player.mana -= HERO_POWER_COST;
+  state.heroPowerUsed[playerId] = true;
+  events.push({ kind: "effect", text: `${player.name} uses ${definition.name}.`, player: playerId });
+
+  if (definition.target !== "none") {
+    const options = heroPowerTargetOptions(state, playerId, powerId);
+    if (options.length === 1) {
+      resolveHeroPower(state, playerId, powerId, { kind: "board", target: options[0] }, events);
+      return;
+    }
+    state.pendingTarget = {
+      kind: "board",
+      player: playerId,
+      sourceInstanceId: "",
+      sourceOwner: playerId,
+      sourceName: definition.name,
+      sourceCardId: "",
+      effectId: "none",
+      heroPowerId: powerId,
+      prompt: definition.text,
+      options,
+      handOptions: [],
+      labelOptions: [],
+      step: 0,
+      priorOptions: [],
+      priorHandOptions: [],
+      priorLabelOptions: [],
+    };
+    state.phase = "targeting";
+    return;
+  }
+  resolveHeroPower(state, playerId, powerId, null, events);
+}
+
+function resolveHeroPower(
+  state: GameState,
+  playerId: PlayerId,
+  powerId: HeroPowerId,
+  answer: ResolvedChoice | null,
+  events: GameEvent[],
+): void {
+  const player = state.players[playerId];
+  const definition = heroPowerDefinition(powerId);
+  if (!definition) return;
+  const target = answer?.kind === "board" ? state.players[answer.target.owner].board[answer.target.slot] : null;
+  if (powerId === "minion_hp" && target) {
+    buffMinion(target, 0, 1);
+    events.push({ kind: "effect", text: `${definition.name} gives ${target.name} +1 HP.`, player: playerId, instanceId: target.instanceId });
+  } else if (powerId === "minion_atk" && target) {
+    target.atk += 1;
+    events.push({ kind: "effect", text: `${definition.name} gives ${target.name} +1 ATK.`, player: playerId, instanceId: target.instanceId });
+  } else if (powerId === "minion_hp_down" && target) {
+    target.maxHp = Math.max(1, target.maxHp - 1);
+    target.hp -= 1;
+    events.push({ kind: "effect", text: `${definition.name} gives ${target.name} -1 HP.`, player: playerId, instanceId: target.instanceId });
+  } else if (powerId === "minion_atk_down" && target) {
+    target.atk = Math.max(0, target.atk - 1);
+    events.push({ kind: "effect", text: `${definition.name} gives ${target.name} -1 ATK.`, player: playerId, instanceId: target.instanceId });
+  } else if (powerId === "core_trade_draw") {
+    player.health -= 2;
+    drawDirect(state, playerId, 1, events);
+    events.push({ kind: "effect", text: `${definition.name} costs ${player.name} 2 Core HP and draws a card.`, player: playerId });
+  } else if (powerId === "enemy_core_damage") {
+    const enemyId = opponent(playerId);
+    if (dealCoreDamage(state, enemyId, 2, events)) {
+      events.push({ kind: "effect", text: `${definition.name} deals 2 damage to the enemy Core.`, player: playerId });
+    }
+  } else if (powerId === "core_heal") {
+    player.health += 2;
+    events.push({ kind: "effect", text: `${definition.name} heals ${player.name}'s Core by 2.`, player: playerId });
+  } else if (powerId === "chain_growth" && target) {
+    target.chained = Math.max(target.chained, 2);
+    target.chainGrowthPending = true;
+    events.push({ kind: "effect", text: `${definition.name} chains ${target.name} for 1 turn.`, player: playerId, instanceId: target.instanceId });
+  } else if (powerId === "summon_recruit") {
+    summonHeroPowerRecruit(state, playerId, events);
+  } else if (powerId === "give_taunt" && target) {
+    if (!target.keywords.includes("Taunt")) target.keywords.push("Taunt");
+    if (!target.gainedEffects.some((effect) => effect.text === "Passive: Taunt.")) {
+      target.gainedEffects.push({ effectId: "none", timing: "passive", text: "Passive: Taunt." });
+    }
+    events.push({ kind: "effect", text: `${definition.name} gives ${target.name} Taunt.`, player: playerId, instanceId: target.instanceId });
+  }
+}
+
 /** A card's cost after Kuma-style discounts. */
 function effectiveCost(player: PlayerState, card: PlayableCard): number {
   return Math.max(0, (card.cost ?? 0) - (player.costReductions[card.id] ?? 0));
@@ -343,6 +495,7 @@ export function actionKey(action: GameAction): string {
   }
   if (action.type === "attack_core") return `${action.type}:${action.player}:${action.attackerSlot}`;
   if (action.type === "choose_draw") return `${action.type}:${action.player}:${action.choiceIndex}`;
+  if (action.type === "choose_hero_power") return `${action.type}:${action.player}:${action.choiceIndex}`;
   if (action.type === "choose_target") return `${action.type}:${action.player}:${action.choiceIndex}`;
   if (action.type === "return_relic") return `${action.type}:${action.player}:${action.slotIndex}:${action.relicIndex ?? 0}`;
   return `${action.type}:${action.player}`;
@@ -380,6 +533,16 @@ function nextRandom(state: GameState): number {
 function rollInt(state: GameState, maxExclusive: number): number {
   if (maxExclusive <= 1) return 0;
   return Math.floor(nextRandom(state) * maxExclusive);
+}
+
+function chooseHeroPowerOffers(state: GameState): HeroPowerId[] {
+  const pool = [...HERO_POWER_IDS];
+  const offers: HeroPowerId[] = [];
+  while (offers.length < 2 && pool.length > 0) {
+    const index = rollInt(state, pool.length);
+    offers.push(pool.splice(index, 1)[0]);
+  }
+  return offers;
 }
 
 function rollDie(state: GameState): number {
@@ -593,6 +756,7 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     stolenPassiveText: null,
     gainedEffects: [],
     savedCoreHealth: null,
+    chainGrowthPending: false,
   };
   state.nextInstance += 1;
   state.nextPlayOrder += 1;
@@ -716,6 +880,7 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
     events.push({ kind: "effect", text: `${player.name} loses ${manaPenalty} mana this turn.`, player: playerId });
   }
   player.manaPenaltyNextTurn = 0;
+  state.heroPowerUsed[playerId] = false;
   state.phase = "main";
 
   resolveUpkeep(state, playerId, library, events);
@@ -743,6 +908,7 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
       minion.chained -= 1;
       skipOngoing.add(minion.instanceId);
       events.push({ kind: "effect", text: `${minion.name}'s chain weakens.`, player: playerId, instanceId: minion.instanceId });
+      if (minion.chained === 0) resolveChainGrowth(minion, events);
     }
     minion.sleeping = false;
     minion.attacksUsed = 0;
@@ -1722,6 +1888,7 @@ function runEffect(
     for (const minion of player.board) {
       if (!minion || minion.chained <= 0) continue;
       minion.chained = 0;
+      resolveChainGrowth(minion, events);
       minion.sleeping = false;
       minion.attacksUsed = 0;
       minion.divineShield = true;
@@ -2033,11 +2200,15 @@ function runEffect(
     events.push(effectEvent(`${label} heals 3 HP.`, source));
   } else if (source.effectId === "aoe_damage_3") {
     damageAllEnemies(state, source, 3, events);
-  } else if (source.effectId === "time_bomb_ongoing_5") {
-    damageAllEnemies(state, source, 5, events);
-    const sourceSlot = slotOf(state, source);
-    if (sourceSlot >= 0) dealMinionDamage(state, source.owner, sourceSlot, 5, source, events, true);
-    events.push(effectEvent(`${label} deals 5 damage to all enemy minions and itself.`, source));
+  } else if (source.effectId === "time_bomb_destroy_all") {
+    for (const owner of [0, 1] as PlayerId[]) {
+      for (let slot = 0; slot < boardSize; slot += 1) {
+        if (state.players[owner].board[slot]) {
+          destroyAtSlot(state, owner, slot, events, `${source.name} destroys all minions`, null, false);
+        }
+      }
+    }
+    events.push(effectEvent(`${label} destroys ALL minions.`, source));
   } else if (source.effectId === "aoe_damage_2") {
     damageAllEnemies(state, source, 2, events);
   } else if (source.effectId === "harmony_buff") {
@@ -2700,6 +2871,7 @@ function runEffect(
         if (!minion) continue;
         minion.alignment = "Good";
         minion.chained = 0;
+        resolveChainGrowth(minion, events);
         minion.frozen = false;
         minion.thawPending = false;
         minion.silenced = false;
@@ -3098,6 +3270,33 @@ function summonSkeletons(state: GameState, source: MinionInstance, events: GameE
     summoned += 1;
   }
   if (summoned > 0) events.push(effectEvent(`${source.name} fills the board with ${summoned} Taunt Skeletons.`, source));
+}
+
+function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
+  const player = state.players[playerId];
+  const slot = player.board.findIndex((entry) => !entry);
+  if (slot < 0) return;
+  const recruit: CardDefinition = {
+    kind: "minion",
+    id: "token:heroic-recruit",
+    name: "Heroic Recruit",
+    cost: 0,
+    atk: 1,
+    hp: 1,
+    rarity: "Black",
+    camp: "Magic",
+    alignment: "Good",
+    keywords: [],
+    effectId: "none",
+    effectTiming: "none",
+    effect: "-",
+    flavor: "A small spark can turn the tide.",
+    origin: "Hero Power",
+    art: "/card-art/raw/token-sin.png",
+  };
+  const summoned = createMinion(recruit, playerId, state);
+  player.board[slot] = summoned;
+  events.push({ kind: "effect", text: `${player.name} summons a 1/1 Heroic Recruit.`, player: playerId, instanceId: summoned.instanceId });
 }
 
 function summonSins(state: GameState, source: MinionInstance, events: GameEvent[]): void {
@@ -3890,11 +4089,15 @@ function chooseTarget(state: GameState, choiceIndex: number, library: CardLibrar
   state.pendingTarget = null;
   state.phase = "main";
   if (answer) {
+    if (pending.heroPowerId) {
+      resolveHeroPower(state, pending.sourceOwner, pending.heroPowerId, answer, events);
+    } else {
     const slotIndex = state.players[pending.sourceOwner].board.findIndex(
       (minion) => minion?.instanceId === pending.sourceInstanceId,
     );
     const source = slotIndex >= 0 ? state.players[pending.sourceOwner].board[slotIndex] : null;
     if (source) runEffect(state, source, slotIndex, library, events, answer);
+    }
   }
   if (state.phase === "main") processEffectQueue(state, library, events);
 }
@@ -4219,7 +4422,9 @@ function canAttack(minion: MinionInstance): boolean {
  *  it used to count every minion's swing once, which silently hid Flash's and
  *  Vergil's extra attacks from its lethal check. */
 export function maxAttacks(minion: MinionInstance): number {
-  if (!minion.silenced && hasEffect(minion, "attack_3x")) return 3;
+  // Flash keeps the original multi-attack passive and Divine Shield, but his
+  // current card pass caps the speed at two swings.
+  if (!minion.silenced && hasEffect(minion, "flash_speed")) return 2;
   if (!minion.silenced && hasEffect(minion, "attack_2x")) return 2;
   return 1;
 }
@@ -4250,6 +4455,13 @@ function buffMinion(minion: MinionInstance, atk: number, hp: number): void {
   minion.atk += atk;
   minion.maxHp += hp;
   minion.hp += hp;
+}
+
+function resolveChainGrowth(minion: MinionInstance, events: GameEvent[]): void {
+  if (!minion.chainGrowthPending || minion.chained > 0) return;
+  minion.chainGrowthPending = false;
+  buffMinion(minion, 1, 1);
+  events.push(effectEvent(`${minion.name} breaks free and gains +1/+1.`, minion));
 }
 
 /**
@@ -4996,6 +5208,7 @@ function reactToDeath(
         );
       } else if (playerId === deadOwner && hasEffect(minion, "kratos_chain_break") && minion.chained > 0) {
         minion.chained = 0;
+        resolveChainGrowth(minion, events);
         buffMinion(minion, 2, 2);
         events.push(effectEvent(`${minion.name} breaks its chains and gains +2/+2.`, minion));
       } else if (minion.effectId === "nulgath_any_death_2_2") {

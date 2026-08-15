@@ -54,9 +54,11 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // be removed when Gojo leaves play.
 // v17: Doctor Strange's next-turn mana penalty and Dormammu's persistent Dark
 // Dimension banishment zone became part of GameState.
-const SAVE_VERSION = 17;
+// v18: the opening hero-power draft, once-per-turn usage flags, and the
+// chain-growth marker became part of GameState/MinionInstance.
+const SAVE_VERSION = 18;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v16";
+const LEGACY_SAVE_KEY = "convergence.save.v17";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -111,6 +113,14 @@ export function loadGame(): SavedGame | null {
       migrateLegacyTransforms(game);
       migrateLegacyMechanics(game);
     }
+    if (
+      !Array.isArray(game.heroPowerOptions) ||
+      game.heroPowerOptions.length !== 2 ||
+      !Array.isArray(game.heroPowers) ||
+      game.heroPowers.length !== 2 ||
+      !Array.isArray(game.heroPowerUsed) ||
+      game.heroPowerUsed.length !== 2
+    ) return null;
     const playerShapeOk = (player: SavedGame["game"]["players"][number]) =>
       Array.isArray(player?.board) &&
       player.board.length === 5 &&
@@ -176,6 +186,17 @@ function migrateLegacyMechanics(game: GameState): void {
     if (player.manaPenaltyNextTurn === undefined) player.manaPenaltyNextTurn = 0;
     for (const minion of [...player.board, ...stasisMinions, ...darkDimensionMinions]) {
       if (!minion) continue;
+      // v17 saves can still contain the pre-pass numeric effect labels. The
+      // live CSV uses descriptive labels so validation can catch a stale
+      // number, but an in-progress board should keep working after migration.
+      const legacyEffectId = minion.effectId as string;
+      if (legacyEffectId === "time_bomb_ongoing_5") minion.effectId = "time_bomb_destroy_all";
+      if (legacyEffectId === "attack_3x") minion.effectId = "flash_speed";
+      for (const gained of minion.gainedEffects) {
+        const gainedId = gained.effectId as string;
+        if (gainedId === "time_bomb_ongoing_5") gained.effectId = "time_bomb_destroy_all";
+        if (gainedId === "attack_3x") gained.effectId = "flash_speed";
+      }
       if (minion.markedForDeathAtTurn === undefined) minion.markedForDeathAtTurn = null;
       if (minion.untargetableUntilTurn === undefined) minion.untargetableUntilTurn = null;
       if (minion.protectedByMeleoron === undefined) minion.protectedByMeleoron = null;
@@ -189,8 +210,13 @@ function migrateLegacyMechanics(game: GameState): void {
       if (minion.deathStarTarget === undefined) minion.deathStarTarget = null;
       if (minion.commandmentsTriggeredAtTurn === undefined) minion.commandmentsTriggeredAtTurn = null;
       if (minion.passiveSilenceSources === undefined) minion.passiveSilenceSources = [];
+      if (minion.chainGrowthPending === undefined) minion.chainGrowthPending = false;
     }
   }
+  if (game.heroPowerChoicePlayer === undefined) game.heroPowerChoicePlayer = null;
+  if (!Array.isArray(game.heroPowerOptions)) game.heroPowerOptions = [[], []];
+  if (!Array.isArray(game.heroPowers)) game.heroPowers = [null, null];
+  if (!Array.isArray(game.heroPowerUsed)) game.heroPowerUsed = [false, false];
 }
 
 export function clearSave(): void {

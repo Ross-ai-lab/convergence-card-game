@@ -158,6 +158,26 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   await page.getByRole("button", { name: /2 players|Start a hotseat/i }).first().click();
   await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 });
   await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 });
+  // The live game now drafts one Hero Power per player before normal actions
+  // unlock. Complete that opening handoff so the scenarios below start on the
+  // ordinary board, while still exercising the real offer overlay.
+  for (let pass = 0; pass < 4; pass += 1) {
+    const offer = page.locator(".hero-power-choice").first();
+    if (await offer.count()) {
+      await offer.waitFor({ state: "visible", timeout: 9000 });
+      await offer.click();
+      await page.waitForTimeout(250);
+    }
+    const curtain = page.getByRole("button", { name: /Continue|Ready/i }).first();
+    if (await curtain.count()) {
+      await curtain.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
+      if (await curtain.isVisible().catch(() => false)) {
+        await curtain.click();
+        await page.waitForTimeout(250);
+      }
+    }
+    if (!(await page.locator(".hero-power-choice").count()) && !(await page.locator(".pass-screen").count())) break;
+  }
   // Wait for the test hook, not for a guessed 1100ms. It registers from inside a
   // DYNAMIC import, so the first load after a rebuild has to fetch and transform
   // that module first — and a fixed wait that is usually long enough is exactly

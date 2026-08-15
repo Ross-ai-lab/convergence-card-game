@@ -99,7 +99,7 @@ describe("2026 card replacements", () => {
       "Aladdin Lamp": { atk: 5, hp: 4, effectId: "aladdin_wish", effectTiming: "onPlay" },
       "The Mask": { atk: 3, hp: 2, effectId: "mask_return_attacker", effectTiming: "deathrattle" },
       V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle" },
-      "Time Bomb": { atk: 0, hp: 5, effectId: "time_bomb_ongoing_5", effectTiming: "ongoing", keywords: [] },
+      "Time Bomb": { atk: 0, hp: 9, effectId: "time_bomb_destroy_all", effectTiming: "ongoing", keywords: [] },
       Chaos: { effectTiming: "passive", keywords: ["Passive"], effectId: "buff_all_friendly_3_neg2", effect: "Passive: All other minions have +3/-2 (minimum 1 HP)." },
       "Giant Tree": { effectTiming: "passive", keywords: ["Passive"], effectId: "buff_all_nature_2_1", effect: "Passive: All other friendly Nature minions have +2/+1." },
       "Elden Beast": { camp: "Magic", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: All friendly Magic minions have +2 ATK." },
@@ -266,12 +266,12 @@ describe("2026 card replacements", () => {
     expect(hit.players[0].heroDivineShield).toBe(false);
   });
 
-  it("Time Bomb deals 5 to enemy minions and itself on its owner's turn", () => {
+  it("Time Bomb destroys every minion on its owner's turn", () => {
     const state = mainState();
     state.players[0].board[0] = minion("Time Bomb", 0);
     state.players[1].board[0] = minion("John Wick", 1, { hp: 10, maxHp: 10 });
     const after = endTurn(endTurn(state, 0), 1);
-    expect(after.players[1].board[0]?.hp).toBe(5);
+    expect(after.players[1].board[0]).toBeNull();
     expect(after.players[0].board[0]).toBeNull();
   });
 
@@ -288,7 +288,7 @@ describe("2026 card replacements", () => {
 
     const enemyTurn = endTurn(myTurn, 0);
     expect(enemyTurn.activePlayer).toBe(1);
-    expect(enemyTurn.players[0].board[0]?.hp).toBe(5);
+    expect(enemyTurn.players[0].board[0]).toBeNull();
     expect(enemyTurn.players[1].board[0]).toBeNull();
   });
 
@@ -988,17 +988,17 @@ describe("2026 card replacements", () => {
     expect(healed.players[0].board[0]).toMatchObject({ hp: 4, maxHp: 6 });
   });
 
-  it("Flash can attack exactly 3 times for 12 total core damage", () => {
-    let state = mainState("flash-three-attacks");
+  it("Flash can attack exactly 2 times for 10 total core damage", () => {
+    let state = mainState("flash-two-attacks");
     state.players[0].board[0] = minion("Flash", 0, { sleeping: false });
 
-    for (let attack = 0; attack < 3; attack += 1) {
+    for (let attack = 0; attack < 2; attack += 1) {
       expect(getLegalActions(state, library)).toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
       state = applyAction(state, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
     }
 
-    expect(state.players[1].health).toBe(64);
-    expect(state.players[0].board[0]?.attacksUsed).toBe(3);
+    expect(state.players[1].health).toBe(66);
+    expect(state.players[0].board[0]?.attacksUsed).toBe(2);
     expect(getLegalActions(state, library)).not.toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
   });
 
@@ -1087,7 +1087,7 @@ describe("2026 card replacements", () => {
     const afterCopy = endTurn(endTurn(afterPlay, 0), 1);
     const teach = afterCopy.players[0].board[0];
     expect(teach?.gainedEffects).toHaveLength(2);
-    expect(teach?.gainedEffects.map((effect) => effect.effectId).sort()).toEqual(["attack_3x", "small_cannot_attack"]);
+    expect(teach?.gainedEffects.map((effect) => effect.effectId).sort()).toEqual(["flash_speed", "small_cannot_attack"]);
 
     const blocked = applyAction(
       { ...afterCopy, activePlayer: 1 },
@@ -1233,8 +1233,8 @@ describe("2026 card replacements", () => {
     expect(after.players[1].board[1]?.silenced).toBe(true);
     expect(after.players[1].board[2]?.silenced).toBe(false);
     expect(after.players[0].board[0]?.gainedEffects.map((effect) => effect.effectId).sort()).toEqual([
-      "attack_3x",
       "buff_all_magic_2_1",
+      "flash_speed",
     ]);
     expect(after.players[0].board[0]).toMatchObject({ divineShield: true, effectId: "none", effectTiming: "ongoing" });
   });

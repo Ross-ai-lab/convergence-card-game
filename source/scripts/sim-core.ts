@@ -288,7 +288,9 @@ export function playOneGame(options: PlayOptions): GameResult {
     }
 
     const actor: PlayerId =
-      state.phase === "drawChoice" && state.drawChoice
+      state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
+        ? state.heroPowerChoicePlayer
+        : state.phase === "drawChoice" && state.drawChoice
         ? state.drawChoice.player
         : state.phase === "targeting" && state.pendingTarget
           ? state.pendingTarget.player

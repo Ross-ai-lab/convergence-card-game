@@ -8,6 +8,7 @@ import "./board-fx.css";
 import { sfx, type SfxName } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
 import { chooseBotAction } from "./engine/bot";
+import { HERO_POWER_COST, heroPowerDefinition } from "./engine/hero-powers";
 import { isMinionCard, isRelicCard } from "./engine/types";
 import {
   actionKey,
@@ -25,6 +26,7 @@ import type {
   GameAction,
   GameEvent,
   GameState,
+  HeroPowerId,
   MinionInstance,
   PendingTarget,
   PlayerId,
@@ -499,8 +501,11 @@ export default function App() {
   // exactly as long as the privacy curtain is up, and during that gap nothing on
   // the incoming player's side may render or be clickable.
   const viewerId: PlayerId = vsBot ? 0 : seatedPlayer;
+  const seatOwner = game.phase === "heroPowerChoice" && game.heroPowerChoicePlayer !== null
+    ? game.heroPowerChoicePlayer
+    : game.activePlayer;
   const curtainUp =
-    mode.kind === "hotseat" && screen === "playing" && game.phase !== "gameOver" && game.activePlayer !== seatedPlayer;
+    mode.kind === "hotseat" && screen === "playing" && game.phase !== "gameOver" && seatOwner !== seatedPlayer;
 
   /**
    * Whose turn it is, announced.
@@ -698,9 +703,10 @@ export default function App() {
   );
   const revealedOpponentHand = opponentHandRevealed ? opponent.hand : undefined;
   const myTurn = game.activePlayer === viewerId;
+  const viewerCanAct = (game.phase === "heroPowerChoice" && game.heroPowerChoicePlayer === viewerId) || myTurn;
   // Every affordance and click reads this. Empty while the opponent is thinking,
   // so nothing lights up and nothing can be clicked on their behalf.
-  const uiActions = myTurn && !duelIntro ? legalActions : [];
+  const uiActions = viewerCanAct && !duelIntro ? legalActions : [];
 
   function clearFx() {
     setFloats([]);
@@ -1456,7 +1462,9 @@ export default function App() {
   // every legal move, which is far too much work to redo on every render.
   const botThinking =
     vsBot &&
-    (game.phase === "main"
+    (game.phase === "heroPowerChoice" && game.heroPowerChoicePlayer === BOT_ID
+      ? true
+      : game.phase === "main"
       ? game.activePlayer === BOT_ID
       : game.phase === "drawChoice"
         ? game.drawChoice?.player === BOT_ID
@@ -1485,7 +1493,7 @@ export default function App() {
       // the overlays run their own Escape handler.
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
-      if (overlay || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice") return;
+      if (overlay || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "heroPowerChoice") return;
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
 
       if (event.key === " " || event.key === "Enter") {
@@ -1526,6 +1534,7 @@ export default function App() {
         <HeroPlate
           enemy
           player={opponent}
+          heroPower={game.heroPowers[opponentId]}
           cheatMode={game.cheatMode}
           floats={floats.filter((f) => f.slot === "hero" && f.owner === opponentId)}
           impacts={heroFx(opponentId)}
@@ -1665,13 +1674,27 @@ export default function App() {
         </section>
 
         <section className="command-bar">
-          <HeroPlate
-            player={viewer}
-            cheatMode={game.cheatMode}
-            floats={floats.filter((f) => f.slot === "hero" && f.owner === viewerId)}
-            impacts={heroFx(viewerId)}
-            active={game.activePlayer === viewerId && game.phase !== "gameOver"}
-          />
+          <div className="hero-command">
+            <HeroPlate
+              player={viewer}
+              heroPower={game.heroPowers[viewerId]}
+              cheatMode={game.cheatMode}
+              floats={floats.filter((f) => f.slot === "hero" && f.owner === viewerId)}
+              impacts={heroFx(viewerId)}
+              active={game.activePlayer === viewerId && game.phase !== "gameOver"}
+            />
+            {game.heroPowers[viewerId] ? (
+              <HeroPowerButton
+                definition={heroPowerDefinition(game.heroPowers[viewerId])}
+                action={uiActions.find((candidate) => candidate.type === "use_hero_power")}
+                used={game.heroPowerUsed[viewerId]}
+                onUse={(action) => {
+                  sfx.play("button");
+                  perform(action);
+                }}
+              />
+            ) : null}
+          </div>
 
           <div className="hand-fan" aria-label={`${viewer.name}'s hand`}>
             {viewer.hand.map((cardId, handIndex) => {
@@ -1876,6 +1899,10 @@ export default function App() {
         <DrawChoiceOverlay game={game} library={library} onChoose={perform} locked={botThinking} />
       ) : null}
 
+      {game.phase === "heroPowerChoice" && game.heroPowerChoicePlayer === viewerId ? (
+        <HeroPowerChoiceOverlay game={game} onChoose={perform} locked={botThinking} />
+      ) : null}
+
       {game.phase === "gameOver" ? (
         <GameOver game={game} library={library} vsBot={vsBot} onRestart={restart} onMenu={toTitle} />
       ) : null}
@@ -1884,8 +1911,8 @@ export default function App() {
           readable, including an open prompt belonging to the other player. */}
       {curtainUp ? (
         <PassScreen
-          toName={game.players[game.activePlayer].name}
-          onReady={() => setSeatedPlayer(game.activePlayer)}
+          toName={game.players[seatOwner].name}
+          onReady={() => setSeatedPlayer(seatOwner)}
         />
       ) : null}
 
@@ -2641,6 +2668,7 @@ function minionStates(
 
 function HeroPlate({
   player,
+  heroPower,
   cheatMode,
   floats,
   impacts,
@@ -2655,6 +2683,7 @@ function HeroPlate({
   onStrike,
 }: {
   player: GameState["players"][number];
+  heroPower?: HeroPowerId | null;
   cheatMode: boolean;
   floats: FloatNum[];
   impacts: Impact[];
@@ -2685,6 +2714,7 @@ function HeroPlate({
     .filter(Boolean)
     .join(" ");
   const backs = Math.min(player.hand.length, 10);
+  const power = heroPowerDefinition(heroPower);
   const canStrike = enemy && targetable && Boolean(onStrike);
   return (
     <button
@@ -2707,6 +2737,7 @@ function HeroPlate({
             <i />
           </span>
         </strong>
+        {power ? <small className="hero-power-label" title={power.text}>⚡ {power.name}</small> : null}
       </span>
       {enemy && revealedHand && library ? (
         <span className="revealed-hand" title="The Watcher reveals this hand">
@@ -2756,6 +2787,38 @@ function HeroPlate({
           {f.delta < 0 ? f.delta : `+${f.delta}`}
         </span>
       ))}
+    </button>
+  );
+}
+
+function HeroPowerButton({
+  definition,
+  action,
+  used,
+  onUse,
+}: {
+  definition: ReturnType<typeof heroPowerDefinition>;
+  action?: GameAction;
+  used: boolean;
+  onUse: (action: Extract<GameAction, { type: "use_hero_power" }>) => void;
+}) {
+  if (!definition) return null;
+  const usable = action?.type === "use_hero_power" && !used;
+  return (
+    <button
+      type="button"
+      className={usable ? "hero-power-button ready" : "hero-power-button"}
+      disabled={!usable}
+      onClick={() => {
+        if (action?.type === "use_hero_power") onUse(action);
+      }}
+      title={`${definition.text} Costs ${HERO_POWER_COST} mana and can be used once per turn.`}
+    >
+      <span className="hero-power-cost">{HERO_POWER_COST}</span>
+      <span className="hero-power-copy">
+        <strong>⚡ {definition.name}</strong>
+        <small>{used ? "Used this turn" : definition.text}</small>
+      </span>
     </button>
   );
 }
@@ -2950,6 +3013,54 @@ function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
       />
       {hover.extraEffects.length ? <span className="hover-extra-effect">{hover.extraEffects.join(" • ")}</span> : null}
     </aside>
+  );
+}
+
+function HeroPowerChoiceOverlay({
+  game,
+  onChoose,
+  locked = false,
+}: {
+  game: GameState;
+  onChoose: (action: GameAction) => void;
+  locked?: boolean;
+}) {
+  const playerId = game.heroPowerChoicePlayer;
+  if (playerId === null) return null;
+  const options = game.heroPowerOptions[playerId] ?? [];
+  return (
+    <div className="overlay">
+      <section className={locked ? "draw-panel hero-power-panel locked" : "draw-panel hero-power-panel"}>
+        <span>Opening Draft</span>
+        <h2>
+          {locked ? `${game.players[playerId].name} is choosing…` : `${game.players[playerId].name}, choose your Hero Power`}
+        </h2>
+        <p className="hero-power-intro">Each Hero Power costs 2 mana and can be used once on your turn.</p>
+        <div className="hero-power-choice-row">
+          {options.map((powerId) => {
+            const power = heroPowerDefinition(powerId);
+            if (!power) return null;
+            const choiceIndex = options.indexOf(powerId);
+            return (
+              <button
+                type="button"
+                key={power.id}
+                className="hero-power-choice"
+                disabled={locked}
+                onClick={() => {
+                  sfx.play("button");
+                  onChoose({ type: "choose_hero_power", player: playerId, choiceIndex });
+                }}
+              >
+                <span className="hero-power-choice-cost">2</span>
+                <strong>⚡ {power.name}</strong>
+                <span>{power.text}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    </div>
   );
 }
 

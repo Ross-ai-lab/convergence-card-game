@@ -31,7 +31,20 @@ function mainState(): GameState {
   const state = createInitialGame(cards);
   state.phase = "main";
   state.drawChoice = null;
+  state.heroPowerChoicePlayer = null;
   return state;
+}
+
+function finishHeroPowerDraft(state: GameState): GameState {
+  let next = state;
+  while (next.phase === "heroPowerChoice" && next.heroPowerChoicePlayer !== null) {
+    next = applyAction(
+      next,
+      { type: "choose_hero_power", player: next.heroPowerChoicePlayer, choiceIndex: 0 },
+      library,
+    ).state;
+  }
+  return next;
 }
 
 describe("Convergence engine", () => {
@@ -77,14 +90,19 @@ describe("Convergence engine", () => {
     expect(state.players[0].hand).toHaveLength(3);
     expect(state.players[1].hand).toHaveLength(3); // both start with 3; player two also keeps The Coin
     expect(state.players[1].coins).toBe(1);
-    // The deck is genuinely shuffled, so an opening hand may hold nothing
-    // affordable on turn 1 - that is intended (as in Hearthstone), not a bug.
-    // What must always hold is that the player is never left with no move.
-    expect(legal).toContainEqual({ type: "end_turn", player: 0 });
+    expect(state.phase).toBe("heroPowerChoice");
+    expect(state.heroPowerOptions[0]).toHaveLength(2);
+    expect(state.heroPowerOptions[1]).toHaveLength(2);
+    expect(new Set(state.heroPowerOptions[0]).size).toBe(2);
+    expect(legal).toHaveLength(2);
+    const drafted = finishHeroPowerDraft(state);
+    expect(drafted.phase).toBe("main");
+    expect(drafted.heroPowers[0]).not.toBeNull();
+    expect(drafted.heroPowers[1]).not.toBeNull();
   });
 
   it("reuses a known legal-action list without changing action resolution", () => {
-    const state = createInitialGame(cards, "known-legal-actions");
+    const state = finishHeroPowerDraft(createInitialGame(cards, "known-legal-actions"));
     const legal = getLegalActions(state, library);
     const action = legal.find((candidate) => candidate.type === "end_turn");
     expect(action).toBeDefined();
@@ -131,7 +149,7 @@ describe("Convergence engine", () => {
   });
 
   it("draws one card straight into hand on end turn — no choice step", () => {
-    const state = createInitialGame(cards);
+    const state = finishHeroPowerDraft(createInitialGame(cards));
     const before = state.players[1].hand.length;
     const ended = applyAction(state, { type: "end_turn", player: 0 }, library).state;
     expect(ended.phase).toBe("main"); // Hearthstone's draw: no pick-1-of-2
@@ -141,7 +159,7 @@ describe("Convergence engine", () => {
   });
 
   it("Detective L turns the draw back into a choice of two", () => {
-    const state = createInitialGame(cards);
+    const state = finishHeroPowerDraft(createInitialGame(cards));
     state.players[1].board[0] = makeMinion("Detective L", 1);
     const before = state.players[1].hand.length;
     const ended = applyAction(state, { type: "end_turn", player: 0 }, library).state;
@@ -155,7 +173,7 @@ describe("Convergence engine", () => {
   });
 
   it("a silenced Detective L gives no Foresight", () => {
-    const state = createInitialGame(cards);
+    const state = finishHeroPowerDraft(createInitialGame(cards));
     state.players[1].board[0] = makeMinion("Detective L", 1, { silenced: true });
     const ended = applyAction(state, { type: "end_turn", player: 0 }, library).state;
     expect(ended.phase).toBe("main");

@@ -4,6 +4,19 @@ export type Alignment = "Good" | "Evil" | "Neutral";
 export type Rarity = "Red" | "Yellow" | "Purple" | "Black";
 export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "passive" | "deathrattle";
 
+/** The ten powers offered during the opening draft. */
+export type HeroPowerId =
+  | "minion_hp"
+  | "minion_atk"
+  | "minion_hp_down"
+  | "minion_atk_down"
+  | "core_trade_draw"
+  | "enemy_core_damage"
+  | "core_heal"
+  | "chain_growth"
+  | "summon_recruit"
+  | "give_taunt";
+
 export type Keyword =
   | "Passive"
   | "Ongoing"
@@ -29,7 +42,7 @@ export type EffectId =
   | "deal_enemy_core"
   | "heal_self"
   | "aoe_damage_3"
-  | "time_bomb_ongoing_5"
+  | "time_bomb_destroy_all"
   | "harmony_buff"
   | "evil_invulnerable"
   | "set_attack_1"
@@ -53,7 +66,7 @@ export type EffectId =
   | "damage_3x_nature"
   | "protect_slot"
   | "snap_balance"
-  | "attack_3x"
+  | "flash_speed"
   | "destroy_small_good"
   | "no_evil_buff"
   | "destroy_small_neutral"
@@ -422,6 +435,8 @@ export interface MinionInstance {
   gainedEffects: Array<{ effectId: EffectId; timing: "passive" | "ongoing"; text: string }>;
   /** Flowey: the core HP captured by its Battlecry, restored on death. */
   savedCoreHealth?: number | null;
+  /** Hero power: this minion gets +1/+1 when its one-turn chain expires. */
+  chainGrowthPending?: boolean;
 }
 
 export interface PlayerState {
@@ -458,7 +473,7 @@ export interface PlayerState {
   turnsStarted: number;
 }
 
-export type GamePhase = "main" | "drawChoice" | "targeting" | "gameOver";
+export type GamePhase = "heroPowerChoice" | "main" | "drawChoice" | "targeting" | "gameOver";
 
 export interface DrawChoice {
   player: PlayerId;
@@ -526,6 +541,8 @@ export interface PendingTarget {
   sourceName: string;
   sourceCardId: string;
   effectId: EffectId;
+  /** Hero powers do not have a board minion source, so they carry their id here. */
+  heroPowerId?: HeroPowerId;
   prompt: string;
   options: TargetOption[];
   handOptions: HandOption[];
@@ -649,6 +666,14 @@ export interface GameState {
   discard: string[];
   drawChoice: DrawChoice | null;
   pendingTarget: PendingTarget | null;
+  /** The player currently choosing a starting hero power, or null after the draft. */
+  heroPowerChoicePlayer: PlayerId | null;
+  /** Two deterministic, distinct offers for each player at the start of a duel. */
+  heroPowerOptions: [HeroPowerId[], HeroPowerId[]];
+  /** The selected power for each player. */
+  heroPowers: [HeroPowerId | null, HeroPowerId | null];
+  /** Once-per-own-turn gate, reset at the start of each player's turn. */
+  heroPowerUsed: [boolean, boolean];
   /** Knov's pocket room entries; optional for backwards-compatible saved/test states. */
   pocketRooms?: PocketRoom[];
   /** G-Man's temporarily removed minions. */
@@ -692,7 +717,9 @@ export type GameAction =
   | { type: "attack_core"; player: PlayerId; attackerSlot: number }
   | { type: "end_turn"; player: PlayerId }
   | { type: "choose_draw"; player: PlayerId; choiceIndex: number }
+  | { type: "choose_hero_power"; player: PlayerId; choiceIndex: number }
   | { type: "choose_target"; player: PlayerId; choiceIndex: number }
+  | { type: "use_hero_power"; player: PlayerId }
   | { type: "use_coin"; player: PlayerId }
   | { type: "return_relic"; player: PlayerId; slotIndex: number; relicIndex?: number };
 

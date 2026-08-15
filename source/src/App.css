@@ -1568,6 +1568,95 @@ button:disabled {
   justify-self: start; /* push the hero + health gem to the far-left corner */
 }
 
+.hero-command {
+  display: flex;
+  min-width: 250px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.hero-power-button {
+  display: flex;
+  width: min(250px, 100%);
+  min-height: 48px;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px 6px 7px;
+  border: 1px solid rgba(240, 199, 103, 0.28);
+  border-radius: 10px;
+  background: rgba(30, 21, 16, 0.86);
+  color: var(--muted);
+  cursor: not-allowed;
+  text-align: left;
+  opacity: 0.68;
+}
+
+.hero-power-button.ready {
+  border-color: rgba(96, 178, 255, 0.9);
+  background: linear-gradient(150deg, rgba(40, 82, 126, 0.88), rgba(23, 31, 47, 0.95));
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(70, 150, 255, 0.26);
+  opacity: 1;
+}
+
+.hero-power-button.ready:hover {
+  border-color: #cfe6ff;
+  box-shadow: 0 0 28px rgba(120, 195, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.hero-power-cost,
+.hero-power-choice-cost {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid #c4ebff;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #aee6ff, #2f8fc9);
+  color: #102337;
+  font-size: 0.95rem;
+  font-weight: 950;
+  box-shadow: 0 0 8px rgba(110, 195, 255, 0.65);
+}
+
+.hero-power-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.hero-power-copy strong {
+  color: var(--ink);
+  font-size: 0.76rem;
+  line-height: 1.1;
+}
+
+.hero-power-copy small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-power-label {
+  display: block;
+  overflow: hidden;
+  color: #bfe4ff;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .command-bar .mana-tray {
   justify-self: end; /* push the mana tray to the far-right corner */
 }
@@ -3498,6 +3587,63 @@ button:disabled {
   overflow-y: auto;
 }
 
+.hero-power-panel {
+  width: min(720px, 100%);
+}
+
+.hero-power-intro {
+  margin: -8px auto 18px;
+  color: var(--muted);
+}
+
+.hero-power-choice-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.hero-power-choice {
+  display: grid;
+  min-height: 180px;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 22px 20px;
+  border: 2px solid rgba(96, 178, 255, 0.5);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(96, 178, 255, 0.25), transparent 55%),
+    rgba(24, 35, 52, 0.92);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: center;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.hero-power-choice:hover:not(:disabled) {
+  border-color: #cfe6ff;
+  box-shadow: 0 0 30px rgba(120, 195, 255, 0.34);
+  transform: translateY(-5px);
+}
+
+.hero-power-choice:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.hero-power-choice strong {
+  color: #d9efff;
+  font-size: 1.1rem;
+}
+
+.hero-power-choice > span:last-child {
+  max-width: 260px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
 .draw-panel span,
 .result-panel span {
   color: var(--muted);
@@ -3754,6 +3900,16 @@ button:disabled {
     gap: 6px;
   }
 
+  .hero-command {
+    grid-area: plate;
+    min-width: 0;
+    align-items: stretch;
+  }
+
+  .hero-command .hero-power-button {
+    width: min(250px, 100%);
+  }
+
   .command-bar .hero-plate .hero-sigil {
     width: 26px;
     height: 26px;
@@ -3832,6 +3988,14 @@ button:disabled {
 
 /* Portrait phones: the board is the whole screen and the hand is a strip. */
 @media (max-width: 620px) {
+  .hero-power-choice-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-power-choice {
+    min-height: 138px;
+  }
+
   .board-row {
     grid-auto-columns: 118px;
   }

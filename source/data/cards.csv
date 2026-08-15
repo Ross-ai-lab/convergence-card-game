@@ -7,7 +7,7 @@ c005,Batman,2,1,1,Purple,Tech,Good,,batman_gadget_choice,onPlay,"Battlecry: Choo
 c006,Sandworm,2,1,3,Black,Nature,Neutral,Taunt;Passive,small_attack_ward,passive,Taunt. Passive: Cannot be damaged by minions with 2 or less ATK.,The desert itself has teeth.,Dune,/card-art/raw/c006.webp
 c007,Pandora's Actor,2,2,2,Red,Magic,Good,,copy_minion_effects,onPlay,Battlecry: Choose another minion. Become it. HP and ATK are not copied.,Every role is useful.,Overlord,/card-art/raw/c007.webp
 c008,T-1000,6,4,5,Purple,Tech,Neutral,Ongoing,heal_self_full,ongoing,Ongoing: Fully heal yourself.,It remembers its shape.,Terminator,/card-art/raw/c008.webp
-c009,Time Bomb,6,0,5,Yellow,Tech,Good,,time_bomb_ongoing_5,ongoing,Ongoing: Deal 5 damage to all enemy minions and itself.,Timer is T-1.,Loki,/card-art/raw/c009.webp
+c009,Time Bomb,6,0,9,Yellow,Tech,Good,,time_bomb_destroy_all,ongoing,Ongoing: Destroy ALL minions.,Timer is T-1.,Loki,/card-art/raw/c009.webp
 c010,Avatar Aang,6,2,2,Red,Magic,Good,,harmony_buff,ongoing,Ongoing: Gain +1/+1 for each different camp on the board.,The last airbender gathers the table.,Avatar,/card-art/raw/c010.webp
 c011,Thirteen Lords of Chaos,6,4,2,Purple,Magic,Evil,Deathrattle,deathrattle_summon_drakath,deathrattle,Deathrattle: Summon Drakath (5/3).,Reality picks a side.,AQW,/card-art/raw/c011.webp
 c012,G-Man,7,3,6,Purple,Tech,Neutral,,stasis_enemy,onPlay,Battlecry: Put an enemy minion into stasis - remove it from the board for 2 turns.,"Time, Mr. Freeman.",Half-Life,/card-art/raw/c012.webp
@@ -26,7 +26,7 @@ c024,Conquest,9,6,6,Purple,Nature,Evil,,anti_good_grow,ongoing,Ongoing: Gain +2/
 c025,Saitama,10,10,10,Red,Nature,Good,Passive,small_cannot_attack,passive,Passive: Ignores ATK damage less than 5.,The punchline is always the same.,OPM,/card-art/raw/c025.webp
 c026,Neo,10,5,7,Red,Tech,Good,,protect_slot,onPlay,"Battlecry: Choose a friendly minion board slot. Minions on that slot cannot be Silenced, Frozen, or Chained.",He decided the bullets were harmless.,Matrix,/card-art/raw/c026.webp
 c027,Thanos,10,9,10,Yellow,Magic,Evil,,snap_balance,onPlay,Battlecry: Each player destroys a random minion and discards a random card.,Balance. At any cost.,MCU,/card-art/raw/c027.webp
-c028,Flash,10,4,6,Yellow,Magic,Neutral,Divine Shield;Passive,attack_3x,passive,Divine Shield. Passive: Can attack 3 times each turn.,Speed of light. And beyond.,DCU,/card-art/raw/c028.webp
+c028,Flash,10,5,5,Yellow,Magic,Neutral,Divine Shield;Passive;Charge,flash_speed,passive,Charge. Divine Shield. Passive: Can attack 2 times each turn.,Speed of light. And beyond.,DCU,/card-art/raw/c028.webp
 c029,Darth Vader,5,3,2,Purple,Magic,Evil,,vader_chain_or_destroy,onPlay,"Battlecry: Choose an enemy minion - set its ATK to 1 and Chain it. If it is already Chained, destroy it instead.",Reborn.,Star Wars,/card-art/raw/c029.webp
 c030,Dumbledore,5,2,4,Black,Magic,Good,Passive,dumbledore_cleanse,passive,"Passive: Friendly minions cannot be Silenced or Frozen. Undo any such curses.",He always asks calmly.,Harry Potter,/card-art/raw/c030.webp
 c031,Ragnaros,5,4,4,Black,Magic,Neutral,Passive,ragnaros_end_turn,passive,"Passive: Cannot attack. At the end of your turn, deal 3 damage to a random enemy minion or the enemy core.",Summoned. Once again.,Hearthstone,/card-art/raw/c031.webp

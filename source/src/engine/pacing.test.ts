@@ -17,7 +17,9 @@ function playOut(seed: string, skills: [BotSkill, BotSkill], cap = 200): GameSta
   for (let step = 0; step < cap * 40; step += 1) {
     if (state.phase === "gameOver") break;
     const actor: PlayerId =
-      state.phase === "drawChoice" && state.drawChoice
+      state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
+        ? state.heroPowerChoicePlayer
+        : state.phase === "drawChoice" && state.drawChoice
         ? state.drawChoice.player
         : state.phase === "targeting" && state.pendingTarget
           ? state.pendingTarget.player
@@ -51,7 +53,9 @@ function manaCurve(turns: number): number[] {
       recordedTurnsStarted = state.players[0].turnsStarted;
     }
     const actor: PlayerId =
-      state.phase === "drawChoice" && state.drawChoice
+      state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
+        ? state.heroPowerChoicePlayer
+        : state.phase === "drawChoice" && state.drawChoice
         ? state.drawChoice.player
         : state.phase === "targeting" && state.pendingTarget
           ? state.pendingTarget.player
@@ -162,7 +166,9 @@ describe("the bot", () => {
       if (state.phase === "gameOver") break;
       if (state.phase === "targeting") sawPrompt = true;
       const actor: PlayerId =
-        state.phase === "drawChoice" && state.drawChoice
+        state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
+          ? state.heroPowerChoicePlayer
+          : state.phase === "drawChoice" && state.drawChoice
           ? state.drawChoice.player
           : state.phase === "targeting" && state.pendingTarget
             ? state.pendingTarget.player

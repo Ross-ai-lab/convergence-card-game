@@ -66,6 +66,7 @@ export function spawnTestMinion(
     stolenPassiveFrom: null,
     stolenPassiveText: null,
     gainedEffects: [],
+    chainGrowthPending: false,
   };
   return { ...base, ...overrides };
 }

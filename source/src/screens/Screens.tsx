@@ -287,6 +287,7 @@ function HowToPlayContent() {
         <ol className="rules-steps">
           <li><b>Draw</b> one card.</li>
           <li>Your <b>mana</b> refills and its maximum grows by one.</li>
+          <li>At the start of the duel, choose one of two random <b>Hero Powers</b>. Each costs 2 mana and works once per turn.</li>
           <li>Drag a card onto one of your five empty board slots to play it.</li>
           <li>Drag a ready minion onto an enemy minion or Core to attack.</li>
         </ol>

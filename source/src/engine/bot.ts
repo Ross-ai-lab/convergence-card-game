@@ -165,6 +165,7 @@ function scoreState(state: GameState, botId: PlayerId): number {
 
 function whoActs(state: GameState): PlayerId | null {
   if (state.phase === "gameOver") return null;
+  if (state.phase === "heroPowerChoice") return state.heroPowerChoicePlayer;
   if (state.phase === "drawChoice") return state.drawChoice?.player ?? null;
   if (state.phase === "targeting") return state.pendingTarget?.player ?? null;
   return state.activePlayer;
