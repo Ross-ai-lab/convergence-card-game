@@ -117,6 +117,18 @@ check(
   (await page.locator(".hs-shell").count()) === 1,
   (await page.locator(".hs-shell").count()) === 1 ? "board opened" : "BLOCKED",
 );
+await page.locator(".duel-intro").waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+check(
+  "Hero Power draft waits for the intro",
+  (await page.locator(".hero-power-choice").count()) === 0,
+  "draft hidden during opening animation",
+);
+await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
+check(
+  "Hero Power draft appears after the intro",
+  (await page.locator(".hero-power-choice").count()) === 2,
+  "two choices revealed after opening animation",
+);
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.locator(".title-links").getByRole("button", { name: "Settings", exact: true }).click();

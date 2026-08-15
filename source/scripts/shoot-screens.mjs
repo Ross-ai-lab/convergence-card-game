@@ -63,6 +63,28 @@ await shoot("01-title");
 // label check-cardface.mjs already had to correct.
 await page.locator(".duel-trigger").first().click();
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
+// The opening Hero Power draft is now revealed after the intro animation. The
+// later screenshots need the ordinary board, so complete the real offer and
+// any hotseat pass curtain before clicking toolbar controls.
+for (let pass = 0; pass < 4; pass += 1) {
+  const offer = page.locator(".hero-power-choice").first();
+  if (await offer.count()) {
+    await offer.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
+    if (await offer.isVisible().catch(() => false)) {
+      await offer.click();
+      await page.waitForTimeout(250);
+    }
+  }
+  const curtain = page.getByRole("button", { name: /Continue|Ready/i }).first();
+  if (await curtain.count()) {
+    await curtain.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
+    if (await curtain.isVisible().catch(() => false)) {
+      await curtain.click();
+      await page.waitForTimeout(250);
+    }
+  }
+  if (!(await page.locator(".hero-power-choice").count()) && !(await page.locator(".pass-screen").count())) break;
+}
 await shoot("04-board-opening");
 
 // --- the rules overlay

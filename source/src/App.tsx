@@ -1899,7 +1899,7 @@ export default function App() {
         <DrawChoiceOverlay game={game} library={library} onChoose={perform} locked={botThinking} />
       ) : null}
 
-      {game.phase === "heroPowerChoice" && game.heroPowerChoicePlayer === viewerId ? (
+      {game.phase === "heroPowerChoice" && !duelIntro && game.heroPowerChoicePlayer === viewerId ? (
         <HeroPowerChoiceOverlay game={game} onChoose={perform} locked={botThinking} />
       ) : null}
 
