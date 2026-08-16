@@ -167,6 +167,7 @@ export type EffectId =
   | "immune_tech_minions"
   | "immune_nature_minions"
   | "immune_nature_tech"
+  | "enemy_cards_cost_1_more"
   | "dodge_80"
   | "freeze_attacker"
   | "on_kill_buff_1"

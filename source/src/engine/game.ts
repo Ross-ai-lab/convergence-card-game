@@ -314,7 +314,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
 
   player.hand.forEach((cardId, handIndex) => {
     const card = library[cardId];
-    if (!card || (!state.cheatMode && effectiveCost(player, card) > player.mana)) return;
+    if (!card || (!state.cheatMode && effectiveCardCost(state, player.id, card) > player.mana)) return;
     player.board.forEach((slot, slotIndex) => {
       if (isMinionCard(card) && !slot) {
         actions.push({ type: "play_card", player: player.id, handIndex, slotIndex });
@@ -488,9 +488,14 @@ function resolveHeroPower(
   }
 }
 
-/** A card's cost after Kuma-style discounts. */
-function effectiveCost(player: PlayerState, card: PlayableCard): number {
-  return Math.max(0, (card.cost ?? 0) - (player.costReductions[card.id] ?? 0));
+/** A card's cost after discounts and live enemy cost auras. */
+export function effectiveCardCost(state: GameState, playerId: PlayerId, card: PlayableCard): number {
+  const player = state.players[playerId];
+  const enemy = state.players[opponent(playerId)];
+  const enemyCardTax = enemy.board.filter(
+    (minion) => minion && !minion.silenced && hasEffect(minion, "enemy_cards_cost_1_more"),
+  ).length;
+  return Math.max(0, (card.cost ?? 0) - (player.costReductions[card.id] ?? 0) + enemyCardTax);
 }
 
 export function actionKey(action: GameAction): string {
@@ -633,7 +638,7 @@ function playCard(
   if (!isMinionCard(card)) return;
   player.hand.splice(handIndex, 1);
   if (!state.cheatMode) {
-    player.mana -= effectiveCost(player, card);
+    player.mana -= effectiveCardCost(state, playerId, card);
   }
   // A Kuma discount is spent on use, and playing a pressured card satisfies it.
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
@@ -667,7 +672,7 @@ function playRelic(
   const bearer = player.board[slotIndex];
   if (!isRelicCard(relic) || !bearer || !hasFreeRelicSlot(bearer)) return;
   player.hand.splice(handIndex, 1);
-  if (!state.cheatMode) player.mana -= effectiveCost(player, relic);
+  if (!state.cheatMode) player.mana -= effectiveCardCost(state, playerId, relic);
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
   if (player.pressured?.cardId === cardId) player.pressured = null;
   const instance = createRelicInstance(relic);

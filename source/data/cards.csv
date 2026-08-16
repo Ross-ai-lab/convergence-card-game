@@ -35,7 +35,7 @@ c033,Yujiro,4,4,3,Red,Nature,Neutral,,destroy_enemy,onPlay,Battlecry: Destroy a 
 c034,Yubaba,4,3,4,Red,Magic,Neutral,,devolve_enemy_minions,onPlay,"Battlecry: Devolve your enemy minions into random ones that cost 1 less mana.",Are you looking for employment?,Spirited Away,/card-art/raw/c034.webp
 c035,Spider-Man,4,3,3,Black,Nature,Good,,freeze_and_weaken,onPlay,Battlecry: Freeze an enemy minion and halve its ATK.,Responsibility.,MCU,/card-art/raw/c035.webp
 c036,General Grievous,4,3,2,Black,Tech,Evil,Passive,grievous_on_kill_atk,passive,"Passive: Whenever Grievous kills a minion, he permanently gains that minion's ATK.",A fine addition.,Star Wars,/card-art/raw/c036.webp
-c037,Eye of Sauron,5,3,5,Yellow,Magic,Evil,,reveal_hand,onPlay,Battlecry: Reveal a random card from the enemy hand.,Try and hide.,Lord of the Rings,/card-art/raw/c037.webp
+c037,Eye of Sauron,1,1,5,Yellow,Magic,Evil,Passive,enemy_cards_cost_1_more,passive,Passive: Enemy cards cost 1 more,Try and hide.,Lord of the Rings,/card-art/raw/c037.webp
 c038,Buddha,5,3,4,Yellow,Magic,Good,,buddha_purify,onPlay,"Battlecry: All minions become Good type. Clear Chained, Frozen, Silenced and Marked from every minion on the board.",Peace.,Record of Ragnarok,/card-art/raw/c038.webp
 c039,Deep Sea King,5,4,4,Black,Nature,Evil,Passive,invulnerable_if_frozen,passive,"Passive: While any minion on the board is Frozen, Deep Sea King is Invulnerable.",This is why you stay out of the ocean.,OPM,/card-art/raw/c039.webp
 c040,Toji,6,5,3,Purple,Nature,Neutral,Passive,immune_magic_minions,passive,Passive: Immune to Magic minions.,No magic. No mercy.,Jujutsu Kaisen,/card-art/raw/c040.webp

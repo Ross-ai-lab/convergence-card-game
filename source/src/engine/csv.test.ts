@@ -43,6 +43,15 @@ describe("card CSV data", () => {
       effect: "Battlecry: Rebirth a friendly minion that died this game",
     });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
+    expect(changed.get("Eye of Sauron")).toMatchObject({
+      cost: 1,
+      atk: 1,
+      hp: 5,
+      effectId: "enemy_cards_cost_1_more",
+      effectTiming: "passive",
+      keywords: ["Passive"],
+      effect: "Passive: Enemy cards cost 1 more",
+    });
     expect(changed.get("Kizaru")).toMatchObject({ atk: 4, hp: 4 });
     expect(changed.get("Ten Tails")?.effect).toBe("Battlecry: Chain all other minions.");
   });

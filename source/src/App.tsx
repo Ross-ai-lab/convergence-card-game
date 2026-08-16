@@ -15,6 +15,7 @@ import {
   applyAction,
   attacksRandomly,
   createInitialGame,
+  effectiveCardCost,
   getLegalActions,
   makeCardLibrary,
   STARTING_CORE,
@@ -98,8 +99,9 @@ function relicFace(relic: RelicInstance | RelicDefinition): CardFaceModel {
   };
 }
 
-function playableFace(card: PlayableCard): CardFaceModel {
-  return isRelicCard(card) ? relicFace(card) : card;
+function playableFace(card: PlayableCard, costOverride?: number): CardFaceModel {
+  const face = isRelicCard(card) ? relicFace(card) : card;
+  return costOverride === undefined || face.cost === costOverride ? face : { ...face, cost: costOverride };
 }
 
 function attachedRelics(minion: MinionInstance): Array<{ relic: RelicInstance; index: number }> {
@@ -1142,12 +1144,12 @@ export default function App() {
     );
   }
 
-  function previewCard(card: PlayableCard, el: HTMLElement) {
+  function previewCard(card: PlayableCard, el: HTMLElement, owner?: PlayerId) {
     if (drag?.active) return;
     sfx.hoverTick();
     const r = el.getBoundingClientRect();
     setHover({
-      face: playableFace(card),
+      face: playableFace(card, owner === undefined ? undefined : effectiveCardCost(game, owner, card)),
       effect: card.effect,
       flavor: card.flavor,
       atkClass: "",
@@ -1316,7 +1318,7 @@ export default function App() {
     // selects, because selection happens on click, not on pointerdown.
     if (e.pointerType === "touch") {
       const card = library[viewer.hand[handIndex]];
-      if (card) previewCard(card, e.currentTarget);
+      if (card) previewCard(card, e.currentTarget, viewerId);
     }
     if (game.phase !== "main" || !playable) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -1763,12 +1765,12 @@ export default function App() {
                   onPointerMove={moveDrag}
                   onPointerUp={endDrag}
                   onPointerCancel={cancelDrag}
-                  onMouseEnter={(e) => previewCard(card, e.currentTarget)}
+                  onMouseEnter={(e) => previewCard(card, e.currentTarget, viewerId)}
                   onMouseLeave={endPreview}
                   data-playable={playable}
                   title={playable ? "Drag onto the board (or click) to play" : undefined}
                 >
-                  {card ? <CardFace card={playableFace(card)} /> : null}
+                  {card ? <CardFace card={playableFace(card, effectiveCardCost(game, viewerId, card))} /> : null}
                 </button>
               );
             })}
@@ -1888,7 +1890,7 @@ export default function App() {
       {drag?.active && drag.kind === "hand" ? (
         <div className="drag-layer" style={{ transform: `translate(${drag.x - 64}px, ${drag.y - 104}px)` }} aria-hidden="true">
           <div className="drag-card">
-            {library[drag.cardId] ? <CardFace card={playableFace(library[drag.cardId])} /> : null}
+            {library[drag.cardId] ? <CardFace card={playableFace(library[drag.cardId], effectiveCardCost(game, viewerId, library[drag.cardId]))} /> : null}
           </div>
         </div>
       ) : null}

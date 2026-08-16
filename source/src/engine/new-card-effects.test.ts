@@ -79,6 +79,15 @@ describe("2026 card replacements", () => {
       "Doctor Strange": { cost: 7, atk: 3, hp: 2, effectId: "strange_bargain", effectTiming: "onPlay" },
       "Kento Nanami": { cost: 3, atk: 1, hp: 1, effectId: "set_hp_1", effectTiming: "onPlay", keywords: [] },
       "Ainz Ooal Gown": { cost: 9, atk: 3, hp: 3, effectId: "set_all_enemy_hp_1", effectTiming: "onPlay", keywords: [] },
+      "Eye of Sauron": {
+        cost: 1,
+        atk: 1,
+        hp: 5,
+        effectId: "enemy_cards_cost_1_more",
+        effectTiming: "passive",
+        keywords: ["Passive"],
+        effect: "Passive: Enemy cards cost 1 more",
+      },
       Kizaru: { atk: 4, hp: 4 },
       "Avatar Aang": {
         cost: 6,
@@ -168,6 +177,27 @@ describe("2026 card replacements", () => {
       const card = cards.find((entry) => entry.name === name);
       expect(card, name).toMatchObject(fields);
     }
+  });
+
+  it("Eye of Sauron taxes every enemy card while its passive is active", () => {
+    const state = mainState("eye-of-sauron-tax");
+    state.cheatMode = false;
+    state.players[1].board[0] = minion("Eye of Sauron", 1);
+    state.players[0].hand = [cardId("John Wick")];
+    state.players[0].mana = 1;
+
+    expect(getLegalActions(state, library)).not.toContainEqual({ type: "play_card", player: 0, handIndex: 0, slotIndex: 0 });
+
+    state.players[0].mana = 2;
+    expect(getLegalActions(state, library)).toContainEqual({ type: "play_card", player: 0, handIndex: 0, slotIndex: 0 });
+    const after = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library).state;
+    expect(after.players[0].mana).toBe(0);
+    expect(after.players[0].board[0]?.name).toBe("John Wick");
+
+    after.players[1].board[0]!.silenced = true;
+    after.players[0].hand = [cardId("John Wick")];
+    after.players[0].mana = 1;
+    expect(getLegalActions(after, library)).toContainEqual({ type: "play_card", player: 0, handIndex: 0, slotIndex: 1 });
   });
 
   it("Dumbledore cleanses existing disables and blocks new Silence and Freeze", () => {
@@ -1576,18 +1606,6 @@ describe("direct effect reachability", () => {
       (action) => action.type === "attack_core" || action.type === "attack_minion",
     );
     expect(attacks).toEqual([]);
-  });
-
-  it("Eye of Sauron reveals the exact random card name from the enemy hand", () => {
-    const state = mainState("eye-reveal");
-    state.rngSeed = 1;
-    state.players = [...state.players] as GameState["players"];
-    state.players[0] = { ...state.players[0], hand: [cardId("Eye of Sauron")] };
-    state.players[1] = { ...state.players[1], hand: [cardId("Saitama"), cardId("Zoro")] };
-    const result = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library);
-    expect(result.events).toContainEqual(
-      expect.objectContaining({ text: "Eye of Sauron: reveals Saitama in the enemy hand." }),
-    );
   });
 
   it("Aizen has the printed 50% Reborn chance and always silences and chains the killer", () => {
