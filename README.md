@@ -8,7 +8,7 @@
 
 ## What Convergence is
 
-Convergence is a non-commercial browser card duel where 173 characters and forces from fiction collide in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
+Convergence is a non-commercial browser card duel where 175 characters and forces from fiction collide in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
 
 - **Recruit** — deliberately forgiving.
 - **Veteran** — plays each move correctly but does not plan beyond it.
@@ -18,9 +18,9 @@ Convergence is a non-commercial browser card duel where 173 characters and force
 
 **Owner play location:** Play only through the public [GitHub Pages game URL](https://ross-ai-lab.github.io/convergence-card-game/play/). The local `play/` folder is a generated deployment artifact for building and publishing; it is not the owner's play location.
 
-No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **173 character cards plus 21 Ascension Relics** in one shared 194-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
+No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **175 character cards plus 21 Ascension Relics** in one shared 196-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
-The live game and `source/data/cards.csv` now contain 173 character cards; the lore guide is a reference document, and the live roster is the source of truth.
+The live game and `source/data/cards.csv` now contain 175 character cards; the lore guide is a reference document, and the live roster is the source of truth.
 
 ## Parallel work
 
@@ -50,7 +50,7 @@ Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an
 
 Mana is the roster's in-fiction power grade for each card subject. A 2-mana subject is intended to be more powerful in lore than a 1-mana subject, and subjects sharing a mana value should be roughly equal in lore power. This is separate from gameplay balance: tune stats, effects, timing, or keywords first, and change mana only when the subject's lore placement is wrong.
 
-Each mana tier also has a **Basic** reference card that represents the peak power of that tier. A card at mana **N** may equal, but must not exceed, the Basic card at N; it must also be strong enough to defeat the Basic card at N-1. The 7-mana reference card is **Mothership (6/6)**, placed above the 6-mana UFO and below the 8-mana Star Destroyer.
+Each mana tier also has a **Basic** reference card that represents the peak power of that tier. A card at mana **N** may equal, but must not exceed, the Basic card at N; it must also be strong enough to defeat the Basic card at N-1. The 7-mana reference card is **Mothership (6/6)**, placed above the 6-mana UFO and below the 8-mana Star Destroyer. The 9-mana reference is **Planetary Defense Grid (4/8)**, and the 10-mana reference is **Black Hole (10/5)**.
 
 ### Timing words
 

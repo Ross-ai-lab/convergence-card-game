@@ -251,6 +251,26 @@ describe("2026 card replacements", () => {
       "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
       "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
       Mothership: { cost: 7, atk: 6, hp: 6, effectId: "none", effectTiming: "none", keywords: [], effect: "-", origin: "Basic" },
+      "Planetary Defense Grid": {
+        cost: 9,
+        atk: 4,
+        hp: 8,
+        effectId: "planetary_defense_grid_taunt_buff",
+        effectTiming: "passive",
+        keywords: ["Taunt", "Passive"],
+        effect: "Taunt. Passive: All Taunt minions have +3/+3.",
+        origin: "Basic",
+      },
+      "Black Hole": {
+        cost: 10,
+        atk: 10,
+        hp: 5,
+        effectId: "black_hole_deathrattle",
+        effectTiming: "deathrattle",
+        keywords: ["Deathrattle"],
+        effect: "Deathrattle: Silence then destroy all minions.",
+        origin: "Basic",
+      },
     };
     for (const [name, fields] of Object.entries(expected)) {
       const card = cards.find((entry) => entry.name === name);
@@ -958,6 +978,38 @@ describe("2026 card replacements", () => {
     expect(fighters.every((fighter) => fighter.name === "TIE Fighter" && fighter.atk === 1 && fighter.hp === 1)).toBe(true);
     expect(fighters.every((fighter) => fighter.keywords.includes("Charge") && fighter.sleeping === false)).toBe(true);
     expect(fighters.every((fighter) => fighter.art.endsWith("/token-tie-fighter.png"))).toBe(true);
+  });
+
+  it("Planetary Defense Grid buffs every Taunt minion and loses the aura when silenced", () => {
+    const state = mainState("planetary-defense-grid-aura");
+    state.players[0].board[1] = minion("Dragon", 0);
+    state.players[1].board[0] = minion("Wall of Flesh", 1);
+    state.players[1].board[1] = minion("John Wick", 1);
+    const buffed = play(state, 0, "Planetary Defense Grid", 0);
+
+    expect(buffed.players[0].board[0]).toMatchObject({ atk: 7, hp: 11, maxHp: 11 });
+    expect(buffed.players[0].board[1]).toMatchObject({ atk: 6, hp: 8, maxHp: 8 });
+    expect(buffed.players[1].board[0]).toMatchObject({ atk: 6, hp: 8, maxHp: 8 });
+    expect(buffed.players[1].board[1]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
+
+    buffed.players[0].board[0]!.silenced = true;
+    const auraGone = endTurn(buffed, 0);
+    expect(auraGone.players[0].board[0]).toMatchObject({ atk: 4, hp: 8, maxHp: 8 });
+    expect(auraGone.players[0].board[1]).toMatchObject({ atk: 3, hp: 5, maxHp: 5 });
+    expect(auraGone.players[1].board[0]).toMatchObject({ atk: 3, hp: 5, maxHp: 5 });
+  });
+
+  it("Black Hole silences before destroying every minion, preventing their Deathrattles", () => {
+    const state = mainState("black-hole-deathrattle");
+    state.players[0].board[0] = minion("Black Hole", 0, { hp: 1, maxHp: 1 });
+    state.players[0].board[1] = minion("Margit the Fell Omen", 0);
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 2, hp: 5, maxHp: 5, sleeping: false });
+    state.players[1].board[1] = minion("Dragon", 1);
+    state.activePlayer = 1;
+
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players.every((player) => player.board.every((entry) => entry === null))).toBe(true);
+    expect(after.players[0].deadMinions).not.toContain("token:morgott");
   });
 
   it("Elder Centipede grows +2/+2 on its ongoing turn and All Might lowers enemy ATK", () => {

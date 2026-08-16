@@ -3782,6 +3782,23 @@ function refreshPassiveAuras(state: GameState): void {
       }
     }
   }
+  const planetaryDefenseGrids = ([0, 1] as PlayerId[]).flatMap((owner) =>
+    state.players[owner].board.filter(
+      (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "planetary_defense_grid_taunt_buff")),
+    ),
+  );
+  for (const source of planetaryDefenseGrids) {
+    for (const targetBoard of state.players.map((player) => player.board)) {
+      for (const target of targetBoard) {
+        if (!target || target.silenced || !hasKeyword(target, "Taunt")) continue;
+        target.atk += 3;
+        target.maxHp += 3;
+        target.hp += 3;
+        target.auraBonuses = target.auraBonuses ?? [];
+        target.auraBonuses.push({ sourceId: source.instanceId, atk: 3, hp: 3, keywords: [] });
+      }
+    }
+  }
   const battleships = ([0, 1] as PlayerId[]).flatMap((owner) =>
     state.players[owner].board.filter(
       (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "battleship_tech_aura")),
@@ -4951,6 +4968,20 @@ function resolveDeathrattle(
   } else if (dead.effectId === "deathrattle_aoe_3") {
     damageAllEnemies(state, dead, 3, events);
     events.push(effectEvent(`${dead.name}'s Deathrattle deals 3 damage to all enemy minions.`, dead));
+  } else if (dead.effectId === "black_hole_deathrattle") {
+    for (const owner of [0, 1] as PlayerId[]) {
+      for (const minion of state.players[owner].board) {
+        if (minion) minion.silenced = true;
+      }
+    }
+    events.push(effectEvent(`${dead.name} silences every minion before the void consumes them.`, dead));
+    for (const owner of [0, 1] as PlayerId[]) {
+      for (let slot = 0; slot < boardSize; slot += 1) {
+        if (state.players[owner].board[slot]) {
+          destroyAtSlot(state, owner, slot, events, `${dead.name} destroys all minions`, null, false);
+        }
+      }
+    }
   } else if (dead.effectId === "deathrattle_summon_morgott") {
     const slot = state.players[dead.owner].board[deadSlot] ? state.players[dead.owner].board.findIndex((minion) => !minion) : deadSlot;
     if (slot >= 0) {

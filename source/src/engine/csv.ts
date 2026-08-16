@@ -291,6 +291,8 @@ const effectIds = new Set<EffectId>([
   "black_ops_ignore_taunt",
   "battleship_tech_aura",
   "star_destroyer_tie_fighters",
+  "planetary_defense_grid_taunt_buff",
+  "black_hole_deathrattle",
 ]);
 
 const relicIds = new Set<RelicId>([

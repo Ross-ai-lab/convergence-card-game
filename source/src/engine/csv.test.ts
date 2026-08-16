@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { cards, resolvePublicAssetUrl } from "../data/cards";
 
 describe("card CSV data", () => {
-  it("loads the full 173-card roster", () => {
-    expect(cards).toHaveLength(173);
-    expect(new Set(cards.map((card) => card.id)).size).toBe(173);
-    expect(new Set(cards.map((card) => card.name)).size).toBe(173);
+  it("loads the full 175-card roster", () => {
+    expect(cards).toHaveLength(175);
+    expect(new Set(cards.map((card) => card.id)).size).toBe(175);
+    expect(new Set(cards.map((card) => card.name)).size).toBe(175);
   });
 
   it("contains the v1 systems needed for engine coverage", () => {
@@ -55,6 +55,27 @@ describe("card CSV data", () => {
     expect(changed.get("Kizaru")).toMatchObject({ atk: 4, hp: 4 });
     expect(changed.get("Ten Tails")?.effect).toBe("Battlecry: Chain all other minions.");
     expect(changed.get("Mothership")).toMatchObject({ cost: 7, atk: 6, hp: 6, origin: "Basic", effect: "-" });
+    expect(changed.get("Planetary Defense Grid")).toMatchObject({
+      cost: 9,
+      atk: 4,
+      hp: 8,
+      effectId: "planetary_defense_grid_taunt_buff",
+      effectTiming: "passive",
+      origin: "Basic",
+    });
+    expect(changed.get("Black Hole")).toMatchObject({
+      cost: 10,
+      atk: 10,
+      hp: 5,
+      effectId: "black_hole_deathrattle",
+      effectTiming: "deathrattle",
+      origin: "Basic",
+    });
+  });
+
+  it("has exactly one Basic reference card at each mana tier from 1 through 10", () => {
+    const basicCosts = cards.filter((card) => card.origin === "Basic").map((card) => card.cost).sort((a, b) => a - b);
+    expect(basicCosts).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   it("loads Luffy's chained-minion rescue Battlecry", () => {

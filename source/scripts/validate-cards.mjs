@@ -184,7 +184,7 @@ for (const [index, card] of cards.entries()) {
   }
 }
 
-if (cards.length !== 173) errors.push(`Expected 173 cards, found ${cards.length}`);
+if (cards.length !== 175) errors.push(`Expected 175 cards, found ${cards.length}`);
 
 if (errors.length) {
   console.error(errors.join("\n"));
