@@ -507,7 +507,7 @@ export type SlotAuraId =
   | "slot_chain" // Giorno GER — a minion here is permanently Chained
   | "slot_grow_1" // Floor Guardians — a minion here gains +1/+1 each of your turns
   | "slot_grow_2" // Ultra Instinct Goku — a minion here gains +2/+2 each of your turns
-  | "slot_protected" // Neo — minions here cannot be targeted, silenced, or frozen
+  | "slot_protected" // Neo — minions here resist Silence, Freeze, and Chain; removal and attacks still reach them
   | "slot_stats_one"; // Doctor Manhattan — minions here are permanently 1/1
 
 export interface SlotAura {

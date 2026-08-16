@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { countBy, projectRoot, readCards } from "./card-tools.mjs";
+import { countBy, projectRoot, readCards, readRelics } from "./card-tools.mjs";
 
 const required = [
   "id",
@@ -65,6 +65,7 @@ const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained|Charge|Cannot attack)
 
 function checkPrintedText(card, line, errors) {
   const text = card.effect ?? "";
+  checkEffectPunctuation(card.name, line, text, errors);
 
   const match = PRINTED_TIMING.exec(text);
   const printed = match ? match[1] : null;
@@ -109,6 +110,12 @@ function checkPrintedText(card, line, errors) {
   }
 }
 
+function checkEffectPunctuation(name, line, text, errors) {
+  if (text && text !== "-" && !/[.!?]$/.test(text.trim())) {
+    errors.push(`Line ${line}: ${name}'s printed effect must end with punctuation.`);
+  }
+}
+
 /**
  * An effectId is an internal label. The player never sees it, so when its
  * numbers drift away from the card's printed numbers nothing visibly breaks and
@@ -149,6 +156,7 @@ function checkLabelNumbers(card, line, errors) {
 }
 
 const cards = readCards();
+const relics = readRelics();
 const errors = [];
 const ids = new Set();
 const names = new Set();
@@ -187,6 +195,10 @@ for (const [index, card] of cards.entries()) {
 }
 
 if (cards.length !== 175) errors.push(`Expected 175 cards, found ${cards.length}`);
+if (relics.length !== 21) errors.push(`Expected 21 relics, found ${relics.length}`);
+for (const [index, relic] of relics.entries()) {
+  checkEffectPunctuation(relic.name, index + 2, relic.effect, errors);
+}
 
 if (errors.length) {
   console.error(errors.join("\n"));

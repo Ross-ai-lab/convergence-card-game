@@ -171,8 +171,18 @@ describe("combat-reaction cards", () => {
     state.players[1].board[0] = dummy("Death Star", 1, { atk: 1, hp: 99, maxHp: 99 });
 
     const after = attack(state, 0, 0);
-    expect(after.players[0].board[0]?.atk).toBe(3); // 1 + 2
+    expect(after.players[0].board[0]?.atk).toBe(2); // 1 + 1
     expect(after.players[0].board[0]?.maxHp).toBe(100); // 99 + 1
+    expect(after.players[0].board[1]).toMatchObject({ atk: 2, maxHp: 2 }); // did not participate
+  });
+
+  it("Yoriichi also sharpens itself when it survives combat", () => {
+    const state = mainState("yoriichi-self");
+    state.players[0].board[0] = makeMinion("Yoriichi Type Zero", 0, { sleeping: false });
+    state.players[1].board[0] = dummy("Death Star", 1, { atk: 0, hp: 99, maxHp: 99 });
+
+    const after = attack(state, 0, 0);
+    expect(after.players[0].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
   });
 });
 

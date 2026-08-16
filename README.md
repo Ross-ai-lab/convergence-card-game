@@ -97,7 +97,7 @@ The current relic pool contains **21 relics**. Relics are equipment cards: they 
 - A relic dies with its bearer.
 - A relic that can be moved may be passed to another friendly minion by clicking its badge and then the recipient. This is limited to once per player's turn.
 - Some relics spend themselves when they arrive and cannot be passed.
-- The **Relics** button shows the remaining shelf, its order, and who is carrying each relic.
+- During a duel, attached relic badges show who is carrying each relic. Click a movable badge to begin a transfer; there is no separate relic-shelf screen.
 
 ## Controls and modes
 
@@ -137,9 +137,9 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 - Press **Escape** to clear a selection.
 - **The Coin** appears for the player who goes second and spends for +1 mana that turn.
 - **Restart** begins a fresh duel.
-- **Relics** opens the relic shelf.
-- **Effect Codex** opens the in-game glossary and the how-to-play guide.
-- **Settings** contains sound mute/volume controls, and in bot games lets you change the opponent level during the duel. It also returns to the title screen.
+- **How to play** opens the in-duel rules guide.
+- **Settings** contains sound mute/volume controls and returns to the title screen. Choose the bot level on the title screen before starting a duel.
+- **Cards** opens the card gallery from the title screen.
 - **Cheat Off/On** is a separate toolbar sandbox switch. When enabled, mana is infinite; it is intended for testing and experimentation, not normal balance.
 
 The board communicates conditions visually: a wall means Taunt, a gold rim means Divine Shield, a blue-and-white rim means Invulnerable, ice means Frozen, chains across the artwork mean Chained, a grey attack gem means the minion cannot attack, and a sleeping minion shows drifting `z` glyphs.
@@ -250,7 +250,7 @@ Printed timing must match play. For every target or choice, specify whether it s
 
 - Keep the engine deterministic. Randomness comes from game state and its seeded RNG, never `Math.random()` in the engine.
 - Taunt is enforced through legal targets. Divine Shield is a breakable state. Invulnerable prevents damage. These are gameplay rules with visible card states, not text-only decoration.
-- Passive stat/keyword auras are derived from live sources through `auraBonuses`. Refresh removes each source's contribution before reapplying live auras, so a dead or Silenced source cannot leave a stale buff behind. Use this reversible path for effects such as Giant Tree and Chaos; do not use a permanent `buffMinion` call for a Passive aura.
+- Passive stat/keyword auras are derived from live sources through `auraBonuses`. Refresh removes each source's contribution before reapplying live auras, so a dead or Silenced source cannot leave a stale buff behind. Use this reversible path for effects such as Giant Tree and the other live passive auras; do not use a permanent `buffMinion` call for a Passive aura.
 - Passive status effects are transient too. Track the live source of a Passive Silence (for example, Gojo); when that source dies, leaves the board, or is Silenced, remove its Silence and restore the affected minions' effects. Do not turn a Passive aura into a permanent mutation.
 - Reborn is a return, not a fresh play: every reborn minion suppresses its
   arrival card theme so an Ouken-style loop never repeats its music.

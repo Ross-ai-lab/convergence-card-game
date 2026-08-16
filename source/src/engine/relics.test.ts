@@ -136,7 +136,7 @@ describe("relic effects", () => {
   it("ships the requested relic costs and stat changes", () => {
     expect(relics.find((relic) => relic.name === "White Whistle")?.cost).toBe(2);
     expect(relics.find((relic) => relic.name === "Devil Fruit")).toMatchObject({ cost: 2, effect: expect.stringContaining("+2/+1") });
-    expect(relics.find((relic) => relic.name === "Monster Cell")).toMatchObject({ cost: 2, effect: "The bearer gains +3/+2. It gets silenced" });
+    expect(relics.find((relic) => relic.name === "Monster Cell")).toMatchObject({ cost: 2, effect: "The bearer gains +3/+2. It gets silenced." });
   });
 
   it("returns reusable relics to hand once per turn, but never re-fires them automatically", () => {

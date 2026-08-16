@@ -4,9 +4,14 @@ import { fileURLToPath } from "node:url";
 
 export const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const cardsPath = path.join(projectRoot, "data", "cards.csv");
+export const relicsPath = path.join(projectRoot, "data", "relics.csv");
 
 export function readCards() {
   return parseCsv(fs.readFileSync(cardsPath, "utf8"));
+}
+
+export function readRelics() {
+  return parseCsv(fs.readFileSync(relicsPath, "utf8"));
 }
 
 export function parseCsv(text) {

@@ -103,7 +103,7 @@ describe("2026 card replacements", () => {
         effectId: "enemy_cards_cost_1_more",
         effectTiming: "passive",
         keywords: ["Passive"],
-        effect: "Passive: Enemy cards cost 1 more",
+        effect: "Passive: Enemy cards cost 1 more.",
       },
       "Yoriichi Type Zero": {
         cost: 3,
@@ -176,12 +176,12 @@ describe("2026 card replacements", () => {
         effect: "Battlecry: Summon a random minion from the deck. Deathrattle: Summon a random minion from the deck.",
       },
       UFO: { effectId: "none", effectTiming: "none", keywords: [], effect: "-" },
-      Yujiro: { atk: 4, hp: 4, effectId: "immune_nature_minions", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Immune to Nature minions" },
+      Yujiro: { atk: 4, hp: 4, effectId: "immune_nature_minions", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Immune to Nature minions." },
       Vegapunk: { effectId: "discover_tech_card", effectTiming: "onPlay", keywords: [] },
       "John Wick": { atk: 1, hp: 1, effectId: "friendly_death_buff_1_1", effectTiming: "passive" },
       Joker: { atk: 1, hp: 1, effectId: "copy_minion_to_hand", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Put a copy of a minion in your hand." },
       "Escanor \"The One\"": { cost: 8, atk: 8, hp: 4, effectId: "double_other_friendly_attack", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Double your other friendly minions attack." },
-      "Lelouch Lamperouge": { cost: 8, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion" },
+      "Lelouch Lamperouge": { cost: 8, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion." },
       "Ultron Prime": { cost: 7, atk: 4, hp: 5, effectId: "none", effectTiming: "none", keywords: [], effect: "-" },
       Neo: { cost: 10, atk: 5, hp: 7, effectId: "protect_slot", effectTiming: "onPlay" },
       "Monkey D. Luffy": { cost: 8, atk: 6, hp: 4, effectId: "free_chained_shield", effectTiming: "onPlay" },
@@ -205,7 +205,7 @@ describe("2026 card replacements", () => {
       "Aladdin Lamp": { atk: 5, hp: 4, effectId: "aladdin_wish", effectTiming: "onPlay" },
       "The Mask": { cost: 6, atk: 4, hp: 3, effectId: "transform_random_allies_up", effectTiming: "onPlay", keywords: [] },
       Yubaba: { effectId: "devolve_enemy_minions", effectTiming: "onPlay", keywords: [] },
-      V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle", keywords: ["Deathrattle"], effect: "Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core" },
+      V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle", keywords: ["Deathrattle"], effect: "Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core." },
       "Time Bomb": { atk: 0, hp: 9, effectId: "time_bomb_destroy_all", effectTiming: "ongoing", keywords: [] },
       Doomsday: {
         cost: 9,
@@ -228,8 +228,15 @@ describe("2026 card replacements", () => {
       Darkwing: { effectTiming: "deathrattle", keywords: ["Deathrattle"], effectId: "kill_back", effect: "Deathrattle: The minion which kills this minion also dies right after." },
       "Dr. Heinz Doofenshmirtz": { effect: "Ongoing: 50% to die and 50% to gain +2/+1." },
       "G-Man": { atk: 3, hp: 6, effectId: "stasis_enemy", effectTiming: "onPlay", keywords: [] },
-      Superman: { atk: 6, hp: 6, effectId: "superman_damage_cap_3", effectTiming: "passive", keywords: ["Passive"] },
-      "Darth Vader": { atk: 3, hp: 2, effectId: "vader_chain_or_destroy", effectTiming: "onPlay", keywords: [] },
+      Superman: { atk: 6, hp: 6, effectId: "superman_damage_cap_3", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Cannot lose more than 3 HP at once." },
+      "Darth Vader": {
+        atk: 3,
+        hp: 2,
+        effectId: "vader_chain_or_destroy",
+        effectTiming: "onPlay",
+        keywords: [],
+        effect: "Battlecry: Choose an enemy minion. Set its ATK to 1 and Chain it.",
+      },
       Dumbledore: {
         atk: 2,
         hp: 4,
@@ -239,8 +246,8 @@ describe("2026 card replacements", () => {
         effect: "Passive: Friendly minions cannot be Silenced, Frozen, or Chained. Undo any such curses.",
       },
       Gojo: { atk: 4, hp: 8, effectId: "yoda_global_silence", effectTiming: "passive", keywords: ["Passive"] },
-      "Rennala Queen of the Full Moon": { atk: 2, hp: 3, effectId: "rebirth_friendly_dead", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Rebirth a random friendly minion that died this game" },
-      "Kagaya Ubuyashiki": { atk: 1, hp: 1, effectId: "discover_random_keyword_minion", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Discover a random Taunt, Divine Shield, and Passive minion in the deck. Draw one" },
+      "Rennala Queen of the Full Moon": { atk: 2, hp: 3, effectId: "rebirth_friendly_dead", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Rebirth a random friendly minion that died this game." },
+      "Kagaya Ubuyashiki": { atk: 1, hp: 1, effectId: "discover_random_keyword_minion", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Discover a random Taunt, Divine Shield, and Passive minion in the deck. Draw one." },
       Cecil: { atk: 1, hp: 1, effectId: "bounce_friendly", effectTiming: "onPlay", keywords: [] },
       "Giorno - Gold Experience Requiem": { cost: 10, atk: 4, hp: 8, effectId: "slot_permanent_chain", effectTiming: "onPlay", keywords: [] },
       Avengers: { atk: 4, hp: 4, effectId: "invuln_with_good_ally", effectTiming: "passive", keywords: ["Passive"] },
@@ -423,6 +430,19 @@ describe("2026 card replacements", () => {
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(after.players[0].board[0]).toBeNull();
     expect(after.players[0].board[1]).toBeNull();
+    expect(after.players[0].health).toBe(72);
+  });
+
+  it("V cannot randomly destroy an Evil minion that is Chained", () => {
+    const state = mainState("v-chained-target");
+    state.players[0].board[0] = minion("V", 0, { hp: 1, maxHp: 1 });
+    state.players[0].board[1] = minion("Aizen", 0, { chained: 2 });
+    state.players[1].board[0] = minion("Zoro", 1, { atk: 99, sleeping: false });
+    state.activePlayer = 1;
+
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[0].board[1]).toMatchObject({ name: "Aizen", chained: 2 });
     expect(after.players[0].health).toBe(72);
   });
 
@@ -1090,6 +1110,15 @@ describe("2026 card replacements", () => {
     const locked = enemyTurn.players[1].board.filter((entry) => entry?.attackLocked);
     expect(locked).toHaveLength(1);
     expect(locked[0]?.attackLockedUntilTurn).toBe(enemyTurn.turnNumber + 1);
+  });
+
+  it("King does not choose a Chained minion for its random attack lock", () => {
+    const state = mainState("king-chain-lock");
+    state.players[0].board[0] = minion("King", 0);
+    state.players[1].board[0] = minion("John Wick", 1, { sleeping: false, chained: 2 });
+
+    const enemyTurn = endTurn(state, 0);
+    expect(enemyTurn.players[1].board[0]).toMatchObject({ chained: 1, attackLocked: false });
   });
 
   it("Dominion Authority blocks enemy mind control and returns", () => {

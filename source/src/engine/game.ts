@@ -1214,17 +1214,16 @@ function attackMinion(
   awardSurvivors(state, events, [attackerId, defender.instanceId]);
 }
 
-/** Yoriichi's payoff — a friendly that lived through the exchange gains +2/+1. */
+/** Yoriichi's payoff — every friendly participant that survives gains +1/+1. */
 function awardSurvivors(state: GameState, events: GameEvent[], fought: string[]): void {
   for (const playerId of [0, 1] as PlayerId[]) {
     const board = state.players[playerId].board;
-    const mentor = board.some((minion) => minion && hasEffect(minion, "survivor_buff") && !minion.silenced);
-    if (!mentor) continue;
+    const hasActiveMentor = board.some((minion) => minion && hasEffect(minion, "survivor_buff") && !minion.silenced);
+    if (!hasActiveMentor) continue;
     for (const minion of board) {
-      if (!minion || hasEffect(minion, "survivor_buff")) continue;
-      if (!fought.includes(minion.instanceId)) continue;
-      buffMinion(minion, 2, 1);
-      events.push(effectEvent(`${minion.name} survives and grows +2/+1.`, minion));
+      if (!minion || !fought.includes(minion.instanceId)) continue;
+      buffMinion(minion, 1, 1);
+      events.push(effectEvent(`${minion.name} survives and grows +1/+1.`, minion));
     }
   }
 }
@@ -1534,7 +1533,6 @@ function targetOptions(state: GameState, source: MinionInstance, spec: TargetSpe
 
 function isProtectedDisableTarget(state: GameState, source: MinionInstance, target: MinionInstance): boolean {
   if (!isSlotProtected(state, target)) return false;
-  if (source.effectId === "vader_chain_or_destroy") return target.chained === 0;
   if (source.effectId === "freeze_or_kill") return !target.frozen;
   return new Set<EffectId>([
     "freeze_two",
@@ -1543,6 +1541,7 @@ function isProtectedDisableTarget(state: GameState, source: MinionInstance, targ
     "freeze_and_weaken",
     "silence_enemy",
     "freeze_and_silence_enemy",
+    "vader_chain_or_destroy",
   ]).has(source.effectId);
 }
 
@@ -2119,8 +2118,6 @@ function runEffect(
     if (picked && pickedSlot) {
       if (hasDumbledoreProtection(state, picked)) {
         events.push(effectEvent(`${picked.name} resists Darth Vader's chain.`, picked));
-      } else if (picked.chained > 0) {
-        destroyAtSlot(state, picked.owner, pickedSlot.slot, events, `${source.name} destroys ${picked.name}`, source);
       } else if (!isSlotProtected(state, picked) && canDisable(state, source.owner, picked)) {
         picked.atk = 1;
         picked.chained = Math.max(picked.chained, 2);
@@ -3676,7 +3673,9 @@ function resolveKingAttackLocks(state: GameState, playerId: PlayerId, events: Ga
   const kings = state.players[opponent(playerId)].board.filter(
     (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "king_attack_lock_random")),
   );
-  const candidates = state.players[playerId].board.filter((minion): minion is MinionInstance => Boolean(minion));
+  const candidates = state.players[playerId].board.filter(
+    (minion): minion is MinionInstance => Boolean(minion && !isUntargetable(state, minion)),
+  );
   if (kings.length === 0 || candidates.length === 0) return;
   const target = candidates[rollInt(state, candidates.length)];
   const king = kings[0];
@@ -5211,7 +5210,7 @@ function resolveDeathrattle(
     const candidates = ([0, 1] as PlayerId[]).flatMap((owner) =>
       state.players[owner].board
         .map((minion, slot) => ({ minion, owner, slot }))
-        .filter(({ minion }) => minion?.alignment === "Evil"),
+        .filter(({ minion }) => minion?.alignment === "Evil" && !isUntargetable(state, minion)),
     );
     if (candidates.length > 0) {
       const target = candidates[rollInt(state, candidates.length)];

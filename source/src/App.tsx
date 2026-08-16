@@ -229,7 +229,7 @@ const AURA_TEXT: Record<SlotAuraId, string> = {
   slot_chain: "a minion here is permanently Chained",
   slot_grow_1: "a minion here gains +1/+1 at the start of your turn",
   slot_grow_2: "a minion here gains +2/+2 at the start of your turn",
-  slot_protected: "minions here cannot be targeted, silenced, or frozen; attacks can still hit them",
+  slot_protected: "minions here resist Silence, Freeze, and Chain; attacks and ordinary removal can still reach them",
   slot_stats_one: "minions here are permanently set to 1/1",
 };
 /** Each permanent board-slot effect gets its own visible ring colour. */
