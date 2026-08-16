@@ -20,7 +20,7 @@ Convergence is a non-commercial browser card duel where 173 characters and force
 
 No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **173 character cards plus 21 Ascension Relics** in one shared 194-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
-The included lore guide is a historical 175-entry roster reference. The live game and `source/data/cards.csv` are the current source of truth at 173 character cards.
+The project previously used a 175-card roster. The live game, current lore guide, and `source/data/cards.csv` now contain 173 character cards; the live roster is the source of truth.
 
 ## Rules at a glance
 
@@ -363,7 +363,7 @@ When changing a rule, add or update a focused test and make the card text agree 
 ## Included materials and links
 
 - [Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/)
-- [Historical 175-card lore and roster guide](https://ross-ai-lab.github.io/convergence-card-game/materials/Convergence-Official-Lore.html)
+- [Current 173-card lore and roster guide](https://ross-ai-lab.github.io/convergence-card-game/materials/Convergence-Official-Lore.html)
 - [Card statistics workbook](materials/Convergence%20card%20stat%20excel%20sheet.xlsx)
 - [Raw card artwork](https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/raw-card-art)
 - Skeleton token artwork: [Skeleton Warrior by Clint Bellanger](https://opengameart.org/content/skeleton-warrior-0), adapted from the CC BY 3.0 sprite sheet.
