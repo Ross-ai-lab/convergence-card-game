@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Mothership</title>
+  <desc id="desc">A large alien mothership hovering above a blue planet.</desc>
+  <defs>
+    <linearGradient id="space" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#050b24"/>
+      <stop offset="1" stop-color="#172d62"/>
+    </linearGradient>
+    <linearGradient id="hull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dbe9ff"/>
+      <stop offset="0.5" stop-color="#7188b5"/>
+      <stop offset="1" stop-color="#25365e"/>
+    </linearGradient>
+    <radialGradient id="planet" cx="50%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#6ae0ff"/>
+      <stop offset="0.65" stop-color="#1d6aa5"/>
+      <stop offset="1" stop-color="#07152e"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="640" height="420" fill="url(#space)"/>
+  <circle cx="76" cy="72" r="2" fill="#fff"/>
+  <circle cx="560" cy="64" r="3" fill="#b9eaff"/>
+  <circle cx="498" cy="150" r="2" fill="#fff"/>
+  <circle cx="144" cy="168" r="2" fill="#c8d8ff"/>
+  <ellipse cx="320" cy="386" rx="290" ry="96" fill="url(#planet)"/>
+  <path d="M58 360c78-42 153-46 226-14 65 29 143 25 226-13 31-14 58-19 79-13-55 37-103 60-160 67H170c-47-4-82-12-112-27Z" fill="#39b678" opacity=".45"/>
+  <g filter="url(#glow)">
+    <path d="M105 206c34-57 103-88 215-91 112 3 181 34 215 91-34 56-103 87-215 90-112-3-181-34-215-90Z" fill="url(#hull)" stroke="#d7e8ff" stroke-width="5"/>
+    <ellipse cx="320" cy="202" rx="106" ry="30" fill="#21365f" stroke="#95b5e8" stroke-width="4"/>
+    <ellipse cx="320" cy="202" rx="60" ry="18" fill="#63e9ff" opacity=".9"/>
+    <path d="M139 229h362" stroke="#71eaff" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+    <path d="M178 259c43 19 91 28 142 28s99-9 142-28" fill="none" stroke="#6b8ab9" stroke-width="10"/>
+    <circle cx="186" cy="250" r="8" fill="#8affea"/>
+    <circle cx="238" cy="267" r="7" fill="#8affea"/>
+    <circle cx="402" cy="250" r="8" fill="#8affea"/>
+    <circle cx="350" cy="267" r="7" fill="#8affea"/>
+  </g>
+</svg>

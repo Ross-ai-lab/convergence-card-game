@@ -54,7 +54,7 @@ describe("card CSV data", () => {
     });
     expect(changed.get("Kizaru")).toMatchObject({ atk: 4, hp: 4 });
     expect(changed.get("Ten Tails")?.effect).toBe("Battlecry: Chain all other minions.");
-    expect(changed.get("Aircraft Carrier")).toMatchObject({ cost: 7, atk: 6, hp: 6, origin: "Basic", effect: "-" });
+    expect(changed.get("Mothership")).toMatchObject({ cost: 7, atk: 6, hp: 6, origin: "Basic", effect: "-" });
   });
 
   it("loads Luffy's chained-minion rescue Battlecry", () => {

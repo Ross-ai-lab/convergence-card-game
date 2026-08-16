@@ -50,7 +50,7 @@ Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an
 
 Mana is the roster's in-fiction power grade for each card subject. A 2-mana subject is intended to be more powerful in lore than a 1-mana subject, and subjects sharing a mana value should be roughly equal in lore power. This is separate from gameplay balance: tune stats, effects, timing, or keywords first, and change mana only when the subject's lore placement is wrong.
 
-Each mana tier also has a **Basic** reference card that represents the peak power of that tier. A card at mana **N** may equal, but must not exceed, the Basic card at N; it must also be strong enough to defeat the Basic card at N-1. The 7-mana reference card is **Aircraft Carrier (6/6)**.
+Each mana tier also has a **Basic** reference card that represents the peak power of that tier. A card at mana **N** may equal, but must not exceed, the Basic card at N; it must also be strong enough to defeat the Basic card at N-1. The 7-mana reference card is **Mothership (6/6)**, placed above the 6-mana UFO and below the 8-mana Star Destroyer.
 
 ### Timing words
 

@@ -179,7 +179,7 @@ c172,Mr. Poopybutthole,1,1,1,Black,Nature,Neutral,Deathrattle,reborn_75,deathrat
 c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,ongoing,Ongoing: Draw 1 card.,The smartest thing here is a mouse.,MHA,/card-art/raw/c173.webp
 c174,Shibukawa,1,1,1,Black,Nature,Neutral,Ongoing,set_attack_highest_enemy,ongoing,Ongoing: Set Shibukawa's ATK equal to the highest ATK enemy minion.,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
 c175,V,1,1,1,Black,Nature,Neutral,Deathrattle,deathrattle_random_evil,deathrattle,"Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
-c176,Aircraft Carrier,7,6,6,Black,Tech,Neutral,,none,none,-,The fleet arrives.,Basic,/card-art/raw/basic-aircraft-carrier.svg
+c176,Mothership,7,6,6,Black,Tech,Neutral,,none,none,-,A larger craft arrives.,Basic,/card-art/raw/basic-mothership.svg
 `,ct=`id,name,cost,rarity,color,relicId,effect,flavor,origin,art
 r001,The Holy Grail,5,Relic,relic,double_stats,The bearer doubles its ATK and HP,Every knight sought it,Myth,/card-art/raw/r001.webp
 r002,Lostvayne,4,Relic,relic,immune_magic,The bearer is invulnerable to Magic attacks,,Seven Deadly Sins,/card-art/raw/r002.webp

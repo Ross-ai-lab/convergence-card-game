@@ -250,7 +250,7 @@ describe("2026 card replacements", () => {
       "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: The first enemy minion to attack each turn is Chained for 1 turn." },
       "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
       "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
-      "Aircraft Carrier": { cost: 7, atk: 6, hp: 6, effectId: "none", effectTiming: "none", keywords: [], effect: "-", origin: "Basic" },
+      Mothership: { cost: 7, atk: 6, hp: 6, effectId: "none", effectTiming: "none", keywords: [], effect: "-", origin: "Basic" },
     };
     for (const [name, fields] of Object.entries(expected)) {
       const card = cards.find((entry) => entry.name === name);
