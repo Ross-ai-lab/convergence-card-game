@@ -8,7 +8,7 @@
 
 ## What Convergence is
 
-Convergence is a non-commercial browser card duel where 175 characters and forces from fiction collide in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
+Convergence is a non-commercial browser card duel where 173 characters and forces from fiction collide in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
 
 - **Recruit** — deliberately forgiving.
 - **Veteran** — plays each move correctly but does not plan beyond it.
@@ -18,7 +18,9 @@ Convergence is a non-commercial browser card duel where 175 characters and force
 
 **Owner play location:** Play only through the public [GitHub Pages game URL](https://ross-ai-lab.github.io/convergence-card-game/play/). The local `play/` folder is a generated deployment artifact for building and publishing; it is not the owner's play location.
 
-No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **175 character cards plus 21 Ascension Relics** in one shared 196-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
+No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **173 character cards plus 21 Ascension Relics** in one shared 194-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
+
+The included lore guide is a historical 175-entry roster reference. The live game and `source/data/cards.csv` are the current source of truth at 173 character cards.
 
 ## Rules at a glance
 
@@ -39,6 +41,10 @@ Nothing damages a core automatically just because a turn starts; core damage com
 ## Cards and card language
 
 Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an **alignment**. The three camps are **Magic**, **Nature**, and **Tech**. The three alignments are **Good**, **Evil**, and **Neutral**. Many effects target a camp or alignment, so read both labels before playing a card.
+
+### Mana is lore power
+
+Mana is the roster's in-fiction power grade for each card subject. A 2-mana subject is intended to be more powerful in lore than a 1-mana subject, and subjects sharing a mana value should be roughly equal in lore power. This is separate from gameplay balance: tune stats, effects, timing, or keywords first, and change mana only when the subject's lore placement is wrong.
 
 ### Timing words
 
@@ -169,7 +175,7 @@ For stats, wording, keywords, timing, or art paths, update the relevant `cards.c
 
 ### Card wording is uniform, and that is a mechanical requirement
 
-Printed effect text uses one vocabulary across the whole roster. This is not a style preference. Two cards that do the same thing in different words read as two different cards, and that is exactly how Nulgath and Gravelord Nito ran the identical rule under two effect ids for the entire balance history without anyone noticing, and how Whitebeard's sweep ended up on Fire Lord Ozai three mana cheaper. The duplicate report in `validate-cards.mjs` compares normalised printed text precisely so that a rule written twice becomes visible, and wording drift is the one thing that blinds it.
+Printed effect text uses one vocabulary across the whole roster. This is not a style preference. Two cards that do the same thing in different words read as two different cards, and that is how duplicated rules can survive under separate effect ids without anyone noticing, or how Whitebeard's sweep can end up on Fire Lord Ozai three mana cheaper. The duplicate report in `validate-cards.mjs` compares normalised printed text precisely so that a rule written twice becomes visible, and wording drift is the one thing that blinds it.
 
 The rules:
 
@@ -318,7 +324,7 @@ Do not make the simulated rules, bot skill, or turn timing “10× faster” by 
 
 `source/public/` is the runtime asset location. `materials/local-production/` contains optional rebuild tools for art, music, voice previews, and cast sheets; it is not required to play the included build. Large audio and card-production libraries are release downloads rather than normal clone requirements.
 
-Card-theme stings are the `c###.ogg` files in `source/public/audio/stings/`, one for each of the 175 entries in `source/data/cards.csv`. Relics use `r###` IDs and are intentionally not part of that theme set, even though relics share the deck and can appear in hand; audio prefetch must filter relic IDs rather than request `audio/stings/r###.ogg`.
+Card-theme stings are the `c###.ogg` files in `source/public/audio/stings/`, one for each of the 173 entries in `source/data/cards.csv`. Relics use `r###` IDs and are intentionally not part of that theme set, even though relics share the deck and can appear in hand; audio prefetch must filter relic IDs rather than request `audio/stings/r###.ogg`.
 
 The complete original audio collection is the separate [Convergence-Audio-Tracks.7z release download](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z), because it is larger than a practical GitHub Pages site.
 
@@ -357,7 +363,7 @@ When changing a rule, add or update a focused test and make the card text agree 
 ## Included materials and links
 
 - [Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/)
-- [Official lore and roster guide](https://ross-ai-lab.github.io/convergence-card-game/materials/Convergence-Official-Lore.html)
+- [Historical 175-card lore and roster guide](https://ross-ai-lab.github.io/convergence-card-game/materials/Convergence-Official-Lore.html)
 - [Card statistics workbook](materials/Convergence%20card%20stat%20excel%20sheet.xlsx)
 - [Raw card artwork](https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/raw-card-art)
 - Skeleton token artwork: [Skeleton Warrior by Clint Bellanger](https://opengameart.org/content/skeleton-warrior-0), adapted from the CC BY 3.0 sprite sheet.

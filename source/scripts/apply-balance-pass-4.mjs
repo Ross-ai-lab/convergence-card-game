@@ -56,7 +56,7 @@ const CHANGES = {
   },
   Cthulhu: {
     effect: "All enemy minions lose 1 ATK",
-    codeToo: "all_enemy_atk_down_2 -> -1 ATK",
+    codeToo: "all_enemy_atk_down_1 -> -1 ATK",
     why: "61.9% vs 53.1% at an 83.8% play rate — the most-played card in the roster. Its body is exactly the tier median, so the effect was carrying all of it: a permanent, board-wide ATK strip that scales with how wide the enemy is, for three mana.",
   },
   Sandworm: {

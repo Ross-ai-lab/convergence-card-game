@@ -41,7 +41,6 @@ function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
   }
   return next;
 }
-const toMyNextTurn = (state: GameState): GameState => endTurnAndDraw(endTurnAndDraw(state, 0), 1);
 
 /** Plays a card from hand into slot 0, ignoring mana. */
 function play(state: GameState, name: string, slotIndex = 0): GameState {
@@ -213,17 +212,13 @@ describe("control and theft cards", () => {
     expect(after.players[0].board.some((minion) => minion?.name === "Death Star")).toBe(true);
   });
 
-  it("Lelouch's command lands a turn later, not immediately", () => {
+  it("Lelouch immediately gains control of any enemy minion", () => {
     const state = mainState();
-    state.players[1].board[0] = dummy("Death Star", 1, { hp: 3, maxHp: 9 });
+    state.players[1].board[0] = dummy("Death Star", 1, { hp: 9, maxHp: 9 });
 
     const commanded = play(state, "Lelouch Lamperouge", 1);
-    expect(commanded.players[1].board[0]).not.toBeNull(); // still theirs for now
-    expect(commanded.players[0].pendingControl).not.toBeNull();
-
-    const later = toMyNextTurn(commanded);
-    expect(later.players[1].board[0]).toBeNull();
-    expect(later.players[0].board.some((minion) => minion?.name === "Death Star")).toBe(true);
+    expect(commanded.players[1].board[0]).toBeNull();
+    expect(commanded.players[0].board.some((minion) => minion?.name === "Death Star")).toBe(true);
   });
 
   it("Ten Commandments chains the first enemy minion to attack each turn", () => {
@@ -341,23 +336,6 @@ describe("choice-driven cards", () => {
     expect(after.players[0].board[1]).toBeNull();
     expect(after.players[0].board[0]?.atk).toBe(before.atk + 1);
     expect(after.players[0].board[0]?.maxHp).toBe(before.maxHp + 1);
-  });
-
-  it("Joker chooses two cards, then discards one of them", () => {
-    const state = mainState();
-    state.players[1].hand = [cardId("Death Star"), cardId("Zoro")];
-
-    const asking = play(state, "Joker", 0);
-    expect(asking.pendingTarget?.kind).toBe("hand");
-
-    const firstIndex = asking.pendingTarget!.handOptions.findIndex((option) => option.cardId === cardId("Zoro"));
-    const deciding = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: firstIndex }, library).state;
-    expect(deciding.pendingTarget?.step).toBe(2);
-    expect(deciding.pendingTarget?.handOptions).toHaveLength(2);
-    const discardIndex = deciding.pendingTarget!.handOptions.findIndex((option) => option.cardId === cardId("Zoro"));
-    const discarded = applyAction(deciding, { type: "choose_target", player: 0, choiceIndex: discardIndex }, library).state;
-    expect(discarded.players[1].hand).toEqual([cardId("Death Star")]);
-    expect(discarded.discard).toContain(cardId("Zoro"));
   });
 
   it("Indiana Jones discovers a relic and adds it to hand", () => {

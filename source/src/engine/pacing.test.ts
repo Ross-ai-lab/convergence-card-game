@@ -107,7 +107,14 @@ describe("pacing", () => {
 
   it("puts every relic into the shared deck", () => {
     const state = createInitialGame(cards, "pool", relics);
-    expect(state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId))).toHaveLength(relics.length);
+    const drawPool = [
+      ...state.players[0].hand,
+      ...state.players[1].hand,
+      ...state.deck,
+      ...state.bottomDeck,
+      ...state.discard,
+    ];
+    expect(drawPool.filter((cardId) => relics.some((relic) => relic.id === cardId))).toHaveLength(relics.length);
   });
 
   it("carries the ramp through a JSON round trip, so a save restores the same pacing", () => {

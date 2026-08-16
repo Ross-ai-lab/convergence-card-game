@@ -8,10 +8,10 @@
  * bracket. MANA COST IS NEVER TOUCHED.
  *
  * Pass 5 took cards 9+ points off their bracket from 19 to 9. These are those
- * nine. Eight of them are pure body changes; only Nulgath touches an effect, and
- * it is edited in both halves.
+ * nine. Eight of them are pure body changes; only one touches an effect, and it
+ * is edited in both halves.
  *
- * NULGATH IS CUT A SECOND TIME, and that deserves its own note because the
+ * One effect is cut a second time, and that deserves its own note because the
  * standing rule here is that consecutive cuts are how APR was destroyed. The
  * rule's actual content is narrower than "never twice": APR was cut twice
  * WITHOUT a measurement between, so the second cut could not know the first had
@@ -21,20 +21,15 @@
  * runs the identical effect one branch below at +1/+1 and measures 47.7% against
  * 48.5% — dead on its bracket, and it has held there since pass 3.
  *
- * WHAT TO WATCH IN PASS 7: Nulgath's body is 1/1 and cannot absorb another cut,
- * so if +1/+1 undershoots there is nothing left to trim and the next move is a
- * body BUFF, not a third nerf.
+ * The next move after an effect cut should follow a fresh measurement rather
+ * than a third unmeasured nerf.
  */
 
 // EFFECT LABELS HAVE BEEN RENAMED SINCE THIS PASS RAN. The codeToo note below
 // quotes the label as it read at the time, deliberately, because this file is a
 // record of what was done and not a description of the code today. Current
-// names for the two labels named in this pass:
-//
-//   any_death_buff_2_2  ->  nulgath_any_death_1_1
-//   any_death_buff_2_1  ->  nito_any_death_1_1   (the Nito branch this pass cites)
-//
-// Grep the current name, not the one printed below.
+// The codeToo note preserves the labels as they read when this historical pass
+// ran; it is a record of what was done, not a description of today's code.
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -45,12 +40,6 @@ const write = process.argv.includes("--write");
 
 const CHANGES = {
   // ---------------------------------------------------------------- NERFS
-  Nulgath: {
-    effect: "Passive: Whenever any minion dies, this minion gains +1/+1",
-    codeToo: "any_death_buff_2_2 -> buffMinion(minion, 1, 1)",
-    why:
-      "61.4% vs a 50.3% bracket after pass 5 moved it from 65.1%. Second cut, and the header explains why that is allowed here: there is a fresh 1500-duel measurement between the two, which is the thing APR never had. Lands on Gravelord Nito's proven number — same effect, one branch below, 47.7% against a 48.5% bracket and stable there for three passes.",
-  },
   Gums: {
     atk: 1,
     hp: 1,

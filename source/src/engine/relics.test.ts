@@ -77,7 +77,8 @@ describe("relic cards in the shared deck", () => {
   it("puts every relic card in the shared deck", () => {
     const state = mainState();
     const relicIds = relics.map((relic) => relic.id);
-    expect(state.deck.filter((cardId) => relicIds.includes(cardId))).toHaveLength(relics.length);
+    const sharedCards = [...state.deck, ...state.players[0].hand, ...state.players[1].hand];
+    expect(sharedCards.filter((cardId) => relicIds.includes(cardId))).toHaveLength(relics.length);
     expect(state.deck.length + state.players[0].hand.length + state.players[1].hand.length).toBe(cards.length + relics.length);
     expect(mainState("other-seed").deck).not.toEqual(state.deck);
   });

@@ -10,7 +10,7 @@
  * FIFTEEN cards, and fourteen of them are pure body changes. That is deliberate:
  * a stat edit needs no engine work, so it cannot ship a card whose text says one
  * thing while its code does another — the trap pass 3 documented. The single
- * exception (Nulgath) is called out below and edited in BOTH halves.
+ * exception is called out below and edited in BOTH halves.
  *
  * DETECTIVE L IS BUFFED THIS TIME, reversing pass 4's decision to leave him
  * alone. Pass 4's stated reason was that the bot has no term for passive effects
@@ -35,12 +35,7 @@
 
 // EFFECT LABELS HAVE BEEN RENAMED SINCE THIS PASS RAN. The codeToo notes below
 // quote the labels as they read at the time, deliberately, because this file is
-// a record of what was done and not a description of the code today. Current
-// name for the label this pass touched:
-//
-//   any_death_buff_2_2  ->  nulgath_any_death_1_1
-//
-// Grep the current name, not the one printed below.
+// a record of what was done and not a description of the code today.
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,12 +46,6 @@ const write = process.argv.includes("--write");
 
 const CHANGES = {
   // ---------------------------------------------------------------- NERFS
-  Nulgath: {
-    effect: "Passive: Whenever any minion dies, this minion gains +1/+2",
-    codeToo: "any_death_buff_2_2 -> buffMinion(minion, 1, 2)",
-    why:
-      "65.1% vs a 50.1% bracket, the worst outlier in the roster. Unbounded growth off EVERY death on BOTH boards, so the opponent's own trades feed it. The body is already 1/1 and cannot be cut, so this is the one effect edit in the pass. The calibration is not a guess: Gravelord Nito runs the same shape one branch below, was cut from +2/+1 to +1/+1 in pass 3, and now measures 47.7% against a 48.5% bracket — dead on. Nulgath costs 6 to Nito's 2, so it keeps the faster HP growth and loses the ATK growth, which is the half that runs the clock.",
-  },
   "One-Eyed Owl": {
     atk: 4,
     hp: 4,

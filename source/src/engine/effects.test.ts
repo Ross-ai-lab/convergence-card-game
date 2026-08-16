@@ -41,21 +41,18 @@ function attack(state: GameState, attackerSlot: number, targetSlot: number) {
 }
 
 describe("full-roster effects", () => {
-  it("Rennala (rebirth_friendly_dead): summons a friendly minion that died this game", () => {
+  it("Rennala (rebirth_friendly_dead): randomly summons a friendly minion that died this game", () => {
     const state = mainState();
     const zoroId = cardId("Zoro");
     const johnWickId = cardId("John Wick");
     state.players[0].deadMinions = [zoroId, johnWickId];
     state.discard.push(zoroId, johnWickId);
     const afterPlay = playCardFor(state, 0, "Rennala Queen of the Full Moon", 2);
-    expect(afterPlay.pendingTarget?.kind).toBe("option");
-    expect(afterPlay.pendingTarget?.labelOptions).toEqual([
-      { label: "Zoro", value: zoroId },
-      { label: "John Wick", value: johnWickId },
-    ]);
-    const afterChoice = applyAction(afterPlay, { type: "choose_target", player: 0, choiceIndex: 0 }, library).state;
-    expect(afterChoice.players[0].board[0]).toMatchObject({ name: "Zoro", atk: 3, hp: 3, maxHp: 3 });
-    expect(afterChoice.players[0].deadMinions).toEqual([johnWickId]);
+    expect(afterPlay.pendingTarget).toBeNull();
+    const reborn = afterPlay.players[0].board[0];
+    expect(["Zoro", "John Wick"]).toContain(reborn?.name);
+    expect(afterPlay.players[0].deadMinions).toHaveLength(1);
+    expect(afterPlay.discard).not.toContain(reborn?.cardId);
   });
 
   it("Hypnos (chain_attacker): makes an attacker skip its next turn", () => {
@@ -191,37 +188,6 @@ describe("full-roster effects", () => {
     const after = attack(state, 0, 0);
     expect(after.players[1].board[0]?.hp).toBe(10);
     expect(after.players[0].board[0]?.hp).toBe(6);
-  });
-
-  it("Nulgath (nulgath_any_death_2_2): grows whenever a minion dies", () => {
-    const state = mainState();
-    state.players[0].board[0] = makeMinion("Nulgath", 0);
-    state.players[0].board[1] = makeMinion("John Wick", 0, { atk: 5, hp: 20, maxHp: 20 });
-    state.players[1].board[0] = makeMinion("John Wick", 1);
-    const before = state.players[0].board[0]!;
-    const after = attack(state, 1, 0); // slot-1 attacker kills the enemy
-    const grown = after.players[0].board[0]!;
-    expect(grown.atk).toBe(before.atk + 2);
-    expect(grown.maxHp).toBe(before.maxHp + 2);
-  });
-
-  it("Nulgath and Gravelord Nito are no longer the same card", () => {
-    // These two ran the identical rule under two different effect ids for the
-    // whole balance history, which made them one card charged at 6 mana and at
-    // 2. Pin both printed magnitudes so a future effect-label or engine change
-    // cannot make the cards silently converge again.
-    const growthOf = (name: string) => {
-      const state = mainState();
-      state.players[0].board[0] = makeMinion(name, 0);
-      state.players[0].board[1] = makeMinion("John Wick", 0, { atk: 5, hp: 20, maxHp: 20 });
-      state.players[1].board[0] = makeMinion("John Wick", 1);
-      const before = state.players[0].board[0]!;
-      const after = attack(state, 1, 0).players[0].board[0]!;
-      return { atk: after.atk - before.atk, hp: after.maxHp - before.maxHp };
-    };
-
-    expect(growthOf("Nulgath")).toEqual({ atk: 2, hp: 2 });
-    expect(growthOf("Gravelord Nito")).toEqual({ atk: 1, hp: 1 });
   });
 
   it("Fire Lord Ozai (aoe_all_2): deals 2 to every other minion, not 3", () => {

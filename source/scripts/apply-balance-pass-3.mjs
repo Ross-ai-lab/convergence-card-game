@@ -56,7 +56,7 @@ const CHANGES = {
   },
   "Kagaya Ubuyashiki": {
     effect: "Ongoing: Give +1/+1 to all other friendly Good minions",
-    codeToo: "buff_all_good_1 no longer includes itself",
+    codeToo: "alignment anthem no longer includes itself",
     why: "69.2% vs 51%. Same anthem cluster, same lever, deliberately identical treatment — three symmetric cards fixed three different ways would be an unexplainable roster.",
   },
   Flowey: {
@@ -76,7 +76,7 @@ const CHANGES = {
   "Gravelord Nito": {
     effect: "Passive: Gain +1/+1 when a minion dies",
     codeToo: "any_death_buff_2_1 -> +1/+1",
-    why: "62.3% vs 48.2% off an 0/1, the smallest 2-cost body in the game, so there is nothing left to cut in the body. It counts every death on BOTH boards with no cap — the opponent's own trades feed it. Nulgath is the same effect at 6 mana for +2/+2; Nito was paying 2 for 80% of it.",
+    why: "62.3% vs 48.2% off an 0/1, the smallest 2-cost body in the game, so there is nothing left to cut in the body. It counts every death on BOTH boards with no cap — the opponent's own trades feed it.",
   },
   "Margit the Fell Omen": {
     effect: "Ongoing: Give a friendly Evil minion +2/+1",

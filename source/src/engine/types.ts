@@ -73,7 +73,6 @@ export type EffectId =
   | "summon_chained"
   | "deathrattle_summon_galactus"
   | "chain_all_minions"
-  | "freeze_opposing"
   | "delayed_destroy"
   | "freeze_and_weaken"
   | "tech_buff"
@@ -104,7 +103,7 @@ export type EffectId =
   | "devour_friendly"
   | "chain_damage"
   | "reduce_atk_3"
-  | "all_enemy_atk_down_2"
+  | "all_enemy_atk_down_1"
   | "freeze_enemy"
   | "freeze_all"
   | "freeze_all_enemies"
@@ -119,7 +118,6 @@ export type EffectId =
   | "buff_neutral_tech_ally_2"
   | "buff_good_tech_ally_2"
   | "buff_all_evil_1"
-  | "buff_all_good_1"
   | "buff_all_neutral_1"
   | "buff_all_magic_2_1"
   | "buff_all_nature_2_1"
@@ -132,7 +130,6 @@ export type EffectId =
   | "evil_2_shield"
   | "restore_shield"
   | "damaged_ongoing_buff"
-  | "lone_burst_8"
   | "copy_ally_atk"
   | "copy_ally_hp"
   | "steal_random"
@@ -174,7 +171,6 @@ export type EffectId =
   | "on_survive_buff_1"
   | "on_survive_buff_2"
   | "friendly_death_buff_1_1"
-  | "nulgath_any_death_2_2"
   | "nito_any_death_1_1"
   | "tech_death_buff"
   | "godrick_relic_on_kill"
@@ -199,7 +195,6 @@ export type EffectId =
   | "survivor_buff"
   | "mark_for_death"
   | "mind_control_2"
-  | "mind_control_4_delayed"
   | "copy_and_trigger"
   | "steal_passive"
   | "redirect_attacks"
@@ -292,6 +287,9 @@ export type EffectId =
   | "avatar_aang_awakened"
   | "chaos_random_summon"
   | "copy_minion_to_hand"
+  | "discover_random_keyword_minion"
+  | "double_other_friendly_attack"
+  | "mind_control_enemy"
   | "discover_tech_card"
   | "transform_random_allies_up"
   | "devolve_enemy_minions"
@@ -459,8 +457,6 @@ export interface PlayerState {
   coins: number;
   hand: string[];
   board: Array<MinionInstance | null>;
-  /** Lelouch: a minion promised to this player at the start of their next turn. */
-  pendingControl: { instanceId: string; fromPlayer: PlayerId; dueTurn: number } | null;
   /** Kuma: per-card discounts, keyed by card id. */
   costReductions: Record<string, number>;
   /** Doctor Strange: mana removed from this player's next turn. */

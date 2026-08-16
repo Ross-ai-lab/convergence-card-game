@@ -184,7 +184,7 @@ for (const [index, card] of cards.entries()) {
   }
 }
 
-if (cards.length !== 175) errors.push(`Expected 175 cards, found ${cards.length}`);
+if (cards.length !== 173) errors.push(`Expected 173 cards, found ${cards.length}`);
 
 if (errors.length) {
   console.error(errors.join("\n"));
@@ -216,10 +216,9 @@ function reportSharedEffects(all) {
 
   const byLabel = group((card) => card.effectId.trim());
 
-  // The label is only half the question. Nulgath and Gravelord Nito ran the
-  // identical rule under two different ids for the whole balance history, and
-  // grouping by label waved them through every time — the duplicate was found by
-  // hand, which is exactly the kind of check that stops happening.
+  // The label is only half the question. Grouping by label can miss a duplicate
+  // when two cards use different ids, so the printed-text check below keeps that
+  // review visible instead of relying on memory.
   //
   // Normalising the printed text catches that case. It only works because the
   // roster's wording is kept deliberately uniform (see the README's card wording

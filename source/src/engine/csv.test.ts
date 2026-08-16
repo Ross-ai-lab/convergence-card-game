@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { cards, resolvePublicAssetUrl } from "../data/cards";
 
 describe("card CSV data", () => {
-  it("loads the full 175-card roster", () => {
-    expect(cards).toHaveLength(175);
-    expect(new Set(cards.map((card) => card.id)).size).toBe(175);
-    expect(new Set(cards.map((card) => card.name)).size).toBe(175);
+  it("loads the full 173-card roster", () => {
+    expect(cards).toHaveLength(173);
+    expect(new Set(cards.map((card) => card.id)).size).toBe(173);
+    expect(new Set(cards.map((card) => card.name)).size).toBe(173);
   });
 
   it("contains the v1 systems needed for engine coverage", () => {
@@ -40,7 +40,7 @@ describe("card CSV data", () => {
       hp: 3,
       effectId: "rebirth_friendly_dead",
       effectTiming: "onPlay",
-      effect: "Battlecry: Rebirth a friendly minion that died this game",
+      effect: "Battlecry: Rebirth a random friendly minion that died this game",
     });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
     expect(changed.get("Eye of Sauron")).toMatchObject({

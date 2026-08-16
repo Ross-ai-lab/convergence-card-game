@@ -107,9 +107,14 @@ describe("2026 card replacements", () => {
         keywords: ["Deathrattle"],
         effect: "Battlecry: Summon a random minion from the deck. Deathrattle: Summon a random minion from the deck.",
       },
-      UFO: { effectId: "immune_nature_minions", effectTiming: "passive", keywords: ["Passive"] },
+      UFO: { effectId: "none", effectTiming: "none", keywords: [], effect: "-" },
+      Yujiro: { atk: 4, hp: 4, effectId: "immune_nature_minions", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Immune to Nature minions" },
       Vegapunk: { effectId: "discover_tech_card", effectTiming: "onPlay", keywords: [] },
-      "Ultron Prime": { cost: 7, atk: 4, hp: 5, effectId: "copy_minion_to_hand", effectTiming: "onPlay", keywords: [] },
+      "John Wick": { atk: 1, hp: 1, effectId: "friendly_death_buff_1_1", effectTiming: "passive" },
+      Joker: { atk: 1, hp: 1, effectId: "copy_minion_to_hand", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Put a copy of a minion in your hand." },
+      "Escanor \"The One\"": { cost: 8, atk: 8, hp: 4, effectId: "double_other_friendly_attack", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Double your other friendly minions attack." },
+      "Lelouch Lamperouge": { cost: 9, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion" },
+      "Ultron Prime": { cost: 7, atk: 4, hp: 5, effectId: "none", effectTiming: "none", keywords: [], effect: "-" },
       Neo: { cost: 10, atk: 5, hp: 7, effectId: "protect_slot", effectTiming: "onPlay" },
       "Monkey D. Luffy": { cost: 8, atk: 6, hp: 4, effectId: "free_chained_shield", effectTiming: "onPlay" },
       Meruem: { cost: 6, atk: 4, hp: 5, effectId: "meruem_kill_copy", effectTiming: "passive" },
@@ -132,7 +137,7 @@ describe("2026 card replacements", () => {
       "Aladdin Lamp": { atk: 5, hp: 4, effectId: "aladdin_wish", effectTiming: "onPlay" },
       "The Mask": { atk: 3, hp: 2, effectId: "transform_random_allies_up", effectTiming: "onPlay", keywords: [] },
       Yubaba: { effectId: "devolve_enemy_minions", effectTiming: "onPlay", keywords: [] },
-      V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle" },
+      V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle", keywords: ["Deathrattle"], effect: "Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core" },
       "Time Bomb": { atk: 0, hp: 9, effectId: "time_bomb_destroy_all", effectTiming: "ongoing", keywords: [] },
       Doomsday: {
         cost: 9,
@@ -150,18 +155,33 @@ describe("2026 card replacements", () => {
       "G-Man": { atk: 3, hp: 6, effectId: "stasis_enemy", effectTiming: "onPlay", keywords: [] },
       Superman: { atk: 6, hp: 6, effectId: "superman_damage_cap_3", effectTiming: "passive", keywords: ["Passive"] },
       "Darth Vader": { atk: 3, hp: 2, effectId: "vader_chain_or_destroy", effectTiming: "onPlay", keywords: [] },
-      Dumbledore: { atk: 2, hp: 4, effectId: "dumbledore_cleanse", effectTiming: "passive", keywords: ["Passive"] },
+      Dumbledore: {
+        atk: 2,
+        hp: 4,
+        effectId: "dumbledore_cleanse",
+        effectTiming: "passive",
+        keywords: ["Passive"],
+        effect: "Passive: Friendly minions cannot be Silenced, Frozen, or Chained. Undo any such curses.",
+      },
       Gojo: { atk: 4, hp: 8, effectId: "yoda_global_silence", effectTiming: "passive", keywords: ["Passive"] },
-      "Rennala Queen of the Full Moon": { atk: 2, hp: 3, effectId: "rebirth_friendly_dead", effectTiming: "onPlay", keywords: [] },
+      "Rennala Queen of the Full Moon": { atk: 2, hp: 3, effectId: "rebirth_friendly_dead", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Rebirth a random friendly minion that died this game" },
+      "Kagaya Ubuyashiki": { atk: 1, hp: 1, effectId: "discover_random_keyword_minion", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Discover a random Taunt, Divine Shield, and Passive minion in the deck. Draw one" },
       Cecil: { atk: 1, hp: 1, effectId: "bounce_friendly", effectTiming: "onPlay", keywords: [] },
       "Giorno - Gold Experience Requiem": { cost: 10, atk: 4, hp: 8, effectId: "slot_permanent_chain", effectTiming: "onPlay", keywords: [] },
       Avengers: { atk: 4, hp: 4, effectId: "invuln_with_good_ally", effectTiming: "passive", keywords: ["Passive"] },
-      "General Grievous": { atk: 3, hp: 2, effectId: "grievous_on_kill_atk", effectTiming: "passive", keywords: ["Passive"] },
+      "General Grievous": { atk: 3, hp: 3, alignment: "Evil", effectId: "grievous_on_kill_atk", effectTiming: "passive", keywords: ["Passive"] },
       Buddha: { atk: 3, hp: 4, effectId: "buddha_purify", effectTiming: "onPlay", keywords: [] },
       "Deep Sea King": { atk: 4, hp: 4, effectId: "invulnerable_if_frozen", effectTiming: "passive", keywords: ["Passive"] },
       "Seven Deadly Sins": { atk: 4, hp: 5, effectId: "summon_sins", effectTiming: "onPlay", keywords: [] },
       "Elder Centipede": { atk: 5, hp: 6, effectId: "self_buff_2", effectTiming: "ongoing", keywords: ["Ongoing"] },
-      "All Might": { atk: 4, hp: 5, effectId: "all_enemy_atk_down_2", effectTiming: "passive", keywords: ["Passive"] },
+      "All Might": {
+        atk: 4,
+        hp: 5,
+        effectId: "all_enemy_atk_down_1",
+        effectTiming: "passive",
+        keywords: ["Passive"],
+        effect: "Passive: While on the board, every enemy minion has -1 ATK.",
+      },
       Sans: { effectId: "dodge_80", effect: "Passive: Evade 80% of attacks." },
       Musashi: { atk: 2, hp: 1 },
       Illumi: { atk: 1, hp: 1 },
@@ -200,15 +220,17 @@ describe("2026 card replacements", () => {
     expect(getLegalActions(after, library)).toContainEqual({ type: "play_card", player: 0, handIndex: 0, slotIndex: 1 });
   });
 
-  it("Dumbledore cleanses existing disables and blocks new Silence and Freeze", () => {
+  it("Dumbledore cleanses existing disables and blocks new Silence, Freeze, and Chained", () => {
     const state = mainState();
     state.players[0].board[1] = minion("John Wick", 0, { silenced: true });
     state.players[0].board[2] = minion("Zoro", 0, { frozen: true, thawPending: true, attacksUsed: 1 });
+    state.players[0].board[3] = minion("John Wick", 0, { chained: 2 });
 
     const afterPlay = play(state, 0, "Dumbledore", 0);
     expect(afterPlay.players[0].board[0]).toMatchObject({ atk: 2, hp: 4, silenced: false, frozen: false });
     expect(afterPlay.players[0].board[1]).toMatchObject({ silenced: false });
     expect(afterPlay.players[0].board[2]).toMatchObject({ frozen: false, thawPending: false, attacksUsed: 0 });
+    expect(afterPlay.players[0].board[3]).toMatchObject({ chained: 0 });
 
     const frozenAttempt = play(afterPlay, 1, "Dio Brando", 0);
     expect(frozenAttempt.players[0].board[0]?.frozen).toBe(false);
@@ -220,6 +242,15 @@ describe("2026 card replacements", () => {
     expect(targetIndex).toBeGreaterThanOrEqual(0);
     const cleansed = choose(silencedAttempt, targetIndex);
     expect(cleansed.players[0].board[1]?.silenced).toBe(false);
+
+    const protectedChain = mainState("dumbledore-blocks-chain");
+    protectedChain.players[0].board[0] = minion("Dumbledore", 0);
+    protectedChain.players[0].board[1] = minion("John Wick", 0, { chained: 2 });
+    const vaderPending = play(protectedChain, 1, "Darth Vader", 0);
+    const protectedTarget = vaderPending.pendingTarget?.options.findIndex((option) => option.owner === 0 && option.slot === 1) ?? -1;
+    expect(protectedTarget).toBeGreaterThanOrEqual(0);
+    const vaderBlocked = choose(vaderPending, protectedTarget);
+    expect(vaderBlocked.players[0].board[1]).toMatchObject({ chained: 0 });
   });
 
   it("Gojo silences enemy minions while alive, then releases them when he dies", () => {
@@ -296,6 +327,7 @@ describe("2026 card replacements", () => {
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(after.players[0].board[0]).toBeNull();
     expect(after.players[0].board[1]).toBeNull();
+    expect(after.players[0].health).toBe(72);
   });
 
   it("Morpheus offers the two pill choices", () => {
@@ -546,8 +578,8 @@ describe("2026 card replacements", () => {
     const placed = play(state, 0, "Fantastic Four", 4);
     expect(placed.players[0].board[0]?.keywords).toContain("Taunt");
     expect(placed.players[0].board[1]?.divineShield).toBe(true);
-    expect(placed.players[0].board[2]?.atk).toBe(4);
-    expect(placed.players[0].board[3]?.maxHp).toBe(4);
+    expect(placed.players[0].board[2]?.atk).toBe(3);
+    expect(placed.players[0].board[3]?.maxHp).toBe(3);
 
     placed.players[0].board[0]!.keywords = [];
     placed.players[1].board[0] = minion("Zoro", 1, { atk: 99, sleeping: false, hp: 99, maxHp: 99 });
@@ -556,8 +588,8 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[4]).toBeNull();
     expect(after.players[0].board[0]?.keywords).not.toContain("Taunt");
     expect(after.players[0].board[1]?.divineShield).toBe(false);
-    expect(after.players[0].board[2]?.atk).toBe(2);
-    expect(after.players[0].board[3]?.maxHp).toBe(2);
+    expect(after.players[0].board[2]?.atk).toBe(1);
+    expect(after.players[0].board[3]?.maxHp).toBe(1);
   });
 
   it("Ragnaros fires at the end of its controller's turn", () => {
@@ -687,8 +719,21 @@ describe("2026 card replacements", () => {
     expect(after.deck).not.toContain(chosenId);
   });
 
-  it("UFO is immune to damage from Nature minions", () => {
-    const state = mainState("ufo-nature-immunity");
+  it("Yujiro is immune to damage from Nature minions", () => {
+    const state = mainState("yujiro-nature-immunity");
+    state.players[0].board[0] = minion("Yujiro", 0);
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 4, hp: 10, maxHp: 10, sleeping: false });
+    state.activePlayer = 1;
+    const after = applyAction(
+      state,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(after.players[0].board[0]?.hp).toBe(4);
+  });
+
+  it("UFO no longer has Nature immunity", () => {
+    const state = mainState("ufo-no-nature-immunity");
     state.players[0].board[0] = minion("UFO", 0);
     state.players[1].board[0] = minion("John Wick", 1, { atk: 4, hp: 10, maxHp: 10, sleeping: false });
     state.activePlayer = 1;
@@ -697,7 +742,7 @@ describe("2026 card replacements", () => {
       { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
       library,
     ).state;
-    expect(after.players[0].board[0]?.hp).toBe(5);
+    expect(after.players[0].board[0]?.hp).toBe(1);
   });
 
   it("G-Man stores an enemy in stasis and returns it after two turns", () => {
@@ -844,7 +889,7 @@ describe("2026 card replacements", () => {
     const might = mainState("all-might-aura");
     might.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 5, maxHp: 5 });
     const empowered = play(might, 0, "All Might", 0);
-    expect(empowered.players[1].board[0]?.atk).toBe(3);
+    expect(empowered.players[1].board[0]?.atk).toBe(4);
     empowered.players[1].board[1] = minion("John Wick", 1, { atk: 0, hp: 5, maxHp: 5 });
     const clamped = applyAction(empowered, { type: "end_turn", player: 0 }, library).state;
     expect(clamped.players[1].board[1]?.atk).toBe(0);
@@ -1145,23 +1190,18 @@ describe("2026 card replacements", () => {
     );
   });
 
-  it("Escanor The One deals exactly 8 damage only when he controls no other minions", () => {
-    const alone = mainState("escanor-lone-burst");
-    alone.players[1].board[0] = minion("John Wick", 1, { hp: 10, maxHp: 10 });
-    alone.players[1].board[1] = minion("Zoro", 1, { hp: 10, maxHp: 10 });
-    const asking = play(alone, 0, 'Escanor "The One"', 0);
-    const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 1 && option.slot === 0) ?? -1;
-    expect(targetIndex).toBeGreaterThanOrEqual(0);
-    const after = choose(asking, targetIndex);
-    expect(after.players[1].board[0]?.hp).toBe(2);
-    expect(after.players[1].board[1]?.hp).toBe(10);
+  it("Escanor The One doubles the ATK of his other friendly minions", () => {
+    const state = mainState("escanor-double-attack");
+    state.players[0].board[1] = minion("Zoro", 0, { atk: 3, hp: 5, maxHp: 5 });
+    state.players[0].board[2] = minion("Saitama", 0, { atk: 5, hp: 6, maxHp: 6 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 7, hp: 10, maxHp: 10 });
 
-    const crowded = mainState("escanor-not-alone");
-    crowded.players[0].board[2] = minion("John Wick", 0);
-    crowded.players[1].board[0] = minion("John Wick", 1, { hp: 10, maxHp: 10 });
-    const noBurst = play(crowded, 0, 'Escanor "The One"', 0);
-    expect(noBurst.pendingTarget).toBeNull();
-    expect(noBurst.players[1].board[0]?.hp).toBe(10);
+    const after = play(state, 0, 'Escanor "The One"', 0);
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[0].board[0]).toMatchObject({ atk: 8, hp: 4, maxHp: 4 });
+    expect(after.players[0].board[1]?.atk).toBe(6);
+    expect(after.players[0].board[2]?.atk).toBe(10);
+    expect(after.players[1].board[0]?.atk).toBe(7);
   });
 
   it("Dormammu holds an enemy in the Dark Dimension until he dies", () => {
@@ -1240,14 +1280,22 @@ describe("2026 card replacements", () => {
     expect(after.players[1].board[0]?.hp).toBe(9);
   });
 
-  it("Ultron Prime puts a copy of a chosen minion into its owner's hand", () => {
-    const state = mainState("ultron-copy-minion");
+  it("Joker puts a copy of a chosen minion into its owner's hand", () => {
+    const state = mainState("joker-copy-minion");
     state.players[1].board[1] = minion("John Wick", 1);
-    const asking = play(state, 0, "Ultron Prime", 0);
+    const asking = play(state, 0, "Joker", 0);
     const choice = asking.pendingTarget!.options.findIndex((option) => option.owner === 1 && option.slot === 1);
     const after = choose(asking, choice);
     expect(after.players[0].hand).toContain(cardId("John Wick"));
     expect(after.players[1].board[1]?.name).toBe("John Wick");
+  });
+
+  it("Ultron Prime no longer has the copy effect", () => {
+    const state = mainState("ultron-vanilla");
+    state.players[1].board[1] = minion("John Wick", 1);
+    const after = play(state, 0, "Ultron Prime", 0);
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[0].hand).toHaveLength(0);
   });
 
   it("Thirteen Lords of Chaos summons Drakath on death", () => {
@@ -1357,15 +1405,6 @@ describe("2026 card replacements", () => {
     const after = play(state, 0, "Yubaba", 0);
     expect(after.players[1].board[0]?.cost).toBe((originalCosts[0] ?? 0) - 1);
     expect(after.players[1].board[1]?.cost).toBe((originalCosts[1] ?? 0) - 1);
-  });
-
-  it("Yujiro destroys the chosen enemy minion", () => {
-    const state = mainState("yujiro-destroy");
-    state.players[1].board[0] = minion("John Wick", 1);
-
-    const after = play(state, 0, "Yujiro", 0);
-    expect(after.players[1].board[0]).toBeNull();
-    expect(after.discard).toContain(cardId("John Wick"));
   });
 
   it("Giant Crystal gives exactly +2/+1 to other friendly Magic minions", () => {
@@ -1496,18 +1535,14 @@ describe("2026 card replacements", () => {
     expect(byItself.players[0].board[0]).toMatchObject({ atk: 1, hp: 2 });
   });
 
-  it("Kagaya Ubuyashiki gives exactly +1/+1 to other friendly Good minions", () => {
-    const state = mainState("kagaya-good-aura");
-    state.players[0].board[0] = minion("Kagaya Ubuyashiki", 0);
-    state.players[0].board[1] = minion("Saitama", 0, { alignment: "Good", atk: 2, hp: 3, maxHp: 3 });
-    state.players[0].board[2] = minion("John Wick", 0, { alignment: "Evil", atk: 2, hp: 3, maxHp: 3 });
-    state.players[1].board[0] = minion("Saitama", 1, { alignment: "Good", atk: 2, hp: 3, maxHp: 3 });
+  it("Kagaya Ubuyashiki draws a random Taunt, Divine Shield, or Passive minion", () => {
+    const state = mainState("kagaya-keyword-draw");
+    state.deck = [cardId("John Wick"), cardId("The Five Convicts")];
+    const after = play(state, 0, "Kagaya Ubuyashiki", 0);
 
-    const after = endTurn(endTurn(state, 0), 1);
-    expect(after.players[0].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
-    expect(after.players[0].board[1]).toMatchObject({ atk: 3, hp: 4, maxHp: 4 });
-    expect(after.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
-    expect(after.players[1].board[0]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[0].hand).toEqual([cardId("The Five Convicts")]);
+    expect(after.deck).toEqual([cardId("John Wick")]);
   });
 
   it("Sir Nighteye sees the card left on top of the shared deck", () => {
