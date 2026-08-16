@@ -22,7 +22,7 @@ const required = [
 
 const allowed = {
   rarity: new Set(["Red", "Yellow", "Purple", "Black"]),
-  camp: new Set(["Magic", "Tech", "Nature"]),
+  camp: new Set(["Magic", "Tech", "Nature", "ALL"]),
   alignment: new Set(["Good", "Evil", "Neutral"]),
   effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive", "deathrattle"]),
   keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Invulnerable", "Charge", "Deathrattle", "Cannot Attack"]),
@@ -184,7 +184,7 @@ for (const [index, card] of cards.entries()) {
   }
 }
 
-if (cards.length !== 173) errors.push(`Expected 173 cards, found ${cards.length}`);
+if (cards.length !== 172) errors.push(`Expected 172 cards, found ${cards.length}`);
 
 if (errors.length) {
   console.error(errors.join("\n"));

@@ -448,7 +448,7 @@ await page.evaluate(() => {
   const stage = document.createElement("div");
   stage.id = "fx-stage";
   stage.style.cssText =
-    "position:fixed;inset:0;z-index:200;display:grid;grid-template-columns:repeat(3,1fr);" +
+    "position:fixed;inset:0;z-index:200;display:grid;grid-template-columns:repeat(4,1fr);" +
     "place-items:center;background:#1a1220;font:600 13px system-ui;color:#c9bea7";
   // THE BACKGROUND MATTERS AND USED TO BE A LIE. These were photographed on a
   // dark panel and tuned there, then played on bright parchment over a lit card
@@ -470,13 +470,14 @@ await page.evaluate(() => {
   cell("Magic", impact("magic"));
   cell("Nature", impact("nature"));
   cell("Tech", impact("tech"));
+  cell("ALL", impact("all"));
   document.body.appendChild(stage);
 
   // Freeze each one at ITS OWN peak. A single shared delay is not a fair
-  // comparison — the three effects have different durations, so one flat -0.34s
-  // caught Tech already fading out and made it look like the weakest of the
-  // three when it was simply photographed late.
-  const peak = { magic: "-0.30s", nature: "-0.34s", tech: "-0.28s" };
+  // comparison — the four effects have different durations, so one flat -0.34s
+  // caught Tech or ALL already fading out and made it look weak when it was
+  // simply photographed late.
+  const peak = { magic: "-0.30s", nature: "-0.34s", tech: "-0.28s", all: "-0.30s" };
   for (const [camp, delay] of Object.entries(peak)) {
     for (const node of stage.querySelectorAll(`.camp-${camp}, .camp-${camp} *`)) {
       node.style.animationPlayState = "paused";

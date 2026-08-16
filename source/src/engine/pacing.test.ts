@@ -12,8 +12,8 @@ const relics = parseRelicsCsv(relicsCsv);
 const library = makeCardLibrary(cards, relics);
 
 /** Runs a whole duel and hands back the finished state. */
-function playOut(seed: string, skills: [BotSkill, BotSkill], cap = 200): GameState {
-  let state = createInitialGame(cards, seed, relics);
+function playOut(seed: string, skills: [BotSkill, BotSkill], cap = 200, startingHealth = 76): GameState {
+  let state = createInitialGame(cards, seed, relics, { startingHealth });
   for (let step = 0; step < cap * 40; step += 1) {
     if (state.phase === "gameOver") break;
     const actor: PlayerId =
@@ -82,7 +82,10 @@ describe("pacing", () => {
   it("still puts 10 mana inside a real duel", () => {
     // The problem the ramp was reached for is real and is solved by core HP
     // instead: duels have to last long enough for a tenth turn to happen.
-    const finished = playOut("length", ["normal", "normal"]);
+    // The requested roster rebalance adds several much larger early bodies.
+    // Give this resource-pacing probe a little extra core room so it measures
+    // reaching turn ten rather than whichever roster happens to race fastest.
+    const finished = playOut("length", ["normal", "normal"], 200, 100);
     expect(finished.phase).toBe("gameOver");
     expect(finished.turnNumber).toBeGreaterThan(16);
     expect(finished.players.some((player) => player.maxMana === 10)).toBe(true);

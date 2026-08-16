@@ -80,13 +80,54 @@ describe("2026 card replacements", () => {
       "Kento Nanami": { cost: 3, atk: 1, hp: 1, effectId: "set_hp_1", effectTiming: "onPlay", keywords: [] },
       "Ainz Ooal Gown": { cost: 9, atk: 3, hp: 3, effectId: "set_all_enemy_hp_1", effectTiming: "onPlay", keywords: [] },
       "Eye of Sauron": {
-        cost: 1,
+        cost: 4,
         atk: 1,
-        hp: 5,
+        hp: 4,
         effectId: "enemy_cards_cost_1_more",
         effectTiming: "passive",
         keywords: ["Passive"],
         effect: "Passive: Enemy cards cost 1 more",
+      },
+      "Yoriichi Type Zero": {
+        cost: 3,
+        atk: 2,
+        hp: 2,
+        effectId: "survivor_buff",
+        effectTiming: "passive",
+        keywords: [],
+        effect: "Passive: Whenever a friendly minion survives a combat, it gains +1/+1.",
+      },
+      "Gordon Freeman": { cost: 4, atk: 3, hp: 3, effectId: "none", effectTiming: "none", keywords: [], effect: "-" },
+      Hypnos: {
+        cost: 4,
+        atk: 0,
+        hp: 5,
+        effectId: "chain_attacker",
+        effectTiming: "passive",
+        keywords: ["Taunt", "Passive"],
+        effect: "Taunt. Passive: Enemy minions that attack this become Chained for 1 turn.",
+      },
+      Zoro: { cost: 5, atk: 4, hp: 4, effectId: "on_kill_buff_1", effectTiming: "passive", keywords: [], effect: "Passive: Gain +1/+1 after killing a minion." },
+      "One-Eyed Owl": { cost: 5, atk: 6, hp: 6, effectId: "none", effectTiming: "none", keywords: ["Chained"], effect: "Chained." },
+      "Gravelord Nito": { cost: 3, atk: 1, hp: 3, effectId: "nito_any_death_1_1", effectTiming: "passive", keywords: [], effect: "Passive: Gain +1/+1 when a minion dies." },
+      "Silver Surfer": {
+        cost: 6,
+        atk: 3,
+        hp: 3,
+        effectId: "deathrattle_summon_galactus",
+        effectTiming: "deathrattle",
+        keywords: ["Chained", "Deathrattle"],
+        effect: "Chained. Deathrattle: Summon Galactus (5/5).",
+      },
+      "Pillar Men": { cost: 4, atk: 5, hp: 5, effectId: "none", effectTiming: "none", keywords: ["Chained"], effect: "Chained." },
+      Cthulhu: {
+        cost: 6,
+        atk: 6,
+        hp: 6,
+        effectId: "immune_tech_minions",
+        effectTiming: "passive",
+        keywords: ["Chained", "Passive"],
+        effect: "Chained. Passive: Immune to Tech minions.",
       },
       Kizaru: { atk: 4, hp: 4 },
       "Avatar Aang": {
@@ -133,7 +174,7 @@ describe("2026 card replacements", () => {
       },
       "The Five Convicts": { cost: 3, atk: 5, hp: 1, keywords: ["Taunt"], effectId: "none", effectTiming: "none", effect: "Taunt." },
       "Doctor Octopus": { cost: 4, atk: 3, hp: 3, effectId: "destroy_relic", effectTiming: "onPlay" },
-      "The 7 Heroic Spirits": { cost: 2, atk: 2, hp: 2, effectId: "heroic_relics" },
+      "The 7 Heroic Spirits": { cost: 7, atk: 2, hp: 2, effectId: "heroic_relics" },
       "Aladdin Lamp": { atk: 5, hp: 4, effectId: "aladdin_wish", effectTiming: "onPlay" },
       "The Mask": { atk: 3, hp: 2, effectId: "transform_random_allies_up", effectTiming: "onPlay", keywords: [] },
       Yubaba: { effectId: "devolve_enemy_minions", effectTiming: "onPlay", keywords: [] },
@@ -407,6 +448,28 @@ describe("2026 card replacements", () => {
     const afterDeath = applyAction({ ...withTree, activePlayer: 1 }, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(afterDeath.players[0].board[0]).toBeNull();
     expect(afterDeath.players[0].board[1]).toMatchObject({ atk: 3, maxHp: 3 });
+  });
+
+  it("ALL receives positive camp auras but is excluded from camp-specific debuffs", () => {
+    const natureAura = mainState("all-nature-aura");
+    natureAura.players[0].board[1] = minion("Zoro", 0, { camp: "ALL", atk: 3, hp: 3, maxHp: 3 });
+    const withTree = play(natureAura, 0, "Giant Tree", 0);
+    expect(withTree.players[0].board[1]).toMatchObject({ atk: 5, hp: 4, maxHp: 4 });
+
+    const magicAura = mainState("all-magic-aura");
+    magicAura.players[0].board[0] = minion("Giant Crystal", 0);
+    magicAura.players[0].board[1] = minion("Zoro", 0, { camp: "ALL", atk: 3, hp: 3, maxHp: 3 });
+    magicAura.players[0].board[2] = minion("John Wick", 0, { camp: "Nature", atk: 2, hp: 3, maxHp: 3 });
+    const afterCrystal = endTurn(endTurn(magicAura, 0), 1);
+    expect(afterCrystal.players[0].board[1]).toMatchObject({ atk: 5, hp: 4, maxHp: 4 });
+    expect(afterCrystal.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
+
+    const debuff = mainState("all-nature-debuff");
+    debuff.players[1].board[0] = minion("Zoro", 1, { camp: "ALL", atk: 3, hp: 4, maxHp: 4 });
+    const asking = play(debuff, 0, "Gums", 0);
+    expect(asking.pendingTarget?.options ?? []).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ owner: 1, slot: 0 })]),
+    );
   });
 
   it("Dr. Heinz's winning coin flip grants +2/+1", () => {
@@ -992,7 +1055,7 @@ describe("2026 card replacements", () => {
     tech.players[0].board[0] = minion("Modern Tank", 0, { sleeping: false, atk: 5, hp: 20, maxHp: 20 });
     tech.players[1].board[0] = minion("Cthulhu", 1);
     const cthulhuHit = applyAction(tech, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(cthulhuHit.players[1].board[0]?.hp).toBe(4);
+    expect(cthulhuHit.players[1].board[0]?.hp).toBe(6);
 
     const nature = mainState("t1000-nature");
     nature.players[0].board[0] = minion("John Wick", 0, { sleeping: false, camp: "Nature", atk: 1, hp: 20, maxHp: 20 });
@@ -1011,10 +1074,8 @@ describe("2026 card replacements", () => {
     const after = targetIndex >= 0 ? choose(asking, targetIndex) : asking;
     const godrick = after.players[0].board[0];
     expect(after.players[0].board[1]).toBeNull();
-    expect(godrick).toMatchObject({ atk: 5, hp: 5, maxHp: 5, effectId: "none", effectTiming: "passive" });
-    expect(godrick?.gainedEffects).toEqual([
-      expect.objectContaining({ effectId: "gordon_survive_damage", timing: "passive" }),
-    ]);
+    expect(godrick).toMatchObject({ atk: 5, hp: 5, maxHp: 5, effectId: "none", effectTiming: "none" });
+    expect(godrick?.gainedEffects).toEqual([]);
   });
 
   it("Godzilla retaliates with damage to enemy minions and the enemy core", () => {

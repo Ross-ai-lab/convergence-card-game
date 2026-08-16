@@ -47,7 +47,6 @@ const WORST = [
   // typical card actually renders at, which is the number worth watching.
   "Furious Five",
   "Kojiro Sasaki",
-  "The Nameless King",
 ];
 
 const results = [];

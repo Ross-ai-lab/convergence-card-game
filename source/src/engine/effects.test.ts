@@ -142,13 +142,13 @@ describe("full-roster effects", () => {
     expect(afterStrong.players[1].board[0]?.hp).toBe(printedHp - 2);
   });
 
-  it("Gordon Freeman gains +2/+2 whenever he survives damage", () => {
+  it("Gordon Freeman has no effect when he survives damage", () => {
     const alone = mainState();
     alone.players[0].board[0] = makeMinion("John Wick", 0, { atk: 1, hp: 20, maxHp: 20 });
     alone.players[1].board[0] = makeMinion("Gordon Freeman", 1);
     const after = attack(alone, 0, 0).players[1].board[0]!;
-    expect(after.hp).toBe(4); // 3 - 1 + 2
-    expect(after.maxHp).toBe(5);
+    expect(after.hp).toBe(2); // 3 - 1
+    expect(after.maxHp).toBe(3);
   });
 
   it("Sans (dodge_80): evades an incoming attack", () => {
@@ -168,7 +168,7 @@ describe("full-roster effects", () => {
     state.players[1].board[0] = makeMinion("John Wick", 1);
     const zoro = attack(state, 0, 0).players[0].board[0];
     expect(zoro?.atk).toBe(6);
-    expect(zoro?.maxHp).toBe(4);
+    expect(zoro?.maxHp).toBe(5);
   });
 
   it("RoboCop (robocop_evil_bonus): triples damage into Evil", () => {

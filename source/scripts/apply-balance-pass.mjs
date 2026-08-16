@@ -149,11 +149,6 @@ const CHANGES = {
     hp: 9,
     why: "34.0% vs 42.5% — killing the smallest enemy minion is not a 9-mana effect on a 1-ATK body.",
   },
-  "The Nameless King": {
-    atk: 2,
-    hp: 3,
-    why: "39.1% vs 49.0%.",
-  },
   "Gandalf the White": {
     atk: 3,
     hp: 4,

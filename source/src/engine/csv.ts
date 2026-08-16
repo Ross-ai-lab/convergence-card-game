@@ -11,7 +11,7 @@ import type {
 } from "./types";
 
 const rarities = new Set<Rarity>(["Red", "Yellow", "Purple", "Black"]);
-const camps = new Set<Camp>(["Magic", "Tech", "Nature"]);
+const camps = new Set<Camp>(["Magic", "Tech", "Nature", "ALL"]);
 const alignments = new Set<Alignment>(["Good", "Evil", "Neutral"]);
 const timings = new Set<EffectTiming>(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive", "deathrattle"]);
 const keywords = new Set<Keyword>([
@@ -199,7 +199,6 @@ const effectIds = new Set<EffectId>([
   "replace_allies_from_deck",
   "camp_immunity_on_hit",
   "set_stats_choice",
-  "alignment_shift",
   "pressure_chosen_card",
   "reveal_and_shuffle_chosen",
   "choose_2_discard",
@@ -225,7 +224,6 @@ const effectIds = new Set<EffectId>([
   "strange_duel",
   "death_star_mark",
   "glados_adjacent_tech",
-  "gordon_survive_damage",
   "deathrattle_aoe_3",
   "avengers_recruit_good",
   "doom_evil_slayer",

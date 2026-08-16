@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { cards, resolvePublicAssetUrl } from "../data/cards";
 
 describe("card CSV data", () => {
-  it("loads the full 173-card roster", () => {
-    expect(cards).toHaveLength(173);
-    expect(new Set(cards.map((card) => card.id)).size).toBe(173);
-    expect(new Set(cards.map((card) => card.name)).size).toBe(173);
+  it("loads the full 172-card roster", () => {
+    expect(cards).toHaveLength(172);
+    expect(new Set(cards.map((card) => card.id)).size).toBe(172);
+    expect(new Set(cards.map((card) => card.name)).size).toBe(172);
   });
 
   it("contains the v1 systems needed for engine coverage", () => {
@@ -44,9 +44,9 @@ describe("card CSV data", () => {
     });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
     expect(changed.get("Eye of Sauron")).toMatchObject({
-      cost: 1,
+      cost: 4,
       atk: 1,
-      hp: 5,
+      hp: 4,
       effectId: "enemy_cards_cost_1_more",
       effectTiming: "passive",
       keywords: ["Passive"],

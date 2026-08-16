@@ -4,6 +4,7 @@ import { traceEffect } from "./trace";
 import type {
   ApplyResult,
   Alignment,
+  Camp,
   SlotAuraId,
   CardDefinition,
   EffectId,
@@ -1298,6 +1299,18 @@ interface TargetSpec {
   coreOption?: boolean;
 }
 
+type SourceCamp = Exclude<Camp, "ALL">;
+
+/**
+ * ALL is an umbrella recipient for positive camp buffs. It must not be used by
+ * hostile camp filters: an ALL minion is not secretly Magic, Nature, or Tech,
+ * so camp-specific damage, immunity, consumption, and other debuffs continue
+ * to require an exact camp match.
+ */
+function receivesCampBuff(minion: MinionInstance, camp: SourceCamp): boolean {
+  return minion.camp === camp || minion.camp === "ALL";
+}
+
 export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   // --- enemy side ---
   weak_point_mark: { side: "enemy", prompt: "Choose an enemy minion to mark its weak point" },
@@ -1374,24 +1387,24 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
     includeSelf: true,
   },
   protect_slot: { kind: "slot", side: "friendly", prompt: "Protect a friendly minion board slot" },
-  tech_buff: { side: "friendly", prompt: "Upgrade a friendly Tech minion", filter: (m) => m.camp === "Tech", includeSelf: true },
+  tech_buff: { side: "friendly", prompt: "Upgrade a friendly Tech minion", filter: (m) => receivesCampBuff(m, "Tech"), includeSelf: true },
   heal_ally_full: { side: "friendly", prompt: "Fully heal a friendly minion", includeSelf: true },
   // Cecil may return an ally, but never himself.
   bounce_friendly: { side: "friendly", prompt: "Return another friendly minion to your hand", includeSelf: false },
   heal_good_ally_full: { side: "friendly", prompt: "Fully heal a Good ally", filter: (m) => m.alignment === "Good" },
   buff_good_ally_3: { side: "friendly", prompt: "Give a Good ally +2/+2", filter: (m) => m.alignment === "Good" },
-  buff_magic_ally_3: { side: "friendly", prompt: "Give a Magic ally +3/+3", filter: (m) => m.camp === "Magic" },
+  buff_magic_ally_3: { side: "friendly", prompt: "Give a Magic ally +3/+3", filter: (m) => receivesCampBuff(m, "Magic") },
   buff_evil_ally_2: { side: "friendly", prompt: "Give an Evil ally +2/+2", filter: (m) => m.alignment === "Evil" },
   buff_evil_ally_3_2_heal: { side: "friendly", prompt: "Empower and heal an Evil ally", filter: (m) => m.alignment === "Evil" },
   buff_neutral_tech_ally_2: {
     side: "friendly",
     prompt: "Give a Neutral Tech ally +2/+2",
-    filter: (m) => m.alignment === "Neutral" && m.camp === "Tech",
+    filter: (m) => m.alignment === "Neutral" && receivesCampBuff(m, "Tech"),
   },
   buff_good_tech_ally_2: {
     side: "friendly",
     prompt: "Give a Good Tech ally +2/+2",
-    filter: (m) => m.alignment === "Good" && m.camp === "Tech",
+    filter: (m) => m.alignment === "Good" && receivesCampBuff(m, "Tech"),
   },
   give_shield_ally: { side: "friendly", prompt: "Give an ally Divine Shield", filter: (m) => !m.divineShield },
   give_dodge_50: { side: "friendly", prompt: "Give an ally 50% evasion", filter: (m) => !hasEffect(m, "dodge_50") },
@@ -1458,16 +1471,6 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   },
   bounce_friendly_discount: { side: "friendly", prompt: "Return an ally to your hand at a discount" },
   set_stats_choice: { kind: "slot", side: "enemy", prompt: "Set an enemy minion board slot to 1/1" },
-  alignment_shift: {
-    kind: "option",
-    side: "friendly",
-    prompt: "Your minions all adopt the alignment",
-    values: [
-      { label: "Good", value: "Good" },
-      { label: "Evil", value: "Evil" },
-      { label: "Neutral", value: "Neutral" },
-    ],
-  },
   pressure_chosen_card: {
     kind: "hand",
     side: "enemy",
@@ -2284,8 +2287,9 @@ function runEffect(
     damageAllEnemies(state, source, 2, events);
   } else if (source.effectId === "harmony_buff") {
     // Camps only, down from camps PLUS alignments (balance pass). Counting both
-    // scaled to +6/+6 a turn on a 6-mana body, for 67%. Three camps is the cap
-    // now, which still makes a mixed board the point of the card.
+    // scaled to +6/+6 a turn on a 6-mana body, for 67%. ALL is a fourth camp
+    // category, so a board containing it can legitimately reach four distinct
+    // camp labels while still rewarding a genuinely varied board.
     const camps = new Set([...player.board, ...enemy.board].filter(Boolean).map((minion) => minion!.camp));
     buffMinion(source, camps.size, camps.size);
     events.push(effectEvent(`${label} harmonizes for +${camps.size}/+${camps.size}.`, source));
@@ -2675,10 +2679,10 @@ function runEffect(
     buffAllAllies(player, source, (minion) => minion.alignment === "Neutral", 1, 1, false);
     events.push(effectEvent(`${label} rallies the Neutral.`, source));
   } else if (source.effectId === "buff_all_magic_2_1") {
-    buffAllAllies(player, source, (minion) => minion.camp === "Magic", 2, 1, false);
+    buffAllAllies(player, source, (minion) => receivesCampBuff(minion, "Magic"), 2, 1, false);
     events.push(effectEvent(`${label} empowers Magic allies.`, source));
   } else if (source.effectId === "buff_all_tech_2_1") {
-    buffAllAllies(player, source, (minion) => minion.camp === "Tech", 2, 1, false);
+    buffAllAllies(player, source, (minion) => receivesCampBuff(minion, "Tech"), 2, 1, false);
     events.push(effectEvent(`${label} empowers Tech allies.`, source));
   } else if (source.effectId === "evil_count_buff") {
     const count = friendlyOthers(player, source).filter((minion) => minion.alignment === "Evil").length;
@@ -2704,7 +2708,7 @@ function runEffect(
     for (const minion of player.board) if (minion?.alignment === "Good") minion.divineShield = true;
     events.push(effectEvent(`${label} shields the Good.`, source));
   } else if (source.effectId === "shield_good_magic") {
-    for (const minion of player.board) if (minion && (minion.alignment === "Good" || minion.camp === "Magic")) minion.divineShield = true;
+    for (const minion of player.board) if (minion && (minion.alignment === "Good" || receivesCampBuff(minion, "Magic"))) minion.divineShield = true;
     events.push(effectEvent(`${label} shields the faithful.`, source));
   } else if (source.effectId === "evil_2_shield") {
     if (player.board.filter((minion) => minion?.alignment === "Evil").length >= 2) {
@@ -3127,10 +3131,6 @@ function runEffect(
     events.push(effectEvent(`${label} devolves ${transformed} enemy minion${transformed === 1 ? "" : "s"}.`, source));
   } else if (source.effectId === "set_stats_choice") {
     if (pickedSlot) layAura(state, pickedSlot, "slot_stats_one", source, events);
-  } else if (source.effectId === "alignment_shift") {
-    const alignment = (pickedValue ?? "Neutral") as Alignment;
-    for (const minion of player.board) if (minion) minion.alignment = alignment;
-    events.push(effectEvent(`${label} turns your board ${alignment}.`, source));
   } else if (source.effectId === "pressure_chosen_card") {
     if (pickedHand) {
       const name = library[pickedHand.cardId]?.name ?? "a card";
@@ -3761,7 +3761,7 @@ function refreshPassiveAuras(state: GameState): void {
         // Its Nature allies therefore lose the contribution as soon as the
         // Tree leaves play or is silenced.
         for (const target of board) {
-          if (!target || target.instanceId === source.instanceId || target.camp !== "Nature") continue;
+          if (!target || target.instanceId === source.instanceId || !receivesCampBuff(target, "Nature")) continue;
           target.atk += 2;
           target.maxHp += 1;
           target.hp += 1;
@@ -3772,7 +3772,7 @@ function refreshPassiveAuras(state: GameState): void {
       const sourceSlot = board.findIndex((entry) => entry?.instanceId === source.instanceId);
       for (const targetSlot of [sourceSlot - 1, sourceSlot + 1]) {
         const target = board[targetSlot];
-        if (!target || target.camp !== "Tech") continue;
+        if (!target || !receivesCampBuff(target, "Tech")) continue;
         target.atk += 2;
         target.maxHp += 2;
         target.hp += 2;
@@ -3788,7 +3788,7 @@ function refreshPassiveAuras(state: GameState): void {
   );
   for (const source of battleships) {
     for (const target of state.players[source.owner].board) {
-      if (!target || target.camp !== "Tech") continue;
+      if (!target || !receivesCampBuff(target, "Tech")) continue;
       target.atk += 1;
       target.maxHp += 1;
       target.hp += 1;
@@ -3803,7 +3803,7 @@ function refreshPassiveAuras(state: GameState): void {
   );
   for (const source of eldenBeasts) {
     for (const target of state.players[source.owner].board) {
-      if (!target || target.camp !== "Magic") continue;
+      if (!target || !receivesCampBuff(target, "Magic")) continue;
       target.atk += 2;
       target.auraBonuses = target.auraBonuses ?? [];
       target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 0, keywords: [] });
@@ -4354,10 +4354,6 @@ function dealMinionDamage(
     const nextPath = new Set(godzillaPath);
     nextPath.add(target.instanceId);
     damageAllEnemiesAndCore(state, target, 2, events, nextPath);
-  }
-  if (target.hp > 0 && hasEffect(target, "gordon_survive_damage") && !target.silenced) {
-    buffMinion(target, 2, 2);
-    events.push(effectEvent(`${target.name} survives the hit and grows +2/+2.`, target));
   }
   if (target.hp > 0 && hasEffect(source, "shigaraki_decay") && !source.silenced) {
     target.markedBy = source.instanceId;

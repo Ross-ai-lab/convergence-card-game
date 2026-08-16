@@ -40,7 +40,7 @@ Nothing damages a core automatically just because a turn starts; core damage com
 
 ## Cards and card language
 
-Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an **alignment**. The three camps are **Magic**, **Nature**, and **Tech**. The three alignments are **Good**, **Evil**, and **Neutral**. Many effects target a camp or alignment, so read both labels before playing a card.
+Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an **alignment**. The four camps are **Magic**, **Nature**, **Tech**, and **ALL**. An **ALL** card receives positive buffs aimed at any of the three source camps, but never camp-specific debuffs. The three alignments are **Good**, **Evil**, and **Neutral**. Many effects target a camp or alignment, so read both labels before playing a card.
 
 ### Mana is lore power
 

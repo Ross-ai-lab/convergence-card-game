@@ -1,5 +1,10 @@
 export type PlayerId = 0 | 1;
-export type Camp = "Magic" | "Tech" | "Nature";
+/**
+ * The three source camps plus the umbrella camp. ALL is deliberately not an
+ * alias for any one source camp: it receives their positive camp buffs, while
+ * camp-specific hostile effects still require the exact named camp.
+ */
+export type Camp = "Magic" | "Tech" | "Nature" | "ALL";
 export type Alignment = "Good" | "Evil" | "Neutral";
 export type Rarity = "Red" | "Yellow" | "Purple" | "Black";
 export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "passive" | "deathrattle";
@@ -202,7 +207,6 @@ export type EffectId =
   | "replace_allies_from_deck"
   | "camp_immunity_on_hit"
   | "set_stats_choice"
-  | "alignment_shift"
   | "pressure_chosen_card"
   | "reveal_and_shuffle_chosen"
   | "choose_2_discard"
@@ -227,7 +231,6 @@ export type EffectId =
   | "strange_duel"
   | "death_star_mark"
   | "glados_adjacent_tech"
-  | "gordon_survive_damage"
   | "deathrattle_aoe_3"
   | "avengers_recruit_good"
   | "doom_evil_slayer"

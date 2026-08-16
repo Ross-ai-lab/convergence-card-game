@@ -135,9 +135,10 @@ type Impact = {
   delay: number;
   particles: Particle[];
   /**
-   * Which camp is arriving. Only set on a summon, and only three effects were
-   * built rather than 175 — the board reads far richer for a fraction of the
-   * work, and a player learns "green means Nature landed" in one duel.
+   * Which camp is arriving. Only set on a summon, and only four signatures were
+   * built rather than one bespoke effect per card — the board reads far richer
+   * for a fraction of the work, and a player learns the camp language in one
+   * duel.
    */
   camp?: Camp;
 };
@@ -2200,7 +2201,8 @@ function ImpactFx({ impact }: { impact: Impact }) {
     >
       <span className="impact-core" />
       {/* The camp's signature: a rune ring for Magic, a rising bloom for Nature,
-          a snapping bracket for Tech. Drawn in CSS, so it costs no asset. */}
+          a snapping bracket for Tech, and a compass for ALL. Drawn in CSS, so
+          it costs no asset. */}
       {impact.camp ? <span className="camp-sigil" /> : null}
       {impact.particles.map((p) => (
         <i

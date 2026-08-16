@@ -19,7 +19,7 @@
 /* ============================================================================
    CAMP SIGNATURES, THE MYTHIC ENTRANCE, AND THE KILLING BLOW
 
-   Three summon looks rather than 175: a player learns them in one duel, and the
+   Four summon looks rather than 172: a player learns them in one duel, and the
    board reads far richer for a fraction of the work. Colour alone is not a
    signature — each one also MOVES differently, which is the half of the read
    that survives being glanced at.
@@ -36,7 +36,7 @@
 
 /* NO SHADE LAYER, and that was a decision rather than an omission.
 
-   All three sigils were tuned against a DARK screenshot and then shipped onto
+   All four sigils were tuned against a DARK screenshot and then shipped onto
    bright parchment under a lit card face, where a thin coloured line at 60%
    opacity is close to invisible. Two backdrop layers were built to fix that and
    both were deleted after being photographed on the real parchment (which the
@@ -47,7 +47,7 @@
 
    What actually fixed legibility was the boring half: Magic 124 -> 150px at 4px
    stroke, Nature 132 -> 160px at higher alpha, Tech 136 -> 164px at 5px, and all
-   three held ~30% longer. Contrast, not scaffolding. If a future pass reaches
+   all four held ~30% longer. Contrast, not scaffolding. If a future pass reaches
    for a backdrop again: look at it on parchment before keeping it.
    -------------------------------------------------------------------------- */
 
@@ -64,12 +64,12 @@
    unreadable: you could not tell what a camp looked like without diffing two
    blocks and knowing the file order. Each camp is now stated once, in full.
 
-   Shared shape rules, all three learned the hard way:
+   Shared shape rules, all four learned the hard way:
      - They must differ in SHAPE and MOTION, not only colour. The first version
        passed a glance and was, frozen side by side and blown up, the same
        glowing circle three times.
      - The shared summon flash (.impact-core) drops to a soft under-glow when a
-       camp signature is present, or it is the dominant round shape in all three.
+       camp signature is present, or it is the dominant round shape in all four.
      - They play on bright parchment over a lit card. Judge them there — the
        harness in shoot-screens.mjs paints the battlefield gradient behind them.
      - No backdrop layer. Two were tried and both looked like dirt; see the note
@@ -80,7 +80,8 @@
    stands down to a small coloured glow underneath it. */
 .impact-summon.camp-magic .impact-core,
 .impact-summon.camp-nature .impact-core,
-.impact-summon.camp-tech .impact-core {
+.impact-summon.camp-tech .impact-core,
+.impact-summon.camp-all .impact-core {
   width: 22px;
   height: 22px;
   border-color: transparent;
@@ -97,6 +98,10 @@
 
 .impact-summon.camp-tech .impact-core {
   background: radial-gradient(circle, rgba(127, 168, 216, 0.55), transparent 72%);
+}
+
+.impact-summon.camp-all .impact-core {
+  background: radial-gradient(circle, rgba(255, 215, 130, 0.62), transparent 72%);
 }
 
 /* --- MAGIC: an arcane ring that turns as it opens. -------------------------- */
@@ -201,6 +206,47 @@
   40% { opacity: 1; scale: 1 1; }
   72% { opacity: 1; scale: 1 1; }
   100% { opacity: 0; scale: 1.1 1.1; }
+}
+
+/* --- ALL: a four-way compass, the umbrella camp rather than a fourth source. */
+.camp-all .camp-sigil {
+  width: 148px;
+  height: 148px;
+  border: 4px solid rgba(255, 232, 174, 1);
+  border-radius: 50%;
+  box-shadow:
+    0 0 14px rgba(255, 232, 174, 0.95),
+    0 0 52px rgba(220, 164, 66, 0.95),
+    inset 0 0 30px rgba(255, 215, 130, 0.72);
+  animation:
+    sigil-life 0.98s cubic-bezier(0.15, 0.8, 0.25, 1) var(--fd, 0s) both,
+    compass-turn 0.98s cubic-bezier(0.2, 0.8, 0.2, 1) var(--fd, 0s) both;
+}
+
+.camp-all .camp-sigil::before,
+.camp-all .camp-sigil::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 58px;
+  height: 58px;
+  border: 3px solid rgba(255, 245, 211, 0.98);
+  box-shadow: 0 0 12px rgba(255, 215, 130, 0.9);
+}
+
+.camp-all .camp-sigil::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.camp-all .camp-sigil::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+@keyframes compass-turn {
+  0% { opacity: 0; scale: 0.35; rotate: -45deg; }
+  24% { opacity: 1; }
+  100% { opacity: 0; scale: 1.5; rotate: 45deg; }
 }
 
 /* ------------------------------------------------- the Mythic entrance */

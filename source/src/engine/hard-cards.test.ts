@@ -306,19 +306,6 @@ describe("choice-driven cards", () => {
     expect(set.players[1].board[0]?.hp).toBe(1);
   });
 
-  it("The Nameless King re-aligns the whole board to the chosen side", () => {
-    const state = mainState();
-    state.players[0].board[1] = dummy("Death Star", 0, { alignment: "Evil" });
-
-    const asking = play(state, "The Nameless King", 0);
-    expect(asking.phase).toBe("targeting");
-    expect(asking.pendingTarget?.kind).toBe("option");
-
-    const index = asking.pendingTarget!.labelOptions.findIndex((option) => option.value === "Good");
-    const shifted = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: index }, library).state;
-    expect(shifted.players[0].board.every((minion) => !minion || minion.alignment === "Good")).toBe(true);
-  });
-
   it("John Wick gains +1/+1 when another friendly minion dies", () => {
     const state = mainState();
     state.activePlayer = 1;

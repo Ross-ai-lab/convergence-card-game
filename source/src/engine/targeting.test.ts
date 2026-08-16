@@ -234,7 +234,7 @@ describe("targeted effects", () => {
     const zoroIndex = asking.pendingTarget!.options.findIndex((option) => option.slot === 2);
     const resumed = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: zoroIndex }, library).state;
     expect(resumed.phase).toBe("main");
-    expect(resumed.players[0].board[2]?.atk).toBe(5); // Zoro took the +2/+2
+    expect(resumed.players[0].board[2]?.atk).toBe(6); // Zoro took the +2/+2
     expect(resumed.players[0].board[1]?.atk).toBe(6); // and Carnage's own +3 landed after it
     expect(resumed.effectQueue).toHaveLength(0);
   });
