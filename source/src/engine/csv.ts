@@ -13,7 +13,7 @@ import type {
 const rarities = new Set<Rarity>(["Red", "Yellow", "Purple", "Black"]);
 const camps = new Set<Camp>(["Magic", "Tech", "Nature", "ALL"]);
 const alignments = new Set<Alignment>(["Good", "Evil", "Neutral"]);
-const timings = new Set<EffectTiming>(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive", "deathrattle"]);
+const timings = new Set<EffectTiming>(["none", "onPlay", "ongoing", "onPlayAndOngoing", "onPlayAndDeathrattle", "passive", "deathrattle"]);
 const keywords = new Set<Keyword>([
   "Passive",
   "Ongoing",
@@ -55,6 +55,7 @@ const effectIds = new Set<EffectId>([
   "anti_disable_aura",
   "destroy_weakest",
   "kill_random_enemy",
+  "light_yagami_nature_kill",
   "destroy_enemy_taunt",
   "destroy_and_gain_stats",
   "godrick_graft",

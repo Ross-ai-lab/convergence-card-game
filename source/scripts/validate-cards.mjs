@@ -24,7 +24,7 @@ const allowed = {
   rarity: new Set(["Red", "Yellow", "Purple", "Black"]),
   camp: new Set(["Magic", "Tech", "Nature", "ALL"]),
   alignment: new Set(["Good", "Evil", "Neutral"]),
-  effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "passive", "deathrattle"]),
+  effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "onPlayAndDeathrattle", "passive", "deathrattle"]),
   keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Invulnerable", "Charge", "Deathrattle", "Cannot Attack"]),
 };
 
@@ -49,6 +49,7 @@ const MECHANICAL = ["Taunt", "Divine Shield", "Chained", "Charge", "Deathrattle"
 const TIMING_WORD = {
   onPlay: "Battlecry",
   onPlayAndOngoing: "Battlecry/Ongoing",
+  onPlayAndDeathrattle: "Battlecry and Deathrattle",
   none: null,
   ongoing: "Ongoing",
   passive: "Passive",
@@ -60,7 +61,7 @@ const TIMING_WORD = {
  *  Driller's "Give another minion Taunt" is about someone else's Taunt, so a
  *  plain substring search would wave it through. */
 const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained|Charge|Deathrattle|Cannot attack)\.\s*)*)/;
-const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained|Charge|Cannot attack)\.\s*)*(Battlecry\/Ongoing|Battlecry|Ongoing|Passive|Deathrattle):\s/;
+const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained|Charge|Cannot attack)\.\s*)*(Battlecry and Deathrattle|Battlecry\/Ongoing|Battlecry|Ongoing|Passive|Deathrattle):\s/;
 
 function checkPrintedText(card, line, errors) {
   const text = card.effect ?? "";
@@ -85,6 +86,7 @@ function checkPrintedText(card, line, errors) {
   );
   if (/^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*Deathrattle:\s/.test(text)) declared.add("Deathrattle");
   if (dualTiming && /\bDeathrattle:\s/.test(text)) declared.add("Deathrattle");
+  if (/^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*Battlecry and Deathrattle:\s/.test(text)) declared.add("Deathrattle");
   if (/^Charge\.\s*/.test(text)) declared.add("Charge");
   const carried = new Set(
     (card.keywords ?? "").split(";").map((k) => k.trim()).filter((k) => MECHANICAL.includes(k)),

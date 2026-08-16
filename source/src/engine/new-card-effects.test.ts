@@ -77,12 +77,22 @@ describe("2026 card replacements", () => {
       },
       Dormammu: { cost: 9, atk: 8, hp: 5, effectId: "dark_dimension_banish", effectTiming: "onPlay" },
       "Doctor Strange": { cost: 7, atk: 3, hp: 2, effectId: "strange_bargain", effectTiming: "onPlay" },
+      Morpheus: { cost: 4, atk: 1, hp: 1, effectId: "morpheus_choice", effectTiming: "onPlay" },
       "Kento Nanami": { cost: 3, atk: 1, hp: 1, effectId: "set_hp_1", effectTiming: "onPlay", keywords: [] },
       "Ainz Ooal Gown": { cost: 9, atk: 3, hp: 3, effectId: "set_all_enemy_hp_1", effectTiming: "onPlay", keywords: [] },
-      "Eye of Sauron": {
-        cost: 4,
-        atk: 1,
+      "Light Yagami": {
+        cost: 8,
+        atk: 2,
         hp: 4,
+        effectId: "light_yagami_nature_kill",
+        effectTiming: "onPlayAndDeathrattle",
+        keywords: ["Deathrattle"],
+        effect: "Battlecry and Deathrattle: Destroy a random Nature enemy minion.",
+      },
+      "Eye of Sauron": {
+        cost: 5,
+        atk: 1,
+        hp: 5,
         effectId: "enemy_cards_cost_1_more",
         effectTiming: "passive",
         keywords: ["Passive"],
@@ -109,7 +119,7 @@ describe("2026 card replacements", () => {
       },
       Zoro: { cost: 5, atk: 4, hp: 4, effectId: "on_kill_buff_1", effectTiming: "passive", keywords: [], effect: "Passive: Gain +1/+1 after killing a minion." },
       "One-Eyed Owl": { cost: 5, atk: 6, hp: 6, effectId: "none", effectTiming: "none", keywords: ["Chained"], effect: "Chained." },
-      "Gravelord Nito": { cost: 3, atk: 1, hp: 3, effectId: "nito_any_death_1_1", effectTiming: "passive", keywords: [], effect: "Passive: Gain +1/+1 when a minion dies." },
+      "Gravelord Nito": { cost: 4, atk: 2, hp: 3, effectId: "nito_any_death_1_1", effectTiming: "passive", keywords: [], effect: "Passive: Gain +1/+1 when a minion dies." },
       "Margit the Fell Omen": {
         cost: 3,
         atk: 1,
@@ -121,19 +131,19 @@ describe("2026 card replacements", () => {
       },
       "T-1000": { cost: 5, atk: 3, hp: 5, effectId: "heal_self_full", effectTiming: "ongoing", keywords: ["Ongoing"] },
       "Silver Surfer": {
-        cost: 6,
-        atk: 3,
-        hp: 3,
+        cost: 7,
+        atk: 1,
+        hp: 1,
         effectId: "deathrattle_summon_galactus",
         effectTiming: "deathrattle",
-        keywords: ["Chained", "Deathrattle"],
-        effect: "Chained. Deathrattle: Summon Galactus (5/5).",
+        keywords: ["Deathrattle"],
+        effect: "Deathrattle: Summon chained Galactus (8/8).",
       },
       "Pillar Men": { cost: 4, atk: 5, hp: 5, effectId: "none", effectTiming: "none", keywords: ["Chained"], effect: "Chained." },
       Cthulhu: {
-        cost: 6,
-        atk: 6,
-        hp: 6,
+        cost: 8,
+        atk: 8,
+        hp: 8,
         effectId: "immune_tech_minions",
         effectTiming: "passive",
         keywords: ["Chained", "Passive"],
@@ -164,7 +174,7 @@ describe("2026 card replacements", () => {
       "John Wick": { atk: 1, hp: 1, effectId: "friendly_death_buff_1_1", effectTiming: "passive" },
       Joker: { atk: 1, hp: 1, effectId: "copy_minion_to_hand", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Put a copy of a minion in your hand." },
       "Escanor \"The One\"": { cost: 8, atk: 8, hp: 4, effectId: "double_other_friendly_attack", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Double your other friendly minions attack." },
-      "Lelouch Lamperouge": { cost: 9, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion" },
+      "Lelouch Lamperouge": { cost: 8, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion" },
       "Ultron Prime": { cost: 7, atk: 4, hp: 5, effectId: "none", effectTiming: "none", keywords: [], effect: "-" },
       Neo: { cost: 10, atk: 5, hp: 7, effectId: "protect_slot", effectTiming: "onPlay" },
       "Monkey D. Luffy": { cost: 8, atk: 6, hp: 4, effectId: "free_chained_shield", effectTiming: "onPlay" },
@@ -186,7 +196,7 @@ describe("2026 card replacements", () => {
       "Doctor Octopus": { cost: 4, atk: 3, hp: 3, effectId: "destroy_relic", effectTiming: "onPlay" },
       "The 7 Heroic Spirits": { cost: 7, atk: 2, hp: 2, effectId: "heroic_relics" },
       "Aladdin Lamp": { atk: 5, hp: 4, effectId: "aladdin_wish", effectTiming: "onPlay" },
-      "The Mask": { atk: 3, hp: 2, effectId: "transform_random_allies_up", effectTiming: "onPlay", keywords: [] },
+      "The Mask": { cost: 6, atk: 4, hp: 3, effectId: "transform_random_allies_up", effectTiming: "onPlay", keywords: [] },
       Yubaba: { effectId: "devolve_enemy_minions", effectTiming: "onPlay", keywords: [] },
       V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle", keywords: ["Deathrattle"], effect: "Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core" },
       "Time Bomb": { atk: 0, hp: 9, effectId: "time_bomb_destroy_all", effectTiming: "ongoing", keywords: [] },
@@ -240,7 +250,9 @@ describe("2026 card replacements", () => {
         keywords: ["Passive"],
         effect: "Passive: While on the board, every enemy minion has -1 ATK.",
       },
-      Sans: { effectId: "dodge_80", effect: "Passive: Evade 80% of attacks." },
+      Sans: { cost: 4, atk: 1, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks." },
+      "Doom Slayer": { cost: 8, atk: 3, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
+      Ragnaros: { cost: 6, atk: 6, hp: 6, effectId: "ragnaros_end_turn", effectTiming: "passive", keywords: ["Passive"] },
       Musashi: { atk: 2, hp: 1 },
       Illumi: { atk: 1, hp: 1 },
       "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
@@ -422,6 +434,29 @@ describe("2026 card replacements", () => {
     redState.players[1].board[0] = minion("Zoro", 1);
     const red = choose(play(redState, 0, "Morpheus", 0), 1);
     expect(red.players.every((player) => player.board.every((minion) => minion === null))).toBe(true);
+  });
+
+  it("Light Yagami destroys a random Nature enemy on play and on death", () => {
+    const battlecry = mainState("light-yagami-battlecry");
+    battlecry.players[1].board[0] = minion("John Wick", 1);
+    battlecry.players[1].board[1] = minion("Modern Tank", 1);
+    const afterBattlecry = play(battlecry, 0, "Light Yagami", 0);
+    expect(afterBattlecry.players[1].board[0]).toBeNull();
+    expect(afterBattlecry.players[1].board[1]).not.toBeNull();
+
+    const deathrattle = mainState("light-yagami-deathrattle");
+    deathrattle.players[0].board[0] = minion("Light Yagami", 0, { hp: 1, maxHp: 1, sleeping: false });
+    deathrattle.players[1].board[0] = minion("John Wick", 1);
+    deathrattle.players[1].board[1] = minion("Modern Tank", 1, { atk: 9, sleeping: false });
+    deathrattle.activePlayer = 1;
+    const afterDeath = applyAction(
+      deathrattle,
+      { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 0 },
+      library,
+    ).state;
+    expect(afterDeath.players[0].board[0]).toBeNull();
+    expect(afterDeath.players[1].board[0]).toBeNull();
+    expect(afterDeath.players[1].board[1]).not.toBeNull();
   });
 
   it("Aladdin can give the hero a Divine Shield", () => {
@@ -1126,7 +1161,7 @@ describe("2026 card replacements", () => {
     tech.players[0].board[0] = minion("Modern Tank", 0, { sleeping: false, atk: 5, hp: 20, maxHp: 20 });
     tech.players[1].board[0] = minion("Cthulhu", 1);
     const cthulhuHit = applyAction(tech, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(cthulhuHit.players[1].board[0]?.hp).toBe(6);
+    expect(cthulhuHit.players[1].board[0]?.hp).toBe(8);
 
     const nature = mainState("t1000-nature");
     nature.players[0].board[0] = minion("John Wick", 0, { sleeping: false, camp: "Nature", atk: 1, hp: 20, maxHp: 20 });
@@ -1183,8 +1218,8 @@ describe("2026 card replacements", () => {
     state.players[1].board[0] = minion("John Wick", 1, { atk: 9, sleeping: false, hp: 20, maxHp: 20 });
     state.activePlayer = 1;
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(after.players[0].board[0]).toMatchObject({ name: "Galactus", atk: 5, hp: 5, maxHp: 5 });
-    expect(after.players[0].board[0]?.keywords).toContain("Taunt");
+    expect(after.players[0].board[0]).toMatchObject({ name: "Galactus", atk: 8, hp: 8, maxHp: 8, chained: 2 });
+    expect(after.players[0].board[0]?.keywords).toEqual(["Taunt", "Chained"]);
     expect(after.players[0].board[0]?.art).toBe("/card-art/raw/galactus.webp");
   });
 
@@ -1286,14 +1321,14 @@ describe("2026 card replacements", () => {
     wounded.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 1, hp: 10, maxHp: 10 });
     const nineDamage = applyAction(wounded, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(nineDamage.players[1].board[0]?.hp).toBe(1);
-    expect(nineDamage.players[0].board[0]?.hp).toBe(5);
+    expect(nineDamage.players[0].board[0]?.hp).toBe(7);
 
     const kill = mainState("doom-kill-heal");
-    kill.players[0].board[0] = minion("Doom Slayer", 0, { sleeping: false, hp: 2, maxHp: 6 });
+    kill.players[0].board[0] = minion("Doom Slayer", 0, { sleeping: false, hp: 2, maxHp: 8 });
     kill.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 1, hp: 8, maxHp: 8 });
     const healed = applyAction(kill, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(healed.players[1].board[0]).toBeNull();
-    expect(healed.players[0].board[0]).toMatchObject({ hp: 4, maxHp: 6 });
+    expect(healed.players[0].board[0]).toMatchObject({ hp: 4, maxHp: 8 });
   });
 
   it("Flash can attack exactly 2 times for 10 total core damage", () => {
@@ -1320,6 +1355,31 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[0]?.gainedEffects).toContainEqual(
       expect.objectContaining({ effectId: "friendly_death_buff_1_1", timing: "passive" }),
     );
+  });
+
+  it("Gravelord Nito gains +1/+1 when a minion dies on either board", () => {
+    const enemyDeath = mainState("gravelord-nito-enemy-death");
+    enemyDeath.players[0].board[0] = minion("Gravelord Nito", 0);
+    enemyDeath.players[0].board[1] = minion("Gordon Freeman", 0, { atk: 4, hp: 4, maxHp: 4, sleeping: false });
+    enemyDeath.players[1].board[0] = minion("Gordon Freeman", 1, { atk: 0, hp: 1, maxHp: 1, sleeping: false });
+    const afterEnemyDeath = applyAction(
+      enemyDeath,
+      { type: "attack_minion", player: 0, attackerSlot: 1, targetSlot: 0 },
+      library,
+    ).state;
+    expect(afterEnemyDeath.players[0].board[0]).toMatchObject({ atk: 3, hp: 4, maxHp: 4 });
+
+    const friendlyDeath = mainState("gravelord-nito-friendly-death");
+    friendlyDeath.players[0].board[0] = minion("Gravelord Nito", 0);
+    friendlyDeath.players[0].board[1] = minion("Gordon Freeman", 0, { atk: 0, hp: 1, maxHp: 1, sleeping: false });
+    friendlyDeath.players[1].board[0] = minion("John Wick", 1, { atk: 2, hp: 2, maxHp: 2, sleeping: false });
+    friendlyDeath.activePlayer = 1;
+    const afterFriendlyDeath = applyAction(
+      friendlyDeath,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 },
+      library,
+    ).state;
+    expect(afterFriendlyDeath.players[0].board[0]).toMatchObject({ atk: 3, hp: 4, maxHp: 4 });
   });
 
   it("Escanor The One doubles the ATK of his other friendly minions", () => {
@@ -1847,7 +1907,7 @@ describe("direct effect reachability", () => {
     const after = play(state, 0, "The Mask", 0);
     expect(after.players[0].board[0]).not.toBeNull();
     expect(after.players[0].board[1]).not.toBeNull();
-    expect(after.players[0].board[0]?.cost).toBe(5);
+    expect(after.players[0].board[0]?.cost).toBe(7);
     expect(after.players[0].board[1]?.cost).toBe(2);
   });
 

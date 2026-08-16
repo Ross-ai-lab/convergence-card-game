@@ -8,7 +8,7 @@
 
 ## What Convergence is
 
-Convergence is a non-commercial browser card duel where 175 characters and forces from fiction collide in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
+Convergence is a non-commercial browser card duel where 172 named characters and forces from fiction collide alongside three Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
 
 - **Recruit** — deliberately forgiving.
 - **Veteran** — plays each move correctly but does not plan beyond it.
@@ -18,9 +18,9 @@ Convergence is a non-commercial browser card duel where 175 characters and force
 
 **Owner play location:** Play only through the public [GitHub Pages game URL](https://ross-ai-lab.github.io/convergence-card-game/play/). The local `play/` folder is a generated deployment artifact for building and publishing; it is not the owner's play location.
 
-No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **175 character cards plus 21 Ascension Relics** in one shared 196-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
+No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **172 character cards, 3 Basic reference cards, and 21 Ascension Relics** in one shared 196-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
-The live game and `source/data/cards.csv` now contain 175 character cards; the lore guide is a reference document, and the live roster is the source of truth.
+The live game and `source/data/cards.csv` now contain 172 named character cards plus 3 Basic reference cards, 175 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
 
 ## Parallel work
 
@@ -48,7 +48,13 @@ Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an
 
 ### Mana is lore power
 
-Mana is the roster's in-fiction power grade for each card subject. A 2-mana subject is intended to be more powerful in lore than a 1-mana subject, and subjects sharing a mana value should be roughly equal in lore power. This is separate from gameplay balance: tune stats, effects, timing, or keywords first, and change mana only when the subject's lore placement is wrong.
+Mana is the roster's in-fiction power grade for each card subject. A 2-mana subject is intended to be more powerful in lore than a 1-mana subject, and subjects sharing a mana value should be roughly equal in lore power. Determine mana from the subject's lore first; stats, effects, timing, and keywords are the later card translation and are not evidence for the mana tier.
+
+#### Lore-only audit safeguard
+
+Mana comparisons must use canon lore and narrative role only. Do not use printed ATK, HP, effects, keywords, synergies, board outcomes, engine behaviour, or gameplay impact as evidence that a subject belongs in a higher or lower mana tier. Those fields are the game's representation of the subject, not evidence of the subject's in-fiction power. First place the subject on the Basic lore ladder from its source material; only afterward should stats and effects be designed to express that placement. If a subject has multiple versions, state which canon version is being judged instead of mixing versions or inferring lore from its card mechanics.
+
+An earlier audit violated this rule by treating card effects and gameplay impact as lore evidence. Do not repeat that mistake: every future mana review must show the subject's current card text separately, but the tier judgment must be justified only by the subject's canon capabilities, scale, achievements, and narrative role.
 
 Each mana tier also has a **Basic** reference card that represents the peak power of that tier. A card at mana **N** may equal, but must not exceed, the Basic card at N; it must also be strong enough to defeat the Basic card at N-1. The 7-mana reference card is **Mothership (6/6)**, placed above the 6-mana UFO and below the 8-mana Star Destroyer. The 9-mana reference is **Planetary Defense Grid (4/8)**, and the 10-mana reference is **Black Hole (10/5)**.
 

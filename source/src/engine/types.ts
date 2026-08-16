@@ -7,7 +7,7 @@ export type PlayerId = 0 | 1;
 export type Camp = "Magic" | "Tech" | "Nature" | "ALL";
 export type Alignment = "Good" | "Evil" | "Neutral";
 export type Rarity = "Red" | "Yellow" | "Purple" | "Black";
-export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "passive" | "deathrattle";
+export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "onPlayAndDeathrattle" | "passive" | "deathrattle";
 
 /** The ten powers offered during the opening draft. */
 export type HeroPowerId =
@@ -62,6 +62,7 @@ export type EffectId =
   | "anti_disable_aura"
   | "destroy_weakest"
   | "kill_random_enemy"
+  | "light_yagami_nature_kill"
   | "destroy_enemy_taunt"
   | "destroy_and_gain_stats"
   | "godrick_graft"

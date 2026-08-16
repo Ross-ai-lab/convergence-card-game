@@ -790,6 +790,7 @@ function applyOnPlayEffects(
   if (
     minion.effectTiming !== "onPlay" &&
     minion.effectTiming !== "onPlayAndOngoing" &&
+    minion.effectTiming !== "onPlayAndDeathrattle" &&
     minion.effectId !== "lunar_slime" &&
     minion.effectId !== "meleoron_protect_ally" &&
     minion.effectId !== "flowey_save_load"
@@ -2326,6 +2327,14 @@ function runEffect(
     destroyEnemyByPredicate(state, source, enemyId, () => true, "destroys the weakest enemy", events, "atk");
   } else if (source.effectId === "kill_random_enemy") {
     destroyRandomEnemyByPredicate(state, source, () => true, "kills a random enemy", events);
+  } else if (source.effectId === "light_yagami_nature_kill") {
+    destroyRandomEnemyByPredicate(
+      state,
+      source,
+      (minion) => minion.camp === "Nature",
+      "destroys a random Nature enemy minion",
+      events,
+    );
   } else if (source.effectId === "anti_good_grow") {
     const count = enemy.board.filter((minion) => minion?.alignment === "Good").length;
     if (count > 0) {
@@ -4953,12 +4962,20 @@ function resolveDeathrattle(
 ): void {
   if (
     dead.silenced ||
-    (dead.effectTiming !== "deathrattle" && dead.effectId !== "flowey_save_load" && dead.effectId !== "avatar_aang_awakened" && dead.effectId !== "chaos_random_summon")
+    (dead.effectTiming !== "deathrattle" && dead.effectTiming !== "onPlayAndDeathrattle" && dead.effectId !== "flowey_save_load" && dead.effectId !== "avatar_aang_awakened" && dead.effectId !== "chaos_random_summon")
   ) return;
   // The dead minion is already out of its board slot when this function runs,
   // so reactToDeath cannot discover its own effect. Record it at resolution.
   traceEffect(dead.effectId);
-  if (dead.effectId === "deathrattle_good_buff_shield") {
+  if (dead.effectId === "light_yagami_nature_kill") {
+    destroyRandomEnemyByPredicate(
+      state,
+      dead,
+      (minion) => minion.camp === "Nature",
+      "destroys a random Nature enemy minion",
+      events,
+    );
+  } else if (dead.effectId === "deathrattle_good_buff_shield") {
     for (const ally of state.players[dead.owner].board) {
       if (!ally || ally.alignment !== "Good") continue;
       buffMinion(ally, 1, 1);
@@ -5061,15 +5078,15 @@ function resolveDeathrattle(
         id: "token:galactus",
         name: "Galactus",
         cost: 5,
-        atk: 5,
-        hp: 5,
+        atk: 8,
+        hp: 8,
         rarity: "Black",
         camp: "Magic",
         alignment: "Neutral",
-        keywords: ["Taunt"],
+        keywords: ["Taunt", "Chained"],
         effectId: "none",
         effectTiming: "none",
-        effect: "Taunt.",
+        effect: "Taunt. Chained.",
         flavor: "The devourer of worlds arrives.",
         origin: "Marvel",
         art: "/card-art/raw/galactus.webp",

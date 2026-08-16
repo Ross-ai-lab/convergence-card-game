@@ -13,7 +13,7 @@ describe("card CSV data", () => {
     const effectIds = new Set(cards.map((card) => card.effectId));
     expect(keywords.has("Divine Shield")).toBe(true);
     expect(keywords.has("Taunt")).toBe(true);
-    expect(effectIds.has("kill_random_enemy")).toBe(true);
+    expect(effectIds.has("light_yagami_nature_kill")).toBe(true);
     expect(effectIds.has("equip_random_relic")).toBe(true);
     expect(effectIds.has("batman_gadget_choice")).toBe(true);
   });
@@ -44,9 +44,9 @@ describe("card CSV data", () => {
     });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
     expect(changed.get("Eye of Sauron")).toMatchObject({
-      cost: 4,
+      cost: 5,
       atk: 1,
-      hp: 4,
+      hp: 5,
       effectId: "enemy_cards_cost_1_more",
       effectTiming: "passive",
       keywords: ["Passive"],
@@ -101,5 +101,9 @@ describe("card CSV data", () => {
       camp: "Magic",
       alignment: "Neutral",
     });
+    expect(cards.find((card) => card.id === "c077")).toMatchObject({ camp: "Nature", alignment: "Neutral" });
+    expect(cards.find((card) => card.id === "c084")).toMatchObject({ camp: "Nature", alignment: "Neutral" });
+    expect(cards.find((card) => card.id === "c155")).toMatchObject({ camp: "Magic", alignment: "Neutral" });
+    expect(cards.find((card) => card.id === "c167")).toMatchObject({ camp: "Tech", alignment: "Neutral" });
   });
 });

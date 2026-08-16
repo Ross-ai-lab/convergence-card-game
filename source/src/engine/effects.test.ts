@@ -286,12 +286,13 @@ describe("full-roster effects", () => {
     expect(toMyNextTurn(state).players[0].board[0]?.divineShield).toBe(true);
   });
 
-  it("Light Yagami (kill_random_enemy): kills an enemy at the start of its owner's turn", () => {
+  it("Light Yagami destroys a random Nature enemy on play", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Light Yagami", 0);
     state.players[1].board[0] = makeMinion("John Wick", 1, { divineShield: true });
-    const after = toMyNextTurn(state);
+    state.players[1].board[1] = makeMinion("Avatar Aang", 1);
+    const after = playCardFor(state, 0, "Light Yagami", 0);
     expect(after.players[1].board[0]).toBeNull();
+    expect(after.players[1].board[1]?.name).toBe("Avatar Aang");
   });
 
   it("Mob Psycho ascends after returning three friendly minions", () => {

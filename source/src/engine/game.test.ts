@@ -241,12 +241,12 @@ describe("Convergence engine", () => {
       .toBeLessThan(effectTexts.indexOf(effectTexts.find((t) => t.includes("Carnage Kabuto"))!));
   });
 
-  it("keeps Light Yagami on the board as an Ongoing effect", () => {
+  it("keeps Light Yagami on the board with Battlecry and Deathrattle", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("Avatar Aang", 1, { divineShield: true });
     const resolved = playCardFor(state, 0, "Light Yagami", 0);
     expect(resolved.players[0].board[0]?.name).toBe("Light Yagami");
-    expect(resolved.players[0].board[0]?.effectTiming).toBe("ongoing");
+    expect(resolved.players[0].board[0]?.effectTiming).toBe("onPlayAndDeathrattle");
     expect(resolved.players[1].board[0]?.name).toBe("Avatar Aang");
   });
 });
