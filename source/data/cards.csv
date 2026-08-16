@@ -12,7 +12,7 @@ c010,Avatar Aang,6,2,3,Red,Magic,Good,Deathrattle,avatar_aang_awakened,onPlay,"B
 c011,Thirteen Lords of Chaos,6,4,2,Purple,Magic,Evil,Deathrattle,deathrattle_summon_drakath,deathrattle,Deathrattle: Summon Drakath (5/3).,Reality picks a side.,AQW,/card-art/raw/c011.webp
 c012,G-Man,7,3,6,Purple,Tech,Neutral,,stasis_enemy,onPlay,Battlecry: Put an enemy minion into stasis - remove it from the board for 2 turns.,"Time, Mr. Freeman.",Half-Life,/card-art/raw/c012.webp
 c013,Doctor Strange,7,3,2,Yellow,Magic,Good,,strange_bargain,onPlay,"Battlecry: Offer a bargain. Your opponent chooses: lose 10 Core HP, lose a random minion, or lose 5 mana next turn.",Magic trumps everything.,MCU,/card-art/raw/c013.webp
-c014,Kizaru,7,6,7,Yellow,Magic,Neutral,Divine Shield,gain_divine_shield,ongoing,Divine Shield. Ongoing: Gain Divine Shield.,Light logic.,One Piece,/card-art/raw/c014.webp
+c014,Kizaru,7,4,4,Yellow,Magic,Neutral,Divine Shield,gain_divine_shield,ongoing,Divine Shield. Ongoing: Gain Divine Shield.,Light logic.,One Piece,/card-art/raw/c014.webp
 c015,Avengers,7,4,4,Yellow,Tech,Good,Passive,invuln_with_good_ally,passive,"Passive: Invulnerable as long as you control another Good minion.","When the board breaks, they assemble.",MCU,/card-art/raw/c015.webp
 c016,Doom Slayer,7,3,6,Purple,Nature,Good,Passive,doom_evil_slayer,passive,"Passive: Deal triple damage to Evil minions. Whenever Doom Slayer kills an Evil minion, heal him for 3 HP.",He cleaned Hell and came back.,Doom,/card-art/raw/c016.webp
 c017,Gol D. Roger,8,7,7,Red,Magic,Good,,choose_relic,onPlay,Battlecry: Choose 1 of 3 Ascension Relics. Add it to your hand.,He has already won.,One Piece,/card-art/raw/c017.webp
@@ -55,7 +55,7 @@ c053,Mob Psycho,9,5,5,Purple,Magic,Good,,mob_ascend,onPlay,"Battlecry: If 3 or m
 c054,Morpheus,9,1,1,Purple,Magic,Good,,morpheus_choice,onPlay,"Battlecry: Heal all minions and give them Divine Shield or destroy all minions.",He doesn't offer truth—only the courage to face it,Matrix,/card-art/raw/c054.webp
 c055,Death Star,9,7,6,Black,Tech,Neutral,,death_star_mark,onPlay,"Battlecry: Mark an enemy minion or the enemy core. Death Star cannot attack this turn. At the start of your next turn, if Death Star survives, destroy the marked minion or deal 12 damage to the marked core.",The ultimate weapon.,Star Wars,/card-art/raw/c055.webp
 c056,Doomsday,9,7,6,Black,Nature,Evil,,camp_immunity_on_hit,passive,"Passive: After it is attacked, gain immunity to that enemies Camp type of attack for the next 3 enemy turns.","Death is his only teacher, and he has learned well",DCU,/card-art/raw/c056.webp
-c057,Ten Tails,9,7,5,Black,Magic,Evil,,chain_all_minions,onPlay,Battlecry: Chain all minions.,"The beast before beginnings, hungry for the end",Naruto,/card-art/raw/c057.webp
+c057,Ten Tails,9,7,5,Black,Magic,Evil,,chain_all_minions,onPlay,Battlecry: Chain all other minions.,"The beast before beginnings, hungry for the end",Naruto,/card-art/raw/c057.webp
 c058,Kaido,8,5,5,Yellow,Nature,Evil,,destroy_enemy_taunt,onPlay,Battlecry: Destroy an enemy Taunt minion.,Rules of the seas,One Piece,/card-art/raw/c058.webp
 c059,Korosensei,8,4,4,Yellow,Nature,Neutral,Passive,korosensei_defense,passive,Passive: Evade 20% of attacks. Can only be damaged by ATK of 4 and higher.,Mach 20,Assasination Classroom,/card-art/raw/c059.webp
 c060,Monkey D. Luffy,8,6,4,Yellow,Magic,Good,,free_chained_shield,onPlay,Battlecry: Free all friendly Chained minions. They may attack immediately and gain Divine Shield.,Reality bends; laughter reigns,One Piece,/card-art/raw/c060.webp

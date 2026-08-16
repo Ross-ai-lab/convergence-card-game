@@ -79,6 +79,7 @@ describe("2026 card replacements", () => {
       "Doctor Strange": { cost: 7, atk: 3, hp: 2, effectId: "strange_bargain", effectTiming: "onPlay" },
       "Kento Nanami": { cost: 3, atk: 1, hp: 1, effectId: "set_hp_1", effectTiming: "onPlay", keywords: [] },
       "Ainz Ooal Gown": { cost: 9, atk: 3, hp: 3, effectId: "set_all_enemy_hp_1", effectTiming: "onPlay", keywords: [] },
+      Kizaru: { atk: 4, hp: 4 },
       "Avatar Aang": {
         cost: 6,
         atk: 2,
@@ -416,11 +417,13 @@ describe("2026 card replacements", () => {
     const afterFriendly = first.pendingTarget ? choose(first, 0) : first;
     const afterEnemy = afterFriendly.pendingTarget ? choose(afterFriendly, 0) : afterFriendly;
     expect(afterEnemy.pocketRooms).toHaveLength(1);
-    const turnTwo = endTurn(afterEnemy, 0);
-    const turnThree = endTurn(turnTwo, 1);
-    expect(turnThree.pocketRooms).toHaveLength(0);
-    expect(turnThree.players[0].board[1]?.name).toBe("John Wick");
-    expect(turnThree.players[1].board[0]).toBeNull();
+    const firstRound = endTurn(endTurn(afterEnemy, 0), 1);
+    expect(firstRound.pocketRooms).toHaveLength(1);
+    expect(firstRound.players[0].board[1]).toBeNull();
+    const secondRound = endTurn(endTurn(firstRound, 0), 1);
+    expect(secondRound.pocketRooms).toHaveLength(0);
+    expect(secondRound.players[0].board[1]?.name).toBe("John Wick");
+    expect(secondRound.players[1].board[0]).toBeNull();
   });
 
   it("Doctor Strange lets the opponent choose one bargain", () => {
@@ -984,7 +987,7 @@ describe("2026 card replacements", () => {
     state.players[1].board[0] = minion("Zoro", 1);
     const after = play(state, 0, "Ten Tails", 1);
     expect(after.players[0].board[0]?.chained).toBe(2);
-    expect(after.players[0].board[1]?.chained).toBe(2);
+    expect(after.players[0].board[1]?.chained).toBe(0);
     expect(after.players[1].board[0]?.chained).toBe(2);
   });
 
@@ -1602,7 +1605,7 @@ describe("direct effect reachability", () => {
     });
     success.activePlayer = 1;
     const reborn = applyAction(success, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(reborn.players[0].board[0]).toMatchObject({ name: "Aizen", hp: 1, maxHp: 4, effectId: "none" });
+    expect(reborn.players[0].board[0]).toMatchObject({ name: "Aizen", hp: 4, maxHp: 4, effectId: "none" });
     expect(reborn.players[1].board[0]).toMatchObject({ silenced: true, chained: 2 });
 
     const failure = mainState("aizen-no-reborn");

@@ -1935,10 +1935,16 @@ function runEffect(
   if (source.effectId === "chain_all_minions") {
     for (const side of state.players) {
       for (const minion of side.board) {
-        if (minion && !isSlotProtected(state, minion)) minion.chained = Math.max(minion.chained, 2);
+        if (
+          minion &&
+          minion.instanceId !== source.instanceId &&
+          !isSlotProtected(state, minion)
+        ) {
+          minion.chained = Math.max(minion.chained, 2);
+        }
       }
     }
-    events.push(effectEvent(`${label} chains all minions.`, source));
+    events.push(effectEvent(`${label} chains all other minions.`, source));
     return false;
   } else if (source.effectId === "free_chained_shield") {
     let freed = 0;
@@ -2173,7 +2179,9 @@ function runEffect(
           friendlySlot: firstChoice.slot,
           enemy: enemyMinion,
           enemySlot: enemyChoice.slot,
-          returnAtTurn: state.turnNumber + 2,
+          // turnNumber advances once at the start of each player's turn. Two
+          // full turns therefore span four counter increments, not two.
+          returnAtTurn: state.turnNumber + 4,
         });
         events.push(effectEvent(`${label} opens a pocket room for ${friendly.name} and ${enemyMinion.name}.`, source));
       }
@@ -5141,7 +5149,7 @@ function resolveDeathrattle(
         };
         const reborn = createMinion(rebornCard, dead.owner, state);
         reborn.suppressArrivalTheme = true;
-        reborn.hp = 1;
+        reborn.hp = reborn.maxHp;
         reborn.divineShield = false;
         reborn.keywords = [];
         reborn.effectId = "none";

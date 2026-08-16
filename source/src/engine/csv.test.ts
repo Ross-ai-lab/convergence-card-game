@@ -43,6 +43,8 @@ describe("card CSV data", () => {
       effect: "Battlecry: Rebirth a friendly minion that died this game",
     });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
+    expect(changed.get("Kizaru")).toMatchObject({ atk: 4, hp: 4 });
+    expect(changed.get("Ten Tails")?.effect).toBe("Battlecry: Chain all other minions.");
   });
 
   it("loads Luffy's chained-minion rescue Battlecry", () => {

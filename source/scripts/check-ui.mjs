@@ -684,7 +684,7 @@ await newBoard({ place: false });
     const before = await page.locator(".relic-badge").count();
     await page.evaluate(() => {
       window.__debug.place("Zoro", "me", 0);
-      window.__debug.giveCard("The Holy Grail");
+      window.__debug.giveCard("Elder wand");
     });
     await page.locator(".hand-card").last().click();
     await page.locator(".board-slot.placeable.occupied").first().click();
@@ -695,6 +695,64 @@ await newBoard({ place: false });
       before === 0 && after > 0,
       `badges ${before} -> ${after}`,
     );
+
+    // A cancelled press or the beginning of a drag must not return the relic.
+    // The old UI performed the return on pointerdown, which made an equipped
+    // relic disappear before the gesture had become a click.
+    await page.evaluate(() => {
+      const badge = document.querySelector(".relic-badge");
+      badge?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, pointerType: "mouse", isPrimary: true }));
+    });
+    await page.waitForTimeout(120);
+    const afterPress = await page.locator(".relic-badge").count();
+    check(
+      "a relic survives an incomplete badge press",
+      afterPress === after,
+      `badges ${after} -> ${afterPress}`,
+    );
+
+    // A completed click remains the explicit, intentional way to return it.
+    await page.locator(".relic-badge").first().click();
+    await page.waitForTimeout(250);
+    check(
+      "a completed badge click returns the relic",
+      (await page.locator(".relic-badge").count()) === 0,
+      "badge returned only after click",
+    );
+  }
+}
+
+// ------------------------------------------------------------- 11. card discover layout
+// All card-backed option prompts share one renderer. Verify the three Tech
+// choices used by Vegapunk stay in one row, so Indiana Jones and future
+// three-card discovers inherit the same fix.
+await newBoard({ place: false });
+{
+  const ready = await page.evaluate(() => Boolean(window.__debug));
+  if (!ready) {
+    skip("three-card discovers stay on one line", "no __debug hook (production build?)");
+  } else {
+    await page.evaluate(() => {
+      window.__debug.place("Zoro", "me", 0);
+      window.__debug.giveCard("Vegapunk");
+    });
+    await page.waitForTimeout(350);
+    await page.locator(".hand-card").last().click();
+    await page.locator(".board-slot.placeable.empty").first().click();
+    await page.locator(".target-prompt.card-choice-prompt .prompt-card-choice").first().waitFor({ state: "visible", timeout: 5000 });
+    const choiceBoxes = await page.locator(".target-prompt.card-choice-prompt .prompt-card-choice").evaluateAll((elements) =>
+      elements.map((element) => {
+        const box = element.getBoundingClientRect();
+        return { top: Math.round(box.top), left: Math.round(box.left), width: Math.round(box.width) };
+      }),
+    );
+    const sameRow = choiceBoxes.length === 3 && Math.max(...choiceBoxes.map((box) => box.top)) - Math.min(...choiceBoxes.map((box) => box.top)) <= 2;
+    check(
+      "three-card discovers stay on one line",
+      sameRow,
+      JSON.stringify(choiceBoxes),
+    );
+    await page.locator(".target-prompt.card-choice-prompt .prompt-card-choice").first().click();
   }
 }
 

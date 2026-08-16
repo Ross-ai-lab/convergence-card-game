@@ -4301,6 +4301,17 @@ button:disabled {
   pointer-events: auto;
 }
 
+/* Card discovers are three equal decisions, not a flex-wrap gallery. The old
+   760px strip was just narrow enough for two 240px cards, so the third card
+   dropped below them and was clipped by the board. Keep the shared option
+   prompt in one row for Vegapunk, Indiana Jones, and every future card discover.
+*/
+.target-prompt.card-choice-prompt {
+  width: min(1000px, calc(100vw - 24px));
+  max-width: min(1000px, calc(100vw - 24px));
+  box-sizing: border-box;
+}
+
 .target-prompt-head {
   display: flex;
   gap: 12px;
@@ -4341,6 +4352,13 @@ button:disabled {
   margin-top: 12px;
 }
 
+.target-prompt.card-choice-prompt .prompt-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
 .prompt-value {
   min-width: 74px;
   min-height: 42px;
@@ -4369,6 +4387,10 @@ button:disabled {
   align-items: center;
   gap: 5px;
   background: rgba(67, 205, 189, 0.1);
+}
+
+.target-prompt.card-choice-prompt .prompt-card-choice {
+  width: 100%;
 }
 
 .prompt-card-choice:hover:not(:disabled) {

@@ -2591,7 +2591,16 @@ function MinionFace({
               ? (e) => {
                   // Stops the board's own drag/arm handler seeing this press.
                   e.stopPropagation();
-                  e.preventDefault();
+                  // The return itself waits for a completed click below; a
+                  // pointerdown can also be the start of a drag or a cancelled
+                  // touch gesture and must never unequip the relic by itself.
+                }
+              : undefined
+          }
+          onClick={
+            onRelicReturn
+              ? (e) => {
+                  e.stopPropagation();
                   onRelicReturn(index);
                 }
               : undefined
@@ -2862,7 +2871,16 @@ function TargetPrompt({
         ? "Their hand, face up. Pick one."
         : "Pick a value.";
   return (
-    <div className={pending.kind === "board" ? "target-prompt" : "target-prompt interactive"} role="status">
+    <div
+      className={[
+        "target-prompt",
+        pending.kind === "board" ? "" : "interactive",
+        pending.kind === "option" ? "card-choice-prompt" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      role="status"
+    >
       <div className="target-prompt-head">
         {card ? <img className="target-prompt-art" src={card.art} alt="" draggable={false} /> : null}
         <div className="target-prompt-text">
