@@ -10,7 +10,7 @@ Error generating stack: `+e.message+`
 c001,John Wick,1,1,1,Black,Nature,Neutral,,friendly_death_buff_1_1,passive,"Passive: Whenever another friendly minion dies, gain +1/+1.",A dog was all he had left.,Myth,/card-art/raw/c001.webp
 c002,Joker,1,1,1,Red,Nature,Evil,,copy_minion_to_hand,onPlay,"Battlecry: Put a copy of a minion in your hand.",The punchline was already loaded.,DCU,/card-art/raw/c002.webp
 c003,Detective L,1,1,4,Yellow,Nature,Good,,foresight_draw,passive,"Passive: Your draw now shows 2 cards, pick one.",Justice works in probabilities.,Death Note,/card-art/raw/c003.webp
-c004,Bigfoot,2,2,2,Black,Nature,Neutral,Passive,dodge_50,passive,Passive: Evades 50% of incoming attacks.,The woods answer with silence.,Basic,/card-art/raw/c004.webp
+c004,Bigfoot,2,2,2,Black,Nature,Neutral,Passive,dodge_50,passive,Passive: Evades 50% of incoming attacks.,The woods answer with silence.,Myth,/card-art/raw/c004.webp
 c005,Batman,2,1,1,Purple,Tech,Good,,batman_gadget_choice,onPlay,"Battlecry: Choose an enemy minion. Choose one gadget: Freeze it; Silence it; or give it -3 ATK",Preparation beats power.,DCU,/card-art/raw/c005.webp
 c006,Sandworm,2,1,3,Black,Nature,Neutral,Taunt;Passive,small_attack_ward,passive,Taunt. Passive: Cannot be damaged by minions with 2 or less ATK.,The desert itself has teeth.,Dune,/card-art/raw/c006.webp
 c007,Pandora's Actor,2,2,2,Red,Magic,Evil,,copy_minion_effects,onPlay,Battlecry: Choose another minion. Become it. HP and ATK are not copied.,Every role is useful.,Overlord,/card-art/raw/c007.webp
@@ -163,7 +163,7 @@ c155,Margit the Fell Omen,3,1,1,Black,Magic,Evil,Deathrattle,deathrattle_summon_
 c156,Ouken,2,2,1,Black,Magic,Evil,Deathrattle,ouken_reborn,deathrattle,"Deathrattle: Reborn, become Chained",Immortality cost him everything,Ranking of Kings,/card-art/raw/c156.webp
 c157,Pillar Men,4,5,5,Black,Nature,Evil,Chained,none,none,Chained.,They outwaited the sun.,JoJo,/card-art/raw/c157.webp
 c159,Indiana Jones,1,1,1,Red,Nature,Good,,discover_relic_self,onPlay,Battlecry: Discover 1 of 3 Ascension Relics. Add it to your hand.,Mine,Indiana Jones,/card-art/raw/c159.webp
-c160,Domovoy,1,1,1,Yellow,Magic,Good,,draw_relic,onPlay,Battlecry: Draw an Ascension Relic.,The house spirit,Basic,/card-art/raw/c160.webp
+c160,Domovoy,1,1,1,Yellow,Magic,Good,,draw_relic,onPlay,Battlecry: Draw an Ascension Relic.,The house spirit,Myth,/card-art/raw/c160.webp
 c161,Flowey,1,0,1,Yellow,Magic,Evil,Deathrattle,flowey_save_load,deathrattle,"Battlecry: Save your core's current HP. Deathrattle: Set your core to the saved HP",Friendliness is a face you put on.,Undertale,/card-art/raw/c161.webp
 c162,Kagaya Ubuyashiki,1,1,1,Yellow,Nature,Good,,discover_random_keyword_minion,onPlay,"Battlecry: Discover a random Taunt, Divine Shield, and Passive minion in the deck. Draw one",Leadership,Demon Slayer,/card-art/raw/c162.webp
 c163,Angstrom Levy,1,1,1,Purple,Magic,Neutral,,replace_same_cost_random,onPlay,"Battlecry: Choose another minion. Put it on the bottom of the deck and summon a random minion of the same cost into its slot.",Universe,Invincible,/card-art/raw/c163.webp
@@ -174,7 +174,7 @@ c167,Vegapunk,1,1,1,Purple,Tech,Good,,discover_tech_card,onPlay,"Battlecry: Disc
 c168,Walter White,1,1,1,Purple,Tech,Neutral,,neutral_double_atk_hp_1,onPlay,"Battlecry: Choose another friendly Neutral minion. Double its ATK, but set its HP to 1.",Say. My. Name,Breaking Bad,/card-art/raw/c168.webp
 c169,An Order of Heavy Knights,1,1,1,Black,Nature,Neutral,,none,none,-,Honor. Duty,Basic,/card-art/raw/c169.webp
 c170,Davy Jones,1,1,1,Black,Magic,Evil,,steal_hand_relic,onPlay,"Battlecry: Steal an Ascension Relic in your opponent's hand.",Captain of the drowned,Pirates of the Caribbean,/card-art/raw/c170.webp
-c171,Goblins,1,2,1,Black,Nature,Evil,Taunt,none,none,Taunt.,"Many, loud, briefly in the way.",Basic,/card-art/raw/c171.webp
+c171,Goblins,1,2,1,Black,Nature,Evil,Taunt,none,none,Taunt.,"Many, loud, briefly in the way.",Myth,/card-art/raw/c171.webp
 c172,Mr. Poopybutthole,1,1,1,Black,Nature,Neutral,Deathrattle,reborn_75,deathrattle,Deathrattle: Reborn-75% chance.,He was there the whole time,Rick and Morty,/card-art/raw/c172.webp
 c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,ongoing,Ongoing: Draw 1 card.,The smartest thing here is a mouse.,MHA,/card-art/raw/c173.webp
 c174,Shibukawa,1,1,1,Black,Nature,Neutral,Ongoing,set_attack_highest_enemy,ongoing,Ongoing: Set Shibukawa's ATK equal to the highest ATK enemy minion.,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
