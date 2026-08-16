@@ -1414,10 +1414,10 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   morpheus_choice: {
     kind: "option",
     side: "friendly",
-    prompt: "Choose a pill",
+    prompt: "Choose an alignment",
     values: [
-      { label: "Blue Pill — Heal and Shield", value: "heal" },
-      { label: "Red Pill — Destroy All Minions", value: "destroy" },
+      { label: "Red Pill — Good", value: "good" },
+      { label: "Blue Pill — Evil", value: "evil" },
     ],
   },
   aladdin_wish: {
@@ -1668,6 +1668,35 @@ function techCardsInDeck(state: GameState, library: CardLibrary): CardDefinition
   });
 }
 
+/** Minion cards of one alignment still in the shared draw pile. */
+function alignmentMinionsInDeck(
+  state: GameState,
+  alignment: "Good" | "Evil",
+  library: CardLibrary,
+): CardDefinition[] {
+  const seen = new Set<string>();
+  return [...state.deck, ...state.bottomDeck].flatMap((cardId) => {
+    const card = library[cardId];
+    if (!isMinionCard(card) || card.alignment !== alignment || seen.has(card.id)) return [];
+    seen.add(card.id);
+    return [card];
+  });
+}
+
+/** Discover up to three distinct alignment cards, using the duel's seeded RNG. */
+function discoverAlignmentMinions(
+  state: GameState,
+  alignment: "Good" | "Evil",
+  library: CardLibrary,
+): CardDefinition[] {
+  const pool = alignmentMinionsInDeck(state, alignment, library);
+  const offers: CardDefinition[] = [];
+  while (offers.length < 3 && pool.length > 0) {
+    offers.push(pool.splice(rollInt(state, pool.length), 1)[0]);
+  }
+  return offers;
+}
+
 function removeCardFromDrawPile(state: GameState, cardId: string): boolean {
   const deckIndex = state.deck.indexOf(cardId);
   if (deckIndex >= 0) {
@@ -1849,6 +1878,47 @@ function runEffect(
     return false;
   }
 
+  // Morpheus pauses twice: the pill chooses Good or Evil, then the chosen
+  // alignment offers three random minions from the shared deck to draw.
+  if (source.effectId === "morpheus_choice") {
+    if (!chosen || chosen.kind !== "option") {
+      const pill = requestChoice(state, source, TARGETED_EFFECTS.morpheus_choice!, library);
+      if (pill === "asked") return true;
+      if (!pill || pill.kind !== "option") return false;
+      return runEffect(state, source, sourceSlot, library, events, pill);
+    }
+
+    const alignment = chosen.option.value === "good" ? "Good" : chosen.option.value === "evil" ? "Evil" : null;
+    if (alignment) {
+      const offers = discoverAlignmentMinions(state, alignment, library);
+      if (offers.length === 0) {
+        events.push(effectEvent(`${label} finds no ${alignment} minion in the deck.`, source));
+        return false;
+      }
+      const cardChoice = requestChoice(
+        state,
+        source,
+        {
+          kind: "option",
+          side: "friendly",
+          prompt: `Discover ${offers.length} ${alignment} minion${offers.length === 1 ? "" : "s"} from the deck`,
+          values: offers.map((card) => ({ label: card.name, value: card.id })),
+        },
+        library,
+      );
+      if (cardChoice === "asked") return true;
+      if (!cardChoice || cardChoice.kind !== "option") return false;
+      return runEffect(state, source, sourceSlot, library, events, cardChoice);
+    }
+
+    const card = library[chosen.option.value];
+    if (!isMinionCard(card) || (card.alignment !== "Good" && card.alignment !== "Evil")) return false;
+    if (!removeCardFromDrawPile(state, card.id)) return false;
+    putCardInHand(state, source.owner, card.id, events);
+    events.push(effectEvent(`${label} draws ${card.name} from the deck.`, source));
+    return false;
+  }
+
   // Voldemort still draws two when there are no cards available to discard.
   if (source.effectId === "discard_draw_2" && player.hand.length === 0) {
     drawDirect(state, source.owner, 2, events);
@@ -1961,30 +2031,6 @@ function runEffect(
   } else if (source.effectId === "flowey_save_load") {
     source.savedCoreHealth = player.health;
     events.push(effectEvent(`${label} saves the core at ${player.health} HP.`, source));
-    return false;
-  } else if (source.effectId === "morpheus_choice") {
-    if (pickedValue === "heal") {
-      for (const playerId of [0, 1] as PlayerId[]) {
-        for (const minion of state.players[playerId].board) {
-          if (!minion) continue;
-          minion.hp = minion.maxHp;
-          minion.divineShield = true;
-          if (!minion.gainedEffects.some((effect) => effect.text === "Passive: Divine Shield.")) {
-            minion.gainedEffects.push({ effectId: "none", timing: "passive", text: "Passive: Divine Shield." });
-          }
-        }
-      }
-      events.push(effectEvent(`${label} chooses the Blue Pill: all minions heal and gain Divine Shield.`, source));
-    } else if (pickedValue === "destroy") {
-      for (const playerId of [0, 1] as PlayerId[]) {
-        for (let slot = 0; slot < boardSize; slot += 1) {
-          if (state.players[playerId].board[slot]) {
-            destroyAtSlot(state, playerId, slot, events, `${source.name} destroys all minions`, null, false);
-          }
-        }
-      }
-      events.push(effectEvent(`${label} chooses the Red Pill: all minions are destroyed.`, source));
-    }
     return false;
   } else if (source.effectId === "aladdin_wish") {
     if (pickedValue === "hero_shield") {

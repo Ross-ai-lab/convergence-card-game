@@ -77,7 +77,14 @@ describe("2026 card replacements", () => {
       },
       Dormammu: { cost: 9, atk: 8, hp: 5, effectId: "dark_dimension_banish", effectTiming: "onPlay" },
       "Doctor Strange": { cost: 7, atk: 3, hp: 2, effectId: "strange_bargain", effectTiming: "onPlay" },
-      Morpheus: { cost: 4, atk: 1, hp: 1, effectId: "morpheus_choice", effectTiming: "onPlay" },
+      Morpheus: {
+        cost: 4,
+        atk: 2,
+        hp: 3,
+        effectId: "morpheus_choice",
+        effectTiming: "onPlay",
+        effect: "Battlecry: Discover a random Good or Evil minion from the deck. Draw it.",
+      },
       "Kento Nanami": { cost: 3, atk: 1, hp: 1, effectId: "set_hp_1", effectTiming: "onPlay", keywords: [] },
       "Ainz Ooal Gown": { cost: 9, atk: 3, hp: 3, effectId: "set_all_enemy_hp_1", effectTiming: "onPlay", keywords: [] },
       "Light Yagami": {
@@ -419,21 +426,30 @@ describe("2026 card replacements", () => {
     expect(after.players[0].health).toBe(72);
   });
 
-  it("Morpheus offers the two pill choices", () => {
+  it("Morpheus chooses an alignment, then discovers three matching minions to draw", () => {
     const state = mainState();
-    state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 3 });
-    state.players[1].board[0] = minion("Zoro", 1, { hp: 1, maxHp: 3 });
     const asking = play(state, 0, "Morpheus", 0);
-    expect(asking.pendingTarget?.labelOptions).toHaveLength(2);
-    const healed = choose(asking, 0);
-    expect(healed.players[0].board[1]).toMatchObject({ hp: 3, divineShield: true });
-    expect(healed.players[1].board[0]).toMatchObject({ hp: 3, divineShield: true });
+    expect(asking.pendingTarget?.labelOptions).toEqual([
+      { label: "Red Pill — Good", value: "good" },
+      { label: "Blue Pill — Evil", value: "evil" },
+    ]);
 
-    const redState = mainState("morpheus-red");
-    redState.players[0].board[1] = minion("John Wick", 0);
-    redState.players[1].board[0] = minion("Zoro", 1);
-    const red = choose(play(redState, 0, "Morpheus", 0), 1);
-    expect(red.players.every((player) => player.board.every((minion) => minion === null))).toBe(true);
+    const goodOffers = choose(asking, 0);
+    expect(goodOffers.pendingTarget?.labelOptions).toHaveLength(3);
+    const offeredGood = goodOffers.pendingTarget!.labelOptions.map((option) => option.value);
+    expect(offeredGood.every((id) => cards.find((card) => card.id === id)?.alignment === "Good")).toBe(true);
+
+    const selectedGood = choose(goodOffers, 1);
+    expect(selectedGood.players[0].hand).toContain(offeredGood[1]);
+    expect(selectedGood.deck).not.toContain(offeredGood[1]);
+
+    const evilOffers = choose(play(mainState("morpheus-blue"), 0, "Morpheus", 0), 1);
+    expect(evilOffers.pendingTarget?.labelOptions).toHaveLength(3);
+    expect(
+      evilOffers.pendingTarget!.labelOptions.every(
+        (option) => cards.find((card) => card.id === option.value)?.alignment === "Evil",
+      ),
+    ).toBe(true);
   });
 
   it("Light Yagami destroys a random Nature enemy on play and on death", () => {
