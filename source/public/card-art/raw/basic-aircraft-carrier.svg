@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Aircraft Carrier</title>
+  <desc id="desc">A stylized aircraft carrier cutting through a dark blue sea beneath a geometric sky.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#081326"/>
+      <stop offset="1" stop-color="#16385a"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e6c8b"/>
+      <stop offset="1" stop-color="#061522"/>
+    </linearGradient>
+    <linearGradient id="hull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a7c8d2"/>
+      <stop offset="0.45" stop-color="#496879"/>
+      <stop offset="1" stop-color="#172936"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="900" fill="url(#sky)"/>
+  <path d="M0 545 Q150 500 300 545 T600 545 V900 H0Z" fill="url(#sea)"/>
+  <path d="M0 650 Q130 610 270 650 T600 650" fill="none" stroke="#6ed7ff" stroke-opacity=".38" stroke-width="8"/>
+  <path d="M0 760 Q160 710 320 760 T600 760" fill="none" stroke="#6ed7ff" stroke-opacity=".22" stroke-width="6"/>
+  <path d="M86 515 L505 515 L555 584 L431 650 L152 650 L45 580Z" fill="url(#hull)" stroke="#b7edf7" stroke-width="5"/>
+  <path d="M90 503 L508 503 L466 468 L133 468Z" fill="#d7edf0" stroke="#6ed7ff" stroke-width="4"/>
+  <path d="M202 463 L354 463 L354 382 L319 382 L319 342 L281 342 L281 382 L202 382Z" fill="#547183" stroke="#b7edf7" stroke-width="4"/>
+  <path d="M305 341 L305 282 M305 300 L348 300 M305 313 L268 313" stroke="#6ed7ff" stroke-width="5" fill="none"/>
+  <path d="M146 470 L234 470 L234 421 L146 421Z" fill="#1c3549" stroke="#6ed7ff" stroke-width="3"/>
+  <path d="M391 470 L468 470 L468 430 L391 430Z" fill="#1c3549" stroke="#6ed7ff" stroke-width="3"/>
+  <path d="M155 514 L447 514" stroke="#163342" stroke-width="7"/>
+  <path d="M105 598 L474 598 M145 625 L425 625" stroke="#6ed7ff" stroke-opacity=".5" stroke-width="4"/>
+  <path d="M194 507 L252 507 L276 493 L218 493Z M333 507 L391 507 L416 493 L358 493Z" fill="#e8f5f5" stroke="#233d4b" stroke-width="3"/>
+  <circle cx="90" cy="155" r="3" fill="#d9fbff"/><circle cx="470" cy="112" r="4" fill="#d9fbff"/><circle cx="530" cy="246" r="2" fill="#d9fbff"/>
+</svg>

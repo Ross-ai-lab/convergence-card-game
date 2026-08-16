@@ -297,8 +297,8 @@ function HowToPlayContent() {
           <h4>3. Fight smart</h4>
           <p>
             A minion sleeps on the turn it arrives and normally attacks once per turn. Combat is <b>simultaneous</b>:
-            the defender hits back even if it dies. <b>Chained</b> minions wait two owner turns, while <b>Charge</b>
-            minions can attack immediately. A minion with <b>0 ATK</b> can attack, but deals no damage.
+            the defender hits back even if it dies. <b>Chained</b> minions wait two owner turns and cannot be targeted,
+            while <b>Charge</b> minions can attack immediately. A minion with <b>0 ATK</b> can attack, but deals no damage.
           </p>
         </section>
         <section>

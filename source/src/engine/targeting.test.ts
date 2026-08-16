@@ -105,6 +105,24 @@ describe("targeted effects", () => {
     expect(after.players[1].board[1]).toBeNull();
   });
 
+  it("keeps Chained minions out of attack and targeted-effect choices", () => {
+    const state = mainState("chained-untargetable");
+    state.players[0].board[0] = dummy("Zoro", 0, { sleeping: false });
+    state.players[1].board[0] = dummy("John Wick", 1, { chained: 2 });
+    state.players[1].board[1] = dummy("John Wick", 1);
+    state.players[1].board[2] = dummy("Zoro", 1);
+
+    const attacks = getLegalActions(state, library).filter((action) => action.type === "attack_minion");
+    expect(attacks.some((action) => action.targetSlot === 0)).toBe(false);
+    expect(attacks.some((action) => action.targetSlot === 1)).toBe(true);
+
+    const asking = playCardFor(state, 0, "Kiritsugu Emiya", 1);
+    expect(asking.pendingTarget?.options).toEqual([
+      { owner: 1, slot: 1 },
+      { owner: 1, slot: 2 },
+    ]);
+  });
+
   it("stops and asks when more than one enemy is legal", () => {
     const state = mainState();
     state.players[1].board[0] = dummy("John Wick", 1);

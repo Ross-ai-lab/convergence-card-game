@@ -253,7 +253,7 @@ const effectIds = new Set<EffectId>([
   "dodge_75",
   "reborn_75",
   "mask_return_attacker",
-  "elden_beast_magic_atk",
+  "elden_beast_neutral_magic_atk",
   "oogway_rescue",
   "set_attack_highest_enemy",
   "evade_allies_33",

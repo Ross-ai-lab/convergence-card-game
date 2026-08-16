@@ -1560,6 +1560,7 @@ function attackTargetable(state: GameState, minion: MinionInstance): boolean {
 }
 
 function isUntargetable(state: GameState, minion: MinionInstance): boolean {
+  if (minion.chained > 0) return true;
   if (hasRelic(minion, "untargetable")) return true;
   if (minion.untargetableUntilTurn !== null && minion.untargetableUntilTurn !== undefined && minion.untargetableUntilTurn > state.turnNumber) return true;
   if (minion.protectedByMeleoron) {
@@ -3798,12 +3799,12 @@ function refreshPassiveAuras(state: GameState): void {
   }
   const eldenBeasts = ([0, 1] as PlayerId[]).flatMap((owner) =>
     state.players[owner].board.filter(
-      (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "elden_beast_magic_atk")),
+      (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "elden_beast_neutral_magic_atk")),
     ),
   );
   for (const source of eldenBeasts) {
     for (const target of state.players[source.owner].board) {
-      if (!target || !receivesCampBuff(target, "Magic")) continue;
+      if (!target || (target.alignment !== "Neutral" && target.camp !== "Magic")) continue;
       target.atk += 2;
       target.auraBonuses = target.auraBonuses ?? [];
       target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 0, keywords: [] });
@@ -4388,6 +4389,10 @@ function canDamage(
   effectDamage: boolean,
   events: GameEvent[],
 ): boolean {
+  if (!effectDamage && target.chained > 0) {
+    events.push(effectEvent(`${target.name} is protected by its chains.`, target));
+    return false;
+  }
   if (target.untargetableUntilTurn !== null && target.untargetableUntilTurn !== undefined && target.untargetableUntilTurn > state.turnNumber) {
     events.push(effectEvent(`${target.name} is Chained beyond harm.`, target));
     return false;
@@ -4663,7 +4668,10 @@ function discardAttachedRelics(state: GameState, minion: MinionInstance): void {
 
 function randomEnemyMinion(state: GameState, source: MinionInstance): MinionInstance | null {
   const candidates = state.players[opponent(source.owner)].board.filter(
-    (minion): minion is MinionInstance => Boolean(minion),
+    (minion): minion is MinionInstance => {
+      if (!minion) return false;
+      return enemyTargetable(state, minion);
+    },
   );
   return candidates.length > 0 ? candidates[rollInt(state, candidates.length)] : null;
 }
@@ -4805,7 +4813,7 @@ function destroyEnemyByPredicate(
 ): void {
   const candidates = state.players[enemyId].board
     .map((minion, slotIndex) => ({ minion, slotIndex }))
-    .filter(({ minion }) => minion && predicate(minion));
+    .filter(({ minion }) => minion && enemyTargetable(state, minion) && predicate(minion));
   if (sortBy === "atk") candidates.sort((left, right) => left.minion!.atk - right.minion!.atk);
   const target = candidates[0];
   if (!target?.minion) return;
@@ -4815,7 +4823,7 @@ function destroyEnemyByPredicate(
 function destroyRandomMinion(state: GameState, playerId: PlayerId, events: GameEvent[], prefix: string): void {
   const occupied = state.players[playerId].board
     .map((minion, slotIndex) => ({ minion, slotIndex }))
-    .filter(({ minion }) => minion);
+    .filter(({ minion }) => minion && !isUntargetable(state, minion));
   if (occupied.length === 0) return;
   const target = occupied[rollInt(state, occupied.length)];
   if (target?.minion) destroyAtSlot(state, playerId, target.slotIndex, events, `${prefix}: ${target.minion.name}`);
@@ -4950,9 +4958,9 @@ function resolveDeathrattle(
         kind: "minion",
         id: "token:morgott",
         name: "Morgott, the Omen King",
-        cost: 2,
-        atk: 2,
-        hp: 1,
+        cost: 3,
+        atk: 3,
+        hp: 3,
         rarity: "Black",
         camp: "Nature",
         alignment: "Evil",

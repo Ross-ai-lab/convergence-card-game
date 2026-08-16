@@ -110,6 +110,16 @@ describe("2026 card replacements", () => {
       Zoro: { cost: 5, atk: 4, hp: 4, effectId: "on_kill_buff_1", effectTiming: "passive", keywords: [], effect: "Passive: Gain +1/+1 after killing a minion." },
       "One-Eyed Owl": { cost: 5, atk: 6, hp: 6, effectId: "none", effectTiming: "none", keywords: ["Chained"], effect: "Chained." },
       "Gravelord Nito": { cost: 3, atk: 1, hp: 3, effectId: "nito_any_death_1_1", effectTiming: "passive", keywords: [], effect: "Passive: Gain +1/+1 when a minion dies." },
+      "Margit the Fell Omen": {
+        cost: 3,
+        atk: 1,
+        hp: 1,
+        effectId: "deathrattle_summon_morgott",
+        effectTiming: "deathrattle",
+        keywords: ["Deathrattle"],
+        effect: "Deathrattle: Summon Morgott, the Omen King (3/3).",
+      },
+      "T-1000": { cost: 5, atk: 3, hp: 5, effectId: "heal_self_full", effectTiming: "ongoing", keywords: ["Ongoing"] },
       "Silver Surfer": {
         cost: 6,
         atk: 3,
@@ -190,7 +200,14 @@ describe("2026 card replacements", () => {
         effect: "Passive: After it is attacked, gain immunity to that enemies Camp type of attack for the next 3 enemy turns.",
       },
       "Giant Tree": { effectTiming: "passive", keywords: ["Passive"], effectId: "buff_all_nature_2_1", effect: "Passive: All other friendly Nature minions have +2/+1." },
-      "Elden Beast": { camp: "Magic", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: All friendly Magic minions have +2 ATK." },
+      "Elden Beast": {
+        cost: 6,
+        camp: "Magic",
+        effectId: "elden_beast_neutral_magic_atk",
+        effectTiming: "passive",
+        keywords: ["Passive"],
+        effect: "Passive: All friendly Neutral or Magic minions have +2 ATK.",
+      },
       Darkwing: { effectTiming: "deathrattle", keywords: ["Deathrattle"], effectId: "kill_back", effect: "Deathrattle: The minion which kills this minion also dies right after." },
       "Dr. Heinz Doofenshmirtz": { effect: "Ongoing: 50% to die and 50% to gain +2/+1." },
       "G-Man": { atk: 3, hp: 6, effectId: "stasis_enemy", effectTiming: "onPlay", keywords: [] },
@@ -214,7 +231,7 @@ describe("2026 card replacements", () => {
       Buddha: { atk: 3, hp: 4, effectId: "buddha_purify", effectTiming: "onPlay", keywords: [] },
       "Deep Sea King": { atk: 4, hp: 4, effectId: "invulnerable_if_frozen", effectTiming: "passive", keywords: ["Passive"] },
       "Seven Deadly Sins": { atk: 4, hp: 5, effectId: "summon_sins", effectTiming: "onPlay", keywords: [] },
-      "Elder Centipede": { atk: 5, hp: 6, effectId: "self_buff_2", effectTiming: "ongoing", keywords: ["Ongoing"] },
+      "Elder Centipede": { cost: 7, atk: 5, hp: 6, effectId: "self_buff_2", effectTiming: "ongoing", keywords: ["Ongoing"] },
       "All Might": {
         atk: 4,
         hp: 5,
@@ -233,6 +250,7 @@ describe("2026 card replacements", () => {
       "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: The first enemy minion to attack each turn is Chained for 1 turn." },
       "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
       "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
+      "Aircraft Carrier": { cost: 7, atk: 6, hp: 6, effectId: "none", effectTiming: "none", keywords: [], effect: "-", origin: "Basic" },
     };
     for (const [name, fields] of Object.entries(expected)) {
       const card = cards.find((entry) => entry.name === name);
@@ -288,10 +306,8 @@ describe("2026 card replacements", () => {
     protectedChain.players[0].board[0] = minion("Dumbledore", 0);
     protectedChain.players[0].board[1] = minion("John Wick", 0, { chained: 2 });
     const vaderPending = play(protectedChain, 1, "Darth Vader", 0);
-    const protectedTarget = vaderPending.pendingTarget?.options.findIndex((option) => option.owner === 0 && option.slot === 1) ?? -1;
-    expect(protectedTarget).toBeGreaterThanOrEqual(0);
-    const vaderBlocked = choose(vaderPending, protectedTarget);
-    expect(vaderBlocked.players[0].board[1]).toMatchObject({ chained: 0 });
+    expect((vaderPending.pendingTarget?.options ?? []).some((option) => option.owner === 0 && option.slot === 1)).toBe(false);
+    expect(vaderPending.players[0].board[1]).toMatchObject({ chained: 0 });
   });
 
   it("Gojo silences enemy minions while alive, then releases them when he dies", () => {
@@ -435,7 +451,7 @@ describe("2026 card replacements", () => {
     state.activePlayer = 1;
 
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(after.players[0].board[0]).toMatchObject({ name: "Morgott, the Omen King", art: "/card-art/raw/token-morgott.png" });
+    expect(after.players[0].board[0]).toMatchObject({ name: "Morgott, the Omen King", atk: 3, hp: 3, art: "/card-art/raw/token-morgott.png" });
   });
 
   it("Giant Tree's Nature aura is removed when the Tree leaves play", () => {
@@ -825,7 +841,7 @@ describe("2026 card replacements", () => {
     expect(twoTurnsLater.players[1].board[2]?.name).toBe("Zoro");
   });
 
-  it("Darth Vader chains a target, then destroys it if it is already Chained", () => {
+  it("Darth Vader chains a target but cannot target one that is already Chained", () => {
     const state = mainState("vader-chain");
     state.players[1].board[0] = minion("John Wick", 1);
     const chained = play(state, 0, "Darth Vader", 1);
@@ -834,7 +850,8 @@ describe("2026 card replacements", () => {
     const alreadyChained = mainState("vader-destroy");
     alreadyChained.players[1].board[0] = minion("John Wick", 1, { chained: 2 });
     const destroyed = play(alreadyChained, 0, "Darth Vader", 1);
-    expect(destroyed.players[1].board[0]).toBeNull();
+    expect(destroyed.pendingTarget).toBeNull();
+    expect(destroyed.players[1].board[0]).toMatchObject({ chained: 2 });
   });
 
   it("Buddha makes the board Good and clears its listed negative statuses", () => {
@@ -1032,7 +1049,7 @@ describe("2026 card replacements", () => {
     expect(after.players[1].hand).toContain(cardId("John Wick"));
   });
 
-  it("Toji blocks Magic, while Elden Beast buffs only friendly Magic ATK", () => {
+  it("Toji blocks Magic, while Elden Beast buffs friendly Neutral and Magic ATK", () => {
     const blocked = mainState("toji-magic");
     blocked.players[0].board[0] = minion("Pandora's Actor", 0, { sleeping: false, atk: 5, hp: 20, maxHp: 20 });
     blocked.players[1].board[0] = minion("Toji", 1);
@@ -1043,10 +1060,12 @@ describe("2026 card replacements", () => {
     elder.players[0].board[0] = minion("Pandora's Actor", 0, { sleeping: false, atk: 1, hp: 20, maxHp: 20 });
     elder.players[1].board[0] = minion("Elden Beast", 1);
     elder.players[1].board[1] = minion("Pandora's Actor", 1, { atk: 1, hp: 20, maxHp: 20 });
+    elder.players[1].board[2] = minion("John Wick", 1, { atk: 1, hp: 20, maxHp: 20, alignment: "Neutral" });
     const elderHit = applyAction(elder, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(elderHit.players[1].board[0]?.hp).toBe(3);
     expect(elderHit.players[1].board[0]?.atk).toBe(6);
     expect(elderHit.players[1].board[1]?.atk).toBe(3);
+    expect(elderHit.players[1].board[2]?.atk).toBe(3);
     expect(elderHit.players[0].board[0]?.atk).toBe(1);
   });
 

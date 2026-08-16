@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { cards, resolvePublicAssetUrl } from "../data/cards";
 
 describe("card CSV data", () => {
-  it("loads the full 172-card roster", () => {
-    expect(cards).toHaveLength(172);
-    expect(new Set(cards.map((card) => card.id)).size).toBe(172);
-    expect(new Set(cards.map((card) => card.name)).size).toBe(172);
+  it("loads the full 173-card roster", () => {
+    expect(cards).toHaveLength(173);
+    expect(new Set(cards.map((card) => card.id)).size).toBe(173);
+    expect(new Set(cards.map((card) => card.name)).size).toBe(173);
   });
 
   it("contains the v1 systems needed for engine coverage", () => {
@@ -54,11 +54,31 @@ describe("card CSV data", () => {
     });
     expect(changed.get("Kizaru")).toMatchObject({ atk: 4, hp: 4 });
     expect(changed.get("Ten Tails")?.effect).toBe("Battlecry: Chain all other minions.");
+    expect(changed.get("Aircraft Carrier")).toMatchObject({ cost: 7, atk: 6, hp: 6, origin: "Basic", effect: "-" });
   });
 
   it("loads Luffy's chained-minion rescue Battlecry", () => {
     expect(cards.find((card) => card.name === "Monkey D. Luffy")?.effect).toBe(
       "Battlecry: Free all friendly Chained minions. They may attack immediately and gain Divine Shield.",
     );
+  });
+
+  it("keeps the approved lore-only camp and alignment corrections", () => {
+    expect(cards.find((card) => card.id === "c082")).toMatchObject({
+      camp: "Magic",
+      alignment: "Neutral",
+    });
+    expect(cards.find((card) => card.id === "c087")).toMatchObject({
+      camp: "Nature",
+      alignment: "Evil",
+    });
+    expect(cards.find((card) => card.id === "c130")).toMatchObject({
+      camp: "Magic",
+      alignment: "Evil",
+    });
+    expect(cards.find((card) => card.id === "c154")).toMatchObject({
+      camp: "Magic",
+      alignment: "Neutral",
+    });
   });
 });
