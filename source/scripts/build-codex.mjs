@@ -136,6 +136,20 @@ function build() {
   const counts = { wired: 0, targeted: 0, keyword: 0, vanilla: 0 };
   for (const card of cards) counts[card.s] += 1;
 
+  /**
+   * The blank cards that are actually a gap.
+   *
+   * "Prints no effect" on its own is the wrong flag and once put eight cards on
+   * a worklist that should have held two. A Basic reference card is SUPPOSED to
+   * be a plain body — that is its whole job — and a card carrying only Charge or
+   * Chained does something, whether or not it should do more. What is left after
+   * both exclusions is a licensed character with a genuinely empty card, and the
+   * test for that is the card's origin, not its effect text.
+   */
+  const blankCharacters = cards
+    .filter((card) => card.s === "vanilla" && card.o !== "Basic")
+    .map((card) => card.n);
+
   const curve = {};
   for (const cost of cards.map((card) => card.c).sort((a, b) => a - b)) {
     curve[String(cost)] = (curve[String(cost)] ?? 0) + 1;
@@ -159,6 +173,7 @@ function build() {
     timings: countBy(cards, "tim"),
     repeatables: [],
     engines,
+    blankCharacters,
   };
 
   // `</` would close the host <script> element early; JSON has no opinion about
@@ -177,6 +192,11 @@ function build() {
   console.log(`Codex data ${changed ? "rebuilt" : "already current"}: ${path.basename(codexPath)}`);
   console.log(`  ${cards.length} cards — ${counts.wired} wired, ${counts.targeted} targeted, ${counts.keyword} keyword-only, ${counts.vanilla} vanilla`);
   console.log(`  ${relics.length} relics, ${engines.length} ongoing engines`);
+  console.log(
+    `  ${blankCharacters.length} blank character${blankCharacters.length === 1 ? "" : "s"}` +
+      `${blankCharacters.length ? `: ${blankCharacters.join(", ")}` : ""}` +
+      ` (Basic reference cards and keyword-only cards are not counted)`,
+  );
   return changed;
 }
 
