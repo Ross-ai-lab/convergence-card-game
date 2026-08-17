@@ -153,14 +153,14 @@ describe("the bot", () => {
 
   it("rates the skills in the right order", () => {
     // A cheap guard, not the measurement. The real number comes from
-    // `npm run sim -- --ladder`, which on 2026-08-17 reported hard>easy 86.3%
-    // (80 games), hard>normal 75.0% (80), normal>easy 71.5% (200) — measured
-    // after the cheat ladder landed, so Recruit and Veteran are rolling blind
-    // and the Ascendant is branching replies. Foresight is NOT in those numbers:
-    // self-play never sets `foresightFor`, so the shipped Ascendant is stronger
-    // than the ladder says. Sixteen games is far too few to reproduce any of it,
-    // so the bar here is only "the ladder is not upside down" — a regression
-    // that broke `hard` would sink well below half.
+    // `npm run sim -- --ladder`, which on 2026-08-17 reported hard>easy 91.0%
+    // (100 games), hard>normal 82.0% (100), normal>easy 71.5% (200) on the
+    // shipped cheat bot, Foresight included. Sixteen games is far too few to
+    // reproduce any of it, so the bar here is only "the ladder is not upside
+    // down" — a regression that broke `hard` would sink well below half.
+    // Never compare a number from here, or from there, by subtraction: use
+    // `--ladder-compare`, which pairs two runs duel by duel. The README's
+    // "Comparing two ladder runs" section says why that is not optional.
     // Choice-driven Battlecries add real branches to hard's search, so this
     // guard needs the same generous budget as the full deterministic pass.
     let hardWins = 0;
@@ -173,7 +173,12 @@ describe("the bot", () => {
       if (finished.winner === hardSeat) hardWins += 1;
     }
     expect(hardWins / games).toBeGreaterThan(0.5);
-  }, 120_000);
+    // Budget raised from 120s when the Ascendant began rolling its opponent's
+    // half of the projection blind: every simulated enemy move now costs an
+    // extra apply, and this guard plays sixteen full duels of them. Raised
+    // rather than shrunk on purpose — the sample is already the smallest that
+    // can catch an upside-down ladder.
+  }, 300_000);
 
   it("answers its own targeting prompts rather than stalling on them", () => {
     let state = createInitialGame(cards, "prompts", relics);

@@ -63,10 +63,42 @@ export const BOT_CHEATS: Record<BotSkill, BotCheats> = {
   hard: { trueDice: true, readsYourReply: true, clairvoyance: true, foresight: true },
 };
 
+/**
+ * Every dial this file exposes, in one readable object.
+ *
+ * Written into the ladder's result file so that comparing two runs can say WHAT
+ * changed between them rather than only that the number moved. A comparison
+ * whose dials are identical is measuring shuffle luck; one whose dials differ is
+ * measuring the change — and only the file knows which it is looking at.
+ */
+export function botDials(): Record<string, unknown> {
+  return {
+    cheats: BOT_CHEATS,
+    hardBranch: HARD_BRANCH,
+    enemyBranch: ENEMY_BRANCH,
+    enemyDice: ENEMY_DICE,
+    clairvoyantDepth: CLAIRVOYANT_DEPTH,
+    clairvoyantWeight: CLAIRVOYANT_WEIGHT,
+    blindSamples: BLIND_SAMPLES,
+    rolloutCap: ROLLOUT_CAP,
+  };
+}
+
 /** How many candidate opening moves `hard` is willing to search in depth. */
 const HARD_BRANCH = 5;
 /** How many of the opponent's replies `hard` weighs before assuming the worst. */
 const ENEMY_BRANCH = 3;
+/**
+ * Whether the OPPONENT, inside the Ascendant's projection, gets to see the dice.
+ *
+ * No, and it is a constant rather than a dial because there is no defensible
+ * value on the other side: the seat being modelled is a human or a lower tier,
+ * and neither of them can read a roll. A bot that braces against answers its
+ * opponent cannot find is not playing more carefully, it is playing a different
+ * game.
+ */
+const ENEMY_DICE = false;
+
 /** How many upcoming DRAWS Clairvoyance reads down the shared deck. */
 const CLAIRVOYANT_DEPTH = 3;
 /**
@@ -308,8 +340,6 @@ function whoActs(state: GameState): PlayerId | null {
   return state.activePlayer;
 }
 
-/** A move's resulting state and immediate score. Keeping both avoids applying the
- * same candidate again when a rollout follows it. */
 /**
  * What a move is worth beyond the board it leaves behind.
  *
@@ -346,26 +376,37 @@ function evaluateAction(
   // only advances when something actually rolled, so an unchanged seed proves
   // nothing was left to chance and one sample is the exact answer.
   const first = blindSeed(state, 1);
-  const result = applyAction({ ...state, rngSeed: first }, action, library, knownLegal, false);
-  let total = scoreState(result.state, forId);
+  const trial = applyAction({ ...state, rngSeed: first }, action, library, knownLegal, false);
+  const wasRandom = trial.state.rngSeed !== first;
+  let total = scoreState(trial.state, forId);
   let samples = 1;
-  if (result.state.rngSeed !== first) {
-    // It IS random. Average a few different rolls, so the bot plays the odds
-    // rather than one arbitrary outcome it happened to be shown.
+
+  // The DECISION is blind; the OUTCOME is whatever the game really rolls. Those
+  // are two different things, and conflating them matters now that this runs
+  // inside a rollout rather than only at the top of a one-ply search: a
+  // continuation built on a fictional roll projects a duel that never happens.
+  let outcome = { ...trial.state, rngSeed: state.rngSeed };
+
+  if (wasRandom) {
+    // Average a few different rolls, so the bot plays the odds rather than one
+    // arbitrary outcome it happened to be shown.
     for (let index = 2; index <= BLIND_SAMPLES; index += 1) {
       const seed = blindSeed(state, index);
       const sample = applyAction({ ...state, rngSeed: seed }, action, library, knownLegal, false);
       total += scoreState(sample.state, forId);
       samples += 1;
     }
+    outcome = applyAction(state, action, library, knownLegal, false).state;
   }
-  return { state: result.state, score: total / samples + tempoAdjustment(action) };
+
+  return { state: outcome, score: total / samples + tempoAdjustment(action) };
 }
 
 function bestGreedy(
   state: GameState,
   library: CardLibrary,
   forId: PlayerId,
+  trueDice = true,
 ): { action: GameAction; state: GameState } | null {
   const legal = getLegalActions(state, library);
   if (legal.length === 0) return null;
@@ -373,7 +414,7 @@ function bestGreedy(
   let bestState: GameState | null = null;
   let bestScore = -Infinity;
   for (const action of legal) {
-    const evaluated = evaluateAction(state, action, library, forId, legal);
+    const evaluated = evaluateAction(state, action, library, forId, legal, trueDice);
     const score = evaluated.score;
     if (score > bestScore) {
       bestScore = score;
@@ -389,13 +430,18 @@ function bestGreedy(
  * passed to someone else (or the game has ended). Used by `hard` to see what its
  * own turn really ends up looking like, and what the opponent does with theirs.
  */
-function rolloutTurn(state: GameState, library: CardLibrary, playerId: PlayerId): GameState {
+function rolloutTurn(
+  state: GameState,
+  library: CardLibrary,
+  playerId: PlayerId,
+  trueDice = true,
+): GameState {
   let current = state;
   for (let step = 0; step < ROLLOUT_CAP; step += 1) {
     if (current.phase === "gameOver") return current;
     const actor = whoActs(current);
     if (actor === null || actor !== playerId) return current;
-    const step = bestGreedy(current, library, playerId);
+    const step = bestGreedy(current, library, playerId, trueDice);
     if (!step) return current;
     const before = actionKey(step.action);
     const next = step.state;
@@ -415,6 +461,12 @@ function rolloutTurn(state: GameState, library: CardLibrary, playerId: PlayerId)
  * your best few openings by how good they look TO YOU, plays each of them out,
  * and keeps the WORST board that comes back. That is the difference between
  * "what will probably happen" and "what happens if you are paying attention".
+ *
+ * Your half of this projection rolls BLIND, because you are blind. Modelling you
+ * as someone who reads the dice was the first version's mistake: it braced the
+ * Ascendant against answers no Veteran and no human could actually find, and
+ * left it unprepared for the ones they can. A cheat is what the Ascendant knows,
+ * never what it imagines you know.
  */
 export function worstReply(
   state: GameState,
@@ -431,18 +483,21 @@ export function worstReply(
   const legal = getLegalActions(state, library);
   if (legal.length === 0) return value(state);
 
+  // ENEMY_DICE: false — the opponent picks their moves without seeing the roll,
+  // because that is the opponent who actually exists on the other side.
   if (!cheats.readsYourReply || legal.length === 1) {
-    return value(rolloutTurn(state, library, enemyId));
+    return value(rolloutTurn(state, library, enemyId, ENEMY_DICE));
   }
 
   const replies = legal
-    .map((action) => ({ action, ...evaluateAction(state, action, library, enemyId, legal) }))
+    .map((action) => ({ action, ...evaluateAction(state, action, library, enemyId, legal, ENEMY_DICE) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, ENEMY_BRANCH);
 
   let worst = Infinity;
   for (const reply of replies) {
-    const after = reply.state.phase === "gameOver" ? reply.state : rolloutTurn(reply.state, library, enemyId);
+    const after =
+      reply.state.phase === "gameOver" ? reply.state : rolloutTurn(reply.state, library, enemyId, ENEMY_DICE);
     const scored = value(after);
     if (scored < worst) worst = scored;
   }
@@ -511,7 +566,8 @@ export function chooseBotAction(
   for (const candidate of shortlist) {
     let projected = candidate.state;
     if (projected.phase !== "gameOver") {
-      projected = rolloutTurn(projected, library, botId);
+      // Its OWN turn it may finish with the real dice — that is its cheat.
+      projected = rolloutTurn(projected, library, botId, cheats.trueDice);
     }
     let score = worstReply(projected, library, botId, cheats);
     score += tempoAdjustment(candidate.action);

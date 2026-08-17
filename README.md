@@ -376,17 +376,47 @@ Notes that matter when changing any of it:
 - **Clairvoyance values an upcoming card by its printed cost**, because this game freezes cost as the subject's power grade in its own fiction. That is a proxy standing in for a real per-card valuation the bot does not have yet. Replace it when that valuation exists.
 - **A bot-valuation change moves every balance number.** Blind dice change how random-effect cards perform in self-play. Re-measure rather than comparing across the change.
 
-Measured on 2026-08-17, immediately after the cheats landed, with `npm run sim -- --ladder`:
+Measured on 2026-08-17 with `npm run sim -- --ladder`, on the same cards and the same seeds, once with the pre-cheat bot and once with the shipped one:
 
-| Matchup | Stronger side wins | Games | Median turns |
-|---|---|---|---|
-| Ascendant beats Recruit | 86.3% | 80 | 25 |
-| Ascendant beats Veteran | 75.0% | 80 | 22 |
-| Veteran beats Recruit | 71.5% | 200 | 25 |
+| Matchup | Pre-cheat bot | Shipped cheat bot | Paired verdict | Games |
+|---|---|---|---|---|
+| Ascendant beats Recruit | 83.0% | 91.0% | +8.0, leans positive but does not clear the bar (p=0.077) | 100 |
+| Ascendant beats Veteran | 81.0% | 82.0% | +1.0, nothing (p=1.000) | 100 |
+| Veteran beats Recruit | 71.5% | 71.5% | 0.0, nothing — but 18 duels flipped, 9 each way (p=1.000) | 200 |
 
-Two things that reading needs. **Foresight is not in it**, because self-play never sets `foresightFor`, so the shipped Ascendant is stronger than the table says. And the Ascendant's lead over the Veteran **fell** from a pre-cheat 88.8% on the same sample: assuming the opponent answers well is worth less against a bot that does not, and the Ascendant's internal model of its opponent still rolls true dice while the real Veteran no longer does. Expect that cost to invert against a human, who does punish. Do not read the ladder as a measurement of how hard the game feels.
+**The cheats did not measurably raise the Ascendant's win rate.** They changed how it plays, not how often it wins against these opponents. Against a human that should read very differently, because the two cheats with the most bite — seeing your hand and taking your draw — are aimed at a player who holds cards for a reason. A bot ladder cannot measure that, and this table should never be quoted as how hard the game feels.
+
+That last row is the clearest argument for the paired comparison. The percentage is identical to the decimal in both runs, which reads as "the blind-dice change did nothing at all". Eighteen of those 200 duels actually changed hands; they simply cancelled. Only the game-by-game pairing can tell those two situations apart.
+
+Three earlier readings of this ladder were wrong and are recorded here so they are not repeated. A pre-cheat figure of 88.8% came from a 15 August run measured on a different roster, and the apparent 14-point collapse was that roster difference, not the bot. A follow-up at 80 duels put Ascendant-versus-Veteran at 75.0%, against 81-82% here: that is the sampling error of 80 duels, which is why the two Ascendant matchups now run 100 and why comparisons go through `--ladder-compare` instead of subtraction.
 
 Per-move thinking time on the reference machine, measured the same day: Veteran 4 ms mean and 20 ms worst; Ascendant 237 ms mean and 816 ms worst, which runs on the UI thread before the `BOT_DELAY_MS` pause. Branching replies roughly tripled it. `ENEMY_BRANCH` in `bot.ts` is the dial if that ever needs trading back.
+
+### Comparing two ladder runs
+
+**Never answer "did that change help?" by subtracting one run's win rate from another's.** At these sample sizes the difference of two runs carries around seven points of error, so any ordinary change disappears into it, and the subtraction gives no warning that it has. That mistake has already been made once here: a run measured on an older roster was read as a 14-point bot regression, when the bot was responsible for under four points of it.
+
+Use the paired comparison instead:
+
+```bash
+npm run sim -- --ladder-compare .preview/balance/ladder-before.json
+```
+
+It pairs the two runs duel by duel and counts only the games whose result flipped. Every ladder duel is seeded by matchup and index, so two runs deal identical shuffles; pairing them cancels shuffle luck instead of averaging over it. That makes a four-point change visible on 100 duels, where subtracting percentages would need roughly 900. The maths is a two-sided exact McNemar test in `scripts/ladder-compare.ts`.
+
+How to read the output:
+
+- **won→lost and lost→won** are the flip counts. Everything else stayed the same and carries no information.
+- **verdict** is `improved`, `worsened`, or `no measurable change`, at p < 0.05. Equal flips in both directions is genuinely no evidence, however much the percentage moved.
+- **Bot dials that changed** is printed from a snapshot each run stores. Identical dials mean any difference came from the engine or the card data, not the bot.
+- A matchup whose seeds are not identical between the runs is **REFUSED**, not approximated. Changing a sample size makes the old run unpairable, by design — a partial pairing is the silent wrong answer this tool exists to prevent. Re-run the baseline at the new size.
+- **Card data is not captured.** A comparison spanning a roster change measures the bot and the cards at once, and nothing in the output can separate them. Re-run the baseline after any card change.
+
+Save a baseline before making a bot change, not after:
+
+```bash
+cp .preview/balance/ladder.json .preview/balance/ladder-before.json
+```
 
 ### Full balance-command gate and runtime
 

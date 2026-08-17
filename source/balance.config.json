@@ -110,19 +110,25 @@
         "Does skill actually win? Each matchup is its own check, so the summary names which one broke.",
         "A matchup passes only when BOTH hold: the observed rate clears its floor, AND the 95%",
         "confidence interval sits entirely above 50% — i.e. the gap is real, not shuffle luck.",
-        "Measured on the shipped bot: hard>easy 79.2, hard>normal 71.6, normal>easy 62.4.",
+        "Measured on the shipped cheat bot, 2026-08-17, at these sample sizes: hard>easy 91.0,",
+        "hard>normal 82.0, normal>easy 71.5.",
         "",
         "Sample sizes are per matchup because the cost and the need are inverted. A duel involving",
         "the hard bot takes about eight times as long (it searches whole turns), and those two",
-        "matchups have 20-point margins that need almost no sample: at 80 duels the chance of a false",
-        "red is under one in a thousand. normal>easy has only 9 points of headroom over its floor and",
-        "is the cheap matchup, so it gets 200. Flat 200s across all three would cost 16 minutes and",
-        "buy nothing; this costs about 7."
+        "matchups have 25-point margins that need almost no sample: at 100 duels the chance of a",
+        "false red is far under one in a thousand. normal>easy has the least headroom over its floor",
+        "and is the cheap matchup, so it gets 200. Flat 200s across all three would cost roughly",
+        "16 minutes and buy nothing.",
+        "",
+        "Raising a sample is the WRONG tool for comparing two runs. Every ladder duel is seeded by",
+        "matchup and index, so two runs deal identical shuffles; `--ladder-compare` pairs them game",
+        "by game and counts only the results that flipped, which cancels shuffle luck entirely. That",
+        "sees a 4-point change at 100 duels, where subtracting two percentages would need about 900."
       ],
       "enabled": true,
       "games": {
-        "hard>easy": 80,
-        "hard>normal": 80,
+        "hard>easy": 100,
+        "hard>normal": 100,
         "normal>easy": 200
       },
       "floors": {

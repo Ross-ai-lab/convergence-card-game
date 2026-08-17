@@ -37,7 +37,13 @@ import {
   type LadderMetric,
   type RunSnapshot,
 } from "./balance-gate";
-import type { BotSkill } from "../src/engine/bot";
+import {
+  compareLadders,
+  formatComparison,
+  type LadderGame,
+  type LadderRun,
+} from "./ladder-compare";
+import { botDials, type BotSkill } from "../src/engine/bot";
 import { STARTING_CORE } from "../src/engine/game";
 import type { CardDefinition, PlayerId } from "../src/engine/types";
 
@@ -430,6 +436,23 @@ function runSweep(values: number[], games: number, ramps: number[]) {
 // advantage.
 // ---------------------------------------------------------------------------
 
+/**
+ * Writes the ladder result file.
+ *
+ * The per-game results and the bot's dials go in alongside the summary, because
+ * a percentage on its own cannot be compared with anything later: it carries no
+ * record of which duels produced it or which bot played them.
+ */
+function writeLadderFile(table: Array<LadderMetric & { medianTurns: number; results?: LadderGame[] }>): void {
+  const run: LadderRun = {
+    generatedAt: new Date().toISOString(),
+    seedPrefix: SEED_PREFIX,
+    dials: botDials(),
+    matchups: table as LadderRun["matchups"],
+  };
+  writeFileSync(join(outDir, "ladder.json"), JSON.stringify(run, null, 1), "utf8");
+}
+
 function runLadder(gamesFor: (key: string) => number) {
   const { cards, relics } = loadData();
   const skills: BotSkill[] = ["easy", "normal", "hard"];
@@ -452,6 +475,9 @@ function runLadder(gamesFor: (key: string) => number) {
     let wins = 0;
     let decided = 0;
     const turns: number[] = [];
+    // Every duel's own result, kept so two runs can be compared game by game
+    // instead of percentage against percentage. See `compareLadders`.
+    const results: LadderGame[] = [];
     const games = gamesFor(`${strong}>${weak}`);
     for (let index = 0; index < games; index += 1) {
       const strongSeat: PlayerId = index % 2 === 0 ? 0 : 1;
@@ -459,11 +485,24 @@ function runLadder(gamesFor: (key: string) => number) {
       const result = playOneGame({
         cards, relics, seed: `${SEED_PREFIX}-ladder-${strong}-${weak}-${index}`,
         drivers: ["bot", "bot"], skills: seats, turnCap: 200, deepChecks: false,
+        // The ladder asks how the three opponents compare as the player meets
+        // them, so the Ascendant brings its Foresight draw here. Self-play does
+        // NOT pass this — card win rates must stay measurements of the honest game.
+        grantCheats: true,
       });
+      const strongWon = result.winner === strongSeat;
       if (result.winner !== null && result.winner !== "draw") {
         decided += 1;
-        if (result.winner === strongSeat) wins += 1;
+        if (strongWon) wins += 1;
       }
+      results.push({
+        seed: result.seed,
+        strongSeat,
+        // `null` covers a draw and a duel that never finished. Both are excluded
+        // from a pairing rather than counted as a loss for either side.
+        strongWon: result.winner === null || result.winner === "draw" ? null : strongWon,
+        turns: result.turns,
+      });
       if (result.stalled) hygiene.stalled += 1;
       if (result.softLocked) hygiene.softLocked += 1;
       hygiene.problems.push(...result.problems);
@@ -472,7 +511,10 @@ function runLadder(gamesFor: (key: string) => number) {
     turns.sort((a, b) => a - b);
     const rate = pct(wins, Math.max(1, decided));
     console.log(`  ${(strong + " vs " + weak).padEnd(21)}${String(rate).padStart(9)}%       ${turns[Math.floor(turns.length / 2)]}`);
-    out.push({ key: `${strong}>${weak}`, strong, weak, played: games, decided, winPct: rate, medianTurns: turns[Math.floor(turns.length / 2)] });
+    out.push({
+      key: `${strong}>${weak}`, strong, weak, played: games, decided, winPct: rate,
+      medianTurns: turns[Math.floor(turns.length / 2)], results,
+    });
   }
   void skills;
   console.log("");
@@ -883,6 +925,29 @@ if (REPLAY) {
   process.exit(one.softLocked || one.stalled ? 1 : 0);
 }
 
+// Compare two saved ladder runs game by game. Reads only; runs no duels.
+{
+  const against = arg("ladder-compare", "");
+  if (against) {
+    const current = arg("ladder-current", join(outDir, "ladder.json"));
+    let before: LadderRun;
+    let after: LadderRun;
+    try {
+      before = JSON.parse(readFileSync(against, "utf8")) as LadderRun;
+      after = JSON.parse(readFileSync(current, "utf8")) as LadderRun;
+    } catch (error) {
+      console.error(`Could not read both ladder files: ${(error as Error).message}`);
+      process.exit(2);
+    }
+    if (!Array.isArray(before?.matchups) || !Array.isArray(after?.matchups)) {
+      console.error("Both files must be ladder runs written by `npm run sim -- --ladder`.");
+      process.exit(2);
+    }
+    console.log(formatComparison(compareLadders(before, after), against, current));
+    process.exit(0);
+  }
+}
+
 if (flag("ladder")) {
   const override = Number(arg("ladder-games", "0"));
   if (!Number.isInteger(override) || override < 0 || override > MAX_GAMES) {
@@ -890,7 +955,10 @@ if (flag("ladder")) {
     process.exit(2);
   }
   const { table } = runLadder((key) => override || CONFIG.checks.skillLadder.games[key] || 150);
-  writeFileSync(join(outDir, "ladder.json"), JSON.stringify(table, null, 1), "utf8");
+  writeLadderFile(table);
+  console.log(`  Saved to ${join(outDir, "ladder.json")}.`);
+  console.log(`  Compare a later run with: npm run sim -- --ladder-compare <a copy of that file>`);
+  console.log("");
   process.exit(0);
 }
 
@@ -925,7 +993,7 @@ if (MODE === "fuzz" || MODE === "both") {
   fuzz = runFuzz(FUZZ_GAMES);
 }
 
-let ladder: Array<LadderMetric & { medianTurns: number }> | null = null;
+let ladder: Array<LadderMetric & { medianTurns: number; results?: LadderGame[] }> | null = null;
 let ladderHygiene: { stalled: number; softLocked: number; problems: string[] } | null = null;
 if (FULL && CONFIG.checks.skillLadder.enabled) {
   const per = CONFIG.checks.skillLadder.games;
@@ -933,7 +1001,7 @@ if (FULL && CONFIG.checks.skillLadder.enabled) {
   const run = runLadder((key) => per[key] ?? 150);
   ladder = run.table;
   ladderHygiene = run.hygiene;
-  writeFileSync(join(outDir, "ladder.json"), JSON.stringify(ladder, null, 1), "utf8");
+  writeLadderFile(ladder);
 }
 
 // ---------------------------------------------------------------------------

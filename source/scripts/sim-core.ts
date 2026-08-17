@@ -22,7 +22,7 @@ import {
   STARTING_CORE,
   type CardLibrary,
 } from "../src/engine/game";
-import { chooseBotAction, type BotSkill } from "../src/engine/bot";
+import { chooseBotAction, BOT_CHEATS, type BotSkill } from "../src/engine/bot";
 import type { CardDefinition, GameAction, GameState, PlayerId, RelicDefinition } from "../src/engine/types";
 
 /** How many of each player's OWN opening turns are sampled for playability. */
@@ -213,17 +213,37 @@ export interface PlayOptions {
   startingHealth?: number;
   /** Mana per turn. Omitted = the game's real default. */
   manaRamp?: number;
+  /**
+   * Grant the engine-side cheats a difficulty is entitled to — today that means
+   * the Ascendant's Foresight draw.
+   *
+   * Off by default, and the balance run must leave it off: card win rates have
+   * to describe the honest game, not a game where one seat draws twice. The
+   * skill LADDER turns it on, because there the question is the opposite one —
+   * how the three opponents compare as the player actually meets them.
+   */
+  grantCheats?: boolean;
 }
 
 export function playOneGame(options: PlayOptions): GameResult {
-  const { cards, relics, seed, drivers, skills, turnCap, deepChecks, startingHealth, manaRamp } = options;
+  const { cards, relics, seed, drivers, skills, turnCap, deepChecks, startingHealth, manaRamp, grantCheats } = options;
   const library = makeCardLibrary(cards, relics);
   const rng = makeRng(`${seed}:driver`);
   const byId = new Map([...cards, ...relics].map((card) => [card.id, card]));
 
-  const setup: { startingHealth?: number; manaRamp?: number } = {};
+  const setup: { startingHealth?: number; manaRamp?: number; foresightFor?: PlayerId | null } = {};
   if (startingHealth) setup.startingHealth = startingHealth;
   if (manaRamp) setup.manaRamp = manaRamp;
+  if (grantCheats) {
+    // Only ever ONE seat: the field holds a single player, and a duel where both
+    // sides burned two cards a turn would be a different game from the one being
+    // measured. A hard-vs-hard pairing therefore gets it for neither side, which
+    // is honest — the ladder never runs that pairing.
+    const entitled = skills
+      .map((skill, seat) => (drivers[seat] === "bot" && BOT_CHEATS[skill].foresight ? (seat as PlayerId) : null))
+      .filter((seat): seat is PlayerId => seat !== null);
+    if (entitled.length === 1) setup.foresightFor = entitled[0];
+  }
   let state = createInitialGame(cards, seed, relics, setup);
   let peakMana = 1;
   const playsByCost = new Array(11).fill(0);
