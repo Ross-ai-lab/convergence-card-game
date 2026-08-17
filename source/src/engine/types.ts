@@ -673,6 +673,18 @@ export interface GameState {
   nextPlayOrder: number;
   /** xorshift32 state. Lives IN the game state so undo rewinds luck too. */
   rngSeed: number;
+  /**
+   * The seat that draws two and keeps one every turn, or null when nobody does.
+   *
+   * This is the Ascendant opponent's Foresight cheat, and it lives in the state
+   * rather than in the bot for two reasons: the draw happens deep inside
+   * `beginTurn`, where nothing knows who is a bot, and a save has to restore a
+   * duel that still cheats. Optional so an older save loads without it.
+   *
+   * Self-play never sets it, so the balance harness keeps measuring the honest
+   * game.
+   */
+  foresightFor?: PlayerId | null;
   deck: string[];
   bottomDeck: string[];
   discard: string[];

@@ -56,9 +56,13 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // Dimension banishment zone became part of GameState.
 // v18: the opening hero-power draft, once-per-turn usage flags, and the
 // chain-growth marker became part of GameState/MinionInstance.
-const SAVE_VERSION = 18;
+// v19: GameState gained `foresightFor`, the seat the Ascendant opponent's draw
+// cheat belongs to. A v18 save has no such field, so a duel resumed from one
+// would silently stop cheating halfway through — migrated to null rather than
+// discarded, because losing the duel is worse than losing one cheat.
+const SAVE_VERSION = 19;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v17";
+const LEGACY_SAVE_KEY = "convergence.save.v18";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -174,6 +178,7 @@ function migrateLegacyTransforms(game: GameState): void {
 }
 
 function migrateLegacyMechanics(game: GameState): void {
+  if (game.foresightFor === undefined) game.foresightFor = null;
   if (!game.pocketRooms) game.pocketRooms = [];
   if (!Array.isArray(game.stasis)) game.stasis = [];
   if (!Array.isArray(game.darkDimension)) game.darkDimension = [];

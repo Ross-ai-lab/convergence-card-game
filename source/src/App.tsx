@@ -7,7 +7,7 @@ import "./App.css";
 import "./board-fx.css";
 import { sfx, type SfxName } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
-import { chooseBotAction } from "./engine/bot";
+import { chooseBotAction, BOT_CHEATS } from "./engine/bot";
 import { HERO_POWER_COST, heroPowerDefinition } from "./engine/hero-powers";
 import { isMinionCard, isRelicCard } from "./engine/types";
 import {
@@ -244,6 +244,15 @@ const AURA_COLOR: Record<SlotAuraId, string> = {
 };
 
 const BOT_ID: PlayerId = 1;
+
+/**
+ * The one cheat the engine has to know about, because the draw it changes
+ * happens deep inside `beginTurn` where nothing knows which seat is a bot.
+ * Every other cheat lives in the bot's own search. Hotseat grants it to nobody.
+ */
+function foresightSeat(mode: GameMode): PlayerId | null {
+  return mode.kind === "bot" && BOT_CHEATS[mode.skill].foresight ? BOT_ID : null;
+}
 const BOT_DELAY_MS = 620;
 const BOT_FIRST_DELAY_MS = 900;
 
@@ -1054,7 +1063,8 @@ export default function App() {
     sfx.stopCardTheme();
     clearSave();
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
-    setGame(createInitialGame(cards, createDuelSeed(), relics));
+    // A restart keeps the mode, so it keeps the opponent's cheats too.
+    setGame(createInitialGame(cards, createDuelSeed(), relics, { foresightFor: foresightSeat(mode) }));
     setHistory([]);
     setSelection(null);
     clearFx();
@@ -1073,7 +1083,7 @@ export default function App() {
     clearSave();
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setMode(next);
-    setGame(createInitialGame(cards, createDuelSeed(), relics));
+    setGame(createInitialGame(cards, createDuelSeed(), relics, { foresightFor: foresightSeat(next) }));
     setHistory([]);
     setSelection(null);
     clearFx();

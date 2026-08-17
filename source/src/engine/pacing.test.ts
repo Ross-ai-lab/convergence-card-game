@@ -153,10 +153,14 @@ describe("the bot", () => {
 
   it("rates the skills in the right order", () => {
     // A cheap guard, not the measurement. The real number comes from
-    // `npm run sim -- --ladder`, which over 250 games each way reports
-    // hard>easy 79.2%, hard>normal 71.6%, normal>easy 62.4%. Twenty games is far
-    // too few to reproduce that, so the bar here is only "the ladder is not
-    // upside down" — a regression that broke `hard` would sink well below half.
+    // `npm run sim -- --ladder`, which on 2026-08-17 reported hard>easy 86.3%
+    // (80 games), hard>normal 75.0% (80), normal>easy 71.5% (200) — measured
+    // after the cheat ladder landed, so Recruit and Veteran are rolling blind
+    // and the Ascendant is branching replies. Foresight is NOT in those numbers:
+    // self-play never sets `foresightFor`, so the shipped Ascendant is stronger
+    // than the ladder says. Sixteen games is far too few to reproduce any of it,
+    // so the bar here is only "the ladder is not upside down" — a regression
+    // that broke `hard` would sink well below half.
     // Choice-driven Battlecries add real branches to hard's search, so this
     // guard needs the same generous budget as the full deterministic pass.
     let hardWins = 0;

@@ -103,6 +103,8 @@ export function makeCardLibrary(cards: CardDefinition[], relics: RelicDefinition
 export interface GameSetup {
   startingHealth?: number;
   manaRamp?: number;
+  /** Seat granted permanent Foresight — the Ascendant opponent's draw cheat. */
+  foresightFor?: PlayerId | null;
 }
 
 export function createInitialGame(
@@ -126,6 +128,7 @@ export function createInitialGame(
     nextInstance: 1,
     nextPlayOrder: 1,
     rngSeed: hashSeed(`${seed}:rng`),
+    foresightFor: setup.foresightFor ?? null,
     deck,
     bottomDeck: [],
     discard: [],
@@ -810,10 +813,17 @@ function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, e
   events.push({ kind: "turn", text: `${player.name}'s turn begins.`, player: playerId });
 
   // Hearthstone's draw: one card, no choice. The pick-1-of-2 that used to happen
-  // every single turn is now a card's privilege — Detective L's Foresight.
-  const foresight = player.board.some(
-    (minion) => minion && hasEffect(minion, "foresight_draw") && !minion.silenced && minion.chained === 0,
-  );
+  // every single turn is now a card's privilege — Detective L's Foresight — or
+  // the Ascendant opponent's standing cheat, which is the same mechanic granted
+  // permanently rather than earned by putting a minion on the board.
+  //
+  // The deck is SHARED, so this is not only a better draw for whoever holds it:
+  // the card it rejects is the card the other seat was about to draw.
+  const foresight =
+    state.foresightFor === playerId ||
+    player.board.some(
+      (minion) => minion && hasEffect(minion, "foresight_draw") && !minion.silenced && minion.chained === 0,
+    );
   const drawn = drawFromDeck(state, foresight ? 2 : 1, events);
 
   if (foresight && drawn.length > 1) {

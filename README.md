@@ -12,7 +12,7 @@ Convergence is a non-commercial browser card duel where 172 named characters and
 
 - **Recruit** — deliberately forgiving.
 - **Veteran** — plays each move correctly but does not plan beyond it.
-- **Ascendant** — searches a full turn and answers likely plans.
+- **Ascendant** — searches a full turn, assumes you answer well, and cheats. See [The cheat ladder](#the-cheat-ladder).
 
 [Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/play/)
 
@@ -352,6 +352,41 @@ Card cost is a fiction and canon assignment, not a balancing lever. Change stats
 Judge each card against its own cost tier, not against the whole-roster average. Separate play rate from win rate, and treat effects the bot cannot value as unmeasured. Re-measure after every balance or pacing pass: a previous buff can become the next pass’s worst outlier, and a bot-valuation change can move every balance number.
 
 Balance checks must report inadequate samples, unset thresholds, disabled checks, and missing results as a skip or failure, never as a silent pass.
+
+### The cheat ladder
+
+The three difficulties differ in what the opponent is allowed to KNOW, not only in how far it searches. Higher difficulties cheat on purpose. Every cheat is information the bot could not honestly have; none of them give it extra mana, extra core health, or a stat it did not earn.
+
+| Cheat | Recruit | Veteran | Ascendant |
+|---|---|---|---|
+| Sees your hand | no | no | yes |
+| Predicts your reply | no | no | assumes your best line |
+| Knows the dice before committing | no | no | yes |
+| Sees the top of the shared deck | no | no | next 3 draws |
+| Draws two and keeps one | no | no | every turn |
+
+`BOT_CHEATS` in `source/src/engine/bot.ts` is the single source of truth for that table; `source/src/engine/bot-cheats.test.ts` fails if the code and this page disagree.
+
+Notes that matter when changing any of it:
+
+- **Reading the dice used to be an accident, and every skill had it.** A candidate move is tested by applying it to a copy of the real state, and the RNG seed lives in the state, so the copy rolled exactly the dice the game was about to roll. Recruit and Veteran now evaluate on a scrambled seed and average five rolls when a move is genuinely random, which is what a player does. Three samples was not enough: a one-in-three gamble came out ahead whenever two samples landed on the good outcome.
+- **Seeing your hand is not a separate feature.** The Ascendant plays your reply turn out using your real cards, so it has always had this; branching your best few replies rather than assuming one greedy line is what turns the knowledge into pressure.
+- **Foresight is granted by the engine, not by the bot.** The draw happens inside `beginTurn`, which knows nothing about bots, so the seat is named in `GameState.foresightFor` and the app sets it from `BOT_CHEATS` when the duel starts. It survives a save. Self-play never sets it, so the balance harness keeps measuring the honest game.
+- **The deck is shared, which is what makes Foresight and Clairvoyance interesting.** The card the Ascendant rejects is the card you were about to draw, and every card it sees coming is a card it knows might go to you instead.
+- **Clairvoyance values an upcoming card by its printed cost**, because this game freezes cost as the subject's power grade in its own fiction. That is a proxy standing in for a real per-card valuation the bot does not have yet. Replace it when that valuation exists.
+- **A bot-valuation change moves every balance number.** Blind dice change how random-effect cards perform in self-play. Re-measure rather than comparing across the change.
+
+Measured on 2026-08-17, immediately after the cheats landed, with `npm run sim -- --ladder`:
+
+| Matchup | Stronger side wins | Games | Median turns |
+|---|---|---|---|
+| Ascendant beats Recruit | 86.3% | 80 | 25 |
+| Ascendant beats Veteran | 75.0% | 80 | 22 |
+| Veteran beats Recruit | 71.5% | 200 | 25 |
+
+Two things that reading needs. **Foresight is not in it**, because self-play never sets `foresightFor`, so the shipped Ascendant is stronger than the table says. And the Ascendant's lead over the Veteran **fell** from a pre-cheat 88.8% on the same sample: assuming the opponent answers well is worth less against a bot that does not, and the Ascendant's internal model of its opponent still rolls true dice while the real Veteran no longer does. Expect that cost to invert against a human, who does punish. Do not read the ladder as a measurement of how hard the game feels.
+
+Per-move thinking time on the reference machine, measured the same day: Veteran 4 ms mean and 20 ms worst; Ascendant 237 ms mean and 816 ms worst, which runs on the UI thread before the `BOT_DELAY_MS` pause. Branching replies roughly tripled it. `ENEMY_BRANCH` in `bot.ts` is the dial if that ever needs trading back.
 
 ### Full balance-command gate and runtime
 
