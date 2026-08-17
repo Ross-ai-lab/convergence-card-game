@@ -7,3 +7,5 @@ __pycache__/
 .wrangler/
 .env
 .env.*
+# Disposable local evidence: screenshots, balance runs, capture walls.
+.preview/

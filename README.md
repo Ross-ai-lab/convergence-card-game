@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- KB-JUMP-START -->
-**Jump:** Play · Rules · Card language · Relics · Controls and modes · Project structure · Parallel work · Run and verify · Cards and effects · Engine rules · Interface · Balance · Assets and audio · Contributing · Development lessons
+**Jump:** Play · What the game still needs · Rules · Card language · Relics · Controls and modes · Project structure · Parallel work · Run and verify · Cards and effects · Engine rules · Interface · Balance · Assets and audio · Contributing · Development lessons
 <!-- KB-JUMP-END -->
 
 ## What Convergence is
@@ -21,6 +21,35 @@ Convergence is a non-commercial browser card duel where 172 named characters and
 No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **172 character cards, 3 Basic reference cards, and 21 Ascension Relics** in one shared 196-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
 The live game and `source/data/cards.csv` now contain 172 named character cards plus 3 Basic reference cards, 175 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
+
+## What the game still needs
+
+**The duel itself is finished and it is fun.** The owner has played it and enjoyed it. Treat "does a
+turn feel good" as an answered question, not an open one, and do not put a human playtest back on any
+list of remaining work. Older notes that describe the playtest as pending are stale; correct them
+where you find them.
+
+**The one big thing missing is meta-progression.** A duel ends and nothing survives it: no record, no
+unlock, no rank, no reason the tenth duel differs from the first. Everything else outstanding is
+maintenance beside it, because everything else improves a match that already works. No direction has
+been chosen yet, so do not start building one without asking. The four candidates, smallest first:
+
+- **A record.** Duels played, won and lost per bot level, plus the last few results.
+- **A collection.** Cards seen, played, or won with, marked in the existing gallery.
+- **A ladder.** Beat Recruit to open Veteran, beat Veteran to open Ascendant.
+- **A run.** A sequence of duels carrying something forward: a kept relic, a kept Hero Power, a
+  growing core. The largest option, and the one that changes the game most.
+
+A draft or deckbuilding mode pairs with the run option, because a drafted deck is the most natural
+thing for a run to carry. A match currently shows roughly 25 to 30 of the 175 cards and the player
+chooses none of them, so that mode is also what would make the roster size mean something.
+
+**The balance measurement is stale.** The last full run was 15 August 2026. The lore-tier pass
+afterwards changed the cost or stats of 34 cards, and 3 cards were added that have never been
+measured (Mothership, Planetary Defense Grid, Black Hole). A card's verdict is a comparison against
+its own cost bracket's average, so moving 34 cards moved the brackets under their neighbours. Treat
+the stored results as history until an owner-authorised `npm run check:balance` replaces them, and
+note that the last run measured first-player wins at 55.8% against a 56% ceiling.
 
 ## Parallel work
 

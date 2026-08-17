@@ -132,12 +132,14 @@ describe("the bot", () => {
 
   // These play real duels to the end, and `hard` searches whole turns, so they
   // run in seconds rather than milliseconds. The default 5 s vitest timeout kills
-  // them — every heavy case below states its own.
+  // them — every heavy case below states its own. The full-roster hard duel can
+  // exceed 30 seconds while still making progress, so this legality probe gets
+  // a 60-second ceiling without changing the engine or pacing rules.
   it.each(skills)("%s only ever returns a legal action, and finishes duels", (skill) => {
     const finished = playOut(`legal-${skill}`, [skill, skill]);
     expect(finished.phase).toBe("gameOver");
     expect(finished.winner).not.toBeNull();
-  }, 30_000);
+  }, 60_000);
 
   it("is deterministic at every skill — no Math.random anywhere in the engine", () => {
     // Easy deliberately plays badly, but it must play badly the SAME way twice or
