@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "publish:pages": "node scripts/publish-pages.mjs",
+    "build:codex": "node scripts/build-codex.mjs",
     "preview": "vite preview",
     "validate:docs": "node scripts/validate-project-docs.mjs",
     "pretest": "npm run validate:docs",

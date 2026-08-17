@@ -68,7 +68,7 @@ c058,Kaido,8,5,5,Yellow,Nature,Evil,,destroy_enemy_taunt,onPlay,Battlecry: Destr
 c059,Korosensei,8,4,4,Yellow,Nature,Neutral,Passive,korosensei_defense,passive,Passive: Evade 20% of attacks. Can only be damaged by ATK of 4 and higher.,Mach 20,Assasination Classroom,/card-art/raw/c059.webp
 c060,Monkey D. Luffy,8,6,4,Yellow,Magic,Good,,free_chained_shield,onPlay,Battlecry: Free all friendly Chained minions. They may attack immediately and gain Divine Shield.,Reality bends; laughter reigns,One Piece,/card-art/raw/c060.webp
 c061,Chaos,8,1,1,Purple,Magic,Neutral,Deathrattle,chaos_random_summon,onPlay,"Battlecry: Summon a random minion from the deck. Deathrattle: Summon a random minion from the deck.",He gives gifts. He never mentions the cost,Hades,/card-art/raw/c061.webp
-c062,S-Class Heroes,8,4,7,Purple,ALL,Good,,buff_all_good_2,ongoing,Ongoing: Give +2/+2 to all good minions.,The strongest team,OPM,/card-art/raw/c062.webp
+c062,S-Class Heroes,8,4,7,Purple,ALL,Good,,buff_all_good_2,ongoing,Ongoing: Give +2/+2 to all Good minions.,The strongest team,OPM,/card-art/raw/c062.webp
 c063,Sans,4,1,1,Purple,Magic,Neutral,Passive,dodge_80,passive,Passive: Evade 80% of attacks.,"HELLO, WORLD!",Undertale,/card-art/raw/c063.webp
 c064,Seven Deadly Sins,8,4,5,Purple,Magic,Good,,summon_sins,onPlay,"Battlecry: Fill your empty slots with 1/1 Sin minions. Each enters with a different keyword at random: Taunt, Divine Shield, Charge, Chained.",The Magic Number,Seven Deadly Sins,/card-art/raw/c064.webp
 c065,Whitebeard,8,6,4,Purple,Magic,Neutral,,aoe_all_3,onPlay,Battlecry: Deal 3 damage to all other minions.,Split the World in two,One Piece,/card-art/raw/c065.webp
@@ -144,7 +144,7 @@ c136,Cthulhu,8,8,8,Black,Magic,Neutral,Chained;Passive,immune_tech_minions,passi
 c137,Giant Crystal,3,1,1,Black,Magic,Neutral,Divine Shield,buff_all_magic_2_1,ongoing,Divine Shield. Ongoing: Give all other friendly Magic minions +2/+1.,Spawnpoint,Core,/card-art/raw/c137.webp
 c138,Giant Tree,3,1,1,Black,Nature,Neutral,Passive,buff_all_nature_2_1,passive,Passive: All other friendly Nature minions have +2/+1.,Older than the roots it feeds.,Core,/card-art/raw/c138.webp
 c139,Modern Tank,3,3,3,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c139.webp
-c140,RoboCop,3,2,4,Black,Tech,Good,,robocop_evil_bonus,passive,Passive: Deal 3x damage against evil minions.,Uphold the law,RoboCop,/card-art/raw/c140.webp
+c140,RoboCop,3,2,4,Black,Tech,Good,,robocop_evil_bonus,passive,Passive: Deal 3x damage against Evil minions.,Uphold the law,RoboCop,/card-art/raw/c140.webp
 c141,Tech Hub,3,1,1,Black,Tech,Neutral,Divine Shield,buff_all_tech_2_1,ongoing,Divine Shield. Ongoing: Give all other friendly Tech minions +2/+1.,Every machine came from somewhere. This is that somewhere,Core,/card-art/raw/c141.webp
 c142,Zoro,5,4,4,Black,Nature,Good,,on_kill_buff_1,passive,Passive: Gain +1/+1 after killing a minion.,Lost again. Still won.,One Piece,/card-art/raw/c142.webp
 c143,Survivors,2,2,2,Red,Nature,Good,Divine Shield,none,none,Divine Shield.,They weren't the strongest or the fastest. They were the ones who didn't stop,L4d2,/card-art/raw/c143.webp

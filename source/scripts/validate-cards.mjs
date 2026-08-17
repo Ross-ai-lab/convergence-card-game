@@ -66,6 +66,7 @@ const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained|Charge|Cannot attack)
 function checkPrintedText(card, line, errors) {
   const text = card.effect ?? "";
   checkEffectPunctuation(card.name, line, text, errors);
+  checkFactionCase(card.name, line, text, errors);
 
   const match = PRINTED_TIMING.exec(text);
   const printed = match ? match[1] : null;
@@ -113,6 +114,31 @@ function checkPrintedText(card, line, errors) {
 function checkEffectPunctuation(name, line, text, errors) {
   if (text && text !== "-" && !/[.!?]$/.test(text.trim())) {
     errors.push(`Line ${line}: ${name}'s printed effect must end with punctuation.`);
+  }
+}
+
+/**
+ * Camps and alignments are proper labels on the card, printed on its rails and
+ * used by the filters in the gallery and the codex. "all good minions" reads as
+ * ordinary English rather than as the Good alignment, and the player has to
+ * guess whether the rule means the label or the adjective. Two cards had drifted
+ * into lowercase before this check existed.
+ *
+ * Only the exact standalone words count. "goods", "high-tech" and a name that
+ * happens to contain one are left alone, and ALL is the camp's own spelling.
+ */
+const FACTION_WORDS = ["Good", "Evil", "Neutral", "Magic", "Tech", "Nature"];
+
+function checkFactionCase(name, line, text, errors) {
+  if (!text || text === "-") return;
+  for (const word of FACTION_WORDS) {
+    const lower = word.toLowerCase();
+    if (new RegExp(String.raw`(?<![A-Za-z-])${lower}(?![A-Za-z])`).test(text)) {
+      errors.push(
+        `Line ${line}: ${name} prints "${lower}" in lowercase. ` +
+          `Camps and alignments are labels, so write "${word}".`,
+      );
+    }
   }
 }
 
