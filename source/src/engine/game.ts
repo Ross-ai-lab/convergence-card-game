@@ -1587,6 +1587,35 @@ function slotOptions(source: MinionInstance, spec: TargetSpec): TargetOption[] {
   return Array.from({ length: boardSize }, (_unused, slot) => ({ owner: ownerId, slot }));
 }
 
+/**
+ * Whether a borrowed effect may legally point at the minion it was copied from.
+ *
+ * `runEffect` reads `chosen ?? requestChoice(...)`, so handing it a choice skips
+ * `requestChoice` entirely, and with it the spec's own side, filter, includeSelf
+ * and untargetable rules. `copy_and_trigger` is the only caller that builds a
+ * choice by hand instead of getting one from a prompt, and the one it builds
+ * always names an ENEMY minion, so every borrowed spec has to be re-checked
+ * against it here.
+ *
+ * "untargeted" means the effect takes no target at all and should simply fire.
+ */
+function copiedTargetLegality(
+  state: GameState,
+  source: MinionInstance,
+  victim: TargetOption,
+): "untargeted" | "legal" | "illegal" {
+  const spec = TARGETED_EFFECTS[source.effectId];
+  if (!spec) return "untargeted";
+  const kind = spec.kind ?? "board";
+  // A board answer can never satisfy a hand or option prompt. `runEffect`
+  // already declines those, but naming it here keeps the whole rule in one
+  // place rather than half here and half in a guard 1,500 lines away.
+  if (kind === "hand" || kind === "option") return "illegal";
+  const options = kind === "slot" ? slotOptions(source, spec) : targetOptions(state, source, spec);
+  const allowed = options.some((option) => option.owner === victim.owner && option.slot === victim.slot);
+  return allowed ? "legal" : "illegal";
+}
+
 function handOptions(state: GameState, source: MinionInstance, spec: TargetSpec, library: CardLibrary): HandOption[] {
   if (spec.enabled && !spec.enabled(state, source)) return [];
   const ownerId = spec.side === "enemy" ? opponent(source.owner) : source.owner;
@@ -3113,12 +3142,35 @@ function runEffect(
   } else if (source.effectId === "copy_and_trigger") {
     if (picked && picked.effectId !== "none") {
       const borrowed = picked.effectId;
+      const victim: TargetOption = { owner: picked.owner, slot: slotOf(state, picked) };
       events.push(effectEvent(`${label} copies ${picked.name}'s power.`, source));
       // Wear the effect for one resolution. A copied effect that itself wants a
       // target is not re-prompted — it takes the same victim it was copied from.
+      //
+      // The victim is only OFFERED, never assumed, because that handoff skips
+      // the borrowed spec's own rules (see `copiedTargetLegality`). The victim
+      // is by definition an enemy minion, so feeding it to a `side: "friendly"`
+      // effect made this card fully heal, buff, shield or Taunt the OPPONENT's
+      // minion, and made a `slot` effect bless the opponent's slot. It is also
+      // how a friendly pick owned by the opponent reached Knov's pocket-room
+      // resolver, which is the upstream cause of the `instance <id> is on the
+      // board twice` breach the balance gate reported on 18 August 2026 and
+      // that the resolver's own guards could only make safe, not explain.
+      //
+      // When the victim is not a legal target the copy is simply lost. That is
+      // the honest outcome and it is never one that helps the opponent.
+      // Re-prompting is not an option here: `effectId` is restored the moment
+      // this branch returns, so a deferred answer would resolve against
+      // `copy_and_trigger` instead of the borrowed effect — which is also why
+      // any prompt left open below is cleared rather than awaited.
       const own = source.effectId;
       source.effectId = borrowed;
-      runEffect(state, source, sourceSlot, library, events, { kind: "board", target: { owner: picked.owner, slot: slotOf(state, picked) } });
+      const legality = copiedTargetLegality(state, source, victim);
+      if (legality === "illegal") {
+        events.push(effectEvent(`${label} cannot aim ${picked.name}'s power, and loses it.`, source));
+      } else {
+        runEffect(state, source, sourceSlot, library, events, legality === "legal" ? { kind: "board", target: victim } : undefined);
+      }
       source.effectId = own;
       state.pendingTarget = null;
       if (state.phase === "targeting") state.phase = "main";

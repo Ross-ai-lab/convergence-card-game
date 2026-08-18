@@ -56,11 +56,30 @@ One is fixed; the other two are below. In the order they matter:
   now reports **0 invariant breaches** over 20,996 actions, where it reported 1. Pinned by
   `src/engine/pocket-room.test.ts`, live-fired by removing the dedupe and watching it go red.
 
-  The upstream question is still open and is worth knowing: the two picks reached the resolver as one
-  minion, and the friendly pick was owned by the *opponent*, which `targetOptions` should make
-  impossible for a `side: "friendly"` spec. Something in the two-step choice plumbing can lose its
-  `priorOptions`, at which point `firstChoice` falls back to the enemy pick. The guards make the
-  outcome safe; they do not explain the plumbing.
+  **The upstream cause is now known, and it was never the two-step plumbing.** It is All for One
+  (`copy_and_trigger`), and it was doing visible damage in ordinary play, not only in the fuzzer.
+  `runEffect` reads `chosen ?? requestChoice(...)`, so handing it a ready-made choice skips
+  `requestChoice` and every rule the borrowed effect's own `TargetSpec` carries — side, filter,
+  `includeSelf`, untargetability. All for One is the only caller that builds a choice by hand, and the
+  one it builds always names the **enemy** minion it copied. Feeding that to a `side: "friendly"`
+  effect made the card fully heal, buff, shield or Taunt the *opponent's* minion, and made a `slot`
+  effect bless the opponent's slot. Reaching the pocket-room resolver with an enemy-owned "friendly"
+  pick was the same fault wearing its worst outcome. `priorOptions` was never lost: the synthetic
+  choice simply never had any, so `firstChoice` fell through to the enemy pick by design.
+
+  **Fixed 18 August 2026** by `copiedTargetLegality` in `source/src/engine/game.ts`: the copied victim
+  is now *offered* to the borrowed effect and accepted only when that effect would legally target it.
+  When it would not, the copy is lost and the log says so. Re-prompting is not available here, because
+  `effectId` is restored the moment the branch returns and a deferred answer would resolve against
+  `copy_and_trigger` instead of the borrowed effect. Pinned by three tests in
+  `src/engine/targeting.test.ts`, two of which were live-fired by restoring the old unconditional
+  handoff and watching them go red; the third asserts an enemy-targeting copy still fires normally, so
+  it passes either way on purpose. Fuzz after the fix: **0 invariant breaches over 21,005 actions.**
+
+  Worth knowing for whoever changes this next: a board assertion cannot test this fix. The pocket
+  room's own two guards already stop the duplicate instance, so a "no minion appears twice" test
+  passes with or without the cause being fixed. The discriminating assertion is that the room
+  resolver is never entered at all.
 - **One duel in 1,000 never finished.** `npm run sim -- --replay sim-308` reproduces it: 121 turns
   against a 120 cap, cores at 27 and 15, and no invariant broken. A slow grind, not a lock.
 - **First player wins 57%** against a 44 to 56% band. The gate flags that its own 95% range still
