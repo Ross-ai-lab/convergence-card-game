@@ -390,7 +390,17 @@ That last row is the clearest argument for the paired comparison. The percentage
 
 Three earlier readings of this ladder were wrong and are recorded here so they are not repeated. A pre-cheat figure of 88.8% came from a 15 August run measured on a different roster, and the apparent 14-point collapse was that roster difference, not the bot. A follow-up at 80 duels put Ascendant-versus-Veteran at 75.0%, against 81-82% here: that is the sampling error of 80 duels, which is why the two Ascendant matchups now run 100 and why comparisons go through `--ladder-compare` instead of subtraction.
 
-Per-move thinking time on the reference machine, measured the same day: Veteran 4 ms mean and 20 ms worst; Ascendant 237 ms mean and 816 ms worst, which runs on the UI thread before the `BOT_DELAY_MS` pause. Branching replies roughly tripled it. `ENEMY_BRANCH` in `bot.ts` is the dial if that ever needs trading back.
+### How long an enemy turn may take
+
+**The budget is 8 seconds for a whole enemy turn**, raised from 5 on 2026-08-18. Check any bot change against that number, and measure a whole TURN rather than a move: a turn is five or six moves, and `BOT_DELAY_MS` (620 ms) sits between each one, so roughly 3.7 seconds of every turn is a deliberate pause with no thinking in it at all.
+
+Two deterministic cost cuts keep the beam affordable: `DEEP_LINES` limits how many built turns get the expensive opponent-reply search, and `BEAM_BUDGET` narrows the beam on crowded boards, where the number of legal moves was what ran the cost away.
+
+**No trustworthy timing figures exist yet.** Every measurement taken on 2026-08-18 was made while a balance pass was running on the same machine, which inflates wall-clock by an unknown amount. The relative reading — that the beam costs about the same as the search it replaced — came from back-to-back runs under similar load and is the only part worth provisional belief. The absolute numbers are not. **Before quoting or acting on a turn-time figure, confirm nothing else is running**, and prefer a back-to-back A/B under identical conditions to any single absolute number. Several sessions work in this repository at once, so an idle machine is an assumption, never a default.
+
+**Neither cut may be replaced by a wall-clock deadline**, however obvious that looks. The same board would then produce different moves on a slower machine, and every save, replay, undo and test in this engine depends on that not happening. Cost limits here are always derived from the position.
+
+A caution for whoever measures next: the first attempt at this compared the beam's turn times against nothing and concluded the beam had broken the budget. The pre-beam game was already over it. Measure both sides or the number means nothing.
 
 ### Comparing two ladder runs
 

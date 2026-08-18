@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { cards, relics } from "../data/cards";
 import { applyAction, createInitialGame, makeCardLibrary } from "./game";
-import { BOT_CHEATS, chooseBotAction, clairvoyanceEdge, worstReply, type BotCheats } from "./bot";
+import {
+  BOT_CHEATS,
+  chooseBotAction,
+  clairvoyanceEdge,
+  rolloutTurn,
+  turnsConsidered,
+  worstReply,
+  type BotCheats,
+} from "./bot";
 import { spawnTestMinion } from "./test-utils";
 import type { GameState, MinionInstance, PlayerId } from "./types";
 
@@ -315,4 +323,88 @@ describe("Insight+", () => {
     );
     expect(gaps.length).toBeGreaterThan(0);
   });
+});
+
+// ---------------------------------------------------------------------------
+// The beam — judging whole turns instead of one move at a time
+// ---------------------------------------------------------------------------
+
+describe("planning a whole turn", () => {
+  const cheats = BOT_CHEATS.hard;
+
+  /**
+   * Real mid-duel boards with the BOT on move and a turn worth planning.
+   *
+   * The mana and hand filters are the whole point. A first attempt sampled
+   * whatever positions came along, which meant turns at one to three mana
+   * holding one castable card: there is no multi-card turn to find there, the
+   * beam correctly agreed with the greedy line every time, and the test read
+   * that as "the beam does nothing". A combo needs the mana to pay for two
+   * cards before it can exist at all.
+   */
+  let cached: GameState[] | null = null;
+  function positions(): GameState[] {
+    if (cached) return cached;
+    let state = createInitialGame(cards, "beam-positions", relics, { foresightFor: BOT });
+    const collected: GameState[] = [];
+    for (let step = 0; step < 400 && collected.length < 10; step += 1) {
+      if (state.phase === "gameOver") break;
+      const actor: PlayerId =
+        state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
+          ? state.heroPowerChoicePlayer
+          : state.phase === "drawChoice" && state.drawChoice
+            ? state.drawChoice.player
+            : state.phase === "targeting" && state.pendingTarget
+              ? state.pendingTarget.player
+              : state.activePlayer;
+      if (
+        actor === BOT &&
+        state.phase === "main" &&
+        state.players[BOT].mana >= 6 &&
+        state.players[BOT].hand.length >= 4
+      ) {
+        collected.push(state);
+      }
+      const action = chooseBotAction(state, library, actor, "normal");
+      if (!action) break;
+      state = applyAction(state, action, library).state;
+    }
+    expect(collected.length).toBeGreaterThan(3);
+    cached = collected;
+    return collected;
+  }
+
+  /** How good a finished turn is, judged the way the real search judges it. */
+  function judge(finished: GameState): number {
+    return worstReply(finished, library, BOT, cheats);
+  }
+
+  it("builds several different turns rather than one", () => {
+    const widths = positions().map((state) => turnsConsidered(state, library, BOT, cheats).length);
+    expect(Math.max(...widths)).toBeGreaterThan(1);
+  }, 120_000);
+
+  it("every turn it builds is a turn that actually ended", () => {
+    for (const state of positions()) {
+      for (const line of turnsConsidered(state, library, BOT, cheats)) {
+        const stillOurs = line.state.phase !== "gameOver" && line.state.activePlayer === BOT
+          && line.state.phase === "main";
+        expect(stillOurs).toBe(false);
+      }
+    }
+  }, 120_000);
+
+  it("finds a better turn than playing the best-looking card each time", () => {
+    // The greedy line is what the search used to do: best move, look again,
+    // best move. If the beam never beats it, the beam is decoration.
+    let beamBetter = 0;
+    for (const state of positions()) {
+      const greedy = judge(rolloutTurn(state, library, BOT, cheats.trueDice));
+      const lines = turnsConsidered(state, library, BOT, cheats);
+      const best = Math.max(...lines.map((line) => judge(line.state)));
+      expect(best).toBeGreaterThanOrEqual(greedy - 1e-9);
+      if (best > greedy + 1e-6) beamBetter += 1;
+    }
+    expect(beamBetter).toBeGreaterThan(0);
+  }, 120_000);
 });

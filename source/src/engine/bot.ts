@@ -74,7 +74,8 @@ export const BOT_CHEATS: Record<BotSkill, BotCheats> = {
 export function botDials(): Record<string, unknown> {
   return {
     cheats: BOT_CHEATS,
-    hardBranch: HARD_BRANCH,
+    beamWidth: BEAM_WIDTH,
+    deepLines: DEEP_LINES,
     enemyBranch: ENEMY_BRANCH,
     enemyDice: ENEMY_DICE,
     clairvoyantDepth: CLAIRVOYANT_DEPTH,
@@ -84,8 +85,61 @@ export function botDials(): Record<string, unknown> {
   };
 }
 
-/** How many candidate opening moves `hard` is willing to search in depth. */
-const HARD_BRANCH = 5;
+/**
+ * How many part-built turns `hard` carries at once.
+ *
+ * This is both dials at once. It is the width of the opening shortlist, because
+ * the beam starts as the best few openings — and it is the width of the turn
+ * search, because those lines are extended together rather than each being
+ * finished greedily on its own. Five was the old shortlist size; eight buys a
+ * weak-looking setup card enough room to survive its first move and prove itself
+ * on the second, at roughly 1.6x the search cost.
+ *
+ * Cost is close to linear in this number, and the Ascendant's move already runs
+ * on the UI thread. Read the timing note in the README before raising it.
+ */
+const BEAM_WIDTH = 8;
+
+/**
+ * How many of those finished turns get the full "and then what do they do?"
+ * search.
+ *
+ * Building eight turns is cheap. Answering each one with a branched opponent
+ * reply is the expensive half, and doing it for all eight was measurably the
+ * dominant cost. Four keeps the beam's ability to FIND a better turn while
+ * paying for the deep look only on the turns that could win the argument.
+ *
+ * The owner's budget for a whole enemy turn is 8 SECONDS (raised from 5 on
+ * 2026-08-18, once measurement showed the pre-beam game already crossed 5). That
+ * is the number to check any change to this file against, and it is a whole
+ * turn, not a move: a turn is five or six moves plus `BOT_DELAY_MS` between each.
+ */
+const DEEP_LINES = 4;
+
+/**
+ * Roughly how many moves the beam is allowed to weigh per step of a turn.
+ *
+ * The cost of a step is the beam's width times the number of legal moves, and
+ * the second half of that is the game's business, not ours: a crowded board with
+ * a full hand offers three or four times as many moves as an opening turn. A
+ * fixed width therefore does not cost a fixed amount, which is why the slowest
+ * turns measured several times the typical one.
+ *
+ * Holding width times legal-moves near a constant bounds the step instead, so
+ * the search narrows exactly where it was running away.
+ *
+ * It stays deterministic —
+ * the width comes from the position, never from a clock. A wall-clock budget
+ * would cap the same cost and is the obvious answer, but it would mean the same
+ * board producing different moves on a slower machine, and every replay, save
+ * and test in this engine depends on that not happening.
+ */
+const BEAM_BUDGET = 110;
+
+/** The beam width this particular position can afford. */
+function affordableWidth(legalCount: number, cap: number): number {
+  return Math.max(2, Math.min(cap, Math.round(BEAM_BUDGET / Math.max(1, legalCount))));
+}
 /** How many of the opponent's replies `hard` weighs before assuming the worst. */
 const ENEMY_BRANCH = 3;
 /**
@@ -430,7 +484,7 @@ function bestGreedy(
  * passed to someone else (or the game has ended). Used by `hard` to see what its
  * own turn really ends up looking like, and what the opponent does with theirs.
  */
-function rolloutTurn(
+export function rolloutTurn(
   state: GameState,
   library: CardLibrary,
   playerId: PlayerId,
@@ -504,6 +558,183 @@ export function worstReply(
   return worst === Infinity ? value(state) : worst;
 }
 
+/** Every legal move from here, scored on its own. The beam's starting line-up. */
+function scoreOpenings(
+  state: GameState,
+  library: CardLibrary,
+  botId: PlayerId,
+  trueDice: boolean,
+  knownLegal?: readonly GameAction[],
+): Array<{ action: GameAction; state: GameState; score: number }> {
+  const legal = knownLegal ?? getLegalActions(state, library);
+  return legal.map((action) => ({
+    action,
+    ...evaluateAction(state, action, library, botId, legal, trueDice),
+  }));
+}
+
+/**
+ * The whole turns `hard` weighed before choosing. Exported for tests: the point
+ * of the beam is that it reaches turns the greedy line never builds, and that
+ * claim is only checkable by looking at what it built.
+ */
+export function turnsConsidered(
+  state: GameState,
+  library: CardLibrary,
+  botId: PlayerId,
+  cheats: BotCheats,
+): BeamLine[] {
+  const openings = scoreOpenings(state, library, botId, cheats.trueDice).sort((a, b) => b.score - a.score);
+  return beamOwnTurn(library, botId, cheats, openings);
+}
+
+/**
+ * What makes one opening genuinely different from another.
+ *
+ * WHICH card you play is a decision; which empty slot you drop it into almost
+ * never is. Keying the beam's diversity on the full action spent all eight lines
+ * on one card in five slots and a second card in three — eight "different"
+ * openings that were really two, scoring identically to three decimal places,
+ * with every other card in hand already discarded. Targets are the opposite case
+ * and stay part of the identity: who you attack is the whole decision.
+ *
+ * This only governs which lines are GUARANTEED a place. Every legal move is
+ * still explored, and duplicates can still fill the beam's remaining slots.
+ *
+ * Like the reservation it serves, this is evidenced by measurement rather than
+ * by a test: keying on the full action was observed filling all eight lines with
+ * one card in five slots and a second in three, every line scoring identically.
+ * The beam's width itself IS covered — collapsing it to one fails two tests.
+ */
+function openingIdentity(action: GameAction): string {
+  if (action.type === "play_card") return `play:${action.handIndex}`;
+  if (action.type === "play_relic") return `relic:${action.handIndex}`;
+  return actionKey(action);
+}
+
+/** One part-built turn: where it started, and where it has got to. */
+export interface BeamLine {
+  firstAction: GameAction;
+  openingScore: number;
+  state: GameState;
+}
+
+/**
+ * Builds several whole turns at once and hands back the finished ones.
+ *
+ * This replaced two mechanisms that shared one blind spot. The old search picked
+ * the five best-LOOKING opening moves and then finished each turn greedily, one
+ * best-looking move at a time. Both halves judged a move by the board it left
+ * behind immediately, which is exactly the wrong test for a setup card: a body
+ * that only matters once the buff lands looks like a wasted turn on its own, so
+ * it never made the shortlist, and the turn that would have won was never
+ * examined. The bot could not see a two-card play unless each card was already
+ * the best move by itself — in which case it was not really a combo.
+ *
+ * A beam keeps the best BEAM_WIDTH part-built turns side by side and extends all
+ * of them together, so a weak-looking opening survives long enough to show what
+ * it sets up. Nothing is compared as a finished turn until it IS a finished
+ * turn. Diversity is not the goal and lines collapsing onto one opening is fine:
+ * only the first move is ever played, so several strong turns agreeing on how to
+ * start is the answer arriving early.
+ */
+function beamOwnTurn(
+  library: CardLibrary,
+  botId: PlayerId,
+  cheats: BotCheats,
+  openings: Array<{ action: GameAction; state: GameState; score: number }>,
+): BeamLine[] {
+  const finished: BeamLine[] = [];
+  // The openings are already scored and sorted; the beam starts as the best few
+  // it can afford on a board this busy.
+  const width = affordableWidth(openings.length, BEAM_WIDTH);
+  let live: BeamLine[] = openings
+    .slice(0, width)
+    .map((opening) => ({ firstAction: opening.action, openingScore: opening.score, state: opening.state }));
+
+  for (const line of live) {
+    if (line.state.phase === "gameOver" || whoActs(line.state) !== botId) finished.push(line);
+  }
+  live = live.filter((line) => line.state.phase !== "gameOver" && whoActs(line.state) === botId);
+
+  for (let step = 0; step < ROLLOUT_CAP && live.length > 0; step += 1) {
+    const extended: Array<BeamLine & { score: number }> = [];
+
+    for (const line of live) {
+      const legal = getLegalActions(line.state, library);
+      if (legal.length === 0) {
+        finished.push(line);
+        continue;
+      }
+      for (const action of legal) {
+        // Its OWN turn it may finish with the real dice — that is its cheat.
+        const next = evaluateAction(line.state, action, library, botId, legal, cheats.trueDice);
+        extended.push({
+          firstAction: line.firstAction,
+          openingScore: line.openingScore,
+          state: next.state,
+          score: next.score,
+        });
+      }
+    }
+
+    if (extended.length === 0) break;
+    extended.sort((a, b) => b.score - a.score);
+    // Re-price every step: a turn opens crowded and empties as mana is spent.
+    const stepWidth = affordableWidth(Math.ceil(extended.length / Math.max(1, live.length)), BEAM_WIDTH);
+
+    // Keep the best line for each DIFFERENT opening move before filling the rest
+    // of the beam with whatever scores highest overall.
+    //
+    // Without this the beam collapses almost immediately: the strongest opening
+    // usually has the strongest follow-ups too, so all eight slots fill with
+    // variations of one turn and every other opening is gone by the second move.
+    // That is the original blind spot wearing a wider hat — a setup card is
+    // behind on the board precisely while it is setting something up, so it must
+    // be allowed to stay behind until the turn ends. This is the half of the fix
+    // that widens the shortlist; the beam itself is what then finds the payoff.
+    //
+    // Honest note on its size: measured over ten sampled high-mana turns, the
+    // reservation improved 5 of them against the greedy line versus 4 without
+    // it, for a total advantage of 107.0 against 100.7. Real, but small, and
+    // NOT covered by a test — a test that could tell a 6% effect apart would
+    // have to be pinned to one specific board, which is precisely the kind of
+    // test that later passes for the wrong reason. Re-measure rather than trust
+    // this comment if you are deciding whether to keep it.
+    const kept: Array<BeamLine & { score: number }> = [];
+    const seenOpenings = new Set<string>();
+    for (const candidate of extended) {
+      if (kept.length >= stepWidth) break;
+      const opening = openingIdentity(candidate.firstAction);
+      if (seenOpenings.has(opening)) continue;
+      seenOpenings.add(opening);
+      kept.push(candidate);
+    }
+    for (const candidate of extended) {
+      if (kept.length >= stepWidth) break;
+      if (kept.includes(candidate)) continue;
+      kept.push(candidate);
+    }
+
+    const carry: BeamLine[] = [];
+    for (const candidate of kept) {
+      const line: BeamLine = {
+        firstAction: candidate.firstAction,
+        openingScore: candidate.openingScore,
+        state: candidate.state,
+      };
+      if (line.state.phase === "gameOver" || whoActs(line.state) !== botId) finished.push(line);
+      else carry.push(line);
+    }
+    live = carry;
+  }
+
+  // A line still running when the cap bites is judged where it stands rather
+  // than thrown away; the cap is a safety rail, not a rule of the game.
+  finished.push(...live);
+  return finished;
+}
+
 /**
  * Picks the bot's next move, or null when it has none (not its turn, or the game
  * is over). Always returns something the engine already called legal.
@@ -526,10 +757,7 @@ export function chooseBotAction(
   if (legal.length === 1) return legal[0];
 
   const cheats = BOT_CHEATS[skill];
-  const scored = legal.map((action) => ({
-    action,
-    ...evaluateAction(state, action, library, botId, legal, cheats.trueDice),
-  }));
+  const scored = scoreOpenings(state, library, botId, cheats.trueDice, legal);
 
   if (skill === "easy") {
     // A beginner opponent: mostly it does something, occasionally it does the
@@ -557,26 +785,36 @@ export function chooseBotAction(
   scored.sort((a, b) => b.score - a.score);
   if (skill === "normal") return scored[0].action;
 
-  // hard: take the shortlist the one-ply score likes and actually look at where
-  // each of them leads once both turns have been played out.
-  const shortlist = scored.slice(0, Math.min(HARD_BRANCH, scored.length));
-  let best = shortlist[0];
+  // hard: build several whole turns, then judge them as whole turns.
+  let best: { action: GameAction; score: number } = scored[0];
   let bestScore = -Infinity;
 
-  for (const candidate of shortlist) {
-    let projected = candidate.state;
-    if (projected.phase !== "gameOver") {
-      // Its OWN turn it may finish with the real dice — that is its cheat.
-      projected = rolloutTurn(projected, library, botId, cheats.trueDice);
-    }
-    let score = worstReply(projected, library, botId, cheats);
-    score += tempoAdjustment(candidate.action);
-    // Break ties toward the move that already looked best, so `hard` never plays
-    // worse than `normal` on a position where the deep look adds nothing.
-    score += candidate.score * 0.001;
+  // Building the turns is cheap; asking what the opponent does about each one is
+  // not, because that is a fresh branching search per line. So build wide and
+  // look deep only at the best few. Ranking by the turn's own finished board is
+  // a good enough filter, and it is deterministic — a wall-clock cutoff would
+  // cap the cost too, but the same position would then produce different moves
+  // on a slower machine, and nothing in this engine is allowed to do that.
+  const built = beamOwnTurn(library, botId, cheats, scored);
+  const deepest =
+    built.length <= DEEP_LINES
+      ? built
+      : built
+          .map((line) => ({ line, quick: scoreState(line.state, botId) }))
+          .sort((a, b) => b.quick - a.quick)
+          .slice(0, DEEP_LINES)
+          .map((entry) => entry.line);
+
+  for (const line of deepest) {
+    let score = worstReply(line.state, library, botId, cheats);
+    score += tempoAdjustment(line.firstAction);
+    // Break ties toward the move that already looked best on its own, so `hard`
+    // never plays worse than `normal` on a position where the deep look adds
+    // nothing.
+    score += line.openingScore * 0.001;
     if (score > bestScore) {
       bestScore = score;
-      best = candidate;
+      best = { action: line.firstAction, score: line.openingScore };
     }
   }
 
