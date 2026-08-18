@@ -141,6 +141,12 @@ describe("the bot", () => {
     expect(finished.winner).not.toBeNull();
   }, 60_000);
 
+  // Budgets on the three heavy checks below are set from measured quiet-machine
+  // times with room for load, not from guesses. Several sessions work in this
+  // repository at once, so a check sized to its best case fails on a busy
+  // afternoon and reads exactly like a real defect. Measured 2026-08-18 on an
+  // idle machine: deterministic 48s, ladder order 113s, targeting prompts 16s.
+  // If one of these fails, re-run the file alone before believing it.
   it("is deterministic at every skill — no Math.random anywhere in the engine", () => {
     // Easy deliberately plays badly, but it must play badly the SAME way twice or
     // a saved duel replays differently on reload and nothing here is testable.
@@ -149,7 +155,7 @@ describe("the bot", () => {
       const b = playOut(`det-${skill}`, [skill, skill]);
       expect(a).toEqual(b);
     }
-  }, 60_000);
+  }, 180_000);  // 48s quiet
 
   it("rates the skills in the right order", () => {
     // A cheap guard, not the measurement. The real number comes from
@@ -178,7 +184,7 @@ describe("the bot", () => {
     // extra apply, and this guard plays sixteen full duels of them. Raised
     // rather than shrunk on purpose — the sample is already the smallest that
     // can catch an upside-down ladder.
-  }, 300_000);
+  }, 300_000);  // 113s quiet — was 120_000, which it cleared by 6 seconds
 
   it("answers its own targeting prompts rather than stalling on them", () => {
     let state = createInitialGame(cards, "prompts", relics);
@@ -202,5 +208,5 @@ describe("the bot", () => {
     }
     expect(sawPrompt).toBe(true);
     expect(state.phase).toBe("gameOver");
-  }, 30_000);
+  }, 120_000);  // 16s quiet
 });

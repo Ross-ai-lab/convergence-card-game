@@ -106,15 +106,36 @@ const BEAM_WIDTH = 8;
  *
  * Building eight turns is cheap. Answering each one with a branched opponent
  * reply is the expensive half, and doing it for all eight was measurably the
- * dominant cost. Four keeps the beam's ability to FIND a better turn while
+ * dominant cost. This keeps the beam's ability to FIND a better turn while
  * paying for the deep look only on the turns that could win the argument.
  *
  * The owner's budget for a whole enemy turn is 8 SECONDS (raised from 5 on
- * 2026-08-18, once measurement showed the pre-beam game already crossed 5). That
- * is the number to check any change to this file against, and it is a whole
- * turn, not a move: a turn is five or six moves plus `BOT_DELAY_MS` between each.
+ * 2026-08-18). It is a whole TURN, not a move: a turn is five or six moves plus
+ * `BOT_DELAY_MS` between each, so most of it is deliberate pause.
+ *
+ * Five is where the spending stopped, and the stopping point was measured rather
+ * than chosen. On a quiet machine, 56 turns across five duels:
+ *
+ *     deep 4, branch 3, budget 110  — median 3.81s, p90 9.01s, 11% over 8s
+ *     deep 5, branch 3, budget 110  — median 3.41s, p90 9.39s, 11% over 8s
+ *     deep 6, branch 4, budget 80   — median 3.91s, p90 10.79s, 16% over 8s
+ *
+ * The first step is free and the second is not. Note also what the tail did NOT
+ * respond to: tightening `BEAM_BUDGET` to 80 was supposed to curb the slow turns
+ * and did the opposite, because the slowest turns are the LONG ones — many moves,
+ * each paying full search — not the crowded ones. No dial here caps a turn's
+ * move count, so the tail is not currently reachable by tuning.
+ *
+ * Free, and also worth nothing. A paired ladder A/B of 4 against 5, same seeds
+ * back to back, moved hard>easy and hard>normal by +1.0 each at p=1.000, with
+ * only three and five duels out of a hundred changing at all. Five is shipped
+ * because it costs nothing and looks a little further, not because it wins.
+ * DO NOT read a bigger number here as a stronger opponent: three separate
+ * deepenings of this search have now measured as zero, and the reason is that
+ * `scoreState` cannot see card quality or passive effects. Fix the judgement
+ * before buying more search.
  */
-const DEEP_LINES = 4;
+const DEEP_LINES = 5;
 
 /**
  * Roughly how many moves the beam is allowed to weigh per step of a turn.

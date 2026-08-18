@@ -394,9 +394,39 @@ Three earlier readings of this ladder were wrong and are recorded here so they a
 
 **The budget is 8 seconds for a whole enemy turn**, raised from 5 on 2026-08-18. Check any bot change against that number, and measure a whole TURN rather than a move: a turn is five or six moves, and `BOT_DELAY_MS` (620 ms) sits between each one, so roughly 3.7 seconds of every turn is a deliberate pause with no thinking in it at all.
 
-Two deterministic cost cuts keep the beam affordable: `DEEP_LINES` limits how many built turns get the expensive opponent-reply search, and `BEAM_BUDGET` narrows the beam on crowded boards, where the number of legal moves was what ran the cost away.
+Two deterministic cost cuts keep the beam affordable: `DEEP_LINES` limits how many built turns get the expensive opponent-reply search, and `BEAM_BUDGET` narrows the beam on crowded boards.
 
-**No trustworthy timing figures exist yet.** Every measurement taken on 2026-08-18 was made while a balance pass was running on the same machine, which inflates wall-clock by an unknown amount. The relative reading — that the beam costs about the same as the search it replaced — came from back-to-back runs under similar load and is the only part worth provisional belief. The absolute numbers are not. **Before quoting or acting on a turn-time figure, confirm nothing else is running**, and prefer a back-to-back A/B under identical conditions to any single absolute number. Several sessions work in this repository at once, so an idle machine is an assumption, never a default.
+Measured 2026-08-18 on a confirmed-idle machine, 56 Ascendant turns across five duels:
+
+| Dials | Median turn | p90 | Worst | Over 8 s |
+|---|---|---|---|---|
+| deep 4, branch 3, budget 110 | 3.81 s | 9.01 s | 14.10 s | 11% |
+| **deep 5, branch 3, budget 110 (shipped)** | **3.41 s** | **9.39 s** | **14.15 s** | **11%** |
+| deep 6, branch 4, budget 80 | 3.91 s | 10.79 s | 17.88 s | 16% |
+
+The first step up is free and the second is not, which is why the shipped value is 5. It is also worth nothing: a paired ladder A/B of 4 against 5 moved both Ascendant matchups by +1.0 at p=1.000, with only three and five duels in a hundred changing at all.
+
+Also worth knowing: tightening `BEAM_BUDGET` to curb the slow turns made them *worse*. The slowest turns are the LONG ones — many moves, each paying full search — not the crowded ones, and no dial here caps a turn's move count. The tail is not currently reachable by tuning.
+
+**Do not read a bigger search number as a stronger opponent.** Three separate deepenings of this search have now measured as zero: the cheats, the beam, and this dial. The limit is not how far the bot looks, it is what `scoreState` can see — it counts a hand by length, cannot value a passive effect, and rates a draw engine at nothing. Fix the judgement before buying more search.
+
+### Beware the shared ladder file
+
+`.preview/balance/ladder.json` is a single file that every ladder run and every full balance pass overwrites, including runs started by another session. **Snapshot a baseline to a private filename in the same breath as producing it**, never later. A comparison here was once run against a stranger's 10:46 run that had silently replaced the intended baseline, and reported a confident 6-point regression that belonged to nobody.
+
+The tell is in the output, and it is easy to read past. A dial line saying `deepLines: undefined -> 5` means the baseline came from a bot that had no such setting at all. If a baseline is genuinely yours, the dial lines name both values.
+
+### Measuring anything timed, on this machine
+
+**A benchmark is a tool that lies by default, because nothing in the result says what else was running.** Several sessions work in this repository at once, so an idle machine is an assumption and never a default. A whole afternoon of turn-time figures here were quoted, written into this guide, used to call a feature too slow, and then used again to call it free — all measured while a balance pass ran on the same CPU. The clean numbers above came out roughly 40% lower.
+
+Three rules:
+
+1. **Confirm the machine is quiet before timing anything**, and record that alongside the number. A figure without its conditions is not a measurement.
+2. **Prefer a back-to-back A/B to any absolute number.** Run both versions within minutes of each other; shared load hurts both roughly equally, while an absolute number is pure noise.
+3. **A test that fails on a TIMEOUT under load is not a defect, and raising its budget is the wrong reflex.** The tell is the whole suite inflating together — one run went from 337 s to 529 s. Re-run that file alone before touching anything. Test budgets in `pacing.test.ts` are set from measured quiet-machine times with room for load, and each carries its measured time in a comment.
+
+The same trap applies to any duration: build times, deploy times, "is this optimisation working".
 
 **Neither cut may be replaced by a wall-clock deadline**, however obvious that looks. The same board would then produce different moves on a slower machine, and every save, replay, undo and test in this engine depends on that not happening. Cost limits here are always derived from the position.
 
