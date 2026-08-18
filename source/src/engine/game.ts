@@ -2232,7 +2232,19 @@ function runEffect(
     if (firstChoice && enemyChoice) {
       const friendly = state.players[firstChoice.owner].board[firstChoice.slot];
       const enemyMinion = state.players[enemyChoice.owner].board[enemyChoice.slot];
-      if (friendly && enemyMinion) {
+      // The two picks must be DIFFERENT minions. Under random play they can both
+      // resolve to the same one, and the release below then puts a single
+      // instance into two slots — the `instance <id> is on the board twice`
+      // breach the balance gate reported on 18 August 2026. Replay it with
+      // `npx tsx scripts/find-duplicate-instance.mts sim-fuzz-46 random,bot`.
+      // The printed rule is "a friendly and an enemy", so one minion is never a
+      // legal room. Refusing costs the controller the Battlecry and leaves the
+      // board untouched, which is far better than a corrupt duel.
+      const sameMinion = Boolean(friendly && enemyMinion && friendly.instanceId === enemyMinion.instanceId);
+      if (sameMinion) {
+        events.push(effectEvent(`${label} cannot open a pocket room around a single minion.`, source));
+      }
+      if (friendly && enemyMinion && !sameMinion) {
         state.players[friendly.owner].board[firstChoice.slot] = null;
         state.players[enemyMinion.owner].board[enemyChoice.slot] = null;
         (state.pocketRooms ??= []).push({
@@ -3601,15 +3613,27 @@ function resolvePocketRooms(state: GameState, playerId: PlayerId, events: GameEv
     const winners = room.friendly.atk === room.enemy.atk
       ? [room.friendly, room.enemy]
       : [room.friendly.atk > room.enemy.atk ? room.friendly : room.enemy];
+    // Second line of defence, and the one that makes the invariant unbreakable
+    // from here: never place the same instance twice, and never place one that
+    // is somehow already on a board. The guard above stops today's cause; this
+    // stops the whole bug class, because any future effect that manages to store
+    // one minion on both sides of a room would otherwise corrupt the duel again.
+    const placed = new Set<string>();
     for (const winner of winners) {
+      if (placed.has(winner.instanceId)) continue;
+      const alreadyLive = state.players.some((side) =>
+        side.board.some((entry) => entry?.instanceId === winner.instanceId));
+      if (alreadyLive) continue;
       const board = state.players[winner.owner].board;
       const preferred = winner.instanceId === room.friendly.instanceId ? room.friendlySlot : room.enemySlot;
       const slot = !board[preferred] ? preferred : board.findIndex((entry) => !entry);
       if (slot >= 0) {
         board[slot] = winner;
+        placed.add(winner.instanceId);
         events.push(effectEvent(`${winner.name} returns from the pocket room.`, winner));
       } else {
         putCardInHand(state, winner.owner, winner.cardId, events);
+        placed.add(winner.instanceId);
       }
     }
     const losers = [room.friendly, room.enemy].filter((minion) => !winners.includes(minion));

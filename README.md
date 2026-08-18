@@ -44,14 +44,23 @@ A draft or deckbuilding mode pairs with the run option, because a drafted deck i
 thing for a run to carry. A match currently shows roughly 25 to 30 of the 175 cards and the player
 chooses none of them, so that mode is also what would make the roster size mean something.
 
-**The balance gate is red, on a fresh baseline measured 18 August 2026.** Three of eleven checks
-failed. In the order they matter:
+**The balance gate was red on the fresh baseline measured 18 August 2026** — three of eleven checks.
+One is fixed; the other two are below. In the order they matter:
 
-- **An invariant breach: `instance <id> is on the board twice`**, found under random legal play. This
-  is corruption rather than a balance problem, and it is the only finding that can produce a broken
-  duel instead of an unfair one. Replay it with
-  `npm run sim -- --replay sim-fuzz-46 --drivers random,bot`, which reproduces it at turn 16 on
-  instance `m6`. Fix this before touching any card.
+- ~~**An invariant breach: `instance <id> is on the board twice`.**~~ **Fixed 18 August 2026.** It was
+  Knov's pocket room. A room could be stored holding the *same* minion as both its friendly and its
+  enemy side, and since a minion trivially ties its own ATK, the tie branch released it into two slots
+  at once. Two guards now exist: the room refuses to open around a single minion, and the release
+  refuses to place an instance twice or to place one already on a board. The second guard is the
+  load-bearing one, because it closes the whole bug class rather than this one cause. The fuzz phase
+  now reports **0 invariant breaches** over 20,996 actions, where it reported 1. Pinned by
+  `src/engine/pocket-room.test.ts`, live-fired by removing the dedupe and watching it go red.
+
+  The upstream question is still open and is worth knowing: the two picks reached the resolver as one
+  minion, and the friendly pick was owned by the *opponent*, which `targetOptions` should make
+  impossible for a `side: "friendly"` spec. Something in the two-step choice plumbing can lose its
+  `priorOptions`, at which point `firstChoice` falls back to the enemy pick. The guards make the
+  outcome safe; they do not explain the plumbing.
 - **One duel in 1,000 never finished.** `npm run sim -- --replay sim-308` reproduces it: 121 turns
   against a 120 cap, cores at 27 and 15, and no invariant broken. A slow grind, not a lock.
 - **First player wins 57%** against a 44 to 56% band. The gate flags that its own 95% range still
@@ -490,7 +499,13 @@ Every duel is seeded, so any failure the gate reports can be played back exactly
 ```bash
 npm run sim -- --replay sim-308                              # a self-play stall
 npm run sim -- --replay sim-fuzz-46 --drivers random,bot     # a fuzz invariant breach
+npx tsx scripts/find-duplicate-instance.mts sim-fuzz-46 random,bot   # name the ACTION that broke it
 ```
+
+`--replay` tells you a duel went wrong; `find-duplicate-instance.mts` tells you which action did it. It
+walks the same duel one action at a time and stops at the first duplicated instance, printing the
+action, the events it produced, and both slots. That is what turned "1 invariant breach" into "Knov's
+pocket room releases one minion twice" in a single run.
 
 **A fuzz duel needs its `--drivers` pair or it is a different duel.** The fuzz phase rotates random/random, bot/random, random/bot and bot/bot, and `--replay` defaults to bot/bot because self-play duels are bot-vs-bot. Replaying a fuzz seed without its drivers runs a duel that never had the bug and prints `no invariant ever broke in this duel`, which reads exactly like the defect being fixed. The fuzz summary prints the whole command beside each distinct breach; copy it rather than retyping the seed alone.
 

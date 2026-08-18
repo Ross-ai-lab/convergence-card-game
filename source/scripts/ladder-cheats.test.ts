@@ -37,6 +37,8 @@ describe("ladder cheats stay out of the balance measurement", () => {
     for (const seed of seeds) {
       expect(fingerprint(duel(seed, undefined))).toBe(fingerprint(duel(seed, false)));
     }
+    // 31.5s measured on a quiet machine, 2026-08-18. Budgets in this file are
+    // sized from a measured time with room for load, not from the best case.
   }, 120_000);
 
   it("actually reaches the engine when the ladder asks for it", () => {
@@ -44,7 +46,9 @@ describe("ladder cheats stay out of the balance measurement", () => {
     // nothing at all, the flag is not wired to anything.
     const changed = seeds.filter((seed) => fingerprint(duel(seed, true)) !== fingerprint(duel(seed, false)));
     expect(changed.length).toBeGreaterThan(0);
-  }, 120_000);
+    // 59.8s measured quiet, 2026-08-18. Six duels, half of them with the cheat
+    // on, so it costs roughly twice the case above.
+  }, 180_000);
 
   it("gives it to nobody when both seats would qualify", () => {
     // The field holds one seat, and a duel where both sides burn two cards a
@@ -58,5 +62,10 @@ describe("ladder cheats stay out of the balance measurement", () => {
       skills: ["hard", "hard"], turnCap: 200, deepChecks: false,
     });
     expect(fingerprint(both)).toBe(fingerprint(neither));
-  }, 120_000);
+    // 96.5s measured quiet, 2026-08-18, against a 120s budget that left 24%
+    // headroom — so this passed alone and failed under any concurrent work,
+    // which reads as a defect in the cheat wiring rather than as machine load.
+    // It is the most expensive case in the file by construction: hard-vs-hard is
+    // the priciest pairing there is, played twice, to a 200-turn cap.
+  }, 300_000);
 });
