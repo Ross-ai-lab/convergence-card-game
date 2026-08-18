@@ -44,12 +44,29 @@ A draft or deckbuilding mode pairs with the run option, because a drafted deck i
 thing for a run to carry. A match currently shows roughly 25 to 30 of the 175 cards and the player
 chooses none of them, so that mode is also what would make the roster size mean something.
 
-**The balance measurement is stale.** The last full run was 15 August 2026. The lore-tier pass
-afterwards changed the cost or stats of 34 cards, and 3 cards were added that have never been
-measured (Mothership, Planetary Defense Grid, Black Hole). A card's verdict is a comparison against
-its own cost bracket's average, so moving 34 cards moved the brackets under their neighbours. Treat
-the stored results as history until an owner-authorised `npm run check:balance` replaces them, and
-note that the last run measured first-player wins at 55.8% against a 56% ceiling.
+**The balance gate is red, on a fresh baseline measured 18 August 2026.** Three of eleven checks
+failed. In the order they matter:
+
+- **An invariant breach: `instance <id> is on the board twice`**, found under random legal play. This
+  is corruption rather than a balance problem, and it is the only finding that can produce a broken
+  duel instead of an unfair one. Replay it with
+  `npm run sim -- --replay sim-fuzz-46 --drivers random,bot`, which reproduces it at turn 16 on
+  instance `m6`. Fix this before touching any card.
+- **One duel in 1,000 never finished.** `npm run sim -- --replay sim-308` reproduces it: 121 turns
+  against a 120 cap, cores at 27 and 15, and no invariant broken. A slow grind, not a lock.
+- **First player wins 57%** against a 44 to 56% band. The gate flags that its own 95% range still
+  touches the band, so do not act on this from one run.
+
+The per-tier outliers ARE usable, because each card is compared with its own cost bracket inside one
+run: above their tier, Escanor "The One" +23.6, Elden Beast +19.5, Darth Vader +17.9, Planetary
+Defense Grid +16.9, Flash +14.7; below it, Cecil -23.1 (the worst card in the game, a 2-mana 1/1),
+Ten Tails -15.2, Shigaraki -14.2, The Watcher -13.8. Cost 7 is clean.
+
+**Do not tune from the run-to-run diff.** That block spans both a roster change and the bot rewrite
+that landed in the same window, so it measures two things and separates neither, and several of its
+entries do not clear their own stated noise floor. For the same reason, hold off on tuning anything
+except the three largest gaps until the bot stops moving: a ±23 gap is too big to be bot noise, and a
+±10 one is not.
 
 ## Parallel work
 
@@ -462,7 +479,20 @@ cp .preview/balance/ladder.json .preview/balance/ladder-before.json
 
 `npm run check:balance` is an expensive full-roster measurement, not a routine check. Never launch it unless the owner explicitly says to run `npm run check:balance` or otherwise explicitly authorises that full command. A request described as “a balance pass,” even when it lists card changes, is not authorisation. Do not run the full command for one changed card; use focused tests and data validation. Reserve it for a pass that changes many cards, global pacing, draw rules, bot valuation, or another system-wide balance lever.
 
-The measured full run on this machine with the former 1,500-duel sample took **11 minutes 28.2 seconds** wall-clock. Its self-play phase took 268 seconds, fuzz took 21 seconds, and the Ascendant skill ladder accounted for most of the remaining time. The harness now caps self-play at **1,000 duels**; based on the measured phase costs, a future owner-authorised full run should take roughly ten minutes. Replace that estimate with an observed 1,000-duel time after the next explicitly authorised run.
+The observed full run at the 1,000-duel cap, measured on 18 August 2026, took **1 hour 40 minutes** wall-clock. Self-play was 506 seconds and fuzz 31 seconds; the Ascendant ladder was the remaining **91 minutes, about 91% of the run**. The earlier estimate of roughly ten minutes came from a 1,500-duel run that took 11 minutes 28.2 seconds before the Ascendant searched whole turns, and it is no longer close.
+
+Treat that as a planning fact, not a footnote. A measurement nobody can afford to run twice cannot be tuned against, because tuning needs a before and an after, so the ladder's cost is now the thing standing between this project and its next balance pass. Anything that cuts Ascendant search cost buys back most of this run.
+
+### Replaying a failure the harness found
+
+Every duel is seeded, so any failure the gate reports can be played back exactly.
+
+```bash
+npm run sim -- --replay sim-308                              # a self-play stall
+npm run sim -- --replay sim-fuzz-46 --drivers random,bot     # a fuzz invariant breach
+```
+
+**A fuzz duel needs its `--drivers` pair or it is a different duel.** The fuzz phase rotates random/random, bot/random, random/bot and bot/bot, and `--replay` defaults to bot/bot because self-play duels are bot-vs-bot. Replaying a fuzz seed without its drivers runs a duel that never had the bug and prints `no invariant ever broke in this duel`, which reads exactly like the defect being fixed. The fuzz summary prints the whole command beside each distinct breach; copy it rather than retyping the seed alone.
 
 Do not make the simulated rules, bot skill, or turn timing “10× faster” by simplifying them: that would measure a different game. Safe implementation optimisations may reuse already-computed legal actions and candidate results, and independent duels may eventually run across CPU workers if deterministic output and result ordering are preserved. The current harness applies the safe reuse optimisation; the Ascendant ladder remains the unavoidable dominant cost because it searches whole turns.
 

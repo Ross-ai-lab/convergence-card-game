@@ -529,6 +529,13 @@ function runFuzz(games: number) {
   const { cards, relics } = loadData();
   const started = Date.now();
   const problems: string[] = [];
+  // Where each problem came from. Recording only the text made a corrupt state
+  // the one failure in this harness that could not be replayed: a stall printed
+  // its seed and an invariant breach did not, so the more serious defect was the
+  // harder one to chase. The drivers travel with the seed because a fuzz duel is
+  // not reproducible without them — half the rotation is random play, and
+  // replaying that seed under bot play is a different duel.
+  const problemOrigins: { text: string; seed: string; drivers: [Driver, Driver] }[] = [];
   let softLocks = 0;
   let stalls = 0;
   // Split by driver: a stall in a bot-vs-bot fuzz duel is a real bot stall and
@@ -552,16 +559,18 @@ function runFuzz(games: number) {
           : index % 4 === 2
             ? ["random", "bot"]
             : ["bot", "bot"];
+    const seed = `${SEED_PREFIX}-fuzz-${index}`;
     const result = playOneGame({
       cards,
       relics,
-      seed: `${SEED_PREFIX}-fuzz-${index}`,
+      seed,
       drivers,
       skills: ["normal", "normal"],
       turnCap: TURN_CAP,
       deepChecks: true,
     });
     problems.push(...result.problems);
+    for (const text of result.problems) problemOrigins.push({ text, seed, drivers });
     actions += result.actions;
     if (result.softLocked) softLocks += 1;
     if (result.stalled) {
@@ -573,12 +582,16 @@ function runFuzz(games: number) {
     }
   }
 
-  const unique = new Map<string, number>();
-  for (const problem of problems) {
+  const unique = new Map<string, { count: number; seed: string; drivers: [Driver, Driver] }>();
+  for (const { text, seed, drivers } of problemOrigins) {
     // Strip the turn number so the same defect reported on 200 different turns
     // collapses to one line with a count.
-    const key = problem.replace(/turn \d+/g, "turn N").replace(/\b[a-z]\d+\b/g, "<id>");
-    unique.set(key, (unique.get(key) ?? 0) + 1);
+    const key = text.replace(/turn \d+/g, "turn N").replace(/\b[a-z]\d+\b/g, "<id>");
+    const seen = unique.get(key);
+    // First occurrence wins: the earliest seed is the cheapest to replay, and a
+    // stable choice means two runs of the same build name the same duel.
+    if (seen) seen.count += 1;
+    else unique.set(key, { count: 1, seed, drivers });
   }
 
   return {
@@ -592,7 +605,13 @@ function runFuzz(games: number) {
     randomStalls: stalls - botStalls,
     total: problems.length,
     invariantBreaches: problems.filter((text) => !isSoftLockProblem(text)).length,
-    unique: [...unique.entries()].sort((a, b) => b[1] - a[1]).map(([text, count]) => ({ text, count })),
+    unique: [...unique.entries()]
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([text, { count, seed, drivers }]) => ({ text, count, seed, drivers })),
+    /** Every distinct invariant breach with a duel that produces it. */
+    breaches: [...unique.entries()]
+      .filter(([text]) => !isSoftLockProblem(text))
+      .map(([text, { count, seed, drivers }]) => ({ text, count, seed, drivers })),
   };
 }
 
@@ -899,20 +918,35 @@ let fuzz: ReturnType<typeof runFuzz> | null = null;
 // Replay one exact duel. Seeds are reproducible, so when the gate names a
 // stalled or soft-locked seed this plays that same duel back with the full
 // invariant suite armed, instead of leaving a count and no way in.
+function parseDrivers(value: string): [Driver, Driver] {
+  const parts = value.split(",").map((part) => part.trim());
+  if (parts.length !== 2 || parts.some((part) => part !== "bot" && part !== "random")) {
+    // Refusing beats defaulting. A mistyped pair would replay a DIFFERENT duel
+    // and report "no invariant ever broke", which reads as the bug being fixed.
+    console.error(`--drivers must be two of bot|random, comma separated, got "${value}"`);
+    process.exit(2);
+  }
+  return parts as [Driver, Driver];
+}
+
 const REPLAY = arg("replay", "");
 if (REPLAY) {
   const { cards, relics } = loadData();
+  // Self-play duels are bot-vs-bot, so that stays the default. A fuzz duel is
+  // only reproducible with the driver pair it actually ran under, which the fuzz
+  // summary now prints beside the seed.
+  const drivers = parseDrivers(arg("drivers", "bot,bot"));
   const one = playOneGame({
     cards,
     relics,
     seed: REPLAY,
-    drivers: ["bot", "bot"],
+    drivers,
     skills: [SKILL, SKILL],
     turnCap: TURN_CAP,
     deepChecks: true,
     startingHealth: CORE_HP,
   });
-  console.log(`Replaying ${REPLAY} at ${SKILL}, turn cap ${TURN_CAP}`);
+  console.log(`Replaying ${REPLAY} at ${SKILL} with drivers ${drivers.join(",")}, turn cap ${TURN_CAP}`);
   console.log(`  winner ${one.winner ?? "nobody"}, ${one.turns} turns, ${one.actions} actions`);
   console.log(`  core left ${one.healthLeft[0]} / ${one.healthLeft[1]}, peak mana ${one.peakMana}`);
   console.log(`  stalled ${one.stalled}, soft-locked ${one.softLocked}`);
@@ -1168,7 +1202,10 @@ if (selfPlay) {
 if (fuzz) {
   console.log(`FUZZ      ${fuzz.games} games, ${fuzz.actions.toLocaleString()} actions, ${fuzz.elapsedSec}s`);
   console.log(`          ${fuzz.total} invariant breaches, ${fuzz.softLocks} soft-locks, ${fuzz.stalls} stalls`);
-  for (const u of fuzz.unique.slice(0, 12)) console.log(`          ${String(u.count).padStart(5)} x ${u.text}`);
+  for (const u of fuzz.unique.slice(0, 12)) {
+    console.log(`          ${String(u.count).padStart(5)} x ${u.text}`);
+    console.log(`                  replay: npm run sim -- --replay ${u.seed} --drivers ${u.drivers.join(",")}`);
+  }
 }
 
 // The per-tier offenders, named. Judged against their own cost bracket only.
