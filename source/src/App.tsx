@@ -5,6 +5,10 @@ import "./App.css";
 // they occupied when they lived in screens/Screens.css, so moving the file could
 // not change which rule wins anything.
 import "./board-fx.css";
+// Development-only styling, dropped entirely from the production bundle. The
+// static analysis Vite does on this condition is what removes it, so the check
+// has to be exactly this shape -- do not hoist it into a variable.
+if (import.meta.env.DEV) import("./dev-only.css");
 import { sfx, type SfxName } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
 import { chooseBotAction, BOT_CHEATS } from "./engine/bot";

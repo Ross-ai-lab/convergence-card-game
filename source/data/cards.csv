@@ -73,11 +73,11 @@ c071,All for One,7,4,5,Yellow,Magic,Evil,,copy_and_trigger,onPlay,Battlecry: Cop
 c072,Aladdin Lamp,7,5,4,Purple,Magic,Neutral,,aladdin_wish,onPlay,Battlecry: Make a wish.,What does thy wish,Aladdin,/card-art/raw/c072.webp
 c073,All Might,7,4,5,Purple,Magic,Good,Passive,all_enemy_atk_down_1,passive,"Passive: While on the board, every enemy minion has -1 ATK.",Number One,MHA,/card-art/raw/c073.webp
 c074,Grand Master Yoda,7,5,5,Purple,Magic,Good,Cannot Attack;Ongoing,yoda_lowest_atk_buff,ongoing,Cannot attack. Ongoing: Your lowest-ATK friendly minion gains +2/+2.,Nine centuries of learning,Star Wars,/card-art/raw/c074.webp
-c075,Ultron Prime,7,4,5,Purple,Tech,Evil,,none,none,-,He decided the most efficient protection was elimination,MCU,/card-art/raw/c075.webp
+c075,Ultron Prime,7,6,3,Purple,Tech,Evil,Taunt;Deathrattle,deathrattle_summon_vision,deathrattle,Taunt. Deathrattle: Summon Vision (6/3) with Taunt.,He decided the most efficient protection was elimination,MCU,/card-art/raw/c075.webp
 c076,Godzilla,7,4,5,Black,Nature,Neutral,Passive,godzilla_damage_burst,passive,Passive: Deal 2 damage to all enemies each time you take damage.,Laser breathing,Godzilla,/card-art/raw/c076.webp
 c077,King,7,0,7,Black,Nature,Neutral,Cannot Attack;Passive,king_attack_lock_random,passive,"Cannot attack. Passive: At the start of each enemy turn, a random enemy minion is Attack Locked for that turn.",Luckiest man alive,OPM,/card-art/raw/c077.webp
 c080,Gandalf the White,6,2,2,Yellow,Magic,Good,Divine Shield,shield_all_friendly,onPlay,Divine Shield. Battlecry: Give all friendly Good minions Divine Shield.,An incarnated angel,Lord of the Rings,/card-art/raw/c080.webp
-c081,Gordon Freeman,4,3,3,Yellow,Tech,Neutral,,none,none,-,I̵n̷ ̵t̵h̵e̷ ̵f̴l̵e̷s̷h̴…,Half-life,/card-art/raw/c081.webp
+c081,Gordon Freeman,4,1,3,Yellow,Tech,Neutral,Passive,freeman_charge_aura,passive,Passive: All friendly minions have Charge.,I̵n̷ ̵t̵h̵e̷ ̵f̴l̵e̷s̷h̴…,Half-life,/card-art/raw/c081.webp
 c082,Mahoraga,6,5,6,Yellow,Magic,Neutral,,attack_once_ever,passive,Passive: Can only be attacked by each enemy minion once per game.,Adaptation is not survival—it is dominance,Jujutsu Kaisen,/card-art/raw/c082.webp
 c083,Floor Guardians,6,4,4,Purple,Magic,Evil,,slot_growth_1,onPlay,"Battlecry: Choose 1 friendly minion board slot. Minions on that board slot gain +1/+1 at the start of your turn.",They do not guard the floors—they own them,Overlord,/card-art/raw/c083.webp
 c084,Meruem,6,4,5,Purple,Nature,Neutral,Passive,meruem_kill_copy,passive,"Passive: Whenever Meruem kills a minion, gain +1/+1 and gain its effects.",Loyalty,HxH,/card-art/raw/c084.webp

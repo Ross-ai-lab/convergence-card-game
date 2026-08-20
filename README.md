@@ -626,6 +626,31 @@ Do not make the simulated rules, bot skill, or turn timing “10× faster” by 
 
 `source/public/` is the runtime asset location. `materials/local-production/` contains optional rebuild tools for art, music, voice previews, and cast sheets; it is not required to play the included build. Large audio and card-production libraries are release downloads rather than normal clone requirements.
 
+### What the title screen is allowed to download
+
+**Every card must have a theme, and `npm run validate:data` now fails when one does not.** Three cards
+shipped silent (Mothership, Planetary Defense Grid, Black Hole) purely because nothing counted. Relics
+are deliberately excluded: they use `r###` ids and are not part of the theme set.
+
+**The menu has a size budget, and it is easy to undo by accident.** Measured 2026-08-21, the title
+screen was downloading **7.9 MB** before it settled, and the owner's report was that it "opens a bit
+slow and laggy". It is **1.1 MB** now, with nothing about the design changed. Three rules keep it there:
+
+| What | Rule | Why |
+|---|---|---|
+| Floating cards | Serve `card-art/menu/`, never `card-art/raw/` | 84 cards render at most 134px wide and are blurred; the full art was 4.67 MB for pixels nobody can see. Thumbnails are 568 kB |
+| Backdrop | `menu-rift.webp`, never a PNG | The same picture was 2.0 MB as PNG and is 124 kB as WebP |
+| Fonts | WOFF2, never TTF | 1.21 MB became 382 kB. This matters more than it looks: `font-display: block` holds every piece of text invisible until its font arrives |
+
+`materials/local-production/asset-tools/build-menu-art.py` regenerates the thumbnails; re-run it after
+adding cards. **`font-display: block` stays.** Swapping fonts mid-render would resize card text in
+front of the player, because a card's rules text is measured to fit its plaque. Shrink the file
+instead of trading the layout away.
+
+**A card whose art is an SVG has no thumbnail and must keep the raw path.** `menuArt()` in
+`Screens.tsx` checks for a raster extension first; rewriting an SVG pointed at a file the generator
+never produces, and the card rendered blank.
+
 Card-theme stings are the `c###.ogg` files in `source/public/audio/stings/` for the voiced entries in `source/data/cards.csv`. Relics use `r###` IDs and are intentionally not part of that theme set, even though relics share the deck and can appear in hand; audio prefetch must filter relic IDs rather than request `audio/stings/r###.ogg`.
 
 The complete original audio collection is the separate [Convergence-Audio-Tracks.7z release download](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z), because it is larger than a practical GitHub Pages site.

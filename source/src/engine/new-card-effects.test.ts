@@ -114,7 +114,15 @@ describe("2026 card replacements", () => {
         keywords: [],
         effect: "Passive: Whenever a friendly minion survives a combat, it gains +1/+1.",
       },
-      "Gordon Freeman": { cost: 4, atk: 3, hp: 3, effectId: "none", effectTiming: "none", keywords: [], effect: "-" },
+      "Gordon Freeman": {
+        cost: 4,
+        atk: 1,
+        hp: 3,
+        effectId: "freeman_charge_aura",
+        effectTiming: "passive",
+        keywords: ["Passive"],
+        effect: "Passive: All friendly minions have Charge.",
+      },
       Hypnos: {
         cost: 4,
         atk: 0,
@@ -182,7 +190,15 @@ describe("2026 card replacements", () => {
       Joker: { atk: 1, hp: 1, effectId: "copy_minion_to_hand", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Put a copy of a minion in your hand." },
       "Escanor \"The One\"": { cost: 8, atk: 8, hp: 4, effectId: "double_other_friendly_attack", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Double your other friendly minions attack." },
       "Lelouch Lamperouge": { cost: 8, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion." },
-      "Ultron Prime": { cost: 7, atk: 4, hp: 5, effectId: "none", effectTiming: "none", keywords: [], effect: "-" },
+      "Ultron Prime": {
+        cost: 7,
+        atk: 6,
+        hp: 3,
+        effectId: "deathrattle_summon_vision",
+        effectTiming: "deathrattle",
+        keywords: ["Taunt", "Deathrattle"],
+        effect: "Taunt. Deathrattle: Summon Vision (6/3) with Taunt.",
+      },
       Neo: { cost: 10, atk: 5, hp: 7, effectId: "protect_slot", effectTiming: "onPlay" },
       "Monkey D. Luffy": { cost: 8, atk: 6, hp: 4, effectId: "free_chained_shield", effectTiming: "onPlay" },
       Meruem: { cost: 6, atk: 4, hp: 5, effectId: "meruem_kill_copy", effectTiming: "passive" },
@@ -1219,7 +1235,9 @@ describe("2026 card replacements", () => {
 
   it("Godrick kills a friendly minion and keeps its stats and persistent effects", () => {
     const state = mainState();
-    state.players[0].board[1] = minion("Gordon Freeman", 0);
+    // A deliberately stat-only victim: Modern Tank is a Basic reference card and
+    // is supposed to stay a plain 3/3, so this measures the stats graft alone.
+    state.players[0].board[1] = minion("Modern Tank", 0);
     const asking = play(state, 0, "Godrick the Grafted", 0);
     const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 0 && option.slot === 1) ?? -1;
     const after = targetIndex >= 0 ? choose(asking, targetIndex) : asking;
@@ -1269,6 +1287,81 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[0]).toMatchObject({ name: "Galactus", atk: 8, hp: 8, maxHp: 8, chained: 0 });
     expect(after.players[0].board[0]?.keywords).toEqual(["Taunt", "Cannot Attack"]);
     expect(after.players[0].board[0]?.art).toBe("/card-art/raw/galactus.webp");
+  });
+
+  it("Ultron Prime leaves Vision behind when he dies", () => {
+    const state = mainState("ultron-vision");
+    state.players[0].board[0] = minion("Ultron Prime", 0, { hp: 1, maxHp: 3 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 9, sleeping: false, hp: 20, maxHp: 20 });
+    state.activePlayer = 1;
+
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+
+    // Killing Ultron is not the end of him: the wall is replaced by an identical
+    // wall, which is the whole reason the body is 6/3 rather than something that
+    // survives on its own.
+    expect(after.players[0].board[0]).toMatchObject({ name: "Vision", atk: 6, hp: 3, maxHp: 3, chained: 0 });
+    expect(after.players[0].board[0]?.keywords).toEqual(["Taunt"]);
+    expect(after.players[0].board[0]?.art).toBe("/card-art/raw/token-vision.webp");
+    expect(after.players[0].board[0]?.owner).toBe(0);
+  });
+
+  it("Vision does not arrive when there is nowhere to put him", () => {
+    const state = mainState("ultron-vision-full");
+    state.players[0].board[0] = minion("Ultron Prime", 0, { hp: 1, maxHp: 3 });
+    // Ultron dies in slot 0, so that slot frees up and Vision takes it. Fill
+    // every OTHER slot to prove the fallback search is not what is being tested,
+    // then kill him from a board where his own slot is the only opening.
+    for (const slot of [1, 2, 3, 4]) state.players[0].board[slot] = minion("Zoro", 0);
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 9, sleeping: false, hp: 20, maxHp: 20 });
+    state.activePlayer = 1;
+
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+
+    expect(after.players[0].board[0]?.name).toBe("Vision");
+    expect(after.players[0].board.filter(Boolean)).toHaveLength(5);
+  });
+
+  it("Gordon Freeman lets the minions already on the board attack at once", () => {
+    const state = mainState("freeman-wakes-board");
+    // Asleep, the way a minion played this turn would be.
+    state.players[0].board[1] = minion("Zoro", 0, { sleeping: true });
+    state.players[0].board[2] = minion("John Wick", 0, { sleeping: true });
+
+    const after = play(state, 0, "Gordon Freeman", 0);
+
+    // Granting the keyword alone would do nothing here, because Charge is read
+    // when a minion is CREATED. Waking the board is the half that makes the card
+    // work on the turn it lands.
+    expect(after.players[0].board[1]?.sleeping).toBe(false);
+    expect(after.players[0].board[2]?.sleeping).toBe(false);
+    expect(after.players[0].board[1]?.keywords).toContain("Charge");
+    // And it is a friendly-only aura.
+    expect(after.players[1].board.every((entry) => entry === null || !entry.keywords.includes("Charge"))).toBe(true);
+  });
+
+  it("a minion played after Gordon Freeman can attack immediately", () => {
+    const state = mainState("freeman-wakes-newcomer");
+    state.players[0].board[0] = minion("Gordon Freeman", 0, { sleeping: false });
+
+    const after = play(state, 0, "Zoro", 1);
+
+    expect(after.players[0].board[1]?.sleeping).toBe(false);
+    expect(after.players[0].board[1]?.keywords).toContain("Charge");
+  });
+
+  it("Gordon Freeman's Charge is taken back when he leaves", () => {
+    const state = mainState("freeman-aura-removal");
+    state.players[0].board[0] = minion("Gordon Freeman", 0, { hp: 1, maxHp: 3 });
+    state.players[0].board[1] = minion("Zoro", 0, { sleeping: true });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 9, sleeping: false, hp: 20, maxHp: 20 });
+    state.activePlayer = 1;
+
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+
+    expect(after.players[0].board[0]).toBeNull();
+    // The card must stop promising Charge once the source of it is gone.
+    expect(after.players[0].board[1]?.keywords).not.toContain("Charge");
   });
 
   it("Ten Tails chains every minion on both boards", () => {

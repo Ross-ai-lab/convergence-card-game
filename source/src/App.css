@@ -2351,11 +2351,20 @@ button:disabled {
    the design size. No layout thrash, no flash of oversized text, same result.
    ========================================================================= */
 
+/* WOFF2, not TTF. A TTF is essentially an uncompressed font file: these three
+   were 1.21 MB between them and are 382 KB as WOFF2, rendering identically.
+   That matters more here than it looks, because `font-display: block` below
+   holds every piece of text on the screen INVISIBLE until its font arrives —
+   the title, the menu, the card faces. The block is deliberate and stays: a
+   card's text is measured to fit its plaque, so swapping fonts mid-render would
+   resize text in front of the player. Shrinking the file is the way to shorten
+   that wait without trading anything for it. WOFF2 has been supported by every
+   browser since 2016, and this game already requires far newer CSS than that. */
 @font-face {
   font-family: "Baloo 2";
   font-weight: 400 800;
   font-display: block;
-  src: url("/fonts/Baloo2.ttf") format("truetype");
+  src: url("/fonts/Baloo2.woff2") format("woff2");
 }
 
 @font-face {
@@ -2363,7 +2372,7 @@ button:disabled {
   font-style: normal;
   font-weight: 200 900;
   font-display: block;
-  src: url("/fonts/Nunito.ttf") format("truetype");
+  src: url("/fonts/Nunito.woff2") format("woff2");
 }
 
 @font-face {
@@ -2371,7 +2380,7 @@ button:disabled {
   font-style: italic;
   font-weight: 200 900;
   font-display: block;
-  src: url("/fonts/Nunito-Italic.ttf") format("truetype");
+  src: url("/fonts/Nunito-Italic.woff2") format("woff2");
 }
 
 .card-face {
@@ -4898,8 +4907,13 @@ button:disabled {
 }
 
 .gallery-cell.mark-unseen .card-face {
-  filter: grayscale(0.9) brightness(0.5);
-  opacity: 0.7;
+  /* Dimmed, never blacked out. brightness(0.5) looked right on the average card
+     and turned the already-dark art -- G-Man, Time Bomb -- into a black
+     rectangle, which in this project is the known signature of BROKEN artwork
+     rather than of an unmet card. Desaturation carries the meaning; the
+     brightness cut only supports it. */
+  filter: grayscale(0.85) brightness(0.68);
+  opacity: 0.78;
   transition: filter 160ms ease, opacity 160ms ease;
 }
 
@@ -5038,12 +5052,4 @@ button:disabled {
 .record-turns {
   color: rgba(246, 236, 216, 0.5);
   font-size: 0.84rem;
-}
-
-/* Development-only cheat toggle (see App.tsx). Absent from the built bundle. */
-.cheat-toggle.active,
-.cheat-toggle.active:hover:not(:disabled) {
-  color: #10221f;
-  border-color: rgba(67, 205, 189, 0.92);
-  background: linear-gradient(180deg, #9bf1df, var(--teal));
 }

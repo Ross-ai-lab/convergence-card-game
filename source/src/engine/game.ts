@@ -3895,6 +3895,26 @@ function refreshPassiveAuras(state: GameState): void {
           target.auraBonuses!.push({ sourceId: source.instanceId, atk: 0, hp: 0, keywords: ["Taunt"] });
         }
       }
+      if (hasEffect(source, "freeman_charge_aura")) {
+        for (const target of board) {
+          if (!target) continue;
+          if (!hasKeyword(target, "Charge")) {
+            target.keywords.push("Charge");
+            target.auraBonuses!.push({ sourceId: source.instanceId, atk: 0, hp: 0, keywords: ["Charge"] });
+          }
+          // Charge is normally read ONCE, when a minion is created, so granting
+          // the keyword is not enough on its own: an aura has to wake what is
+          // already asleep. Without this line the card would do nothing on the
+          // turn Gordon lands and nothing for any minion already on the board,
+          // which is most of the times you would want to play him.
+          //
+          // A minion woken this way stays awake if Gordon then dies, and that is
+          // the intended reading rather than an oversight — it charged. The
+          // keyword itself is stripped by the removal pass above, so the card
+          // face stops promising something that is no longer true.
+          target.sleeping = false;
+        }
+      }
       if (hasEffect(source, "fantastic_four_aura")) {
         for (const targetSlot of [0, 1, 2, 3]) {
           const target = board[targetSlot];
@@ -5232,6 +5252,36 @@ function resolveDeathrattle(
         destroyAtSlot(state, killer.owner, killerSlot, events, `${dead.name} drags ${killer.name} down`, null);
         events.push(effectEvent(`${dead.name}'s Deathrattle destroys ${killer.name}.`, dead));
       }
+    }
+  } else if (dead.effectId === "deathrattle_summon_vision") {
+    // Ultron's whole point is that killing him is not the end of him. The slot
+    // rule matches Galactus above: take the slot he died in when it is free,
+    // otherwise the first open one, and do nothing at all on a full board.
+    const slot = state.players[dead.owner].board[deadSlot]
+      ? state.players[dead.owner].board.findIndex((minion) => !minion)
+      : deadSlot;
+    if (slot >= 0) {
+      const vision: CardDefinition = {
+        kind: "minion",
+        id: "token:vision",
+        name: "Vision",
+        cost: 7,
+        atk: 6,
+        hp: 3,
+        rarity: "Purple",
+        camp: "Tech",
+        alignment: "Good",
+        keywords: ["Taunt"],
+        effectId: "none",
+        effectTiming: "none",
+        effect: "Taunt.",
+        flavor: "Built to end him. Chose otherwise.",
+        origin: "MCU",
+        art: "/card-art/raw/token-vision.webp",
+      };
+      const summoned = createMinion(vision, dead.owner, state);
+      state.players[dead.owner].board[slot] = summoned;
+      events.push(effectEvent(`${dead.name}'s Deathrattle summons Vision.`, dead));
     }
   } else if (dead.effectId === "deathrattle_summon_galactus") {
     const slot = state.players[dead.owner].board[deadSlot]

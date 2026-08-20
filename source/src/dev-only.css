@@ -1,0 +1,20 @@
+/*
+ * Styles that exist ONLY while developing, and must never reach a player.
+ *
+ * CSS is not tree-shaken the way code is: a rule in App.css ships whether or not
+ * anything can ever match it. The cheat toggle is `import.meta.env.DEV`-gated in
+ * App.tsx, so its markup is absent from the built bundle, but its styling still
+ * rode along in the stylesheet a player downloads.
+ *
+ * This file is imported behind the same DEV check, so Vite drops the import in a
+ * production build and the rules go with it. Anything else that is genuinely
+ * development-only belongs here for the same reason — not in App.css with a
+ * comment promising it is harmless.
+ */
+
+.cheat-toggle.active,
+.cheat-toggle.active:hover:not(:disabled) {
+  color: #10221f;
+  border-color: rgba(67, 205, 189, 0.92);
+  background: linear-gradient(180deg, #9bf1df, var(--teal));
+}

@@ -78,16 +78,34 @@ const FLOATING_CARDS = Array.from({ length: 84 }, (_, index) => {
   };
 });
 
+/**
+ * The menu's own copy of a card's artwork, built by
+ * `materials/local-production/asset-tools/build-menu-art.py`.
+ *
+ * A floating card is at most 134 CSS pixels wide and is blurred on top of that,
+ * so the full artwork behind it was about twenty-five times more pixels than
+ * could ever be seen: 4.67 MB across 84 files, all of it decoded on the main
+ * thread before the menu settles. The thumbnails are the same pictures at 220px.
+ */
+function menuArt(art: string): string {
+  // Only RASTER art has a thumbnail. One card is drawn as an SVG, which is
+  // already tiny and scales perfectly, so it keeps the original path — rewriting
+  // it pointed at a file the generator never makes, and the card rendered blank.
+  if (!/\.(png|jpe?g|webp)$/i.test(art)) return art;
+  return art.replace("/card-art/raw/", "/card-art/menu/").replace(/\.(png|jpe?g)$/i, ".webp");
+}
+
 function FloatingCardField() {
   return (
     <div className="floating-card-field" aria-hidden="true">
       {FLOATING_CARDS.map((card) => (
         <img
           key={card.id}
-          src={card.art}
+          src={menuArt(card.art)}
           alt=""
           draggable={false}
           loading="eager"
+          decoding="async"
           className={card.reverse ? "reverse" : undefined}
           style={
             {
@@ -197,7 +215,7 @@ export function TitleScreen({
       <div className="title-rift-stage">
         <img
           className="title-rift-backdrop"
-          src={`${import.meta.env.BASE_URL}menu-rift.png`}
+          src={`${import.meta.env.BASE_URL}menu-rift.webp`}
           alt=""
           draggable={false}
           fetchPriority="high"

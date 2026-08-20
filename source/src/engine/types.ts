@@ -78,6 +78,8 @@ export type EffectId =
   | "destroy_small_neutral"
   | "summon_chained"
   | "deathrattle_summon_galactus"
+  | "deathrattle_summon_vision"
+  | "freeman_charge_aura"
   | "chain_all_minions"
   | "delayed_destroy"
   | "freeze_and_weaken"
