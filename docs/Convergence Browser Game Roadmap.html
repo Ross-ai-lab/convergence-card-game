@@ -252,27 +252,24 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
   <div class="card warn">
     <h3>What it still needs &mdash; the short version</h3>
     <ul class="tight">
-      <li><b>Meta-progression.</b> This is the one big thing the game does not have. A duel is
-        satisfying and then it is over, and nothing carries into the next one &mdash; no unlocks, no
-        record, no reason the tenth duel is different from the first. Everything else on this list is
-        maintenance next to it.</li>
-      <li><b>A fresh balance measurement.</b> The roster has been tuned over seven passes, but 34 cards
-        changed cost or stats afterwards in the lore-tier pass and 3 cards are new since. The last
-        full measurement therefore describes a slightly different game than the one being played.</li>
+      <li><b>Two blank characters &mdash; the last real gap.</b> See below.</li>
       <li><b>Two blank characters.</b> Exactly two licensed characters print nothing at all &mdash;
         no effect and no keyword: <b>Ultron Prime</b> and <b>Gordon Freeman</b>. The other five blank
         cards are the Basic reference beaters, which are supposed to be plain. Cards carrying only a
         keyword, such as Sonic's Charge or Tai Lung's Chained, are not counted here: they do something,
         and whether they should do more is a separate question.</li>
     </ul>
-    <p style="margin-bottom:0">Full detail, in the order worth doing it, on the <b>Roadmap</b> tab.</p>
+    <p style="margin-bottom:0">Everything else that was once on this list is either built or parked on
+    purpose. Meta-progression exists now; fine balance is deliberately retired until a larger audience
+    would notice it. Full detail on the <b>Roadmap</b> tab.</p>
   </div>
 
   <h2 class="sec">The one-line verdict</h2>
   <div class="card gold">
-    <p style="margin:0">It looks like a finished product and it now plays like one: it has been
-    played by a human, and it was fun. What it is missing is not inside the duel, it is around it.
-    A match is good and then it ends, and the game has nothing to remember it by.</p>
+    <p style="margin:0">It looks like a finished product and it plays like one: it has been played by
+    a human, and it was fun. A match is good, and now it is also remembered &mdash; the result goes into
+    a record and every card you meet is marked in the gallery. What is left is a short list of small
+    things, not a missing piece.</p>
   </div>
 </section>
 
@@ -443,30 +440,38 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
   <p class="lede">Ordered by what actually improves the game, not by what is easiest to tick off.
   Everything here was read out of the code, not guessed.</p>
 
-  <div class="card warn"><h3><span class="tag open">1 &middot; next</span> &nbsp;Meta-progression &mdash; the one thing the game does not have</h3>
-    <p>The duel itself has been answered. It has been played by a human and it was fun. That was the
-    open question at the top of this list for a long time, and it is now closed.</p>
-    <p>What the playtest exposed is not inside the match, it is around it. <b>A duel ends and nothing
-    survives it.</b> No record of what happened, no unlock, no rank, no reason your tenth duel is a
-    different experience from your first. Every other item on this page is maintenance next to that
-    one, because every other item improves a match that already works.</p>
-    <p>The pieces the engine already has make this cheaper than it sounds: state serialises cleanly,
-    saves are versioned, the roster carries camps, alignments, origins and cost tiers, and the bot has
-    three real skill levels to climb. Directions worth weighing, from smallest to largest:</p>
+  <div class="card"><h3><span class="tag done">done</span> &nbsp;A duel now leaves something behind</h3>
+    <p>The duel itself was answered a while ago: it has been played by a human and it was fun. What that
+    playtest exposed was not inside the match, it was around it. <b>A duel ended and nothing survived
+    it</b> &mdash; no record, no rank, no reason your tenth duel differed from your first.</p>
+    <p>Two things now persist, both on this device, in their own storage separate from the save (a save
+    holds one duel and is cleared when it ends; a record has to survive exactly that):</p>
     <ul class="tight">
-      <li><b>A record.</b> Duels played, won and lost, per bot level, plus the last few results. The
-        smallest change on this list, and the one that makes a session feel like a session.</li>
-      <li><b>A collection.</b> Cards you have seen, played, or won with, marked in the existing gallery.
-        The roster is 175 characters, and nothing currently tracks meeting one.</li>
-      <li><b>A ladder.</b> Beat Recruit to open Veteran, beat Veteran to open Ascendant, with the win
-        that opened each one remembered.</li>
-      <li><b>A run.</b> A sequence of duels where something carries forward &mdash; a kept relic, a kept
-        Hero Power, a growing core. This is the largest and the one that would change the game most.</li>
+      <li><b>A record.</b> Duels played, won and lost against each opponent level, an overall win rate,
+        and your last ten results with the turn count of each. Reached from the title screen, which only
+        offers the door once you have finished a duel.</li>
+      <li><b>A collection.</b> Every one of the 196 cards and relics is marked in the gallery by how far
+        it has got with you: <b>dimmed</b> until it has been in your hand, full colour once it has, a
+        <b>teal ring</b> once you have played it, and a <b>gold ring</b> once you have won a duel with it
+        on the board. One match deals you roughly 25 to 30 cards, so the roster is a long game.</li>
     </ul>
-    <p class="muted" style="margin-bottom:0">No decision has been made between these. They are listed
-    so the choice is made deliberately rather than by whichever is easiest to start.</p></div>
+    <p style="margin-bottom:0">Two larger ideas were weighed and <b>deliberately not built</b>. A
+    <b>ladder</b> that locks Veteran and Ascendant behind wins would take two thirds of the game away
+    from a player who wants it now, and the record already answers "how am I doing". A <b>run</b>, and
+    the draft mode that pairs with it, is a bigger problem than it looks: this game deals both players
+    from <b>one shared deck</b>, and that is exactly what gives Foresight and Clairvoyance their bite
+    &mdash; the card the Ascendant throws away is the card you were about to draw. Give each player their
+    own deck and that whole layer disappears.</p></div>
 
-  <div class="card warn"><h3><span class="tag open">2 &middot; next</span> &nbsp;Re-measure the balance &mdash; the current numbers describe a different game</h3>
+  <div class="card"><h3><span class="tag done">parked</span> &nbsp;Fine balance &mdash; deliberately left where it is</h3>
+    <p><b>Owner decision, 20 August 2026: this is retired for now, not abandoned.</b> It comes back only
+    if the game is ever put in front of a larger audience. The reasoning is worth stating plainly,
+    because it is a judgement rather than an oversight. Pulling a first-player rate from 57% toward 50%,
+    or a single card from +17 above its tier back to the middle, only matters once enough people play
+    that anyone can tell. One person and a few friends is not that. Meanwhile the measurement costs
+    <b>1 hour 40 minutes</b> a run, roughly 91% of it the Ascendant ladder, and by its own statistics it
+    cannot resolve a change smaller than about four points. The numbers below are kept because they are
+    true and useful reading, not because they are a to-do list.</p>
     <p>The last full measurement ran on <b>15 August 2026</b> over 1,000 duels
     (<code>npm run check:balance</code>). All eleven gate checks passed:</p>
     <ul class="tight">
@@ -580,7 +585,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
     will be claimed</b>, plus who is wearing what. No rule changed &mdash; but seeing what is coming turns
     the next relic from weather into something you can plan a turn around.</p></div>
 
-  <div class="card"><h3><span class="tag part">3</span> &nbsp;The mode that would make the roster matter</h3>
+  <div class="card"><h3><span class="tag done">not doing</span> &nbsp;The mode that would make the roster matter</h3>
     <p>One shared deck, one card drawn a turn, duels running a median of <b>22 turns</b> &mdash; a match shows
     roughly 25&ndash;30 of 175 cards, and the player chooses none of them. <b>A draft or deckbuilding mode is
     the single change that would make the roster size mean something</b>, and the engine already carries
