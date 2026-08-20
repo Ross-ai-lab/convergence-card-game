@@ -435,7 +435,7 @@ function HowToPlayContent() {
       <section>
         <h4>1. Win the duel</h4>
         <p>
-          Each Core starts at <b>76 health</b>. Reduce the opposing Core to zero. Minions attack it directly unless a
+          Each Core starts at <b>75 health</b>. Reduce the opposing Core to zero. Minions attack it directly unless a
           <b> Taunt</b> is standing in the way.
         </p>
       </section>

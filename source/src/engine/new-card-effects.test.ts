@@ -192,12 +192,12 @@ describe("2026 card replacements", () => {
       "Lelouch Lamperouge": { cost: 8, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion." },
       "Ultron Prime": {
         cost: 7,
-        atk: 6,
+        atk: 5,
         hp: 3,
         effectId: "deathrattle_summon_vision",
         effectTiming: "deathrattle",
         keywords: ["Taunt", "Deathrattle"],
-        effect: "Taunt. Deathrattle: Summon Vision (6/3) with Taunt.",
+        effect: "Taunt. Deathrattle: Summon Vision (5/3) with Taunt.",
       },
       Neo: { cost: 10, atk: 5, hp: 7, effectId: "protect_slot", effectTiming: "onPlay" },
       "Monkey D. Luffy": { cost: 8, atk: 6, hp: 4, effectId: "free_chained_shield", effectTiming: "onPlay" },
@@ -446,7 +446,9 @@ describe("2026 card replacements", () => {
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(after.players[0].board[0]).toBeNull();
     expect(after.players[0].board[1]).toBeNull();
-    expect(after.players[0].health).toBe(72);
+    // The damage is the claim, not the total. Reading it as a delta means a
+    // change to starting core health cannot break a card test again.
+    expect(state.players[0].health - after.players[0].health).toBe(4);
   });
 
   it("V cannot randomly destroy an Evil minion that is Chained", () => {
@@ -459,7 +461,7 @@ describe("2026 card replacements", () => {
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(after.players[0].board[0]).toBeNull();
     expect(after.players[0].board[1]).toMatchObject({ name: "Aizen", chained: 2 });
-    expect(after.players[0].health).toBe(72);
+    expect(state.players[0].health - after.players[0].health).toBe(4);
   });
 
   it("Morpheus chooses an alignment, then discovers three matching minions to draw", () => {
@@ -558,7 +560,7 @@ describe("2026 card replacements", () => {
     state.activePlayer = 1;
 
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(after.players[0].board[0]).toMatchObject({ name: "Morgott, the Omen King", atk: 3, hp: 3, art: "/card-art/raw/token-morgott.png" });
+    expect(after.players[0].board[0]).toMatchObject({ name: "Morgott, the Omen King", atk: 3, hp: 3, art: "/card-art/raw/token-morgott.webp" });
   });
 
   it("Giant Tree's Nature aura is removed when the Tree leaves play", () => {
@@ -681,7 +683,7 @@ describe("2026 card replacements", () => {
     expect(asking.pendingTarget?.kind).toBe("option");
     expect(asking.pendingTarget?.player).toBe(1);
     const manaChoice = choose(asking, 2);
-    expect(manaChoice.players[0].health).toBe(76);
+    expect(manaChoice.players[0].health).toBe(75);
     expect(manaChoice.players[1].manaPenaltyNextTurn).toBe(5);
     expect(manaChoice.players[0].board[2]?.name).toBe("John Wick");
     const nextOwnTurn = endTurn(endTurn(manaChoice, 0), 1);
@@ -689,8 +691,9 @@ describe("2026 card replacements", () => {
     expect(nextOwnTurn.players[1].manaPenaltyNextTurn).toBe(0);
 
     const healthChoice = choose(play(mainState("strange-bargain-health"), 0, "Doctor Strange", 1), 0);
-    expect(healthChoice.players[0].health).toBe(76);
-    expect(healthChoice.players[1].health).toBe(66);
+    expect(healthChoice.players[0].health).toBe(75);
+    // The bargain costs the opponent 10 core, read against the untouched caster.
+    expect(healthChoice.players[1].health).toBe(healthChoice.players[0].health - 10);
 
     const minionChoice = mainState("strange-bargain-minion");
     minionChoice.players[1].board[3] = minion("Zoro", 1);
@@ -1030,7 +1033,7 @@ describe("2026 card replacements", () => {
     expect(tokenKeywords.map(([keyword]) => keyword).sort()).toEqual(
       ["Taunt", "Divine Shield", "Charge", "Chained"].sort(),
     );
-    expect(sins.every((entry) => entry?.atk === 1 && entry?.hp === 1 && entry.art.endsWith("/token-sin.png"))).toBe(true);
+    expect(sins.every((entry) => entry?.atk === 1 && entry?.hp === 1 && entry.art.endsWith("/token-sin.webp"))).toBe(true);
     expect(sins.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
   });
 
@@ -1064,7 +1067,7 @@ describe("2026 card replacements", () => {
     expect(fighters).toHaveLength(2);
     expect(fighters.every((fighter) => fighter.name === "TIE Fighter" && fighter.atk === 1 && fighter.hp === 1)).toBe(true);
     expect(fighters.every((fighter) => fighter.keywords.includes("Charge") && fighter.sleeping === false)).toBe(true);
-    expect(fighters.every((fighter) => fighter.art.endsWith("/token-tie-fighter.png"))).toBe(true);
+    expect(fighters.every((fighter) => fighter.art.endsWith("/token-tie-fighter.webp"))).toBe(true);
   });
 
   it("Planetary Defense Grid buffs every Taunt minion and loses the aura when silenced", () => {
@@ -1300,7 +1303,7 @@ describe("2026 card replacements", () => {
     // Killing Ultron is not the end of him: the wall is replaced by an identical
     // wall, which is the whole reason the body is 6/3 rather than something that
     // survives on its own.
-    expect(after.players[0].board[0]).toMatchObject({ name: "Vision", atk: 6, hp: 3, maxHp: 3, chained: 0 });
+    expect(after.players[0].board[0]).toMatchObject({ name: "Vision", atk: 5, hp: 3, maxHp: 3, chained: 0 });
     expect(after.players[0].board[0]?.keywords).toEqual(["Taunt"]);
     expect(after.players[0].board[0]?.art).toBe("/card-art/raw/token-vision.webp");
     expect(after.players[0].board[0]?.owner).toBe(0);
@@ -1475,13 +1478,14 @@ describe("2026 card replacements", () => {
   it("Flash can attack exactly 2 times for 10 total core damage", () => {
     let state = mainState("flash-two-attacks");
     state.players[0].board[0] = minion("Flash", 0, { sleeping: false });
+    const before = state.players[1].health;
 
     for (let attack = 0; attack < 2; attack += 1) {
       expect(getLegalActions(state, library)).toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
       state = applyAction(state, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
     }
 
-    expect(state.players[1].health).toBe(66);
+    expect(before - state.players[1].health).toBe(10);
     expect(state.players[0].board[0]?.attacksUsed).toBe(2);
     expect(getLegalActions(state, library)).not.toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
   });
@@ -1642,7 +1646,7 @@ describe("2026 card replacements", () => {
       library,
     ).state;
     expect(afterDeath.players[0].board[0]).toMatchObject({ name: "Drakath", atk: 5, hp: 3, maxHp: 3 });
-    expect(afterDeath.players[0].board[0]?.art).toBe("/card-art/raw/token-drakath.png");
+    expect(afterDeath.players[0].board[0]?.art).toBe("/card-art/raw/token-drakath.webp");
   });
 
   it("Big Mom gains exactly the devoured friendly minion's ATK and HP", () => {

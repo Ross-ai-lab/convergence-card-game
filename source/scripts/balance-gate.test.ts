@@ -543,7 +543,7 @@ function snapshot(over: Partial<RunSnapshot> = {}): RunSnapshot {
     games: 1500,
     skill: "normal",
     seedPrefix: "sim",
-    coreHp: 76,
+    coreHp: 75,
     headline: { firstWinPct: 49, medianTurns: 21 },
     cards: [{ id: "c001", name: "Whitebeard", cost: 9, winRate: 55, playRate: 60, sample: 400 }],
     ...over,

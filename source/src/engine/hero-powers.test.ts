@@ -92,7 +92,9 @@ describe("opening Hero Powers", () => {
 
     const bolt = mainState("enemy_core_damage");
     const bolted = usePower(bolt);
-    expect(bolted.players[1].health).toBe(74);
+    // The 2 damage is the claim. The two assertions above set health explicitly
+    // first, so only this one was ever tied to the starting core total.
+    expect(bolt.players[1].health - bolted.players[1].health).toBe(2);
 
     const mend = mainState("core_heal");
     mend.players[0].health = 20;

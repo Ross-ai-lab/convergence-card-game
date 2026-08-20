@@ -8,7 +8,7 @@ c006,Sandworm,2,1,3,Black,Nature,Neutral,Taunt;Passive,small_attack_ward,passive
 c007,Pandora's Actor,2,2,2,Red,Magic,Evil,,copy_minion_effects,onPlay,Battlecry: Choose another minion. Become it. HP and ATK are not copied.,Every role is useful.,Overlord,/card-art/raw/c007.webp
 c008,T-1000,5,3,5,Purple,Tech,Neutral,Ongoing,heal_self_full,ongoing,Ongoing: Fully heal yourself.,It remembers its shape.,Terminator,/card-art/raw/c008.webp
 c009,Time Bomb,6,0,9,Yellow,Tech,Neutral,,time_bomb_destroy_all,ongoing,Ongoing: Destroy ALL minions.,Timer is T-1.,Loki,/card-art/raw/c009.webp
-c010,Avatar Aang,6,2,3,Red,Magic,Good,Deathrattle,avatar_aang_awakened,onPlay,"Battlecry: Restore all friendly minions to full health. Deathrattle: Summon the Awakened (6/3).",The last airbender gathers the table.,Avatar,/card-art/raw/avatar-aang.png
+c010,Avatar Aang,6,2,3,Red,Magic,Good,Deathrattle,avatar_aang_awakened,onPlay,"Battlecry: Restore all friendly minions to full health. Deathrattle: Summon the Awakened (6/3).",The last airbender gathers the table.,Avatar,/card-art/raw/avatar-aang.webp
 c011,Thirteen Lords of Chaos,6,4,2,Purple,Magic,Evil,Deathrattle,deathrattle_summon_drakath,deathrattle,Deathrattle: Summon Drakath (5/3).,Reality picks a side.,AQW,/card-art/raw/c011.webp
 c012,G-Man,7,3,6,Purple,Magic,Neutral,,stasis_enemy,onPlay,Battlecry: Put an enemy minion into stasis - remove it from the board for 2 turns.,"Time, Mr. Freeman.",Half-Life,/card-art/raw/c012.webp
 c013,Doctor Strange,7,3,2,Yellow,Magic,Good,,strange_bargain,onPlay,"Battlecry: Offer a bargain. Your opponent chooses: lose 10 Core HP, lose a random minion, or lose 5 mana next turn.",Magic trumps everything.,MCU,/card-art/raw/c013.webp
@@ -73,7 +73,7 @@ c071,All for One,7,4,5,Yellow,Magic,Evil,,copy_and_trigger,onPlay,Battlecry: Cop
 c072,Aladdin Lamp,7,5,4,Purple,Magic,Neutral,,aladdin_wish,onPlay,Battlecry: Make a wish.,What does thy wish,Aladdin,/card-art/raw/c072.webp
 c073,All Might,7,4,5,Purple,Magic,Good,Passive,all_enemy_atk_down_1,passive,"Passive: While on the board, every enemy minion has -1 ATK.",Number One,MHA,/card-art/raw/c073.webp
 c074,Grand Master Yoda,7,5,5,Purple,Magic,Good,Cannot Attack;Ongoing,yoda_lowest_atk_buff,ongoing,Cannot attack. Ongoing: Your lowest-ATK friendly minion gains +2/+2.,Nine centuries of learning,Star Wars,/card-art/raw/c074.webp
-c075,Ultron Prime,7,6,3,Purple,Tech,Evil,Taunt;Deathrattle,deathrattle_summon_vision,deathrattle,Taunt. Deathrattle: Summon Vision (6/3) with Taunt.,He decided the most efficient protection was elimination,MCU,/card-art/raw/c075.webp
+c075,Ultron Prime,7,5,3,Purple,Tech,Evil,Taunt;Deathrattle,deathrattle_summon_vision,deathrattle,Taunt. Deathrattle: Summon Vision (5/3) with Taunt.,He decided the most efficient protection was elimination,MCU,/card-art/raw/c075.webp
 c076,Godzilla,7,4,5,Black,Nature,Neutral,Passive,godzilla_damage_burst,passive,Passive: Deal 2 damage to all enemies each time you take damage.,Laser breathing,Godzilla,/card-art/raw/c076.webp
 c077,King,7,0,7,Black,Nature,Neutral,Cannot Attack;Passive,king_attack_lock_random,passive,"Cannot attack. Passive: At the start of each enemy turn, a random enemy minion is Attack Locked for that turn.",Luckiest man alive,OPM,/card-art/raw/c077.webp
 c080,Gandalf the White,6,2,2,Yellow,Magic,Good,Divine Shield,shield_all_friendly,onPlay,Divine Shield. Battlecry: Give all friendly Good minions Divine Shield.,An incarnated angel,Lord of the Rings,/card-art/raw/c080.webp
@@ -97,7 +97,7 @@ c097,Elden Beast,6,4,4,Yellow,Magic,Neutral,Passive,elden_beast_neutral_magic_at
 c098,Big Mom,5,3,5,Purple,Magic,Evil,,devour_friendly,onPlay,"Battlecry: Destroy a friendly minion. Gain its ATK and HP, in addition to your own.",Greed,One Piece,/card-art/raw/c098.webp
 c099,Fire Lord Ozai,5,4,3,Purple,Magic,Evil,,aoe_all_2,onPlay,Battlecry: Deal 2 damage to all other minions.,Entitlement,Avatar,/card-art/raw/c099.webp
 c100,Rennala Queen of the Full Moon,5,2,3,Purple,Magic,Neutral,,rebirth_friendly_dead,onPlay,Battlecry: Rebirth a random friendly minion that died this game.,The Moon,Elden Ring,/card-art/raw/c100.webp
-c101,The 7 Heroic Spirits,7,2,2,Purple,Magic,Neutral,,heroic_relics,onPlay,Battlecry: All of your minions gain a random Ascension Relic.,Legends reborn,Fate,/card-art/raw/c101.png
+c101,The 7 Heroic Spirits,7,2,2,Purple,Magic,Neutral,,heroic_relics,onPlay,Battlecry: All of your minions gain a random Ascension Relic.,Legends reborn,Fate,/card-art/raw/c101.webp
 c102,Dragon,5,3,5,Black,Nature,Neutral,Taunt,none,none,Taunt.,ROAR,Myth,/card-art/raw/c102.webp
 c103,Fort,5,4,5,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c103.webp
 c104,GLaDOS,5,2,3,Black,Tech,Evil,Passive;Cannot Attack,glados_adjacent_tech,passive,Cannot attack. Passive: Adjacent friendly Tech minions have Taunt and +2/+2.,The test continues,Portal,/card-art/raw/c104.webp
@@ -172,5 +172,5 @@ c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,ongoing,Ongoing: Draw 1 card.,The s
 c174,Shibukawa,1,1,1,Black,Nature,Neutral,Ongoing,set_attack_highest_enemy,ongoing,Ongoing: Set Shibukawa's ATK equal to the highest ATK enemy minion.,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
 c175,V,1,1,1,Black,Nature,Neutral,Deathrattle,deathrattle_random_evil,deathrattle,"Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core.",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
 c176,Mothership,7,6,6,Black,Tech,Neutral,,none,none,-,A larger craft arrives.,Basic,/card-art/raw/basic-mothership.svg
-c177,Planetary Defense Grid,9,4,8,Black,Tech,Neutral,Taunt;Passive,planetary_defense_grid_taunt_buff,passive,"Taunt. Passive: All Taunt minions have +3/+3.",The shield watches from orbit.,Basic,/card-art/raw/planetary-defense-grid.png
-c178,Black Hole,10,10,5,Black,Magic,Neutral,Deathrattle,black_hole_deathrattle,deathrattle,Deathrattle: Silence then destroy all minions.,Nothing escapes the singularity.,Basic,/card-art/raw/black-hole.png
+c177,Planetary Defense Grid,9,4,8,Black,Tech,Neutral,Taunt;Passive,planetary_defense_grid_taunt_buff,passive,"Taunt. Passive: All Taunt minions have +3/+3.",The shield watches from orbit.,Basic,/card-art/raw/planetary-defense-grid.webp
+c178,Black Hole,10,10,5,Black,Magic,Neutral,Deathrattle,black_hole_deathrattle,deathrattle,Deathrattle: Silence then destroy all minions.,Nothing escapes the singularity.,Basic,/card-art/raw/black-hole.webp

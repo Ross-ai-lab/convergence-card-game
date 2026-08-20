@@ -12,7 +12,7 @@ const relics = parseRelicsCsv(relicsCsv);
 const library = makeCardLibrary(cards, relics);
 
 /** Runs a whole duel and hands back the finished state. */
-function playOut(seed: string, skills: [BotSkill, BotSkill], cap = 200, startingHealth = 76): GameState {
+function playOut(seed: string, skills: [BotSkill, BotSkill], cap = 200, startingHealth = 75): GameState {
   let state = createInitialGame(cards, seed, relics, { startingHealth });
   for (let step = 0; step < cap * 40; step += 1) {
     if (state.phase === "gameOver") break;

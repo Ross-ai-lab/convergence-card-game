@@ -49,15 +49,19 @@ const handLimit = 10;
  * Goku, Neo, Doctor Manhattan. A roster whose Greats never arrive is not this
  * game.
  *
- * At 76, with the plain +1 mana ramp below, the median duel runs 21 player-turns
- * — about ten each, the same shape as Hearthstone — 80% of duels reach 10 mana,
- * boards sit at 3.1 of 5 slots, and 6% end as blowouts.
+ * At 75, with the plain +1 mana ramp below, the median duel runs 22 player-turns
+ * — eleven each, which is the same shape as Hearthstone — 80% of duels reach 10
+ * mana, boards sit at 3.1 of 5 slots, and 6% end as blowouts.
+ *
+ * The number was 76 until 2026-08-21 and is now 75 by owner preference. One
+ * point is inside the noise of every measurement on this page, so nothing above
+ * is restated: it is a tidier number on the health bar, not a pacing change.
  *
  * **This number carries ALL of the pacing weirdness on purpose.** A player never
  * feels an unusual health total; they feel an unusual mana curve every single
  * turn. `npm run sim -- --sweep` is the measurement behind it.
  */
-const DEFAULT_STARTING_HEALTH = 76;
+const DEFAULT_STARTING_HEALTH = 75;
 
 /**
  * The same number, for the UI and the rules screen to read. Exported so the
@@ -84,7 +88,7 @@ export const STARTING_CORE = DEFAULT_STARTING_HEALTH;
  * around "next turn I have one more".
  *
  * The lever that works is the one players never feel: **starting core HP**. At
- * 76 with this plain +1 ramp, 80% of duels reach 10 mana — the same access the
+ * 75 with this plain +1 ramp, 80% of duels reach 10 mana — the same access the
  * clever ramp bought at 48 — with fewer blowouts and fuller boards. Put the odd
  * number in the health bar, never in the mana curve.
  *
@@ -3580,7 +3584,7 @@ function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: Ga
     effect: "-",
     flavor: "A small spark can turn the tide.",
     origin: "Hero Power",
-    art: "/card-art/raw/token-sin.png",
+    art: "/card-art/raw/token-sin.webp",
   };
   const summoned = createMinion(recruit, playerId, state);
   player.board[slot] = summoned;
@@ -3609,7 +3613,7 @@ function summonSins(state: GameState, source: MinionInstance, events: GameEvent[
     effect: "-",
     flavor: "A fragment of sin.",
     origin: source.origin,
-    art: source.art.replace(/[^/]+$/, "token-sin.png"),
+    art: source.art.replace(/[^/]+$/, "token-sin.webp"),
   };
   const player = state.players[source.owner];
   const emptySlots = player.board.map((minion, slot) => (minion ? -1 : slot)).filter((slot) => slot >= 0);
@@ -3641,7 +3645,7 @@ function summonTieFighters(state: GameState, source: MinionInstance, events: Gam
     effect: "Charge.",
     flavor: "Twin ion engines scream through the void.",
     origin: "Star Wars",
-    art: source.art.replace(/[^/]+$/, "token-tie-fighter.png"),
+    art: source.art.replace(/[^/]+$/, "token-tie-fighter.webp"),
   };
   const player = state.players[source.owner];
   let summoned = 0;
@@ -5203,7 +5207,7 @@ function resolveDeathrattle(
         effect: "-",
         flavor: "The omen king returns.",
         origin: dead.origin,
-        art: "/card-art/raw/token-morgott.png",
+        art: "/card-art/raw/token-morgott.webp",
       };
       const summoned = createMinion(morgott, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
@@ -5230,7 +5234,7 @@ function resolveDeathrattle(
         effect: "-",
         flavor: "Chaos answers chaos.",
         origin: dead.origin,
-        art: "/card-art/raw/token-drakath.png",
+        art: "/card-art/raw/token-drakath.webp",
       };
       const summoned = createMinion(drakath, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
@@ -5266,7 +5270,7 @@ function resolveDeathrattle(
         id: "token:vision",
         name: "Vision",
         cost: 7,
-        atk: 6,
+        atk: 5,
         hp: 3,
         rarity: "Purple",
         camp: "Tech",

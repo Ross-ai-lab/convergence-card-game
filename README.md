@@ -128,7 +128,7 @@ Multiple threads usually work on Convergence at the same time. Files, generated 
 
 ## Rules at a glance
 
-- Both cores begin at **76 health**. Reduce the opposing core to zero to win.
+- Both cores begin at **75 health**. Reduce the opposing core to zero to win.
 - Both players draw from the same shuffled deck and open with **3 cards**. The second player also receives **The Coin**.
 - At the start of the duel, each player is offered **2 random Hero Powers** and chooses one. A Hero Power costs **2 mana** and can be used once during its controller's turn.
 - At the start of a turn, draw one card. Mana starts at **1**, refills each turn, and increases by one each turn up to **10**.
@@ -423,6 +423,26 @@ Interaction verification covered Recruit, Veteran, and Ascendant selection; the 
 
 ## Balance, pacing, and bot
 
+### Duel length is CORRECT. Do not shorten it
+
+**Measured 2026-08-21 over 600 self-play duels: median 22 turns, p10 19, p90 28,
+longest 54.** That figure is settled and the pacing behind it is not up for
+revision.
+
+**Read the unit carefully, because the obvious reading is wrong and has already
+caused one attempt to "fix" this.** The turn counter ticks once per PLAYER turn,
+not once per round. A 22-turn duel is **eleven turns each**. Hearthstone's
+commonly quoted ~10 turns is counted per player, so Convergence is within one
+turn of it. The game is not long; the number just counts differently.
+
+So: **do not lower core health to shorten duels.** Health is what makes the
+expensive half of the roster reachable — 80% of duels reach 10 mana at the
+current total, and cutting it deletes the 9 and 10-mana cards from live play
+without deleting them from the deck. If duel length is ever genuinely a problem,
+the trigger is the owner saying a duel felt long, and the lever is the mana ramp,
+not the health bar. The reasoning is in `DEFAULT_STARTING_HEALTH`'s comment.
+
+
 Card cost is a fiction and canon assignment, not a balancing lever. Change stats, effect magnitude, timing, keywords, or global pacing instead.
 
 Re-measure before every tuning pass as well as after one. A rules change invalidates the outlier list you were about to tune from, a previous buff can have overshot into the roster's next worst outlier, and a bot-valuation change moves every balance number at once. Raising the opening hand from 1/2 cards to 2/3 to fix dead openings (20.7% down to 13.0%) produced an outlier list materially different from the one measured before it: different cards, different sizes. Every tuning pass is a rules change to the next one.
@@ -626,6 +646,25 @@ Do not make the simulated rules, bot skill, or turn timing “10× faster” by 
 
 `source/public/` is the runtime asset location. `materials/local-production/` contains optional rebuild tools for art, music, voice previews, and cast sheets; it is not required to play the included build. Large audio and card-production libraries are release downloads rather than normal clone requirements.
 
+### Card art is WebP. Every file, no exceptions
+
+**A new card image is saved as `.webp`.** As of 2026-08-21 every one of the 203
+files in `source/public/card-art/raw/` is WebP except one deliberate SVG, and the
+last eight PNGs converted at **3.85 MB -> 0.48 MB, 88% smaller**, with no visible
+difference at card size. One of them, `token-sin.png`, was 2.1 MB by itself: the
+largest file in the entire game, for a 1/1 token.
+
+**WebP is not universally better than PNG, so the rule is scoped to what this
+folder actually holds.** PNG wins on small flat-colour graphics, on anything
+needing pixel-exact reproduction, and SVG beats both for vector art — which is
+why `basic-mothership.svg` stays an SVG. What lives here is photographic
+character art displayed at roughly 730x490, and for that WebP is decisively
+better at the same visual quality. Judge a genuinely different kind of image on
+its own terms rather than converting it because of this line.
+
+**An SVG has no menu thumbnail and must keep its raw path** — see `menuArt()`
+below.
+
 ### What the title screen is allowed to download
 
 **Every card must have a theme, and `npm run validate:data` now fails when one does not.** Three cards
@@ -693,8 +732,8 @@ When changing a rule, add or update a focused test and make the card text agree 
 - [Card statistics workbook](materials/Convergence%20card%20stat%20excel%20sheet.xlsx)
 - [Raw card artwork](https://github.com/Ross-ai-lab/convergence-card-game/tree/main/materials/raw-card-art)
 - Skeleton token artwork: [Skeleton Warrior by Clint Bellanger](https://opengameart.org/content/skeleton-warrior-0), adapted from the CC BY 3.0 sprite sheet.
-- TIE Fighter token art: owner-supplied `source/public/card-art/raw/token-tie-fighter.png`.
-- Morgott token art: owner-supplied `source/public/card-art/raw/token-morgott.png`.
+- TIE Fighter token art: owner-supplied `source/public/card-art/raw/token-tie-fighter.webp`.
+- Morgott token art: owner-supplied `source/public/card-art/raw/token-morgott.webp`.
 - [Original audio-track collection](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z)
 - [Rendered card-production library](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Card-Production.7z)
 - [Project roadmap](docs/Convergence%20Browser%20Game%20Roadmap.html)

@@ -86,10 +86,6 @@ const TRACK_URL: Record<Track | Sting, string[]> = {
   victory: [`${import.meta.env.BASE_URL}audio/music/victory.ogg`],
   defeat: [`${import.meta.env.BASE_URL}audio/music/defeat.ogg`],
 };
-// The pre-existing bed, kept as the fallback so a missing generated track means
-// quieter, never silent.
-const FALLBACK_URLS = [`${import.meta.env.BASE_URL}audio/lofi-loop.ogg`, `${import.meta.env.BASE_URL}audio/lofi-loop.wav`];
-
 /**
  * Two faders. The per-card voice lines were retired -- summoning a minion fired
  * a rarity fanfare, a spoken line AND the card's music theme, and three at once
@@ -706,8 +702,12 @@ export async function setTrack(track: Track | null): Promise<void> {
       currentTrack = null;
       return;
     }
-    let buffer = await fetchTrack(TRACK_URL[track], true);
-    if (!buffer) buffer = await fetchTrack(FALLBACK_URLS, true);
+    // No fallback bed any more. There used to be a generic loop standing behind
+    // every track so a missing file meant quieter rather than silent, and it was
+    // 244 kB shipped to every player to insure against a failure that cannot
+    // happen: all five beds are committed, and `fetchTrack` already returns null
+    // safely, so a genuinely missing one is silence rather than a broken screen.
+    const buffer = await fetchTrack(TRACK_URL[track], true);
     if (!buffer || muted || !ctx || !musicGain) return;
     // Superseded while decoding.
     if (wantedTrack !== track) return;
