@@ -5039,3 +5039,11 @@ button:disabled {
   color: rgba(246, 236, 216, 0.5);
   font-size: 0.84rem;
 }
+
+/* Development-only cheat toggle (see App.tsx). Absent from the built bundle. */
+.cheat-toggle.active,
+.cheat-toggle.active:hover:not(:disabled) {
+  color: #10221f;
+  border-color: rgba(67, 205, 189, 0.92);
+  background: linear-gradient(180deg, #9bf1df, var(--teal));
+}

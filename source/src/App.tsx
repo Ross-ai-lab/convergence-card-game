@@ -1196,6 +1196,29 @@ export default function App() {
     setEvents((items) => [...items, { kind: "info" as const, text: "Last local action undone." }].slice(-80));
   }
 
+  /**
+   * Infinite mana. DEVELOPMENT ONLY — see the button below for why it survives.
+   */
+  function toggleCheatMode() {
+    sfx.play("button");
+    // Read the switch from the live state inside the updater. The settings
+    // overlay can stay mounted across game changes, so closing over `game`
+    // could toggle from an older render and show ON without changing the
+    // current duel's affordability rules.
+    const enabled = !game.cheatMode;
+    setGame((current) => ({ ...current, cheatMode: !current.cheatMode }));
+    setSelection(null);
+    setEvents((items) =>
+      [
+        ...items,
+        {
+          kind: "info" as const,
+          text: enabled ? "Cheat mode enabled. Mana is infinite." : "Cheat mode disabled. Mana costs restored.",
+        },
+      ].slice(-80),
+    );
+  }
+
   function previewCard(card: PlayableCard, el: HTMLElement, owner?: PlayerId) {
     if (drag?.active) return;
     sfx.hoverTick();
@@ -1632,6 +1655,24 @@ export default function App() {
           >
             ⚙ Settings
           </button>
+          {/* DEVELOPMENT ONLY, and it must stay that way. The owner asked for this
+              button to be gone while playing, and `import.meta.env.DEV` is false
+              in the built bundle, so the published game has no cheat control at
+              all. It is not dead code: `scripts/check-ui.mjs` clicks it to buy
+              itself infinite mana before playing cards, which is how the UI
+              checks reach a board state worth asserting on. Deleting it outright
+              broke that suite, which is how this comment came to be here. */}
+          {import.meta.env.DEV ? (
+            <button
+              type="button"
+              className={game.cheatMode ? "cheat-toggle active" : "cheat-toggle"}
+              aria-pressed={game.cheatMode}
+              onClick={toggleCheatMode}
+              title={game.cheatMode ? "Infinite mana is on. Click to turn it off." : "Enable infinite mana"}
+            >
+              {game.cheatMode ? "⚡ Cheat On" : "⚡ Cheat Off"}
+            </button>
+          ) : null}
           {/* The Coin exists for about one turn per duel. A button that is greyed
               out for the other twenty teaches nothing and takes up a slot. */}
           {coinAction ? (
