@@ -511,6 +511,10 @@ Two deterministic cost cuts keep the beam affordable: `DEEP_LINES` limits how ma
 
 Measured 2026-08-18 on a confirmed-idle machine, 56 Ascendant turns across five duels:
 
+These figures were taken while the budget was 8 seconds, so the last column counts against 8 and not
+against the current 10. They are left as measured rather than recomputed, because a measurement edited
+to match a later decision is no longer a measurement.
+
 | Dials | Median turn | p90 | Worst | Over 8 s |
 |---|---|---|---|---|
 | deep 4, branch 3, budget 110 | 3.81 s | 9.01 s | 14.10 s | 11% |
