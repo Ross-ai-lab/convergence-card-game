@@ -228,6 +228,7 @@ The board communicates conditions visually: a wall means Taunt, a gold rim means
 - `docs/Convergence Browser Game Roadmap.html` is useful for design direction and browsing, but its embedded roster can lag behind the live CSV.
 - `materials/local-production/` contains optional rebuild tools and source libraries. It is not required to play the included build.
 - `counter/` is the small aggregate player-count service used by the public landing page.
+- `source/scripts/` holds the tooling. `simulate.ts` is the balance harness: self-play, fuzzing, the dial sweep, and the difficulty ladder. `balance-gate.ts` and `balance-gate.test.ts` hold the pure pass, fail, and skip logic, with one planted failure per check. `ladder-compare.ts` is the paired ladder comparison. `source/balance.config.json` carries every threshold with the reasoning for it written alongside. The `apply-balance-pass*.mjs` files record each past pass with the measured number behind every change.
 
 The maintained game is React and TypeScript with a deterministic rules engine, DOM-rendered full card faces, Ascension Relics, persistent local saves, and a practice bot.
 
@@ -271,6 +272,10 @@ The rules:
 - **No shouting.** `all other minions`, not `ALL other minions`.
 - **Every effect ends as a sentence**, with a full stop.
 - **Effect ids spell magnitudes as digits and must match the printed number.** `validate-cards.mjs` fails the build when a digit in the id is missing from the text, so renaming the id is part of changing a magnitude, not an afterthought.
+
+Two more rules about the detector itself. **Report a duplicate as a warning, never as a build failure**: two cards legitimately sharing a mechanic is a design judgement, and a gate that cannot tell "borrowed as filler" from "genuinely describes both subjects" will simply get muted. And **near-duplicate scoring by word overlap is worth running once by hand and not automating**, because it flags "freeze all enemies" against "freeze an enemy" as identical, and that difference is the whole card.
+
+**Two cards with the same effect keep two separate code branches.** Collapsing duplicate branches into one shared effect looks like tidying and is not: it welds the two cards together, so the next balance pass aimed at one silently retunes the other, and their measured histories stop being separable. Keep the branches apart and name each one after its card.
 
 ### Every game change must be published to GitHub in the same session
 
@@ -394,9 +399,41 @@ Interaction verification covered Recruit, Veteran, and Ascendant selection; the 
 
 Card cost is a fiction and canon assignment, not a balancing lever. Change stats, effect magnitude, timing, keywords, or global pacing instead.
 
-Judge each card against its own cost tier, not against the whole-roster average. Separate play rate from win rate, and treat effects the bot cannot value as unmeasured. Re-measure after every balance or pacing pass: a previous buff can become the next pass’s worst outlier, and a bot-valuation change can move every balance number.
+Re-measure before every tuning pass as well as after one. A rules change invalidates the outlier list you were about to tune from, a previous buff can have overshot into the roster's next worst outlier, and a bot-valuation change moves every balance number at once. Raising the opening hand from 1/2 cards to 2/3 to fix dead openings (20.7% down to 13.0%) produced an outlier list materially different from the one measured before it: different cards, different sizes. Every tuning pass is a rules change to the next one.
 
-Balance checks must report inadequate samples, unset thresholds, disabled checks, and missing results as a skip or failure, never as a silent pass.
+Balance checks must report inadequate samples, unset thresholds, disabled checks, and missing results as a skip or failure, never as a silent pass. A verdict line has to read `PASS WITH 4 SKIPPED` rather than `PASS`, because a summary that folds skips into passes is a false coverage report, which is worse than no check at all.
+
+The card-level numbers quoted in the four subsections below were measured on 2026-07-30, on the 175-card roster at 76 starting core, over 1500 bot-versus-bot duels. Re-measure before quoting any of them again. Ladder and turn-time numbers carry their own dates in their own sections.
+
+### Choosing a pacing lever
+
+**When a pacing problem has two levers, take the one the player never feels.** A resource curve is felt every single turn; a core-health total is felt once, at a glance, and then never thought about again. Convergence needed its expensive half of the roster to become reachable, and the clever fix — accelerating the mana ramp to 1.35 per turn — produced the sequence 1, 2, 4, 5, 6, 8, 9, 10, silently skipping 3 and 7. Every card costed at 3 or 7 then had no turn where it was on curve: two whole cost tiers deleted, invisibly. Raising starting core health from 48 to 76 with a plain +1 ramp bought the same access (80% of duels reaching maximum mana against 82%) with fewer blowouts and fuller boards. No major card game skips resource values, because players build a per-turn rhythm on it.
+
+**Sweep dials in a grid and read the table; do not reason about them.** The first instinct here, "raise health so matches last longer", was measured and found nearly useless on its own: 30 to 52 core health moved the median only from 15 to 18 turns, because bigger boards deal more damage in step with the extra health. The grid is what made the real answer obvious.
+
+**A pacing change is never balance-neutral.** Any Ongoing effect is worth turns alive times effect magnitude, so stretching the median duel by a third makes every one of them roughly a third stronger. The first tuning pass held for 20 of 24 cards across a pacing change, and the four that broke loose were all per-turn engines.
+
+### Reading the measured numbers
+
+- **Judge a card inside its own cost tier, never against the roster average.** Cheap cards get played more often, so a flat comparison reads "cheap" as "overpowered" and points the whole pass backwards. Score each card as a z-score within its mana tier.
+- **Play rate and win rate answer different questions.** A card drawn 327 times and played twice is invisible to win rate, and it is the more serious defect.
+- **Anything the bot cannot value is unmeasured, not balanced.** `scoreState` adds a bonus for an Ongoing minion and has no term at all for a Passive effect; its only card-flow term is hand length, so a draw engine is worth nothing to it and a targeted discard scores the same as a random one. Seven of nineteen outliers in one pass were the bot's blindness rather than the card's power. Two usable consequences: a card the bot under-values that is winning anyway is stronger than measured and safe to nerf, and a card whose whole effect is invisible to the bot cannot be tuned from these numbers at all. Write that caveat next to the number, not in your head.
+- **A high play rate with a low win rate means the card is being used and failing**, which is precisely when the body is the wrong lever. A 2-cost minion measured at 34% was buffed from 1/2 to 1/5 and came back at 33.6%, unmoved: its keyword made it unable to attack and it had no Taunt, so nothing obliged the enemy to attack it either. Its ATK was decoration and its HP defended nothing. Read the keyword's implementation, not its flavour, before changing a number.
+- **Count every outcome you exclude.** A draw is not a win, not a loss, not a stall and not a soft-lock, so it drops out of the coin-flip, ladder, and snowball denominators at once. The game could start ending in draws half the time and every published rate would still look normal, just measured on a smaller sample nobody mentioned. Give each exclusion its own counter and its own threshold, and print the excluded count beside the rate it shrank.
+- **Ask "who is ahead" with more than one number before building a snowball metric on it.** The turn-5 health leader wins only 58%, because the player on more health that early is often simply the one who has not committed to an attack yet. Board strength alone gives 56%. The player ahead on both at once gives 59.5%, which is also what a human would call being ahead.
+
+### Gating on the game, not on the harness
+
+- **Pair self-play with a fuzzer over random legal actions, asserting invariants after every action**: no crash, no NaN or negative stat, no duplicate instance, no unserialisable save, and above all no state where the duel is unfinished but offers zero legal moves. That last one is the soft-lock class a human playtest takes dozens of hours to stumble into.
+- **Split every metric by driver.** A fuzzer driving both seats with random legal moves will miss a turn cap honestly; that is the random driver's property, not a defect in the game. The gate went red on its first real run for exactly this: bot play stalled 0 times in 1500 duels while the fuzzer stalled once. Gate the bot-play number and print the fuzzer's beside it, ungated. Soft-locks are the opposite case and stay summed, because a legal-action dead end found under random play is a real dead end.
+- **Size each comparison's sample by its own margin, not uniformly.** Cost and need are usually inverted. The two ladder matchups involving the Ascendant cost roughly eight times as much per duel and had 20-point margins needing about 80 duels; the cheap matchup had a 9-point margin and needed 200. A flat 200 across all three took 16 minutes and bought nothing over the 7 that per-matchup sizing takes. Work out the false-red probability per comparison, `z = (floor - measured) / se`, and spend duels where that number is uncomfortable.
+- **A per-card before-and-after diff is mostly noise unless the noise floor is printed beside every number.** A card played in about 130 duels carries roughly 4.4 points of shuffle noise on its win rate, and the difference between two runs carries about 6, so "this card is down 8 since the nerf" is barely a signal and a table of 112 such rows is a machine for chasing ghosts. Compute each delta's own standard error, list only what exceeds it, and count the rest as noise rather than showing it. Replay the same seed list before and after, and refuse to compare runs whose size, seeds, skill, or dials differ at all. Buffing one card from 1/1 to 9/9 proved the method: the diff named that card at +36.8 against a 13.1 floor and correctly dismissed 111 other cards that had moved by less. The same pairing argument in its stronger form is in [Comparing two ladder runs](#comparing-two-ladder-runs).
+
+### Fixing a bot-valuation blind spot
+
+**Price a deterrent on the attacker, never on the defender.** A minion whose text punishes whoever attacks it — a permanent disarm, a freeze, a damage reflection, a forced discard — does not become harder to kill; it makes killing it expensive, and that expense already lands on the attacker where the evaluation can see it. Adding a matching bonus to the defender's own value looks like the bot finally respecting the card and does the opposite, because a more valuable enemy is a more attractive target, so the bot walks into it harder. A permanent-disarm minion was scored at +3.5 here and the premium almost exactly cancelled the attacker's own penalty. Fix the consequence instead: the disarm is irreversible, so it must cancel the attacker's whole ATK term rather than shave half of it. Model a threat once, on the side that actually pays it.
+
+**When you fix a blind spot, plant the old evaluation back and watch the new tests fail.** Two of the three "proofs" written for that change turned out to be decoration. In one, the bot correctly ignored both options because it attacked the core instead; in another, the forced move was never a choice at all, because the trap minion had Taunt. Both looked like passes until the old scoring was restored. Every discriminating test needs the alternative to be genuinely available and genuinely attractive: block the core, give both candidates the same body, and change exactly one property.
 
 ### The cheat ladder
 
@@ -561,8 +598,7 @@ When changing a rule, add or update a focused test and make the card text agree 
 - Assert every printed number exactly. Do not settle for “damage happened,” “the list is non-empty,” or “the stat changed”; assert the exact damage, stat, multiplier, event text, and affected targets, and update the expected number whenever the card changes.
 - Re-read test assumptions whenever card text, engine timing, or helper setup changes. Reset counters, advance turns explicitly, and assert the expiration boundary so an unrelated once-per-turn limit or stale turn counter cannot make a test pass without checking its intended rule.
 - When replacing a card effect, treat it as a full definition replacement: remove every obsolete keyword and every obsolete keyword sentence from the CSV row unless the new effect explicitly retains that rule. Before calling the change finished, compare the new keywords, timing, and printed text with the requested effect so stale Taunt, Divine Shield, Chained, Passive, or similar rules cannot survive by accident.
-- Re-measure a balance pass before making its next adjustment. A successful buff can overshoot into the roster’s next outlier.
-- Tune the lever that controls the behaviour. Health does not fix a card whose targeting, keyword, or bot valuation is the real issue.
+- Balance and pacing lessons live in [Balance, pacing, and bot](#balance-pacing-and-bot) with the measurements behind them: re-measure before a pass as well as after, tune the lever that actually controls the behaviour, and treat anything the bot cannot value as unmeasured.
 - Card text needs real font measurement. A fixed maximum can make short text needlessly tiny while still failing long text.
 - Board cards must communicate their full rules without hover-only discovery.
 - UI tests must assert setup state, not merely click a control and continue. A swallowed click can leave the test green while it tests the wrong game state.

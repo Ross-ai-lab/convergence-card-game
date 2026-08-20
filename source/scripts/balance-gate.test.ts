@@ -444,7 +444,7 @@ describe("per-tier outliers", () => {
   it("judges a card against its own cost tier, never the roster average", () => {
     // The trap this exists to avoid: cheap cards win less overall, so a flat
     // comparison would name every cost-1 card as weak and every cost-9 card as
-    // strong, and point the whole balance pass backwards (game-balance.md R-gb-04).
+    // strong, and point the whole balance pass backwards (README, Reading the measured numbers).
     const rows: CardRow[] = [
       ...Array.from({ length: 6 }, (_unused, index) => card({ id: `cheap${index}`, cost: 1, winRate: 40 })),
       ...Array.from({ length: 6 }, (_unused, index) => card({ id: `dear${index}`, cost: 9, winRate: 60 })),

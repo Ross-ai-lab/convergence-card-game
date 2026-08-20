@@ -41,7 +41,7 @@
       "$comment": [
         "Median duel length in player-turns (about half that many turns each).",
         "The shipped game measures 21. Outside this band the pacing has moved and every",
-        "per-turn effect in the game changed value with it (game-balance.md R-gb-03)."
+        "per-turn effect in the game changed value with it (README, Choosing a pacing lever)."
       ],
       "enabled": true,
       "minMedianTurns": 18,
@@ -167,7 +167,7 @@
       "  where the interesting cards actually sit (owner ruling — the 1% gate was dropped for this).",
       "tierOutlier*: a card is only named as an outlier when it is BOTH beyond this many standard",
       "  errors from its own cost tier's mean AND at least this many points away from it. Judging",
-      "  against the tier, never the roster average (game-balance.md R-gb-04).",
+      "  against the tier, never the roster average (README, Reading the measured numbers).",
       "diffNoiseMultiple: a before/after card delta is marked 'noise' unless it exceeds this many",
       "  standard errors of the difference. At default sample sizes that floor is around 12 points,",
       "  which is the honest resolution of a per-card diff."
