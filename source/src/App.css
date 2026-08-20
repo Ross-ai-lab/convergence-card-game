@@ -177,13 +177,6 @@ button:disabled {
   font-size: 0.78rem;
 }
 
-.cheat-toggle.active,
-.cheat-toggle.active:hover:not(:disabled) {
-  color: #10221f;
-  border-color: rgba(67, 205, 189, 0.92);
-  background: linear-gradient(180deg, #9bf1df, var(--teal));
-}
-
 .sound-toggle.muted {
   color: var(--muted);
   border-color: rgba(255, 241, 207, 0.18);
@@ -4849,6 +4842,16 @@ button:disabled {
 .gallery-cell {
   aspect-ratio: 750 / 1050;
   min-width: 0;
+  /* Every card in the game is mounted here at once, and a card face is not
+     cheap: it is its own size container, with gradients, inset shadows, rails
+     and gem artwork. Laying out and painting the ~180 of them nobody is looking
+     at was the whole cost of opening this screen and of scrolling it.
+     `content-visibility: auto` lets the browser skip both for off-screen cells
+     and do the work as they come into view. The cell keeps its box while
+     skipped, because `aspect-ratio` above belongs to the CELL and is not
+     contained away with its contents — so nothing jumps and the scrollbar is
+     honest from the first frame. */
+  content-visibility: auto;
 }
 
 .gallery-cell .card-face {
@@ -4873,4 +4876,166 @@ button:disabled {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 14px;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Collection marks in the gallery.
+
+   A ring on the CELL, never a badge on the card. Every corner of the card face
+   is already spoken for — mana top right, ATK and HP along the bottom, the name
+   banner across the top — so a corner dot lands squarely on a real number. It
+   did, and it was invisible. The card's own note says the artwork does the
+   talking; a ring outside the frame keeps that true and still reads at a glance
+   down a grid of 196.
+
+   Unseen is the loud state on purpose. It is dimmed rather than marked, so the
+   screen answers "how much of this have I actually met" from across the room,
+   and the cards you HAVE met gain nothing they have to carry.
+   --------------------------------------------------------------------------- */
+.gallery-cell {
+  position: relative;
+  border-radius: 12px;
+}
+
+.gallery-cell.mark-unseen .card-face {
+  filter: grayscale(0.9) brightness(0.5);
+  opacity: 0.7;
+  transition: filter 160ms ease, opacity 160ms ease;
+}
+
+.gallery-cell.mark-unseen:hover .card-face {
+  filter: grayscale(0.15) brightness(0.9);
+  opacity: 1;
+}
+
+.gallery-cell.mark-played {
+  box-shadow: 0 0 0 2px rgba(67, 205, 189, 0.85);
+}
+
+.gallery-cell.mark-won {
+  box-shadow: 0 0 0 2px rgba(224, 169, 58, 0.95), 0 0 16px rgba(224, 169, 58, 0.4);
+}
+
+/* ---------------------------------------------------------------------------
+   The record panel.
+   --------------------------------------------------------------------------- */
+.record-body {
+  overflow-y: auto;
+}
+
+.record-headline {
+  display: flex;
+  gap: 26px;
+  flex-wrap: wrap;
+  padding: 4px 0 18px;
+}
+
+.record-figure {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.record-figure b {
+  font-family: "Baloo 2", cursive;
+  font-size: 2.1rem;
+  color: var(--gold, #e0a93a);
+}
+
+.record-figure span {
+  font-size: 0.82rem;
+  color: rgba(246, 236, 216, 0.62);
+}
+
+.record-heading {
+  margin: 18px 0 8px;
+  font-size: 0.86rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(246, 236, 216, 0.58);
+}
+
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.record-table th,
+.record-table td {
+  padding: 7px 10px;
+  text-align: right;
+  border-bottom: 1px solid rgba(246, 236, 216, 0.1);
+}
+
+.record-table thead th {
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(246, 236, 216, 0.5);
+}
+
+.record-table th[scope="row"],
+.record-table thead th:first-child {
+  text-align: left;
+  color: rgba(246, 236, 216, 0.92);
+}
+
+.record-collection {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.75;
+  color: rgba(246, 236, 216, 0.82);
+}
+
+.record-collection b {
+  color: var(--gold, #e0a93a);
+  font-size: 1.05rem;
+}
+
+.record-note {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: rgba(246, 236, 216, 0.55);
+}
+
+.record-recent {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record-result {
+  display: grid;
+  grid-template-columns: 62px 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(246, 236, 216, 0.1);
+  font-size: 0.92rem;
+}
+
+.record-outcome {
+  font-weight: 700;
+}
+
+.record-result.is-won .record-outcome {
+  color: #7fe0a4;
+}
+
+.record-result.is-lost .record-outcome {
+  color: #e08a8a;
+}
+
+.record-result.is-drawn .record-outcome {
+  color: rgba(246, 236, 216, 0.65);
+}
+
+.record-versus {
+  color: rgba(246, 236, 216, 0.82);
+}
+
+.record-turns {
+  color: rgba(246, 236, 216, 0.5);
+  font-size: 0.84rem;
 }

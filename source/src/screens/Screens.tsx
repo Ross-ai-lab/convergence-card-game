@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   Cards,
   Crown,
+  Scroll,
   GearSix,
   Lightning,
   MusicNotes,
@@ -33,6 +34,14 @@ import {
 import "./Screens.css";
 import { sfx, type Bus, type Mix } from "../audio/sfx";
 import { cards } from "../data/cards";
+import {
+  LADDER_KEYS,
+  LADDER_LABEL,
+  totals,
+  winPct,
+  type LadderKey,
+  type Progress,
+} from "../progress";
 import type { BotSkill } from "../engine/bot";
 
 export type GameMode = { kind: "hotseat" } | { kind: "bot"; skill: BotSkill };
@@ -159,17 +168,22 @@ function Overlay({
 export function TitleScreen({
   canContinue,
   playerCount,
+  duelsPlayed,
   onContinue,
   onStart,
   onSettings,
   onGallery,
+  onRecord,
 }: {
   canContinue: boolean;
   playerCount: number | null;
+  /** Total duels finished on this device. Hides the Record door until there is one. */
+  duelsPlayed: number;
   onContinue: () => void;
   onStart: (mode: GameMode) => void;
   onSettings: () => void;
   onGallery: () => void;
+  onRecord: () => void;
 }) {
   const [skill, setSkill] = useState<BotSkill>("normal");
   const skillIcon = {
@@ -244,6 +258,14 @@ export function TitleScreen({
             <Cards size={22} weight="fill" aria-hidden="true" />
             <span>Cards</span>
           </button>
+          {/* No duels yet means an empty table and a promise of nothing, so the
+              door only appears once there is something behind it. */}
+          {duelsPlayed > 0 ? (
+            <button type="button" className="gallery-trigger" onClick={onRecord}>
+              <Scroll size={22} weight="fill" aria-hidden="true" />
+              <span>Record</span>
+            </button>
+          ) : null}
           <button type="button" className="settings-trigger" onClick={onSettings}>
             <GearSix size={22} weight="fill" aria-hidden="true" />
             <span>Settings</span>
@@ -254,6 +276,123 @@ export function TitleScreen({
           <p className="title-player-count"><b>{playerCount.toLocaleString()}</b> played this game</p>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/**
+ * What has survived every duel so far: the results, and how much of the roster
+ * you have actually met.
+ *
+ * The collection is counted three ways on purpose, because they are three
+ * different facts and only the first is close to automatic. SEEN is "this card
+ * has been in my hand". PLAYED is "I have put it on the board". WON WITH is "it
+ * was on the board in a duel I won". With one shared deck and no deckbuilding, a
+ * match shows roughly 25 to 30 of 196 cards, so seeing the whole roster is a real
+ * long game rather than a formality.
+ */
+export function RecordScreen({ progress, onClose }: { progress: Progress; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const overall = totals(progress);
+  const overallPct = winPct(overall);
+  const rosterSize = cards.length;
+  const played = LADDER_KEYS.filter((key) => progress.ladders[key].played > 0);
+
+  return (
+    <div className="screen-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="screen-panel wide" role="dialog" aria-label="Your record">
+        <header className="screen-panel-top">
+          <h2>Your record</h2>
+          <button type="button" className="screen-x" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </header>
+        <div className="screen-panel-body record-body">
+          <div className="record-headline">
+            <div className="record-figure">
+              <b>{overall.played}</b>
+              <span>{overall.played === 1 ? "duel" : "duels"}</span>
+            </div>
+            <div className="record-figure">
+              <b>{overall.won}</b>
+              <span>won</span>
+            </div>
+            <div className="record-figure">
+              <b>{overallPct === null ? "—" : `${overallPct}%`}</b>
+              <span>win rate</span>
+            </div>
+          </div>
+
+          <h3 className="record-heading">By opponent</h3>
+          <table className="record-table">
+            <thead>
+              <tr>
+                <th scope="col">Opponent</th>
+                <th scope="col">Played</th>
+                <th scope="col">Won</th>
+                <th scope="col">Lost</th>
+                <th scope="col">Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {played.map((key: LadderKey) => {
+                const record = progress.ladders[key];
+                const pct = winPct(record);
+                return (
+                  <tr key={key}>
+                    <th scope="row">{LADDER_LABEL[key]}</th>
+                    <td>{record.played}</td>
+                    <td>{record.won}</td>
+                    <td>{record.lost}</td>
+                    <td>{pct === null ? "—" : `${pct}%`}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          <h3 className="record-heading">Your collection</h3>
+          <ul className="record-collection">
+            <li>
+              <b>{progress.seen.length}</b> of {rosterSize} cards have been in your hand
+            </li>
+            <li>
+              <b>{progress.played.length}</b> you have put on the board
+            </li>
+            <li>
+              <b>{progress.wonWith.length}</b> were on the board when you won
+            </li>
+          </ul>
+          <p className="record-note">
+            Marked on every card in the gallery. One duel deals you roughly 25 to 30 of them, so the whole
+            roster takes a while.
+          </p>
+
+          {progress.recent.length ? (
+            <>
+              <h3 className="record-heading">Last {progress.recent.length === 1 ? "duel" : `${progress.recent.length} duels`}</h3>
+              <ol className="record-recent">
+                {progress.recent.map((entry, index) => (
+                  <li key={`${entry.at}-${index}`} className={`record-result is-${entry.outcome}`}>
+                    <span className="record-outcome">
+                      {entry.outcome === "won" ? "Won" : entry.outcome === "lost" ? "Lost" : "Draw"}
+                    </span>
+                    <span className="record-versus">{LADDER_LABEL[entry.ladder]}</span>
+                    <span className="record-turns">{entry.turns} turns</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          ) : null}
+        </div>
+      </section>
     </div>
   );
 }

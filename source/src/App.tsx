@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import "./App.css";
 // Board effects (camp signatures, the Mythic entrance, the killing blow). Loaded
 // HERE, immediately after App.css, on purpose: that is the exact cascade slot
@@ -37,6 +37,7 @@ import type {
   SlotAuraId,
 } from "./engine/types";
 import { clearSave, loadGame, saveGame } from "./storage";
+import { finishDuel, loadProgress, saveProgress, totals, type Progress } from "./progress";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
@@ -48,6 +49,7 @@ import {
   TitleScreen,
   type DuelIntroPhase,
   type GameMode,
+  RecordScreen,
 } from "./screens/Screens";
 
 type Selection =
@@ -355,7 +357,22 @@ export default function App() {
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record">(null);
+  /**
+   * The only thing in this game that outlives a duel. Held in state so the title
+   * screen and the gallery re-render the moment a duel is folded in, and written
+   * straight through to localStorage whenever it changes.
+   */
+  const [progress, setProgress] = useState<Progress>(() => loadProgress());
+  const totalDuels = useMemo(() => totals(progress).played, [progress]);
+  /**
+   * What THIS duel has shown the viewer, as a ref rather than state: it changes
+   * several times a turn, nothing renders from it until the duel ends, and making
+   * it state would re-render the whole board on every draw for no visible reason.
+   */
+  const duelCards = useRef<{ seen: Set<string>; played: Set<string> }>({ seen: new Set(), played: new Set() });
+  /** One duel folds into the record once, however many times game over renders. */
+  const duelRecorded = useRef(false);
   /**
    * Hotseat only: who the screen is currently cleared for. The curtain drops
    * whenever the turn passes to the other player, and stays down until they say
@@ -463,6 +480,7 @@ export default function App() {
   // slot is cleared instead of holding a game-over screen forever.
   useEffect(() => {
     if (game.phase === "gameOver") clearSave();
+
     else saveGame(game, events, mode, Date.now());
   }, [game, events, mode]);
 
@@ -517,6 +535,16 @@ export default function App() {
   // exactly as long as the privacy curtain is up, and during that gap nothing on
   // the incoming player's side may render or be clickable.
   const viewerId: PlayerId = vsBot ? 0 : seatedPlayer;
+
+  // A card counts as SEEN once it has been in your hand. Watching the hand
+  // rather than the draw event means a card that arrives by Discover, by theft,
+  // by a Battlecry or by any future route is counted the same way, with nothing
+  // to keep in sync. In hotseat both seats are the player, so both count.
+  useEffect(() => {
+    const ledger = duelCards.current;
+    const hands = vsBot ? [game.players[0].hand] : [game.players[0].hand, game.players[1].hand];
+    for (const hand of hands) for (const cardId of hand) ledger.seen.add(cardId);
+  }, [game, vsBot]);
   const seatOwner = game.phase === "heroPowerChoice" && game.heroPowerChoicePlayer !== null
     ? game.heroPowerChoicePlayer
     : game.activePlayer;
@@ -1029,6 +1057,15 @@ export default function App() {
       action.type === "choose_target" && game.pendingTarget?.effectId === "strange_bargain"
         ? game.pendingTarget.labelOptions[action.choiceIndex]?.label
         : undefined;
+    // Read the played card off the state the player acted ON: once the action
+    // is applied the card has left the hand and the index means something else.
+    if (
+      (action.type === "play_card" || action.type === "play_relic") &&
+      (!vsBot || action.player === viewerId)
+    ) {
+      const playedId = game.players[action.player].hand[action.handIndex];
+      if (playedId) duelCards.current.played.add(playedId);
+    }
     const result = applyAction(game, action, library);
     if (result.state !== game) {
       spawnFx(game, result.state, action, result.events);
@@ -1057,11 +1094,33 @@ export default function App() {
     setEvents((items) => [...items, ...result.events].slice(-80));
   }
 
+  /**
+   * Folds the finished duel into the permanent record, exactly once.
+   *
+   * It runs from an effect rather than from the action handler because a duel
+   * can also end on the BOT's move, on a Deathrattle resolving inside somebody
+   * else's action, or on a restored save that was already over. Watching the
+   * phase catches every one of those; hooking the handler caught only the first.
+   */
+  useEffect(() => {
+    if (game.phase !== "gameOver" || duelRecorded.current) return;
+    duelRecorded.current = true;
+    const next = finishDuel(
+      progress,
+      { winner: game.winner, viewerId, mode, turns: game.turnNumber, at: Date.now() },
+      { seen: [...duelCards.current.seen], played: [...duelCards.current.played] },
+    );
+    setProgress(next);
+    saveProgress(next);
+  }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress]);
+
   function restart() {
     sfx.play("button");
     sfx.unlock();
     sfx.stopCardTheme();
     clearSave();
+    duelCards.current = { seen: new Set(), played: new Set() };
+    duelRecorded.current = false;
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     // A restart keeps the mode, so it keeps the opponent's cheats too.
     setGame(createInitialGame(cards, createDuelSeed(), relics, { foresightFor: foresightSeat(mode) }));
@@ -1081,6 +1140,8 @@ export default function App() {
     sfx.unlock();
     sfx.stopCardTheme();
     clearSave();
+    duelCards.current = { seen: new Set(), played: new Set() };
+    duelRecorded.current = false;
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setMode(next);
     setGame(createInitialGame(cards, createDuelSeed(), relics, { foresightFor: foresightSeat(next) }));
@@ -1133,26 +1194,6 @@ export default function App() {
     setSelection(null);
     clearFx();
     setEvents((items) => [...items, { kind: "info" as const, text: "Last local action undone." }].slice(-80));
-  }
-
-  function toggleCheatMode() {
-    sfx.play("button");
-    // Read the switch from the live state inside the updater. The settings
-    // overlay can stay mounted across game changes, so closing over `game`
-    // could toggle from an older render and show ON without changing the
-    // current duel's affordability rules.
-    const enabled = !game.cheatMode;
-    setGame((current) => ({ ...current, cheatMode: !current.cheatMode }));
-    setSelection(null);
-    setEvents((items) =>
-      [
-        ...items,
-        {
-          kind: "info" as const,
-          text: enabled ? "Cheat mode enabled. Mana is infinite." : "Cheat mode disabled. Mana costs restored.",
-        },
-      ].slice(-80),
-    );
   }
 
   function previewCard(card: PlayableCard, el: HTMLElement, owner?: PlayerId) {
@@ -1591,15 +1632,6 @@ export default function App() {
           >
             ⚙ Settings
           </button>
-          <button
-            type="button"
-            className={game.cheatMode ? "cheat-toggle active" : "cheat-toggle"}
-            aria-pressed={game.cheatMode}
-            onClick={toggleCheatMode}
-            title={game.cheatMode ? "Infinite mana is on. Click to turn it off." : "Enable infinite mana"}
-          >
-            {game.cheatMode ? "⚡ Cheat On" : "⚡ Cheat Off"}
-          </button>
           {/* The Coin exists for about one turn per duel. A button that is greyed
               out for the other twenty teaches nothing and takes up a slot. */}
           {coinAction ? (
@@ -1958,11 +1990,14 @@ export default function App() {
           onStart={beginDuel}
           onSettings={() => setOverlay("settings")}
           onGallery={() => setOverlay("gallery")}
+          onRecord={() => setOverlay("record")}
+          duelsPlayed={totalDuels}
         />
       ) : null}
 
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "gallery" ? <CardGallery onClose={() => setOverlay(null)} /> : null}
+      {overlay === "gallery" ? <CardGallery progress={progress} onClose={() => setOverlay(null)} /> : null}
+      {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel
           onClose={() => setOverlay(null)}
@@ -2384,7 +2419,7 @@ const NAME_CEILING_COMPACT = 72;
  *
  * Cards are shown as printed: no board state, no live buffs, no conditions.
  */
-function CardGallery({ onClose }: { onClose: () => void }) {
+function CardGallery({ progress, onClose }: { progress: Progress; onClose: () => void }) {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -2396,11 +2431,28 @@ function CardGallery({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   const needle = query.trim().toLowerCase();
-  const entries = useMemo(() => {
-    const all = [
+  // Built ONCE and then only filtered. Rebuilding the faces on every keystroke
+  // handed React 196 brand-new objects, so every cell re-rendered for every
+  // letter typed even though the cards had not changed.
+  const allEntries = useMemo(
+    () => [
       ...cards.map((card) => ({ key: card.id, face: playableFace(card) })),
       ...relics.map((relic) => ({ key: relic.id, face: relicFace(relic) })),
-    ];
+    ],
+    [],
+  );
+  // Sets, not `includes`: this is checked once per card per render, and the
+  // three lists together are the size of the whole roster.
+  const collection = useMemo(
+    () => ({
+      seen: new Set(progress.seen),
+      played: new Set(progress.played),
+      wonWith: new Set(progress.wonWith),
+    }),
+    [progress],
+  );
+  const entries = useMemo(() => {
+    const all = allEntries;
     if (!needle) return all;
     // Search everything printed on the face. Looking for "freeze" should find
     // the cards that freeze, not only the ones with Freeze in their name.
@@ -2419,7 +2471,7 @@ function CardGallery({ onClose }: { onClose: () => void }) {
         .toLowerCase()
         .includes(needle),
     );
-  }, [needle]);
+  }, [needle, allEntries]);
 
   return (
     <div
@@ -2450,9 +2502,19 @@ function CardGallery({ onClose }: { onClose: () => void }) {
           {entries.length ? (
             <div className="gallery-grid">
               {entries.map((entry) => (
-                <div className="gallery-cell" key={entry.key}>
-                  <CardFace card={entry.face} />
-                </div>
+                <GalleryCell
+                  key={entry.key}
+                  face={entry.face}
+                  mark={
+                    collection.wonWith.has(entry.key)
+                      ? "won"
+                      : collection.played.has(entry.key)
+                        ? "played"
+                        : collection.seen.has(entry.key)
+                          ? "seen"
+                          : "unseen"
+                  }
+                />
               ))}
             </div>
           ) : (
@@ -2464,8 +2526,42 @@ function CardGallery({ onClose }: { onClose: () => void }) {
   );
 }
 
+/**
+ * One card in the gallery, held still between renders.
+ *
+ * The gallery mounts every card in the game at once, and each card face is a
+ * size container with its own gradients, shadows and six text measurements. Two
+ * things keep that affordable and they belong together: this memo stops a search
+ * keystroke re-rendering all 196, and `content-visibility: auto` on
+ * `.gallery-cell` stops the browser laying out and painting the ones off screen.
+ */
+const GalleryCell = memo(function GalleryCell({
+  face,
+  mark,
+}: {
+  face: CardFaceModel;
+  mark: CollectionMark;
+}) {
+  return (
+    <div className={`gallery-cell mark-${mark}`} data-mark={mark} title={COLLECTION_TITLE[mark]}>
+      <CardFace card={face} lazyArt />
+    </div>
+  );
+});
+
+/** How far a card has got in your collection. Ordered weakest to strongest. */
+type CollectionMark = "unseen" | "seen" | "played" | "won";
+
+const COLLECTION_TITLE: Record<CollectionMark, string> = {
+  unseen: "Not yet drawn",
+  seen: "Has been in your hand",
+  played: "You have played it",
+  won: "You have won with it",
+};
+
 function CardFace({
   card,
+  lazyArt = false,
   extras,
   states = [],
   onBoard = false,
@@ -2475,6 +2571,8 @@ function CardFace({
   flavor,
 }: {
   card: CardFaceModel;
+  /** Gallery only — see the loading note in `CardArtwork`. */
+  lazyArt?: boolean;
   extras?: ReactNode;
   /** Live condition classes for a minion in play (`is-frozen`, `is-shielded`…). */
   states?: readonly string[];
@@ -2533,7 +2631,7 @@ function CardFace({
       <div className="cf-stage">
         <div className="cf-frame" aria-hidden="true" />
         <div className="cf-well" aria-hidden="true" />
-        <CardArtwork card={card} />
+        <CardArtwork card={card} lazy={lazyArt} />
         <div className="cf-desc"><p>{text}</p></div>
         <span className="cf-rail cf-camp">{card.camp}</span>
         <span className="cf-rail cf-align">{card.alignment}</span>
@@ -2643,13 +2741,18 @@ function MinionFace({
   );
 }
 
-function CardArtwork({ card }: { card: CardFaceModel }) {
+function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boolean }) {
   // NEVER loading="lazy" here. Cards mount and unmount constantly as they move
   // between hand, board and preview, and a lazy <img> that is re-created during
   // that churn frequently never fires its load at all — it stays
   // complete:false / naturalWidth:0 forever and the card renders as a black
   // rectangle while the file itself serves fine. Half a board went black this
   // way. Only a handful of card images exist at once; load them eagerly.
+  //
+  // The GALLERY is the one exception, and it is a different situation, not a
+  // relaxation of the rule above. Its cells mount once and stay put, so there is
+  // no churn to lose a load in — while requesting all 196 images at once is the
+  // single biggest cost of opening the screen.
   if (!card.art) return <div className="cf-art empty-art" aria-hidden="true" />;
   return (
     <div
@@ -2657,7 +2760,7 @@ function CardArtwork({ card }: { card: CardFaceModel }) {
         card.name === "Yujiro" ? "cf-art-yujiro" : card.name === "Conquest" ? "cf-art-conquest" : ""
       }`}
     >
-      <img src={card.art} alt="" draggable={false} />
+      <img src={card.art} alt="" draggable={false} loading={lazy ? "lazy" : undefined} decoding={lazy ? "async" : undefined} />
     </div>
   );
 }

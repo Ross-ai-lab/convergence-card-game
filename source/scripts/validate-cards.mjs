@@ -218,6 +218,17 @@ for (const [index, card] of cards.entries()) {
     const artPath = path.join(projectRoot, "public", card.art.replace(/^\//, ""));
     if (!fs.existsSync(artPath)) errors.push(`Line ${line}: art file does not exist: ${card.art}`);
   }
+
+  // EVERY card has a theme. A card whose sting is missing is silent when it
+  // lands, which is not a small blemish: the sound IS the arrival, and the
+  // silence reads as a broken build rather than as a card without music. Three
+  // cards shipped that way (Mothership, Planetary Defense Grid, Black Hole)
+  // simply because nothing counted, so this counts. Relics are deliberately NOT
+  // included — they use r### ids and are not part of the theme set at all.
+  const stingPath = path.join(projectRoot, "public", "audio", "stings", `${card.id}.ogg`);
+  if (!fs.existsSync(stingPath)) {
+    errors.push(`Line ${line}: ${card.name} has no theme — expected public/audio/stings/${card.id}.ogg`);
+  }
 }
 
 if (cards.length !== 175) errors.push(`Expected 175 cards, found ${cards.length}`);

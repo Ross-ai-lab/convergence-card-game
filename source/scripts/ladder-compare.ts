@@ -120,6 +120,24 @@ export function compareLadders(before: LadderRun, after: LadderRun): Comparison 
   const dialChanges: string[] = [];
   describeDials(before.dials, after.dials, "", dialChanges);
 
+  // A dial the baseline does not have AT ALL means the baseline predates the
+  // dial, so it was written by a different bot — almost always somebody else's
+  // run that overwrote the shared `ladder.json` between the baseline being taken
+  // and the comparison being made. That misread produced a confident six-point
+  // regression belonging to nobody. The tell was always in the output and always
+  // easy to read past, so it is a refusal now rather than a line to notice.
+  const missingDials = dialChanges.filter((change) => change.includes(": undefined -> "));
+  if (missingDials.length > 0) {
+    return {
+      rows: [],
+      dialChanges,
+      refused:
+        `the baseline has no value for ${missingDials.length === 1 ? "a dial" : `${missingDials.length} dials`} ` +
+        `this run sets (${missingDials.join("; ")}), so it was written by a different bot. ` +
+        `That is the signature of a baseline replaced by a parallel run — take a fresh one`,
+    };
+  }
+
   if (before.seedPrefix !== after.seedPrefix) {
     return {
       rows: [],

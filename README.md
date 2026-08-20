@@ -29,20 +29,30 @@ turn feel good" as an answered question, not an open one, and do not put a human
 list of remaining work. Older notes that describe the playtest as pending are stale; correct them
 where you find them.
 
-**The one big thing missing is meta-progression.** A duel ends and nothing survives it: no record, no
-unlock, no rank, no reason the tenth duel differs from the first. Everything else outstanding is
-maintenance beside it, because everything else improves a match that already works. No direction has
-been chosen yet, so do not start building one without asking. The four candidates, smallest first:
+**Meta-progression exists now, in its two smallest forms.** A duel used to end and leave nothing
+behind, so the tenth duel was indistinguishable from the first. Built 20 August 2026:
 
-- **A record.** Duels played, won and lost per bot level, plus the last few results.
-- **A collection.** Cards seen, played, or won with, marked in the existing gallery.
-- **A ladder.** Beat Recruit to open Veteran, beat Veteran to open Ascendant.
-- **A run.** A sequence of duels carrying something forward: a kept relic, a kept Hero Power, a
-  growing core. The largest option, and the one that changes the game most.
+- **A record.** Duels played, won and lost per opponent level, plus the last ten results. Reached from
+  the title screen, which only shows the door once a duel has finished.
+- **A collection.** Every card is marked in the gallery by how far it has got: dimmed until it has
+  been in your hand, plain once it has, a teal ring once you have played it, a gold ring once you have
+  won a duel with it on the board.
 
-A draft or deckbuilding mode pairs with the run option, because a drafted deck is the most natural
-thing for a run to carry. A match currently shows roughly 25 to 30 of the 175 cards and the player
-chooses none of them, so that mode is also what would make the roster size mean something.
+Both live in `source/src/progress.ts`, under their own localStorage key with their own version.
+**They are deliberately NOT part of the save**: a save holds one duel and is cleared at game over,
+and a record has to survive exactly that. The React side is three lines calling `finishDuel`, because
+the judgement — which ladder, what counts as a loss — is the part that goes quietly wrong, so it lives
+in a pure function with tests rather than in a component.
+
+**Two larger candidates were considered and are NOT being built.** They are recorded here so nobody
+re-proposes them as gaps:
+
+- **A ladder** (beat Recruit to open Veteran) — the record already answers "how am I doing", and
+  locking away two thirds of the opponents on a game one person plays for fun costs more than it adds.
+- **A run**, and the **draft mode** that pairs with it. Draft is not a feature here, it is a different
+  game: this engine deals both players from ONE shared deck, and that is what makes Foresight and
+  Clairvoyance mean anything — the card the Ascendant rejects is the card you were about to draw. Give
+  each player their own deck and that whole layer is deleted. Do not propose it as an addition.
 
 **The balance gate was red on the fresh baseline measured 18 August 2026** — three of eleven checks.
 One is fixed; the other two are below. In the order they matter:
@@ -67,21 +77,37 @@ One is fixed; the other two are below. In the order they matter:
   pick was the same fault wearing its worst outcome. `priorOptions` was never lost: the synthetic
   choice simply never had any, so `firstChoice` fell through to the enemy pick by design.
 
-  **Fixed 18 August 2026** by `copiedTargetLegality` in `source/src/engine/game.ts`: the copied victim
-  is now *offered* to the borrowed effect and accepted only when that effect would legally target it.
-  When it would not, the copy is lost and the log says so. Re-prompting is not available here, because
-  `effectId` is restored the moment the branch returns and a deferred answer would resolve against
-  `copy_and_trigger` instead of the borrowed effect. Pinned by three tests in
-  `src/engine/targeting.test.ts`, two of which were live-fired by restoring the old unconditional
-  handoff and watching them go red; the third asserts an enemy-targeting copy still fires normally, so
-  it passes either way on purpose. Fuzz after the fix: **0 invariant breaches over 21,005 actions.**
+  **Fixed 18 August 2026, and completed 20 August**, by `copiedVictimIsLegalTarget` in
+  `source/src/engine/game.ts`. The copied victim is now *offered* to the borrowed effect and accepted
+  only when that effect would legally target it. When it would not, the effect **asks for its own
+  target** instead, which resolves the copy exactly as though All for One's controller had cast it: a
+  copied friendly power lands on THEIR board.
+
+  The first version simply lost the copy, because a borrowed effect could not survive an open prompt —
+  `effectId` was restored the instant the branch returned, so a deferred answer would have resolved
+  against `copy_and_trigger`. The minion's own effect is now parked in `MinionInstance.copyRestoreEffectId`
+  (save v20) and put back by `restoreCopiedEffect` once the copy has no question left. That is what
+  makes the prompt possible, and it fixed a second bug for free: **multi-step copies now work**. A
+  copied Ten Commandments freezes both minions and a copied pocket room takes one minion from each
+  side, where before the first prompt silently cancelled the whole effect.
+
+  Anything reading an effect OFF a minion must call `printedEffectId`, not `effectId`, or it copies a
+  power that is about to be handed back. `copy_and_trigger`, `copy_minion_effects` and `steal_passive`
+  all do.
+
+  Pinned by four tests in `src/engine/targeting.test.ts`, live-fired by restoring the old
+  unconditional handoff and watching them go red; one asserts an enemy-targeting copy still fires
+  normally, so it passes either way on purpose. Fuzz after the fix: **0 invariant breaches over 21,005
+  actions.**
 
   Worth knowing for whoever changes this next: a board assertion cannot test this fix. The pocket
   room's own two guards already stop the duplicate instance, so a "no minion appears twice" test
   passes with or without the cause being fixed. The discriminating assertion is that the room
   resolver is never entered at all.
-- **One duel in 1,000 never finished.** `npm run sim -- --replay sim-308` reproduces it: 121 turns
-  against a 120 cap, cores at 27 and 15, and no invariant broken. A slow grind, not a lock.
+- ~~**One duel in 1,000 never finished.**~~ **Closed 20 August 2026.** It was 121 turns against a
+  120-turn cap, cores at 27 and 15, no invariant broken: two bots grinding, not a lock. The cap is now
+  150 (`--turncap` in `scripts/simulate.ts`). A real duel ends around turn 22, so this was never
+  reachable by a player and was only ever a self-play artefact.
 - **First player wins 57%** against a 44 to 56% band. The gate flags that its own 95% range still
   touches the band, so do not act on this from one run.
 
@@ -474,7 +500,12 @@ Three earlier readings of this ladder were wrong and are recorded here so they a
 
 ### How long an enemy turn may take
 
-**The budget is 8 seconds for a whole enemy turn**, raised from 5 on 2026-08-18. Check any bot change against that number, and measure a whole TURN rather than a move: a turn is five or six moves, and `BOT_DELAY_MS` (620 ms) sits between each one, so roughly 3.7 seconds of every turn is a deliberate pause with no thinking in it at all.
+**The budget is 10 seconds for a whole enemy turn**, raised from 8 on 2026-08-20 (and from 5 on
+2026-08-18). The raise is a decision, not a measurement: at 8 seconds about one turn in nine was over
+budget, the owner does not find those turns annoying in play, and the alternative was spending real
+effort chasing a tail nobody minds. **The long-turn tail is no longer a finding.** Do not reopen it as
+one; if it is ever worth fixing again, the trigger is the owner saying a turn felt slow, not a
+percentage. Check any bot change against that number, and measure a whole TURN rather than a move: a turn is five or six moves, and `BOT_DELAY_MS` (620 ms) sits between each one, so roughly 3.7 seconds of every turn is a deliberate pause with no thinking in it at all.
 
 Two deterministic cost cuts keep the beam affordable: `DEEP_LINES` limits how many built turns get the expensive opponent-reply search, and `BEAM_BUDGET` narrows the beam on crowded boards.
 
@@ -491,6 +522,26 @@ The first step up is free and the second is not, which is why the shipped value 
 Also worth knowing: tightening `BEAM_BUDGET` to curb the slow turns made them *worse*. The slowest turns are the LONG ones — many moves, each paying full search — not the crowded ones, and no dial here caps a turn's move count. The tail is not currently reachable by tuning.
 
 **Do not read a bigger search number as a stronger opponent.** Three separate deepenings of this search have now measured as zero: the cheats, the beam, and this dial. The limit is not how far the bot looks, it is what `scoreState` can see — it counts a hand by length, cannot value a passive effect, and rates a draw engine at nothing. Fix the judgement before buying more search.
+
+### Bot and balance work is PARKED, not finished
+
+**Owner decision, 20 August 2026: do not start bot or fine-balance work.** It is retired for now, not
+abandoned, and it may come back if this game is ever put in front of a larger audience.
+
+The reasoning is his and it is worth keeping, because it is the thing that makes the rest of this
+section safe to leave alone. Chasing a first-player rate of 57% toward 50%, or a per-card outlier from
++17 toward its tier mean, only matters when enough people play that the difference is visible to
+anyone. One person and a few friends is not that. Until it is, the cost is real and the benefit is
+theoretical: `npm run check:balance` is 1 hour 40 minutes, roughly 91% of it the Ascendant ladder, and
+by its own maths it cannot resolve a change smaller than about four points.
+
+So the standing instruction for a new session is: **do not propose the per-card value table, Insight,
+or another search dial as outstanding work.** They are on the shelf deliberately. What is still fair
+game is anything a PLAYER would notice — a card that does nothing, a rule that reads wrong, a bug.
+
+The apparatus itself stays exactly where it is. Nothing in this section is deleted, because parking
+work is not the same as throwing away the means to resume it, and the traps documented here (the
+shared ladder file, the paired comparison, timing on a busy machine) cost real time to learn.
 
 ### Beware the shared ladder file
 

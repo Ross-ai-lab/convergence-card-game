@@ -450,6 +450,16 @@ export interface MinionInstance {
   savedCoreHealth?: number | null;
   /** Hero power: this minion gets +1/+1 when its one-turn chain expires. */
   chainGrowthPending?: boolean;
+  /**
+   * All for One: the minion's OWN effect, parked while it wears a copied one.
+   *
+   * Non-null means "currently wearing a borrowed effect, put this back when it
+   * finishes". It has to be state rather than a local variable because a copied
+   * effect may open a prompt, and the answer arrives on a later action — by
+   * which time any local would be long gone and the effect would resolve
+   * against `copy_and_trigger` instead of the borrowed one.
+   */
+  copyRestoreEffectId?: EffectId | null;
 }
 
 export interface PlayerState {

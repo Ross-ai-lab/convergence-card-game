@@ -60,9 +60,15 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // cheat belongs to. A v18 save has no such field, so a duel resumed from one
 // would silently stop cheating halfway through — migrated to null rather than
 // discarded, because losing the duel is worse than losing one cheat.
-const SAVE_VERSION = 19;
+// v20: MinionInstance gained `copyRestoreEffectId`, the minion's own effect
+// parked while All for One wears a copied one. A copied effect can now open a
+// prompt and be saved mid-question, so a v19 save restored into this build could
+// hold a minion permanently wearing a borrowed effect with nothing recorded to
+// put back. Migrated to null rather than discarded: a v19 save cannot be mid-copy
+// in the first place, because the old code never left a copy open across a save.
+const SAVE_VERSION = 20;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v18";
+const LEGACY_SAVE_KEY = "convergence.save.v19";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -202,6 +208,7 @@ function migrateLegacyMechanics(game: GameState): void {
         if (gainedId === "time_bomb_ongoing_5") gained.effectId = "time_bomb_destroy_all";
         if (gainedId === "attack_3x") gained.effectId = "flash_speed";
       }
+      if (minion.copyRestoreEffectId === undefined) minion.copyRestoreEffectId = null;
       if (minion.markedForDeathAtTurn === undefined) minion.markedForDeathAtTurn = null;
       if (minion.untargetableUntilTurn === undefined) minion.untargetableUntilTurn = null;
       if (minion.protectedByMeleoron === undefined) minion.protectedByMeleoron = null;

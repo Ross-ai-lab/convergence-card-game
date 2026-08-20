@@ -30,7 +30,7 @@ c028,Flash,10,5,5,Yellow,Magic,Good,Divine Shield;Passive;Charge,flash_speed,pas
 c029,Darth Vader,5,3,2,Purple,Magic,Evil,,vader_chain_or_destroy,onPlay,"Battlecry: Choose an enemy minion. Set its ATK to 1 and Chain it.",Reborn.,Star Wars,/card-art/raw/c029.webp
 c030,Dumbledore,5,2,4,Black,Magic,Good,Passive,dumbledore_cleanse,passive,"Passive: Friendly minions cannot be Silenced, Frozen, or Chained. Undo any such curses.",He always asks calmly.,Harry Potter,/card-art/raw/c030.webp
 c031,Ragnaros,6,6,6,Black,Magic,Evil,Passive,ragnaros_end_turn,passive,"Passive: Cannot attack. At the end of your turn, deal 3 damage to a random enemy minion or the enemy core.",Summoned. Once again.,Hearthstone,/card-art/raw/c031.webp
-c032,Silver Surfer,7,1,1,Purple,Magic,Neutral,Deathrattle,deathrattle_summon_galactus,deathrattle,Deathrattle: Summon chained Galactus (8/8).,The tide brings worlds.,MCU,/card-art/raw/c032.webp
+c032,Silver Surfer,7,1,1,Purple,Magic,Neutral,Deathrattle,deathrattle_summon_galactus,deathrattle,Deathrattle: Summon Galactus (8/8) with Taunt that cannot attack.,The tide brings worlds.,MCU,/card-art/raw/c032.webp
 c033,Yujiro,4,4,4,Red,Nature,Evil,Passive,immune_nature_minions,passive,Passive: Immune to Nature minions.,The strongest man alive.,Baki,/card-art/raw/c033.webp
 c034,Yubaba,4,3,4,Red,Magic,Evil,,devolve_enemy_minions,onPlay,"Battlecry: Devolve your enemy minions into random ones that cost 1 less mana.",Are you looking for employment?,Spirited Away,/card-art/raw/c034.webp
 c035,Spider-Man,4,3,3,Black,Nature,Good,,freeze_and_weaken,onPlay,Battlecry: Freeze an enemy minion and halve its ATK.,Responsibility.,MCU,/card-art/raw/c035.webp
@@ -47,7 +47,7 @@ c045,Rick Prime,10,1,1,Purple,Tech,Evil,,rick_return_all,onPlay,Battlecry: Retur
 c046,The Watcher,10,10,7,Purple,Magic,Neutral,Passive,watcher_reveal_hand,passive,Passive: Cannot attack. Your opponent's hand is revealed to you.,The Witness,MCU,/card-art/raw/c046.webp
 c047,"Escanor ""The One""",8,8,4,Red,Magic,Good,,double_other_friendly_attack,onPlay,"Battlecry: Double your other friendly minions attack.","The Sun, incarnated",Seven Deadly Sins,/card-art/raw/c047.webp
 c048,Lelouch Lamperouge,8,1,1,Yellow,Magic,Neutral,,mind_control_enemy,onPlay,Battlecry: Gain control of an enemy minion.,Obey,Code Geass,/card-art/raw/c048.webp
-c049,Rimuru Tempest,9,1,1,Yellow,Magic,Good,,rimuru_tempest,onPlayAndOngoing,Battlecry/Ongoing: Destroy a minion. Gain its stats. Ongoing: Gain +2/+1.,Infinite growth,Tensura,/card-art/raw/c049.webp
+c049,Rimuru Tempest,9,1,1,Yellow,Magic,Good,,rimuru_tempest,onPlay,Battlecry: Destroy a minion. Gain its stats. Ongoing: Gain +1/+1.,Infinite growth,Tensura,/card-art/raw/c049.webp
 c050,Aizen,9,4,4,Purple,Magic,Evil,Deathrattle,aizen_deathrattle,deathrattle,Deathrattle: Reborn-50% chance. Silence and chain your killer.,All part of the plan,Bleach,/card-art/raw/c050.webp
 c051,Boros,9,6,8,Purple,Nature,Evil,,heal_5,ongoing,Ongoing: Heal 5 HP.,Strongest of his Universe,OPM,/card-art/raw/c051.webp
 c052,Dormammu,9,8,5,Purple,Magic,Evil,,dark_dimension_banish,onPlay,Battlecry: Choose an enemy minion. Banish it to the Dark Dimension until Dormammu dies.,I've come to bargain,MCU,/card-art/raw/c052.webp

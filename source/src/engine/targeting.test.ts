@@ -370,14 +370,6 @@ describe("practice bot", () => {
  * which keeps All for One's own prompt forced and the assertion about one thing.
  */
 describe("All for One aims a copied effect legally", () => {
-  /** Like playCardFor, but keeps the events — some assertions here are about the log. */
-  function playWithEvents(state: GameState, player: PlayerId, name: string, slotIndex = 0) {
-    const next: GameState = { ...state, cheatMode: true, activePlayer: player, phase: "main", drawChoice: null };
-    next.players = [...state.players] as GameState["players"];
-    next.players[player] = { ...state.players[player], hand: [cardId(name)] };
-    return applyAction(next, { type: "play_card", player, handIndex: 0, slotIndex }, library);
-  }
-
   /** Board with exactly one enemy minion, wearing the effect to be copied. */
   function boardWithVictim(seed: string, effectId: MinionInstance["effectId"]): GameState {
     const state = mainState(seed);
@@ -386,37 +378,65 @@ describe("All for One aims a copied effect legally", () => {
     return state;
   }
 
-  it("does not fire a friendly-only heal on the enemy minion it copied", () => {
+  it("aims a copied friendly power at its OWN board, never at the enemy it copied", () => {
     const state = boardWithVictim("afo-heal", "heal_ally_full");
+
+    const asking = playCardFor(state, 0, "All for One", 0);
+
+    // The victim is an enemy, so it is not a legal target for "fully heal a
+    // FRIENDLY minion" and is never handed over. The copy asks for its own
+    // target instead, and every option offered belongs to the copier.
+    expect(asking.phase).toBe("targeting");
+    expect(asking.pendingTarget?.options.length).toBeGreaterThan(0);
+    expect(asking.pendingTarget?.options.every((option) => option.owner === 0)).toBe(true);
+    expect(asking.players[1].board[0]?.hp).toBe(1);
+
+    const mine = asking.pendingTarget!.options.findIndex((option) => option.owner === 0 && option.slot === 3);
+    expect(mine).toBeGreaterThanOrEqual(0);
+    const after = choose(asking, mine);
+
+    expect(after.players[0].board[3]?.hp).toBe(6); // our own minion, fully healed
+    expect(after.players[1].board[0]?.hp).toBe(1); // theirs, untouched
+    // And All for One takes its own effect back once the copy has finished.
+    expect(after.players[0].board[0]?.effectId).toBe("copy_and_trigger");
+    expect(after.players[0].board[0]?.copyRestoreEffectId ?? null).toBeNull();
+  });
+
+  it("gives Knov's pocket room a friendly pick from its own side", () => {
+    const state = boardWithVictim("afo-pocket", "knov_pocket_room");
+    const mine = state.players[0].board[3]!.instanceId;
+    const theirs = state.players[1].board[0]!.instanceId;
 
     const after = playCardFor(state, 0, "All for One", 0);
 
-    // The victim is an enemy, so it is not a legal target for "heal a friendly
-    // minion". The copy is lost rather than healing the opponent's board.
-    expect(after.players[1].board[0]?.hp).toBe(1);
-    // And the copy is genuinely lost, not silently redirected onto our own.
-    expect(after.players[0].board[3]?.hp).toBe(2);
-    expect(after.phase).toBe("main");
-    expect(after.pendingTarget).toBeNull();
+    // Both picks are forced here, so the room opens with no prompt. WHICH two
+    // minions it took is the whole point: before this was fixed the enemy victim
+    // arrived as the "friendly" pick, the room closed around one minion, and the
+    // release put that single instance into two slots.
+    expect(after.pocketRooms).toHaveLength(1);
+    const room = after.pocketRooms![0];
+    expect(room.friendly.instanceId).toBe(mine);
+    expect(room.enemy.instanceId).toBe(theirs);
+    expect(room.friendly.owner).toBe(0);
+    expect(room.enemy.owner).toBe(1);
   });
 
-  it("never reaches Knov's pocket room with a friendly pick owned by the opponent", () => {
-    const state = boardWithVictim("afo-pocket", "knov_pocket_room");
+  it("carries a copied effect across its own prompts instead of dropping it", () => {
+    // Ten Commandments freezes TWO enemies, so a copy of it has to survive the
+    // question between them. The borrowed effect used to be handed back the
+    // instant the first prompt opened, which silently cancelled the whole copy.
+    const state = mainState("afo-multistep");
+    state.players[1].board[0] = dummy("Zoro", 1, { effectId: "freeze_two", effectTiming: "onPlay" });
+    state.players[1].board[1] = dummy("John Wick", 1);
+    state.players[1].board[2] = dummy("Sonic", 1);
 
-    const played = playWithEvents(state, 0, "All for One", 0);
-    const log = played.events.map((event) => event.text).join(" | ");
+    const asking = playCardFor(state, 0, "All for One", 0);
+    expect(asking.phase).toBe("targeting");
+    const after = choose(asking, 0);
 
-    // This asserts on the log rather than on the board, deliberately. The room's
-    // own two guards (added 18 August 2026) already stop the enemy-owned pick
-    // from putting one instance into two slots, so a board assertion here would
-    // pass whether or not this fix exists — it would test the guard, not the
-    // cause. What changed is that the room resolver is never entered at all.
-    expect(log).toContain("cannot aim");
-    expect(log).not.toContain("pocket room");
-    const onBoard = [...played.state.players[0].board, ...played.state.players[1].board]
-      .filter((minion): minion is MinionInstance => minion !== null)
-      .map((minion) => minion.instanceId);
-    expect(new Set(onBoard).size).toBe(onBoard.length);
+    const frozen = after.players[1].board.filter((minion) => minion?.frozen).length;
+    expect(frozen).toBe(2);
+    expect(after.players[0].board[0]?.effectId).toBe("copy_and_trigger");
   });
 
   it("still fires a copied enemy-targeting effect on the minion it copied", () => {

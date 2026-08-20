@@ -139,6 +139,28 @@ describe("refusing rather than approximating", () => {
     expect(comparison.rows).toHaveLength(0);
   });
 
+  it("refuses a baseline that predates a dial this run sets", () => {
+    // The signature of the shared-file trap: `.preview/balance/ladder.json` was
+    // replaced by a parallel session's run between the baseline being taken and
+    // the comparison being made, so the "baseline" is a stranger's bot. A dial
+    // reading `undefined -> <value>` is the tell, and it used to be a line in
+    // the output that was easy to read past on the way to a confident number.
+    const before = run("WWLL", { dials: {} });
+    const after = run("WWLL", { dials: { enemyBranch: 3, deepLines: 5 } });
+    const comparison = compareLadders(before, after);
+    expect(comparison.refused).toContain("written by a different bot");
+    expect(comparison.refused).toContain("deepLines");
+    expect(comparison.rows).toHaveLength(0);
+  });
+
+  it("does not refuse a dial the baseline simply changed", () => {
+    // A dial with a value on both sides is an ordinary A/B, which is the entire
+    // purpose of this tool. Only a MISSING dial means a different bot.
+    const before = run("WWLL", { dials: { enemyBranch: 3 } });
+    const after = run("WWLL", { dials: { enemyBranch: 5 } });
+    expect(compareLadders(before, after).refused).toBeUndefined();
+  });
+
   it("refuses a matchup whose sample size changed", () => {
     // This is the 80-to-100 case. The extra duels are new seeds, so the old run
     // has nothing to pair them against and a partial pairing would silently

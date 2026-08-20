@@ -775,6 +775,7 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     gainedEffects: [],
     savedCoreHealth: null,
     chainGrowthPending: false,
+    copyRestoreEffectId: null,
   };
   state.nextInstance += 1;
   state.nextPlayOrder += 1;
@@ -1597,23 +1598,47 @@ function slotOptions(source: MinionInstance, spec: TargetSpec): TargetOption[] {
  * always names an ENEMY minion, so every borrowed spec has to be re-checked
  * against it here.
  *
- * "untargeted" means the effect takes no target at all and should simply fire.
+ * False means "do not hand this one over" — never "give up". The caller then
+ * lets the effect ask for its own target, which is both legal and the stronger
+ * reading of the card: the copy behaves as though its controller had cast it.
  */
-function copiedTargetLegality(
-  state: GameState,
-  source: MinionInstance,
-  victim: TargetOption,
-): "untargeted" | "legal" | "illegal" {
+function copiedVictimIsLegalTarget(state: GameState, source: MinionInstance, victim: TargetOption): boolean {
   const spec = TARGETED_EFFECTS[source.effectId];
-  if (!spec) return "untargeted";
+  // An untargeted effect ignores `chosen` entirely; handing it one is noise.
+  if (!spec) return false;
   const kind = spec.kind ?? "board";
-  // A board answer can never satisfy a hand or option prompt. `runEffect`
-  // already declines those, but naming it here keeps the whole rule in one
-  // place rather than half here and half in a guard 1,500 lines away.
-  if (kind === "hand" || kind === "option") return "illegal";
+  // A board answer can never satisfy a hand or option prompt.
+  if (kind === "hand" || kind === "option") return false;
   const options = kind === "slot" ? slotOptions(source, spec) : targetOptions(state, source, spec);
-  const allowed = options.some((option) => option.owner === victim.owner && option.slot === victim.slot);
-  return allowed ? "legal" : "illegal";
+  return options.some((option) => option.owner === victim.owner && option.slot === victim.slot);
+}
+
+/**
+ * A minion's OWN effect, ignoring any it is temporarily wearing.
+ *
+ * All for One parks the borrower's real effect in `copyRestoreEffectId` while a
+ * copy resolves, so for the length of that resolution `effectId` is somebody
+ * else's. Any card that reads an effect OFF another minion has to ask for the
+ * printed one, or it copies a borrowed power that is about to be handed back —
+ * All for One copying All for One mid-copy being the obvious way in.
+ */
+function printedEffectId(minion: MinionInstance): EffectId {
+  return minion.copyRestoreEffectId ?? minion.effectId;
+}
+
+/**
+ * Puts a minion's own effect back after a copied one has finished with it.
+ *
+ * Safe to call at any time: it does nothing unless the minion is mid-copy, and
+ * it deliberately does nothing while a prompt is still open, because the copied
+ * effect has not finished until its last question is answered.
+ */
+function restoreCopiedEffect(state: GameState, minion: MinionInstance | null | undefined): void {
+  if (!minion) return;
+  if (minion.copyRestoreEffectId === null || minion.copyRestoreEffectId === undefined) return;
+  if (state.phase === "targeting") return;
+  minion.effectId = minion.copyRestoreEffectId;
+  minion.copyRestoreEffectId = null;
 }
 
 function handOptions(state: GameState, source: MinionInstance, spec: TargetSpec, library: CardLibrary): HandOption[] {
@@ -2187,7 +2212,7 @@ function runEffect(
       events.push(effectEvent(`${label} gains ${gainedAtk}/${gainedHp} from ${target.name}.`, source));
     }
     if (!source.gainedEffects.some((effect) => effect.effectId === "rimuru_tempest_growth")) {
-      source.gainedEffects.push({ effectId: "rimuru_tempest_growth", timing: "ongoing", text: "Ongoing: Gain +2/+1" });
+      source.gainedEffects.push({ effectId: "rimuru_tempest_growth", timing: "ongoing", text: "Ongoing: Gain +1/+1" });
     }
     source.effectId = "none";
     source.effectTiming = "ongoing";
@@ -2568,8 +2593,8 @@ function runEffect(
     }
     events.push(effectEvent(`${label} copies ${copied.length} persistent effects.`, source));
   } else if (source.effectId === "rimuru_tempest_growth") {
-    buffMinion(source, 2, 1);
-    events.push(effectEvent(`${label} grows +2/+1.`, source));
+    buffMinion(source, 1, 1);
+    events.push(effectEvent(`${label} grows +1/+1.`, source));
   } else if (source.effectId === "self_buff_2") {
     buffMinion(source, 2, 2);
     events.push(effectEvent(`${label} grows +2/+2.`, source));
@@ -3141,48 +3166,48 @@ function runEffect(
     if (picked) seizeMinion(state, source, picked, events);
   } else if (source.effectId === "copy_and_trigger") {
     if (picked && picked.effectId !== "none") {
-      const borrowed = picked.effectId;
+      const borrowed = printedEffectId(picked);
       const victim: TargetOption = { owner: picked.owner, slot: slotOf(state, picked) };
       events.push(effectEvent(`${label} copies ${picked.name}'s power.`, source));
       // Wear the effect for one resolution. A copied effect that itself wants a
       // target is not re-prompted — it takes the same victim it was copied from.
       //
       // The victim is only OFFERED, never assumed, because that handoff skips
-      // the borrowed spec's own rules (see `copiedTargetLegality`). The victim
-      // is by definition an enemy minion, so feeding it to a `side: "friendly"`
-      // effect made this card fully heal, buff, shield or Taunt the OPPONENT's
-      // minion, and made a `slot` effect bless the opponent's slot. It is also
-      // how a friendly pick owned by the opponent reached Knov's pocket-room
-      // resolver, which is the upstream cause of the `instance <id> is on the
-      // board twice` breach the balance gate reported on 18 August 2026 and
-      // that the resolver's own guards could only make safe, not explain.
+      // the borrowed spec's own rules (see `copiedVictimIsLegalTarget`). The
+      // victim is by definition an enemy minion, so feeding it to a
+      // `side: "friendly"` effect made this card fully heal, buff, shield or
+      // Taunt the OPPONENT's minion, and made a `slot` effect bless their slot.
+      // It is also how a friendly pick owned by the opponent reached Knov's
+      // pocket-room resolver, the upstream cause of the `instance <id> is on the
+      // board twice` breach the balance gate reported on 18 August 2026.
       //
-      // When the victim is not a legal target the copy is simply lost. That is
-      // the honest outcome and it is never one that helps the opponent.
-      // Re-prompting is not an option here: `effectId` is restored the moment
-      // this branch returns, so a deferred answer would resolve against
-      // `copy_and_trigger` instead of the borrowed effect — which is also why
-      // any prompt left open below is cleared rather than awaited.
-      const own = source.effectId;
+      // When the victim is not legal, the copy is NOT lost. The effect asks for
+      // its own target instead, which resolves it exactly as though All for One
+      // had cast it: a copied friendly power lands on ITS controller's board.
+      //
+      // That requires the borrowed effect to survive an open prompt, because
+      // the answer arrives on a later action. So the minion's own effect is
+      // parked in `copyRestoreEffectId` rather than in a local, and it is put
+      // back by `restoreCopiedEffect` — here when the copy finishes in one go,
+      // or from `chooseTarget` when the last prompt is answered. Multi-step
+      // copies (Knov's room, Ten Commandments' double Freeze) work for the same
+      // reason: the minion keeps wearing the effect between questions.
+      source.copyRestoreEffectId = source.effectId;
       source.effectId = borrowed;
-      const legality = copiedTargetLegality(state, source, victim);
-      if (legality === "illegal") {
-        events.push(effectEvent(`${label} cannot aim ${picked.name}'s power, and loses it.`, source));
-      } else {
-        runEffect(state, source, sourceSlot, library, events, legality === "legal" ? { kind: "board", target: victim } : undefined);
-      }
-      source.effectId = own;
-      state.pendingTarget = null;
-      if (state.phase === "targeting") state.phase = "main";
+      const offerVictim = copiedVictimIsLegalTarget(state, source, victim);
+      runEffect(state, source, sourceSlot, library, events, offerVictim ? { kind: "board", target: victim } : undefined);
+      restoreCopiedEffect(state, source);
     }
   } else if (source.effectId === "steal_passive") {
     if (picked && picked.effectId !== "none") {
       source.stolenPassiveFrom = picked.instanceId;
       source.stolenPassiveText = picked.effect;
-      source.effectId = picked.effectId;
+      source.effectId = printedEffectId(picked);
       source.effectTiming = "passive";
+      source.copyRestoreEffectId = null;
       picked.effectId = "none";
       picked.effectTiming = "none";
+      picked.copyRestoreEffectId = null;
       events.push(effectEvent(`${label} steals ${picked.name}'s passive.`, source));
     }
   } else if (source.effectId === "steal_magic_effects") {
@@ -3347,7 +3372,10 @@ function copyMinionEffects(source: MinionInstance, target: MinionInstance, event
   source.camp = target.camp;
   source.alignment = target.alignment;
   source.keywords = [...target.keywords];
-  source.effectId = target.effectId;
+  source.effectId = printedEffectId(target);
+  // Becoming another minion replaces this one's identity outright, so a parked
+  // "put your own effect back" note is stale the moment it lands.
+  source.copyRestoreEffectId = null;
   source.effectTiming = target.effectTiming;
   source.effect = target.effect;
   source.origin = target.origin;
@@ -4410,7 +4438,13 @@ function chooseTarget(state: GameState, choiceIndex: number, library: CardLibrar
       (minion) => minion?.instanceId === pending.sourceInstanceId,
     );
     const source = slotIndex >= 0 ? state.players[pending.sourceOwner].board[slotIndex] : null;
-    if (source) runEffect(state, source, slotIndex, library, events, answer);
+    if (source) {
+      runEffect(state, source, slotIndex, library, events, answer);
+      // A copied effect keeps its borrower wearing it across every prompt it
+      // opens, so the minion's own effect is only put back once the copy has no
+      // question left. `restoreCopiedEffect` declines while a prompt is open.
+      restoreCopiedEffect(state, source);
+    }
     }
   }
   if (state.phase === "main") processEffectQueue(state, library, events);
@@ -5214,10 +5248,10 @@ function resolveDeathrattle(
         rarity: "Black",
         camp: "Magic",
         alignment: "Neutral",
-        keywords: ["Taunt", "Chained"],
+        keywords: ["Taunt", "Cannot Attack"],
         effectId: "none",
         effectTiming: "none",
-        effect: "Taunt. Chained.",
+        effect: "Taunt. Cannot attack.",
         flavor: "The devourer of worlds arrives.",
         origin: "Marvel",
         art: "/card-art/raw/galactus.webp",

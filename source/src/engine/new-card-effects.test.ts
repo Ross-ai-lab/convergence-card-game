@@ -144,7 +144,7 @@ describe("2026 card replacements", () => {
         effectId: "deathrattle_summon_galactus",
         effectTiming: "deathrattle",
         keywords: ["Deathrattle"],
-        effect: "Deathrattle: Summon chained Galactus (8/8).",
+        effect: "Deathrattle: Summon Galactus (8/8) with Taunt that cannot attack.",
       },
       "Pillar Men": { cost: 4, atk: 5, hp: 5, effectId: "none", effectTiming: "none", keywords: ["Chained"], effect: "Chained." },
       Cthulhu: {
@@ -1240,7 +1240,7 @@ describe("2026 card replacements", () => {
     expect(after.players[0].health).toBe(coreBefore - 2);
   });
 
-  it("Rimuru Tempest keeps its sacrifice Battlecry and gains +2/+1 ongoing", () => {
+  it("Rimuru Tempest keeps its sacrifice Battlecry and gains +1/+1 ongoing", () => {
     const state = mainState();
     state.players[1].board[0] = minion("John Wick", 1, { atk: 2, hp: 3, maxHp: 3 });
     const asking = play(state, 0, "Rimuru Tempest", 1);
@@ -1254,17 +1254,20 @@ describe("2026 card replacements", () => {
     ]);
 
     const nextOwnerTurn = endTurn(endTurn(after, 0), 1);
-    expect(nextOwnerTurn.players[0].board[1]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
+    expect(nextOwnerTurn.players[0].board[1]).toMatchObject({ atk: 4, hp: 5, maxHp: 5 });
   });
 
-  it("Silver Surfer summons a Taunt Galactus on death", () => {
+  it("Silver Surfer summons a Taunt Galactus that cannot attack", () => {
     const state = mainState("silver-surfer-galactus");
     state.players[0].board[0] = minion("Silver Surfer", 0, { hp: 1, maxHp: 1, chained: 0 });
     state.players[1].board[0] = minion("John Wick", 1, { atk: 9, sleeping: false, hp: 20, maxHp: 20 });
     state.activePlayer = 1;
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(after.players[0].board[0]).toMatchObject({ name: "Galactus", atk: 8, hp: 8, maxHp: 8, chained: 2 });
-    expect(after.players[0].board[0]?.keywords).toEqual(["Taunt", "Chained"]);
+    // Galactus arrives unchained now, so he blocks from the turn he lands rather
+    // than sitting untargetable for two turns; "Cannot Attack" is what keeps a
+    // free 8/8 wall from also being a free 8-damage swing.
+    expect(after.players[0].board[0]).toMatchObject({ name: "Galactus", atk: 8, hp: 8, maxHp: 8, chained: 0 });
+    expect(after.players[0].board[0]?.keywords).toEqual(["Taunt", "Cannot Attack"]);
     expect(after.players[0].board[0]?.art).toBe("/card-art/raw/galactus.webp");
   });
 

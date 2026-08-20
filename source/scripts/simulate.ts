@@ -66,7 +66,7 @@ const GAMES = Number(arg("games", String(MAX_GAMES)));
 const FUZZ_GAMES = Number(arg("fuzz-games", String(Math.max(150, Math.round(GAMES / 6)))));
 const SKILL = arg("skill", "normal") as BotSkill;
 const SEED_PREFIX = arg("seed", "sim");
-const TURN_CAP = Number(arg("turncap", "120"));
+const TURN_CAP = Number(arg("turncap", "150"));
 const CORE_HP_TEXT = arg("core-hp", "");
 const CORE_HP = CORE_HP_TEXT === "" ? undefined : Number(CORE_HP_TEXT);
 /** `--full` adds the bot ladder. Without it the three ladder checks SKIP loudly. */
@@ -443,14 +443,26 @@ function runSweep(values: number[], games: number, ramps: number[]) {
  * a percentage on its own cannot be compared with anything later: it carries no
  * record of which duels produced it or which bot played them.
  */
-function writeLadderFile(table: Array<LadderMetric & { medianTurns: number; results?: LadderGame[] }>): void {
+function writeLadderFile(table: Array<LadderMetric & { medianTurns: number; results?: LadderGame[] }>): string {
   const run: LadderRun = {
     generatedAt: new Date().toISOString(),
     seedPrefix: SEED_PREFIX,
     dials: botDials(),
     matchups: table as LadderRun["matchups"],
   };
-  writeFileSync(join(outDir, "ladder.json"), JSON.stringify(run, null, 1), "utf8");
+  const body = JSON.stringify(run, null, 1);
+  writeFileSync(join(outDir, "ladder.json"), body, "utf8");
+  // `ladder.json` is a single fixed name that every ladder run and every full
+  // balance pass overwrites, including one started by a parallel session. A
+  // comparison here was once run against a stranger's run that had silently
+  // replaced the intended baseline, and reported a confident six-point
+  // regression that belonged to nobody. So every run ALSO drops an immutable
+  // stamped copy: a baseline nobody can overwrite exists whether or not the
+  // person running it remembered to make one.
+  const stamp = run.generatedAt.replace(/[:.]/g, "-");
+  const archived = join(outDir, `ladder-${stamp}.json`);
+  writeFileSync(archived, body, "utf8");
+  return archived;
 }
 
 function runLadder(gamesFor: (key: string) => number) {
@@ -989,9 +1001,10 @@ if (flag("ladder")) {
     process.exit(2);
   }
   const { table } = runLadder((key) => override || CONFIG.checks.skillLadder.games[key] || 150);
-  writeLadderFile(table);
-  console.log(`  Saved to ${join(outDir, "ladder.json")}.`);
-  console.log(`  Compare a later run with: npm run sim -- --ladder-compare <a copy of that file>`);
+  const archived = writeLadderFile(table);
+  console.log(`  Saved to ${join(outDir, "ladder.json")} (overwritten by the next run).`);
+  console.log(`  Immutable copy: ${archived}`);
+  console.log(`  Compare a later run with: npm run sim -- --ladder-compare ${archived}`);
   console.log("");
   process.exit(0);
 }
