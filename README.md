@@ -676,8 +676,24 @@ and ask. The full rule and its reasoning are in
 ### What the title screen is allowed to download
 
 **Every card must have a theme, and `npm run validate:data` now fails when one does not.** Three cards
-shipped silent (Mothership, Planetary Defense Grid, Black Hole) purely because nothing counted. Relics
-are deliberately excluded: they use `r###` ids and are not part of the theme set.
+shipped silent purely because nothing counted. Relics are deliberately excluded: they use `r###` ids
+and are not part of the theme set.
+
+**Themes are FOUND, never generated.** Owner ruling, 2026-08-21: generation is banned for audio as
+well as images, unless he permits a specific job by name. Three themes were generated before that
+ruling and have been replaced with real recordings, sourced with `yt-dlp` per
+[Knowledge/audio.md](../../../Knowledge/audio.md):
+
+| Card | Source | Why |
+|---|---|---|
+| Meteor | [Meteor Whoosh and Explosion](https://www.youtube.com/watch?v=WFN9tUtrq-s) | Free sound effect; the whoosh-then-impact arc is the card |
+| Planetary Defense Grid | [Sci-Fi Energy Shield Activate](https://www.youtube.com/watch?v=ekErpYY7X8c) | No-copyright SFX, already the right length |
+| Black Hole | [NASA black hole sonification](https://www.youtube.com/watch?v=_tXhBLg3Wng) | NASA'''s own data made audible: a real recording, public domain |
+
+Each is the LOUDEST six-second window of its source, found by stepping `volumedetect` across the file
+rather than guessing an offset, then two-pass `loudnorm` to sit with the other 172. **volumedetect
+reports at ffmpeg'''s info level** — suppressing to `-v error` makes every window score nothing and the
+search silently returns offset 0 while looking like it worked.
 
 **The menu has a size budget, and it is easy to undo by accident.** Measured 2026-08-21, the title
 screen was downloading **7.9 MB** before it settled, and the owner's report was that it "opens a bit

@@ -2502,9 +2502,43 @@ const FILTER_ANY: Record<FilterKey, string> = {
 const VALUE_ORDER: Record<FilterKey, string[]> = {
   cost: [],
   rarity: ["Black", "Yellow", "Purple", "Red", "Relic"],
-  camp: ["Magic", "Tech", "Nature", "ALL", "Ascension"],
-  alignment: ["Good", "Neutral", "Evil", "Relic"],
+  camp: ["Magic", "Tech", "Nature", "ALL"],
+  alignment: ["Good", "Neutral", "Evil"],
 };
+
+/**
+ * Values that exist in the data but must not be offered as a filter.
+ *
+ * A relic is not a camp and it is not an alignment — it carries the placeholder
+ * strings "Ascension" and "Relic" so the card face has something to print on its
+ * rails. Deriving the option lists from the roster is what surfaced them, and
+ * they read as real choices next to Magic and Evil, which they are not. Rarity
+ * keeps "Relic" because there it IS the answer: it is what those cards are.
+ */
+const HIDDEN_FILTER_VALUES: Partial<Record<FilterKey, string[]>> = {
+  camp: ["Ascension"],
+  alignment: ["Relic"],
+};
+
+/**
+ * The rarity tiers under the names the game actually uses for them.
+ *
+ * The colours are the internal labels — they name the gem on the card, not the
+ * tier — so a filter offering "Yellow" and "Red" asks the player to know an
+ * implementation detail. `build-codex.mjs` has carried this same mapping for the
+ * public page since long before the gallery had filters; keep the two in step.
+ */
+const RARITY_NAME: Record<string, string> = {
+  Black: "Rare",
+  Purple: "Epic",
+  Yellow: "Legendary",
+  Red: "Mythic",
+  Relic: "Relic",
+};
+
+function filterOptionLabel(key: FilterKey, value: string): string {
+  return key === "rarity" ? (RARITY_NAME[value] ?? value) : value;
+}
 
 function faceValue(face: CardFaceModel, key: FilterKey): string {
   return key === "cost" ? String(face.cost ?? "") : (face[key] ?? "");
@@ -2585,7 +2619,10 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
   // points at an empty result.
   const options = useMemo(() => {
     const build = (key: FilterKey) => {
-      const present = new Set(allEntries.map((entry) => faceValue(entry.face, key)).filter(Boolean));
+      const hidden = new Set(HIDDEN_FILTER_VALUES[key] ?? []);
+      const present = new Set(
+        allEntries.map((entry) => faceValue(entry.face, key)).filter((value) => value && !hidden.has(value)),
+      );
       if (key === "cost") {
         return [...present].sort((a, b) => Number(a) - Number(b));
       }
@@ -2669,7 +2706,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
                   <option value="">{FILTER_ANY[key]}</option>
                   {options[key].map((value) => (
                     <option key={value} value={value}>
-                      {value}
+                      {filterOptionLabel(key, value)}
                     </option>
                   ))}
                 </select>

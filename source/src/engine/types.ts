@@ -100,7 +100,6 @@ export type EffectId =
   | "aoe_all_1"
   | "aoe_all_2"
   | "aoe_all_3"
-  | "aoe_enemies_4"
   | "damage_evil_enemy_4"
   | "damage_magic_enemy_2"
   | "destroy_small_4"

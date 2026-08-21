@@ -59,11 +59,11 @@ describe("card CSV data", () => {
     expect(changed.get("Mothership")).toBeUndefined();
     expect(changed.get("Meteor")).toMatchObject({
       cost: 8,
-      atk: 8,
-      hp: 4,
+      atk: 4,
+      hp: 3,
       origin: "Basic",
-      effectId: "aoe_enemies_4",
-      effect: "Battlecry: Deal 4 damage to all enemy minions.",
+      effectId: "aoe_all_3",
+      effect: "Battlecry: Deal 3 damage to all other minions.",
     });
     expect(changed.get("Planetary Defense Grid")).toMatchObject({
       cost: 9,

@@ -2397,8 +2397,6 @@ function runEffect(
   } else if (source.effectId === "heal_self") {
     source.hp = Math.min(source.maxHp, source.hp + 3);
     events.push(effectEvent(`${label} heals 3 HP.`, source));
-  } else if (source.effectId === "aoe_enemies_4") {
-    damageAllEnemies(state, source, 4, events);
   } else if (source.effectId === "aoe_damage_3") {
     damageAllEnemies(state, source, 3, events);
   } else if (source.effectId === "time_bomb_destroy_all") {

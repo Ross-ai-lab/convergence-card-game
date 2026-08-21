@@ -294,12 +294,12 @@ describe("2026 card replacements", () => {
       "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
       Meteor: {
         cost: 8,
-        atk: 8,
-        hp: 4,
-        effectId: "aoe_enemies_4",
+        atk: 4,
+        hp: 3,
+        effectId: "aoe_all_3",
         effectTiming: "onPlay",
         keywords: [],
-        effect: "Battlecry: Deal 4 damage to all enemy minions.",
+        effect: "Battlecry: Deal 3 damage to all other minions.",
         origin: "Basic",
       },
       "Planetary Defense Grid": {
