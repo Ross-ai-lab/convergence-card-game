@@ -2397,6 +2397,8 @@ function runEffect(
   } else if (source.effectId === "heal_self") {
     source.hp = Math.min(source.maxHp, source.hp + 3);
     events.push(effectEvent(`${label} heals 3 HP.`, source));
+  } else if (source.effectId === "aoe_enemies_4") {
+    damageAllEnemies(state, source, 4, events);
   } else if (source.effectId === "aoe_damage_3") {
     damageAllEnemies(state, source, 3, events);
   } else if (source.effectId === "time_bomb_destroy_all") {
@@ -3983,11 +3985,14 @@ function refreshPassiveAuras(state: GameState): void {
     for (const targetBoard of state.players.map((player) => player.board)) {
       for (const target of targetBoard) {
         if (!target || target.silenced || !hasKeyword(target, "Taunt")) continue;
-        target.atk += 3;
-        target.maxHp += 3;
-        target.hp += 3;
+        // "All OTHER Taunt minions". The grid is itself a Taunt, so without this
+        // it fed its own buff and read as a 7/11 behind a 4/8's printed stats.
+        if (target.instanceId === source.instanceId) continue;
+        target.atk += 2;
+        target.maxHp += 2;
+        target.hp += 2;
         target.auraBonuses = target.auraBonuses ?? [];
-        target.auraBonuses.push({ sourceId: source.instanceId, atk: 3, hp: 3, keywords: [] });
+        target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 2, keywords: [] });
       }
     }
   }

@@ -54,7 +54,17 @@ describe("card CSV data", () => {
     });
     expect(changed.get("Kizaru")).toMatchObject({ atk: 4, hp: 4 });
     expect(changed.get("Ten Tails")?.effect).toBe("Battlecry: Chain all other minions.");
-    expect(changed.get("Mothership")).toMatchObject({ cost: 7, atk: 6, hp: 6, origin: "Basic", effect: "-" });
+    // Mothership was retired: four consecutive Basic cards were all large
+    // spacecraft, and its hand-drawn SVG was the only non-photograph in the game.
+    expect(changed.get("Mothership")).toBeUndefined();
+    expect(changed.get("Meteor")).toMatchObject({
+      cost: 8,
+      atk: 8,
+      hp: 4,
+      origin: "Basic",
+      effectId: "aoe_enemies_4",
+      effect: "Battlecry: Deal 4 damage to all enemy minions.",
+    });
     expect(changed.get("Planetary Defense Grid")).toMatchObject({
       cost: 9,
       atk: 4,
@@ -65,8 +75,8 @@ describe("card CSV data", () => {
     });
     expect(changed.get("Black Hole")).toMatchObject({
       cost: 10,
-      atk: 10,
-      hp: 5,
+      atk: 7,
+      hp: 4,
       effectId: "black_hole_deathrattle",
       effectTiming: "deathrattle",
       origin: "Basic",

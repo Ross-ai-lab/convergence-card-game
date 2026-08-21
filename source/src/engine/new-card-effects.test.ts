@@ -59,7 +59,7 @@ describe("2026 card replacements", () => {
       "Isaac Netero": { atk: 4, hp: 4, effectId: "deathrattle_aoe_3", effectTiming: "deathrattle" },
       "Death Star": { atk: 7, hp: 6, origin: "Star Wars", effectId: "death_star_mark" },
       "Star Destroyer": {
-        cost: 8,
+        cost: 7,
         atk: 5,
         hp: 5,
         effectId: "star_destroyer_tie_fighters",
@@ -183,7 +183,7 @@ describe("2026 card replacements", () => {
         keywords: ["Deathrattle"],
         effect: "Battlecry: Summon a random minion from the deck. Deathrattle: Summon a random minion from the deck.",
       },
-      UFO: { effectId: "none", effectTiming: "none", keywords: [], effect: "-" },
+      UFO: { cost: 6, atk: 3, hp: 3, effectId: "none", effectTiming: "none", keywords: ["Divine Shield"], effect: "Divine Shield." },
       Yujiro: { atk: 4, hp: 4, effectId: "immune_nature_minions", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Immune to Nature minions." },
       Vegapunk: { effectId: "discover_tech_card", effectTiming: "onPlay", keywords: [] },
       "John Wick": { atk: 1, hp: 1, effectId: "friendly_death_buff_1_1", effectTiming: "passive" },
@@ -292,7 +292,16 @@ describe("2026 card replacements", () => {
       "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: The first enemy minion to attack each turn is Chained for 1 turn." },
       "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
       "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
-      Mothership: { cost: 7, atk: 6, hp: 6, effectId: "none", effectTiming: "none", keywords: [], effect: "-", origin: "Basic" },
+      Meteor: {
+        cost: 8,
+        atk: 8,
+        hp: 4,
+        effectId: "aoe_enemies_4",
+        effectTiming: "onPlay",
+        keywords: [],
+        effect: "Battlecry: Deal 4 damage to all enemy minions.",
+        origin: "Basic",
+      },
       "Planetary Defense Grid": {
         cost: 9,
         atk: 4,
@@ -300,13 +309,13 @@ describe("2026 card replacements", () => {
         effectId: "planetary_defense_grid_taunt_buff",
         effectTiming: "passive",
         keywords: ["Taunt", "Passive"],
-        effect: "Taunt. Passive: All Taunt minions have +3/+3.",
+        effect: "Taunt. Passive: All other Taunt minions have +2/+2.",
         origin: "Basic",
       },
       "Black Hole": {
         cost: 10,
-        atk: 10,
-        hp: 5,
+        atk: 7,
+        hp: 4,
         effectId: "black_hole_deathrattle",
         effectTiming: "deathrattle",
         keywords: ["Deathrattle"],
@@ -923,14 +932,19 @@ describe("2026 card replacements", () => {
 
   it("UFO no longer has Nature immunity", () => {
     const state = mainState("ufo-no-nature-immunity");
-    state.players[0].board[0] = minion("UFO", 0);
-    state.players[1].board[0] = minion("John Wick", 1, { atk: 4, hp: 10, maxHp: 10, sleeping: false });
+    // Divine Shield off, because this test is about Nature immunity and the
+    // shield would swallow the hit before immunity could be observed at all.
+    state.players[0].board[0] = minion("UFO", 0, { divineShield: false });
+    // 2 ATK, not 4: UFO is a 3/3 now, so a 4-ATK swing simply kills it and the
+    // board slot reads null -- which proves nothing about immunity either way.
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 2, hp: 10, maxHp: 10, sleeping: false });
     state.activePlayer = 1;
     const after = applyAction(
       state,
       { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
       library,
     ).state;
+    // 3 HP minus a full 2 damage. Immunity would have left it untouched at 3.
     expect(after.players[0].board[0]?.hp).toBe(1);
   });
 
@@ -1077,9 +1091,11 @@ describe("2026 card replacements", () => {
     state.players[1].board[1] = minion("John Wick", 1);
     const buffed = play(state, 0, "Planetary Defense Grid", 0);
 
-    expect(buffed.players[0].board[0]).toMatchObject({ atk: 7, hp: 11, maxHp: 11 });
-    expect(buffed.players[0].board[1]).toMatchObject({ atk: 6, hp: 8, maxHp: 8 });
-    expect(buffed.players[1].board[0]).toMatchObject({ atk: 6, hp: 8, maxHp: 8 });
+    // "All OTHER Taunt minions", so the grid keeps its printed 4/8 rather than
+    // feeding its own aura, and the buff is +2/+2.
+    expect(buffed.players[0].board[0]).toMatchObject({ atk: 4, hp: 8, maxHp: 8 });
+    expect(buffed.players[0].board[1]).toMatchObject({ atk: 5, hp: 7, maxHp: 7 });
+    expect(buffed.players[1].board[0]).toMatchObject({ atk: 5, hp: 7, maxHp: 7 });
     expect(buffed.players[1].board[1]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
 
     buffed.players[0].board[0]!.silenced = true;

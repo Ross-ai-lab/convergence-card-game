@@ -66,7 +66,7 @@ c064,Seven Deadly Sins,8,4,5,Purple,Magic,Good,,summon_sins,onPlay,"Battlecry: F
 c065,Whitebeard,8,6,4,Purple,Magic,Neutral,,aoe_all_3,onPlay,Battlecry: Deal 3 damage to all other minions.,Split the World in two,One Piece,/card-art/raw/c065.webp
 c066,Elder Centipede,7,5,6,Black,Nature,Evil,Ongoing,self_buff_2,ongoing,Ongoing: Gain +2/+2.,Billion year old,OPM,/card-art/raw/c066.webp
 c067,Hypnos,4,0,5,Black,Magic,Neutral,Taunt;Passive,chain_attacker,passive,Taunt. Passive: Enemy minions that attack this become Chained for 1 turn.,He sleeps in his sleep,Hades,/card-art/raw/c067.webp
-c068,Star Destroyer,8,5,5,Black,Tech,Neutral,,star_destroyer_tie_fighters,onPlay,Battlecry: Summon two 1/1 TIE Fighters with Charge.,-,Basic,/card-art/raw/c068.webp
+c068,Star Destroyer,7,5,5,Black,Tech,Neutral,,star_destroyer_tie_fighters,onPlay,Battlecry: Summon two 1/1 TIE Fighters with Charge.,-,Basic,/card-art/raw/c068.webp
 c069,Isaac Netero,7,4,4,Red,Magic,Good,Divine Shield;Deathrattle,deathrattle_aoe_3,deathrattle,Divine Shield. Deathrattle: Deal 3 damage to all enemy minions.,Each prayer strikes harder than any fist,HxH,/card-art/raw/c069.webp
 c070,Vergil & Dante & Nero,7,3,5,Red,Magic,Neutral,,attack_2x,passive,Passive: This minion can attack 2 times per turn.,Infinite potential,Devil May Cry,/card-art/raw/c070.webp
 c071,All for One,7,4,5,Yellow,Magic,Evil,,copy_and_trigger,onPlay,Battlecry: Copy and trigger effect of an enemy minion.,A Collector,MHA,/card-art/raw/c071.webp
@@ -88,7 +88,7 @@ c088,Homelander,6,4,4,Black,Nature,Evil,Passive,invuln_if_alone,passive,Passive:
 c089,Kratos,6,3,4,Black,Magic,Neutral,Chained,kratos_chain_break,passive,"Chained. Passive: Until any friendly minion dies, Kratos breaks his chains and gains +2/+2.",He killed the gods of his world,God of War Game,/card-art/raw/c089.webp
 c090,Shigaraki,6,4,4,Black,Magic,Evil,Passive,shigaraki_decay,passive,"Passive: Whenever Shigaraki damages a minion, mark it. At the start of your next turn, it dies.",Revenge,MHA,/card-art/raw/c090.webp
 c091,Ten Commandments,6,3,5,Black,Magic,Evil,Passive,ten_commandments_first_attack,passive,Passive: The first enemy minion to attack each turn is Chained for 1 turn.,Their reputation preceded them by centuries,Seven Deadly Sins,/card-art/raw/c091.webp
-c092,UFO,6,5,5,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c092.webp
+c092,UFO,6,3,3,Black,Tech,Neutral,Divine Shield,none,none,Divine Shield.,-,Basic,/card-art/raw/c092.webp
 c093,Yoriichi Type Zero,3,2,2,Black,Tech,Neutral,,survivor_buff,passive,"Passive: Whenever a friendly minion survives a combat, it gains +1/+1.",Strongest puppet,Demon Slayer,/card-art/raw/c093.webp
 c094,Grand Master Oogway,5,2,2,Red,Magic,Good,Divine Shield;Passive,oogway_rescue,passive,"Divine Shield. Passive: Once per turn, when another friendly minion would die, return it to your hand instead and Chain Oogway for 1 turn.",Patience,Kung-Fu Panda,/card-art/raw/c094.webp
 c095,Kojiro Sasaki,5,2,6,Red,Nature,Good,Passive,evade_allies_33,passive,Passive: All other friendly minions have +33% chance to evade an attack (does not apply to himself).,Spending infinity in the Astral made him on par with the Gods,RoR,/card-art/raw/c095.webp
@@ -135,7 +135,7 @@ c135,APR,3,0,3,Black,Magic,Good,Taunt;Passive,attack_lock,passive,"Taunt. Passiv
 c136,Cthulhu,8,8,8,Black,Magic,Neutral,Chained;Passive,immune_tech_minions,passive,Chained. Passive: Immune to Tech minions.,He dreams,Myth,/card-art/raw/c136.webp
 c137,Giant Crystal,3,1,1,Black,Magic,Neutral,Divine Shield,buff_all_magic_2_1,ongoing,Divine Shield. Ongoing: Give all other friendly Magic minions +2/+1.,Spawnpoint,Core,/card-art/raw/c137.webp
 c138,Giant Tree,3,1,1,Black,Nature,Neutral,Passive,buff_all_nature_2_1,passive,Passive: All other friendly Nature minions have +2/+1.,Older than the roots it feeds.,Core,/card-art/raw/c138.webp
-c139,Modern Tank,3,3,3,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c139.webp
+c139,Modern Tank,3,3,3,Black,Tech,Neutral,Taunt,none,none,Taunt.,-,Basic,/card-art/raw/c139.webp
 c140,RoboCop,3,2,4,Black,Tech,Good,,robocop_evil_bonus,passive,Passive: Deal 3x damage against Evil minions.,Uphold the law,RoboCop,/card-art/raw/c140.webp
 c141,Tech Hub,3,1,1,Black,Tech,Neutral,Divine Shield,buff_all_tech_2_1,ongoing,Divine Shield. Ongoing: Give all other friendly Tech minions +2/+1.,Every machine came from somewhere. This is that somewhere,Core,/card-art/raw/c141.webp
 c142,Zoro,5,4,4,Black,Nature,Good,,on_kill_buff_1,passive,Passive: Gain +1/+1 after killing a minion.,Lost again. Still won.,One Piece,/card-art/raw/c142.webp
@@ -171,6 +171,6 @@ c172,Mr. Poopybutthole,1,1,1,Black,Nature,Neutral,Deathrattle,reborn_75,deathrat
 c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,ongoing,Ongoing: Draw 1 card.,The smartest thing here is a mouse.,MHA,/card-art/raw/c173.webp
 c174,Shibukawa,1,1,1,Black,Nature,Neutral,Ongoing,set_attack_highest_enemy,ongoing,Ongoing: Set Shibukawa's ATK equal to the highest ATK enemy minion.,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
 c175,V,1,1,1,Black,Nature,Neutral,Deathrattle,deathrattle_random_evil,deathrattle,"Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core.",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
-c176,Mothership,7,6,6,Black,Tech,Neutral,,none,none,-,A larger craft arrives.,Basic,/card-art/raw/basic-mothership.svg
-c177,Planetary Defense Grid,9,4,8,Black,Tech,Neutral,Taunt;Passive,planetary_defense_grid_taunt_buff,passive,"Taunt. Passive: All Taunt minions have +3/+3.",The shield watches from orbit.,Basic,/card-art/raw/planetary-defense-grid.webp
-c178,Black Hole,10,10,5,Black,Magic,Neutral,Deathrattle,black_hole_deathrattle,deathrattle,Deathrattle: Silence then destroy all minions.,Nothing escapes the singularity.,Basic,/card-art/raw/black-hole.webp
+c176,Meteor,8,8,4,Black,Nature,Neutral,,aoe_enemies_4,onPlay,Battlecry: Deal 4 damage to all enemy minions.,It was never going to miss.,Basic,/card-art/raw/c176.webp
+c177,Planetary Defense Grid,9,4,8,Black,Tech,Neutral,Taunt;Passive,planetary_defense_grid_taunt_buff,passive,"Taunt. Passive: All other Taunt minions have +2/+2.",The shield watches from orbit.,Basic,/card-art/raw/planetary-defense-grid.webp
+c178,Black Hole,10,7,4,Black,Magic,Neutral,Deathrattle,black_hole_deathrattle,deathrattle,Deathrattle: Silence then destroy all minions.,Nothing escapes the singularity.,Basic,/card-art/raw/black-hole.webp

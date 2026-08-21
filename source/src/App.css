@@ -5059,59 +5059,79 @@ button:disabled {
 }
 
 /* ---------------------------------------------------------------------------
-   Gallery sort control. A native <select>, deliberately: it is one control with
-   five options, it gets the platform's own keyboard and touch handling for free,
-   and a hand-built dropdown here would be more code than the feature.
+   Gallery filters. One control per attribute, sitting in a row in the header.
+
+   Native <select> on purpose: four controls with short option lists, and the
+   platform gives keyboard and touch handling for free. A hand-built dropdown
+   here would be more code than the whole feature.
    --------------------------------------------------------------------------- */
-.gallery-sort {
+.gallery-filters {
   display: flex;
-  align-items: center;
-  gap: 7px;
-  flex: 0 0 auto;
+  gap: 8px;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
 }
 
-.gallery-sort-label {
-  font-size: 0.72rem;
+.gallery-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gallery-filter-label {
+  font-size: 0.62rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: rgba(246, 236, 216, 0.5);
+  color: rgba(246, 236, 216, 0.42);
+  padding-left: 2px;
 }
 
-.gallery-sort select {
+.gallery-filter select {
   appearance: none;
-  padding: 7px 30px 7px 11px;
-  border-radius: 9px;
+  padding: 5px 26px 5px 9px;
+  border-radius: 8px;
   border: 1px solid rgba(246, 236, 216, 0.16);
   background-color: rgba(14, 12, 18, 0.85);
-  background-image: linear-gradient(45deg, transparent 50%, rgba(246, 236, 216, 0.55) 50%),
-    linear-gradient(135deg, rgba(246, 236, 216, 0.55) 50%, transparent 50%);
-  background-position: calc(100% - 15px) center, calc(100% - 10px) center;
-  background-size: 5px 5px, 5px 5px;
+  background-image: linear-gradient(45deg, transparent 50%, rgba(246, 236, 216, 0.5) 50%),
+    linear-gradient(135deg, rgba(246, 236, 216, 0.5) 50%, transparent 50%);
+  background-position: calc(100% - 13px) center, calc(100% - 9px) center;
+  background-size: 4px 4px, 4px 4px;
   background-repeat: no-repeat;
-  color: rgba(246, 236, 216, 0.92);
+  color: rgba(246, 236, 216, 0.9);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   cursor: pointer;
 }
 
-.gallery-sort select:hover {
+/* An engaged filter has to be obvious, or a player wonders where the cards went. */
+.gallery-filter.is-active select {
+  border-color: rgba(240, 199, 103, 0.75);
+  color: #f0c767;
+  background-color: rgba(46, 34, 12, 0.6);
+}
+
+.gallery-filter.is-active .gallery-filter-label {
+  color: rgba(240, 199, 103, 0.8);
+}
+
+.gallery-filter select:hover {
   border-color: rgba(240, 199, 103, 0.5);
 }
 
-.gallery-sort select:focus-visible {
+.gallery-filter select:focus-visible {
   outline: 2px solid rgba(240, 199, 103, 0.7);
   outline-offset: 1px;
 }
 
-/* The native option list is drawn by the OS, so it needs its own colours or it
-   inherits a white menu under a dark panel. */
-.gallery-sort select option {
+/* The option list is drawn by the OS, so it needs its own colours or it opens
+   as a white menu under a dark panel. */
+.gallery-filter select option {
   background: #14121a;
   color: #f6ecd8;
 }
 
-@media (max-width: 620px) {
-  .gallery-sort-label {
+@media (max-width: 900px) {
+  .gallery-filter-label {
     display: none;
   }
 }

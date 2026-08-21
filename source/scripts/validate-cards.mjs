@@ -33,16 +33,6 @@ const allowed = {
 // disagreed with the engine. These two rules make that impossible to reintroduce:
 // the build fails instead of the card quietly lying to the player.
 
-/**
- * Cards temporarily exempt from the WebP art rule.
- *
- * DELETE AN ENTRY RATHER THAN ADDING ONE. c176 is Mothership, whose hand-drawn
- * SVG is the reason the rule exists at all; that card is being replaced, so this
- * exemption disappears with it. If the set is ever empty, remove it and its
- * lookup — an empty allowance is an invitation to add a new entry.
- */
-const ART_FORMAT_EXCEPTIONS = new Set(["c176"]);
-
 /** Keywords the engine actually acts on, and which the card face draws. */
 const MECHANICAL = ["Taunt", "Divine Shield", "Chained", "Charge", "Deathrattle", "Cannot Attack"];
 
@@ -232,7 +222,7 @@ for (const [index, card] of cards.entries()) {
     // mistake, because it is one. WebP is the format because this is
     // photographic art displayed at roughly 730x490 — see the README, which
     // scopes the rule rather than claiming WebP beats PNG everywhere.
-    if (!/\.webp$/i.test(card.art) && !ART_FORMAT_EXCEPTIONS.has(card.id)) {
+    if (!/\.webp$/i.test(card.art)) {
       errors.push(
         `Line ${line}: ${card.name}'s art is not WebP (${card.art}). ` +
           `Every card carries a real photograph saved as .webp.`,

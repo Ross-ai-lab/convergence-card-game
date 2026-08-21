@@ -2465,38 +2465,59 @@ const NAME_CEILING_COMPACT = 72;
  * Cards are shown as printed: no board state, no live buffs, no conditions.
  */
 /**
- * How the gallery can be ordered.
+ * The gallery's filters: one dropdown per attribute, never one dropdown for all
+ * of them.
  *
- * Every order falls back to cost and then name, so a group is never in the
- * arbitrary order the roster file happens to be in — sorting by camp with 85
- * Magic cards in CSV order is barely more useful than not sorting at all.
+ * The first version offered a single "sort by" list with Camp as an option,
+ * which was incoherent — sorting BY camp cannot answer "show me the Tech
+ * cards", and that is the only question anyone actually has. Each attribute now
+ * gets its own control, and they combine, so Tech + Evil + 7 mana is three
+ * clicks.
+ *
+ * The option lists are derived from the roster rather than typed out, so relics
+ * (rarity "Relic", camp "Ascension") appear on their own without a special case,
+ * and a new camp or rarity would appear the moment a card used one.
  */
-type GallerySort = "default" | "cost" | "rarity" | "camp" | "alignment";
-
 /** Cells built on the first frame; the rest follow when the browser is idle. */
 const FIRST_GALLERY_BATCH = 36;
 
-const SORT_LABEL: Record<GallerySort, string> = {
-  default: "Roster order",
+type FilterKey = "cost" | "rarity" | "camp" | "alignment";
+
+const FILTER_LABEL: Record<FilterKey, string> = {
   cost: "Mana",
   rarity: "Rarity",
   camp: "Camp",
   alignment: "Alignment",
 };
 
-/** Rarity runs commonest to rarest, which is not alphabetical. */
-const RARITY_ORDER = ["Black", "Yellow", "Purple", "Red"];
-const CAMP_ORDER = ["Magic", "Tech", "Nature", "ALL"];
-const ALIGNMENT_ORDER = ["Good", "Neutral", "Evil"];
+/** Shown when a filter is off. Reads as a sentence in the control itself. */
+const FILTER_ANY: Record<FilterKey, string> = {
+  cost: "Any mana",
+  rarity: "Any rarity",
+  camp: "Any camp",
+  alignment: "Any alignment",
+};
 
-function rank(order: string[], value: string): number {
-  const index = order.indexOf(value);
-  return index === -1 ? order.length : index;
+/** Rarity runs commonest to rarest, which is not alphabetical. */
+const VALUE_ORDER: Record<FilterKey, string[]> = {
+  cost: [],
+  rarity: ["Black", "Yellow", "Purple", "Red", "Relic"],
+  camp: ["Magic", "Tech", "Nature", "ALL", "Ascension"],
+  alignment: ["Good", "Neutral", "Evil", "Relic"],
+};
+
+function faceValue(face: CardFaceModel, key: FilterKey): string {
+  return key === "cost" ? String(face.cost ?? "") : (face[key] ?? "");
 }
 
 function CardGallery({ progress, onClose }: { progress: Progress; onClose: () => void }) {
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<GallerySort>("default");
+  const [filters, setFilters] = useState<Record<FilterKey, string>>({
+    cost: "",
+    rarity: "",
+    camp: "",
+    alignment: "",
+  });
   /**
    * How many cells are mounted right now.
    *
@@ -2560,26 +2581,41 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
     );
   }, [needle, allEntries]);
 
-  const sorted = useMemo(() => {
-    if (sort === "default") return entries;
-    const byCostThenName = (a: typeof entries[number], b: typeof entries[number]) =>
-      (a.face.cost ?? 99) - (b.face.cost ?? 99) || a.face.name.localeCompare(b.face.name);
-    const key: Record<Exclude<GallerySort, "default" | "cost">, (face: CardFaceModel) => number> = {
-      rarity: (face) => rank(RARITY_ORDER, face.rarity),
-      camp: (face) => rank(CAMP_ORDER, face.camp),
-      alignment: (face) => rank(ALIGNMENT_ORDER, face.alignment),
+  // Every value the roster actually uses, in the house order, so no option ever
+  // points at an empty result.
+  const options = useMemo(() => {
+    const build = (key: FilterKey) => {
+      const present = new Set(allEntries.map((entry) => faceValue(entry.face, key)).filter(Boolean));
+      if (key === "cost") {
+        return [...present].sort((a, b) => Number(a) - Number(b));
+      }
+      const order = VALUE_ORDER[key];
+      return [...present].sort((a, b) => {
+        const ai = order.indexOf(a);
+        const bi = order.indexOf(b);
+        return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi) || a.localeCompare(b);
+      });
     };
-    const next = [...entries];
-    if (sort === "cost") next.sort(byCostThenName);
-    else next.sort((a, b) => key[sort](a.face) - key[sort](b.face) || byCostThenName(a, b));
-    return next;
-  }, [entries, sort]);
+    return { cost: build("cost"), rarity: build("rarity"), camp: build("camp"), alignment: build("alignment") };
+  }, [allEntries]);
+
+  const sorted = useMemo(() => {
+    const active = (Object.keys(filters) as FilterKey[]).filter((key) => filters[key] !== "");
+    const kept = active.length
+      ? entries.filter((entry) => active.every((key) => faceValue(entry.face, key) === filters[key]))
+      : entries;
+    // Always mana then name. A filtered list in raw roster order is barely a
+    // list, and this removes the need for a separate ordering control.
+    return [...kept].sort(
+      (a, b) => (a.face.cost ?? 99) - (b.face.cost ?? 99) || a.face.name.localeCompare(b.face.name),
+    );
+  }, [entries, filters]);
 
   // A new search or a new order means a different first screen, so the batch
   // starts again rather than leaving the top of the list unmounted.
   useEffect(() => {
     setMounted(FIRST_GALLERY_BATCH);
-  }, [needle, sort]);
+  }, [needle, filters]);
 
   useEffect(() => {
     if (mounted >= sorted.length) return;
@@ -2621,16 +2657,25 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
             placeholder="Search name, rules, origin…"
             aria-label="Search the gallery"
           />
-          <label className="gallery-sort">
-            <span className="gallery-sort-label">Sort</span>
-            <select value={sort} onChange={(event) => setSort(event.target.value as GallerySort)}>
-              {(Object.keys(SORT_LABEL) as GallerySort[]).map((option) => (
-                <option key={option} value={option}>
-                  {SORT_LABEL[option]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="gallery-filters">
+            {(Object.keys(FILTER_LABEL) as FilterKey[]).map((key) => (
+              <label key={key} className={filters[key] ? "gallery-filter is-active" : "gallery-filter"}>
+                <span className="gallery-filter-label">{FILTER_LABEL[key]}</span>
+                <select
+                  value={filters[key]}
+                  aria-label={`Filter by ${FILTER_LABEL[key].toLowerCase()}`}
+                  onChange={(event) => setFilters((current) => ({ ...current, [key]: event.target.value }))}
+                >
+                  <option value="">{FILTER_ANY[key]}</option>
+                  {options[key].map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </div>
           <span className="gallery-count">{sorted.length}</span>
           <button type="button" className="screen-x" onClick={onClose} aria-label="Close">
             ×
