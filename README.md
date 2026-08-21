@@ -15,12 +15,24 @@ artwork and a real theme, and a record and collection now survive each duel.
 What 1.0 means in practice, so nobody reopens a closed question:
 
 - **The duel is done.** Do not put "does a turn feel good" back on any list.
-- **Bot and fine-balance work is PARKED**, by owner decision, and only returns if
-  this game is ever put in front of a larger audience. Do not propose the
-  per-card value table, Insight, or another search dial as outstanding work.
-- **A run mode and a draft mode are declined**, not pending. Draft would delete
-  the shared deck, which is what gives Foresight and Clairvoyance their bite.
-- **Online multiplayer is declined.** Hotseat already covers playing with people.
+
+**Four things are PARKED FOR VERSION 2.** Parked, not abandoned and not declined:
+the owner may pick any of them up whenever he wants, and none of them is a gap in
+1.0. What the parking means is that a session must not start one unasked, and must
+not list one as outstanding work.
+
+- **Bot quality.** The per-card value table, Insight, and any further search dial.
+  Three separate deepenings of the search have already measured as zero, so this
+  is a real problem rather than an easy win.
+- **Fine balance.** Chasing a first-player rate or a per-tier outlier only matters
+  once enough people play that anyone can tell.
+- **Draft mode.** Worth knowing before it is picked up: this engine deals both
+  players from ONE shared deck, and that is exactly what gives Foresight and
+  Clairvoyance their bite. Draft means designing around losing that layer, not
+  bolting a mode on beside it.
+- **Online multiplayer.** Hotseat already covers playing with people in one room.
+  This is a server, matchmaking and state sync, which is a bigger build than the
+  game itself was.
 
 Changes after this point are maintenance or things the owner asks for, not a
 march toward a finish line that has already been crossed.
