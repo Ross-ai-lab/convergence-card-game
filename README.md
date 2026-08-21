@@ -662,8 +662,16 @@ character art displayed at roughly 730x490, and for that WebP is decisively
 better at the same visual quality. Judge a genuinely different kind of image on
 its own terms rather than converting it because of this line.
 
-**An SVG has no menu thumbnail and must keep its raw path** — see `menuArt()`
-below.
+**Every minion wears a real photograph, and hand-drawn art is banned.** One card,
+Mothership, shipped with a hand-authored SVG of gradients and polygons sitting
+among 174 photographs, and it reads as a broken asset rather than as a style.
+`npm run validate:data` now fails on any card whose art is not `.webp`, with a
+single dated exemption for that card because it is being replaced outright.
+
+**Do not generate a replacement image.** Owner ruling, 2026-08-21: image
+generation is banned. Source a real photograph, or say plainly that you cannot
+and ask. The full rule and its reasoning are in
+[Knowledge/image.md](../../../Knowledge/image.md) as R-img-56.
 
 ### What the title screen is allowed to download
 

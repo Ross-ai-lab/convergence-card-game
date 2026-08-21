@@ -2464,8 +2464,50 @@ const NAME_CEILING_COMPACT = 72;
  *
  * Cards are shown as printed: no board state, no live buffs, no conditions.
  */
+/**
+ * How the gallery can be ordered.
+ *
+ * Every order falls back to cost and then name, so a group is never in the
+ * arbitrary order the roster file happens to be in — sorting by camp with 85
+ * Magic cards in CSV order is barely more useful than not sorting at all.
+ */
+type GallerySort = "default" | "cost" | "rarity" | "camp" | "alignment";
+
+/** Cells built on the first frame; the rest follow when the browser is idle. */
+const FIRST_GALLERY_BATCH = 36;
+
+const SORT_LABEL: Record<GallerySort, string> = {
+  default: "Roster order",
+  cost: "Mana",
+  rarity: "Rarity",
+  camp: "Camp",
+  alignment: "Alignment",
+};
+
+/** Rarity runs commonest to rarest, which is not alphabetical. */
+const RARITY_ORDER = ["Black", "Yellow", "Purple", "Red"];
+const CAMP_ORDER = ["Magic", "Tech", "Nature", "ALL"];
+const ALIGNMENT_ORDER = ["Good", "Neutral", "Evil"];
+
+function rank(order: string[], value: string): number {
+  const index = order.indexOf(value);
+  return index === -1 ? order.length : index;
+}
+
 function CardGallery({ progress, onClose }: { progress: Progress; onClose: () => void }) {
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<GallerySort>("default");
+  /**
+   * How many cells are mounted right now.
+   *
+   * Building all 196 card faces in one go is about 850 ms of DOM work, which is
+   * a visible hitch on a screen that should just appear. The first batch is
+   * roughly two screens deep and lands immediately; the rest arrive on the next
+   * idle callback, by which time the reader is still looking at row one. Nothing
+   * about scrolling changes, because `content-visibility` was already skipping
+   * the off-screen ones — this is about the cost of CREATING them.
+   */
+  const [mounted, setMounted] = useState(FIRST_GALLERY_BATCH);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -2518,6 +2560,47 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
     );
   }, [needle, allEntries]);
 
+  const sorted = useMemo(() => {
+    if (sort === "default") return entries;
+    const byCostThenName = (a: typeof entries[number], b: typeof entries[number]) =>
+      (a.face.cost ?? 99) - (b.face.cost ?? 99) || a.face.name.localeCompare(b.face.name);
+    const key: Record<Exclude<GallerySort, "default" | "cost">, (face: CardFaceModel) => number> = {
+      rarity: (face) => rank(RARITY_ORDER, face.rarity),
+      camp: (face) => rank(CAMP_ORDER, face.camp),
+      alignment: (face) => rank(ALIGNMENT_ORDER, face.alignment),
+    };
+    const next = [...entries];
+    if (sort === "cost") next.sort(byCostThenName);
+    else next.sort((a, b) => key[sort](a.face) - key[sort](b.face) || byCostThenName(a, b));
+    return next;
+  }, [entries, sort]);
+
+  // A new search or a new order means a different first screen, so the batch
+  // starts again rather than leaving the top of the list unmounted.
+  useEffect(() => {
+    setMounted(FIRST_GALLERY_BATCH);
+  }, [needle, sort]);
+
+  useEffect(() => {
+    if (mounted >= sorted.length) return;
+    // Bound to window. Pulling requestIdleCallback off the object and calling it
+    // bare throws "Illegal invocation" in Chromium, and the failure is silent
+    // here -- the first batch had already painted, so the gallery simply stopped
+    // at 36 cards and looked finished.
+    // The { timeout } is load-bearing, not a nicety. A hidden tab never goes
+    // "idle" in Chromium, so a bare requestIdleCallback never fires -- measured,
+    // not assumed. A player who opens the gallery and switches tabs would have
+    // come back to a gallery permanently stuck at its first 36 cards. With a
+    // timeout the callback is guaranteed to run.
+    const idle: (fn: () => void) => number = window.requestIdleCallback
+      ? (fn) => window.requestIdleCallback(fn, { timeout: 300 })
+      : (fn) => window.setTimeout(fn, 32);
+    const cancel = (handle: number) =>
+      window.cancelIdleCallback ? window.cancelIdleCallback(handle) : window.clearTimeout(handle);
+    const handle = idle(() => setMounted(sorted.length));
+    return () => cancel(handle);
+  }, [mounted, sorted.length]);
+
   return (
     <div
       className="screen-veil gallery-veil"
@@ -2538,15 +2621,25 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
             placeholder="Search name, rules, origin…"
             aria-label="Search the gallery"
           />
-          <span className="gallery-count">{entries.length}</span>
+          <label className="gallery-sort">
+            <span className="gallery-sort-label">Sort</span>
+            <select value={sort} onChange={(event) => setSort(event.target.value as GallerySort)}>
+              {(Object.keys(SORT_LABEL) as GallerySort[]).map((option) => (
+                <option key={option} value={option}>
+                  {SORT_LABEL[option]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="gallery-count">{sorted.length}</span>
           <button type="button" className="screen-x" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
         <div className="screen-panel-body gallery-body">
-          {entries.length ? (
+          {sorted.length ? (
             <div className="gallery-grid">
-              {entries.map((entry) => (
+              {sorted.slice(0, mounted).map((entry) => (
                 <GalleryCell
                   key={entry.key}
                   face={entry.face}

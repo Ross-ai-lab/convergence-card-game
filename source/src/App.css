@@ -4839,9 +4839,13 @@ button:disabled {
   overflow-x: hidden;
 }
 
+/* 264px, up from 216. Fewer, larger cards per row: the rules text is readable
+   without leaning in, and each row costs fewer simultaneous size containers and
+   image decodes. The viewport area being painted is the same either way, so this
+   is a readability change that happens to be no slower. */
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(216px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(264px, 1fr));
   gap: 20px;
   padding: 4px 2px 18px;
 }
@@ -5052,4 +5056,62 @@ button:disabled {
 .record-turns {
   color: rgba(246, 236, 216, 0.5);
   font-size: 0.84rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Gallery sort control. A native <select>, deliberately: it is one control with
+   five options, it gets the platform's own keyboard and touch handling for free,
+   and a hand-built dropdown here would be more code than the feature.
+   --------------------------------------------------------------------------- */
+.gallery-sort {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.gallery-sort-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(246, 236, 216, 0.5);
+}
+
+.gallery-sort select {
+  appearance: none;
+  padding: 7px 30px 7px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(246, 236, 216, 0.16);
+  background-color: rgba(14, 12, 18, 0.85);
+  background-image: linear-gradient(45deg, transparent 50%, rgba(246, 236, 216, 0.55) 50%),
+    linear-gradient(135deg, rgba(246, 236, 216, 0.55) 50%, transparent 50%);
+  background-position: calc(100% - 15px) center, calc(100% - 10px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  color: rgba(246, 236, 216, 0.92);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.gallery-sort select:hover {
+  border-color: rgba(240, 199, 103, 0.5);
+}
+
+.gallery-sort select:focus-visible {
+  outline: 2px solid rgba(240, 199, 103, 0.7);
+  outline-offset: 1px;
+}
+
+/* The native option list is drawn by the OS, so it needs its own colours or it
+   inherits a white menu under a dark panel. */
+.gallery-sort select option {
+  background: #14121a;
+  color: #f6ecd8;
+}
+
+@media (max-width: 620px) {
+  .gallery-sort-label {
+    display: none;
+  }
 }

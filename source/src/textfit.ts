@@ -55,6 +55,8 @@ const FONT_CSS: Record<FitFont, (size: number) => string> = {
 
 let ctx: CanvasRenderingContext2D | null = null;
 let cache = new Map<string, number>();
+let widthCache = new Map<string, WordWidths>();
+let singleCache = new Map<string, number>();
 let fontsReady = false;
 
 function measurer(): CanvasRenderingContext2D | null {
@@ -65,22 +67,86 @@ function measurer(): CanvasRenderingContext2D | null {
 }
 
 /**
+ * MEASURE EACH WORD ONCE, NOT ONCE PER SEARCH STEP.
+ *
+ * Canvas advance widths are linear in font size — a glyph's advance is scaled by
+ * the size, not re-hinted — so a word measured at one size gives its width at
+ * every size by simple proportion. Verified on this font stack across sizes 6 to
+ * 48: maximum relative error 0.0004%, which is four orders of magnitude below
+ * the half-unit rounding the search already applies.
+ *
+ * That matters because the binary search below runs fourteen steps, and the
+ * naive version re-measured every word on every step. A rules paragraph of
+ * sixteen words cost ~224 `measureText` calls per fit, six fits per card, 196
+ * cards in the gallery: about a quarter of a million canvas calls, and a
+ * measured **6.3 second** main-thread block the first time the gallery opened.
+ *
+ * Now each distinct (text, font) pair is measured once and the search does
+ * arithmetic. Same answers, same rounding — the fit values are unchanged, which
+ * `npm run check:cardface` verifies by measuring the rendered cards.
+ */
+const REFERENCE_SIZE = 100;
+
+interface WordWidths {
+  /** Advance width of each word at REFERENCE_SIZE. */
+  words: number[];
+  /** Advance width of a single space at REFERENCE_SIZE. */
+  space: number;
+}
+
+/**
+ * Width of a whole string at REFERENCE_SIZE, for the one-line fitter.
+ *
+ * Deliberately its own cache rather than a trick played on `wordWidths`. The
+ * first attempt at this joined the words with a non-breaking space so the string
+ * would look like a single word — and U+00A0 does not have a regular space's
+ * advance in these fonts, so every multi-word card name measured narrower than
+ * it renders and was sized up to 13.8px too wide. `check-cardface` caught it;
+ * nothing else would have.
+ */
+function stringWidth(text: string, font: FitFont): number | null {
+  const key = `1|${font}|${text}`;
+  const hit = singleCache.get(key);
+  if (hit !== undefined) return hit;
+  const c = measurer();
+  if (!c) return null;
+  c.font = FONT_CSS[font](REFERENCE_SIZE);
+  const width = c.measureText(text).width;
+  singleCache.set(key, width);
+  return width;
+}
+
+function wordWidths(text: string, font: FitFont): WordWidths | null {
+  const key = `${font}|${text}`;
+  const hit = widthCache.get(key);
+  if (hit) return hit;
+  const c = measurer();
+  if (!c) return null;
+  c.font = FONT_CSS[font](REFERENCE_SIZE);
+  const value: WordWidths = {
+    words: text.split(/\s+/).filter(Boolean).map((word) => c.measureText(word).width),
+    space: c.measureText(" ").width,
+  };
+  widthCache.set(key, value);
+  return value;
+}
+
+/**
  * Greedy word wrap, the same rule the browser uses: words go on the current
  * line until one does not fit. Returns the line count, or Infinity when a single
  * word is wider than the box (which would overflow rather than wrap, so the
  * caller has to shrink).
  */
 function lineCount(text: string, size: number, boxW: number, font: FitFont): number {
-  const c = measurer();
-  if (!c) return Infinity;
-  c.font = FONT_CSS[font](size);
-  const words = text.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return 0;
+  const measured = wordWidths(text, font);
+  if (!measured) return Infinity;
+  if (measured.words.length === 0) return 0;
+  const scale = size / REFERENCE_SIZE;
+  const space = measured.space * scale;
   let lines = 1;
   let width = 0;
-  const space = c.measureText(" ").width;
-  for (const word of words) {
-    const w = c.measureText(word).width;
+  for (const reference of measured.words) {
+    const w = reference * scale;
     if (w > boxW) return Infinity; // one word cannot fit; nothing wraps out of this
     if (width === 0) {
       width = w;
@@ -149,11 +215,11 @@ export function fitOneLine(text: string, boxW: number, ceiling: number, font: Fi
   const key = `l|${font}|${boxW}|${ceiling}|${text}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
+  // One measurement of the real string, scaled through every search step.
+  const reference = stringWidth(text, font);
   const value = search((size) => {
-    const c = measurer();
-    if (!c) return false;
-    c.font = FONT_CSS[font](size);
-    return c.measureText(text).width <= boxW;
+    if (reference === null) return false;
+    return (reference * size) / REFERENCE_SIZE <= boxW;
   }, ceiling);
   cache.set(key, value);
   return value;
@@ -179,7 +245,12 @@ export function onFontsReady(callback: () => void): void {
     .catch(() => undefined)
     .then(() => {
       fontsReady = true;
+      // Both caches. The width cache holds fallback-font metrics until this
+      // point, and keeping it would pin every card to the wrong measurements
+      // for the rest of the session.
       cache = new Map();
+      widthCache = new Map();
+      singleCache = new Map();
       callback();
     });
 }

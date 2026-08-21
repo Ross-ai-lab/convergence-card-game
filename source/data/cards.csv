@@ -99,7 +99,7 @@ c099,Fire Lord Ozai,5,4,3,Purple,Magic,Evil,,aoe_all_2,onPlay,Battlecry: Deal 2 
 c100,Rennala Queen of the Full Moon,5,2,3,Purple,Magic,Neutral,,rebirth_friendly_dead,onPlay,Battlecry: Rebirth a random friendly minion that died this game.,The Moon,Elden Ring,/card-art/raw/c100.webp
 c101,The 7 Heroic Spirits,7,2,2,Purple,Magic,Neutral,,heroic_relics,onPlay,Battlecry: All of your minions gain a random Ascension Relic.,Legends reborn,Fate,/card-art/raw/c101.webp
 c102,Dragon,5,3,5,Black,Nature,Neutral,Taunt,none,none,Taunt.,ROAR,Myth,/card-art/raw/c102.webp
-c103,Fort,5,4,5,Black,Tech,Neutral,,none,none,-,-,Basic,/card-art/raw/c103.webp
+c103,Fort,5,4,5,Black,Tech,Neutral,Taunt,none,none,Taunt.,-,Basic,/card-art/raw/c103.webp
 c104,GLaDOS,5,2,3,Black,Tech,Evil,Passive;Cannot Attack,glados_adjacent_tech,passive,Cannot attack. Passive: Adjacent friendly Tech minions have Taunt and +2/+2.,The test continues,Portal,/card-art/raw/c104.webp
 c105,The Driller,5,1,1,Black,Tech,Evil,,consume_tech_5_hp,onPlay,Battlecry: Consume an enemy Tech minion with 5 HP or lower.,Latest design,MCU,/card-art/raw/c105.webp
 c106,Transformers,5,2,5,Black,Tech,Neutral,,consume_all_friendly_tech,onPlay,Battlecry: Consume all friendly Tech minions and gain their stats and effects.,Cybertronian,Transformers,/card-art/raw/c106.webp
