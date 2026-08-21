@@ -482,7 +482,7 @@ function resolveHeroPower(
     player.health += 2;
     events.push({ kind: "effect", text: `${definition.name} heals ${player.name}'s Core by 2.`, player: playerId });
   } else if (powerId === "chain_growth" && target) {
-    if (isSlotProtected(state, target) || hasDumbledoreProtection(state, target)) {
+    if (isSlotProtected(state, target) || !canDisable(state, playerId, target, "chain")) {
       events.push(effectEvent(`${target.name} resists Chain.`, target));
     } else {
       target.chained = Math.max(target.chained, 2);
@@ -947,11 +947,16 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
 
   // Queue them instead of running them inline: a targeted ongoing effect has to
   // be able to stop the batch mid-way and resume after the player answers.
-  // White Whistle earns its bearer a second pass through the queue.
+  // White Whistle lets a Battlecry bearer run that effect as an Ongoing effect.
   const ready = player.board
     .filter((minion): minion is MinionInstance => Boolean(minion))
     .filter((minion) => !skipOngoing.has(minion.instanceId) && !minion.silenced && minion.chained === 0)
-    .filter((minion) => minion.effectTiming === "ongoing" || minion.effectTiming === "onPlayAndOngoing")
+    .filter(
+      (minion) =>
+        minion.effectTiming === "ongoing" ||
+        minion.effectTiming === "onPlayAndOngoing" ||
+        battlecryRunsAsOngoing(minion),
+    )
     .sort((left, right) => left.playOrder - right.playOrder);
   state.effectQueue = ready.flatMap((minion) =>
     hasRelic(minion, "double_ongoing")
@@ -1147,12 +1152,12 @@ function attackMinion(
     defender.campImmunity.untilTurn > state.turnNumber;
   // Simultaneous combat, Hearthstone-style: the defender ALWAYS retaliates with
   // its attack value, even if the blow kills it (owner ruling, 2026-07-06).
-  dealMinionDamage(state, defenderId, targetSlot, outgoing, attacker, events);
+  dealMinionDamage(state, defenderId, targetSlot, outgoing, attacker, events, false, new Set(), true);
   // Infinity Stone: the swing carries into the two neighbours of the target.
   if (hasRelic(attacker, "cleave_adjacent")) {
     for (const side of [targetSlot - 1, targetSlot + 1]) {
       if (side >= 0 && side < boardSize && state.players[defenderId].board[side]) {
-        dealMinionDamage(state, defenderId, side, outgoing, attacker, events, true);
+        dealMinionDamage(state, defenderId, side, outgoing, attacker, events, true, new Set(), true);
       }
     }
   }
@@ -1160,7 +1165,7 @@ function attackMinion(
   // It is the one thing in the game that suspends simultaneous combat, and only
   // on the bearer's own swing — it is still hit normally on the enemy's turn.
   if (!hasRelic(attacker, "no_retaliation")) {
-    dealMinionDamage(state, playerId, attackerSlot, defender.atk, defender, events);
+    dealMinionDamage(state, playerId, attackerSlot, defender.atk, defender, events, false, new Set(), true);
   } else {
     events.push(effectEvent(`${attacker.name} strikes from outside space — no retaliation.`, attacker));
   }
@@ -1196,7 +1201,7 @@ function attackMinion(
       attackerAlive &&
       survivingAttacker &&
       !isSlotProtected(state, survivingAttacker) &&
-      !hasDumbledoreProtection(state, survivingAttacker)
+      canDisable(state, defender.owner, survivingAttacker, "chain")
     ) {
       // Chained = 2 is one skipped owner turn in this engine: the counter is
       // decremented at turn start before attacks are offered.
@@ -1269,7 +1274,7 @@ function triggerTenCommandments(state: GameState, attacker: MinionInstance, even
   );
   if (!source) return;
   source.commandmentsTriggeredAtTurn = state.turnNumber;
-  if (isSlotProtected(state, attacker) || hasDumbledoreProtection(state, attacker)) return;
+  if (isSlotProtected(state, attacker) || !canDisable(state, source.owner, attacker, "chain")) return;
   attacker.chained = Math.max(attacker.chained, 2);
   events.push(effectEvent(`${source.name} chains the first attacker, ${attacker.name}, for one turn.`, source));
 }
@@ -2003,7 +2008,7 @@ function runEffect(
       if (chosen.option.value === "freeze") {
         applyFreeze(state, source, target, events);
       } else if (chosen.option.value === "silence") {
-        if (!isSlotProtected(state, target) && canDisable(state, source.owner, target)) {
+        if (!isSlotProtected(state, target) && canDisable(state, source.owner, target, "silence")) {
           target.silenced = true;
           events.push(effectEvent(`${label} silences ${target.name}.`, source));
         }
@@ -2074,7 +2079,7 @@ function runEffect(
           minion &&
           minion.instanceId !== source.instanceId &&
           !isSlotProtected(state, minion) &&
-          !hasDumbledoreProtection(state, minion)
+          canDisable(state, source.owner, minion, "chain")
         ) {
           minion.chained = Math.max(minion.chained, 2);
         }
@@ -2186,7 +2191,7 @@ function runEffect(
     if (picked && pickedSlot) {
       if (hasDumbledoreProtection(state, picked)) {
         events.push(effectEvent(`${picked.name} resists Darth Vader's chain.`, picked));
-      } else if (!isSlotProtected(state, picked) && canDisable(state, source.owner, picked)) {
+      } else if (!isSlotProtected(state, picked) && canDisable(state, source.owner, picked, "chain")) {
         picked.atk = 1;
         picked.chained = Math.max(picked.chained, 2);
         events.push(effectEvent(`${label} sets ${picked.name}'s ATK to 1 and chains it.`, source));
@@ -2230,12 +2235,13 @@ function runEffect(
       events.push(effectEvent(`${label} doubles ${picked.name}'s ATK and leaves it at 1 HP.`, source));
     }
   } else if (source.effectId === "strange_duel") {
-    if (
+    const canChainSource = !isSlotProtected(state, source) && canDisable(state, source.owner, source, "chain");
+    const canChainTarget = Boolean(
       picked &&
       !isSlotProtected(state, picked) &&
-      canDisable(state, source.owner, picked) &&
-      !hasDumbledoreProtection(state, source)
-    ) {
+      canDisable(state, source.owner, picked, "chain"),
+    );
+    if (picked && canChainSource && canChainTarget) {
       const until = state.turnNumber + 2;
       source.chained = Math.max(source.chained, 2);
       picked.chained = Math.max(picked.chained, 2);
@@ -2748,11 +2754,20 @@ function runEffect(
   } else if (source.effectId === "freeze_enemy") {
     if (picked) applyFreeze(state, source, picked, events);
   } else if (source.effectId === "freeze_and_silence_enemy") {
-    if (picked && !isSlotProtected(state, picked) && canDisable(state, source.owner, picked)) {
-      picked.frozen = true;
-      picked.attacksUsed = maxAttacks(picked);
-      picked.silenced = true;
-      events.push(effectEvent(`${label} freezes and silences ${picked.name}.`, source));
+    if (picked && !isSlotProtected(state, picked)) {
+      const canFreeze = canDisable(state, source.owner, picked, "freeze");
+      const canSilence = canDisable(state, source.owner, picked, "silence");
+      if (canFreeze) {
+        picked.frozen = true;
+        picked.attacksUsed = maxAttacks(picked);
+      }
+      if (canSilence) picked.silenced = true;
+      if (canFreeze || canSilence) {
+        const statuses = [canFreeze ? "freezes" : "", canSilence ? "silences" : ""].filter(Boolean).join(" and ");
+        events.push(effectEvent(`${label} ${statuses} ${picked.name}.`, source));
+      } else {
+        events.push(effectEvent(`${picked.name} resists Kiritsugu's effect.`, picked));
+      }
     } else if (picked) {
       events.push(effectEvent(`${picked.name} resists Kiritsugu's effect.`, picked));
     }
@@ -2775,7 +2790,7 @@ function runEffect(
     const target = randomEnemyMinion(state, source);
     if (target) transformIntoLunarSlime(state, source, target, events);
   } else if (source.effectId === "silence_enemy") {
-    if (picked && !isSlotProtected(state, picked) && canDisable(state, source.owner, picked)) {
+    if (picked && !isSlotProtected(state, picked) && canDisable(state, source.owner, picked, "silence")) {
       picked.silenced = true;
       events.push(effectEvent(`${source.name} silences ${picked.name}.`, source));
     }
@@ -3088,8 +3103,7 @@ function runEffect(
       (minion): minion is MinionInstance => Boolean(
         minion &&
         !isSlotProtected(state, minion) &&
-        !hasDumbledoreProtection(state, minion) &&
-        !isUntargetable(state, minion),
+        canDisable(state, source.owner, minion, "chain"),
       ),
     );
     const target = candidates.length > 0 ? candidates[rollInt(state, candidates.length)] : null;
@@ -3230,7 +3244,7 @@ function runEffect(
         source.gainedEffects.push({ effectId: minion.effectId, timing, text: minion.effect });
         copiedNames.push(minion.name);
       }
-      if (!isSlotProtected(state, minion) && canDisable(state, source.owner, minion)) minion.silenced = true;
+      if (!isSlotProtected(state, minion) && canDisable(state, source.owner, minion, "silence")) minion.silenced = true;
     }
     if (source.gainedEffects.some((effect) => effect.timing === "ongoing")) source.effectTiming = "ongoing";
     events.push(effectEvent(`${label} silences Magic and gains ${copiedNames.length || "no"} effects.`, source));
@@ -4101,12 +4115,19 @@ function enforceGlobalSilence(state: GameState, events: GameEvent[]): void {
     const enemy = state.players[opponent(owner)];
     for (const minion of enemy.board) {
       if (!minion) continue;
-      if (isSlotProtected(state, minion)) continue;
       const sources = new Set(minion.passiveSilenceSources ?? []);
       // A pre-existing non-Gojo Silence is not owned by this aura. Once a
       // minion is marked by Gojo, however, all live Gojo sources are retained
       // so removing one of several Gojo cards cannot release it too early.
       if (minion.silenced && sources.size === 0) continue;
+      if (isSlotProtected(state, minion) || !canDisable(state, owner, minion, "silence")) {
+        if (sources.size > 0) {
+          minion.passiveSilenceSources = [];
+          minion.silenced = false;
+          events.push(effectEvent(`${minion.name} is no longer silenced by Gojo.`, minion));
+        }
+        continue;
+      }
       for (const gojo of gojos) sources.add(gojo.instanceId);
       const wasSilenced = minion.silenced;
       minion.silenced = true;
@@ -4172,13 +4193,15 @@ function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstan
     bearer.atk *= 2;
     bearer.maxHp *= 2;
     bearer.hp *= 2;
+  } else if (relic.relicId === "double_bearer_attack") {
+    bearer.atk *= 2;
   } else if (relic.relicId === "bearer_divine_shield") {
     bearer.divineShield = true;
   } else if (relic.relicId === "heal_full_now") {
     bearer.hp = bearer.maxHp;
   } else if (relic.relicId === "monster_cell") {
     buffMinion(bearer, 3, 2);
-    bearer.silenced = true;
+    if (!hasKeyword(bearer, "Taunt")) bearer.keywords.push("Taunt");
   } else if (relic.relicId === "cocoon") {
     bearer.chained = Math.max(bearer.chained, 1);
     relic.readyOnTurn = state.turnNumber + 2;
@@ -4198,7 +4221,14 @@ export const RELIC_MOVES_PER_TURN = 1;
  * double a minion's stats every single time — while reusable relics can safely
  * be picked up once per turn. Keep this set in step with `equipRelic`.
  */
-const ONE_SHOT_RELICS = new Set(["double_stats", "bearer_divine_shield", "heal_full_now", "monster_cell", "cocoon"]);
+const ONE_SHOT_RELICS = new Set([
+  "double_stats",
+  "double_bearer_attack",
+  "bearer_divine_shield",
+  "heal_full_now",
+  "monster_cell",
+  "cocoon",
+]);
 
 export function relicCanMove(relic: RelicInstance | null | undefined): boolean {
   return Boolean(relic && !ONE_SHOT_RELICS.has(relic.relicId));
@@ -4314,7 +4344,12 @@ function enforceSlotAuras(state: GameState, events: GameEvent[]): void {
         minion.hp = 1;
       }
       if (aura.auraId === "slot_chain") {
-        if (minion && minion.chained === 0 && !isSlotProtected(state, minion) && !hasDumbledoreProtection(state, minion)) {
+        if (
+          minion &&
+          minion.chained === 0 &&
+          !isSlotProtected(state, minion) &&
+          canDisable(state, playerId, minion, "chain")
+        ) {
           minion.chained = 2;
           events.push({
             kind: "effect",
@@ -4327,6 +4362,7 @@ function enforceSlotAuras(state: GameState, events: GameEvent[]): void {
       }
       if (aura.auraId !== "slot_silence") continue;
       if (minion && !minion.silenced && !isSlotProtected(state, minion)) {
+        if (!canDisable(state, playerId, minion, "silence")) continue;
         minion.silenced = true;
         events.push({
           kind: "effect",
@@ -4492,7 +4528,11 @@ function processEffectQueue(state: GameState, library: CardLibrary, events: Game
     if (slotIndex < 0) continue;
     const minion = board[slotIndex];
     if (!minion || minion.silenced || minion.chained > 0 || minion.frozen) continue;
-    if (minion.effectTiming !== "ongoing" && minion.effectTiming !== "onPlayAndOngoing") continue;
+    if (
+      minion.effectTiming !== "ongoing" &&
+      minion.effectTiming !== "onPlayAndOngoing" &&
+      !battlecryRunsAsOngoing(minion)
+    ) continue;
     if (minion.gainedEffects.some((effect) => effect.timing === "ongoing")) {
       const ownEffectId = minion.effectId;
       for (const gained of minion.gainedEffects.filter((effect) => effect.timing === "ongoing")) {
@@ -4549,10 +4589,11 @@ function dealMinionDamage(
   events: GameEvent[],
   effectDamage = false,
   godzillaPath: ReadonlySet<string> = new Set(),
+  combatDamage = false,
 ): void {
   const target = state.players[owner].board[slotIndex];
   if (!target || amount <= 0) return;
-  if (!canDamage(state, source, target, effectDamage, events)) return;
+  if (!canDamage(state, source, target, effectDamage, events, combatDamage)) return;
   amount = modifyIncoming(state, source, target, amount);
   if (!target.silenced && hasEffect(target, "superman_damage_cap_3")) {
     amount = Math.min(amount, 3);
@@ -4608,6 +4649,7 @@ function canDamage(
   target: MinionInstance,
   effectDamage: boolean,
   events: GameEvent[],
+  combatDamage: boolean,
 ): boolean {
   if (!effectDamage && target.chained > 0) {
     events.push(effectEvent(`${target.name} is protected by its chains.`, target));
@@ -4621,6 +4663,14 @@ function canDamage(
   // including normal combat damage — still reaches the minion in that slot.
   if (target.invulnerableUntilTurn !== null && target.invulnerableUntilTurn > state.turnNumber) {
     events.push(effectEvent(`${target.name} is Invulnerable.`, target));
+    return false;
+  }
+  if (combatDamage && hasRelic(target, "immune_nature_attacks") && source.camp === "Nature") {
+    events.push(effectEvent(`${target.name} is invulnerable to Nature attacks.`, target));
+    return false;
+  }
+  if (combatDamage && hasRelic(target, "immune_tech_attacks") && source.camp === "Tech") {
+    events.push(effectEvent(`${target.name} is invulnerable to Tech attacks.`, target));
     return false;
   }
   // Doomsday's adaptation, and the defensive relics.
@@ -4727,6 +4777,12 @@ function canDamage(
       return false;
     }
   }
+  if (!effectDamage && hasRelic(target, "evade_50") && !target.silenced) {
+    if (coinFlip(state)) {
+      events.push(effectEvent(`${target.name} evades the attack through Infinity Castle.`, target));
+      return false;
+    }
+  }
   if (!effectDamage && hasEffect(target, "dodge_80") && !target.silenced) {
     if (rollInt(state, 100) < 80) {
       events.push(effectEvent(`${target.name} slips away.`, target));
@@ -4803,7 +4859,15 @@ export function maxAttacks(minion: MinionInstance): number {
   // current card pass caps the speed at two swings.
   if (!minion.silenced && hasEffect(minion, "flash_speed")) return 2;
   if (!minion.silenced && hasEffect(minion, "attack_2x")) return 2;
+  if (!minion.silenced && hasRelic(minion, "double_attack")) return 2;
   return 1;
+}
+
+function battlecryRunsAsOngoing(minion: MinionInstance): boolean {
+  return (
+    hasRelic(minion, "battlecry_to_ongoing") &&
+    (minion.effectTiming === "onPlay" || minion.effectTiming === "onPlayAndDeathrattle")
+  );
 }
 
 function hasKeyword(card: Pick<CardDefinition | MinionInstance, "keywords">, keyword: string): boolean {
@@ -5002,7 +5066,7 @@ function thawServed(state: GameState, playerId: PlayerId, events: GameEvent[]): 
 }
 
 function applyFreeze(state: GameState, source: MinionInstance, target: MinionInstance, events: GameEvent[]): void {
-  if (isSlotProtected(state, target) || !canDisable(state, source.owner, target)) {
+  if (isSlotProtected(state, target) || !canDisable(state, source.owner, target, "freeze")) {
     events.push(effectEvent(`${target.name} resists Freeze.`, target));
     return;
   }
@@ -5011,10 +5075,19 @@ function applyFreeze(state: GameState, source: MinionInstance, target: MinionIns
   events.push(effectEvent(`${source.name} freezes ${target.name}.`, source));
 }
 
-function canDisable(state: GameState, sourceOwner: PlayerId, target: MinionInstance): boolean {
+type DisableKind = "other" | "silence" | "freeze" | "chain";
+
+function canDisable(
+  state: GameState,
+  sourceOwner: PlayerId,
+  target: MinionInstance,
+  kind: DisableKind = "other",
+): boolean {
   if (target.protectedSlot) return false;
   if (isUntargetable(state, target)) return false;
   if (hasRelic(target, "immune_disable")) return false; // Anti-magic Mask
+  if (kind === "silence" && hasRelic(target, "immune_silence")) return false;
+  if ((kind === "freeze" || kind === "chain") && hasRelic(target, "immune_freeze_chain")) return false;
   if (hasDumbledoreProtection(state, target)) return false;
   const friendlyAura = state.players[target.owner].board.some(
     (minion) => minion && hasEffect(minion, "anti_disable_aura") && !minion.silenced,
@@ -5101,6 +5174,17 @@ function destroyAtSlot(
       return;
     }
   }
+  const ringIndex = firstRelicIndex(minion, (relic) => relic.relicId === "rescue_full");
+  if (ringIndex >= 0) {
+    const ring = relicAt(minion, ringIndex);
+    if (ring) {
+      unequipRelic(minion, ringIndex);
+      state.discard.push(ring.id);
+      minion.hp = minion.maxHp;
+      events.push(effectEvent(`${minion.name} survives at full health through the One Ring.`, minion));
+      return;
+    }
+  }
   if (allowReplacement && rescueWithOogway(state, playerId, slotIndex, events)) return;
   const rescued = allowReplacement && hasRelic(minion, "return_on_death"); // The Green Mask
   if (killer && !killer.silenced && hasEffect(killer, "grievous_on_kill_atk")) {
@@ -5180,12 +5264,16 @@ function resolveDeathrattle(
     damageAllEnemies(state, dead, 3, events);
     events.push(effectEvent(`${dead.name}'s Deathrattle deals 3 damage to all enemy minions.`, dead));
   } else if (dead.effectId === "black_hole_deathrattle") {
+    let silenced = 0;
     for (const owner of [0, 1] as PlayerId[]) {
       for (const minion of state.players[owner].board) {
-        if (minion) minion.silenced = true;
+        if (minion && canDisable(state, dead.owner, minion, "silence")) {
+          minion.silenced = true;
+          silenced += 1;
+        }
       }
     }
-    events.push(effectEvent(`${dead.name} silences every minion before the void consumes them.`, dead));
+    events.push(effectEvent(`${dead.name} silences ${silenced} minion${silenced === 1 ? "" : "s"} before the void consumes them.`, dead));
     for (const owner of [0, 1] as PlayerId[]) {
       for (let slot = 0; slot < boardSize; slot += 1) {
         if (state.players[owner].board[slot]) {
@@ -5438,9 +5526,18 @@ function resolveDeathrattle(
       killer && state.players[killer.owner].board.some((minion) => minion?.instanceId === killer.instanceId),
     );
     if (killer && killerAlive) {
-      killer.silenced = true;
-      killer.chained = Math.max(killer.chained, 2);
-      events.push(effectEvent(`${dead.name} silences and chains its killer, ${killer.name}.`, dead));
+      const canSilence = canDisable(state, dead.owner, killer, "silence");
+      const canChain = canDisable(state, dead.owner, killer, "chain");
+      if (canSilence) killer.silenced = true;
+      if (canChain) killer.chained = Math.max(killer.chained, 2);
+      const statuses = [canSilence ? "silences" : "", canChain ? "chains" : ""]
+        .filter(Boolean)
+        .join(" and ");
+      if (statuses) {
+        events.push(effectEvent(`${dead.name} ${statuses} its killer, ${killer.name}.`, dead));
+      } else {
+        events.push(effectEvent(`${killer.name} resists ${dead.name}'s curses.`, killer));
+      }
     }
   } else if (dead.effectId === "reborn_75") {
     if (nextRandom(state) < 0.75) {

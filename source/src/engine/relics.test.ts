@@ -100,7 +100,7 @@ describe("relic effects", () => {
     state.players[0].board[0] = makeMinion("Mob Psycho", 0);
     state.players[0].board[1] = makeMinion("Gilgamesh", 0);
     state.players[0].hand = [relicByName("Elder wand").id];
-    state.players[0].mana = 2;
+    state.players[0].mana = 1;
     const action = getLegalActions(state, library).find((candidate) => candidate.type === "play_relic");
     expect(action).toEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 });
     const after = applyAction(state, action!, library).state;
@@ -133,10 +133,28 @@ describe("relic effects", () => {
     expect(returned.players[0].hand).toEqual([relicByName("Tesseract").id]);
   });
 
-  it("ships the requested relic costs and stat changes", () => {
-    expect(relics.find((relic) => relic.name === "White Whistle")?.cost).toBe(2);
+  it("ships the requested relic costs and replacement effects", () => {
+    const requested = [
+      ["Lostvayne", 3, "The bearer is invulnerable to Magic attacks."],
+      ["One Ring", 4, "The first time the bearer would die, set it to full HP instead and destroy this relic."],
+      ["White Whistle", 3, "The bearer's Battlecry effect turns into Ongoing effect."],
+      ["Chamber of Secrets", 3, "The bearer is invulnerable to Nature attacks."],
+      ["Cyber-Enchantment", 3, "The bearer is invulnerable to Tech attacks."],
+      ["Ea", 3, "The bearer's ATK is doubled."],
+      ["Elder wand", 1, "The bearer is immune to Silence."],
+      ["Monster Cell", 2, "The bearer gains +3/+2 and Taunt."],
+      ["Philosopher's Stone", 4, "The bearer takes double damage on the enemy's turn but is invulnerable on your own."],
+      ["Anti-magic Mask", 1, "The bearer is immune to Freeze and Chained."],
+      ["Queen's Cocoon", 2, "The bearer is Chained for a turn. When it awakens, it gains +3/+3."],
+      ["The Green Mask", 2, "Return the bearer to your hand after death."],
+      ["Tesseract", 2, "The bearer can attack twice each turn."],
+      ["Infinity Castle", 4, "The bearer's Evade chance is 50%."],
+    ] as const;
+
+    for (const [name, cost, effect] of requested) {
+      expect(relics.find((relic) => relic.name === name)).toMatchObject({ cost, effect });
+    }
     expect(relics.find((relic) => relic.name === "Devil Fruit")).toMatchObject({ cost: 2, effect: expect.stringContaining("+2/+1") });
-    expect(relics.find((relic) => relic.name === "Monster Cell")).toMatchObject({ cost: 2, effect: "The bearer gains +3/+2. It gets silenced." });
   });
 
   it("returns reusable relics to hand once per turn, but never re-fires them automatically", () => {
@@ -169,66 +187,151 @@ describe("relic effects", () => {
     expect(wearer.maxHp).toBe(wearer.baseHp * 2);
   });
 
-  it("One Ring adds 3 to a swing at the core, and nothing to a minion trade", () => {
-    const swing = (relic: RelicInstance | null) => {
-      const state = mainState();
-      state.players[0].board[0] = makeMinion("Mob Psycho", 0, { atk: 5, relic });
-      return applyAction(state, { type: "attack_core", player: 0, attackerSlot: 0 }, library)
-        .state.players[1].health;
-    };
-    // Relative to the core the duel actually starts on, so a pacing change to
-    // starting health never fails this test again.
-    const fullCore = mainState().players[1].health;
-    expect(swing(null)).toBe(fullCore - 5);
-    expect(swing(relicByName("One Ring"))).toBe(fullCore - 8);
-
-    // A minion trade is untouched by it.
-    const trade = mainState();
-    trade.players[0].board[0] = makeMinion("Mob Psycho", 0, { atk: 5, relic: relicByName("One Ring") });
-    trade.players[1].board[0] = makeMinion("Death Star", 1, { hp: 20, maxHp: 20 });
-    const after = applyAction(trade, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(after.players[1].board[0]?.hp).toBe(15);
-  });
-
-  it("Tesseract takes no retaliation on its own swing, but is hit normally on the enemy's turn", () => {
-    // Re-cut from a "move to another board slot" effect the engine has no action
-    // for. This is the only thing in the game that suspends simultaneous combat.
-    const attack = (relic: RelicInstance | null) => {
-      const state = mainState();
-      state.players[0].board[0] = makeMinion("Mob Psycho", 0, { atk: 3, hp: 9, maxHp: 9, relic });
-      state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 4, hp: 20, maxHp: 20 });
-      const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-      return after.players[0].board[0]!.hp;
-    };
-    expect(attack(null)).toBe(5); // 9 - 4 retaliation
-    expect(attack(relicByName("Tesseract"))).toBe(9); // untouched
-
-    // It only protects the bearer's OWN swing. Being attacked still hurts.
-    const incoming = mainState();
-    incoming.players[0].board[0] = makeMinion("Mob Psycho", 0, {
-      atk: 3, hp: 9, maxHp: 9, relic: relicByName("Tesseract"),
+  it("One Ring prevents the first death, restores full HP, and is destroyed", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0, {
+      hp: 1,
+      maxHp: 10,
+      relic: relicByName("One Ring"),
     });
-    incoming.players[1].board[0] = makeMinion("Death Star", 1, { atk: 4, hp: 20, maxHp: 20 });
-    incoming.activePlayer = 1;
-    const hit = applyAction(incoming, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(hit.players[0].board[0]!.hp).toBe(5);
+    state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 99, hp: 20, maxHp: 20 });
+    state.activePlayer = 1;
+
+    const result = applyAction(
+      state,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
+      library,
+    );
+    const after = result.state;
+    expect(after.players[0].board[0]?.hp).toBe(10);
+    expect(after.players[0].board[0]?.relic).toBeNull();
+    expect(after.discard).toContain(relicByName("One Ring").id);
+    expect(result.events).toContainEqual(expect.objectContaining({ text: expect.stringContaining("survives at full health") }));
+
+    // The relic is consumed: the next lethal hit removes the bearer.
+    after.players[1].board[1] = makeMinion("Death Star", 1, { atk: 99, hp: 20, maxHp: 20 });
+    const second = applyAction(
+      after,
+      { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 0 },
+      library,
+    ).state;
+    expect(second.players[0].board[0]).toBeNull();
   });
 
-  it("Anti-magic Mask refuses a Freeze", () => {
+  it("Tesseract lets its bearer attack twice each turn", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0, {
+      atk: 3,
+      hp: 9,
+      maxHp: 9,
+      relic: relicByName("Tesseract"),
+    });
+    state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 1, hp: 20, maxHp: 20 });
+
+    const first = applyAction(
+      state,
+      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(first.players[0].board[0]?.attacksUsed).toBe(1);
+    expect(getLegalActions(first, library)).toContainEqual({
+      type: "attack_minion",
+      player: 0,
+      attackerSlot: 0,
+      targetSlot: 0,
+    });
+
+    const second = applyAction(
+      first,
+      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(second.players[0].board[0]?.attacksUsed).toBe(2);
+    expect(second.players[1].board[0]?.hp).toBe(14);
+  });
+
+  it("Anti-magic Mask blocks Freeze and Chained but not Silence", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("Mob Psycho", 1, { relic: relicByName("Anti-magic Mask") });
 
-    const after = playCardFor(state, 0, "Kiritsugu Emiya", 0); // Battlecry: freeze an enemy
+    const after = playCardFor(state, 0, "Kiritsugu Emiya", 0); // Battlecry: freeze and silence an enemy
     expect(after.players[1].board[0]?.frozen).toBe(false);
+    expect(after.players[1].board[0]?.silenced).toBe(true);
+
+    const chainState = mainState();
+    chainState.players[1].board[0] = makeMinion("Mob Psycho", 1, { relic: relicByName("Anti-magic Mask") });
+    const chained = playCardFor(chainState, 0, "Darth Vader", 0);
+    expect(chained.players[1].board[0]?.chained).toBe(0);
   });
 
-  it("Elder wand halves damage coming from Magic", () => {
+  it("Elder wand blocks Silence but not Freeze", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Mob Psycho", 0, { atk: 5 }); // Magic camp
-    state.players[1].board[0] = makeMinion("Death Star", 1, { hp: 20, maxHp: 20, relic: relicByName("Elder wand") });
+    state.players[1].board[0] = makeMinion("Mob Psycho", 1, { relic: relicByName("Elder wand") });
 
-    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(after.players[1].board[0]?.hp).toBe(18); // 5 -> 2
+    const after = playCardFor(state, 0, "Kiritsugu Emiya", 0);
+    expect(after.players[1].board[0]?.frozen).toBe(true);
+    expect(after.players[1].board[0]?.silenced).toBe(false);
+  });
+
+  it("Chamber of Secrets blocks Nature attacks and Cyber-Enchantment blocks Tech attacks", () => {
+    const chamberState = mainState();
+    chamberState.players[0].board[0] = makeMinion("Goblins", 0, { atk: 5 });
+    chamberState.players[1].board[0] = makeMinion("Mob Psycho", 1, {
+      hp: 10,
+      maxHp: 10,
+      relic: relicByName("Chamber of Secrets"),
+    });
+    const chamber = applyAction(
+      chamberState,
+      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(chamber.players[1].board[0]?.hp).toBe(10);
+
+    const cyberState = mainState();
+    cyberState.players[0].board[0] = makeMinion("Death Star", 0, { atk: 5 });
+    cyberState.players[1].board[0] = makeMinion("Mob Psycho", 1, {
+      hp: 10,
+      maxHp: 10,
+      relic: relicByName("Cyber-Enchantment"),
+    });
+    const cyber = applyAction(
+      cyberState,
+      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(cyber.players[1].board[0]?.hp).toBe(10);
+  });
+
+  it("Ea doubles the bearer's attack and Monster Cell grants stats and Taunt", () => {
+    const eaState = mainState();
+    eaState.players[0].board[0] = makeMinion("Mob Psycho", 0);
+    const ea = playRelicFor(eaState, 0, "Ea", 0);
+    expect(ea.players[0].board[0]?.atk).toBe(10);
+
+    const monsterState = mainState();
+    monsterState.players[0].board[0] = makeMinion("Mob Psycho", 0);
+    const monster = playRelicFor(monsterState, 0, "Monster Cell", 0);
+    const bearer = monster.players[0].board[0]!;
+    expect(bearer.atk).toBe(8);
+    expect(bearer.maxHp).toBe(7);
+    expect(bearer.hp).toBe(7);
+    expect(bearer.keywords).toContain("Taunt");
+    expect(bearer.silenced).toBe(false);
+  });
+
+  it("White Whistle repeats a Battlecry at the next start of turn", () => {
+    const state = mainState();
+    state.players[1].board[0] = makeMinion("Death Star", 1, { hp: 10, maxHp: 10 });
+    const afterBattlecry = playCardFor(state, 0, "Ainz Ooal Gown", 0);
+    expect(afterBattlecry.players[1].board[0]?.hp).toBe(1);
+
+    afterBattlecry.players[1].board[1] = makeMinion("Death Star", 1, { hp: 10, maxHp: 10 });
+    const equipped = playRelicFor(afterBattlecry, 0, "White Whistle", 0);
+    expect(equipped.players[1].board[1]?.hp).toBe(10);
+
+    const nextTurn = toMyNextTurn(equipped);
+    expect(nextTurn.players[1].board[1]?.hp).toBe(1);
   });
 
   it("The Green Mask sends a dying bearer to hand instead of the discard", () => {
@@ -263,16 +366,25 @@ describe("relic effects", () => {
     expect(result.events).toContainEqual(expect.objectContaining({ motion: "return", instanceId: targetInstanceId }));
   });
 
-  it("Infinity Castle hides its bearer from enemy targeting", () => {
-    const state = mainState();
-    state.players[1].board[0] = makeMinion("Mob Psycho", 1, { relic: relicByName("Infinity Castle") });
-    state.players[1].board[1] = makeMinion("Death Star", 1);
+  it("Infinity Castle gives its bearer a 50% chance to evade attacks", () => {
+    const attackWithSeed = (rngSeed: number) => {
+      const state = mainState();
+      state.rngSeed = rngSeed;
+      state.players[0].board[0] = makeMinion("Mob Psycho", 0, { atk: 5 });
+      state.players[1].board[0] = makeMinion("Death Star", 1, {
+        hp: 20,
+        maxHp: 20,
+        relic: relicByName("Infinity Castle"),
+      });
+      return applyAction(
+        state,
+        { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+        library,
+      ).state.players[1].board[0]?.hp;
+    };
 
-    const after = playCardFor(state, 0, "Kiritsugu Emiya", 0);
-    // Only the unprotected minion was ever an option, so it froze without a prompt.
-    expect(after.phase).toBe("main");
-    expect(after.players[1].board[0]?.frozen).toBe(false);
-    expect(after.players[1].board[1]?.frozen).toBe(true);
+    expect(attackWithSeed(1)).toBe(20);
+    expect(attackWithSeed(123456789)).toBe(15);
   });
 
   it("a relic dies with its bearer", () => {

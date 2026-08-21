@@ -1,22 +1,22 @@
 id,name,cost,rarity,color,relicId,effect,flavor,origin,art
 r001,The Holy Grail,5,Relic,relic,double_stats,The bearer doubles its ATK and HP.,Every knight sought it,Myth,/card-art/raw/r001.webp
-r002,Lostvayne,4,Relic,relic,immune_magic,The bearer is invulnerable to Magic attacks.,,Seven Deadly Sins,/card-art/raw/r002.webp
-r003,One Ring,4,Relic,relic,core_strike_3,The bearer deals 3 extra damage when it strikes the enemy core.,,Lord of The Rings,/card-art/raw/r003.webp
+r002,Lostvayne,3,Relic,relic,immune_magic,The bearer is invulnerable to Magic attacks.,,Seven Deadly Sins,/card-art/raw/r002.webp
+r003,One Ring,4,Relic,relic,rescue_full,"The first time the bearer would die, set it to full HP instead and destroy this relic.",,Lord of The Rings,/card-art/raw/r003.webp
 r004,Sunshine Grace,4,Relic,relic,bearer_divine_shield,The bearer gains Divine Shield.,The sun does not ask permission. It simply rises,Seven Deadly Sins,/card-art/raw/r004.webp
 r005,Infinity Stone,3,Relic,relic,cleave_adjacent,The bearer's attacks also strike the two minions adjacent to its target.,,MCU,/card-art/raw/r005.webp
-r006,White Whistle,2,Relic,relic,double_ongoing,"The bearer triggers their ""Ongoing"" effect a second time each turn.",Only those who've faced the Abyss may sound it,Made in Abyss,/card-art/raw/r006.webp
-r007,Chamber of Secrets,2,Relic,relic,half_from_nature,The bearer takes half damage from Nature minions (rounded down).,It has been opened before,Harry Potter,/card-art/raw/r007.webp
-r008,Cyber-Enchantment,2,Relic,relic,half_from_tech,The bearer takes half damage from Tech minions (rounded down).,,Myth,/card-art/raw/r008.webp
-r009,Ea,2,Relic,relic,double_atk_damage,The bearer deals double damage with its attacks.,It remembers when the world had no shape,Fate,/card-art/raw/r009.webp
-r010,Elder wand,2,Relic,relic,half_from_magic,The bearer takes half the damage from Magic minions (rounded down).,,Harry Potter,/card-art/raw/r010.webp
-r011,Monster Cell,2,Relic,relic,monster_cell,"The bearer gains +3/+2. It gets silenced.",Become the next thing. Leave behind something of the last,OPM,/card-art/raw/r011.webp
-r012,Philosopher's Stone,2,Relic,relic,philosophers_stone,The bearer takes double damage on the enemy's turn but is invulnerable on your own.,Everything has a cost,Myth,/card-art/raw/r012.webp
+r006,White Whistle,3,Relic,relic,battlecry_to_ongoing,The bearer's Battlecry effect turns into Ongoing effect.,Only those who've faced the Abyss may sound it,Made in Abyss,/card-art/raw/r006.webp
+r007,Chamber of Secrets,3,Relic,relic,immune_nature_attacks,The bearer is invulnerable to Nature attacks.,It has been opened before,Harry Potter,/card-art/raw/r007.webp
+r008,Cyber-Enchantment,3,Relic,relic,immune_tech_attacks,The bearer is invulnerable to Tech attacks.,,Myth,/card-art/raw/r008.webp
+r009,Ea,3,Relic,relic,double_bearer_attack,The bearer's ATK is doubled.,It remembers when the world had no shape,Fate,/card-art/raw/r009.webp
+r010,Elder wand,1,Relic,relic,immune_silence,The bearer is immune to Silence.,,Harry Potter,/card-art/raw/r010.webp
+r011,Monster Cell,2,Relic,relic,monster_cell,The bearer gains +3/+2 and Taunt.,Become the next thing. Leave behind something of the last,OPM,/card-art/raw/r011.webp
+r012,Philosopher's Stone,4,Relic,relic,philosophers_stone,The bearer takes double damage on the enemy's turn but is invulnerable on your own.,Everything has a cost,Myth,/card-art/raw/r012.webp
 r013,Allspark Cube,1,Relic,relic,capture_kill,"When the bearer kills an enemy minion, take that minion as a card to your hand.",,Transformers,/card-art/raw/r013.webp
-r014,Anti-magic Mask,1,Relic,relic,immune_disable,The bearer gains immunity to Silence and Freeze.,Magic is energy with rules attached. This removes the rules,That time I got reincarnated as a Slime,/card-art/raw/r014.webp
+r014,Anti-magic Mask,1,Relic,relic,immune_freeze_chain,The bearer is immune to Freeze and Chained.,Magic is energy with rules attached. This removes the rules,That time I got reincarnated as a Slime,/card-art/raw/r014.webp
 r015,Devil Fruit,2,Relic,relic,ongoing_grow_2,The bearer gains an additional Ongoing: gain +2/+1.,The sea will never accept you again,One Piece,/card-art/raw/r015.webp
 r016,Healing Potion,1,Relic,relic,heal_full_now,The bearer is fully healed the moment it is equipped.,,That time I got reincarnated as a Slime,/card-art/raw/r016.webp
-r017,Queen's Cocoon,1,Relic,relic,cocoon,"The bearer is Chained for a turn. When it awakens, it gains +3/+3.",,Hxh,/card-art/raw/r017.webp
+r017,Queen's Cocoon,2,Relic,relic,cocoon,"The bearer is Chained for a turn. When it awakens, it gains +3/+3.",,Hxh,/card-art/raw/r017.webp
 r018,Shinigami Eyes,1,Relic,relic,ignore_defences,The bearer ignores Taunt and Divine Shield.,I finally see,Death Note,/card-art/raw/r018.webp
-r019,The Green Mask,1,Relic,relic,return_on_death,Return the bearer to your hand after death.,Fears removed,The Mask,/card-art/raw/r019.webp
-r020,Tesseract,0,Relic,relic,no_retaliation,The bearer takes no retaliation damage when it attacks.,Space doesn't exist,MCU,/card-art/raw/r020.webp
-r021,Infinity Castle,3,Relic,relic,untargetable,The bearer cannot be chosen by enemy effects.,The rooms rearrange themselves behind you,Demon Slayer,/card-art/raw/r021.webp
+r019,The Green Mask,2,Relic,relic,return_on_death,Return the bearer to your hand after death.,Fears removed,The Mask,/card-art/raw/r019.webp
+r020,Tesseract,2,Relic,relic,double_attack,The bearer can attack twice each turn.,Space doesn't exist,MCU,/card-art/raw/r020.webp
+r021,Infinity Castle,4,Relic,relic,evade_50,The bearer's Evade chance is 50%.,The rooms rearrange themselves behind you,Demon Slayer,/card-art/raw/r021.webp

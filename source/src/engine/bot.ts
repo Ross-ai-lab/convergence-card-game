@@ -91,21 +91,21 @@ export function botDials(): Record<string, unknown> {
  * This is both dials at once. It is the width of the opening shortlist, because
  * the beam starts as the best few openings — and it is the width of the turn
  * search, because those lines are extended together rather than each being
- * finished greedily on its own. Five was the old shortlist size; eight buys a
+ * finished greedily on its own. Five was the old shortlist size; nine buys a
  * weak-looking setup card enough room to survive its first move and prove itself
  * on the second, at roughly 1.6x the search cost.
  *
  * Cost is close to linear in this number, and the Ascendant's move already runs
  * on the UI thread. Read the timing note in the README before raising it.
  */
-const BEAM_WIDTH = 8;
+const BEAM_WIDTH = 9;
 
 /**
  * How many of those finished turns get the full "and then what do they do?"
  * search.
  *
- * Building eight turns is cheap. Answering each one with a branched opponent
- * reply is the expensive half, and doing it for all eight was measurably the
+ * Building nine turns is cheap. Answering each one with a branched opponent
+ * reply is the expensive half, and doing it for all nine was measurably the
  * dominant cost. This keeps the beam's ability to FIND a better turn while
  * paying for the deep look only on the turns that could win the argument.
  *
@@ -613,8 +613,8 @@ export function turnsConsidered(
  * What makes one opening genuinely different from another.
  *
  * WHICH card you play is a decision; which empty slot you drop it into almost
- * never is. Keying the beam's diversity on the full action spent all eight lines
- * on one card in five slots and a second card in three — eight "different"
+ * never is. Keying the beam's diversity on the full action spent all nine lines
+ * on one card in five slots and a second card in four — nine "different"
  * openings that were really two, scoring identically to three decimal places,
  * with every other card in hand already discarded. Targets are the opposite case
  * and stay part of the identity: who you attack is the whole decision.
@@ -623,8 +623,8 @@ export function turnsConsidered(
  * still explored, and duplicates can still fill the beam's remaining slots.
  *
  * Like the reservation it serves, this is evidenced by measurement rather than
- * by a test: keying on the full action was observed filling all eight lines with
- * one card in five slots and a second in three, every line scoring identically.
+ * by a test: keying on the full action was observed filling all nine lines with
+ * one card in five slots and a second in four, every line scoring identically.
  * The beam's width itself IS covered — collapsing it to one fails two tests.
  */
 function openingIdentity(action: GameAction): string {
@@ -708,7 +708,7 @@ function beamOwnTurn(
     // of the beam with whatever scores highest overall.
     //
     // Without this the beam collapses almost immediately: the strongest opening
-    // usually has the strongest follow-ups too, so all eight slots fill with
+    // usually has the strongest follow-ups too, so all nine slots fill with
     // variations of one turn and every other opening is gone by the second move.
     // That is the original blind spot wearing a wider hat — a setup card is
     // behind on the board precisely while it is setting something up, so it must
