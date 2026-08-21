@@ -663,13 +663,19 @@ own; the general image technique lives in
 5. **Rebuild the menu thumbnails** with
    `materials/local-production/asset-tools/build-menu-art.py`.
 
-**Bulk-shrinking oversized source art**, if a batch ever arrives at print size:
-target roughly 2 to 3 times the on-screen size and leave the masters alone. One
-run took **358 MB down to 12 MB** across 196 card faces with the baked-in card
-text still crisp:
+**Bulk-shrinking oversized source art**, if a batch ever arrives at print size.
+Target roughly **2 to 3 times the on-screen size** and leave the print masters
+untouched. One run took **358 MB down to 12 MB** (~60 kB a face) across 196 card
+faces with the baked-in card text still crisp:
 
 ```
 image_convert.ps1 -Path <folder> -From png -To webp -MaxWidth 600 -Quality 86
+```
+
+Per file:
+
+```
+ffmpeg -i in.png -vf "scale=600:-1:flags=lanczos" -c:v libwebp -quality 86 out.webp
 ```
 
 
