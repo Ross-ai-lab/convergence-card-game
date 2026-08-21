@@ -6,6 +6,25 @@
 **Jump:** Play · What the game still needs · Rules · Card language · Relics · Controls and modes · Project structure · Parallel work · Run and verify · Cards and effects · Engine rules · Interface · Balance · Assets and audio · Contributing · Development lessons
 <!-- KB-JUMP-END -->
 
+## Version 1.0 — complete, 21 August 2026
+
+**Convergence is finished and shipped.** The duel works, it has been played and
+enjoyed, the roster is complete with no blank cards, every card carries real
+artwork and a real theme, and a record and collection now survive each duel.
+
+What 1.0 means in practice, so nobody reopens a closed question:
+
+- **The duel is done.** Do not put "does a turn feel good" back on any list.
+- **Bot and fine-balance work is PARKED**, by owner decision, and only returns if
+  this game is ever put in front of a larger audience. Do not propose the
+  per-card value table, Insight, or another search dial as outstanding work.
+- **A run mode and a draft mode are declined**, not pending. Draft would delete
+  the shared deck, which is what gives Foresight and Clairvoyance their bite.
+- **Online multiplayer is declined.** Hotseat already covers playing with people.
+
+Changes after this point are maintenance or things the owner asks for, not a
+march toward a finish line that has already been crossed.
+
 ## What Convergence is
 
 Convergence is a non-commercial browser card duel where 172 named characters and forces from fiction collide alongside three Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
