@@ -2638,6 +2638,8 @@ function runEffect(
     damageAllOther(state, source, 1, events);
   } else if (source.effectId === "aoe_all_2") {
     damageAllOther(state, source, 2, events);
+  } else if (source.effectId === "aoe_all_4") {
+    damageAllOther(state, source, 4, events);
   } else if (source.effectId === "aoe_all_3") {
     damageAllOther(state, source, 3, events);
   } else if (source.effectId === "damage_evil_enemy_4" || source.effectId === "damage_magic_enemy_2") {

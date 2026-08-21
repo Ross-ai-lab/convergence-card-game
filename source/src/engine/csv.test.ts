@@ -62,8 +62,8 @@ describe("card CSV data", () => {
       atk: 4,
       hp: 3,
       origin: "Basic",
-      effectId: "aoe_all_3",
-      effect: "Battlecry: Deal 3 damage to all other minions.",
+      effectId: "aoe_all_4",
+      effect: "Battlecry: Deal 4 damage to all other minions.",
     });
     expect(changed.get("Planetary Defense Grid")).toMatchObject({
       cost: 9,

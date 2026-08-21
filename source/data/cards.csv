@@ -63,7 +63,7 @@ c061,Chaos,8,1,1,Purple,Magic,Neutral,Deathrattle,chaos_random_summon,onPlay,"Ba
 c062,S-Class Heroes,8,4,7,Purple,ALL,Good,,buff_all_good_2,ongoing,Ongoing: Give +2/+2 to all Good minions.,The strongest team,OPM,/card-art/raw/c062.webp
 c063,Sans,4,1,1,Purple,Magic,Neutral,Passive,dodge_80,passive,Passive: Evade 80% of attacks.,"HELLO, WORLD!",Undertale,/card-art/raw/c063.webp
 c064,Seven Deadly Sins,8,4,5,Purple,Magic,Good,,summon_sins,onPlay,"Battlecry: Fill your empty slots with 1/1 Sin minions. Each enters with a different keyword at random: Taunt, Divine Shield, Charge, Chained.",The Magic Number,Seven Deadly Sins,/card-art/raw/c064.webp
-c065,Whitebeard,8,6,4,Purple,Magic,Neutral,,aoe_all_3,onPlay,Battlecry: Deal 3 damage to all other minions.,Split the World in two,One Piece,/card-art/raw/c065.webp
+c065,Whitebeard,8,4,3,Purple,Magic,Neutral,,aoe_damage_3,onPlay,Battlecry: Deal 3 damage to all enemy minions.,Split the World in two,One Piece,/card-art/raw/c065.webp
 c066,Elder Centipede,7,5,6,Black,Nature,Evil,Ongoing,self_buff_2,ongoing,Ongoing: Gain +2/+2.,Billion year old,OPM,/card-art/raw/c066.webp
 c067,Hypnos,4,0,5,Black,Magic,Neutral,Taunt;Passive,chain_attacker,passive,Taunt. Passive: Enemy minions that attack this become Chained for 1 turn.,He sleeps in his sleep,Hades,/card-art/raw/c067.webp
 c068,Star Destroyer,7,5,5,Black,Tech,Neutral,,star_destroyer_tie_fighters,onPlay,Battlecry: Summon two 1/1 TIE Fighters with Charge.,-,Basic,/card-art/raw/c068.webp
@@ -171,6 +171,6 @@ c172,Mr. Poopybutthole,1,1,1,Black,Nature,Neutral,Deathrattle,reborn_75,deathrat
 c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,ongoing,Ongoing: Draw 1 card.,The smartest thing here is a mouse.,MHA,/card-art/raw/c173.webp
 c174,Shibukawa,1,1,1,Black,Nature,Neutral,Ongoing,set_attack_highest_enemy,ongoing,Ongoing: Set Shibukawa's ATK equal to the highest ATK enemy minion.,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
 c175,V,1,1,1,Black,Nature,Neutral,Deathrattle,deathrattle_random_evil,deathrattle,"Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core.",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
-c176,Meteor,8,4,3,Black,Nature,Neutral,,aoe_all_3,onPlay,Battlecry: Deal 3 damage to all other minions.,It was never going to miss.,Basic,/card-art/raw/c176.webp
+c176,Meteor,8,4,3,Black,Nature,Neutral,,aoe_all_4,onPlay,Battlecry: Deal 4 damage to all other minions.,It was never going to miss.,Basic,/card-art/raw/c176.webp
 c177,Planetary Defense Grid,9,4,8,Black,Tech,Neutral,Taunt;Passive,planetary_defense_grid_taunt_buff,passive,"Taunt. Passive: All other Taunt minions have +2/+2.",The shield watches from orbit.,Basic,/card-art/raw/planetary-defense-grid.webp
 c178,Black Hole,10,7,4,Black,Magic,Neutral,Deathrattle,black_hole_deathrattle,deathrattle,Deathrattle: Silence then destroy all minions.,Nothing escapes the singularity.,Basic,/card-art/raw/black-hole.webp

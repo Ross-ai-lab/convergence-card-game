@@ -52,7 +52,7 @@ describe("2026 card replacements", () => {
   it("loads the requested stats, origins, keywords, timings, and effect IDs", () => {
     const expected: Record<string, Partial<(typeof cards)[number]>> = {
       "The Watcher": { atk: 10, hp: 7, effectId: "watcher_reveal_hand", effectTiming: "passive" },
-      Whitebeard: { atk: 6, hp: 4, effectId: "aoe_all_3", effectTiming: "onPlay" },
+      Whitebeard: { atk: 4, hp: 3, effectId: "aoe_damage_3", effectTiming: "onPlay" },
       "Dio Brando": { atk: 3, hp: 2, effectId: "freeze_all_enemies", effectTiming: "onPlay" },
       Gilgamesh: { atk: 5, hp: 5, effectId: "equip_random_relic", effectTiming: "onPlay", keywords: [] },
       Sonic: { atk: 6, hp: 3, effectId: "charge", effectTiming: "none", keywords: ["Charge"] },
@@ -296,10 +296,10 @@ describe("2026 card replacements", () => {
         cost: 8,
         atk: 4,
         hp: 3,
-        effectId: "aoe_all_3",
+        effectId: "aoe_all_4",
         effectTiming: "onPlay",
         keywords: [],
-        effect: "Battlecry: Deal 3 damage to all other minions.",
+        effect: "Battlecry: Deal 4 damage to all other minions.",
         origin: "Basic",
       },
       "Planetary Defense Grid": {
@@ -2042,14 +2042,27 @@ describe("direct effect reachability", () => {
     expect(after.players[1].board[1]?.name).toBe("John Wick");
   });
 
-  it("Whitebeard deals exactly 3 damage to every other minion", () => {
+  it("Whitebeard deals 3 to the ENEMY board and spares your own", () => {
     const state = mainState("whitebeard-aoe");
     state.players[0].board[0] = minion("John Wick", 0, { hp: 9, maxHp: 9, effectId: "none", effectTiming: "none", keywords: [] });
     state.players[1].board[0] = minion("Zoro", 1, { hp: 9, maxHp: 9, effectId: "none", effectTiming: "none", keywords: [] });
     const after = play(state, 0, "Whitebeard", 2);
-    expect(after.players[0].board[0]?.hp).toBe(6);
+    // Enemy only. This is what separates him from Meteor, which costs the same,
+    // has the same body, hits for 4, and hits YOUR board too.
+    expect(after.players[0].board[0]?.hp).toBe(9);
     expect(after.players[1].board[0]?.hp).toBe(6);
-    expect(after.players[0].board[2]?.hp).toBe(4);
+    expect(after.players[0].board[2]?.hp).toBe(3);
+  });
+
+  it("Meteor deals 4 to every other minion, including your own", () => {
+    const state = mainState("meteor-aoe");
+    state.players[0].board[0] = minion("John Wick", 0, { hp: 9, maxHp: 9, effectId: "none", effectTiming: "none", keywords: [] });
+    state.players[1].board[0] = minion("Zoro", 1, { hp: 9, maxHp: 9, effectId: "none", effectTiming: "none", keywords: [] });
+    const after = play(state, 0, "Meteor", 2);
+    expect(after.players[0].board[0]?.hp).toBe(5);
+    expect(after.players[1].board[0]?.hp).toBe(5);
+    // "All OTHER minions" — the meteor does not hit itself.
+    expect(after.players[0].board[2]?.hp).toBe(3);
   });
 
   it("Gandalf the White gives Divine Shield to every friendly Good minion only", () => {

@@ -2501,7 +2501,9 @@ const FILTER_ANY: Record<FilterKey, string> = {
 /** Rarity runs commonest to rarest, which is not alphabetical. */
 const VALUE_ORDER: Record<FilterKey, string[]> = {
   cost: [],
-  rarity: ["Black", "Yellow", "Purple", "Red", "Relic"],
+  // Commonest to rarest: Rare, Epic, Legendary, Mythic. The colours carry no
+  // order of their own, which is how Legendary ended up listed above Epic.
+  rarity: ["Black", "Purple", "Yellow", "Red", "Relic"],
   camp: ["Magic", "Tech", "Nature", "ALL"],
   alignment: ["Good", "Neutral", "Evil"],
 };

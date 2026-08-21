@@ -648,6 +648,31 @@ Do not make the simulated rules, bot skill, or turn timing “10× faster” by 
 
 ### Card art is WebP. Every file, no exceptions
 
+**Producing a card image, start to finish.** Every step here is Convergence's
+own; the general image technique lives in
+[Knowledge/image.md](../../../Knowledge/image.md) and is not repeated.
+
+1. **Source a real photograph.** Never generate one — see the ruling below.
+2. **Upscale if it is small.** `py -3.14 Pipelines/image/image.py upscale <file> --scale 2`
+   uses the vendored waifu2x. Processing, not generation.
+3. **Crop to the art window, which is `732 x 492` design units** (aspect 1.488).
+   The window is LANDSCAPE — a portrait source will be cropped hard, and that
+   surprises people who assume a card frame wants a portrait picture.
+4. **Save as WebP at quality 88.** That is where a side-by-side stops being
+   distinguishable at card size.
+5. **Rebuild the menu thumbnails** with
+   `materials/local-production/asset-tools/build-menu-art.py`.
+
+**Bulk-shrinking oversized source art**, if a batch ever arrives at print size:
+target roughly 2 to 3 times the on-screen size and leave the masters alone. One
+run took **358 MB down to 12 MB** across 196 card faces with the baked-in card
+text still crisp:
+
+```
+image_convert.ps1 -Path <folder> -From png -To webp -MaxWidth 600 -Quality 86
+```
+
+
 **A new card image is saved as `.webp`.** As of 2026-08-21 every one of the 203
 files in `source/public/card-art/raw/` is WebP except one deliberate SVG, and the
 last eight PNGs converted at **3.85 MB -> 0.48 MB, 88% smaller**, with no visible
