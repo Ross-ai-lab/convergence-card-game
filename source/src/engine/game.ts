@@ -304,13 +304,18 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
 
   const player = state.players[state.activePlayer];
   const enemy = state.players[opponent(state.activePlayer)];
+  const hasHeroPower = Boolean(state.heroPowers[player.id]);
+  // A normal position has neither a selected power nor a relic in hand. Keep
+  // that hot path cheap; the relic check below asks about Kratos lazily when a
+  // relic is actually present.
+  let opponentHasKratosLockdown = hasHeroPower && opponentHasKratosLock(state, player.id);
   const actions: GameAction[] = [{ type: "end_turn", player: player.id }];
 
   if (player.coins > 0) {
     actions.push({ type: "use_coin", player: player.id });
   }
 
-  if (heroPowerIsUsable(state, player.id)) {
+  if (!opponentHasKratosLockdown && heroPowerIsUsable(state, player.id)) {
     actions.push({ type: "use_hero_power", player: player.id });
   }
 
@@ -321,8 +326,13 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
       if (isMinionCard(card) && !slot) {
         actions.push({ type: "play_card", player: player.id, handIndex, slotIndex });
       }
-      if (isRelicCard(card) && slot && hasFreeRelicSlot(slot)) {
-        actions.push({ type: "play_relic", player: player.id, handIndex, slotIndex });
+      if (isRelicCard(card)) {
+        if (!hasHeroPower && !opponentHasKratosLockdown) {
+          opponentHasKratosLockdown = opponentHasKratosLock(state, player.id);
+        }
+        if (!opponentHasKratosLockdown && slot && hasFreeRelicSlot(slot)) {
+          actions.push({ type: "play_relic", player: player.id, handIndex, slotIndex });
+        }
       }
     });
   });
@@ -391,6 +401,29 @@ function toggleMulligan(state: GameState, playerId: PlayerId, handIndex: number)
   if (!mulligan || mulligan.player !== playerId) return;
   if (handIndex < 0 || handIndex >= state.players[playerId].hand.length) return;
   mulligan.selected[handIndex] = !mulligan.selected[handIndex];
+}
+
+/** Kratos's passive is a live opponent lock: silence, chaining, death, and
+ * leaving the board all make the opponent's relic and Hero Power actions legal
+ * again because hasEffect handles those temporary statuses centrally. */
+function opponentHasKratosLock(state: GameState, playerId: PlayerId): boolean {
+  return state.players[opponent(playerId)].board.some(
+    (minion) => {
+      if (!minion) return false;
+      if (minion.silenced || minion.chained > 0) return false;
+      // Avoid asking the generic effect helper about every ordinary minion in
+      // the bot's speculative search. Only a minion that actually holds this
+      // effect needs the centralized coverage trace.
+      if (minion.effectId === "kratos_lockdown") {
+        traceEffect("kratos_lockdown");
+        return true;
+      }
+      if (minion.gainedEffects.length === 0) return false;
+      if (!minion.gainedEffects.some((effect) => effect.effectId === "kratos_lockdown")) return false;
+      traceEffect("kratos_lockdown");
+      return true;
+    },
+  );
 }
 
 function confirmMulligan(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
@@ -5853,16 +5886,6 @@ function reactToDeath(
       // a death is resolved while its owner is on the board, which is the moment
       // its branch is genuinely reachable.
       traceEffect(minion.effectId);
-      // Kratos is the one lifecycle exception: breaking his own chains is the
-      // release condition printed on the card, not a passive board aura. Every
-      // other passive/death reaction is suspended while a minion is Chained.
-      if (playerId === deadOwner && minion.effectId === "kratos_chain_break" && minion.chained > 0) {
-        minion.chained = 0;
-        resolveChainGrowth(minion, events);
-        buffMinion(minion, 2, 2);
-        events.push(effectEvent(`${minion.name} breaks its chains and gains +2/+2.`, minion));
-        continue;
-      }
       if (minion.chained > 0) continue;
       if (
         killer &&

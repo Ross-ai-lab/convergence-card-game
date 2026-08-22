@@ -280,7 +280,7 @@ export type EffectId =
   | "yoda_lowest_atk_buff"
   | "king_attack_lock_random"
   | "dominion_authority"
-  | "kratos_chain_break"
+  | "kratos_lockdown"
   | "ten_commandments_first_attack"
   | "hashira_focus_attack"
   | "freeze_and_silence_enemy"

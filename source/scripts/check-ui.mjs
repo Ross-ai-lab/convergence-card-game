@@ -69,6 +69,12 @@ check(
   (await page.getByRole("button", { name: /relics/i }).count()) === 0,
   "no Relics control rendered",
 );
+check(
+  "Hero Powers menu button stays neutral",
+  (await page.locator(".hero-power-trigger small").count()) === 0 &&
+    (await page.locator(".hero-power-trigger").getByText("Call a Recruit", { exact: true }).count()) === 0,
+  "the equipped power name is not printed on the title menu",
+);
 
 // These four buttons live on the rift artwork, beneath the transparent title
 // layer. A full-screen decorative wrapper once caught their pointer events,
@@ -109,6 +115,16 @@ check(
   titleHoverDrifts.every(({ maxDrift }) => maxDrift < 0.25),
   titleHoverDrifts.map(({ selector, maxDrift }) => `${selector} ${maxDrift.toFixed(1)}px`).join(", "),
 );
+
+await page.locator(".hotseat-trigger").click({ timeout: 2000 });
+check(
+  "2 Players opens a confirmation before starting",
+  (await page.locator('[role="dialog"][aria-label="Two-player duel"]').count()) === 1 &&
+    (await page.locator(".title-screen").count()) === 1 &&
+    (await page.locator(".duel-intro").count()) === 0,
+  "confirmation is visible before a new duel intro begins",
+);
+await page.locator(".hotseat-confirm-cancel").click();
 
 await page.locator(".duel-trigger").click({ timeout: 2000 }).catch(() => {});
 await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
@@ -167,7 +183,8 @@ if (TITLE_ONLY) {
  */
 async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /2 players|Start a hotseat/i }).first().click();
+  await page.locator(".hotseat-trigger").first().click();
+  await page.locator(".hotseat-confirm-start").click();
   await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 });
   await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 });
   // Player One is the only seat with a mulligan. Confirm it so the scenarios

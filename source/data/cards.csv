@@ -85,7 +85,7 @@ c085,Sonic,6,6,3,Purple,Nature,Good,Charge,charge,none,Charge.,SS,Sonic The Hedg
 c086,Dominion Authority,6,4,5,Black,Magic,Good,Passive,dominion_authority,passive,"Passive: Friendly minions cannot be mind-controlled, returned to hand, or transformed by enemy effects.",Loyalty,Overlord,/card-art/raw/c086.webp
 c087,Founding Titan,6,4,5,Black,Nature,Evil,Taunt;Passive,taunt_aura,passive,Taunt. Passive: All friendly minions have Taunt.,The walls were never meant to protect,Attack on Titan,/card-art/raw/c087.webp
 c088,Homelander,6,4,4,Black,Nature,Evil,Passive,invuln_if_alone,passive,Passive: This minion is Invulnerable if it is your only minion on the board.,Central casting,The Boys,/card-art/raw/c088.webp
-c089,Kratos,6,3,4,Black,Magic,Neutral,Chained,kratos_chain_break,passive,"Chained. Passive: Until any friendly minion dies, Kratos breaks his chains and gains +2/+2.",He killed the gods of his world,God of War Game,/card-art/raw/c089.webp
+c089,Kratos,6,2,6,Black,Magic,Neutral,Passive,kratos_lockdown,passive,Passive: Your opponent cannot play Ascension Relics or use Hero power.,He killed the gods of his world,God of War Game,/card-art/raw/c089.webp
 c090,Shigaraki,6,4,4,Black,Magic,Evil,Passive,shigaraki_decay,passive,"Passive: Whenever Shigaraki damages a minion, mark it. At the start of your next turn, it dies.",Revenge,MHA,/card-art/raw/c090.webp
 c091,Ten Commandments,6,3,5,Black,Magic,Evil,Passive,ten_commandments_first_attack,passive,Passive: The first enemy minion to attack each turn is Chained for 1 turn.,Their reputation preceded them by centuries,Seven Deadly Sins,/card-art/raw/c091.webp
 c092,UFO,6,3,3,Black,Tech,Neutral,Divine Shield,none,none,Divine Shield.,-,Basic,/card-art/raw/c092.webp

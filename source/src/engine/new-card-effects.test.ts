@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
+import { HERO_POWER_UNLOCK_ORDER } from "./hero-powers";
 import { spawnTestMinion } from "./test-utils";
 import type { GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
 
@@ -10,6 +11,12 @@ function cardId(name: string): string {
   const card = cards.find((entry) => entry.name === name);
   if (!card) throw new Error(`Missing card ${name}`);
   return card.id;
+}
+
+function relicId(name: string): string {
+  const relic = relics.find((entry) => entry.name === name);
+  if (!relic) throw new Error(`Missing relic ${name}`);
+  return relic.id;
 }
 
 function minion(name: string, owner: PlayerId, overrides: Partial<MinionInstance> = {}): MinionInstance {
@@ -304,7 +311,15 @@ describe("2026 card replacements", () => {
       "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
       King: { atk: 0, hp: 7, effectId: "king_attack_lock_random", effectTiming: "passive", keywords: ["Cannot Attack", "Passive"] },
       "Dominion Authority": { atk: 4, hp: 5, effectId: "dominion_authority", effectTiming: "passive", keywords: ["Passive"] },
-      Kratos: { atk: 3, hp: 4, effectId: "kratos_chain_break", effectTiming: "passive", keywords: ["Chained"] },
+      Kratos: {
+        cost: 6,
+        atk: 2,
+        hp: 6,
+        effectId: "kratos_lockdown",
+        effectTiming: "passive",
+        keywords: ["Passive"],
+        effect: "Passive: Your opponent cannot play Ascension Relics or use Hero power.",
+      },
       "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: The first enemy minion to attack each turn is Chained for 1 turn." },
       "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
       "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
@@ -1205,15 +1220,22 @@ describe("2026 card replacements", () => {
     expect(afterReturn.players[1].board[1]?.name).toBe("John Wick");
   });
 
-  it("Kratos breaks his chains and gains +2/+2 when a friendly minion dies", () => {
-    const state = mainState("kratos-chain-break");
-    state.players[0].board[0] = minion("Kratos", 0, { chained: 2 });
-    state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 1 });
-    state.players[1].board[0] = minion("Zoro", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
+  it("Kratos locks the opponent's Ascension Relics and Hero Power while active", () => {
+    const state = mainState("kratos-lockdown");
+    state.players[0].board[0] = minion("Kratos", 0);
+    state.players[1].board[0] = minion("John Wick", 1);
+    state.players[1].hand = [relicId("The Holy Grail")];
+    state.heroPowers[1] = HERO_POWER_UNLOCK_ORDER[0];
     state.activePlayer = 1;
-    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
-    expect(after.players[0].board[1]).toBeNull();
-    expect(after.players[0].board[0]).toMatchObject({ atk: 5, hp: 6, maxHp: 6, chained: 0 });
+
+    const blocked = getLegalActions(state, library);
+    expect(blocked).not.toContainEqual({ type: "use_hero_power", player: 1 });
+    expect(blocked.some((action) => action.type === "play_relic")).toBe(false);
+
+    state.players[0].board[0]!.silenced = true;
+    const released = getLegalActions(state, library);
+    expect(released).toContainEqual({ type: "use_hero_power", player: 1 });
+    expect(released).toContainEqual({ type: "play_relic", player: 1, handIndex: 0, slotIndex: 0 });
   });
 
   it("Nine Hashira makes every able friendly minion attack the chosen Evil target", () => {

@@ -199,7 +199,6 @@ export function TitleScreen({
   onGallery,
   onRecord,
   onHeroPowers,
-  heroPowerName,
 }: {
   canContinue: boolean;
   playerCount: number | null;
@@ -211,9 +210,9 @@ export function TitleScreen({
   onGallery: () => void;
   onRecord: () => void;
   onHeroPowers: () => void;
-  heroPowerName: string;
 }) {
   const [skill, setSkill] = useState<BotSkill>("normal");
+  const [hotseatConfirmOpen, setHotseatConfirmOpen] = useState(false);
   const skillIcon = {
     easy: Sparkle,
     normal: Target,
@@ -278,7 +277,14 @@ export function TitleScreen({
         ) : null}
 
         <div className="title-links title-actions">
-          <button type="button" className="hotseat-trigger" onClick={() => onStart({ kind: "hotseat" })}>
+          <button
+            type="button"
+            className="hotseat-trigger"
+            onClick={() => {
+              sfx.play("button");
+              setHotseatConfirmOpen(true);
+            }}
+          >
             <UsersThree size={22} weight="fill" aria-hidden="true" />
             <span>2 players</span>
           </button>
@@ -303,7 +309,6 @@ export function TitleScreen({
           >
             <Lightning size={22} weight="fill" aria-hidden="true" />
             <span>Hero Powers</span>
-            <small>{heroPowerName}</small>
           </button>
           <button type="button" className="settings-trigger" onClick={onSettings}>
             <GearSix size={22} weight="fill" aria-hidden="true" />
@@ -315,6 +320,41 @@ export function TitleScreen({
           <p className="title-player-count"><b>{playerCount.toLocaleString()}</b> played this game</p>
         ) : null}
       </div>
+
+      {hotseatConfirmOpen ? (
+        <Overlay title="Two-player duel" onClose={() => setHotseatConfirmOpen(false)}>
+          <div className="hotseat-confirm">
+            <p className="hotseat-confirm-question">Start a two-player duel?</p>
+            <p className="hotseat-confirm-note">
+              Both players share this screen. Player One gets the opening mulligan, and each hand is hidden during the
+              other player&apos;s turn.
+            </p>
+            <div className="hotseat-confirm-actions">
+              <button
+                type="button"
+                className="hotseat-confirm-cancel"
+                onClick={() => {
+                  sfx.play("button");
+                  setHotseatConfirmOpen(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="hotseat-confirm-start"
+                onClick={() => {
+                  sfx.play("button");
+                  setHotseatConfirmOpen(false);
+                  onStart({ kind: "hotseat" });
+                }}
+              >
+                Start duel
+              </button>
+            </div>
+          </div>
+        </Overlay>
+      ) : null}
     </div>
   );
 }

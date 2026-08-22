@@ -2096,7 +2096,6 @@ export default function App() {
           onRecord={() => setOverlay("record")}
           onHeroPowers={() => setOverlay("heroPowers")}
           duelsPlayed={totalDuels}
-          heroPowerName={heroPowerDefinition(selectedHeroPower)?.name ?? "Locked"}
         />
       ) : null}
 

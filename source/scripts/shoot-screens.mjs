@@ -410,6 +410,7 @@ await page.waitForTimeout(500);
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(1400);
 await page.locator(".hotseat-trigger").first().click();
+await page.locator(".hotseat-confirm-start").click();
 await page.waitForTimeout(700);
 const end = page.getByRole("button", { name: /End Turn/i }).first();
 if (await end.count()) await end.click().catch(() => {});

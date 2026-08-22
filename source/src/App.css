@@ -3325,10 +3325,12 @@ button:disabled {
   border-radius: calc(12 * var(--u));
 }
 
-/* --- TAUNT: a shaped guard behind the card -------------------------------
-   Taunt is a silhouette, not a label. Keep the oversized guard and its exact
-   board crop — especially the cut-off bottom row — while giving the plate a
-   cleaner forged-metal treatment that follows the card's rarity palette. */
+/* --- TAUNT: a shaped defensive exoskeleton behind the card ----------------
+   Taunt is a silhouette, not a label. The guard keeps the oversized dimensions
+   and exact board crop — especially the cut-off bottom row — but now reads as a
+   built defensive object: shoulder plates, edge rails, cross-braces, a top lock,
+   and a riveted inner frame. It deliberately ignores card rarity colours so a
+   Taunt is recognized by structure rather than by a palette swap. */
 .card-face.kw-taunt::before {
   content: "";
   grid-area: 1 / 1;
@@ -3344,16 +3346,71 @@ button:disabled {
     0% 52%, 11% 45%, 0% 38%
   );
   background:
-    radial-gradient(circle at 17% 8%, rgba(255, 255, 255, 0.48) 0 calc(4 * var(--u)), transparent calc(5 * var(--u))),
-    radial-gradient(circle at 83% 8%, rgba(255, 255, 255, 0.24) 0 calc(3 * var(--u)), transparent calc(4 * var(--u))),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0 calc(7 * var(--u)), rgba(0, 0, 0, 0.18) calc(7 * var(--u)) calc(18 * var(--u))),
-    linear-gradient(158deg, var(--metal-light) 0%, var(--metal-mid) 24%, var(--metal-dark) 70%, var(--metal-mid) 100%);
+    /* The two shoulder locks and the centre top bolt. */
+    radial-gradient(circle at 8% 10%, #e4f7fb 0 calc(4 * var(--u)), #263b45 calc(4.5 * var(--u)) calc(9 * var(--u)), transparent calc(9.5 * var(--u))),
+    radial-gradient(circle at 92% 10%, #e4f7fb 0 calc(4 * var(--u)), #263b45 calc(4.5 * var(--u)) calc(9 * var(--u)), transparent calc(9.5 * var(--u))),
+    radial-gradient(ellipse at 50% 3%, rgba(222, 249, 255, 0.92) 0 calc(5 * var(--u)), rgba(45, 83, 96, 0.92) calc(5.5 * var(--u)) calc(13 * var(--u)), transparent calc(13.5 * var(--u))),
+    /* Dark outer rails with a cold highlight on each edge. */
+    linear-gradient(90deg, #071016 0% 5%, #9bc2cd 5.2% 6.4%, #1c3039 6.7% 9%, transparent 9% 91%, #1c3039 91% 93.3%, #9bc2cd 93.6% 94.8%, #071016 95% 100%),
+    /* Two broad diagonal braces give the guard its actual geometry. */
+    linear-gradient(135deg, transparent 0% 40%, rgba(193, 231, 239, 0.56) 40.4% 42%, rgba(7, 14, 19, 0.94) 42.2% 45%, transparent 45.3% 54.7%, rgba(7, 14, 19, 0.94) 55% 57.8%, rgba(193, 231, 239, 0.56) 58% 59.6%, transparent 60%),
+    linear-gradient(45deg, transparent 0% 40%, rgba(193, 231, 239, 0.34) 40.4% 42%, rgba(7, 14, 19, 0.78) 42.2% 45%, transparent 45.3% 54.7%, rgba(7, 14, 19, 0.78) 55% 57.8%, rgba(193, 231, 239, 0.34) 58% 59.6%, transparent 60%),
+    repeating-linear-gradient(90deg, rgba(202, 237, 244, 0.11) 0 calc(5 * var(--u)), rgba(0, 0, 0, 0.13) calc(5 * var(--u)) calc(13 * var(--u))),
+    linear-gradient(158deg, #8faeb8 0%, #3b5661 18%, #101a20 56%, #263b45 100%);
   box-shadow:
-    inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(6, 8, 12, 0.96),
-    inset 0 calc(5 * var(--u)) calc(12 * var(--u)) rgba(255, 255, 255, 0.42),
-    inset 0 calc(-14 * var(--u)) calc(24 * var(--u)) rgba(0, 0, 0, 0.86),
-    0 0 0 calc(2 * var(--u)) rgba(240, 199, 103, 0.28),
-    0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
+    inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(3, 8, 12, 0.98),
+    inset 0 calc(6 * var(--u)) calc(16 * var(--u)) rgba(231, 250, 255, 0.36),
+    inset 0 calc(-14 * var(--u)) calc(26 * var(--u)) rgba(0, 0, 0, 0.9),
+    0 0 0 calc(2 * var(--u)) rgba(184, 231, 240, 0.74),
+    0 calc(10 * var(--u)) calc(25 * var(--u)) rgba(0, 0, 0, 0.92);
+}
+
+/* The plate continues over the card surface as a shallow exoskeleton. These
+   are transparent rings and rails, so the art and printed rules stay readable. */
+.card-face.kw-taunt .cf-stage {
+  box-shadow:
+    0 0 0 calc(3 * var(--u)) rgba(3, 8, 12, 0.98),
+    0 0 0 calc(7 * var(--u)) rgba(146, 211, 222, 0.82),
+    0 0 calc(20 * var(--u)) rgba(52, 187, 211, 0.4),
+    var(--cf-drop);
+}
+
+.card-face.kw-taunt .cf-fx {
+  box-shadow:
+    inset 0 0 0 calc(3 * var(--u)) rgba(4, 10, 14, 0.96),
+    inset 0 0 0 calc(8 * var(--u)) rgba(151, 215, 226, 0.68),
+    inset 0 0 0 calc(12 * var(--u)) rgba(5, 15, 20, 0.9);
+}
+
+.card-face.kw-taunt .cf-fx::before {
+  content: "";
+  position: absolute;
+  inset: calc(18 * var(--u));
+  border: calc(3 * var(--u)) solid rgba(207, 243, 249, 0.74);
+  clip-path: polygon(0 9%, 9% 0, 91% 0, 100% 9%, 100% 91%, 91% 100%, 9% 100%, 0 91%);
+  box-shadow:
+    inset 0 0 calc(9 * var(--u)) rgba(70, 190, 214, 0.42),
+    0 0 calc(8 * var(--u)) rgba(17, 96, 113, 0.54);
+}
+
+.card-face.kw-taunt .cf-fx::after {
+  content: "";
+  position: absolute;
+  /* Keep the title banner clean; this is the upper brace of the art-window
+     frame, while the oversized guard behind the card carries the top lock. */
+  top: calc(72 * var(--u));
+  /* Stop short of the cost gem so the brace never masks an important stat. */
+  left: calc(96 * var(--u));
+  right: calc(96 * var(--u));
+  height: calc(26 * var(--u));
+  border-top: calc(3 * var(--u)) solid rgba(223, 249, 255, 0.84);
+  border-bottom: calc(3 * var(--u)) solid rgba(8, 18, 24, 0.96);
+  background:
+    radial-gradient(circle at 8% 50%, #e8fbff 0 calc(3 * var(--u)), #294b58 calc(3.5 * var(--u)) calc(6 * var(--u)), transparent calc(6.5 * var(--u))),
+    radial-gradient(circle at 92% 50%, #e8fbff 0 calc(3 * var(--u)), #294b58 calc(3.5 * var(--u)) calc(6 * var(--u)), transparent calc(6.5 * var(--u))),
+    repeating-linear-gradient(90deg, rgba(221, 248, 252, 0.66) 0 calc(2 * var(--u)), rgba(11, 28, 36, 0.9) calc(2 * var(--u)) calc(8 * var(--u)));
+  clip-path: polygon(4% 0, 96% 0, 100% 50%, 96% 100%, 4% 100%, 0 50%);
+  opacity: 0.88;
 }
 
 /* --- DIVINE SHIELD: a bright golden bubble around the whole card -----------
