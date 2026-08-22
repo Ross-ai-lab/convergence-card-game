@@ -249,15 +249,16 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
  */
 async function answerAnyPrompt() {
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    if ((await page.locator(".target-prompt").count()) === 0) return;
+    const prompt = page.locator(".target-prompt");
+    const boardChoice = page.locator(".board-slot.choosable").first();
+    if ((await prompt.count()) === 0 && (await boardChoice.count()) === 0) return;
     const option = page.locator(".prompt-value").first();
     const handCard = page.locator(".prompt-hand-card").first();
-    const slot = page.locator(".board-slot.choosable").first();
     if (await option.count()) await option.click().catch(() => {});
     else if (await handCard.count()) await handCard.click().catch(() => {});
-    else if (await slot.count()) await slot.click().catch(() => {});
+    else if (await boardChoice.count()) await boardChoice.click().catch(() => {});
     else return; // a prompt with no answers is a soft-lock, and not this file's job
-    await page.locator(".target-prompt").waitFor({ state: "detached", timeout: 3000 }).catch(() => {});
+    if (await prompt.count()) await prompt.waitFor({ state: "detached", timeout: 3000 }).catch(() => {});
   }
 }
 
@@ -594,7 +595,7 @@ await newBoard({ place: false, cheat: false });
 //             different state entirely, and using it found zero legal targets
 //             while the prompt was plainly offering two.
 //   value  -> click a button inside the prompt             (onChoose)
-async function targetingCheck(label, cardName, choiceSelector) {
+async function targetingCheck(label, cardName, choiceSelector, screenPromptExpected = true) {
   await newBoard({ place: false });
   if (!(await page.evaluate(() => Boolean(window.__debug)))) {
     skip(label, "no __debug hook (production build?)");
@@ -625,8 +626,8 @@ async function targetingCheck(label, cardName, choiceSelector) {
 
   check(
     label,
-    shown && offered > 0 && (await page.locator(".target-prompt").count()) === 0,
-    `${given}: shown ${shown}, ${offered} choice(s), cleared`,
+    (screenPromptExpected ? shown : !shown) && offered > 0 && (await page.locator(".target-prompt").count()) === 0,
+    `${given}: screen tip ${shown ? "shown" : "hidden"}, ${offered} choice(s), cleared`,
   );
   if (choiceSelector.includes("prompt-value")) {
     check(
@@ -640,9 +641,10 @@ async function targetingCheck(label, cardName, choiceSelector) {
 // Kiritsugu's freeze_enemy is an enemy-side board pick with no filter, so any
 // enemy minion is a legal target — the most reliable board prompt in the roster.
 await targetingCheck(
-  "a BOARD-target battlecry asks, then resolves",
+  "a BOARD-target battlecry highlights the board without a tip popup",
   "Kiritsugu Emiya",
   ".board-slot.choosable",
+  false,
 );
 
 // Batman chooses a victim, then chooses one of his three gadgets.

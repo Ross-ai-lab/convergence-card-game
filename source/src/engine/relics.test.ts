@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
 import { spawnTestMinion } from "./test-utils";
-import type { GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
+import type { Camp, GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
 
 const minionLibrary = makeCardLibrary(cards);
 const library = makeCardLibrary(cards, relics);
@@ -127,11 +127,11 @@ describe("relic effects", () => {
 
   it("ships the requested relic costs and replacement effects", () => {
     const requested = [
-      ["Lostvayne", 3, "The bearer is invulnerable to Magic attacks."],
+      ["Lostvayne", 3, "The bearer is invulnerable to Magic attacks while defending."],
       ["One Ring", 4, "The first time the bearer would die, set it to full HP instead and destroy this relic."],
       ["White Whistle", 3, "The bearer's Battlecry effect turns into Ongoing effect."],
-      ["Chamber of Secrets", 3, "The bearer is invulnerable to Nature attacks."],
-      ["Cyber-Enchantment", 3, "The bearer is invulnerable to Tech attacks."],
+      ["Chamber of Secrets", 3, "The bearer is invulnerable to Nature attacks while defending."],
+      ["Cyber-Enchantment", 3, "The bearer is invulnerable to Tech attacks while defending."],
       ["Ea", 3, "The bearer's ATK is doubled."],
       ["Elder wand", 1, "The bearer is immune to Silence."],
       ["Monster Cell", 2, "The bearer gains +3/+2 and Taunt."],
@@ -253,34 +253,58 @@ describe("relic effects", () => {
     expect(after.players[1].board[0]?.silenced).toBe(false);
   });
 
-  it("Chamber of Secrets blocks Nature attacks and Cyber-Enchantment blocks Tech attacks", () => {
-    const chamberState = mainState();
-    chamberState.players[0].board[0] = makeMinion("Goblins", 0, { atk: 5 });
-    chamberState.players[1].board[0] = makeMinion("Mob Psycho", 1, {
-      hp: 10,
-      maxHp: 10,
-      relic: relicByName("Chamber of Secrets"),
-    });
-    const chamber = applyAction(
-      chamberState,
-      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
-      library,
-    ).state;
-    expect(chamber.players[1].board[0]?.hp).toBe(10);
+  it("all three camp attack relics protect only a defending bearer", () => {
+    const cases: Array<{ relic: string; camp: Camp }> = [
+      { relic: "Lostvayne", camp: "Magic" },
+      { relic: "Chamber of Secrets", camp: "Nature" },
+      { relic: "Cyber-Enchantment", camp: "Tech" },
+    ];
 
-    const cyberState = mainState();
-    cyberState.players[0].board[0] = makeMinion("Death Star", 0, { atk: 5 });
-    cyberState.players[1].board[0] = makeMinion("Mob Psycho", 1, {
-      hp: 10,
-      maxHp: 10,
-      relic: relicByName("Cyber-Enchantment"),
-    });
-    const cyber = applyAction(
-      cyberState,
-      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
-      library,
-    ).state;
-    expect(cyber.players[1].board[0]?.hp).toBe(10);
+    for (const { relic, camp } of cases) {
+      const defending = mainState(`${relic}-defending`);
+      defending.players[0].board[0] = makeMinion("Mob Psycho", 0, {
+        camp,
+        atk: 5,
+        hp: 10,
+        maxHp: 10,
+        sleeping: false,
+      });
+      defending.players[1].board[0] = makeMinion("John Wick", 1, {
+        hp: 10,
+        maxHp: 10,
+        relic: relicByName(relic),
+        sleeping: false,
+      });
+      const protectedHit = applyAction(
+        defending,
+        { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+        library,
+      ).state;
+      expect(protectedHit.players[1].board[0]?.hp, `${relic} should protect while defending`).toBe(10);
+
+      const attacking = mainState(`${relic}-attacking`);
+      attacking.players[0].board[0] = makeMinion("Mob Psycho", 0, {
+        camp,
+        atk: 5,
+        hp: 10,
+        maxHp: 10,
+        relic: relicByName(relic),
+        sleeping: false,
+      });
+      attacking.players[1].board[0] = makeMinion("John Wick", 1, {
+        camp,
+        atk: 3,
+        hp: 10,
+        maxHp: 10,
+        sleeping: false,
+      });
+      const retaliation = applyAction(
+        attacking,
+        { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+        library,
+      ).state;
+      expect(retaliation.players[0].board[0]?.hp, `${relic} should not block retaliation`).toBe(7);
+    }
   });
 
   it("Ea doubles the bearer's attack and Monster Cell grants stats and Taunt", () => {

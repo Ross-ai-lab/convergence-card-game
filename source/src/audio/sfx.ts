@@ -823,7 +823,7 @@ const RELIC_THEME_SOURCE: Record<string, string> = {
   r009: "c019", // Fate — Gilgamesh
   r010: "c030", // Harry Potter — Dumbledore
   r011: "c025", // One Punch Man — Saitama
-  r012: "c102", // Myth — Dragon
+  r012: "c030", // Harry Potter — Dumbledore
   r013: "c106", // Transformers — Transformers
   r014: "c049", // Tensura — Rimuru Tempest
   r015: "c017", // One Piece — Gol D. Roger

@@ -1,12 +1,12 @@
 id,name,cost,rarity,color,relicId,effect,flavor,origin,art
 r001,The Holy Grail,5,Relic,relic,double_stats,The bearer doubles its ATK and HP.,Every knight sought it,Myth,/card-art/raw/r001.webp
-r002,Lostvayne,3,Relic,relic,immune_magic,The bearer is invulnerable to Magic attacks.,,Seven Deadly Sins,/card-art/raw/r002.webp
+r002,Lostvayne,3,Relic,relic,immune_magic,The bearer is invulnerable to Magic attacks while defending.,,Seven Deadly Sins,/card-art/raw/r002.webp
 r003,One Ring,4,Relic,relic,rescue_full,"The first time the bearer would die, set it to full HP instead and destroy this relic.",,Lord of The Rings,/card-art/raw/r003.webp
 r004,Sunshine Grace,4,Relic,relic,bearer_divine_shield,The bearer gains Divine Shield.,The sun does not ask permission. It simply rises,Seven Deadly Sins,/card-art/raw/r004.webp
 r005,Infinity Stone,3,Relic,relic,cleave_adjacent,The bearer's attacks also strike the two minions adjacent to its target.,,MCU,/card-art/raw/r005.webp
 r006,White Whistle,3,Relic,relic,battlecry_to_ongoing,The bearer's Battlecry effect turns into Ongoing effect.,Only those who've faced the Abyss may sound it,Made in Abyss,/card-art/raw/r006.webp
-r007,Chamber of Secrets,3,Relic,relic,immune_nature_attacks,The bearer is invulnerable to Nature attacks.,It has been opened before,Harry Potter,/card-art/raw/r007.webp
-r008,Cyber-Enchantment,3,Relic,relic,immune_tech_attacks,The bearer is invulnerable to Tech attacks.,,Myth,/card-art/raw/r008.webp
+r007,Chamber of Secrets,3,Relic,relic,immune_nature_attacks,The bearer is invulnerable to Nature attacks while defending.,It has been opened before,Harry Potter,/card-art/raw/r007.webp
+r008,Cyber-Enchantment,3,Relic,relic,immune_tech_attacks,The bearer is invulnerable to Tech attacks while defending.,,Myth,/card-art/raw/r008.webp
 r009,Ea,3,Relic,relic,double_bearer_attack,The bearer's ATK is doubled.,It remembers when the world had no shape,Fate,/card-art/raw/r009.webp
 r010,Elder wand,1,Relic,relic,immune_silence,The bearer is immune to Silence.,,Harry Potter,/card-art/raw/r010.webp
 r011,Monster Cell,2,Relic,relic,monster_cell,The bearer gains +3/+2 and Taunt.,Become the next thing. Leave behind something of the last,OPM,/card-art/raw/r011.webp

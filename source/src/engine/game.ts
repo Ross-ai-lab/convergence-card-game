@@ -1170,12 +1170,12 @@ function attackMinion(
     defender.campImmunity.untilTurn > state.turnNumber;
   // Simultaneous combat, Hearthstone-style: the defender ALWAYS retaliates with
   // its attack value, even if the blow kills it (owner ruling, 2026-07-06).
-  dealMinionDamage(state, defenderId, targetSlot, outgoing, attacker, events, false, new Set(), true);
+  dealMinionDamage(state, defenderId, targetSlot, outgoing, attacker, events, false, new Set(), true, true);
   // Infinity Stone: the swing carries into the two neighbours of the target.
   if (hasRelic(attacker, "cleave_adjacent")) {
     for (const side of [targetSlot - 1, targetSlot + 1]) {
       if (side >= 0 && side < boardSize && state.players[defenderId].board[side]) {
-        dealMinionDamage(state, defenderId, side, outgoing, attacker, events, true, new Set(), true);
+        dealMinionDamage(state, defenderId, side, outgoing, attacker, events, true, new Set(), true, true);
       }
     }
   }
@@ -1183,7 +1183,10 @@ function attackMinion(
   // It is the one thing in the game that suspends simultaneous combat, and only
   // on the bearer's own swing — it is still hit normally on the enemy's turn.
   if (!hasRelic(attacker, "no_retaliation")) {
-    dealMinionDamage(state, playerId, attackerSlot, defender.atk, defender, events, false, new Set(), true);
+    // Retaliation is combat damage, but it is not an attack declared by the
+    // relic bearer. Defensive attack-immunity relics must not absorb this
+    // return blow when their bearer started the fight.
+    dealMinionDamage(state, playerId, attackerSlot, defender.atk, defender, events, false, new Set(), true, false);
   } else {
     events.push(effectEvent(`${attacker.name} strikes from outside space — no retaliation.`, attacker));
   }
@@ -2774,9 +2777,6 @@ function runEffect(
       target.atk = Math.max(0, target.atk - 3);
       events.push(effectEvent(`${label} weakens ${target.name}.`, source));
     }
-  } else if (source.effectId === "all_enemy_atk_down_1") {
-    for (const minion of enemy.board) if (minion) minion.atk = Math.max(0, minion.atk - 1);
-    events.push(effectEvent(`${label} saps enemy strength.`, source));
   } else if (source.effectId === "freeze_enemy") {
     if (picked) applyFreeze(state, source, picked, events);
   } else if (source.effectId === "freeze_and_silence_enemy") {
@@ -4608,10 +4608,11 @@ function dealMinionDamage(
   effectDamage = false,
   godzillaPath: ReadonlySet<string> = new Set(),
   combatDamage = false,
+  attackTarget = false,
 ): void {
   const target = state.players[owner].board[slotIndex];
   if (!target || amount <= 0) return;
-  if (!canDamage(state, source, target, effectDamage, events, combatDamage)) return;
+  if (!canDamage(state, source, target, effectDamage, events, combatDamage, attackTarget)) return;
   amount = modifyIncoming(state, source, target, amount);
   if (!target.silenced && hasEffect(target, "superman_damage_cap_3")) {
     amount = Math.min(amount, 3);
@@ -4668,6 +4669,7 @@ function canDamage(
   effectDamage: boolean,
   events: GameEvent[],
   combatDamage: boolean,
+  attackTarget: boolean,
 ): boolean {
   if (!effectDamage && target.chained > 0) {
     events.push(effectEvent(`${target.name} is protected by its chains.`, target));
@@ -4683,11 +4685,11 @@ function canDamage(
     events.push(effectEvent(`${target.name} is Invulnerable.`, target));
     return false;
   }
-  if (combatDamage && hasRelic(target, "immune_nature_attacks") && source.camp === "Nature") {
+  if (combatDamage && attackTarget && hasRelic(target, "immune_nature_attacks") && source.camp === "Nature") {
     events.push(effectEvent(`${target.name} is invulnerable to Nature attacks.`, target));
     return false;
   }
-  if (combatDamage && hasRelic(target, "immune_tech_attacks") && source.camp === "Tech") {
+  if (combatDamage && attackTarget && hasRelic(target, "immune_tech_attacks") && source.camp === "Tech") {
     events.push(effectEvent(`${target.name} is invulnerable to Tech attacks.`, target));
     return false;
   }
@@ -4696,7 +4698,7 @@ function canDamage(
     events.push(effectEvent(`${target.name} has adapted to ${source.camp}.`, target));
     return false;
   }
-  if (hasRelic(target, "immune_magic") && source.camp === "Magic") {
+  if (combatDamage && attackTarget && hasRelic(target, "immune_magic") && source.camp === "Magic") {
     events.push(effectEvent(`${target.name}'s Lostvayne turns the Magic aside.`, target));
     return false;
   }
@@ -4894,11 +4896,15 @@ function hasKeyword(card: Pick<CardDefinition | MinionInstance, "keywords">, key
 
 function hasEffect(minion: MinionInstance, effectId: EffectId): boolean {
   const held = minion.effectId === effectId || minion.gainedEffects.some((effect) => effect.effectId === effectId);
+  // A Chained minion is temporarily out of the duel in the same way a
+  // Silenced minion is out of the rules text: its passive, aura, immunity and
+  // other effect hooks do not answer while the chain counter is running.
+  const active = !minion.silenced && minion.chained === 0;
   // Only a TRUE answer counts as the effect having been exercised. Recording
   // every question instead would mark a passive as covered because some other
   // card asked whether this minion had it, which is the opposite of the truth.
-  if (held) traceEffect(effectId);
-  return held;
+  if (held && active) traceEffect(effectId);
+  return held && active;
 }
 
 function tauntBypassActive(minion: MinionInstance): boolean {
@@ -5847,6 +5853,17 @@ function reactToDeath(
       // a death is resolved while its owner is on the board, which is the moment
       // its branch is genuinely reachable.
       traceEffect(minion.effectId);
+      // Kratos is the one lifecycle exception: breaking his own chains is the
+      // release condition printed on the card, not a passive board aura. Every
+      // other passive/death reaction is suspended while a minion is Chained.
+      if (playerId === deadOwner && minion.effectId === "kratos_chain_break" && minion.chained > 0) {
+        minion.chained = 0;
+        resolveChainGrowth(minion, events);
+        buffMinion(minion, 2, 2);
+        events.push(effectEvent(`${minion.name} breaks its chains and gains +2/+2.`, minion));
+        continue;
+      }
+      if (minion.chained > 0) continue;
       if (
         killer &&
         killer.instanceId === minion.instanceId &&
@@ -5861,11 +5878,6 @@ function reactToDeath(
             minion,
           ),
         );
-      } else if (playerId === deadOwner && hasEffect(minion, "kratos_chain_break") && minion.chained > 0) {
-        minion.chained = 0;
-        resolveChainGrowth(minion, events);
-        buffMinion(minion, 2, 2);
-        events.push(effectEvent(`${minion.name} breaks its chains and gains +2/+2.`, minion));
       } else if (minion.effectId === "nito_any_death_1_1") {
         // +1/+1, down from +2/+1 (pass 3): 62.3% vs a 48.2% bracket off the
         // smallest body in the game. It counts EVERY death on BOTH boards with

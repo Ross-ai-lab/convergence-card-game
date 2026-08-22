@@ -280,6 +280,22 @@ describe("2026 card replacements", () => {
         keywords: ["Passive"],
         effect: "Passive: While on the board, every enemy minion has -1 ATK.",
       },
+      "Fantastic Four": {
+        cost: 4,
+        atk: 1,
+        hp: 2,
+        effectId: "fantastic_four_aura",
+        effectTiming: "passive",
+        keywords: ["Passive"],
+      },
+      Shibukawa: {
+        cost: 1,
+        atk: 1,
+        hp: 1,
+        effectId: "silence_enemy",
+        effectTiming: "onPlay",
+        keywords: ["Divine Shield"],
+      },
       Sans: { cost: 4, atk: 1, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks." },
       "Doom Slayer": { cost: 8, atk: 3, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
       Ragnaros: { cost: 6, atk: 6, hp: 6, effectId: "ragnaros_end_turn", effectTiming: "passive", keywords: ["Passive"] },
@@ -1131,10 +1147,26 @@ describe("2026 card replacements", () => {
     expect(empowered.players[1].board[0]?.atk).toBe(4);
     empowered.players[1].board[1] = minion("John Wick", 1, { atk: 0, hp: 5, maxHp: 5 });
     const clamped = applyAction(empowered, { type: "end_turn", player: 0 }, library).state;
+    expect(clamped.players[1].board[0]?.atk).toBe(4);
     expect(clamped.players[1].board[1]?.atk).toBe(0);
-    clamped.players[0].board[0] = null;
-    const auraGone = applyAction(clamped, { type: "end_turn", player: 1 }, library).state;
+    const refreshed = endTurn(clamped, 1);
+    expect(refreshed.players[1].board[0]?.atk).toBe(4);
+    refreshed.players[0].board[0] = null;
+    const auraGone = applyAction(refreshed, { type: "end_turn", player: 0 }, library).state;
     expect(auraGone.players[1].board[0]?.atk).toBe(5);
+  });
+
+  it("a Chained passive is dormant until its chain expires", () => {
+    const state = mainState("chained-passive-dormant");
+    state.players[0].board[0] = minion("All Might", 0, { chained: 2 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 5, maxHp: 5 });
+
+    const dormant = play(state, 0, "UFO", 1);
+    expect(dormant.players[1].board[0]?.atk).toBe(5);
+
+    dormant.players[0].board[0]!.chained = 0;
+    const awake = play(dormant, 0, "UFO", 2);
+    expect(awake.players[1].board[0]?.atk).toBe(4);
   });
 
   it("King locks one random enemy attacker at the start of each enemy turn", () => {

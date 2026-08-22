@@ -2041,7 +2041,10 @@ export default function App() {
         <TargetingArrow x1={drag.ox} y1={drag.oy} x2={drag.x} y2={drag.y} />
       ) : null}
 
-      {pendingTarget ? (
+      {/* Board/slot prompts are now entirely in-board: the highlighted legal
+          slots are the instruction, so a fixed tip strip only adds noise.
+          Hand, value, and board-or-core choices still need their controls. */}
+      {pendingTarget && pendingTarget.kind !== "board" && pendingTarget.kind !== "slot" ? (
         <TargetPrompt
           pending={pendingTarget}
           library={library}
@@ -2903,9 +2906,10 @@ function CardFace({
   // minion is actually in play. Taunt is the one keyword that stays live in
   // `keywords` (minions can be granted it), so it is read from there; Divine
   // Shield and Chained come from the live flags in `states`.
-  const keywordClasses = onBoard
+  const silenceHidesKeywords = states.includes("is-silenced") || states.includes("is-chained");
+  const keywordClasses = onBoard && !silenceHidesKeywords
     ? (card.keywords ?? []).filter((k) => k === "Taunt").map(() => "kw-taunt")
-    : []
+    : [];
   const classes = ["card-face", `rarity-${rarity}`, onBoard ? "on-board" : "", blank ? "cf-blank" : "", ...keywordClasses, ...states]
     .filter(Boolean)
     .join(" ");
@@ -3032,10 +3036,11 @@ function minionStates(
   allBoard?: Array<MinionInstance | null>,
 ): string[] {
   const effectIds = new Set([minion.effectId, ...minion.gainedEffects.map((effect) => effect.effectId)]);
+  const effectsActive = !minion.silenced && minion.chained === 0;
   const otherGood = board?.some((other) => other && other.instanceId !== minion.instanceId && other.alignment === "Good") ?? false;
   const goodCount = board?.filter((other) => other?.alignment === "Good").length ?? 0;
   const activeInvulnerable =
-    !minion.silenced &&
+    effectsActive &&
     (effectIds.has("invuln_if_alone")
       ? (board?.filter(Boolean).length ?? 1) <= 1
       : effectIds.has("invuln_with_good_ally")
@@ -3050,11 +3055,11 @@ function minionStates(
     minion.chained > 0 ? "is-chained" : "",
     minion.frozen ? "is-frozen" : "",
     minion.silenced ? "is-silenced" : "",
-    minion.divineShield ? "is-shielded" : "",
+    minion.divineShield && !minion.silenced ? "is-shielded" : "",
     typeof minion.invulnerableUntilTurn === "number" || activeInvulnerable ? "is-invulnerable" : "",
     minion.protectedSlot ? "is-protected" : "",
     minion.attackLocked ||
-    (!minion.silenced && (effectIds.has("watcher_reveal_hand") || effectIds.has("ragnaros_end_turn")))
+    (effectsActive && (effectIds.has("watcher_reveal_hand") || effectIds.has("ragnaros_end_turn")))
       ? "is-locked"
       : "",
     minion.markedBy || minion.markedForDeathAtTurn !== null && minion.markedForDeathAtTurn !== undefined ? "is-marked" : "",

@@ -613,7 +613,7 @@ function HowToPlayContent() {
           <dt>Charge</dt>
           <dd>May attack the same turn it is summoned, or the turn it changes controller.</dd>
           <dt>Chained</dt>
-          <dd>Two owner turns of nothing: no attack, no Ongoing, and untargetable by either side.</dd>
+          <dd>Two owner turns of nothing: no attack, no passive or Ongoing effect, and untargetable by either side.</dd>
           <dt>Divine Shield</dt>
           <dd>Blocks the next instance of damage, whatever its size, then the gold rim goes out.</dd>
           <dt>Freeze</dt>
