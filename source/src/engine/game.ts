@@ -1,6 +1,9 @@
 import { isMinionCard, isRelicCard } from "./types";
 import { HERO_POWER_COST, heroPowerDefinition } from "./hero-powers";
 import { traceEffect } from "./trace";
+// Tokens are the only cards whose artwork is named here rather than in the CSV,
+// so they are the only ones that have to ask for the published base themselves.
+import { resolvePublicAssetUrl } from "./asset-url";
 import type {
   ApplyResult,
   Alignment,
@@ -3663,7 +3666,7 @@ function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: Ga
     effect: "-",
     flavor: "A small spark can turn the tide.",
     origin: "Hero Power",
-    art: "/card-art/raw/token-knight.webp",
+    art: resolvePublicAssetUrl("/card-art/raw/token-knight.webp"),
   };
   const summoned = createMinion(recruit, playerId, state);
   player.board[slot] = summoned;
@@ -5440,7 +5443,7 @@ function resolveDeathrattle(
         effect: "-",
         flavor: "The omen king returns.",
         origin: dead.origin,
-        art: "/card-art/raw/token-morgott.webp",
+        art: resolvePublicAssetUrl("/card-art/raw/token-morgott.webp"),
       };
       const summoned = createMinion(morgott, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
@@ -5467,7 +5470,7 @@ function resolveDeathrattle(
         effect: "-",
         flavor: "Chaos answers chaos.",
         origin: dead.origin,
-        art: "/card-art/raw/token-drakath.webp",
+        art: resolvePublicAssetUrl("/card-art/raw/token-drakath.webp"),
       };
       const summoned = createMinion(drakath, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
@@ -5514,7 +5517,7 @@ function resolveDeathrattle(
         effect: "Taunt.",
         flavor: "Built to end him. Chose otherwise.",
         origin: "MCU",
-        art: "/card-art/raw/token-vision.webp",
+        art: resolvePublicAssetUrl("/card-art/raw/token-vision.webp"),
       };
       const summoned = createMinion(vision, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
@@ -5541,7 +5544,7 @@ function resolveDeathrattle(
         effect: "Taunt. Cannot attack.",
         flavor: "The devourer of worlds arrives.",
         origin: "Marvel",
-        art: "/card-art/raw/galactus.webp",
+        art: resolvePublicAssetUrl("/card-art/raw/galactus.webp"),
       };
       const summoned = createMinion(galactus, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
@@ -5568,7 +5571,7 @@ function resolveDeathrattle(
         effect: "-",
         flavor: "The Avatar's spirit wakes.",
         origin: dead.origin,
-        art: "/card-art/raw/token-awakened.webp",
+        art: resolvePublicAssetUrl("/card-art/raw/token-awakened.webp"),
       };
       const summoned = createMinion(awakened, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
