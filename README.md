@@ -305,6 +305,10 @@ npm run build -- --base=./
 
 Use the development or preview server URL, not a `file://` URL. A white page can mean the server is stopped, a different folder is being served, or `play/` is behind `source/`.
 
+**Keep the suite fast, and treat any test over about ten seconds as a defect to be explained.** `npm test` is the thing a session runs after every change, so its cost is paid dozens of times a day, and it has twice grown a two-minute test that was really a balance measurement in disguise. The rule that catches both: a test may play a whole duel only when the thing it asserts is a property OF a whole duel — that the game terminates, that no illegal action is ever produced, that the bot never stalls on its own prompt. Anything else — who wins, how often, whether a flag is wired — is either a balance question, which belongs in the harness, or a state question, which should read the state.
+
+Measured 2026-08-22, before and after that pass: **452 seconds down to 123.8**, same 391 tests. What remains is dominated by two Ascendant probes that genuinely do have to run a duel to the end — the legality check at 25.5s and the targeting-prompt check at 42s. Everything else in the project, all 386 other tests, is about 55 seconds together.
+
 Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
 
 After changing the **How to play** guide, run `node scripts/shoot-rules.mjs http://127.0.0.1:5177` against a running dev server. It starts a duel, answers the Hero Power offer, opens the guide, and walks the panel down in overlapping screen-height steps into `.preview/rules/`, plus one full-height capture. That step exists because the guide is roughly 2,500 pixels of content inside a 600-pixel window: a single screenshot photographs the first quarter of it and proves nothing about the rest, and no other harness opens the panel at all.
@@ -561,6 +565,22 @@ always"** — it answers engines, it does not stop attacking cores.
 `source/src/engine/bot-trading.test.ts` holds the paired proofs. Every case there
 is two boards differing in exactly one property, because "the bot attacked the
 minion" on its own proves nothing.
+
+**The skill ORDERING is not in the test suite, and must not be put back there.**
+A test that played 16 Ascendant-versus-Recruit duels and asserted the Ascendant
+won more than half was deleted on 2026-08-22. It cost 117.6 seconds, more than
+three times the whole rest of the suite, and it was wrong twice over: a win rate
+is a balance measurement rather than an engine property, and sixteen duels
+cannot carry the claim. Against an Ascendant broken all the way down to a coin
+flip, the binomial says that test still passed 40% of the time; at a true 60% it
+passed 72% of the time. It waved through the exact failure it existed to catch.
+
+Skill ordering is gated where the samples are sized for it, in
+[The cheat ladder](#the-cheat-ladder)'s three matchups under `npm run sim --
+--full`. The part of the claim that IS engine logic — that searching a whole
+turn finds turns the greedy line never builds — stays covered by
+`source/src/engine/bot-cheats.test.ts`, whose whole file runs in under ten
+seconds.
 
 **What it cost, measured 2026-08-22.** 200 self-play duels at Veteran, the same
 seed list before and after, nothing else changed:

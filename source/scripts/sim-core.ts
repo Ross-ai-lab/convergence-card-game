@@ -225,6 +225,33 @@ export interface PlayOptions {
   grantCheats?: boolean;
 }
 
+/**
+ * Which seat, if any, is handed the Ascendant's Foresight for this duel.
+ *
+ * Lifted out of `playOneGame` so that the rule and its test cannot drift: the
+ * harness calls this to set up a duel, and `ladder-cheats.test.ts` calls the
+ * same function to assert who gets it. Inlining the decision meant the only way
+ * to check it was to play whole duels and read their scoreboards backwards,
+ * which cost about two minutes a test run and could still match by luck.
+ *
+ * Returns `null` for "nobody", which is the answer for all of self-play.
+ */
+export function resolveCheatSeat(
+  drivers: PlayOptions["drivers"],
+  skills: PlayOptions["skills"],
+  grantCheats?: boolean,
+): PlayerId | null {
+  if (!grantCheats) return null;
+  // Only ever ONE seat: the field holds a single player, and a duel where both
+  // sides burned two cards a turn would be a different game from the one being
+  // measured. A hard-vs-hard pairing therefore gets it for neither side, which
+  // is honest — the ladder never runs that pairing.
+  const entitled = skills
+    .map((skill, seat) => (drivers[seat] === "bot" && BOT_CHEATS[skill].foresight ? (seat as PlayerId) : null))
+    .filter((seat): seat is PlayerId => seat !== null);
+  return entitled.length === 1 ? entitled[0] : null;
+}
+
 export function playOneGame(options: PlayOptions): GameResult {
   const { cards, relics, seed, drivers, skills, turnCap, deepChecks, startingHealth, manaRamp, grantCheats } = options;
   const library = makeCardLibrary(cards, relics);
@@ -234,16 +261,8 @@ export function playOneGame(options: PlayOptions): GameResult {
   const setup: { startingHealth?: number; manaRamp?: number; foresightFor?: PlayerId | null } = {};
   if (startingHealth) setup.startingHealth = startingHealth;
   if (manaRamp) setup.manaRamp = manaRamp;
-  if (grantCheats) {
-    // Only ever ONE seat: the field holds a single player, and a duel where both
-    // sides burned two cards a turn would be a different game from the one being
-    // measured. A hard-vs-hard pairing therefore gets it for neither side, which
-    // is honest — the ladder never runs that pairing.
-    const entitled = skills
-      .map((skill, seat) => (drivers[seat] === "bot" && BOT_CHEATS[skill].foresight ? (seat as PlayerId) : null))
-      .filter((seat): seat is PlayerId => seat !== null);
-    if (entitled.length === 1) setup.foresightFor = entitled[0];
-  }
+  const cheatSeat = resolveCheatSeat(drivers, skills, grantCheats);
+  if (cheatSeat !== null) setup.foresightFor = cheatSeat;
   let state = createInitialGame(cards, seed, relics, setup);
   let peakMana = 1;
   const playsByCost = new Array(11).fill(0);

@@ -13,8 +13,22 @@ const library = makeCardLibrary(cards, relics);
 
 /** Runs a whole duel and hands back the finished state. */
 function playOut(seed: string, skills: [BotSkill, BotSkill], cap = 200, startingHealth = 75): GameState {
+  return playSteps(seed, skills, cap * 40, startingHealth);
+}
+
+/**
+ * The same duel, stopped after a fixed number of ACTIONS.
+ *
+ * For the determinism check, which does not need a finished duel and used to
+ * play six of them. Hidden randomness is a property of a single decision, so it
+ * shows up on the move it first touches — the opening moves of a duel are the
+ * same evidence as the whole duel, at a fraction of the price. What a full duel
+ * additionally proves is that the duel TERMINATES, and that claim belongs to
+ * the legality probe below, which still plays every skill to the end.
+ */
+function playSteps(seed: string, skills: [BotSkill, BotSkill], steps: number, startingHealth = 75): GameState {
   let state = createInitialGame(cards, seed, relics, { startingHealth });
-  for (let step = 0; step < cap * 40; step += 1) {
+  for (let step = 0; step < steps; step += 1) {
     if (state.phase === "gameOver") break;
     const actor: PlayerId =
       state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
@@ -129,6 +143,8 @@ describe("pacing", () => {
 
 describe("the bot", () => {
   const skills: BotSkill[] = ["easy", "normal", "hard"];
+  /** How far into a duel the determinism check plays before comparing. */
+  const DETERMINISM_ACTIONS = 60;
 
   // These play real duels to the end, and `hard` searches whole turns, so they
   // run in seconds rather than milliseconds. The default 5 s vitest timeout kills
@@ -150,41 +166,45 @@ describe("the bot", () => {
   it("is deterministic at every skill — no Math.random anywhere in the engine", () => {
     // Easy deliberately plays badly, but it must play badly the SAME way twice or
     // a saved duel replays differently on reload and nothing here is testable.
+    //
+    // Sixty actions rather than six finished duels. A reach for real randomness
+    // diverges the two states on the first move it touches, so the length of the
+    // run past that point buys nothing: what it costs is the Ascendant searching
+    // a whole turn for every extra move, which is what made this 55.8 seconds.
+    // Sixty is comfortably past the opening draft, the first plays and the first
+    // attacks, which is where every source of chance in this engine lives.
     for (const skill of skills) {
-      const a = playOut(`det-${skill}`, [skill, skill]);
-      const b = playOut(`det-${skill}`, [skill, skill]);
+      const a = playSteps(`det-${skill}`, [skill, skill], DETERMINISM_ACTIONS);
+      const b = playSteps(`det-${skill}`, [skill, skill], DETERMINISM_ACTIONS);
       expect(a).toEqual(b);
+      // A state that ended early would compare equal to another state that ended
+      // early, so the comparison has to be shown to have played something.
+      expect(a.turnNumber).toBeGreaterThan(1);
     }
-  }, 180_000);  // 48s quiet
+  }, 180_000);
 
-  it("rates the skills in the right order", () => {
-    // A cheap guard, not the measurement. The real number comes from
-    // `npm run sim -- --ladder`, which on 2026-08-17 reported hard>easy 91.0%
-    // (100 games), hard>normal 82.0% (100), normal>easy 71.5% (200) on the
-    // shipped cheat bot, Foresight included. Sixteen games is far too few to
-    // reproduce any of it, so the bar here is only "the ladder is not upside
-    // down" — a regression that broke `hard` would sink well below half.
-    // Never compare a number from here, or from there, by subtraction: use
-    // `--ladder-compare`, which pairs two runs duel by duel. The README's
-    // "Comparing two ladder runs" section says why that is not optional.
-    // Choice-driven Battlecries add real branches to hard's search, so this
-    // guard needs the same generous budget as the full deterministic pass.
-    let hardWins = 0;
-    const games = 16;
-    for (let index = 0; index < games; index += 1) {
-      // Alternate seats so the result is not just the going-second advantage.
-      const hardSeat: PlayerId = index % 2 === 0 ? 0 : 1;
-      const skills2: [BotSkill, BotSkill] = hardSeat === 0 ? ["hard", "easy"] : ["easy", "hard"];
-      const finished = playOut(`ladder-${index}`, skills2);
-      if (finished.winner === hardSeat) hardWins += 1;
-    }
-    expect(hardWins / games).toBeGreaterThan(0.5);
-    // Budget raised from 120s when the Ascendant began rolling its opponent's
-    // half of the projection blind: every simulated enemy move now costs an
-    // extra apply, and this guard plays sixteen full duels of them. Raised
-    // rather than shrunk on purpose — the sample is already the smallest that
-    // can catch an upside-down ladder.
-  }, 300_000);  // 113s quiet — was 120_000, which it cleared by 6 seconds
+  // THE SKILL ORDERING IS NOT TESTED HERE, AND MUST NOT BE PUT BACK.
+  //
+  // A test called "rates the skills in the right order" lived here until
+  // 2026-08-22. It played 16 full Ascendant-versus-Recruit duels and asserted
+  // that the Ascendant won more than half. It cost 117.6 seconds — more than
+  // three times every other test in this project put together — and it was
+  // deleted for two reasons that both matter.
+  //
+  // It measured a WIN RATE, which is balance, not engine logic. `npm run sim
+  // -- --full` is where win rates are gated, with per-matchup samples sized to
+  // their own margins, and it is the only number anyone should quote.
+  //
+  // And at sixteen duels it was a bad guard even on its own terms. Against a
+  // true rate of 50% — an Ascendant broken all the way down to a coin flip —
+  // the binomial says it still passes 40% of the time. At 60% it passes 72% of
+  // the time. It was two minutes a run for a check that waved through the exact
+  // failure it existed to catch, two times in five.
+  //
+  // The LOGIC half of that claim is still covered, and cheaply:
+  // `bot-cheats.test.ts` proves the beam finds turns the greedy line never
+  // builds, and the whole of that file runs in under ten seconds. That is the
+  // part which is a property of the search rather than a property of the meta.
 
   it("answers its own targeting prompts rather than stalling on them", () => {
     let state = createInitialGame(cards, "prompts", relics);
