@@ -30,7 +30,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
 await page.goto(url, { waitUntil: "networkidle" });
 
-// The title screen, then a duel, then the opening Hero Power offer: the guide is
+// The title screen, then a duel, then the opening mulligan: the guide is
 // reachable from the toolbar only once a duel is actually on screen.
 // Target .duel-trigger by class, never by label: the toolbar buttons exist in
 // the DOM behind the title screen, so a label match resolves the wrong node and
@@ -38,14 +38,9 @@ await page.goto(url, { waitUntil: "networkidle" });
 // this the same way.
 await page.locator(".duel-trigger").first().click();
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18_000 }).catch(() => {});
-for (let pass = 0; pass < 4; pass += 1) {
-  const offer = page.locator(".hero-power-choice").first();
-  if (!(await offer.count())) break;
-  await offer.waitFor({ state: "visible", timeout: 9_000 }).catch(() => {});
-  if (!(await offer.isVisible().catch(() => false))) break;
-  await offer.click();
-  await page.waitForTimeout(250);
-}
+const mulliganConfirm = page.locator(".mulligan-panel button.primary");
+await mulliganConfirm.waitFor({ state: "visible", timeout: 9_000 }).catch(() => {});
+if (await mulliganConfirm.isVisible().catch(() => false)) await mulliganConfirm.click();
 
 await page.locator("button", { hasText: /How to play/i }).first().click();
 await page.waitForTimeout(400);

@@ -56,7 +56,7 @@ function oneChoice(defender: MinionInstance): GameState {
   state.phase = "main";
   state.drawChoice = null;
   state.pendingTarget = null;
-  state.heroPowerChoicePlayer = null;
+  state.mulligan = null;
   state.heroPowers = [null, null];
   state.activePlayer = BOT;
 

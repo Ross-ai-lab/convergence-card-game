@@ -32,30 +32,12 @@ const check = (label, ok, detail) => {
   if (!ok) failures.push(label);
 };
 
-// A live duel opens with the same two-player handoff used by the UI checks:
-// each player chooses one of two Hero Powers, then (in hotseat mode) passes
-// the screen. Complete it before clicking any board controls so the overlay
-// cannot intercept the audio trigger below.
-async function completeHeroPowerDraft() {
-  for (let pass = 0; pass < 4; pass += 1) {
-    const offer = page.locator(".hero-power-choice").first();
-    if (await offer.count()) {
-      await offer.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
-      if (await offer.isVisible().catch(() => false)) {
-        await offer.click();
-        await page.waitForTimeout(250);
-      }
-    }
-    const curtain = page.getByRole("button", { name: /Continue|Ready/i }).first();
-    if (await curtain.count()) {
-      await curtain.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
-      if (await curtain.isVisible().catch(() => false)) {
-        await curtain.click();
-        await page.waitForTimeout(250);
-      }
-    }
-    if (!(await page.locator(".hero-power-choice").count()) && !(await page.locator(".pass-screen").count())) break;
-  }
+// Player One is the only seat with an opening mulligan. Complete it before
+// clicking any board controls so the overlay cannot intercept the audio trigger.
+async function completeOpeningMulligan() {
+  const confirm = page.locator(".mulligan-panel button.primary");
+  await confirm.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
+  if (await confirm.isVisible().catch(() => false)) await confirm.click();
 }
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
@@ -67,7 +49,7 @@ await page.waitForTimeout(900);
 await page.locator(".duel-trigger").click({ timeout: 5000 }).catch(() => {});
 await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
-await completeHeroPowerDraft();
+await completeOpeningMulligan();
 await page.waitForTimeout(2600);
 const directDuel = await page.evaluate(() => window.__sfx?.getStats() ?? { error: "SFX probe missing" });
 check(
@@ -212,7 +194,7 @@ await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.locator(".duel-trigger").click({ timeout: 5000 }).catch(() => {});
 await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
-await completeHeroPowerDraft();
+await completeOpeningMulligan();
 await page.waitForTimeout(1200);
 
 // Cheat mode first. Going first deals TWO cards against ONE mana, and the roster

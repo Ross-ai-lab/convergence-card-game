@@ -31,20 +31,8 @@ function mainState(): GameState {
   const state = createInitialGame(cards);
   state.phase = "main";
   state.drawChoice = null;
-  state.heroPowerChoicePlayer = null;
+  state.mulligan = null;
   return state;
-}
-
-function finishHeroPowerDraft(state: GameState): GameState {
-  let next = state;
-  while (next.phase === "heroPowerChoice" && next.heroPowerChoicePlayer !== null) {
-    next = applyAction(
-      next,
-      { type: "choose_hero_power", player: next.heroPowerChoicePlayer, choiceIndex: 0 },
-      library,
-    ).state;
-  }
-  return next;
 }
 
 describe("Convergence engine", () => {
@@ -90,19 +78,23 @@ describe("Convergence engine", () => {
     expect(state.players[0].hand).toHaveLength(3);
     expect(state.players[1].hand).toHaveLength(3); // both start with 3; player two also keeps The Coin
     expect(state.players[1].coins).toBe(1);
-    expect(state.phase).toBe("heroPowerChoice");
-    expect(state.heroPowerOptions[0]).toHaveLength(2);
-    expect(state.heroPowerOptions[1]).toHaveLength(2);
-    expect(new Set(state.heroPowerOptions[0]).size).toBe(2);
-    expect(legal).toHaveLength(2);
-    const drafted = finishHeroPowerDraft(state);
+    expect(state.phase).toBe("mulligan");
+    expect(state.mulligan).toEqual({ player: 0, selected: [false, false, false] });
+    expect(legal).toHaveLength(4);
+    expect(legal).toContainEqual({ type: "toggle_mulligan", player: 0, handIndex: 0 });
+    expect(legal).toContainEqual({ type: "confirm_mulligan", player: 0 });
+    const selected = applyAction(state, { type: "toggle_mulligan", player: 0, handIndex: 0 }, library).state;
+    expect(selected.mulligan?.selected[0]).toBe(true);
+    const replacedId = state.players[0].hand[0];
+    const drafted = applyAction(selected, { type: "confirm_mulligan", player: 0 }, library).state;
     expect(drafted.phase).toBe("main");
-    expect(drafted.heroPowers[0]).not.toBeNull();
-    expect(drafted.heroPowers[1]).not.toBeNull();
+    expect(drafted.mulligan).toBeNull();
+    expect(drafted.players[0].hand).toHaveLength(3);
+    expect(drafted.bottomDeck).toContain(replacedId);
   });
 
   it("reuses a known legal-action list without changing action resolution", () => {
-    const state = finishHeroPowerDraft(createInitialGame(cards, "known-legal-actions"));
+    const state = mainState();
     const legal = getLegalActions(state, library);
     const action = legal.find((candidate) => candidate.type === "end_turn");
     expect(action).toBeDefined();
@@ -149,7 +141,7 @@ describe("Convergence engine", () => {
   });
 
   it("draws one card straight into hand on end turn — no choice step", () => {
-    const state = finishHeroPowerDraft(createInitialGame(cards));
+    const state = mainState();
     const before = state.players[1].hand.length;
     const ended = applyAction(state, { type: "end_turn", player: 0 }, library).state;
     expect(ended.phase).toBe("main"); // Hearthstone's draw: no pick-1-of-2
@@ -159,7 +151,7 @@ describe("Convergence engine", () => {
   });
 
   it("Detective L turns the draw back into a choice of two", () => {
-    const state = finishHeroPowerDraft(createInitialGame(cards));
+    const state = mainState();
     state.players[1].board[0] = makeMinion("Detective L", 1);
     const before = state.players[1].hand.length;
     const ended = applyAction(state, { type: "end_turn", player: 0 }, library).state;
@@ -173,7 +165,7 @@ describe("Convergence engine", () => {
   });
 
   it("a silenced Detective L gives no Foresight", () => {
-    const state = finishHeroPowerDraft(createInitialGame(cards));
+    const state = mainState();
     state.players[1].board[0] = makeMinion("Detective L", 1, { silenced: true });
     const ended = applyAction(state, { type: "end_turn", player: 0 }, library).state;
     expect(ended.phase).toBe("main");

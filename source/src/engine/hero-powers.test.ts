@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cards } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
-import { HERO_POWER_DEFINITIONS } from "./hero-powers";
+import { HERO_POWER_DEFINITIONS, HERO_POWER_UNLOCK_ORDER, firstUnlockedHeroPower, isHeroPowerUnlocked } from "./hero-powers";
 import type { GameState, HeroPowerId, MinionInstance } from "./types";
 import { spawnTestMinion } from "./test-utils";
 
@@ -20,7 +20,7 @@ function minion(name: string, owner: 0 | 1, overrides: Partial<MinionInstance> =
 function mainState(power: HeroPowerId): GameState {
   const state = createInitialGame(cards, `hero-power-${power}`);
   state.phase = "main";
-  state.heroPowerChoicePlayer = null;
+  state.mulligan = null;
   state.heroPowers = [power, null];
   state.heroPowerUsed = [false, false];
   state.activePlayer = 0;
@@ -40,21 +40,23 @@ function usePower(state: GameState, choiceIndex = 0): GameState {
   return result;
 }
 
-describe("opening Hero Powers", () => {
-  it("offers two distinct choices to each player, then records both selections", () => {
-    const state = createInitialGame(cards, "hero-power-draft");
-    expect(state.phase).toBe("heroPowerChoice");
-    expect(state.heroPowerOptions[0]).toHaveLength(2);
-    expect(state.heroPowerOptions[1]).toHaveLength(2);
-    expect(new Set(state.heroPowerOptions[0]).size).toBe(2);
-    expect(new Set(state.heroPowerOptions[1]).size).toBe(2);
-    const first = applyAction(state, { type: "choose_hero_power", player: 0, choiceIndex: 1 }, library).state;
-    expect(first.phase).toBe("heroPowerChoice");
-    expect(first.heroPowerChoicePlayer).toBe(1);
-    const second = applyAction(first, { type: "choose_hero_power", player: 1, choiceIndex: 0 }, library).state;
-    expect(second.phase).toBe("main");
-    expect(second.heroPowers[0]).toBe(state.heroPowerOptions[0][1]);
-    expect(second.heroPowers[1]).toBe(state.heroPowerOptions[1][0]);
+describe("menu Hero Powers", () => {
+  it("starts with the powers selected by the menu instead of an opening draft", () => {
+    const state = createInitialGame(cards, "hero-power-menu", [], { heroPowers: ["minion_atk", null] });
+    expect(state.phase).toBe("mulligan");
+    expect(state.heroPowers).toEqual(["minion_atk", null]);
+    const afterMulligan = applyAction(state, { type: "confirm_mulligan", player: 0 }, library).state;
+    expect(afterMulligan.phase).toBe("main");
+    expect(afterMulligan.heroPowers).toEqual(["minion_atk", null]);
+  });
+
+  it("orders unlocks from the weakest first to the strongest last", () => {
+    expect(HERO_POWER_UNLOCK_ORDER).toHaveLength(10);
+    expect(firstUnlockedHeroPower(0)).toBeNull();
+    expect(firstUnlockedHeroPower(1)).toBe(HERO_POWER_UNLOCK_ORDER[0]);
+    expect(isHeroPowerUnlocked(HERO_POWER_UNLOCK_ORDER[0], 1)).toBe(true);
+    expect(isHeroPowerUnlocked(HERO_POWER_UNLOCK_ORDER[1], 1)).toBe(false);
+    expect(firstUnlockedHeroPower(10)).toBe(HERO_POWER_UNLOCK_ORDER[9]);
   });
 
   it("keeps every power at two mana and exposes the shared text", () => {
@@ -101,7 +103,7 @@ describe("opening Hero Powers", () => {
     expect(usePower(mend).players[0].health).toBe(22);
 
     const recruit = usePower(mainState("summon_recruit"));
-    expect(recruit.players[0].board[0]).toMatchObject({ name: "Heroic Recruit", atk: 1, hp: 1, maxHp: 1 });
+    expect(recruit.players[0].board[0]).toMatchObject({ name: "Knight", atk: 1, hp: 1, maxHp: 1 });
 
     const taunt = mainState("give_taunt");
     taunt.players[0].board[0] = minion("John Wick", 0);

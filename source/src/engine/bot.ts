@@ -471,7 +471,7 @@ export function clairvoyanceEdge(state: GameState, library: CardLibrary, botId: 
 
 function whoActs(state: GameState): PlayerId | null {
   if (state.phase === "gameOver") return null;
-  if (state.phase === "heroPowerChoice") return state.heroPowerChoicePlayer;
+  if (state.phase === "mulligan") return state.mulligan?.player ?? null;
   if (state.phase === "drawChoice") return state.drawChoice?.player ?? null;
   if (state.phase === "targeting") return state.pendingTarget?.player ?? null;
   return state.activePlayer;
@@ -844,6 +844,9 @@ export function chooseBotAction(
   // every simulated bot action; normal app callers simply omit it.
   const legal = botLegalActions(state, library, knownLegal);
   if (legal.length === 0) return null;
+  if (state.phase === "mulligan") {
+    return legal.find((action) => action.type === "confirm_mulligan") ?? legal[legal.length - 1];
+  }
   if (legal.length === 1) return legal[0];
 
   const cheats = BOT_CHEATS[skill];

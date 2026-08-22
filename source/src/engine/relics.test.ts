@@ -120,17 +120,9 @@ describe("relic effects", () => {
     second.players[0].hand = [relicByName("One Ring").id];
     expect(getLegalActions(second, library)).not.toContainEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 });
 
-    // The second slot keeps its real index, so it can still be returned even
-    // when the first slot is occupied.
+    // Attached relics are equipment, not cards the bearer can choose to return.
     second.players[0].hand = [];
-    const secondReturn = getLegalActions(second, library).find(
-      (action) => action.type === "return_relic" && action.relicIndex === 1,
-    );
-    expect(secondReturn).toEqual({ type: "return_relic", player: 0, slotIndex: 0, relicIndex: 1 });
-    const returned = applyAction(second, secondReturn!, library).state;
-    expect(returned.players[0].board[0]?.relic?.name).toBe("Elder wand");
-    expect(returned.players[0].board[0]?.relic2).toBeNull();
-    expect(returned.players[0].hand).toEqual([relicByName("Tesseract").id]);
+    expect(getLegalActions(second, library).some((action) => "relicIndex" in action)).toBe(false);
   });
 
   it("ships the requested relic costs and replacement effects", () => {
@@ -157,23 +149,11 @@ describe("relic effects", () => {
     expect(relics.find((relic) => relic.name === "Devil Fruit")).toMatchObject({ cost: 2, effect: expect.stringContaining("+2/+1") });
   });
 
-  it("returns reusable relics to hand once per turn, but never re-fires them automatically", () => {
+  it("never exposes a manual attached-relic return action", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Mob Psycho", 0, { relic: relicByName("Elder wand") });
     state.players[0].hand = [];
-    const action = getLegalActions(state, library).find((candidate) => candidate.type === "return_relic");
-    expect(action).toEqual({ type: "return_relic", player: 0, slotIndex: 0 });
-    const returned = applyAction(state, action!, library).state;
-    expect(returned.players[0].board[0]?.relic).toBeNull();
-    expect(returned.players[0].hand).toEqual([relicByName("Elder wand").id]);
-    expect(getLegalActions(returned, library).some((candidate) => candidate.type === "return_relic")).toBe(false);
-  });
-
-  it("does not let a full hand keep a returned relic", () => {
-    const state = mainState();
-    state.players[0].board[0] = makeMinion("Mob Psycho", 0, { relic: relicByName("Elder wand") });
-    state.players[0].hand = Array.from({ length: 10 }, () => cardId("Zoro"));
-    expect(getLegalActions(state, library).some((candidate) => candidate.type === "return_relic")).toBe(false);
+    expect(getLegalActions(state, library).some((candidate) => "relicIndex" in candidate)).toBe(false);
   });
 
   it("The Holy Grail doubles the bearer on equip", () => {

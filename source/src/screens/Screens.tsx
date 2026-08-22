@@ -35,6 +35,12 @@ import "./Screens.css";
 import { sfx, type Bus, type Mix } from "../audio/sfx";
 import { cards } from "../data/cards";
 import {
+  HERO_POWER_UNLOCK_ORDER,
+  heroPowerDefinition,
+  isHeroPowerUnlocked,
+} from "../engine/hero-powers";
+import type { HeroPowerId } from "../engine/types";
+import {
   LADDER_KEYS,
   LADDER_LABEL,
   totals,
@@ -192,6 +198,8 @@ export function TitleScreen({
   onSettings,
   onGallery,
   onRecord,
+  onHeroPowers,
+  heroPowerName,
 }: {
   canContinue: boolean;
   playerCount: number | null;
@@ -202,6 +210,8 @@ export function TitleScreen({
   onSettings: () => void;
   onGallery: () => void;
   onRecord: () => void;
+  onHeroPowers: () => void;
+  heroPowerName: string;
 }) {
   const [skill, setSkill] = useState<BotSkill>("normal");
   const skillIcon = {
@@ -285,6 +295,16 @@ export function TitleScreen({
             <Scroll size={22} weight="fill" aria-hidden="true" />
             <span>Record</span>
           </button>
+          <button
+            type="button"
+            className="hero-power-trigger"
+            onClick={onHeroPowers}
+            title="Choose an unlocked Hero Power"
+          >
+            <Lightning size={22} weight="fill" aria-hidden="true" />
+            <span>Hero Powers</span>
+            <small>{heroPowerName}</small>
+          </button>
           <button type="button" className="settings-trigger" onClick={onSettings}>
             <GearSix size={22} weight="fill" aria-hidden="true" />
             <span>Settings</span>
@@ -296,6 +316,67 @@ export function TitleScreen({
         ) : null}
       </div>
     </div>
+  );
+}
+
+export function HeroPowersScreen({
+  botWins,
+  selectedPower,
+  onSelect,
+  onClose,
+}: {
+  botWins: number;
+  selectedPower: HeroPowerId | null;
+  onSelect: (power: HeroPowerId) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Overlay title="Hero Powers" onClose={onClose} wide>
+      <div className="hero-power-menu">
+        <p className="hero-power-menu-intro">
+          Beat the bot to unlock powers permanently. Your first unlock arrives after one win; the tenth arrives after ten.
+          <b>{` ${Math.min(botWins, HERO_POWER_UNLOCK_ORDER.length)}/${HERO_POWER_UNLOCK_ORDER.length} unlocked`}</b>
+        </p>
+        <div className="hero-power-menu-grid">
+          {HERO_POWER_UNLOCK_ORDER.map((powerId, index) => {
+            const definition = heroPowerDefinition(powerId);
+            if (!definition) return null;
+            const unlockAt = index + 1;
+            const unlocked = isHeroPowerUnlocked(powerId, botWins);
+            const selected = selectedPower === powerId;
+            return (
+              <button
+                type="button"
+                key={powerId}
+                className={[
+                  "hero-power-menu-card",
+                  unlocked ? "unlocked" : "locked",
+                  selected ? "selected" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                disabled={!unlocked}
+                aria-pressed={selected}
+                onClick={() => {
+                  sfx.play("button");
+                  onSelect(powerId);
+                }}
+              >
+                <span className="hero-power-menu-status">
+                  {unlocked ? (selected ? "Selected" : `Unlocked · ${unlockAt}`) : `Locked · win ${unlockAt}`}
+                </span>
+                <strong><Lightning size={18} weight="fill" aria-hidden="true" /> {definition.name}</strong>
+                <span>{definition.text}</span>
+                <small>Costs 2 mana · once per turn</small>
+              </button>
+            );
+          })}
+        </div>
+        {selectedPower === null ? (
+          <p className="hero-power-menu-note">No Hero Power is selected yet. Win against the bot to claim your first.</p>
+        ) : null}
+      </div>
+    </Overlay>
   );
 }
 
@@ -460,7 +541,7 @@ function HowToPlayContent() {
         <h4><span className="rules-step-no">2</span> The shared deck</h4>
         <ul className="rules-list">
           <li>Both players draw from the <b>same shuffled deck</b> — 175 minions and 21 relics, one copy of each.</li>
-          <li>You open with <b>3 cards</b>. Going second also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
+          <li>You open with <b>3 cards</b>. Player One may replace any number of them once before the duel begins. Going second also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
           <li>Your hand holds <b>10 cards</b>. A card drawn into a full hand burns and is gone.</li>
           <li>When the deck runs dry, every further draw costs you core health: <b>1, then 2, then 3</b>, and up from there.</li>
         </ul>
@@ -475,8 +556,8 @@ function HowToPlayContent() {
           <li><b>End the turn</b> with Space.</li>
         </ol>
         <p className="rules-aside">
-          At the start of the duel you are offered <b>two random Hero Powers</b> and keep one. It costs 2 mana
-          and works once per turn, every turn, for the rest of the duel.
+          Hero Powers are chosen from the <b>Hero Powers</b> menu. Beat the bot to unlock them one at a time,
+          from the weakest unlock to the strongest at ten wins. A selected power costs 2 mana and works once per turn.
         </p>
       </section>
 
@@ -578,8 +659,8 @@ function HowToPlayContent() {
         <ul className="rules-list">
           <li>The <b>21 relics</b> ride in the same shared deck and arrive in hand like any other card.</li>
           <li>Play one onto a friendly minion to equip it. A minion carries up to <b>two</b>, in independent slots.</li>
-          <li>Click an attached relic badge, then another friendly minion, to pass it across — <b>once per turn</b>.</li>
-          <li>A relic dies with its bearer unless its text says otherwise. Some spend themselves on arrival and cannot be moved.</li>
+          <li>An attached relic stays with its bearer. A minion cannot choose to return it to its owner, and a relic cannot be manually returned to hand.</li>
+          <li>A relic dies with its bearer unless its own text says otherwise. Effects that return a minion to hand discard its attached relics.</li>
         </ul>
       </section>
 

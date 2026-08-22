@@ -1866,26 +1866,22 @@ describe("2026 card replacements", () => {
     expect(notReborn.discard).toContain(cardId("Mr. Poopybutthole"));
   });
 
-  it("Nezu draws exactly 1 extra card on its ongoing turn", () => {
+  it("Nezu draws exactly 1 card from its Battlecry", () => {
     const state = mainState("nezu-draw-one");
-    state.players[0].board[0] = minion("Nezu", 0);
-    state.players[0].hand = [];
-    state.players[1].hand = [];
     state.deck = [cardId("Thanos"), cardId("John Wick"), cardId("Zoro")];
 
-    const after = endTurn(endTurn(state, 0), 1);
-    expect(after.players[0].hand).toEqual([cardId("John Wick"), cardId("Zoro")]);
-    expect(after.deck).toEqual([]);
+    const after = play(state, 0, "Nezu", 0);
+    expect(after.players[0].hand).toEqual([cardId("Thanos")]);
+    expect(after.deck).toEqual([cardId("John Wick"), cardId("Zoro")]);
   });
 
-  it("Shibukawa sets its ATK exactly to the highest enemy ATK", () => {
-    const state = mainState("shibukawa-highest-enemy");
-    state.players[0].board[0] = minion("Shibukawa", 0);
+  it("Shibukawa has Divine Shield and silences one enemy on its Battlecry", () => {
+    const state = mainState("shibukawa-silence");
     state.players[1].board[0] = minion("John Wick", 1, { atk: 7, hp: 10, maxHp: 10 });
-    state.players[1].board[1] = minion("Zoro", 1, { atk: 3, hp: 10, maxHp: 10 });
 
-    const after = endTurn(endTurn(state, 0), 1);
-    expect(after.players[0].board[0]?.atk).toBe(7);
+    const after = play(state, 0, "Shibukawa", 0);
+    expect(after.players[0].board[0]).toMatchObject({ divineShield: true, atk: 1 });
+    expect(after.players[1].board[0]?.silenced).toBe(true);
   });
 
   it("Mugen & Jin gains exactly +1 ATK only with another friendly minion", () => {

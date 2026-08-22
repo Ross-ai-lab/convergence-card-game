@@ -228,6 +228,14 @@ export function totals(progress: Progress): LadderRecord {
   );
 }
 
+/** Wins against the bot only; hotseat victories do not advance the unlock track. */
+export function botWins(progress: Progress): number {
+  return (['easy', 'normal', 'hard'] as const).reduce(
+    (wins, key) => wins + progress.ladders[key].won,
+    0,
+  );
+}
+
 /** Win percentage, or null when nothing decided has been played yet. */
 export function winPct(record: LadderRecord): number | null {
   const decided = record.won + record.lost;

@@ -31,8 +31,8 @@ function playSteps(seed: string, skills: [BotSkill, BotSkill], steps: number, st
   for (let step = 0; step < steps; step += 1) {
     if (state.phase === "gameOver") break;
     const actor: PlayerId =
-      state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
-        ? state.heroPowerChoicePlayer
+      state.phase === "mulligan" && state.mulligan
+        ? state.mulligan.player
         : state.phase === "drawChoice" && state.drawChoice
         ? state.drawChoice.player
         : state.phase === "targeting" && state.pendingTarget
@@ -67,8 +67,8 @@ function manaCurve(turns: number): number[] {
       recordedTurnsStarted = state.players[0].turnsStarted;
     }
     const actor: PlayerId =
-      state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
-        ? state.heroPowerChoicePlayer
+      state.phase === "mulligan" && state.mulligan
+        ? state.mulligan.player
         : state.phase === "drawChoice" && state.drawChoice
         ? state.drawChoice.player
         : state.phase === "targeting" && state.pendingTarget
@@ -213,8 +213,8 @@ describe("the bot", () => {
       if (state.phase === "gameOver") break;
       if (state.phase === "targeting") sawPrompt = true;
       const actor: PlayerId =
-        state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
-          ? state.heroPowerChoicePlayer
+        state.phase === "mulligan" && state.mulligan
+          ? state.mulligan.player
           : state.phase === "drawChoice" && state.drawChoice
           ? state.drawChoice.player
           : state.phase === "targeting" && state.pendingTarget

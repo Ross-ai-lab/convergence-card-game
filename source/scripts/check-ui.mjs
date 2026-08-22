@@ -119,15 +119,15 @@ check(
 );
 await page.locator(".duel-intro").waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
 check(
-  "Hero Power draft waits for the intro",
-  (await page.locator(".hero-power-choice").count()) === 0,
-  "draft hidden during opening animation",
+  "mulligan waits for the intro",
+  (await page.locator(".mulligan-panel").count()) === 0,
+  "mulligan hidden during opening animation",
 );
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
 check(
-  "Hero Power draft appears after the intro",
-  (await page.locator(".hero-power-choice").count()) === 2,
-  "two choices revealed after opening animation",
+  "mulligan appears after the intro",
+  (await page.locator(".mulligan-card").count()) === 3,
+  "three opening cards revealed after opening animation",
 );
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
@@ -170,26 +170,12 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   await page.getByRole("button", { name: /2 players|Start a hotseat/i }).first().click();
   await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 });
   await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 });
-  // The live game now drafts one Hero Power per player before normal actions
-  // unlock. Complete that opening handoff so the scenarios below start on the
-  // ordinary board, while still exercising the real offer overlay.
-  for (let pass = 0; pass < 4; pass += 1) {
-    const offer = page.locator(".hero-power-choice").first();
-    if (await offer.count()) {
-      await offer.waitFor({ state: "visible", timeout: 9000 });
-      await offer.click();
-      await page.waitForTimeout(250);
-    }
-    const curtain = page.getByRole("button", { name: /Continue|Ready/i }).first();
-    if (await curtain.count()) {
-      await curtain.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
-      if (await curtain.isVisible().catch(() => false)) {
-        await curtain.click();
-        await page.waitForTimeout(250);
-      }
-    }
-    if (!(await page.locator(".hero-power-choice").count()) && !(await page.locator(".pass-screen").count())) break;
-  }
+  // Player One is the only seat with a mulligan. Confirm it so the scenarios
+  // below start on the ordinary board.
+  const mulliganConfirm = page.locator(".mulligan-panel button.primary");
+  await mulliganConfirm.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
+  if (await mulliganConfirm.isVisible().catch(() => false)) await mulliganConfirm.click();
+  await page.waitForTimeout(300);
   // Wait for the test hook, not for a guessed 1100ms. It registers from inside a
   // DYNAMIC import, so the first load after a rebuild has to fetch and transform
   // that module first — and a fixed wait that is usually long enough is exactly
@@ -320,16 +306,24 @@ check(
   const enemyHero = page.locator(".enemy-hero-wrap .hero-plate.enemy");
   const powerCard = page.locator(".enemy-power-card");
   await enemyHero.hover();
-  const heroBox = await enemyHero.boundingBox();
-  const cardBox = await powerCard.boundingBox();
-  const cardText = (await powerCard.textContent()) ?? "";
-  const visible = await powerCard.isVisible();
-  const below = Boolean(heroBox && cardBox && cardBox.y >= heroBox.y + heroBox.height);
-  check(
-    "enemy Hero Power opens as an immediate card",
-    visible && below && cardText.length > 20,
-    `visible=${visible}, below=${below}, text=${cardText.length} chars`,
-  );
+  if (await powerCard.count()) {
+    const heroBox = await enemyHero.boundingBox();
+    const cardBox = await powerCard.boundingBox();
+    const cardText = (await powerCard.textContent()) ?? "";
+    const visible = await powerCard.isVisible();
+    const below = Boolean(heroBox && cardBox && cardBox.y >= heroBox.y + heroBox.height);
+    check(
+      "enemy Hero Power display matches the selected unlock",
+      !visible || (below && cardText.length > 20),
+      visible ? `visible=${visible}, below=${below}, text=${cardText.length} chars` : "power card mounted but hidden",
+    );
+  } else {
+    check(
+      "enemy Hero Power display matches the selected unlock",
+      true,
+      "no power selected before the first bot win",
+    );
+  }
   await page.mouse.move(0, 0);
 }
 
@@ -731,13 +725,13 @@ await newBoard({ place: false });
       `badges ${after} -> ${afterPress}`,
     );
 
-    // A completed click remains the explicit, intentional way to return it.
+    // A completed click is only a preview now; it cannot return the relic.
     await page.locator(".relic-badge").first().click();
     await page.waitForTimeout(250);
     check(
-      "a completed badge click returns the relic",
-      (await page.locator(".relic-badge").count()) === 0,
-      "badge returned only after click",
+      "a completed badge click cannot return the relic",
+      (await page.locator(".relic-badge").count()) === after,
+      "attached relic remains with its bearer",
     );
   }
 }

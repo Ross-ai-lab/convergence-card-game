@@ -66,9 +66,12 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // hold a minion permanently wearing a borrowed effect with nothing recorded to
 // put back. Migrated to null rather than discarded: a v19 save cannot be mid-copy
 // in the first place, because the old code never left a copy open across a save.
-const SAVE_VERSION = 20;
+// v21: the opening Hero Power draft became a player-only mulligan, and manual
+// attached-relic returns were removed. A mid-draft v20 save has no equivalent
+// state and is discarded rather than restoring a broken opening screen.
+const SAVE_VERSION = 21;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v19";
+const LEGACY_SAVE_KEY = "convergence.save.v20";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -124,12 +127,15 @@ export function loadGame(): SavedGame | null {
       migrateLegacyMechanics(game);
     }
     if (
-      !Array.isArray(game.heroPowerOptions) ||
-      game.heroPowerOptions.length !== 2 ||
       !Array.isArray(game.heroPowers) ||
       game.heroPowers.length !== 2 ||
       !Array.isArray(game.heroPowerUsed) ||
       game.heroPowerUsed.length !== 2
+    ) return null;
+    if ((game.phase as string) === "heroPowerChoice") return null;
+    if (
+      game.phase === "mulligan" &&
+      (!game.mulligan || game.mulligan.player !== 0 || !Array.isArray(game.mulligan.selected))
     ) return null;
     const playerShapeOk = (player: SavedGame["game"]["players"][number]) =>
       Array.isArray(player?.board) &&
@@ -225,8 +231,8 @@ function migrateLegacyMechanics(game: GameState): void {
       if (minion.chainGrowthPending === undefined) minion.chainGrowthPending = false;
     }
   }
-  if (game.heroPowerChoicePlayer === undefined) game.heroPowerChoicePlayer = null;
-  if (!Array.isArray(game.heroPowerOptions)) game.heroPowerOptions = [[], []];
+  const savedMulligan = (game as GameState & { mulligan?: GameState["mulligan"] }).mulligan;
+  if (savedMulligan === undefined) game.mulligan = null;
   if (!Array.isArray(game.heroPowers)) game.heroPowers = [null, null];
   if (!Array.isArray(game.heroPowerUsed)) game.heroPowerUsed = [false, false];
 }

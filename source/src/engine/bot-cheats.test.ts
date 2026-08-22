@@ -46,7 +46,6 @@ function mainState(seed: string, active: PlayerId = BOT): GameState {
   state.phase = "main";
   state.drawChoice = null;
   state.pendingTarget = null;
-  state.heroPowerChoicePlayer = null;
   state.heroPowers = [null, null];
   state.activePlayer = active;
   return state;
@@ -84,9 +83,9 @@ describe("Foresight", () => {
   /** Ends the human's turn and reports what the bot's turn start looked like. */
   function botTurnStart(foresightFor: PlayerId | null): GameState {
     const state = createInitialGame(cards, "foresight", relics, { foresightFor });
-    // Skip the hero-power draft; this is about the draw, not the opening.
+    // Skip the opening mulligan; this is about the draw, not the opening.
     state.phase = "main";
-    state.heroPowerChoicePlayer = null;
+    state.mulligan = null;
     state.activePlayer = HUMAN;
     return applyAction(state, { type: "end_turn", player: HUMAN }, library).state;
   }
@@ -286,13 +285,16 @@ describe("Insight+", () => {
    * whose best use is not their highest-scoring first move.
    */
   function positions(): GameState[] {
-    let state = createInitialGame(cards, "insight-plus", relics);
+    // Keep the sample's resource trade available explicitly. The old opening
+    // draft happened to select a draw power in this seed; the menu no longer
+    // rolls powers, so make that test fixture's tactical premise explicit.
+    let state = createInitialGame(cards, "insight-plus", relics, { heroPowers: ["core_trade_draw", "core_trade_draw"] });
     const collected: GameState[] = [];
     for (let step = 0; step < 400 && collected.length < 12; step += 1) {
       if (state.phase === "gameOver") break;
       const actor: PlayerId =
-        state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
-          ? state.heroPowerChoicePlayer
+        state.phase === "mulligan" && state.mulligan
+          ? state.mulligan.player
           : state.phase === "drawChoice" && state.drawChoice
             ? state.drawChoice.player
             : state.phase === "targeting" && state.pendingTarget
@@ -350,8 +352,8 @@ describe("planning a whole turn", () => {
     for (let step = 0; step < 400 && collected.length < 10; step += 1) {
       if (state.phase === "gameOver") break;
       const actor: PlayerId =
-        state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null
-          ? state.heroPowerChoicePlayer
+        state.phase === "mulligan" && state.mulligan
+          ? state.mulligan.player
           : state.phase === "drawChoice" && state.drawChoice
             ? state.drawChoice.player
             : state.phase === "targeting" && state.pendingTarget

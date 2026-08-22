@@ -1,5 +1,5 @@
 import { isMinionCard, isRelicCard } from "./types";
-import { HERO_POWER_COST, HERO_POWER_IDS, heroPowerDefinition } from "./hero-powers";
+import { HERO_POWER_COST, heroPowerDefinition } from "./hero-powers";
 import { traceEffect } from "./trace";
 import type {
   ApplyResult,
@@ -109,6 +109,8 @@ export interface GameSetup {
   manaRamp?: number;
   /** Seat granted permanent Foresight — the Ascendant opponent's draw cheat. */
   foresightFor?: PlayerId | null;
+  /** Hero Powers selected in the title-screen menu for each seat. */
+  heroPowers?: [HeroPowerId | null, HeroPowerId | null];
 }
 
 export function createInitialGame(
@@ -124,7 +126,7 @@ export function createInitialGame(
   );
   const players: [PlayerState, PlayerState] = [makePlayer(0, "Player One", health), makePlayer(1, "Player Two", health)];
   const state: GameState = {
-    phase: "heroPowerChoice",
+    phase: "mulligan",
     activePlayer: 0,
     turnNumber: 1,
     cheatMode: false,
@@ -139,9 +141,10 @@ export function createInitialGame(
     drawChoice: null,
     pendingTarget: null,
     pendingPlayCancel: null,
-    heroPowerChoicePlayer: 0,
-    heroPowerOptions: [[], []],
-    heroPowers: [null, null],
+    mulligan: { player: 0, selected: [false, false, false] },
+    heroPowers: setup.heroPowers
+      ? [...setup.heroPowers] as [HeroPowerId | null, HeroPowerId | null]
+      : [null, null],
     heroPowerUsed: [false, false],
     pocketRooms: [],
     stasis: [],
@@ -158,12 +161,6 @@ export function createInitialGame(
   drawDirect(state, 0, 3, []);
   drawDirect(state, 1, 3, []);
   players[1].coins = 1;
-  const gameplaySeed = state.rngSeed;
-  state.heroPowerOptions = [chooseHeroPowerOffers(state), chooseHeroPowerOffers(state)];
-  // The offer is seeded from the duel, but drafting it must not consume a roll
-  // that a card effect or combat will later expect. This keeps the old replay
-  // stream stable while still making the two offers deterministic per duel.
-  state.rngSeed = gameplaySeed;
   return state;
 }
 
@@ -191,8 +188,10 @@ export function applyAction(
   libraryByState.set(next, library);
   const events: GameEvent[] = [];
 
-  if (action.type === "choose_hero_power") {
-    chooseHeroPower(next, action.player, action.choiceIndex, events);
+  if (action.type === "toggle_mulligan") {
+    toggleMulligan(next, action.player, action.handIndex);
+  } else if (action.type === "confirm_mulligan") {
+    confirmMulligan(next, action.player, events);
   } else if (action.type === "use_hero_power") {
     useHeroPower(next, action.player, events);
   } else if (action.type === "play_card") {
@@ -234,8 +233,6 @@ export function applyAction(
     cancelPendingTarget(next, action.player, events);
   } else if (action.type === "use_coin") {
     spendCoin(next, action.player, events);
-  } else if (action.type === "return_relic") {
-    returnRelicToHand(next, action.player, action.slotIndex, events, action.relicIndex);
   }
 
   // Slot marks are permanent and position-based, so they are re-applied after
@@ -264,13 +261,17 @@ export function applyAction(
 
 export function getLegalActions(state: GameState, library: CardLibrary): GameAction[] {
   if (state.phase === "gameOver") return [];
-  if (state.phase === "heroPowerChoice" && state.heroPowerChoicePlayer !== null) {
-    const player = state.heroPowerChoicePlayer;
-    return (state.heroPowerOptions[player] ?? []).map((_power, choiceIndex) => ({
-      type: "choose_hero_power" as const,
-      player,
-      choiceIndex,
-    }));
+  if (state.phase === "mulligan") {
+    const mulligan = state.mulligan;
+    if (!mulligan) return [];
+    return [
+      ...state.players[mulligan.player].hand.map((_cardId, handIndex) => ({
+        type: "toggle_mulligan" as const,
+        player: mulligan.player,
+        handIndex,
+      })),
+      { type: "confirm_mulligan" as const, player: mulligan.player },
+    ];
   }
   if (state.phase === "targeting") {
     const pending = state.pendingTarget;
@@ -311,23 +312,6 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
 
   if (heroPowerIsUsable(state, player.id)) {
     actions.push({ type: "use_hero_power", player: player.id });
-  }
-
-  // A non-one-shot relic may be returned to hand once during its owner's turn.
-  // It is an explicit hand action, so relics never jump between minions or
-  // attach themselves automatically.
-  if (player.relicMoves < RELIC_MOVES_PER_TURN) {
-    player.board.forEach((bearer, slotIndex) => {
-      if (!bearer || player.hand.length >= handLimit) return;
-      [0, 1].forEach((relicIndex) => {
-        const relic = relicAt(bearer, relicIndex);
-        if (relic && relicCanMove(relic)) {
-          actions.push(relicIndex === 0
-            ? { type: "return_relic", player: player.id, slotIndex }
-            : { type: "return_relic", player: player.id, slotIndex, relicIndex });
-        }
-      });
-    });
   }
 
   player.hand.forEach((cardId, handIndex) => {
@@ -402,18 +386,42 @@ function heroPowerIsUsable(state: GameState, playerId: PlayerId): boolean {
   return definition.target === "none" || heroPowerTargetOptions(state, playerId, powerId).length > 0;
 }
 
-function chooseHeroPower(state: GameState, playerId: PlayerId, choiceIndex: number, events: GameEvent[]): void {
-  if (state.heroPowerChoicePlayer !== playerId) return;
-  const selected = state.heroPowerOptions[playerId]?.[choiceIndex];
-  if (!selected) return;
-  state.heroPowers[playerId] = selected;
-  state.heroPowerChoicePlayer = playerId === 0 ? 1 : null;
-  state.phase = playerId === 0 ? "heroPowerChoice" : "main";
-  events.push({
-    kind: "effect",
-    text: `${state.players[playerId].name} chooses ${heroPowerDefinition(selected)?.name ?? "a Hero Power"}.`,
-    player: playerId,
-  });
+function toggleMulligan(state: GameState, playerId: PlayerId, handIndex: number): void {
+  const mulligan = state.mulligan;
+  if (!mulligan || mulligan.player !== playerId) return;
+  if (handIndex < 0 || handIndex >= state.players[playerId].hand.length) return;
+  mulligan.selected[handIndex] = !mulligan.selected[handIndex];
+}
+
+function confirmMulligan(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
+  const mulligan = state.mulligan;
+  if (!mulligan || mulligan.player !== playerId) return;
+  const player = state.players[playerId];
+  const selectedIndices = player.hand
+    .map((_cardId, handIndex) => handIndex)
+    .filter((handIndex) => mulligan.selected[handIndex]);
+  const rejected = selectedIndices.map((handIndex) => player.hand[handIndex]);
+
+  // Remove from the end so the remaining opening hand keeps its order.
+  for (const handIndex of [...selectedIndices].sort((left, right) => right - left)) {
+    player.hand.splice(handIndex, 1);
+  }
+  const replacements = rejected.length > 0 ? drawFromDeck(state, rejected.length, events) : [];
+  for (const cardId of replacements) putCardInHand(state, playerId, cardId, events);
+  // The replaced cards go to the bottom only after the new cards are drawn, so
+  // a player cannot immediately redraw the card they just rejected.
+  state.bottomDeck.unshift(...rejected);
+  if (rejected.length > 0) {
+    events.push({
+      kind: "draw",
+      text: `${player.name} mulligans ${rejected.length} opening card${rejected.length === 1 ? "" : "s"}.`,
+      player: playerId,
+    });
+  } else {
+    events.push({ kind: "draw", text: `${player.name} keeps the opening hand.`, player: playerId });
+  }
+  state.mulligan = null;
+  state.phase = "main";
 }
 
 function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
@@ -527,11 +535,11 @@ export function actionKey(action: GameAction): string {
     return `${action.type}:${action.player}:${action.attackerSlot}:${action.targetSlot}`;
   }
   if (action.type === "attack_core") return `${action.type}:${action.player}:${action.attackerSlot}`;
+  if (action.type === "toggle_mulligan") return `${action.type}:${action.player}:${action.handIndex}`;
+  if (action.type === "confirm_mulligan") return `${action.type}:${action.player}`;
   if (action.type === "choose_draw") return `${action.type}:${action.player}:${action.choiceIndex}`;
-  if (action.type === "choose_hero_power") return `${action.type}:${action.player}:${action.choiceIndex}`;
   if (action.type === "choose_target") return `${action.type}:${action.player}:${action.choiceIndex}`;
   if (action.type === "cancel_target") return `${action.type}:${action.player}`;
-  if (action.type === "return_relic") return `${action.type}:${action.player}:${action.slotIndex}:${action.relicIndex ?? 0}`;
   return `${action.type}:${action.player}`;
 }
 
@@ -569,16 +577,6 @@ function rollInt(state: GameState, maxExclusive: number): number {
   return Math.floor(nextRandom(state) * maxExclusive);
 }
 
-function chooseHeroPowerOffers(state: GameState): HeroPowerId[] {
-  const pool = [...HERO_POWER_IDS];
-  const offers: HeroPowerId[] = [];
-  while (offers.length < 2 && pool.length > 0) {
-    const index = rollInt(state, pool.length);
-    offers.push(pool.splice(index, 1)[0]);
-  }
-  return offers;
-}
-
 function rollDie(state: GameState): number {
   return rollInt(state, 6) + 1;
 }
@@ -612,7 +610,6 @@ function makePlayer(id: PlayerId, name: string, health: number = DEFAULT_STARTIN
     randomAttacksUntilTurn: null,
     fatigue: 0,
     turnsStarted: 0,
-    relicMoves: 0,
     deadMinions: [],
   };
 }
@@ -836,7 +833,6 @@ function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, e
   restoreExpiredTransforms(state, playerId, events);
   const player = state.players[playerId];
   player.turnsStarted += 1;
-  player.relicMoves = 0;
   events.push({ kind: "turn", text: `${player.name}'s turn begins.`, player: playerId });
 
   // Hearthstone's draw: one card, no choice. The pick-1-of-2 that used to happen
@@ -3092,6 +3088,7 @@ function runEffect(
     const slot = slotOf(state, target);
     if (target && slot >= 0 && !blockedByDominionAuthority(state, source, target.owner)) {
       enemy.board[slot] = null;
+      discardAttachedRelics(state, target);
       putCardInHand(state, enemyId, target.cardId, events, target.instanceId);
       events.push(effectEvent(`${label} returns ${target.name} to hand.`, source));
     } else if (target && blockedByDominionAuthority(state, source, target.owner)) {
@@ -3284,6 +3281,7 @@ function runEffect(
     if (picked && slot >= 0) {
       const cardId = picked.cardId;
       player.board[slot] = null;
+      discardAttachedRelics(state, picked);
       putCardInHand(state, source.owner, cardId, events, picked.instanceId);
       player.costReductions[cardId] = (player.costReductions[cardId] ?? 0) + 5;
       events.push(effectEvent(`${label} sends ${picked.name} home; it returns 5 cheaper.`, source));
@@ -3517,6 +3515,7 @@ function returnMinionsToHand(state: GameState, playerId: PlayerId, minions: Mini
     .filter(({ minion, slot }) => minion.owner === playerId && slot >= 0);
   for (const { minion, slot } of entries) {
     state.players[playerId].board[slot] = null;
+    discardAttachedRelics(state, minion);
     putCardInHand(state, playerId, minion.cardId, events, minion.instanceId);
   }
 }
@@ -3537,6 +3536,7 @@ function returnAllMinionsToHand(
       continue;
     }
     state.players[owner].board[slot] = null;
+    discardAttachedRelics(state, minion);
     putCardInHand(state, owner, minion.cardId, events, minion.instanceId);
   }
 }
@@ -3616,8 +3616,8 @@ function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: Ga
   if (slot < 0) return;
   const recruit: CardDefinition = {
     kind: "minion",
-    id: "token:heroic-recruit",
-    name: "Heroic Recruit",
+    id: "token:knight",
+    name: "Knight",
     cost: 0,
     atk: 1,
     hp: 1,
@@ -3630,11 +3630,11 @@ function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: Ga
     effect: "-",
     flavor: "A small spark can turn the tide.",
     origin: "Hero Power",
-    art: "/card-art/raw/token-sin.webp",
+    art: "/card-art/raw/token-knight.webp",
   };
   const summoned = createMinion(recruit, playerId, state);
   player.board[slot] = summoned;
-  events.push({ kind: "effect", text: `${player.name} summons a 1/1 Heroic Recruit.`, player: playerId, instanceId: summoned.instanceId });
+  events.push({ kind: "effect", text: `${player.name} summons a 1/1 Knight.`, player: playerId, instanceId: summoned.instanceId });
 }
 
 function summonSins(state: GameState, source: MinionInstance, events: GameEvent[]): void {
@@ -4246,53 +4246,6 @@ function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstan
 
 function unequipRelic(bearer: MinionInstance, relicIndex = 0): void {
   setRelicAt(bearer, relicIndex, null);
-}
-
-/** How many reusable Ascension Relics a player may return to hand per turn. */
-export const RELIC_MOVES_PER_TURN = 1;
-
-/**
- * Relics that spend themselves the instant they are played. These may NOT be
- * returned to hand. Re-playing one would re-fire it — the Holy Grail would
- * double a minion's stats every single time — while reusable relics can safely
- * be picked up once per turn. Keep this set in step with `equipRelic`.
- */
-const ONE_SHOT_RELICS = new Set([
-  "double_stats",
-  "double_bearer_attack",
-  "bearer_divine_shield",
-  "heal_full_now",
-  "monster_cell",
-  "cocoon",
-]);
-
-export function relicCanMove(relic: RelicInstance | null | undefined): boolean {
-  return Boolean(relic && !ONE_SHOT_RELICS.has(relic.relicId));
-}
-
-/**
- * Return a reusable attached relic to its owner's hand. Re-playing it later is
- * intentional and costs mana, so moving it cannot silently re-fire a one-shot.
- */
-function returnRelicToHand(state: GameState, playerId: PlayerId, slotIndex: number, events: GameEvent[], relicIndex?: number): void {
-  const player = state.players[playerId];
-  const bearer = player.board[slotIndex];
-  if (!bearer) return;
-  const index = relicIndex ?? firstRelicIndex(bearer, (relic) => relicCanMove(relic));
-  const relic = index >= 0 ? relicAt(bearer, index) : null;
-  if (!relic || !relicCanMove(relic)) return;
-  if (player.relicMoves >= RELIC_MOVES_PER_TURN) return;
-  if (player.hand.length >= handLimit) return;
-
-  unequipRelic(bearer, index);
-  player.relicMoves += 1;
-  putCardInHand(state, playerId, relic.id, events);
-  events.push({
-    kind: "effect",
-    text: `${bearer.name} returns ${relic.name} to its owner's hand.`,
-    player: playerId,
-    instanceId: bearer.instanceId,
-  });
 }
 
 function hasRelic(minion: MinionInstance | null | undefined, relicId: string): boolean {
@@ -5792,6 +5745,7 @@ function checkGameOver(state: GameState, events: GameEvent[]): void {
   const playerTwoDown = state.players[1].health <= 0;
   if (!playerOneDown && !playerTwoDown) return;
   state.phase = "gameOver";
+  state.mulligan = null;
   state.drawChoice = null;
   state.pendingTarget = null;
   state.pendingPlayCancel = null;

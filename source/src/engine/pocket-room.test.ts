@@ -58,6 +58,10 @@ function releaseRooms(state: GameState): GameState {
     if ((next.pocketRooms ?? []).length === 0 && step > 0) return next;
     const legal = getLegalActions(next, library);
     if (legal.length === 0) break;
+    if (next.phase === "mulligan") {
+      next = applyAction(next, { type: "confirm_mulligan", player: next.mulligan?.player ?? 0 }, library).state;
+      continue;
+    }
     const end = legal.find((action) => action.type === "end_turn");
     next = applyAction(next, end ?? legal[0], library).state;
   }

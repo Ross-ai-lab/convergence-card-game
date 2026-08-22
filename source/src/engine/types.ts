@@ -9,7 +9,7 @@ export type Alignment = "Good" | "Evil" | "Neutral";
 export type Rarity = "Red" | "Yellow" | "Purple" | "Black";
 export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "onPlayAndDeathrattle" | "passive" | "deathrattle";
 
-/** The ten powers offered during the opening draft. */
+/** The ten Hero Powers available from the title-screen unlock track. */
 export type HeroPowerId =
   | "minion_hp"
   | "minion_atk"
@@ -489,15 +489,20 @@ export interface PlayerState {
   /** Kurogiri: the one full turn in which every swing is random. */
   randomAttacksFromTurn?: number | null;
   randomAttacksUntilTurn?: number | null;
-  /** Reusable attached relics may be returned to hand once during this turn. */
-  relicMoves: number;
   /** Card ids of friendly minions that have died this game, in death order. */
   deadMinions?: string[];
   fatigue: number;
   turnsStarted: number;
 }
 
-export type GamePhase = "heroPowerChoice" | "main" | "drawChoice" | "targeting" | "gameOver";
+export type GamePhase = "mulligan" | "main" | "drawChoice" | "targeting" | "gameOver";
+
+export interface MulliganState {
+  /** Only the starting player takes a mulligan in this game. */
+  player: PlayerId;
+  /** One flag per opening card; true means replace it. */
+  selected: boolean[];
+}
 
 export interface DrawChoice {
   player: PlayerId;
@@ -728,10 +733,8 @@ export interface GameState {
   pendingTarget: PendingTarget | null;
   /** Keeps a play-to-hand escape alive across multi-step target prompts. */
   pendingPlayCancel?: PendingPlayReturn | null;
-  /** The player currently choosing a starting hero power, or null after the draft. */
-  heroPowerChoicePlayer: PlayerId | null;
-  /** Two deterministic, distinct offers for each player at the start of a duel. */
-  heroPowerOptions: [HeroPowerId[], HeroPowerId[]];
+  /** The player-only opening mulligan, or null once the duel has started. */
+  mulligan: MulliganState | null;
   /** The selected power for each player. */
   heroPowers: [HeroPowerId | null, HeroPowerId | null];
   /** Once-per-own-turn gate, reset at the start of each player's turn. */
@@ -778,13 +781,13 @@ export type GameAction =
   | { type: "attack_minion"; player: PlayerId; attackerSlot: number; targetSlot: number }
   | { type: "attack_core"; player: PlayerId; attackerSlot: number }
   | { type: "end_turn"; player: PlayerId }
+  | { type: "toggle_mulligan"; player: PlayerId; handIndex: number }
+  | { type: "confirm_mulligan"; player: PlayerId }
   | { type: "choose_draw"; player: PlayerId; choiceIndex: number }
-  | { type: "choose_hero_power"; player: PlayerId; choiceIndex: number }
   | { type: "choose_target"; player: PlayerId; choiceIndex: number }
   | { type: "cancel_target"; player: PlayerId }
   | { type: "use_hero_power"; player: PlayerId }
-  | { type: "use_coin"; player: PlayerId }
-  | { type: "return_relic"; player: PlayerId; slotIndex: number; relicIndex?: number };
+  | { type: "use_coin"; player: PlayerId };
 
 export type GameEventKind =
   | "info"

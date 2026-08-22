@@ -160,8 +160,8 @@ Multiple threads usually work on Convergence at the same time. Files, generated 
 ## Rules at a glance
 
 - Both cores begin at **75 health**. Reduce the opposing core to zero to win.
-- Both players draw from the same shuffled deck and open with **3 cards**. The second player also receives **The Coin**.
-- At the start of the duel, each player is offered **2 random Hero Powers** and chooses one. A Hero Power costs **2 mana** and can be used once during its controller's turn.
+- Both players draw from the same shuffled deck and open with **3 cards**. Player One may replace any number of those cards once during the mulligan; Player Two keeps the opening hand. The second player also receives **The Coin**.
+- Hero Powers are selected from the title-screen **Hero Powers** menu. Bot wins unlock them one at a time — first win through tenth win, weakest first and strongest last. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
 - At the start of a turn, draw one card. Mana starts at **1**, refills each turn, and increases by one each turn up to **10**.
 - Your hand holds at most **10 cards**. A card drawn into a full hand burns and is discarded.
 - Play a hand card into one of **five board slots** by paying its cost. Effects that summon minions also need an open slot.
@@ -224,12 +224,13 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 The current relic pool contains **21 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
 
 - A minion can carry up to two relics. The first and second slots are independent;
-  a full bearer cannot accept a third, and moving one relic does not move or
-  re-trigger the other.
-- A relic dies with its bearer.
-- A relic that can be moved may be passed to another friendly minion by clicking its badge and then the recipient. This is limited to once per player's turn.
-- Some relics spend themselves when they arrive and cannot be passed.
-- During a duel, attached relic badges show who is carrying each relic. Click a movable badge to begin a transfer; there is no separate relic-shelf screen.
+  a full bearer cannot accept a third.
+- A bearer cannot manually return an attached relic to its owner's hand. A relic
+  dies with its bearer unless the relic's own text says otherwise.
+- Effects that return a minion to hand discard its attached relics before the
+  minion arrives. Relics never ride back as an accidental second card.
+- During a duel, attached relic badges show who is carrying each relic. They are
+  previews only; there is no separate relic-shelf screen.
 
 ## Controls and modes
 
@@ -260,8 +261,8 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 
 ### During a duel
 
-- Each player starts with three cards. The second player also receives **The Coin**, which spends for +1 mana that turn.
-- Each player chooses one of two random Hero Powers during the opening offer. The selected power appears beside the Core and costs 2 mana once per turn.
+- Each player starts with three cards. Player One may select any number to replace once; the second player also receives **The Coin**, which spends for +1 mana that turn.
+- Choose an unlocked Hero Power from the title-screen menu before starting. Bot wins unlock the ten powers in order; the selected power appears beside the Core and costs 2 mana once per turn.
 - Click or drag a hand card onto an empty slot to play it.
 - Click or drag a ready minion onto an enemy minion or the enemy core to attack.
 - Press **Space** or **Enter** to end the turn.
@@ -406,8 +407,8 @@ Printed timing must match play. For every target or choice, specify whether it s
 - Every permanent effect that chooses a board slot must recolour that slot with a unique effect colour. Keep the small effect label above the slot, and keep both markers when a slot has multiple permanent effects.
 - When the saved minion shape changes, bump `SAVE_VERSION` and extend save validation. Otherwise old saves can restore incomplete objects and leave the game blank.
 - Relics are equipment instances: up to two per minion, destroyed with their
-  bearer, and moved at most once per turn. Moving a relic must not re-trigger
-  one-shot equip logic.
+  bearer, and never manually returned by the bearer. Returning a minion to hand
+  discards its attached relics; only a relic's own printed text can override that.
 - The bot evaluates legal actions on a throwaway state. A new effect usually needs no separate bot branch, but bot valuation changes affect balance measurements and need a fresh balance run.
 
 The engine’s central contract is `applyAction(state, action, library) -> { state, events, legalActions }`. An action outside the legal-action list is rejected without changing the state. Targeting pauses the game in a target-selection state so human and bot choices follow the same route and survive saving, cloning, and undo.

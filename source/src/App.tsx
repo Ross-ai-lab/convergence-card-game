@@ -12,7 +12,12 @@ if (import.meta.env.DEV) import("./dev-only.css");
 import { sfx, type SfxName } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
 import { chooseBotAction, BOT_CHEATS } from "./engine/bot";
-import { HERO_POWER_COST, heroPowerDefinition } from "./engine/hero-powers";
+import {
+  HERO_POWER_COST,
+  firstUnlockedHeroPower,
+  heroPowerDefinition,
+  isHeroPowerUnlocked,
+} from "./engine/hero-powers";
 import { isMinionCard, isRelicCard } from "./engine/types";
 import {
   actionKey,
@@ -41,7 +46,7 @@ import type {
   SlotAuraId,
 } from "./engine/types";
 import { clearSave, loadGame, saveGame } from "./storage";
-import { finishDuel, loadProgress, saveProgress, totals, type Progress } from "./progress";
+import { botWins, finishDuel, loadProgress, saveProgress, totals, type Progress } from "./progress";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
@@ -50,6 +55,7 @@ import {
   HowToPlay,
   PassScreen,
   SettingsPanel,
+  HeroPowersScreen,
   TitleScreen,
   type DuelIntroPhase,
   type GameMode,
@@ -336,11 +342,12 @@ function makeParticles(kind: ImpactKind | "death" | "stasis", camp?: Camp): Part
       push(Math.cos(a) * d, Math.sin(a) * d * 0.72, rand(3, 6), rand(0, 0.18), rand(0, 90), rand(0.65, 0.95));
     }
   } else {
-    // death: debris thrown outward, gravity applied by the shard-fly keyframe
-    for (let i = 0; i < 18; i++) {
+    // death: a controlled burst of fragments with staggered timing. The card
+    // itself supplies the break; these are the sparks and fragments around it.
+    for (let i = 0; i < 22; i++) {
       const a = rand(0, Math.PI * 2);
-      const d = rand(26, 104);
-      push(Math.cos(a) * d, Math.sin(a) * d * 0.8, rand(3, 9), rand(0, 0.07), rand(-320, 320), rand(0.44, 0.68));
+      const d = rand(28, 112);
+      push(Math.cos(a) * d, Math.sin(a) * d * 0.78, rand(3, 8), rand(0, 0.16), rand(-320, 320), rand(0.54, 0.86));
     }
   }
   return out;
@@ -361,14 +368,20 @@ export default function App() {
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "heroPowers">(null);
   /**
    * The only thing in this game that outlives a duel. Held in state so the title
    * screen and the gallery re-render the moment a duel is folded in, and written
    * straight through to localStorage whenever it changes.
    */
   const [progress, setProgress] = useState<Progress>(() => loadProgress());
+  const [selectedHeroPower, setSelectedHeroPower] = useState<HeroPowerId | null>(() => firstUnlockedHeroPower(botWins(loadProgress())));
+  const botWinCount = useMemo(() => botWins(progress), [progress]);
   const totalDuels = useMemo(() => totals(progress).played, [progress]);
+  useEffect(() => {
+    const first = firstUnlockedHeroPower(botWinCount);
+    setSelectedHeroPower((current) => (current && isHeroPowerUnlocked(current, botWinCount) ? current : first));
+  }, [botWinCount]);
   /**
    * What THIS duel has shown the viewer, as a ref rather than state: it changes
    * several times a turn, nothing renders from it until the duel ends, and making
@@ -549,9 +562,7 @@ export default function App() {
     const hands = vsBot ? [game.players[0].hand] : [game.players[0].hand, game.players[1].hand];
     for (const hand of hands) for (const cardId of hand) ledger.seen.add(cardId);
   }, [game, vsBot]);
-  const seatOwner = game.phase === "heroPowerChoice" && game.heroPowerChoicePlayer !== null
-    ? game.heroPowerChoicePlayer
-    : game.activePlayer;
+  const seatOwner = game.phase === "mulligan" && game.mulligan ? game.mulligan.player : game.activePlayer;
   const curtainUp =
     mode.kind === "hotseat" && screen === "playing" && game.phase !== "gameOver" && seatOwner !== seatedPlayer;
 
@@ -751,7 +762,7 @@ export default function App() {
   );
   const revealedOpponentHand = opponentHandRevealed ? opponent.hand : undefined;
   const myTurn = game.activePlayer === viewerId;
-  const viewerCanAct = (game.phase === "heroPowerChoice" && game.heroPowerChoicePlayer === viewerId) || myTurn;
+  const viewerCanAct = (game.phase === "mulligan" && game.mulligan?.player === viewerId) || myTurn;
   // Every affordance and click reads this. Empty while the opponent is thinking,
   // so nothing lights up and nothing can be clicked on their behalf.
   const uiActions = viewerCanAct && !duelIntro ? legalActions : [];
@@ -969,7 +980,7 @@ export default function App() {
         sfx.play(g.motion === "stasis" ? "freeze" : g.motion === "return" ? "draw" : "death", g.delay + i * 0.07),
       );
       const ids = new Set(newGhosts.map((g) => g.id));
-      window.setTimeout(() => setGhosts((cur) => cur.filter((g) => !ids.has(g.id))), 760);
+      window.setTimeout(() => setGhosts((cur) => cur.filter((g) => !ids.has(g.id))), 1020);
     }
     if (newImpacts.length) {
       setImpacts((cur) => [...cur, ...newImpacts]);
@@ -1140,7 +1151,12 @@ export default function App() {
     duelRecorded.current = false;
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     // A restart keeps the mode, so it keeps the opponent's cheats too.
-    setGame(createInitialGame(cards, createDuelSeed(), relics, { foresightFor: foresightSeat(mode) }));
+    setGame(
+      createInitialGame(cards, createDuelSeed(), relics, {
+        foresightFor: foresightSeat(mode),
+        heroPowers: mode.kind === "hotseat" ? [selectedHeroPower, selectedHeroPower] : [selectedHeroPower, null],
+      }),
+    );
     setHistory([]);
     setSelection(null);
     clearFx();
@@ -1161,7 +1177,12 @@ export default function App() {
     duelRecorded.current = false;
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setMode(next);
-    setGame(createInitialGame(cards, createDuelSeed(), relics, { foresightFor: foresightSeat(next) }));
+    setGame(
+      createInitialGame(cards, createDuelSeed(), relics, {
+        foresightFor: foresightSeat(next),
+        heroPowers: next.kind === "hotseat" ? [selectedHeroPower, selectedHeroPower] : [selectedHeroPower, null],
+      }),
+    );
     setHistory([]);
     setSelection(null);
     clearFx();
@@ -1408,13 +1429,6 @@ export default function App() {
     }
   }
 
-  function returnRelic(slotIndex: number, relicIndex = 0) {
-    const action = uiActions.find(
-      (candidate) => candidate.type === "return_relic" && candidate.slotIndex === slotIndex && (candidate.relicIndex ?? 0) === relicIndex,
-    );
-    if (action) perform(action);
-  }
-
   // ------------------------------------------------------------- drag & drop
   function startHandDrag(e: React.PointerEvent<HTMLElement>, handIndex: number, playable: boolean) {
     if (duelIntro) return;
@@ -1584,8 +1598,8 @@ export default function App() {
   // every legal move, which is far too much work to redo on every render.
   const botThinking =
     vsBot &&
-    (game.phase === "heroPowerChoice" && game.heroPowerChoicePlayer === BOT_ID
-      ? true
+    (game.phase === "mulligan"
+      ? game.mulligan?.player === BOT_ID
       : game.phase === "main"
       ? game.activePlayer === BOT_ID
       : game.phase === "drawChoice"
@@ -1615,7 +1629,7 @@ export default function App() {
       // the overlays run their own Escape handler.
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
-      if (overlay || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "heroPowerChoice") return;
+      if (overlay || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "mulligan") return;
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
 
       if (event.key === " " || event.key === "Enter") {
@@ -1747,7 +1761,6 @@ export default function App() {
             pendingTarget={pendingTarget}
             selection={selection}
             onSlot={guardedSlotClick}
-            onRelicReturn={returnRelic}
             ghosts={ghosts}
             floats={floats}
             impacts={impacts}
@@ -1779,7 +1792,6 @@ export default function App() {
             pendingTarget={pendingTarget}
             selection={selection}
             onSlot={guardedSlotClick}
-            onRelicReturn={returnRelic}
             ghosts={ghosts}
             floats={floats}
             impacts={impacts}
@@ -2046,8 +2058,8 @@ export default function App() {
         <DrawChoiceOverlay game={game} library={library} onChoose={perform} locked={botThinking} />
       ) : null}
 
-      {game.phase === "heroPowerChoice" && !duelIntro && game.heroPowerChoicePlayer === viewerId ? (
-        <HeroPowerChoiceOverlay game={game} onChoose={perform} locked={botThinking} />
+      {game.phase === "mulligan" && game.mulligan?.player === viewerId && !duelIntro ? (
+        <MulliganOverlay game={game} library={library} onChoose={perform} locked={botThinking} />
       ) : null}
 
       {game.phase === "gameOver" ? (
@@ -2067,7 +2079,7 @@ export default function App() {
 
       {screen === "title" ? (
         <TitleScreen
-          canContinue={game.phase !== "gameOver" && game.turnNumber > 1}
+          canContinue={game.phase !== "gameOver" && (game.turnNumber > 1 || game.phase === "mulligan")}
           playerCount={playerCount}
           onContinue={() => {
             sfx.play("button");
@@ -2079,13 +2091,23 @@ export default function App() {
           onSettings={() => setOverlay("settings")}
           onGallery={() => setOverlay("gallery")}
           onRecord={() => setOverlay("record")}
+          onHeroPowers={() => setOverlay("heroPowers")}
           duelsPlayed={totalDuels}
+          heroPowerName={heroPowerDefinition(selectedHeroPower)?.name ?? "Locked"}
         />
       ) : null}
 
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
       {overlay === "gallery" ? <CardGallery progress={progress} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
+      {overlay === "heroPowers" ? (
+        <HeroPowersScreen
+          botWins={botWinCount}
+          selectedPower={selectedHeroPower}
+          onSelect={(power) => setSelectedHeroPower(power)}
+          onClose={() => setOverlay(null)}
+        />
+      ) : null}
       {overlay === "settings" ? (
         <SettingsPanel
           onClose={() => setOverlay(null)}
@@ -2120,7 +2142,6 @@ function BoardRow({
   pendingTarget,
   selection,
   onSlot,
-  onRelicReturn,
   ghosts,
   floats,
   impacts,
@@ -2142,8 +2163,6 @@ function BoardRow({
   pendingTarget: PendingTarget | null;
   selection: Selection;
   onSlot: (owner: PlayerId, slotIndex: number) => void;
-  /** Return a reusable attached relic to the owner's hand. */
-  onRelicReturn: (slotIndex: number, relicIndex?: number) => void;
   ghosts: Ghost[];
   floats: FloatNum[];
   impacts: Impact[];
@@ -2178,11 +2197,6 @@ function BoardRow({
               (action.type === "attack_minion" || action.type === "attack_core") && action.attackerSlot === slotIndex,
           );
         const armed = selection?.kind === "attacker" && owner === viewerId && selection.slotIndex === slotIndex;
-        const canReturnRelic =
-          owner === viewerId &&
-          minion !== null &&
-          attachedRelics(minion).length > 0 &&
-          legalActions.some((action) => action.type === "return_relic" && action.slotIndex === slotIndex);
         const isLunging = lunge !== null && lunge.owner === owner && lunge.slot === slotIndex;
         // A targeted effect is waiting: only its legal victims light up, and the
         // highlight reads differently from an attack target on purpose.
@@ -2265,7 +2279,6 @@ function BoardRow({
                       minion={minion}
                       board={game.players[owner].board}
                       allBoard={game.players.flatMap((player) => player.board)}
-                      onRelicReturn={canReturnRelic ? (relicIndex) => onRelicReturn(slotIndex, relicIndex) : undefined}
                       onRelicPreview={onRelicPreview}
                       onRelicPreviewEnd={onPreview}
                     />
@@ -2360,6 +2373,11 @@ function ImpactFx({ impact }: { impact: Impact }) {
 function DeathBurst({ particles }: { particles: Particle[] }) {
   return (
     <span className="death-burst" aria-hidden="true">
+      <span className="death-flash" />
+      <span className="death-ring death-ring-one" />
+      <span className="death-ring death-ring-two" />
+      <span className="death-slice death-slice-one" />
+      <span className="death-slice death-slice-two" />
       {particles.map((p) => (
         <i
           key={p.key}
@@ -2922,15 +2940,12 @@ function MinionFace({
   allBoard,
   onRelicPreview,
   onRelicPreviewEnd,
-  onRelicReturn,
 }: {
   minion: MinionInstance;
   board?: Array<MinionInstance | null>;
   allBoard?: Array<MinionInstance | null>;
   /** Hovering the relic badge swaps the preview to the relic's own card. */
   onRelicPreview?: (relic: RelicInstance, el: HTMLElement) => void;
-  /** Given only when returning an attached relic to hand is legal right now. */
-  onRelicReturn?: (relicIndex: number) => void;
   /** Leaving it puts the minion back under the pointer, so the preview never
    *  goes blank while the pointer is still inside the slot. */
   onRelicPreviewEnd?: (minion: MinionInstance, el: HTMLElement) => void;
@@ -2954,34 +2969,10 @@ function MinionFace({
             "relic-badge",
             `relic-badge-${index}`,
             onRelicPreview ? "peekable" : "",
-            onRelicReturn ? "movable" : "",
           ]
             .filter(Boolean)
             .join(" ")}
-          title={
-            onRelicReturn
-              ? `${relic.name} — ${relic.effect}\n\nClick to return it to your hand (once a turn).`
-              : `${relic.name} — ${relic.effect}`
-          }
-          onPointerDown={
-            onRelicReturn
-              ? (e) => {
-                  // Stops the board's own drag/arm handler seeing this press.
-                  e.stopPropagation();
-                  // The return itself waits for a completed click below; a
-                  // pointerdown can also be the start of a drag or a cancelled
-                  // touch gesture and must never unequip the relic by itself.
-                }
-              : undefined
-          }
-          onClick={
-            onRelicReturn
-              ? (e) => {
-                  e.stopPropagation();
-                  onRelicReturn(index);
-                }
-              : undefined
-          }
+          title={`${relic.name} — ${relic.effect}`}
           onMouseEnter={
             onRelicPreview
               ? (e) => {
@@ -3458,48 +3449,63 @@ function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
   );
 }
 
-function HeroPowerChoiceOverlay({
+function MulliganOverlay({
   game,
+  library,
   onChoose,
   locked = false,
 }: {
   game: GameState;
+  library: CardLibrary;
   onChoose: (action: GameAction) => void;
   locked?: boolean;
 }) {
-  const playerId = game.heroPowerChoicePlayer;
-  if (playerId === null) return null;
-  const options = game.heroPowerOptions[playerId] ?? [];
+  const mulligan = game.mulligan;
+  if (!mulligan) return null;
+  const selectedCount = mulligan.selected.filter(Boolean).length;
   return (
     <div className="overlay">
-      <section className={locked ? "draw-panel hero-power-panel locked" : "draw-panel hero-power-panel"}>
-        <span>Opening Draft</span>
-        <h2>
-          {locked ? `${game.players[playerId].name} is choosing…` : `${game.players[playerId].name}, choose your Hero Power`}
-        </h2>
-        <p className="hero-power-intro">Each Hero Power costs 2 mana and can be used once on your turn.</p>
-        <div className="hero-power-choice-row">
-          {options.map((powerId) => {
-            const power = heroPowerDefinition(powerId);
-            if (!power) return null;
-            const choiceIndex = options.indexOf(powerId);
+      <section className={locked ? "draw-panel mulligan-panel locked" : "draw-panel mulligan-panel"}>
+        <span>Opening Hand</span>
+        <h2>{locked ? "Waiting for the opening hand…" : "Choose cards to replace"}</h2>
+        <p className="mulligan-intro">
+          Select any number of cards to mulligan. Replacements come from the shared deck, then your old cards go to the bottom.
+        </p>
+        <div className="mulligan-row">
+          {game.players[mulligan.player].hand.map((cardId, handIndex) => {
+            const selected = Boolean(mulligan.selected[handIndex]);
+            const card = library[cardId];
             return (
               <button
                 type="button"
-                key={power.id}
-                className="hero-power-choice"
+                key={`${cardId}-${handIndex}`}
+                className={selected ? "mulligan-card selected" : "mulligan-card"}
+                aria-pressed={selected}
                 disabled={locked}
                 onClick={() => {
                   sfx.play("button");
-                  onChoose({ type: "choose_hero_power", player: playerId, choiceIndex });
+                  onChoose({ type: "toggle_mulligan", player: mulligan.player, handIndex });
                 }}
               >
-                <span className="hero-power-choice-cost">2</span>
-                <strong>⚡ {power.name}</strong>
-                <span>{power.text}</span>
+                {card ? <CardFace card={playableFace(card)} /> : null}
+                <span className="mulligan-card-label">{selected ? "Replace" : "Keep"}</span>
               </button>
             );
           })}
+        </div>
+        <div className="choice-detail">
+          <span>{selectedCount ? `${selectedCount} selected for replacement` : "Keeping all three cards"}</span>
+          <button
+            type="button"
+            className="primary"
+            disabled={locked}
+            onClick={() => {
+              sfx.play("draw");
+              onChoose({ type: "confirm_mulligan", player: mulligan.player });
+            }}
+          >
+            {selectedCount ? "Mulligan selected" : "Keep opening hand"}
+          </button>
         </div>
       </section>
     </div>
