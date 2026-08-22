@@ -172,7 +172,7 @@ c165,Mugen & Jin,1,1,2,Purple,Nature,Neutral,,ally_atk_1,onPlay,Battlecry: Gain 
 c166,Sir Nighteye,1,1,1,Purple,Magic,Good,Passive,reveal_top_deck,passive,Passive: See the card on top of the deck.,He has already watched this end.,MHA,/card-art/raw/c166.webp
 c167,Vegapunk,1,1,1,Purple,Tech,Neutral,,discover_tech_card,onPlay,"Battlecry: Discover 3 Tech cards in the deck, choose and draw one.",His brain never stopped growing,One Piece,/card-art/raw/c167.webp
 c168,Walter White,1,1,1,Purple,Tech,Neutral,,neutral_double_atk_hp_1,onPlay,"Battlecry: Choose another friendly Neutral minion. Double its ATK, but set its HP to 1.",Say. My. Name,Breaking Bad,/card-art/raw/c168.webp
-c169,Knight,1,1,1,Black,Nature,Neutral,,none,none,-,Honor. Duty,Basic,/card-art/raw/c169.webp
+c169,An Order of Heavy Knights,1,1,1,Black,Nature,Neutral,,none,none,-,Honor. Duty,Basic,/card-art/raw/c169.webp
 c170,Davy Jones,1,1,1,Black,Magic,Evil,,steal_hand_relic,onPlay,"Battlecry: Steal an Ascension Relic in your opponent's hand.",Captain of the drowned,Pirates of the Caribbean,/card-art/raw/c170.webp
 c171,Goblins,1,2,1,Black,Nature,Evil,Taunt,none,none,Taunt.,"Many, loud, briefly in the way.",Myth,/card-art/raw/c171.webp
 c172,Mr. Poopybutthole,1,1,1,Black,Nature,Neutral,Deathrattle,reborn_75,deathrattle,Deathrattle: Reborn-75% chance.,He was there the whole time,Rick and Morty,/card-art/raw/c172.webp

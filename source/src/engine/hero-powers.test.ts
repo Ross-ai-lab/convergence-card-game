@@ -85,6 +85,8 @@ describe("menu Hero Powers", () => {
   });
 
   it("resolves core trade, core damage, healing, summoning, and Taunt", () => {
+    expect(cards.find((entry) => entry.id === "c169")).toMatchObject({ name: "An Order of Heavy Knights" });
+
     const trade = mainState("core_trade_draw");
     trade.deck = [card("John Wick").id];
     trade.players[0].health = 20;
@@ -103,7 +105,13 @@ describe("menu Hero Powers", () => {
     expect(usePower(mend).players[0].health).toBe(22);
 
     const recruit = usePower(mainState("summon_recruit"));
-    expect(recruit.players[0].board[0]).toMatchObject({ name: "Knight", atk: 1, hp: 1, maxHp: 1 });
+    expect(recruit.players[0].board[0]).toMatchObject({
+      name: "Knight",
+      atk: 1,
+      hp: 1,
+      maxHp: 1,
+      art: "/card-art/raw/token-knight.webp",
+    });
 
     const taunt = mainState("give_taunt");
     taunt.players[0].board[0] = minion("John Wick", 0);
