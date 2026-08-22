@@ -1653,22 +1653,25 @@ export default function App() {
           <span className="brand-mark" />
           <strong>Convergence</strong>
         </div>
-        <HeroPlate
-          enemy
-          player={opponent}
-          heroPower={game.heroPowers[opponentId]}
-          cheatMode={game.cheatMode}
-          floats={floats.filter((f) => f.slot === "hero" && f.owner === opponentId)}
-          impacts={heroFx(opponentId)}
-          targetable={coreTargetable}
-          active={game.activePlayer === opponentId && game.phase !== "gameOver"}
-          thinking={botThinking}
-          revealedHand={revealedOpponentHand}
-          library={library}
-          onCardPreview={previewCard}
-          onCardPreviewEnd={endPreview}
-          onStrike={attackCore}
-        />
+        <div className="enemy-hero-wrap">
+          <HeroPlate
+            enemy
+            player={opponent}
+            heroPower={game.heroPowers[opponentId]}
+            cheatMode={game.cheatMode}
+            floats={floats.filter((f) => f.slot === "hero" && f.owner === opponentId)}
+            impacts={heroFx(opponentId)}
+            targetable={coreTargetable}
+            active={game.activePlayer === opponentId && game.phase !== "gameOver"}
+            thinking={botThinking}
+            revealedHand={revealedOpponentHand}
+            library={library}
+            onCardPreview={previewCard}
+            onCardPreviewEnd={endPreview}
+            onStrike={attackCore}
+          />
+          <HeroPowerCard definition={heroPowerDefinition(game.heroPowers[opponentId])} />
+        </div>
         <div className="system-buttons">
           <button type="button" onClick={restart}>Restart</button>
           <button
@@ -3118,7 +3121,6 @@ function HeroPlate({
   const backs = Math.min(player.hand.length, 10);
   const power = heroPowerDefinition(heroPower);
   const canStrike = enemy && targetable && Boolean(onStrike);
-  const powerTitle = power ? `${power.name}: ${power.text} Costs ${HERO_POWER_COST} mana and can be used once per turn.` : undefined;
   return (
     <button
       type="button"
@@ -3126,7 +3128,7 @@ function HeroPlate({
       data-hero={player.id}
       onClick={canStrike ? onStrike : undefined}
       aria-disabled={canStrike ? undefined : true}
-      title={enemy ? (canStrike ? `Strike the enemy hero! ${powerTitle ?? ""}` : powerTitle) : undefined}
+      aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : undefined}
     >
       <span className="hero-sigil" title={`${player.name}'s sigil`}>
         <HeroSigil playerId={player.id} />
@@ -3140,7 +3142,7 @@ function HeroPlate({
             <i />
           </span>
         </strong>
-        {power ? <small className="hero-power-label" title={powerTitle}>⚡ {power.name}</small> : null}
+        {power ? <small className="hero-power-label">⚡ {power.name}</small> : null}
       </span>
       {enemy && revealedHand && library ? (
         <span className="revealed-hand" title="The Watcher reveals this hand">
@@ -3191,6 +3193,23 @@ function HeroPlate({
         </span>
       ))}
     </button>
+  );
+}
+
+function HeroPowerCard({ definition }: { definition: ReturnType<typeof heroPowerDefinition> }) {
+  if (!definition) return null;
+  return (
+    <aside className="enemy-power-card" id="enemy-hero-power-card" aria-label={`${definition.name}: ${definition.text}`}>
+      <div className="enemy-power-card-head">
+        <span className="enemy-power-card-cost">{HERO_POWER_COST}</span>
+        <span className="enemy-power-card-title">
+          <small>ENEMY HERO POWER</small>
+          <strong>⚡ {definition.name}</strong>
+        </span>
+      </div>
+      <p>{definition.text}</p>
+      <small className="enemy-power-card-foot">Costs {HERO_POWER_COST} mana · Once per turn</small>
+    </aside>
   );
 }
 

@@ -127,7 +127,7 @@ button:disabled {
   font-size: 0.8rem;
 }
 
-.top-strip > .hero-plate.enemy {
+.top-strip > .enemy-hero-wrap {
   grid-area: enemy;
   justify-self: center;
 }
@@ -1830,6 +1830,99 @@ button:disabled {
 }
 
 /* ---------------------------------------------------------------- hero plates */
+.enemy-hero-wrap {
+  position: relative;
+  z-index: 8;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.enemy-power-card {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 30;
+  width: min(260px, calc(100vw - 24px));
+  padding: 10px 12px 9px;
+  border: 1px solid rgba(179, 153, 255, 0.8);
+  border-radius: 12px;
+  color: var(--ink);
+  background:
+    linear-gradient(155deg, rgba(90, 57, 135, 0.98), rgba(29, 20, 53, 0.98) 72%),
+    var(--panel);
+  box-shadow: 0 12px 28px rgba(9, 5, 18, 0.75), 0 0 0 2px rgba(155, 119, 210, 0.16), inset 0 0 18px rgba(217, 197, 255, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  visibility: hidden;
+}
+
+/* No transition or delay: the card is the hover state, not a tooltip timer. */
+.enemy-hero-wrap:hover .enemy-power-card,
+.enemy-hero-wrap:focus-within .enemy-power-card {
+  opacity: 1;
+  visibility: visible;
+}
+
+.enemy-power-card-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.enemy-power-card-cost {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid #d9f3ff;
+  border-radius: 50%;
+  color: #102337;
+  background: linear-gradient(160deg, #c6efff, #318dc8);
+  box-shadow: 0 0 10px rgba(110, 195, 255, 0.6);
+  font-size: 0.92rem;
+  font-weight: 950;
+}
+
+.enemy-power-card-title {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.enemy-power-card-title small {
+  color: #d9c8ff;
+  font-size: 0.5rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.enemy-power-card-title strong {
+  color: #fff4cf;
+  font-size: 0.82rem;
+  line-height: 1.1;
+}
+
+.enemy-power-card p {
+  margin: 9px 0 7px;
+  color: #fff8ec;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.enemy-power-card-foot {
+  display: block;
+  padding-top: 6px;
+  border-top: 1px solid rgba(225, 211, 255, 0.22);
+  color: #cdbfe8;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .hero-plate {
   position: relative;
   isolation: isolate;
@@ -3799,7 +3892,7 @@ button:disabled {
     padding: 0;
   }
 
-  .top-strip .hero-plate.enemy {
+  .top-strip .enemy-hero-wrap {
     grid-area: enemy;
     justify-self: center;
   }

@@ -313,6 +313,26 @@ check(
   `${await page.locator(".board-slot.occupied").count()} occupied`,
 );
 
+// The enemy power is a real hover card, not a delayed native title tooltip.
+// Check it immediately after the pointer enters and verify that its full text
+// is rendered below the hero plate once the opening overlays are gone.
+{
+  const enemyHero = page.locator(".enemy-hero-wrap .hero-plate.enemy");
+  const powerCard = page.locator(".enemy-power-card");
+  await enemyHero.hover();
+  const heroBox = await enemyHero.boundingBox();
+  const cardBox = await powerCard.boundingBox();
+  const cardText = (await powerCard.textContent()) ?? "";
+  const visible = await powerCard.isVisible();
+  const below = Boolean(heroBox && cardBox && cardBox.y >= heroBox.y + heroBox.height);
+  check(
+    "enemy Hero Power opens as an immediate card",
+    visible && below && cardText.length > 20,
+    `visible=${visible}, below=${below}, text=${cardText.length} chars`,
+  );
+  await page.mouse.move(0, 0);
+}
+
 // -------------------------------------------------- 2. a fresh minion is sick
 check(
   "a just-summoned minion cannot attack",
