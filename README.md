@@ -319,7 +319,11 @@ To look at a specific card after changing its text, stats or art, run `node scri
 
 This file is the single maintained project guide and knowledge-base page. Do not create another Markdown file anywhere in the Convergence project; add or revise the appropriate section here instead. `npm run validate:docs` enforces that rule, and the normal data-validation, test, build, and full-balance entry points run it automatically. The two README files inside ignored, locally downloaded production packages are frozen third-party-style package notes, not new project documentation; do not add more beside them.
 
-For a deployable update, run `npm run publish:pages` from `source/`. That command validates the data, builds with `--base=./`, replaces the generated `source/dist/` contents in `play/`, and fails unless every published file exactly matches the generated build. After it succeeds, publish the generated copy to the GitHub repository. GitHub Pages serves `play/` from the repository's published static site.
+### What “publish” means
+
+In this project, **publish** always means make the current game change live at the public play URL: <https://ross-ai-lab.github.io/convergence-card-game/play/>. A source edit, local build, generated `play/` folder, or `just vault-publish` workspace checkpoint does **not** count as published. The change is published only after the public Pages deployment finishes and the live URL is verified to serve the new build.
+
+For a deployable update, run `npm run publish:pages` from `source/`. That command validates the data, builds with `--base=./`, replaces the generated `source/dist/` contents in `play/`, and fails unless every published file exactly matches the generated build. After it succeeds, publish the generated copy to the public GitHub repository. GitHub Pages serves `play/` from the repository's published static site.
 
 ## Changing cards and effects
 
@@ -342,11 +346,11 @@ Two more rules about the detector itself. **Report a duplicate as a warning, nev
 
 **Two cards with the same effect keep two separate code branches.** Collapsing duplicate branches into one shared effect looks like tidying and is not: it welds the two cards together, so the next balance pass aimed at one silently retunes the other, and their measured histories stop being separable. Keep the branches apart and name each one after its card.
 
-### Every game change must be published to GitHub in the same session
+### Every game change must be published to the public site in the same session
 
-**Every change to the game must be published to GitHub before it can be reported as done.** This includes changes to cards, balance, engine rules, interface, animations, audio, assets, or any other runtime behaviour. A source edit or a local build is not a finished change because the owner plays only the public site.
+**Every change to the game must be published to the public play URL before it can be reported as done.** This includes changes to cards, balance, engine rules, interface, animations, audio, assets, or any other runtime behaviour. A source edit or a local build is not a finished change because the owner plays only the public site.
 
-For every game change, run `npm run publish:pages` from `source/`, then commit and push the generated `play/` copy to the GitHub repository. Finally, verify that <https://ross-ai-lab.github.io/convergence-card-game/play/> serves the new bundle. This publication step is mandatory for every game change and must happen in the same session without waiting for a separate request.
+For every game change, run `npm run publish:pages` from `source/`, then commit and push the generated `play/` copy to the public GitHub repository. Wait for the Pages deployment to finish, then verify that <https://ross-ai-lab.github.io/convergence-card-game/play/> serves the new bundle. This publication step is mandatory for every game change and must happen in the same session without waiting for a separate request. `just vault-publish` is only a workspace checkpoint; it never replaces this public deployment.
 
 The reason is that the owner never runs this project. He plays the published URL and nothing else, so a change that exists only in `source/` has not reached the only person it was made for. Worse, it reads as done in every report and every test run: the suite passes, the data validates, the card is correct in the CSV, and the game he opens is unchanged. Two sessions in a row left card changes sitting unpublished on exactly that reasoning.
 
