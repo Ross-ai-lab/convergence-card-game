@@ -330,6 +330,38 @@ For a deployable update, run `npm run publish:pages` from `source/`. That comman
 
 For stats, wording, keywords, timing, or art paths, update the relevant `cards.csv` row, validate the data, run focused tests, and rebuild the playable copy when needed.
 
+### Every save that changes a card must name the cards it changed
+
+**A card change committed under a description about something else is invisible, and this has already cost a full investigation.** Shibukawa's effect was changed from `silence_enemy` to `set_attack_highest_enemy` and back again; the restoring commit was described only as "Implement mulligan and hero power progression", and the same commit quietly renamed `c169` and retimed Nezu. None of it was mentioned. Ten days later the only way to answer "why did my card change?" was to walk every version of `cards.csv` by hand and diff one row across five months.
+
+Nothing was lost and nothing was reverted maliciously. That is the point: the record did not hide the change, it simply never said it happened, and to the owner that is indistinguishable from a card rewriting itself. He plays the published site and cannot see a diff, so the description is the only account of a change he will ever have.
+
+The rule: **every commit that touches `cards.csv` or `relics.csv` names each affected card in its message.** One line per card is enough. Write what changed, and where a reason exists, write the reason too, because the data already records what changed and only the message can record why.
+
+This is enforced rather than trusted. `.githooks/commit-msg` rejects a commit whose message does not mention every changed card, and prints the lines to paste. Enable it once per clone:
+
+```
+git config core.hooksPath .githooks
+```
+
+The hook fails open when Node is unavailable, so a machine without the toolchain is never blocked. To see the summary at any time without committing:
+
+```
+npm run changed-cards
+```
+
+### Ask what happened to a card instead of reconstructing it
+
+`just card-history "Shibukawa"` from the workspace root, or `npm run card-history -- "Shibukawa"` from `source/`, prints every change that card has ever had, dated, with the description each one rode in and the card's state right now. It accepts an id (`c174`), the current name, or any name the card used to have, so a renamed card is still findable under its old name.
+
+`just card-history --flips` lists every card whose **effect id** was changed and later changed back. That A to B to A shape is what a lost change looks like in data, where a plain A to B is an ordinary edit. It reports on the effect id alone by design: widening it to stats and wording was measured and returned 26 and 17 hits respectively, nearly all of it balance tuning and punctuation, which buried the two genuine cases. Add `all` to widen it anyway.
+
+Reach for both of these before investigating by hand, and before telling the owner anything about whether a change survived.
+
+### Screenshot requests are exact-scope changes
+
+**Never use a shared display name as the scope of a screenshot request.** First identify the exact card id or token constructor shown in the screenshot. A request for Photo 3, the **Heroic Recruit** created by the 2-mana `summon_recruit` Hero Power, changes only that token's name, art, and summon path. It must not rename card `c169`, **An Order of Heavy Knights**, or change any other card with similar wording. Never run a global name or artwork replacement for a screenshot request. Before reporting completion, state the exact card or token name, id, and asset path changed.
+
 ### Card wording is uniform, and that is a mechanical requirement
 
 Printed effect text uses one vocabulary across the whole roster. This is not a style preference. Two cards that do the same thing in different words read as two different cards, and that is how duplicated rules can survive under separate effect ids without anyone noticing, or how Whitebeard's sweep can end up on Fire Lord Ozai three mana cheaper. The duplicate report in `validate-cards.mjs` compares normalised printed text precisely so that a rule written twice becomes visible, and wording drift is the one thing that blinds it.

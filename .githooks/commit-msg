@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# Refuse a save that changes card data without saying which cards.
+#
+# The failure this prevents: a card's effect was changed inside a save labelled
+# "Implement mulligan and hero power progression", and a second card was renamed
+# in the same one. Neither was mentioned anywhere. The change was not hidden by
+# anything clever - the description simply never said it happened, and months
+# later that was indistinguishable from the card changing on its own.
+#
+# Enabled per clone with:   git config core.hooksPath .githooks
+#
+# Deliberately fails OPEN when node is missing. A hook that blocks every save on
+# a machine without the toolchain is worse than the problem it guards against.
+
+MSG_FILE="$1"
+[ -z "$MSG_FILE" ] && exit 0
+
+# Merges, reverts and squashes get their message generated; nothing to enforce.
+case "$2" in
+  merge|squash) exit 0 ;;
+esac
+
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+CHECKER="$REPO_ROOT/source/scripts/changed-cards.mjs"
+[ -f "$CHECKER" ] || exit 0
+
+command -v node >/dev/null 2>&1 || {
+  echo "note: node not found, skipping the card-change description check" >&2
+  exit 0
+}
+
+node "$CHECKER" --check "$MSG_FILE"
