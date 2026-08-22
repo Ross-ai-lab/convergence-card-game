@@ -106,6 +106,7 @@ const themes = [
   ["c029", "Darth Vader"],
   ["c136", "Cthulhu"],
   ["c005", "Batman"],
+  ["c114", "Lord Voldemort"],
 ];
 for (const [id, label] of themes) {
   const result = await page.evaluate((cardId) => window.__sfx.probeCardTheme(cardId, 2600), id);

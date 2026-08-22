@@ -134,7 +134,7 @@ describe("relic effects", () => {
       ["Cyber-Enchantment", 3, "The bearer is invulnerable to Tech attacks while defending."],
       ["Ea", 3, "The bearer's ATK is doubled."],
       ["Elder wand", 1, "The bearer is immune to Silence."],
-      ["Monster Cell", 2, "The bearer gains +3/+2 and Taunt."],
+      ["Monster Cell", 2, "The bearer gains +2/+2 and Taunt."],
       ["Philosopher's Stone", 4, "The bearer takes double damage on the enemy's turn but is invulnerable on your own."],
       ["Anti-magic Mask", 1, "The bearer is immune to Freeze and Chained."],
       ["Queen's Cocoon", 2, "The bearer is Chained for a turn. When it awakens, it gains +3/+3."],
@@ -317,7 +317,7 @@ describe("relic effects", () => {
     monsterState.players[0].board[0] = makeMinion("Mob Psycho", 0);
     const monster = playRelicFor(monsterState, 0, "Monster Cell", 0);
     const bearer = monster.players[0].board[0]!;
-    expect(bearer.atk).toBe(8);
+    expect(bearer.atk).toBe(7);
     expect(bearer.maxHp).toBe(7);
     expect(bearer.hp).toBe(7);
     expect(bearer.keywords).toContain("Taunt");

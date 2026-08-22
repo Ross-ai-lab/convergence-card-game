@@ -145,6 +145,22 @@ check(
   (await page.locator(".mulligan-card").count()) === 3,
   "three opening cards revealed after opening animation",
 );
+await page.locator(".mulligan-card").first().click();
+const mulliganCross = await page.evaluate(() => {
+  const selected = document.querySelector(".mulligan-card.selected");
+  if (!selected) return { hasCross: false, hasLabel: false };
+  const cross = getComputedStyle(selected, "::after");
+  return {
+    hasCross: cross.backgroundImage !== "none" && cross.boxShadow !== "none",
+    hasLabel: Boolean(selected.querySelector(".mulligan-card-label")),
+  };
+});
+check(
+  "selected mulligan cards show only a red cross",
+  mulliganCross.hasCross && !mulliganCross.hasLabel,
+  "selected card is crossed out and has no Keep/Replace label",
+);
+await page.locator(".mulligan-panel button.primary").click();
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.locator(".title-links").getByRole("button", { name: "Settings", exact: true }).click();

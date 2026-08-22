@@ -3492,7 +3492,6 @@ function MulliganOverlay({
                 }}
               >
                 {card ? <CardFace card={playableFace(card)} /> : null}
-                <span className="mulligan-card-label">{selected ? "Replace" : "Keep"}</span>
               </button>
             );
           })}

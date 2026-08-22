@@ -869,6 +869,7 @@ ruling and have been replaced with real recordings, sourced with `yt-dlp` per
 | Meteor | [Meteor Whoosh and Explosion](https://www.youtube.com/watch?v=WFN9tUtrq-s) | Free sound effect; the whoosh-then-impact arc is the card |
 | Planetary Defense Grid | [Sci-Fi Energy Shield Activate](https://www.youtube.com/watch?v=ekErpYY7X8c) | No-copyright SFX, already the right length |
 | Black Hole | [NASA black hole sonification](https://www.youtube.com/watch?v=_tXhBLg3Wng) | NASA'''s own data made audible: a real recording, public domain |
+| Lord Voldemort | [Hedwig's Theme](https://www.youtube.com/watch?v=wtHra9tFISY) | Owner-selected iconic Harry Potter theme |
 
 Each is the LOUDEST six-second window of its source, found by stepping `volumedetect` across the file
 rather than guessing an offset, then two-pass `loudnorm` to sit with the other 172. **volumedetect

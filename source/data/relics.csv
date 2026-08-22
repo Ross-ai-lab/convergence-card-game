@@ -9,7 +9,7 @@ r007,Chamber of Secrets,3,Relic,relic,immune_nature_attacks,The bearer is invuln
 r008,Cyber-Enchantment,3,Relic,relic,immune_tech_attacks,The bearer is invulnerable to Tech attacks while defending.,,Myth,/card-art/raw/r008.webp
 r009,Ea,3,Relic,relic,double_bearer_attack,The bearer's ATK is doubled.,It remembers when the world had no shape,Fate,/card-art/raw/r009.webp
 r010,Elder wand,1,Relic,relic,immune_silence,The bearer is immune to Silence.,,Harry Potter,/card-art/raw/r010.webp
-r011,Monster Cell,2,Relic,relic,monster_cell,The bearer gains +3/+2 and Taunt.,Become the next thing. Leave behind something of the last,OPM,/card-art/raw/r011.webp
+r011,Monster Cell,2,Relic,relic,monster_cell,The bearer gains +2/+2 and Taunt.,Become the next thing. Leave behind something of the last,OPM,/card-art/raw/r011.webp
 r012,Philosopher's Stone,4,Relic,relic,philosophers_stone,The bearer takes double damage on the enemy's turn but is invulnerable on your own.,Everything has a cost,Myth,/card-art/raw/r012.webp
 r013,Allspark Cube,1,Relic,relic,capture_kill,"When the bearer kills an enemy minion, take that minion as a card to your hand.",,Transformers,/card-art/raw/r013.webp
 r014,Anti-magic Mask,1,Relic,relic,immune_freeze_chain,The bearer is immune to Freeze and Chained.,Magic is energy with rules attached. This removes the rules,That time I got reincarnated as a Slime,/card-art/raw/r014.webp

@@ -4269,7 +4269,7 @@ function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstan
   } else if (relic.relicId === "heal_full_now") {
     bearer.hp = bearer.maxHp;
   } else if (relic.relicId === "monster_cell") {
-    buffMinion(bearer, 3, 2);
+    buffMinion(bearer, 2, 2);
     if (!hasKeyword(bearer, "Taunt")) bearer.keywords.push("Taunt");
   } else if (relic.relicId === "cocoon") {
     bearer.chained = Math.max(bearer.chained, 1);
