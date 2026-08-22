@@ -140,7 +140,7 @@ const effectIds = new Set<EffectId>([
   "reshuffle_hand",
   "discard_draw_2",
   "consume_tech_card",
-  "consume_tech_5_hp",
+  "consume_tech_4_hp",
   "consume_nature_4_hp",
   "consume_all_friendly_tech",
   "dice_buff",

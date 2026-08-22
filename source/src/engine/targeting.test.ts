@@ -66,6 +66,29 @@ function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
 const toMyNextTurn = (state: GameState): GameState => endTurnAndDraw(endTurnAndDraw(state, 0), 1);
 
 describe("targeted effects", () => {
+  it("cancels a fresh target-card play back to hand and refunds its mana", () => {
+    const state = mainState("cancel-target-play");
+    const cecilId = cardId("Cecil");
+    state.players[0].hand = [cecilId];
+    state.players[0].mana = 5;
+    state.players[0].board[1] = dummy("John Wick", 0);
+    state.players[0].board[2] = dummy("Zoro", 0);
+
+    const asking = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library).state;
+    expect(asking.phase).toBe("targeting");
+    expect(asking.pendingTarget?.cancelPlay?.cardId).toBe(cecilId);
+    expect(getLegalActions(asking, library)).toContainEqual({ type: "cancel_target", player: 0 });
+
+    const cancelled = applyAction(asking, { type: "cancel_target", player: 0 }, library).state;
+    expect(cancelled.phase).toBe("main");
+    expect(cancelled.pendingTarget).toBeNull();
+    expect(cancelled.players[0].board[0]).toBeNull();
+    expect(cancelled.players[0].board[1]?.name).toBe("John Wick");
+    expect(cancelled.players[0].board[2]?.name).toBe("Zoro");
+    expect(cancelled.players[0].hand).toEqual([cecilId]);
+    expect(cancelled.players[0].mana).toBe(5);
+  });
+
   it("Neo blocks targeted silence and freeze without blocking damage", () => {
     const state = protectFriendlySlotWithNeo(mainState("neo-targeting"), 1);
     state.players[1].board[1] = dummy("John Wick", 1);
@@ -139,8 +162,10 @@ describe("targeted effects", () => {
     // Nothing has happened to either enemy yet.
     expect(after.players[1].board[0]?.frozen).toBe(false);
     expect(after.players[1].board[2]?.frozen).toBe(false);
-    // The only legal moves are the choices themselves.
-    expect(getLegalActions(after, library).every((action) => action.type === "choose_target")).toBe(true);
+    // The choices plus the explicit play-to-hand escape are the only legal moves.
+    const legal = getLegalActions(after, library);
+    expect(legal.filter((action) => action.type !== "cancel_target").every((action) => action.type === "choose_target")).toBe(true);
+    expect(legal).toContainEqual({ type: "cancel_target", player: 0 });
   });
 
   it("hits the minion the player named, not the leftmost one", () => {
@@ -175,6 +200,22 @@ describe("targeted effects", () => {
     weakenState.players[1].board[0] = dummy("John Wick", 1, { atk: 5 });
     const weakened = choose(playCardFor(weakenState, 0, "Batman", 1), 2);
     expect(weakened.players[1].board[0]?.atk).toBe(2);
+  });
+
+  it("does not offer a refund after a multi-step effect accepts its first target", () => {
+    const state = mainState("batman-cancel-boundary");
+    state.players[1].board[0] = dummy("John Wick", 1);
+    state.players[1].board[2] = dummy("Zoro", 1);
+
+    const victimPrompt = playCardFor(state, 0, "Batman", 1);
+    expect(victimPrompt.pendingTarget?.cancelPlay?.cardId).toBe(cardId("Batman"));
+
+    const gadgetPrompt = choose(victimPrompt, 0);
+    expect(gadgetPrompt.phase).toBe("targeting");
+    expect(gadgetPrompt.pendingTarget?.kind).toBe("option");
+    expect(gadgetPrompt.pendingTarget?.cancelPlay).toBeUndefined();
+    expect(getLegalActions(gadgetPrompt, library)).not.toContainEqual({ type: "cancel_target", player: 0 });
+    expect(gadgetPrompt.players[1].board[0]?.frozen).toBe(false);
   });
 
   it("Musashi kills all damaged enemy minions", () => {

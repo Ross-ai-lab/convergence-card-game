@@ -74,6 +74,7 @@ export const BOT_CHEATS: Record<BotSkill, BotCheats> = {
 export function botDials(): Record<string, unknown> {
   return {
     cheats: BOT_CHEATS,
+    enginePremium: ENGINE_PREMIUM,
     beamWidth: BEAM_WIDTH,
     deepLines: DEEP_LINES,
     enemyBranch: ENEMY_BRANCH,
@@ -244,6 +245,66 @@ function blindSeed(state: GameState, salt: number): number {
 // ---------------------------------------------------------------------------
 
 /**
+ * What a minion that keeps PAYING is worth on top of its stat line.
+ *
+ * This is the number that makes the bot trade instead of running at the core
+ * every turn, and it is deliberately large — roughly a whole extra body.
+ *
+ * The reasoning is about which threats expire and which do not. A Battlecry has
+ * already paid out by the time the minion is sitting there; a Deathrattle pays
+ * once, later, and killing the minion is what triggers it; Taunt and Divine
+ * Shield are one-time tolls that the attacker pays and is then done with. None
+ * of those get better for their owner by being left alone. A Passive or an
+ * Ongoing does: it is a standing rule or a per-turn payment that collects again
+ * every single turn nobody answers it, so its true price is the payout times
+ * the turns still to come — and a Convergence duel runs about eleven turns a
+ * side, so "the turns still to come" is usually most of the game.
+ *
+ * Fourteen is arithmetic, not taste, and the arithmetic is why the old bot was
+ * reported as attacking the core with practically every swing. Face damage is
+ * worth about 3.6 points per point
+ * of ATK here — 2.2 from the health difference and 1.4 from the progress term —
+ * so a 4-ATK swing at the core scores about 14.4, while a whole 4/4 body is
+ * worth only 9.2. The evaluation was therefore stating, correctly by its own
+ * numbers, that three points of face beat killing an equal minion. Nothing
+ * short of a premium on this scale changes that verdict.
+ *
+ * What 14 buys, for a 4-ATK attacker: killing a 2/2 engine and surviving scores
+ * about 17 against the core's 14.4, so it trades. Killing a vanilla 2/2 scores
+ * 3.3, so it does not. An 8-ATK minion still races, because 28.8 of face is
+ * genuinely worth more than one small engine. That is the intended shape —
+ * trade at engines often, not always, and never blindly.
+ *
+ * It is symmetric on purpose. The same premium is what stops the bot throwing
+ * its OWN engine into a pointless attack, and an asymmetric "enemy engines are
+ * scary" term would have made it play its own side worse in order to play the
+ * trade better. The README's own warning about pricing a threat twice applies
+ * to deterrents, which punish the attacker; an engine punishes the DEFENDER for
+ * leaving it alone, so the defender's side is where it belongs.
+ *
+ * A silenced or chained engine is paying nothing, so it earns nothing here —
+ * which is also how the bot learns that silencing an engine is nearly as good
+ * as killing it.
+ */
+const ENGINE_PREMIUM = 14;
+
+/**
+ * Is this minion currently collecting value every turn?
+ *
+ * Printed timing is not the whole answer: Yubaba, Chrollo and All For One hand a
+ * Passive or an Ongoing to a minion whose own card prints neither, and a minion
+ * wearing a borrowed engine is exactly as expensive to leave alone as one that
+ * came with it. Silence and chains are the off switches for both.
+ */
+function isLiveEngine(minion: MinionInstance): boolean {
+  if (minion.silenced || minion.chained > 0) return false;
+  if (minion.effectTiming === "passive" || minion.effectTiming === "ongoing" || minion.effectTiming === "onPlayAndOngoing") {
+    return minion.effectId !== "none";
+  }
+  return minion.gainedEffects.some((effect) => effect.timing === "passive" || effect.timing === "ongoing");
+}
+
+/**
  * What a single minion is worth sitting on the board.
  *
  * There is NO passive per-body ping in this game any more — bodies are worth
@@ -268,8 +329,9 @@ function minionValue(minion: MinionInstance, state: GameState): number {
   if (minion.invulnerableUntilTurn !== null && minion.invulnerableUntilTurn >= state.turnNumber) value += 3;
 
   // An engine that fires every turn compounds; a battlecry has already paid out
-  // by the time it is sitting here.
-  if ((minion.effectTiming === "ongoing" || minion.effectTiming === "onPlayAndOngoing") && !minion.silenced && minion.chained === 0) value += 2.2;
+  // by the time it is sitting here. See ENGINE_PREMIUM for why the number is
+  // this big and what it is meant to change about the bot's attacks.
+  if (isLiveEngine(minion)) value += ENGINE_PREMIUM;
 
   // Ready right now is tempo the opponent has to answer this turn.
   if (!minion.sleeping && !minion.frozen && minion.attacksUsed === 0 && minion.atk > 0 && !minion.attackLocked) {
@@ -415,6 +477,13 @@ function whoActs(state: GameState): PlayerId | null {
   return state.activePlayer;
 }
 
+/** Bot targets should resolve normally; only a human gets the play-to-hand escape. */
+function botLegalActions(state: GameState, library: CardLibrary, knownLegal?: readonly GameAction[]): GameAction[] {
+  const legal = [...(knownLegal ?? getLegalActions(state, library))];
+  const withoutCancel = legal.filter((action) => action.type !== "cancel_target");
+  return withoutCancel.length > 0 ? withoutCancel : legal;
+}
+
 /**
  * What a move is worth beyond the board it leaves behind.
  *
@@ -483,7 +552,7 @@ function bestGreedy(
   forId: PlayerId,
   trueDice = true,
 ): { action: GameAction; state: GameState } | null {
-  const legal = getLegalActions(state, library);
+  const legal = botLegalActions(state, library);
   if (legal.length === 0) return null;
   let best: GameAction | null = null;
   let bestState: GameState | null = null;
@@ -555,7 +624,7 @@ export function worstReply(
 
   if (state.phase === "gameOver" || whoActs(state) !== enemyId) return value(state);
 
-  const legal = getLegalActions(state, library);
+  const legal = botLegalActions(state, library);
   if (legal.length === 0) return value(state);
 
   // ENEMY_DICE: false — the opponent picks their moves without seeing the roll,
@@ -587,7 +656,7 @@ function scoreOpenings(
   trueDice: boolean,
   knownLegal?: readonly GameAction[],
 ): Array<{ action: GameAction; state: GameState; score: number }> {
-  const legal = knownLegal ?? getLegalActions(state, library);
+  const legal = botLegalActions(state, library, knownLegal);
   return legal.map((action) => ({
     action,
     ...evaluateAction(state, action, library, botId, legal, trueDice),
@@ -682,7 +751,7 @@ function beamOwnTurn(
     const extended: Array<BeamLine & { score: number }> = [];
 
     for (const line of live) {
-      const legal = getLegalActions(line.state, library);
+      const legal = botLegalActions(line.state, library);
       if (legal.length === 0) {
         finished.push(line);
         continue;
@@ -773,7 +842,7 @@ export function chooseBotAction(
   // Simulation already asks the engine for legal actions to detect dead ends.
   // Accepting that exact list avoids doing the same rules traversal twice on
   // every simulated bot action; normal app callers simply omit it.
-  const legal = knownLegal ?? getLegalActions(state, library);
+  const legal = botLegalActions(state, library, knownLegal);
   if (legal.length === 0) return null;
   if (legal.length === 1) return legal[0];
 

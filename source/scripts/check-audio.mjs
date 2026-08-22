@@ -130,6 +130,16 @@ for (const [id, label] of themes) {
   check(`card theme: ${label}`, result.peak > 0.02 && result.activeMs > 200, `peak ${result.peak}, ${result.activeMs}ms audible`);
 }
 
+// Relics use the same theme path as minions, but their IDs are distinct so an
+// equip can never be proven by the minion-only sample above. Probe every relic
+// ID, including the locally cut Made in Abyss sting, to catch a missing mapping
+// or a missing file before the player reaches an equip action.
+for (let index = 1; index <= 21; index += 1) {
+  const relicId = `r${String(index).padStart(3, "0")}`;
+  const result = await page.evaluate((cardId) => window.__sfx.probeCardTheme(cardId, 900), relicId);
+  check(`relic theme: ${relicId}`, result.peak > 0.02 && result.activeMs > 200, `peak ${result.peak}, ${result.activeMs}ms audible`);
+}
+
 // The herald comes off its own clip set through its own code path, so a working
 // card theme proves nothing about it.
 // Only DUEL-level lines exist now: the herald was removed from card placement
@@ -222,7 +232,11 @@ if ((await page.locator(".mana-inf").count()) === 0) {
 // Click a card in hand, then an empty slot on our side. Both halves are plain
 // clicks; drag & drop is unreliable to script (pointer events need real gaps).
 const before = await page.evaluate(() => window.__sfx.getStats().themesPlayed);
-const hand = page.locator(".hand-card").first();
+// Inject a plain minion so the trigger check cannot become a random test of
+// whether the opening hand happened to contain a board-playable card or a
+// relic that needs a bearer.
+await page.evaluate(() => window.__debug?.giveCard("Modern Tank"));
+const hand = page.locator(".hand-card").last();
 let placed = false;
 if (await hand.count()) {
   await hand.click({ timeout: 2000 }).catch(() => {});

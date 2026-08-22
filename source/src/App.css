@@ -1655,6 +1655,10 @@ button:disabled {
 }
 
 .hand-fan {
+  position: relative;
+  /* A small drop keeps the fan clear of the lower board row without letting
+     rotated outer cards fall below the viewport at the desktop breakpoint. */
+  top: 2px;
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -3138,7 +3142,7 @@ button:disabled {
   clip-path: polygon(
     0% 4%, 4% 0%, 18% 0%, 20% 3%, 34% 3%, 36% 0%, 64% 0%, 66% 3%, 80% 3%, 82% 0%, 96% 0%, 100% 4%,
     100% 38%, 89% 45%, 100% 52%,
-    100% 96%, 96% 100%, 4% 100%, 0% 96%,
+    100% 96%, 96% 95%, 4% 95%, 0% 96%,
     0% 52%, 11% 45%, 0% 38%
   );
   background:
@@ -4479,6 +4483,21 @@ button:disabled {
   font-size: 0.68rem;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.prompt-cancel {
+  display: block;
+  margin: 10px 0 0 auto;
+  border-color: rgba(255, 232, 154, 0.7);
+  background: rgba(255, 232, 154, 0.12);
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.prompt-cancel:hover:not(:disabled) {
+  border-color: var(--gold);
+  background: rgba(255, 232, 154, 0.24);
 }
 
 .draw-panel.locked {

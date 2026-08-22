@@ -147,7 +147,7 @@ describe("relic effects", () => {
       ["Anti-magic Mask", 1, "The bearer is immune to Freeze and Chained."],
       ["Queen's Cocoon", 2, "The bearer is Chained for a turn. When it awakens, it gains +3/+3."],
       ["The Green Mask", 2, "Return the bearer to your hand after death."],
-      ["Tesseract", 2, "The bearer can attack twice each turn."],
+      ["Tesseract", 4, "The bearer can attack twice each turn."],
       ["Infinity Castle", 4, "The bearer's Evade chance is 50%."],
     ] as const;
 

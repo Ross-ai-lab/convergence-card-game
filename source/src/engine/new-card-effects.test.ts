@@ -176,12 +176,12 @@ describe("2026 card replacements", () => {
       },
       Chaos: {
         cost: 8,
-        atk: 1,
-        hp: 1,
+        atk: 4,
+        hp: 4,
         effectId: "chaos_random_summon",
         effectTiming: "onPlay",
-        keywords: ["Deathrattle"],
-        effect: "Battlecry: Summon a random minion from the deck. Deathrattle: Summon a random minion from the deck.",
+        keywords: [],
+        effect: "Battlecry: Summon a random minion from the deck.",
       },
       UFO: { cost: 6, atk: 3, hp: 3, effectId: "none", effectTiming: "none", keywords: ["Divine Shield"], effect: "Divine Shield." },
       Yujiro: { atk: 4, hp: 4, effectId: "immune_nature_minions", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Immune to Nature minions." },
@@ -202,7 +202,7 @@ describe("2026 card replacements", () => {
       Neo: { cost: 10, atk: 5, hp: 7, effectId: "protect_slot", effectTiming: "onPlay" },
       "Monkey D. Luffy": { cost: 8, atk: 6, hp: 4, effectId: "free_chained_shield", effectTiming: "onPlay" },
       Meruem: { cost: 6, atk: 4, hp: 5, effectId: "meruem_kill_copy", effectTiming: "passive" },
-      "The Driller": { cost: 5, atk: 1, hp: 1, effectId: "consume_tech_5_hp", effectTiming: "onPlay", keywords: [] },
+      "The Driller": { cost: 5, atk: 1, hp: 1, effectId: "consume_tech_4_hp", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Consume an enemy Tech minion with 4 HP or lower." },
       Gums: { cost: 3, atk: 1, hp: 1, effectId: "consume_nature_4_hp", effectTiming: "onPlay" },
       "Thirteen Lords of Chaos": { atk: 4, hp: 2, effectId: "deathrattle_summon_drakath", effectTiming: "deathrattle", keywords: ["Deathrattle"] },
       "Sir Nighteye": { atk: 1, hp: 1, effectId: "reveal_top_deck", effectTiming: "passive", keywords: ["Passive"] },
@@ -261,7 +261,7 @@ describe("2026 card replacements", () => {
         keywords: ["Passive"],
         effect: "Passive: Friendly minions cannot be Silenced, Frozen, or Chained. Undo any such curses.",
       },
-      Gojo: { atk: 4, hp: 8, effectId: "yoda_global_silence", effectTiming: "passive", keywords: ["Passive"] },
+      Gojo: { atk: 4, hp: 8, effectId: "yoda_global_silence", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: All enemy minions are temporarily silenced (until Gojo dies)." },
       "Rennala Queen of the Full Moon": { atk: 2, hp: 3, effectId: "rebirth_friendly_dead", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Rebirth a random friendly minion that died this game." },
       "Kagaya Ubuyashiki": { atk: 1, hp: 1, effectId: "discover_random_keyword_minion", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Discover a random Taunt, Divine Shield, and Passive minion in the deck. Draw one." },
       Cecil: { atk: 1, hp: 1, effectId: "bounce_friendly", effectTiming: "onPlay", keywords: [] },
@@ -861,7 +861,7 @@ describe("2026 card replacements", () => {
     expect(afterDeath.players[0].board[0]?.art).toBe("/card-art/raw/token-awakened.webp");
   });
 
-  it("Chaos summons random deck minions on play and on death", () => {
+  it("Chaos summons a random deck minion on play, and nothing more when it dies", () => {
     const state = mainState("chaos-random-summon");
     const zoroId = cardId("Zoro");
     state.deck = [zoroId, zoroId];
@@ -871,15 +871,16 @@ describe("2026 card replacements", () => {
     expect(afterPlay.players[0].board[1]).toMatchObject({ name: "Zoro", cardId: zoroId });
     expect(afterPlay.deck).toEqual([zoroId]);
 
-    afterPlay.players[1].board[0] = minion("Zoro", 1, { atk: 3, hp: 20, maxHp: 20, sleeping: false });
+    // The Deathrattle half was removed in the 4/4 rework: dying is now just dying.
+    afterPlay.players[1].board[0] = minion("Zoro", 1, { atk: 9, hp: 20, maxHp: 20, sleeping: false });
     afterPlay.activePlayer = 1;
     const afterDeath = applyAction(
       afterPlay,
       { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
       library,
     ).state;
-    expect(afterDeath.players[0].board[0]).toMatchObject({ name: "Zoro", cardId: zoroId });
-    expect(afterDeath.deck).toEqual([]);
+    expect(afterDeath.players[0].board[0]).toBeNull();
+    expect(afterDeath.deck).toEqual([zoroId]);
   });
 
   it("Giorno permanently Chains every minion that occupies the chosen slot", () => {
@@ -1694,14 +1695,24 @@ describe("2026 card replacements", () => {
     expect(second.players[0].hand).not.toContain(cardId("Zoro"));
   });
 
-  it("The Driller consumes an enemy Tech minion at 5 HP", () => {
+  it("The Driller consumes an enemy Tech minion at the exact 4 HP limit", () => {
     const state = mainState("driller-tech-consume");
-    state.players[1].board[0] = minion("John Wick", 1, { camp: "Tech", atk: 3, hp: 5, maxHp: 5 });
+    state.players[1].board[0] = minion("John Wick", 1, { camp: "Tech", atk: 3, hp: 4, maxHp: 4 });
 
     const asking = play(state, 0, "The Driller", 0);
     const after = asking.pendingTarget ? choose(asking, 0) : asking;
     expect(after.players[1].board[0]).toBeNull();
-    expect(after.players[0].board[0]).toMatchObject({ atk: 4, hp: 6, maxHp: 6 });
+    expect(after.players[0].board[0]).toMatchObject({ atk: 4, hp: 5, maxHp: 5 });
+  });
+
+  it("The Driller leaves a 5 HP Tech minion alone", () => {
+    const state = mainState("driller-tech-five-survives");
+    state.players[1].board[0] = minion("John Wick", 1, { camp: "Tech", atk: 3, hp: 5, maxHp: 5 });
+
+    const after = play(state, 0, "The Driller", 0);
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[1].board[0]).toMatchObject({ atk: 3, hp: 5, maxHp: 5 });
+    expect(after.players[0].board[0]).toMatchObject({ name: "The Driller", atk: 1, hp: 1, maxHp: 1 });
   });
 
   it("Po gains exactly +1/+1 after surviving an attack and a defense", () => {

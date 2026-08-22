@@ -147,7 +147,7 @@ export type EffectId =
   | "reshuffle_hand"
   | "discard_draw_2"
   | "consume_tech_card"
-  | "consume_tech_5_hp"
+  | "consume_tech_4_hp"
   | "consume_nature_4_hp"
   | "consume_all_friendly_tech"
   | "dice_buff"
@@ -578,6 +578,20 @@ export interface PendingTarget {
   priorOptions: TargetOption[];
   priorHandOptions: HandOption[];
   priorLabelOptions: LabelOption[];
+  /** Allows a freshly played target-card to be returned before it resolves. */
+  cancelPlay?: PendingPlayReturn;
+}
+
+/** The reversible part of a minion play while its target prompt is open. */
+export interface PendingPlayReturn {
+  player: PlayerId;
+  slotIndex: number;
+  handIndex: number;
+  cardId: string;
+  instanceId: string;
+  manaRefund: number;
+  previousCostReduction?: number;
+  previousPressured: { cardId: string; dueTurn: number } | null;
 }
 
 /** The answer to a pending choice, handed back into the effect that asked. */
@@ -712,6 +726,8 @@ export interface GameState {
   discard: string[];
   drawChoice: DrawChoice | null;
   pendingTarget: PendingTarget | null;
+  /** Keeps a play-to-hand escape alive across multi-step target prompts. */
+  pendingPlayCancel?: PendingPlayReturn | null;
   /** The player currently choosing a starting hero power, or null after the draft. */
   heroPowerChoicePlayer: PlayerId | null;
   /** Two deterministic, distinct offers for each player at the start of a duel. */
@@ -765,6 +781,7 @@ export type GameAction =
   | { type: "choose_draw"; player: PlayerId; choiceIndex: number }
   | { type: "choose_hero_power"; player: PlayerId; choiceIndex: number }
   | { type: "choose_target"; player: PlayerId; choiceIndex: number }
+  | { type: "cancel_target"; player: PlayerId }
   | { type: "use_hero_power"; player: PlayerId }
   | { type: "use_coin"; player: PlayerId }
   | { type: "return_relic"; player: PlayerId; slotIndex: number; relicIndex?: number };

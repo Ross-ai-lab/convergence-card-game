@@ -313,3 +313,111 @@ describe("full-roster effects", () => {
   });
 
 });
+
+/**
+ * Silence takes the growth back with the text.
+ *
+ * The discriminating property in each of these is the DIRECTION of the change,
+ * not the fact that a number moved. A Silence that simply reset both stats to
+ * the printed line would pass the first test and fail the second; a Silence
+ * that left the stat line alone would fail the first and pass the second.
+ */
+describe("Silence strips stat buffs", () => {
+  it("takes a buffed minion back down to its printed stats", () => {
+    const state = mainState();
+    // Death Star prints 7/6. This one has been pumped well past that.
+    state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 14, hp: 16, maxHp: 16 });
+
+    const after = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    expect(after?.silenced).toBe(true);
+    expect(after?.atk).toBe(7);
+    expect(after?.maxHp).toBe(6);
+    expect(after?.hp).toBe(6);
+  });
+
+  it("keeps a nerf, because Silence is not a cleanse", () => {
+    const state = mainState();
+    state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 1, hp: 2, maxHp: 2 });
+
+    const after = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    expect(after?.silenced).toBe(true);
+    expect(after?.atk).toBe(1);
+    expect(after?.maxHp).toBe(2);
+  });
+
+  it("does not heal the damage taken while the minion was oversized", () => {
+    const state = mainState();
+    // 14/16 over a printed 7/6, sitting on 9 HP. Losing the buff caps current
+    // HP at the printed maximum; it must never restore it to full.
+    state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 14, hp: 9, maxHp: 16 });
+
+    const after = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    expect(after?.maxHp).toBe(6);
+    expect(after?.hp).toBe(6);
+  });
+
+  it("undoes a relic's stat gift too, which is what Elder wand is for", () => {
+    const state = mainState();
+    // The Holy Grail doubles the bearer's stats the moment it is strapped on.
+    // Those doubled numbers are a gift like any other, so Silence takes them.
+    const grail = relics.find((relic) => relic.name === "The Holy Grail");
+    if (!grail) throw new Error("Missing The Holy Grail");
+    const printed = makeMinion("Death Star", 1);
+    state.players[1].board[0] = makeMinion("Death Star", 1, {
+      atk: printed.atk * 2,
+      hp: printed.maxHp * 2,
+      maxHp: printed.maxHp * 2,
+      relic: { ...grail, instanceId: "test-grail" } as never,
+    });
+
+    const after = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    expect(after?.silenced).toBe(true);
+    expect(after?.atk).toBe(printed.atk);
+    expect(after?.maxHp).toBe(printed.maxHp);
+    // The relic itself is still equipped; only the stats it handed over are gone.
+    expect(after?.relic?.name).toBe("The Holy Grail");
+  });
+
+  it("leaves permanent buffs alone when the silence is Gojo's, because his lifts when he dies", () => {
+    const state = mainState();
+    // A Death Star pumped to 14/16 over a printed 7/6, standing under Gojo's
+    // aura. His card says the silence is temporary, so taking the growth for
+    // good would quietly make him the best removal card in the deck.
+    state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 14, hp: 16, maxHp: 16 });
+
+    const under = playCardFor(state, 0, "Gojo", 0).players[1].board[0];
+    expect(under?.silenced).toBe(true);
+    expect(under?.atk).toBe(14);
+    expect(under?.maxHp).toBe(16);
+
+    // An ordinary Silence on the same board still takes the growth.
+    const cut = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    expect(cut?.atk).toBe(7);
+    expect(cut?.maxHp).toBe(6);
+  });
+
+  it("cancels a live aura's buff on a silenced minion, but keeps the aura's curse", () => {
+    const printed = makeMinion("Zoro", 1);
+
+    // Giant Tree gives every OTHER friendly Nature minion +2/+1; All Might gives
+    // every ENEMY minion -1 ATK. Zoro stands in both at once, so one board shows
+    // which half survives a Silence.
+    const run = (silenced: boolean) => {
+      const state = mainState();
+      state.players[1].board[0] = makeMinion("Zoro", 1, { silenced });
+      state.players[1].board[1] = makeMinion("Giant Tree", 1);
+      state.players[0].board[0] = makeMinion("All Might", 0);
+      // Any action re-runs the aura pass. A vanilla body into an empty slot is
+      // the quietest one on the roster.
+      return playCardFor(state, 0, "UFO", 1).players[1].board[0];
+    };
+
+    const open = run(false);
+    expect(open?.atk).toBe(printed.atk + 2 - 1);
+    expect(open?.maxHp).toBe(printed.maxHp + 1);
+
+    const shut = run(true);
+    expect(shut?.atk).toBe(printed.atk - 1);
+    expect(shut?.maxHp).toBe(printed.maxHp);
+  });
+});

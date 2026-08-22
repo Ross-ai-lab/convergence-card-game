@@ -169,6 +169,7 @@ Multiple threads usually work on Convergence at the same time. Files, generated 
 - A minion can attack once per turn. A minion with **0 ATK** can still attack, but deals no damage.
 - Combat is simultaneous: attacker and defender deal damage to each other, even when the attack kills the defender.
 - **Taunt** must be dealt with before attacks can reach the opposing core, unless an effect or relic explicitly bypasses that defence.
+- **Silence** strips printed text, keywords, and stat buffs at once. A minion pumped above its printed stats falls back to them; a minion pushed below them stays there.
 - When the shared deck and its bottom-deck cards are empty, drawing causes escalating fatigue damage: 1, then 2, then 3, and so on.
 
 Nothing damages a core automatically just because a turn starts; core damage comes from a minion attacking it or from an effect that explicitly says it damages a core.
@@ -204,7 +205,7 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 - **Taunt** — the enemy must deal with this minion before attacking your core.
 - **Divine Shield** — blocks the next damage instance, then the gold shield disappears.
 - **Freeze** — the minion loses its next turn, then thaws after sitting out that turn.
-- **Silence** — removes the minion's printed effect and active keywords; its stats remain.
+- **Silence** — removes the minion's printed effect and active keywords, and takes back every stat **buff** it is carrying, down to its printed ATK and HP. It moves in one direction only: a stat **nerf** is kept, because Silence is an answer, not a cleanse. Current HP is capped at the restored maximum rather than refilled, so silencing a damaged minion never heals it. A live aura stops paying a silenced minion its positive half while the silence lasts, and keeps applying its negative half. **Gojo is the one exception to the permanent half of the rule**: his Silence is an aura that lifts when he dies, his card says so, and a temporary silence must not take a minion's growth for good — so his aura cancels stat auras while it holds and leaves permanent buffs alone. Stats handed over by a **relic** count as a buff and are taken back too, while the relic itself stays equipped — which is what makes **Elder wand**, the Silence-immunity relic, worth its slot.
 - **Invulnerable** — the minion cannot take damage while the condition is active; the blue-and-white aura shows it.
 - **Evade** — gives the minion a chance to avoid an incoming attack. The percentage is printed on the card.
 - **Sleep** — the normal one-turn delay after play. It is separate from Chained.
@@ -285,6 +286,7 @@ The board communicates conditions visually: a wall means Taunt, a gold rim means
 - `docs/Convergence Browser Game Roadmap.html` is useful for design direction and browsing, but its embedded roster can lag behind the live CSV.
 - `materials/local-production/` contains optional rebuild tools and source libraries. It is not required to play the included build.
 - `counter/` is the small aggregate player-count service used by the public landing page.
+- `source/src/screens/Screens.tsx` holds the **How to play** guide as `HowToPlayContent`. It is the player-facing twin of [Rules at a glance](#rules-at-a-glance) and [Conditions and keywords](#conditions-and-keywords) above: a rules change has to land in both, and the guide is the copy a player will actually read.
 - `source/scripts/` holds the tooling. `simulate.ts` is the balance harness: self-play, fuzzing, the dial sweep, and the difficulty ladder. `balance-gate.ts` and `balance-gate.test.ts` hold the pure pass, fail, and skip logic, with one planted failure per check. `ladder-compare.ts` is the paired ladder comparison. `source/balance.config.json` carries every threshold with the reasoning for it written alongside. The `apply-balance-pass*.mjs` files record each past pass with the measured number behind every change.
 
 The maintained game is React and TypeScript with a deterministic rules engine, DOM-rendered full card faces, Ascension Relics, persistent local saves, and a practice bot.
@@ -304,6 +306,8 @@ npm run build -- --base=./
 Use the development or preview server URL, not a `file://` URL. A white page can mean the server is stopped, a different folder is being served, or `play/` is behind `source/`.
 
 Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
+
+After changing the **How to play** guide, run `node scripts/shoot-rules.mjs http://127.0.0.1:5177` against a running dev server. It starts a duel, answers the Hero Power offer, opens the guide, and walks the panel down in overlapping screen-height steps into `.preview/rules/`, plus one full-height capture. That step exists because the guide is roughly 2,500 pixels of content inside a 600-pixel window: a single screenshot photographs the first quarter of it and proves nothing about the rest, and no other harness opens the panel at all.
 
 To look at a specific card after changing its text, stats or art, run `node scripts/shoot-card.mjs "Kaku Kaioh"` with any number of card names or ids. It starts and stops its own dev server, deals itself each card through the `window.__debug` hook, and writes a full-frame PNG per card into `.preview/cards/`. Call it with `node` rather than `npm run` whenever a name contains a space, because npm on Windows strips the quotes; the `npm run shoot:card` alias is for the no-argument whole-roster run. The capture proves content — name, cost, rules text, stats, rails, origin, art — and deliberately not layout at play size, since the face is enlarged to fill the frame and `.card-face` is `container-type: size`. It photographs the board variant, which prints no flavour line. Gem and text collisions at real hand and board sizes stay the job of `npm run check:cardface`.
 
@@ -494,7 +498,7 @@ The card-level numbers quoted in the four subsections below were measured on 202
 
 - **Judge a card inside its own cost tier, never against the roster average.** Cheap cards get played more often, so a flat comparison reads "cheap" as "overpowered" and points the whole pass backwards. Score each card as a z-score within its mana tier.
 - **Play rate and win rate answer different questions.** A card drawn 327 times and played twice is invisible to win rate, and it is the more serious defect.
-- **Anything the bot cannot value is unmeasured, not balanced.** `scoreState` adds a bonus for an Ongoing minion and has no term at all for a Passive effect; its only card-flow term is hand length, so a draw engine is worth nothing to it and a targeted discard scores the same as a random one. Seven of nineteen outliers in one pass were the bot's blindness rather than the card's power. Two usable consequences: a card the bot under-values that is winning anyway is stronger than measured and safe to nerf, and a card whose whole effect is invisible to the bot cannot be tuned from these numbers at all. Write that caveat next to the number, not in your head.
+- **Anything the bot cannot value is unmeasured, not balanced.** `scoreState` prices Passive and Ongoing minions as a class through `ENGINE_PREMIUM` but cannot tell a strong engine from a weak one, and its only card-flow term is hand length, so a draw engine is worth nothing to it and a targeted discard scores the same as a random one. Seven of nineteen outliers in one pass were the bot's blindness rather than the card's power. Two usable consequences: a card the bot under-values that is winning anyway is stronger than measured and safe to nerf, and a card whose whole effect is invisible to the bot cannot be tuned from these numbers at all. Write that caveat next to the number, not in your head.
 - **A high play rate with a low win rate means the card is being used and failing**, which is precisely when the body is the wrong lever. A 2-cost minion measured at 34% was buffed from 1/2 to 1/5 and came back at 33.6%, unmoved: its keyword made it unable to attack and it had no Taunt, so nothing obliged the enemy to attack it either. Its ATK was decoration and its HP defended nothing. Read the keyword's implementation, not its flavour, before changing a number.
 - **Count every outcome you exclude.** A draw is not a win, not a loss, not a stall and not a soft-lock, so it drops out of the coin-flip, ladder, and snowball denominators at once. The game could start ending in draws half the time and every published rate would still look normal, just measured on a smaller sample nobody mentioned. Give each exclusion its own counter and its own threshold, and print the excluded count beside the rate it shrank.
 - **Ask "who is ahead" with more than one number before building a snowball metric on it.** The turn-5 health leader wins only 58%, because the player on more health that early is often simply the one who has not committed to an attack yet. Board strength alone gives 56%. The player ahead on both at once gives 59.5%, which is also what a human would call being ahead.
@@ -511,6 +515,81 @@ The card-level numbers quoted in the four subsections below were measured on 202
 **Price a deterrent on the attacker, never on the defender.** A minion whose text punishes whoever attacks it — a permanent disarm, a freeze, a damage reflection, a forced discard — does not become harder to kill; it makes killing it expensive, and that expense already lands on the attacker where the evaluation can see it. Adding a matching bonus to the defender's own value looks like the bot finally respecting the card and does the opposite, because a more valuable enemy is a more attractive target, so the bot walks into it harder. A permanent-disarm minion was scored at +3.5 here and the premium almost exactly cancelled the attacker's own penalty. Fix the consequence instead: the disarm is irreversible, so it must cancel the attacker's whole ATK term rather than shave half of it. Model a threat once, on the side that actually pays it.
 
 **When you fix a blind spot, plant the old evaluation back and watch the new tests fail.** Two of the three "proofs" written for that change turned out to be decoration. In one, the bot correctly ignored both options because it attacked the core instead; in another, the forced move was never a choice at all, because the trap minion had Taunt. Both looked like passes until the old scoring was restored. Every discriminating test needs the alternative to be genuinely available and genuinely attractive: block the core, give both candidates the same body, and change exactly one property.
+
+### Why the bot trades into Passive and Ongoing minions
+
+**The old bot was reported as attacking the core with practically every swing,
+and its own arithmetic was the reason.** Face damage is worth about 3.6 points per point of ATK to `scoreState`
+— 2.2 from the health difference and 1.4 from the progress-toward-winning term —
+while a whole 4/4 body is worth 9.2. The evaluation was therefore stating,
+correctly by its own numbers, that three points of core damage beat killing an
+equal minion. No amount of extra search fixes that; the verdict was in the
+scoring, not in the depth.
+
+**The fix is a large premium on minions that keep paying, and only on those.**
+`ENGINE_PREMIUM` in `source/src/engine/bot.ts` adds 14 points to any minion whose
+effect is Passive or Ongoing and is currently live. The distinction it draws is
+about which threats expire:
+
+| Card property | What it costs the opponent | Priced here? |
+|---|---|---|
+| Passive, Ongoing | Collects again every turn nobody answers it | **Yes, +14** |
+| Battlecry | Already paid out before the minion sat down | No |
+| Deathrattle | Pays once, and killing it is what triggers it | No |
+| Taunt, Divine Shield | A one-time toll the attacker pays and is done with | No |
+
+Only the first row gets better for its owner by being left alone, which is why
+only the first row is worth spending a body to remove.
+
+The premium is **symmetric**: it is also what stops the bot throwing its own
+engine into a pointless attack. The README's warning in
+[Fixing a bot-valuation blind spot](#fixing-a-bot-valuation-blind-spot) about
+pricing a threat on the wrong side does not apply, because that warning is about
+*deterrents*, which punish the attacker. An engine punishes the **defender** for
+leaving it alone, so the defender's own value is the correct place for it.
+
+It is also switched off by the game's own answers. A **Silenced** or **Chained**
+engine earns nothing, which is how the bot learns that silencing an engine is
+nearly as good as killing it.
+
+What 14 actually buys, for a 4-ATK attacker: killing a 2/2 engine and surviving
+scores about 17 against the core's 14.4, so it trades. Killing a vanilla 2/2
+scores 3.3, so it does not. An 8-ATK minion still races, because 28.8 of face is
+genuinely worth more than one small engine. **The intended shape is "often, not
+always"** — it answers engines, it does not stop attacking cores.
+
+`source/src/engine/bot-trading.test.ts` holds the paired proofs. Every case there
+is two boards differing in exactly one property, because "the bot attacked the
+minion" on its own proves nothing.
+
+**What it cost, measured 2026-08-22.** 200 self-play duels at Veteran, the same
+seed list before and after, nothing else changed:
+
+| | Old evaluation | With `ENGINE_PREMIUM` |
+|---|---|---|
+| Median duel length | 23 turns | 25 turns |
+| Blowouts — winner ends on 80%+ core | 5% | 11% |
+| First player wins | 54.5% | 56.5% |
+| Dead openings through own turn 3 | 16.3% | 16% |
+| Soft-locks, stalls, invariant breaches | 0 | 0 |
+| Cards standing clear of their cost tier | none | none |
+
+The full gate ran with the ladder on the same day and came back **9 of 11 green,
+2 skipped for sample size**: hard beats easy 85%, hard beats normal 86%, normal
+beats easy 65.5%, every one of them clear of its floor. Those three numbers sit
+below the 2026-08-17 figures quoted in [The cheat ladder](#the-cheat-ladder),
+and that gap is NOT evidence of anything on its own — the runs are not paired.
+Use `--ladder-compare` against the stamped baseline before reading a skill
+regression into it.
+
+**Read the blowout row before touching the number.** A trading bot ends duels on
+a board advantage rather than a mutual race, so the winner finishes healthier.
+Six points on 200 duels is roughly two standard errors — real, but thin, and it
+should be re-measured on a larger sample before anyone tunes against it.
+
+Also measured: 12 and 14 are indistinguishable on every row above, so the size of
+the premium is not what moved the blowout rate — the trading behaviour is. Pick
+the number for which trades you want the bot to take, not to chase a metric.
 
 ### The cheat ladder
 
@@ -646,9 +725,23 @@ Save a baseline before making a bot change, not after:
 cp .preview/balance/ladder.json .preview/balance/ladder-before.json
 ```
 
-### Full balance-command gate and runtime
+### The skill ladder needs explicit permission, every single time
 
-`npm run check:balance` is an expensive full-roster measurement, not a routine check. Never launch it unless the owner explicitly says to run `npm run check:balance` or otherwise explicitly authorises that full command. A request described as “a balance pass,” even when it lists card changes, is not authorisation. Do not run the full command for one changed card; use focused tests and data validation. Reserve it for a pass that changes many cards, global pacing, draw rules, bot valuation, or another system-wide balance lever.
+**Never run the skill ladder unless the owner explicitly authorises it, by any route.** The ladder is what makes this expensive, so the rule binds to the ladder and not to one command's name. All of these are the same forbidden thing:
+
+```
+npm run check:balance
+npm run sim -- --full
+npm run sim -- --ladder
+npx tsx scripts/simulate.ts --full            # any --games value
+npx tsx scripts/simulate.ts --ladder          # any --ladder-games value
+```
+
+**Shrinking `--games` does not make it cheap, and this exact mistake has been made.** A session read the older wording as naming only the npm script, ran `npx tsx scripts/simulate.ts --full --games 200` believing the small sample made it a focused check, and spent about seventy minutes of the owner's machine on it without being asked. `--games` sizes the self-play half only. The ladder takes its own per-matchup sample from `balance.config.json`, so it runs at full size regardless, and it is roughly 91% of the total cost.
+
+A request described as “a balance pass,” even when it lists card changes, is not authorisation. Neither is a bot-valuation change — which is precisely the case that feels most like it needs the ladder, and is therefore the case most likely to talk a session into running it unasked. Ask, and say what the ladder would answer that the cheap run cannot.
+
+**What you may run without asking is the cheap half: `npm run sim` on its own.** It skips the ladder and reports those three checks as SKIP, which is honest rather than green. At 200 duels it costs about two minutes and still answers soft-locks, stalls, invariant breaches, draws, duel length, dead openings, the snowball rate, and per-card outliers. That is the right tool for one changed card and for one changed valuation term. Focused tests and `npm run validate:data` come first, before even that.
 
 The observed full run at the 1,000-duel cap, measured on 18 August 2026, took **1 hour 40 minutes** wall-clock. Self-play was 506 seconds and fuzz 31 seconds; the Ascendant ladder was the remaining **91 minutes, about 91% of the run**. The earlier estimate of roughly ten minutes came from a 1,500-duel run that took 11 minutes 28.2 seconds before the Ascendant searched whole turns, and it is no longer close.
 

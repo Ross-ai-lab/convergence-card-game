@@ -871,11 +871,13 @@ export default function App() {
       if (event.motion === "stasis" && event.instanceId) stasisIds.add(event.instanceId);
     });
     // Equipping an Ascension Relic is a deliberate power-spike moment, not a
-    // normal card-play click. One fanfare per action keeps mass-equipping cards
-    // celebratory without turning them into a stack of overlapping stings.
-    if (resultEvents.some((event) => event.kind === "effect" && /\bequips\b/i.test(event.text))) {
-      sfx.play("relicEquip", 0.05);
-    }
+    // normal card-play click. The relic's own universe theme replaces the old
+    // one-size-fits-all fanfare; generated/effect-driven equips carry cardId too.
+    const equippedRelicId = resultEvents.find(
+      (event) => event.kind === "effect" && /\bequips\b/i.test(event.text) && event.cardId?.startsWith("r"),
+    )?.cardId;
+    if (equippedRelicId) sfx.playCardTheme(equippedRelicId, 0.05);
+    else if (resultEvents.some((event) => event.kind === "effect" && /\bequips\b/i.test(event.text))) sfx.play("relicEquip", 0.05);
 
     before.forEach((entry, id) => {
       const now = after.get(id);
@@ -1057,6 +1059,10 @@ export default function App() {
   }
 
   function perform(action: GameAction) {
+    const hiddenEnemyDiscover =
+      action.type === "choose_target" &&
+      game.pendingTarget?.player !== viewerId &&
+      Boolean(game.pendingTarget?.effectId.startsWith("discover_"));
     const bargainChoice =
       action.type === "choose_target" && game.pendingTarget?.effectId === "strange_bargain"
         ? game.pendingTarget.labelOptions[action.choiceIndex]?.label
@@ -1095,7 +1101,14 @@ export default function App() {
       setHover(null);
       if (bargainChoice) showToast(`Doctor Strange's bargain chosen: ${bargainChoice}`, 3000, "bargain");
     }
-    setEvents((items) => [...items, ...result.events].slice(-80));
+    const visibleEvents = hiddenEnemyDiscover
+      ? result.events.map((event) =>
+          event.kind === "draw" || event.kind === "effect"
+            ? { ...event, text: "The opponent resolves a Discover effect." }
+            : event,
+        )
+      : result.events;
+    setEvents((items) => [...items, ...visibleEvents].slice(-80));
   }
 
   /**
@@ -1179,13 +1192,24 @@ export default function App() {
     const pending = game.pendingTarget;
     // "slot" prompts are answered the same way, but an EMPTY slot is a valid answer.
     if (game.phase !== "targeting" || !pending) return false;
-    if (pending.kind !== "board" && pending.kind !== "slot") return false;
+    if (pending.kind !== "board" && pending.kind !== "slot" && pending.kind !== "boardOrCore") return false;
     const choiceIndex = pending.options.findIndex((option) => option.owner === owner && option.slot === slotIndex);
     if (choiceIndex < 0) {
       sfx.play("invalid");
       return false;
     }
     perform({ type: "choose_target", player: pending.player, choiceIndex });
+    return true;
+  }
+
+  /** Cancels a fresh target-card play and returns its card/mana through the engine. */
+  function cancelTarget(): boolean {
+    const pending = game.pendingTarget;
+    if (!pending?.cancelPlay || pending.player !== viewerId) return false;
+    const action = uiActions.find((candidate) => candidate.type === "cancel_target" && candidate.player === viewerId);
+    if (!action) return false;
+    sfx.play("button");
+    perform(action);
     return true;
   }
 
@@ -1292,6 +1316,10 @@ export default function App() {
 
   function onHandCard(handIndex: number) {
     if (duelIntro) return;
+    if (game.phase === "targeting" && game.pendingTarget?.cancelPlay?.player === viewerId) {
+      cancelTarget();
+      return;
+    }
     if (game.phase !== "main") {
       setSelection(null);
       return;
@@ -1334,7 +1362,8 @@ export default function App() {
     const minion = game.players[owner].board[slotIndex];
 
     if (game.phase === "targeting") {
-      chooseTargetAt(owner, slotIndex);
+      const chosen = chooseTargetAt(owner, slotIndex);
+      if (!chosen && game.pendingTarget?.cancelPlay?.player === viewerId) cancelTarget();
       return;
     }
     if (game.phase !== "main") return;
@@ -1547,7 +1576,10 @@ export default function App() {
   const coinAction = uiActions.find((action) => action.type === "use_coin");
   const coreTargetable = canAttackCore(uiActions, selection);
   const heroFx = (id: PlayerId) => impacts.filter((fx) => fx.slot === "hero" && fx.owner === id);
-  const pendingTarget = game.phase === "targeting" ? game.pendingTarget : null;
+  // A bot's Discover/target prompt belongs to the hidden opponent. Keep the
+  // engine prompt alive for the bot, but do not render its choices to the human.
+  const pendingTarget =
+    game.phase === "targeting" && game.pendingTarget?.player === viewerId ? game.pendingTarget : null;
   // Read off the state rather than asking the bot — chooseBotAction simulates
   // every legal move, which is far too much work to redo on every render.
   const botThinking =
@@ -1695,7 +1727,14 @@ export default function App() {
         </div>
         </header>
 
-        <section className="battlefield">
+        <section
+          className="battlefield"
+          onClick={(event) => {
+            if (event.target === event.currentTarget && game.pendingTarget?.cancelPlay?.player === viewerId) {
+              cancelTarget();
+            }
+          }}
+        >
           <BoardRow
             owner={opponentId}
             label={`${opponent.name}'s board`}
@@ -1996,6 +2035,7 @@ export default function App() {
             sfx.play("button");
             perform({ type: "choose_target", player: pendingTarget.player, choiceIndex });
           }}
+          onCancel={cancelTarget}
         />
       ) : null}
 
@@ -3078,6 +3118,7 @@ function HeroPlate({
   const backs = Math.min(player.hand.length, 10);
   const power = heroPowerDefinition(heroPower);
   const canStrike = enemy && targetable && Boolean(onStrike);
+  const powerTitle = power ? `${power.name}: ${power.text} Costs ${HERO_POWER_COST} mana and can be used once per turn.` : undefined;
   return (
     <button
       type="button"
@@ -3085,7 +3126,7 @@ function HeroPlate({
       data-hero={player.id}
       onClick={canStrike ? onStrike : undefined}
       aria-disabled={canStrike ? undefined : true}
-      title={canStrike ? "Strike the enemy hero!" : undefined}
+      title={enemy ? (canStrike ? `Strike the enemy hero! ${powerTitle ?? ""}` : powerTitle) : undefined}
     >
       <span className="hero-sigil" title={`${player.name}'s sigil`}>
         <HeroSigil playerId={player.id} />
@@ -3099,7 +3140,7 @@ function HeroPlate({
             <i />
           </span>
         </strong>
-        {power ? <small className="hero-power-label" title={power.text}>⚡ {power.name}</small> : null}
+        {power ? <small className="hero-power-label" title={powerTitle}>⚡ {power.name}</small> : null}
       </span>
       {enemy && revealedHand && library ? (
         <span className="revealed-hand" title="The Watcher reveals this hand">
@@ -3195,17 +3236,22 @@ function TargetPrompt({
   library,
   botControlled,
   onChoose,
+  onCancel,
 }: {
   pending: PendingTarget;
   library: CardLibrary;
   botControlled: boolean;
   onChoose: (choiceIndex: number) => void;
+  onCancel: () => void;
 }) {
   const card = library[pending.sourceCardId];
+  const canCancel = Boolean(pending.cancelPlay && !botControlled);
   const hint = botControlled
     ? "The practice bot is choosing…"
-    : pending.kind === "board" || pending.kind === "boardOrCore"
-      ? `Click a highlighted minion — ${pending.options.length} legal targets.`
+    : pending.kind === "board" || pending.kind === "slot" || pending.kind === "boardOrCore"
+      ? canCancel
+        ? `Click a highlighted minion — or click the board/hand to return this minion.`
+        : `Click a highlighted minion — ${pending.options.length} legal targets.`
       : pending.kind === "hand"
         ? "Their hand, face up. Pick one."
         : "Pick a value.";
@@ -3213,7 +3259,7 @@ function TargetPrompt({
     <div
       className={[
         "target-prompt",
-        pending.kind === "board" ? "" : "interactive",
+        pending.kind === "board" && !canCancel ? "" : "interactive",
         pending.kind === "option" ? "card-choice-prompt" : "",
       ]
         .filter(Boolean)
@@ -3228,6 +3274,12 @@ function TargetPrompt({
           <small>{hint}</small>
         </div>
       </div>
+
+      {canCancel ? (
+        <button type="button" className="prompt-cancel" onClick={onCancel}>
+          Return to hand
+        </button>
+      ) : null}
 
       {/* Hand targeting reveals the hand it is reaching into — that reveal IS
           the effect, so there is nothing to hide from the other player. */}

@@ -9,7 +9,7 @@
  * Four screens, all overlays over the live board so nothing here can break a duel
  * in progress:
  *   TitleScreen  — the front door: continue, solo at three difficulties, hotseat.
- *   HowToPlay     — the rules, in the order they matter, in one quick guide.
+ *   HowToPlay     — the complete rules, as eleven chapters plus two glossaries.
  *   SettingsPanel— sound controls and a route back to the title screen.
  *   PassScreen   — the hotseat privacy curtain. Without it, hotseat is not a game:
  *                  both players can read each other's hand off the same screen.
@@ -195,7 +195,7 @@ export function TitleScreen({
 }: {
   canContinue: boolean;
   playerCount: number | null;
-  /** Total duels finished on this device. Hides the Record door until there is one. */
+  /** Total duels finished on this device; the Record door is also useful at zero. */
   duelsPlayed: number;
   onContinue: () => void;
   onStart: (mode: GameMode) => void;
@@ -276,14 +276,15 @@ export function TitleScreen({
             <Cards size={22} weight="fill" aria-hidden="true" />
             <span>Cards</span>
           </button>
-          {/* No duels yet means an empty table and a promise of nothing, so the
-              door only appears once there is something behind it. */}
-          {duelsPlayed > 0 ? (
-            <button type="button" className="gallery-trigger" onClick={onRecord}>
-              <Scroll size={22} weight="fill" aria-hidden="true" />
-              <span>Record</span>
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="gallery-trigger"
+            onClick={onRecord}
+            title={duelsPlayed > 0 ? "View your duel record" : "View your record — no duels played yet"}
+          >
+            <Scroll size={22} weight="fill" aria-hidden="true" />
+            <span>Record</span>
+          </button>
           <button type="button" className="settings-trigger" onClick={onSettings}>
             <GearSix size={22} weight="fill" aria-hidden="true" />
             <span>Settings</span>
@@ -428,76 +429,194 @@ export function DuelIntro({ phase }: { phase: DuelIntroPhase }) {
 
 // ---------------------------------------------------------------------------
 
+/**
+ * The rules guide, written as eleven short chapters in the order a new player
+ * meets them: win condition, deck, turn, combat, then the vocabulary printed on
+ * the cards, then the board's own symbols.
+ *
+ * Two things it is NOT allowed to be. It is not a summary — every keyword the
+ * engine can put on a minion appears here, because a player who meets Chained
+ * or Attack Locked mid-duel has nowhere else to look. And it is not free prose:
+ * the glossary rows are a definition grid so the terms line up in one column
+ * and can be scanned rather than read.
+ */
 function HowToPlayContent() {
   return (
     <div className="rules">
-      <p className="rules-intro">A quick path from your opening hand to your first winning attack.</p>
-      <section>
-        <h4>1. Win the duel</h4>
+      <p className="rules-intro">
+        Two cores, one shared deck, five slots each. Everything below is in the order you meet it.
+      </p>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">1</span> How you win</h4>
         <p>
-          Each Core starts at <b>75 health</b>. Reduce the opposing Core to zero. Minions attack it directly unless a
-          <b> Taunt</b> is standing in the way.
+          Both cores start at <b>75 health</b>. Take the enemy core to zero and the duel is yours. Nothing
+          damages a core on its own: the damage comes from a minion attacking it, or from an effect that says
+          in so many words that it damages a core.
         </p>
       </section>
-      <section>
-        <h4>2. Take your turn</h4>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">2</span> The shared deck</h4>
+        <ul className="rules-list">
+          <li>Both players draw from the <b>same shuffled deck</b> — 175 minions and 21 relics, one copy of each.</li>
+          <li>You open with <b>3 cards</b>. Going second also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
+          <li>Your hand holds <b>10 cards</b>. A card drawn into a full hand burns and is gone.</li>
+          <li>When the deck runs dry, every further draw costs you core health: <b>1, then 2, then 3</b>, and up from there.</li>
+        </ul>
+      </section>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">3</span> Your turn, in order</h4>
         <ol className="rules-steps">
           <li><b>Draw</b> one card.</li>
-          <li>Your <b>mana</b> refills and its maximum grows by one.</li>
-          <li>At the start of the duel, choose one of two random <b>Hero Powers</b>. Each costs 2 mana and works once per turn.</li>
-          <li>Drag a card onto one of your five empty board slots to play it.</li>
-          <li>Drag a ready minion onto an enemy minion or Core to attack.</li>
+          <li>Your <b>mana</b> refills, and its maximum grows by one, up to <b>10</b>.</li>
+          <li>Spend it in any order: play cards into your <b>five slots</b>, fire your Hero Power, attack with ready minions.</li>
+          <li><b>End the turn</b> with Space.</li>
         </ol>
+        <p className="rules-aside">
+          At the start of the duel you are offered <b>two random Hero Powers</b> and keep one. It costs 2 mana
+          and works once per turn, every turn, for the rest of the duel.
+        </p>
       </section>
-      <div className="rules-split">
-        <section>
-          <h4>3. Fight smart</h4>
-          <p>
-            A minion sleeps on the turn it arrives and normally attacks once per turn. Combat is <b>simultaneous</b>:
-            the defender hits back even if it dies. <b>Chained</b> minions wait two owner turns and cannot be targeted,
-            while <b>Charge</b> minions can attack immediately. A minion with <b>0 ATK</b> can attack, but deals no damage.
-          </p>
-        </section>
-        <section>
-          <h4>4. Read the board</h4>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">4</span> Attacking</h4>
+        <ul className="rules-list">
+          <li>Click or drag a hand card onto an empty slot to play it; click or drag a ready minion onto an enemy minion or the enemy core to attack.</li>
+          <li>A minion <b>sleeps</b> the turn it arrives and attacks from your next turn. <b>Charge</b> skips that wait.</li>
+          <li>One attack per turn, unless a card or relic says otherwise.</li>
+          <li>Combat is <b>simultaneous</b>: the defender hits back even as it dies.</li>
+          <li>A minion with <b>0 ATK</b> may still attack, but deals no damage.</li>
+          <li>An enemy <b>Taunt</b> blocks the road to the core — clear it first, unless something explicitly ignores Taunt.</li>
+          <li>A <b>Chained</b> minion is out of the duel entirely while its chains hold: see the next chapter.</li>
+        </ul>
+      </section>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">5</span> Chained, in full</h4>
+        <p>
+          <b>Chained</b> is the game&rsquo;s price tag on something too strong for its cost, and it is stricter
+          than sleep. A Chained minion is unavailable for its <b>first two owner turns</b>. Across that window
+          it cannot attack, its Ongoing effect does not fire, and it <b>cannot be targeted at all</b> — not by
+          an attack, not by removal, not by a buff of your own. It simply sits there, untouchable by both
+          players, until the chains break and it wakes up ready.
+        </p>
+        <p className="rules-aside">
+          Some cards arrive Chained by their own printed text; others are chained by an enemy effect or by a
+          marked board slot. Chains across the artwork are how you spot it.
+        </p>
+      </section>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">6</span> When a card&rsquo;s text happens</h4>
+        <dl className="rules-glossary">
+          <dt>Battlecry</dt>
+          <dd>Happens once, when the minion enters play.</dd>
+          <dt>Ongoing</dt>
+          <dd>Happens again at the start of its owner&rsquo;s turn. An enemy Ongoing waits for the enemy&rsquo;s turn, not yours.</dd>
+          <dt>Passive</dt>
+          <dd>A standing rule that applies for as long as the minion is active. It never &ldquo;fires&rdquo;.</dd>
+          <dt>Battlecry/Ongoing</dt>
+          <dd>Both: once on arrival, then again every owner turn.</dd>
+          <dt>Deathrattle</dt>
+          <dd>Happens after the minion dies — unless it was Silenced first.</dd>
+        </dl>
+      </section>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">7</span> Words on the cards</h4>
+        <dl className="rules-glossary">
+          <dt>Taunt</dt>
+          <dd>The enemy must deal with this minion before attacking your core.</dd>
+          <dt>Charge</dt>
+          <dd>May attack the same turn it is summoned, or the turn it changes controller.</dd>
+          <dt>Chained</dt>
+          <dd>Two owner turns of nothing: no attack, no Ongoing, and untargetable by either side.</dd>
+          <dt>Divine Shield</dt>
+          <dd>Blocks the next instance of damage, whatever its size, then the gold rim goes out.</dd>
+          <dt>Freeze</dt>
+          <dd>The minion loses its next turn, then thaws once it has sat that turn out.</dd>
+          <dt>Silence</dt>
+          <dd>Strips the printed effect and keywords, and takes back every stat <b>buff</b> the minion is carrying, down to its printed stats. Nerfs it has taken are kept. A Silence that its own card calls temporary only suspends the buffs.</dd>
+          <dt>Evade</dt>
+          <dd>A printed percentage chance to dodge an incoming attack outright.</dd>
+          <dt>Invulnerable</dt>
+          <dd>Takes no damage while the condition lasts; a blue-and-white rim shows it.</dd>
+          <dt>Immune</dt>
+          <dd>Takes no damage from one named source — a camp, an alignment, a damage type.</dd>
+          <dt>Untargetable</dt>
+          <dd>Attacks and effects cannot choose it while the condition lasts.</dd>
+          <dt>Attack Locked</dt>
+          <dd>Cannot attack until the printed lock ends; the attack gem greys out.</dd>
+          <dt>Marked</dt>
+          <dd>A delayed effect is waiting on the minion. The card that marked it says when it lands.</dd>
+          <dt>Protected slot</dt>
+          <dd>A board position that shields whoever stands in it from Silence, Freeze and Chained — but not from damage, targeting or removal.</dd>
+          <dt>Destroy</dt>
+          <dd>Removes a minion outright, dealing no damage. Divine Shield does not stop it.</dd>
+          <dt>Summon</dt>
+          <dd>Puts a new minion into an open slot. No open slot, no summon.</dd>
+          <dt>Gain stats</dt>
+          <dd>Adds ATK and both maximum and current HP.</dd>
+          <dt>Target</dt>
+          <dd>A minion, card or board slot that you choose when the effect resolves.</dd>
+        </dl>
+      </section>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">8</span> Camp and alignment</h4>
+        <p>
+          Every minion carries a <b>camp</b> — Magic, Nature or Tech — and an <b>alignment</b> — Good, Evil or
+          Neutral. A great many effects hunt by one or the other, so read both labels before you commit a card.
+          A rare <b>ALL</b> camp minion accepts a buff aimed at any camp and takes no camp-specific debuff at all.
+        </p>
+      </section>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">9</span> Ascension Relics</h4>
+        <ul className="rules-list">
+          <li>The <b>21 relics</b> ride in the same shared deck and arrive in hand like any other card.</li>
+          <li>Play one onto a friendly minion to equip it. A minion carries up to <b>two</b>, in independent slots.</li>
+          <li>Click an attached relic badge, then another friendly minion, to pass it across — <b>once per turn</b>.</li>
+          <li>A relic dies with its bearer unless its text says otherwise. Some spend themselves on arrival and cannot be moved.</li>
+        </ul>
+      </section>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">10</span> Reading the board</h4>
+        <div className="rules-split">
           <ul className="legend">
-            <li><span className="swatch ring-green" /> can attack</li>
+            <li><span className="swatch ring-green" /> ready to attack</li>
             <li><span className="swatch ring-red" /> legal target</li>
-            <li><span className="swatch ring-blue" /> affordable card</li>
+            <li><span className="swatch ring-blue" /> you can afford this card</li>
             <li><span className="swatch ring-teal" /> selected</li>
           </ul>
-          <p className="title-note">Wall = Taunt · gold rim = Divine Shield · ice = Frozen · chains = Chained · red cross = Silenced.</p>
-        </section>
-      </div>
-      <section>
-        <h4>5. Learn the card words</h4>
-        <div className="rules-keywords">
-          <p><b>Battlecry</b> — happens once when played.</p>
-          <p><b>Ongoing</b> — happens at the start of its owner&rsquo;s turn.</p>
-          <p><b>Passive</b> — stays active while the minion is on board.</p>
-          <p><b>Charge</b> — may attack on the same turn it is summoned or changes controller.</p>
-          <p><b>Deathrattle</b> — triggers after the minion dies, unless it was Silenced.</p>
-          <p><b>Silence</b> — removes printed effects and keywords; stats stay.</p>
-          <p><b>Freeze</b> — the minion misses its next turn.</p>
-          <p><b>Divine Shield</b> — blocks the next damage instance.</p>
-          <p><b>Destroy</b> — removes a minion directly, without dealing damage.</p>
-          <p><b>Target</b> — a chosen minion, card, or board slot.</p>
-          <p><b>Untargetable</b> — attacks and effects cannot choose the minion while it lasts.</p>
+          <dl className="rules-glossary rules-glossary-tight">
+            <dt>Wall</dt>
+            <dd>Taunt</dd>
+            <dt>Gold rim</dt>
+            <dd>Divine Shield</dd>
+            <dt>Blue-white rim</dt>
+            <dd>Invulnerable</dd>
+            <dt>Ice</dt>
+            <dd>Frozen</dd>
+            <dt>Chains</dt>
+            <dd>Chained</dd>
+            <dt>Red cross</dt>
+            <dd>Silenced</dd>
+            <dt>Grey gem</dt>
+            <dd>Cannot attack</dd>
+            <dt>Drifting z</dt>
+            <dd>Asleep this turn</dd>
+          </dl>
         </div>
       </section>
-      <div className="rules-split">
-        <section>
-          <h4>6. Use relics</h4>
-          <p>
-            Relics are cards in your hand. Play one onto a friendly minion to equip it, or click an attached relic badge
-            to pass it across <b>once per turn</b>. Relics die with their bearer unless their text says otherwise.
-          </p>
-        </section>
-        <section>
-          <h4>Shortcuts</h4>
-          <p><b>Space</b> end turn · <b>Z</b> undo · <b>Esc</b> clear your selection.</p>
-        </section>
-      </div>
+
+      <section className="rules-chapter">
+        <h4><span className="rules-step-no">11</span> Shortcuts</h4>
+        <p><b>Space</b> or <b>Enter</b> end turn · <b>Z</b> undo your last action · <b>Esc</b> clear your selection.</p>
+      </section>
     </div>
   );
 }

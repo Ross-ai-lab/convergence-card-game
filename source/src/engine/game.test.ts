@@ -200,6 +200,16 @@ describe("Convergence engine", () => {
     expect(result.state.players[0].board[0]?.hp).toBe(1); // attacker still took the hit back
   });
 
+  it("leaves exactly 2 HP when a 3-ATK minion hits a 5-HP defender", () => {
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20, sleeping: false });
+    state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 0, hp: 5, maxHp: 5, sleeping: false });
+
+    const result = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
+    expect(result.state.players[1].board[0]?.hp).toBe(2);
+    expect(result.events).toContainEqual(expect.objectContaining({ text: "John Wick takes 3 damage." }));
+  });
+
   it("breaks Divine Shield before health damage", () => {
     // Pick the defender by the KEYWORD rather than by name: this test used to
     // name Avatar Aang, and a balance pass that took his Divine Shield away left

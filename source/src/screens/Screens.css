@@ -530,13 +530,6 @@
   color: var(--gold);
 }
 
-.title-note {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
 .title-btn {
   padding: 10px 20px;
   border-radius: 11px;
@@ -821,7 +814,20 @@
 .rules {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
+}
+
+/* Each chapter is a titled block with a hairline above it, so a long guide reads
+   as a stack of separate things rather than one wall. The first chapter drops
+   the rule, because a line directly under the panel header is noise. */
+.rules-chapter {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.rules-chapter:first-of-type {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .title-block-alone {
@@ -842,10 +848,35 @@
 
 .rules h4 {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--gold);
+}
+
+/* The chapter number is a chip rather than a digit in the sentence: it keeps the
+   headings aligned with each other whether the number is one or two digits. */
+.rules-step-no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 246, 222, 0.05);
+  font-size: 11px;
+  letter-spacing: 0;
+  color: var(--gold);
+}
+
+.rules-aside {
+  color: var(--muted) !important;
+  font-size: 13px !important;
 }
 
 .rules p {
@@ -881,9 +912,53 @@
   font-size: 13.5px;
 }
 
-.rules-steps {
+.rules-steps,
+.rules-list {
   display: grid;
   gap: 6px;
+}
+
+/* The glossary is the reason this panel is readable at all: term and meaning in
+   two aligned columns, so eighteen keywords can be scanned down the left edge
+   instead of read as eighteen sentences. `max-content` on the first column keeps
+   every term on one line and every definition starting at the same x. */
+.rules-glossary {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 16px;
+  row-gap: 8px;
+  align-items: baseline;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.rules-glossary dt {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.rules-glossary dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.rules-glossary-tight {
+  row-gap: 5px;
+  font-size: 13px;
+}
+
+/* Below this the two columns stop fitting: a term such as "Battlecry/Ongoing"
+   plus a full sentence needs the width back, so the pair stacks. */
+@media (max-width: 460px) {
+  .rules-glossary {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 2px;
+  }
+
+  .rules-glossary dd {
+    margin-bottom: 6px;
+  }
 }
 
 .rules-split {
@@ -892,21 +967,8 @@
   gap: 22px;
 }
 
-.rules-keywords {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 20px;
-  row-gap: 7px;
-}
-
-.rules-keywords p {
-  font-size: 13px;
-  line-height: 1.45;
-}
-
 @media (max-width: 600px) {
-  .rules-split,
-  .rules-keywords {
+  .rules-split {
     grid-template-columns: 1fr;
   }
 }
@@ -928,8 +990,8 @@
 }
 
 /* Affordable-in-hand is BLUE on the board, so the legend is blue. `ring-gold`
-   stays defined because Divine Shield's rim is described in the paragraph
-   underneath and may want a swatch later. */
+   stays defined because Divine Shield's rim is named in the symbol glossary
+   beside this legend and may want a swatch of its own later. */
 .swatch.ring-gold {
   box-shadow: 0 0 0 2px var(--gold), 0 0 12px rgba(240, 199, 103, 0.6);
 }
@@ -1518,7 +1580,6 @@
   .skill-chip {
     padding-block: 6px;
   }
-  .title-note,
   .skill-chip span {
     font-size: 10px;
   }

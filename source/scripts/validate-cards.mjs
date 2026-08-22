@@ -71,7 +71,7 @@ function checkPrintedText(card, line, errors) {
   const match = PRINTED_TIMING.exec(text);
   const printed = match ? match[1] : null;
   const expected = TIMING_WORD[card.effectTiming];
-  const dualTiming = ["flowey_save_load", "avatar_aang_awakened", "chaos_random_summon"].includes(card.effectId) &&
+  const dualTiming = ["flowey_save_load", "avatar_aang_awakened"].includes(card.effectId) &&
     /^Battlecry:\s.+\bDeathrattle:\s/.test(text);
   if (!dualTiming && printed !== expected) {
     const says = printed ? `"${printed}:"` : "no timing word";

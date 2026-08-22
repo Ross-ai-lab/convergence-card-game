@@ -18,5 +18,5 @@ r016,Healing Potion,1,Relic,relic,heal_full_now,The bearer is fully healed the m
 r017,Queen's Cocoon,2,Relic,relic,cocoon,"The bearer is Chained for a turn. When it awakens, it gains +3/+3.",,Hxh,/card-art/raw/r017.webp
 r018,Shinigami Eyes,1,Relic,relic,ignore_defences,The bearer ignores Taunt and Divine Shield.,I finally see,Death Note,/card-art/raw/r018.webp
 r019,The Green Mask,2,Relic,relic,return_on_death,Return the bearer to your hand after death.,Fears removed,The Mask,/card-art/raw/r019.webp
-r020,Tesseract,2,Relic,relic,double_attack,The bearer can attack twice each turn.,Space doesn't exist,MCU,/card-art/raw/r020.webp
+r020,Tesseract,4,Relic,relic,double_attack,The bearer can attack twice each turn.,Space doesn't exist,MCU,/card-art/raw/r020.webp
 r021,Infinity Castle,4,Relic,relic,evade_50,The bearer's Evade chance is 50%.,The rooms rearrange themselves behind you,Demon Slayer,/card-art/raw/r021.webp

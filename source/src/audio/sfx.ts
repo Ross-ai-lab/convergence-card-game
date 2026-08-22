@@ -803,14 +803,44 @@ export function stopMusic(): void {
  * Only one theme sounds at a time. A turn that lands three minions should read
  * as three arrivals, not a pile-up, so a new summon cuts the previous sting.
  */
-const CARD_THEME_ID = /^c\d+$/;
+const CARD_THEME_ID = /^(?:c|r)\d+$/;
+
+/**
+ * Relics use the same six-second theme-sting bus as minions. When the relic's
+ * universe already has a card sting, point at that existing source so the game
+ * does not ship two copies of the same audio. r006 is the one new universe and
+ * has its own generated sting in public/audio/stings/r006.ogg.
+ */
+const RELIC_THEME_SOURCE: Record<string, string> = {
+  r001: "c102", // Myth — Dragon
+  r002: "c064", // Seven Deadly Sins — Seven Deadly Sins
+  r003: "c080", // Lord of the Rings — Gandalf the White
+  r004: "c064", // Seven Deadly Sins — Seven Deadly Sins
+  r005: "c015", // MCU — Avengers
+  r006: "r006", // Made in Abyss — dedicated sting
+  r007: "c030", // Harry Potter — Dumbledore
+  r008: "c102", // Myth — Dragon
+  r009: "c019", // Fate — Gilgamesh
+  r010: "c030", // Harry Potter — Dumbledore
+  r011: "c025", // One Punch Man — Saitama
+  r012: "c102", // Myth — Dragon
+  r013: "c106", // Transformers — Transformers
+  r014: "c049", // Tensura — Rimuru Tempest
+  r015: "c017", // One Piece — Gol D. Roger
+  r016: "c049", // Tensura — Rimuru Tempest
+  r017: "c069", // Hunter x Hunter — Isaac Netero
+  r018: "c021", // Death Note — Light Yagami
+  r019: "c116", // The Mask — The Mask
+  r020: "c015", // MCU — Avengers
+  r021: "c109", // Demon Slayer — Nine Hashira
+};
 
 function isCardThemeId(cardId: string): boolean {
   return CARD_THEME_ID.test(cardId);
 }
 
 function themeUrl(cardId: string): string {
-  return `${import.meta.env.BASE_URL}audio/stings/${cardId}.ogg`;
+  return `${import.meta.env.BASE_URL}audio/stings/${RELIC_THEME_SOURCE[cardId] ?? cardId}.ogg`;
 }
 
 async function loadTheme(cardId: string): Promise<AudioBuffer | null> {

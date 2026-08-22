@@ -20,7 +20,7 @@ c018,Marshall D. Teach,8,5,5,Red,Magic,Evil,,copy_passive,ongoing,Ongoing: Copy 
 c019,Gilgamesh,8,5,5,Yellow,Magic,Evil,,equip_random_relic,onPlay,"Battlecry: Equip a random Ascension Relic.",Unworthy.,Fate,/card-art/raw/c019.webp
 c020,Superman,8,6,6,Purple,Nature,Good,Passive,superman_damage_cap_3,passive,Passive: Cannot lose more than 3 HP at once.,The heir's son rises.,DCU,/card-art/raw/c020.webp
 c021,Light Yagami,8,2,4,Red,Magic,Evil,Deathrattle,light_yagami_nature_kill,onPlayAndDeathrattle,"Battlecry and Deathrattle: Destroy a random Nature enemy minion.","Ryuk, come help.",Death Note,/card-art/raw/c021.webp
-c022,Gojo,9,4,8,Yellow,Magic,Good,Passive,yoda_global_silence,passive,"Passive: All enemy minions are silenced.",Infinity is rude.,Jujutsu Kaisen,/card-art/raw/c022.webp
+c022,Gojo,9,4,8,Yellow,Magic,Good,Passive,yoda_global_silence,passive,"Passive: All enemy minions are temporarily silenced (until Gojo dies).",Infinity is rude.,Jujutsu Kaisen,/card-art/raw/c022.webp
 c023,Ainz Ooal Gown,9,3,3,Yellow,Magic,Evil,,set_all_enemy_hp_1,onPlay,Battlecry: Set all enemy minions' HP to 1.,The king of death.,Overlord,/card-art/raw/c023.webp
 c024,Conquest,9,6,6,Purple,Nature,Evil,,anti_good_grow,ongoing,Ongoing: Gain +2/+2 for each enemy Good minion.,Named after his purpose.,Invincible,/card-art/raw/c024.webp
 c025,Saitama,10,10,10,Red,Nature,Good,Passive,small_cannot_attack,passive,Passive: Ignores ATK damage less than 5.,The punchline is always the same.,OPM,/card-art/raw/c025.webp
@@ -59,7 +59,7 @@ c057,Ten Tails,9,7,5,Black,Nature,Evil,,chain_all_minions,onPlay,Battlecry: Chai
 c058,Kaido,8,5,5,Yellow,Nature,Evil,,destroy_enemy_taunt,onPlay,Battlecry: Destroy an enemy Taunt minion.,Rules of the seas,One Piece,/card-art/raw/c058.webp
 c059,Korosensei,8,4,4,Yellow,Nature,Neutral,Passive,korosensei_defense,passive,Passive: Evade 20% of attacks. Can only be damaged by ATK of 4 and higher.,Mach 20,Assasination Classroom,/card-art/raw/c059.webp
 c060,Monkey D. Luffy,8,6,4,Yellow,Magic,Good,,free_chained_shield,onPlay,Battlecry: Free all friendly Chained minions. They may attack immediately and gain Divine Shield.,Reality bends; laughter reigns,One Piece,/card-art/raw/c060.webp
-c061,Chaos,8,1,1,Purple,Magic,Neutral,Deathrattle,chaos_random_summon,onPlay,"Battlecry: Summon a random minion from the deck. Deathrattle: Summon a random minion from the deck.",He gives gifts. He never mentions the cost,Hades,/card-art/raw/c061.webp
+c061,Chaos,8,4,4,Purple,Magic,Neutral,,chaos_random_summon,onPlay,Battlecry: Summon a random minion from the deck.,He gives gifts. He never mentions the cost,Hades,/card-art/raw/c061.webp
 c062,S-Class Heroes,8,4,7,Purple,ALL,Good,,buff_all_good_2,ongoing,Ongoing: Give +2/+2 to all Good minions.,The strongest team,OPM,/card-art/raw/c062.webp
 c063,Sans,4,1,1,Purple,Magic,Neutral,Passive,dodge_80,passive,Passive: Evade 80% of attacks.,"HELLO, WORLD!",Undertale,/card-art/raw/c063.webp
 c064,Seven Deadly Sins,8,4,5,Purple,Magic,Good,,summon_sins,onPlay,"Battlecry: Fill your empty slots with 1/1 Sin minions. Each enters with a different keyword at random: Taunt, Divine Shield, Charge, Chained.",The Magic Number,Seven Deadly Sins,/card-art/raw/c064.webp
@@ -101,7 +101,7 @@ c101,The 7 Heroic Spirits,7,2,2,Purple,Magic,Neutral,,heroic_relics,onPlay,Battl
 c102,Dragon,5,3,5,Black,Nature,Neutral,Taunt,none,none,Taunt.,ROAR,Myth,/card-art/raw/c102.webp
 c103,Fort,5,4,5,Black,Tech,Neutral,Taunt,none,none,Taunt.,-,Basic,/card-art/raw/c103.webp
 c104,GLaDOS,5,2,3,Black,Tech,Evil,Passive;Cannot Attack,glados_adjacent_tech,passive,Cannot attack. Passive: Adjacent friendly Tech minions have Taunt and +2/+2.,The test continues,Portal,/card-art/raw/c104.webp
-c105,The Driller,5,1,1,Black,Tech,Evil,,consume_tech_5_hp,onPlay,Battlecry: Consume an enemy Tech minion with 5 HP or lower.,Latest design,MCU,/card-art/raw/c105.webp
+c105,The Driller,5,1,1,Black,Tech,Evil,,consume_tech_4_hp,onPlay,Battlecry: Consume an enemy Tech minion with 4 HP or lower.,Latest design,MCU,/card-art/raw/c105.webp
 c106,Transformers,5,2,5,Black,Tech,Neutral,,consume_all_friendly_tech,onPlay,Battlecry: Consume all friendly Tech minions and gain their stats and effects.,Cybertronian,Transformers,/card-art/raw/c106.webp
 c107,Chrollo,4,3,5,Yellow,Magic,Evil,,steal_passive,onPlay,Battlecry: Copy a passive from a minion. That minion loses the passive as long as Chrollo is alive.,A poisonous spider,HxH,/card-art/raw/c107.webp
 c108,Musashi,4,2,1,Yellow,Nature,Neutral,,destroy_all_damaged_enemies,onPlay,Battlecry: Destroy all damaged enemy minions.,Another duel to win,Baki,/card-art/raw/c108.webp

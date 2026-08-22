@@ -138,6 +138,7 @@ export function createInitialGame(
     discard: [],
     drawChoice: null,
     pendingTarget: null,
+    pendingPlayCancel: null,
     heroPowerChoicePlayer: 0,
     heroPowerOptions: [[], []],
     heroPowers: [null, null],
@@ -229,6 +230,8 @@ export function applyAction(
     chooseDraw(next, action.player, action.choiceIndex, library, events);
   } else if (action.type === "choose_target") {
     chooseTarget(next, action.choiceIndex, library, events);
+  } else if (action.type === "cancel_target") {
+    cancelPendingTarget(next, action.player, events);
   } else if (action.type === "use_coin") {
     spendCoin(next, action.player, events);
   } else if (action.type === "return_relic") {
@@ -240,10 +243,15 @@ export function applyAction(
   enforceSlotAuras(next, events);
   refreshPassiveAuras(next);
   enforceGlobalSilence(next, events);
+  // After the silences are settled, because a minion silenced by Gojo or by a
+  // slot mark on THIS action must not still be wearing the aura it was paid a
+  // moment ago.
+  suppressAuraBuffsOnSilenced(next);
   enforceDumbledoreCleansing(next, events);
   sweepDeaths(next, events);
   announceTopDeck(next, library, events);
   checkGameOver(next, events);
+  if (next.phase !== "targeting") next.pendingPlayCancel = null;
   return {
     state: next,
     events,
@@ -275,11 +283,13 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
         : pending.kind === "hand"
           ? pending.handOptions.length
           : pending.labelOptions.length;
-    return Array.from({ length: count }, (_unused, choiceIndex) => ({
+    const choices: GameAction[] = Array.from({ length: count }, (_unused, choiceIndex) => ({
       type: "choose_target" as const,
       player: pending.player,
       choiceIndex,
     }));
+    if (pending.cancelPlay) choices.push({ type: "cancel_target" as const, player: pending.player });
+    return choices;
   }
   if (state.phase === "drawChoice") {
     const drawChoice = state.drawChoice;
@@ -520,6 +530,7 @@ export function actionKey(action: GameAction): string {
   if (action.type === "choose_draw") return `${action.type}:${action.player}:${action.choiceIndex}`;
   if (action.type === "choose_hero_power") return `${action.type}:${action.player}:${action.choiceIndex}`;
   if (action.type === "choose_target") return `${action.type}:${action.player}:${action.choiceIndex}`;
+  if (action.type === "cancel_target") return `${action.type}:${action.player}`;
   if (action.type === "return_relic") return `${action.type}:${action.player}:${action.slotIndex}:${action.relicIndex ?? 0}`;
   return `${action.type}:${action.player}`;
 }
@@ -647,10 +658,11 @@ function playCard(
   const cardId = player.hand[handIndex];
   const card = library[cardId];
   if (!isMinionCard(card)) return;
+  const previousCostReduction = player.costReductions[cardId];
+  const previousPressured = player.pressured?.cardId === cardId ? { ...player.pressured } : null;
+  const manaPaid = state.cheatMode ? 0 : effectiveCardCost(state, playerId, card);
   player.hand.splice(handIndex, 1);
-  if (!state.cheatMode) {
-    player.mana -= effectiveCardCost(state, playerId, card);
-  }
+  player.mana -= manaPaid;
   // A Kuma discount is spent on use, and playing a pressured card satisfies it.
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
   if (player.pressured?.cardId === cardId) player.pressured = null;
@@ -666,6 +678,16 @@ function playCard(
     minion.divineShield = true;
     events.push(effectEvent(`${minion.name} gains Divine Shield from Furious Five.`, minion));
   }
+  state.pendingPlayCancel = {
+    player: playerId,
+    slotIndex,
+    handIndex,
+    cardId: card.id,
+    instanceId: minion.instanceId,
+    manaRefund: manaPaid,
+    previousCostReduction,
+    previousPressured,
+  };
   applyOnPlayEffects(state, minion, slotIndex, library, events);
 }
 
@@ -1383,10 +1405,10 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   destroy_damaged_enemy: { side: "enemy", prompt: "Destroy a wounded enemy", filter: (m) => m.hp < m.maxHp },
   chain_damage: { side: "enemy", prompt: "Choose an enemy minion to take 1 damage" },
   devour_small: { side: "enemy", prompt: "Devour a small enemy", filter: (m) => m.atk <= 3 && m.hp <= 3 },
-  consume_tech_5_hp: {
+  consume_tech_4_hp: {
     side: "enemy",
-    prompt: "Consume an enemy Tech minion with 5 HP or lower",
-    filter: (m) => m.camp === "Tech" && m.hp <= 5,
+    prompt: "Consume an enemy Tech minion with 4 HP or lower",
+    filter: (m) => m.camp === "Tech" && m.hp <= 4,
   },
   consume_nature_4_hp: {
     side: "enemy",
@@ -1700,6 +1722,13 @@ function requestChoice(
     if (kind === "hand") return { kind: "hand", hand: handList[0], step, priorOptions, priorHandOptions, priorLabelOptions };
     return { kind: "option", option: labelList[0], step, priorOptions, priorHandOptions, priorLabelOptions };
   }
+  // The escape hatch belongs only to the first prompt. Once a multi-step
+  // effect has accepted an earlier choice, returning the source would refund
+  // a card whose effect has already partly resolved.
+  const cancelPlay =
+    step === 0 && priorOptions.length === 0 && priorHandOptions.length === 0 && priorLabelOptions.length === 0
+      ? state.pendingPlayCancel ?? state.pendingTarget?.cancelPlay
+      : undefined;
   state.pendingTarget = {
     kind,
     player: spec.chooser === "opponent" ? opponent(source.owner) : source.owner,
@@ -1717,6 +1746,7 @@ function requestChoice(
     priorOptions,
     priorHandOptions,
     priorLabelOptions,
+    ...(cancelPlay ? { cancelPlay } : {}),
   };
   state.phase = "targeting";
   return "asked";
@@ -2009,7 +2039,7 @@ function runEffect(
         applyFreeze(state, source, target, events);
       } else if (chosen.option.value === "silence") {
         if (!isSlotProtected(state, target) && canDisable(state, source.owner, target, "silence")) {
-          target.silenced = true;
+          applySilence(target);
           events.push(effectEvent(`${label} silences ${target.name}.`, source));
         }
       } else if (chosen.option.value === "weaken") {
@@ -2711,7 +2741,7 @@ function runEffect(
       buffMinion(source, prey.atk, prey.hp);
       destroyAtSlot(state, prey.owner, slot, events, `${source.name} devours ${prey.name}`);
     }
-  } else if (source.effectId === "consume_tech_5_hp" || source.effectId === "consume_nature_4_hp") {
+  } else if (source.effectId === "consume_tech_4_hp" || source.effectId === "consume_nature_4_hp") {
     if (picked) consumeEnemyMinion(state, source, picked, events);
   } else if (source.effectId === "devour_friendly") {
     const prey = picked;
@@ -2761,7 +2791,7 @@ function runEffect(
         picked.frozen = true;
         picked.attacksUsed = maxAttacks(picked);
       }
-      if (canSilence) picked.silenced = true;
+      if (canSilence) applySilence(picked);
       if (canFreeze || canSilence) {
         const statuses = [canFreeze ? "freezes" : "", canSilence ? "silences" : ""].filter(Boolean).join(" and ");
         events.push(effectEvent(`${label} ${statuses} ${picked.name}.`, source));
@@ -2791,7 +2821,7 @@ function runEffect(
     if (target) transformIntoLunarSlime(state, source, target, events);
   } else if (source.effectId === "silence_enemy") {
     if (picked && !isSlotProtected(state, picked) && canDisable(state, source.owner, picked, "silence")) {
-      picked.silenced = true;
+      applySilence(picked);
       events.push(effectEvent(`${source.name} silences ${picked.name}.`, source));
     }
   } else if (
@@ -3244,7 +3274,7 @@ function runEffect(
         source.gainedEffects.push({ effectId: minion.effectId, timing, text: minion.effect });
         copiedNames.push(minion.name);
       }
-      if (!isSlotProtected(state, minion) && canDisable(state, source.owner, minion, "silence")) minion.silenced = true;
+      if (!isSlotProtected(state, minion) && canDisable(state, source.owner, minion, "silence")) applySilence(minion);
     }
     if (source.gainedEffects.some((effect) => effect.timing === "ongoing")) source.effectTiming = "ongoing";
     events.push(effectEvent(`${label} silences Magic and gains ${copiedNames.length || "no"} effects.`, source));
@@ -4130,7 +4160,7 @@ function enforceGlobalSilence(state: GameState, events: GameEvent[]): void {
       }
       for (const gojo of gojos) sources.add(gojo.instanceId);
       const wasSilenced = minion.silenced;
-      minion.silenced = true;
+      applySilence(minion, false);
       minion.passiveSilenceSources = [...sources];
       if (!wasSilenced) events.push(effectEvent(`${minion.name} is silenced by Gojo.`, gojos[0]));
     }
@@ -4187,7 +4217,13 @@ function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstan
   const slot = bearer.relic === null ? 0 : bearer.relic2 === null || bearer.relic2 === undefined ? 1 : -1;
   if (slot < 0) return;
   setRelicAt(bearer, slot, relic);
-  events.push({ kind: "effect", text: `${bearer.name} equips ${relic.name}.`, player: bearer.owner, instanceId: bearer.instanceId });
+  events.push({
+    kind: "effect",
+    text: `${bearer.name} equips ${relic.name}.`,
+    player: bearer.owner,
+    cardId: relic.id,
+    instanceId: bearer.instanceId,
+  });
   // One-shot relics fire the moment they are strapped on.
   if (relic.relicId === "double_stats") {
     bearer.atk *= 2;
@@ -4363,7 +4399,7 @@ function enforceSlotAuras(state: GameState, events: GameEvent[]): void {
       if (aura.auraId !== "slot_silence") continue;
       if (minion && !minion.silenced && !isSlotProtected(state, minion)) {
         if (!canDisable(state, playerId, minion, "silence")) continue;
-        minion.silenced = true;
+        applySilence(minion);
         events.push({
           kind: "effect",
           text: `${minion.name} is silenced by the mark on slot ${aura.slot + 1}.`,
@@ -4446,6 +4482,35 @@ function destroyPicked(
   const slot = slotOf(state, picked);
   if (!picked || slot < 0) return;
   destroyAtSlot(state, picked.owner, slot, events, `${source.name} ${message}: ${picked.name}`, source);
+}
+
+/** Return a just-played target-card before its Battlecry resolves. */
+function cancelPendingTarget(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
+  const pending = state.pendingTarget;
+  const cancel = pending?.cancelPlay;
+  if (!pending || !cancel || pending.player !== playerId || cancel.player !== playerId) return;
+
+  const player = state.players[playerId];
+  const minion = player.board[cancel.slotIndex];
+  if (!minion || minion.instanceId !== cancel.instanceId || minion.cardId !== cancel.cardId) return;
+
+  player.board[cancel.slotIndex] = null;
+  player.hand.splice(Math.min(cancel.handIndex, player.hand.length), 0, cancel.cardId);
+  player.mana += cancel.manaRefund;
+  if (cancel.previousCostReduction === undefined) delete player.costReductions[cancel.cardId];
+  else player.costReductions[cancel.cardId] = cancel.previousCostReduction;
+  player.pressured = cancel.previousPressured ? { ...cancel.previousPressured } : null;
+  state.pendingTarget = null;
+  state.pendingPlayCancel = null;
+  state.phase = "main";
+  events.push({
+    kind: "draw",
+    text: `${minion.name} returns to ${player.name}'s hand.`,
+    player: playerId,
+    cardId: cancel.cardId,
+    instanceId: cancel.instanceId,
+    motion: "return",
+  });
 }
 
 /**
@@ -5077,6 +5142,89 @@ function applyFreeze(state: GameState, source: MinionInstance, target: MinionIns
 
 type DisableKind = "other" | "silence" | "freeze" | "chain";
 
+/**
+ * Silences a minion, and unwinds the stat GIFTS it is carrying.
+ *
+ * Silence used to be purely about text: printed effects and keywords went away
+ * and the stat line stayed exactly where the enemy had pushed it. That made
+ * Silence a non-answer against the growth cards, which are the cards it most
+ * obviously should answer — a 1/1 pumped to 10/6 by its own engine lost every
+ * future payment and kept every payment already made, so the board barely
+ * changed. Silence now takes the growth back with the text.
+ *
+ * It moves in ONE direction. Anything that pushed a minion BELOW its printed
+ * line is a curse rather than a gift, and Silence is not a cleanse, so a minion
+ * nerfed to 1 ATK stays at 1 ATK. The rule is a clamp toward the printed stats
+ * from above, never a restore from below.
+ *
+ * Aura contributions are deliberately not part of this arithmetic. They are
+ * re-derived from the live board on every refresh, so removing one here would
+ * simply be handed back a moment later; `suppressAuraBuffsOnSilenced` cancels
+ * the positive half of them after each refresh instead.
+ */
+function stripStatBuffs(minion: MinionInstance): void {
+  const auraAtk = (minion.auraBonuses ?? []).reduce((total, bonus) => total + bonus.atk, 0);
+  const auraHp = (minion.auraBonuses ?? []).reduce((total, bonus) => total + bonus.hp, 0);
+
+  const grantedAtk = minion.atk - auraAtk - minion.baseAtk;
+  if (grantedAtk > 0) minion.atk = Math.max(0, minion.atk - grantedAtk);
+
+  const grantedHp = minion.maxHp - auraHp - minion.baseHp;
+  if (grantedHp > 0) {
+    minion.maxHp = Math.max(1, minion.maxHp - grantedHp);
+    minion.hp = Math.min(minion.hp, minion.maxHp);
+  }
+}
+
+/**
+ * The one way a minion becomes Silenced. Every caller goes through here so the
+ * buff-stripping cannot be forgotten at one of the nine places that silence
+ * something, and so re-silencing an already-silenced minion is free rather than
+ * clamping it a second time.
+ *
+ * `permanent` is false for the ONE silence in the game that is an aura rather
+ * than an event: Gojo's, which lifts the moment he leaves the board and whose
+ * card says so in as many words. Taking a minion's growth away for good on a
+ * silence that is explicitly temporary would make Gojo the strongest removal
+ * card in the deck by accident. The aura's positive stat contributions are
+ * still cancelled while it holds — `suppressAuraBuffsOnSilenced` does that, and
+ * hands them straight back when the aura ends, which is the behaviour the card
+ * describes.
+ */
+function applySilence(minion: MinionInstance, permanent = true): void {
+  if (permanent && !minion.silenced) stripStatBuffs(minion);
+  minion.silenced = true;
+}
+
+/**
+ * Cancels the positive half of every aura landing on a silenced minion.
+ *
+ * Run as one sweep after the auras have been rebuilt rather than as a guard at
+ * each of the eleven places that hand a bonus out: the negative half of an aura
+ * (All Might's -1 ATK to the enemy board, Chaos's -2 HP to everyone) is a curse
+ * and has to keep landing, so the test is the sign of the bonus, not the
+ * identity of the source.
+ */
+function suppressAuraBuffsOnSilenced(state: GameState): void {
+  for (const owner of [0, 1] as PlayerId[]) {
+    for (const target of state.players[owner].board) {
+      if (!target?.silenced || !target.auraBonuses?.length) continue;
+      const kept: NonNullable<MinionInstance["auraBonuses"]> = [];
+      for (const bonus of target.auraBonuses) {
+        const atk = Math.min(0, bonus.atk);
+        const hp = Math.min(0, bonus.hp);
+        if (bonus.atk > 0) target.atk = Math.max(0, target.atk - bonus.atk);
+        if (bonus.hp > 0) {
+          target.maxHp -= bonus.hp;
+          target.hp = Math.min(target.hp, target.maxHp);
+        }
+        kept.push({ ...bonus, atk, hp });
+      }
+      target.auraBonuses = kept;
+    }
+  }
+}
+
 function canDisable(
   state: GameState,
   sourceOwner: PlayerId,
@@ -5240,7 +5388,7 @@ function resolveDeathrattle(
 ): void {
   if (
     dead.silenced ||
-    (dead.effectTiming !== "deathrattle" && dead.effectTiming !== "onPlayAndDeathrattle" && dead.effectId !== "flowey_save_load" && dead.effectId !== "avatar_aang_awakened" && dead.effectId !== "chaos_random_summon")
+    (dead.effectTiming !== "deathrattle" && dead.effectTiming !== "onPlayAndDeathrattle" && dead.effectId !== "flowey_save_load" && dead.effectId !== "avatar_aang_awakened")
   ) return;
   // The dead minion is already out of its board slot when this function runs,
   // so reactToDeath cannot discover its own effect. Record it at resolution.
@@ -5268,7 +5416,7 @@ function resolveDeathrattle(
     for (const owner of [0, 1] as PlayerId[]) {
       for (const minion of state.players[owner].board) {
         if (minion && canDisable(state, dead.owner, minion, "silence")) {
-          minion.silenced = true;
+          applySilence(minion);
           silenced += 1;
         }
       }
@@ -5434,9 +5582,6 @@ function resolveDeathrattle(
       state.players[dead.owner].board[slot] = summoned;
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Awakened.`, dead));
     }
-  } else if (dead.effectId === "chaos_random_summon") {
-    const library = libraryByState.get(state);
-    if (library) summonRandomMinionFromDeck(state, dead, library, events, deadSlot);
   } else if (dead.effectId === "flowey_save_load") {
     if (dead.savedCoreHealth !== null && dead.savedCoreHealth !== undefined) {
       state.players[dead.owner].health = dead.savedCoreHealth;
@@ -5528,7 +5673,7 @@ function resolveDeathrattle(
     if (killer && killerAlive) {
       const canSilence = canDisable(state, dead.owner, killer, "silence");
       const canChain = canDisable(state, dead.owner, killer, "chain");
-      if (canSilence) killer.silenced = true;
+      if (canSilence) applySilence(killer);
       if (canChain) killer.chained = Math.max(killer.chained, 2);
       const statuses = [canSilence ? "silences" : "", canChain ? "chains" : ""]
         .filter(Boolean)
@@ -5649,6 +5794,7 @@ function checkGameOver(state: GameState, events: GameEvent[]): void {
   state.phase = "gameOver";
   state.drawChoice = null;
   state.pendingTarget = null;
+  state.pendingPlayCancel = null;
   state.effectQueue = [];
   state.winner = playerOneDown && playerTwoDown ? "draw" : playerOneDown ? 1 : 0;
   const text = state.winner === "draw" ? "Both cores collapse." : `${state.players[state.winner].name} wins.`;
