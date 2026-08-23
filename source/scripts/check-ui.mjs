@@ -893,7 +893,7 @@ await newBoard({ place: false });
     // be distinct, and "distinct" is the one property that cannot survive
     // someone copying a block and forgetting to change the colours — which is
     // exactly how these six were written.
-    const railCards = ["Doctor Strange", "Vegapunk", "Boros"];
+    const railCards = ["Doctor Strange", "Vegapunk", "Boros", "Avengers"];
     const seenGradients = new Map();
     for (const name of railCards) {
       await page.evaluate((cardName) => window.__debug.giveCard(cardName), name);
@@ -923,7 +923,7 @@ await newBoard({ place: false });
     const gradientValues = [...seenGradients.values()];
     check(
       "every rail palette is different from every other",
-      seenGradients.size === 6 && new Set(gradientValues).size === 6,
+      seenGradients.size === 7 && new Set(gradientValues).size === 7,
       `${seenGradients.size} words, ${new Set(gradientValues).size} distinct gradients: ${[...seenGradients.keys()].join(", ")}`,
     );
 
@@ -945,6 +945,33 @@ await newBoard({ place: false });
       JSON.stringify(nameColours),
     );
 
+    // The flavour and origin lines take the SAME tint as the name, not a second
+    // palette of their own. Two near-identical sets of tier colours would drift
+    // apart the first time one of them was tuned, and this is the check that
+    // notices when they do.
+    const footMatches = {};
+    for (const [name, tier] of [["Aizen", "purple"], ["Detective L", "yellow"], ["Yujiro", "red"]]) {
+      await page.evaluate((cardName) => window.__debug.giveCard(cardName), name);
+      await page.waitForTimeout(260);
+      footMatches[tier] = await page
+        .locator(`.hand-card .card-face.rarity-${tier}`)
+        .last()
+        .evaluate((face) => {
+          const pick = (selector) => {
+            const element = face.querySelector(selector);
+            return element ? getComputedStyle(element).color : "missing";
+          };
+          const name = pick(".cf-name");
+          return name === pick(".cf-flavor") && name === pick(".cf-origin");
+        })
+        .catch(() => false);
+    }
+    check(
+      "the flavour and origin lines share the name's tier tint",
+      Object.values(footMatches).every(Boolean),
+      JSON.stringify(footMatches),
+    );
+
     // The camp RAIL — the vertical word down the left edge — is a different
     // thing from the mark above, and this check exists because the two collided.
     // The sigil layer was first written as `.cf-camp`, a class the rail already
@@ -963,13 +990,18 @@ await newBoard({ place: false });
         vertical: style.writingMode.startsWith("vertical"),
         // Within the left fifth of the card, which is where a rail lives.
         onTheLeft: box.left - card.left < card.width * 0.2,
-        // The one that actually catches it. The collision left the rail sitting
+        // The one that actually catches it. The threshold is 0.4, not the 0.15
+        // it started at: the failure being guarded against blows the rail out to
+        // the WHOLE card, and 0.15 sat close enough to the real width on a small
+        // hand card that it went red over a letter-spacing change instead. The collision left the rail sitting
         // at the same left edge with the same vertical text and the same DOM
         // content — every obvious assertion still passed. What changed was its
         // BOX: an `inset` shorthand from the other rule blew it out to the whole
         // card, and the vertical text then ran down the middle. Measure the
         // width, not the position.
-        narrow: box.width < card.width * 0.15,
+        narrow: box.width < card.width * 0.4,
+        ratio: Number((box.width / card.width).toFixed(3)),
+        cardW: Math.round(card.width),
       };
     });
     // Any real camp word will do. Pinning it to "Magic" tied this check to

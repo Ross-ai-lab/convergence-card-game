@@ -3119,11 +3119,11 @@ const SHINE_RARITIES = new Set(["purple", "yellow", "red", "relic"]);
  * and scrapped: two animated systems in the middle of one card compete for the
  * same space, and a card has one middle.
  *
- * `ALL` is deliberately absent from the camps. Two cards carry it, it is an
- * umbrella rather than a camp, and inventing a seventh palette to distinguish
- * two cards would cost more than it says.
+ * `ALL` is in here despite belonging to only two cards, because its palette is
+ * not a seventh invention — it cycles the other three camp hues in turn, which
+ * is what the camp itself means.
  */
-const RAIL_CAMPS = new Set(["magic", "tech", "nature"]);
+const RAIL_CAMPS = new Set(["magic", "tech", "nature", "all"]);
 const RAIL_ALIGNMENTS = new Set(["good", "neutral", "evil"]);
 
 /** How far a card has got in your collection. Ordered weakest to strongest. */

@@ -560,7 +560,7 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 | Tier | Colour | What it does | Layers |
 |---|---|---|---|
 | Epic | violet | mist drifting sideways, dust settling through it | 4 |
-| Legendary | gold | eight thin rays turning about the card centre | 3 |
+| Legendary | gold | six thin rays turning about the card centre | 3 |
 | Mythic | crimson | a low bed of tapered flame, embers off the top | 5 |
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
@@ -603,7 +603,7 @@ Mythic was rebuilt after the first version read as a red glow rather than as fla
 
 **What could not be taken from those sources:** both end at either a prerendered Perlin-noise texture scrolled upward, or a `filter: contrast()`/`blur()` stack over sliding noise. The filter route is barred by rule 5 and a texture is an asset this project does not need. The substitute for noise is two tongue rows on different fast clocks — 1.7s and 1.1s — at different widths and offsets, with a **`skewX` lean** in the keyframes. The lean is what sells it: a flame that only grows and shrinks is a lamp; a flame that also bends is fire.
 
-**Speed was the other half of the fix.** The first build swelled over 12 seconds. Fire flickers in about one.
+**Speed was the other half of the fix, and it has been tuned in both directions.** The first build swelled over 12 seconds, which is not fire. Real fire flickers in about one, which turned out to be too fast: a thumbnail-sized flame at that rate reads as a strobe, and a gallery row of them is unusable. It runs at 3.4s and 2.2s now. **Slow enough to watch beats accurate**, and the same held for the Legendary rays, which turn once every 134 seconds — slow enough that you never catch them moving, only notice some seconds later that the light is not where it was.
 
 **Height is capped low on purpose**, at roughly a fifth of the card. Fire that climbs to the middle of the artwork stops being a card that is burning and becomes a card behind a bonfire.
 
@@ -619,8 +619,11 @@ A tier says how RARE a card is. The two rails say what KIND of thing it is. **Bo
 | alignment | Good | white → pale gold → sky → white |
 | alignment | Neutral | steel → pale bronze → white |
 | alignment | Evil | crimson → rose → white → ember |
+| camp | ALL | the other three camp hues in turn, slowest of the seven |
 
-`ALL` has no palette — two cards carry it, it is an umbrella rather than a camp, and a seventh palette to distinguish two cards would cost more than it says. Relics print no rails at all.
+`ALL` belongs to two cards only, and it earns a palette because that palette is not a seventh invention: it cycles the other three camp hues in turn, which is what the camp itself means. Relics print no rails at all.
+
+**The rails are tracked wide** — 3 design units against the 0.5 they started at. These words run VERTICALLY, one glyph above the next, and vertical text at normal tracking reads as a stack rather than a word: the letters touch and the eye has to work them out. There is room, since the longest of the seven uses about a third of the rail's 354-unit height even at this spacing.
 
 **An arcane circle behind the artwork was tried first and scrapped.** However faint it was made, a second animated system in the middle of the card competed with the tier shine for the same space, and a card has one middle.
 
@@ -635,7 +638,9 @@ No two periods match: 6.5 / 7.4 / 8.3 / 5.9 / 9.7 / 6.9 seconds. Six words on on
 
 **This is the one deliberate exception to rule 5.** A travelling gradient needs `background-position` animated, which repaints every frame. The rule exists because a gallery can hold a screen of large animated layers; these are two words of about 12 by 46 CSS pixels each, together roughly a five-hundredth of a card's area. **The exception is the size, not the effect** — it is not licence to animate a position anywhere bigger.
 
-**Card names carry their tier's colour too**, as a PALE tint and never the saturated one: lilac for Epic, gold for Legendary, rose for Mythic, cyan for Relic, plain white for Rare. The banner behind the name is already painted in that tier's palette, so a saturated gold name would be gold on gold, and the name is the one thing on a card that must never be hard to read.
+**The name, the flavour line and the origin line all carry the tier's colour**, as a PALE tint and never the saturated one: lilac for Epic, gold for Legendary, rose for Mythic, cyan for Relic, plain white for Rare. That puts the tier's colour at the top of the card and at the bottom, which frames the artwork in it rather than labelling it once.
+
+Pale rather than saturated because the banner behind the name is already painted in that tier's palette, so a saturated gold name would be gold on gold — and the name is the one thing on a card that must never be hard to read. All three use the SAME four values, not a second palette: two near-identical sets of tier colours would drift apart the first time one of them was tuned, and there is a check that notices when they do.
 
 An earlier attempt named its layer `.cf-camp`, which was already the left rail's own class, and claiming it silently rewrote the rail's box and dropped the word "Magic" rotated across the middle of the card. Nothing errored and every test stayed green. `check:ui` now measures the rail's WIDTH, because every obvious assertion about it — present, vertical, left-hand side, correct text — kept passing while it was broken. It also compares all six gradients against each other, because "distinct" is the one property that cannot survive someone copying a block and forgetting to change the colours.
 
