@@ -9,7 +9,7 @@ export type Alignment = "Good" | "Evil" | "Neutral";
 export type Rarity = "Red" | "Yellow" | "Purple" | "Black";
 export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "onPlayAndDeathrattle" | "passive" | "deathrattle";
 
-/** The ten Hero Powers available from the title-screen unlock track. */
+/** The ten Hero Powers; the player unlocks them while the bot can receive any. */
 export type HeroPowerId =
   | "minion_hp"
   | "minion_atk"

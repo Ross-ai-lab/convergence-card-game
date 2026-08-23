@@ -271,6 +271,17 @@ describe("full-roster effects", () => {
     expect(afterDeath.players[0].health).toBe(60);
   });
 
+  it("caps Flowey's restored core HP at the game's 75-HP maximum", () => {
+    const state = mainState();
+    state.players[0].health = 80;
+    const afterPlay = playCardFor(state, 0, "Flowey", 0);
+    afterPlay.players[0].health = 25;
+    afterPlay.players[1].board[0] = makeMinion("John Wick", 1, { atk: 99, sleeping: false });
+    afterPlay.activePlayer = 1;
+    const afterDeath = applyAction(afterPlay, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(afterDeath.players[0].health).toBe(75);
+  });
+
   it("Flowey stays alive through an unopposed turn", () => {
     const state = mainState();
     state.players[0].health = 60;

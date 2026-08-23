@@ -73,6 +73,13 @@ const DEFAULT_STARTING_HEALTH = 75;
  */
 export const STARTING_CORE = DEFAULT_STARTING_HEALTH;
 
+/** Restore core health without ever exceeding the game's 75-HP maximum. */
+function restoreCoreHealth(player: PlayerState, amount: number): number {
+  const before = Math.min(STARTING_CORE, Math.max(0, player.health));
+  player.health = Math.min(STARTING_CORE, before + Math.max(0, amount));
+  return player.health - before;
+}
+
 /**
  * Mana per turn. **One. Do not make this clever.**
  *
@@ -112,7 +119,7 @@ export interface GameSetup {
   manaRamp?: number;
   /** Seat granted permanent Foresight — the Ascendant opponent's draw cheat. */
   foresightFor?: PlayerId | null;
-  /** Hero Powers selected in the title-screen menu for each seat. */
+  /** Hero Powers assigned to each seat for this duel. */
   heroPowers?: [HeroPowerId | null, HeroPowerId | null];
 }
 
@@ -533,8 +540,14 @@ function resolveHeroPower(
       events.push({ kind: "effect", text: `${definition.name} deals 2 damage to the enemy Core.`, player: playerId });
     }
   } else if (powerId === "core_heal") {
-    player.health += 2;
-    events.push({ kind: "effect", text: `${definition.name} heals ${player.name}'s Core by 2.`, player: playerId });
+    const restored = restoreCoreHealth(player, 2);
+    events.push({
+      kind: "effect",
+      text: restored > 0
+        ? `${definition.name} restores ${restored} Core HP.`
+        : `${definition.name} finds ${player.name}'s Core already at full health.`,
+      player: playerId,
+    });
   } else if (powerId === "chain_growth" && target) {
     if (isSlotProtected(state, target) || !canDisable(state, playerId, target, "chain")) {
       events.push(effectEvent(`${target.name} resists Chain.`, target));
@@ -5579,7 +5592,7 @@ function resolveDeathrattle(
     }
   } else if (dead.effectId === "flowey_save_load") {
     if (dead.savedCoreHealth !== null && dead.savedCoreHealth !== undefined) {
-      state.players[dead.owner].health = dead.savedCoreHealth;
+      state.players[dead.owner].health = Math.min(STARTING_CORE, dead.savedCoreHealth);
       events.push(effectEvent(`${dead.name}'s Deathrattle restores the core to ${dead.savedCoreHealth} HP.`, dead));
     }
   } else if (dead.effectId === "ouken_reborn") {

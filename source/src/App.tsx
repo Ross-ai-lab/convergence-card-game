@@ -17,6 +17,7 @@ import {
   firstUnlockedHeroPower,
   heroPowerDefinition,
   isHeroPowerUnlocked,
+  randomHeroPower,
 } from "./engine/hero-powers";
 import { isMinionCard, isRelicCard } from "./engine/types";
 import {
@@ -66,6 +67,14 @@ type Selection =
   | { kind: "hand"; handIndex: number }
   | { kind: "attacker"; slotIndex: number }
   | null;
+
+function heroPowersForDuel(
+  mode: GameMode,
+  playerPower: HeroPowerId | null,
+  seed: string,
+): [HeroPowerId | null, HeroPowerId | null] {
+  return mode.kind === "hotseat" ? [playerPower, playerPower] : [playerPower, randomHeroPower(seed)];
+}
 
 // Everything the card face needs to DRAW itself. It used to be six fields,
 // because the rest was baked into a PNG; now the face is DOM, so it needs the
@@ -358,7 +367,14 @@ export default function App() {
   // A duel in progress is restored from localStorage; anything unreadable or
   // from an older engine falls back to a fresh game (see storage.ts).
   const restored = useMemo(() => loadGame(), []);
-  const [game, setGame] = useState(() => restored?.game ?? createInitialGame(cards, createDuelSeed(), relics));
+  const [game, setGame] = useState(() => {
+    if (!restored) return createInitialGame(cards, createDuelSeed(), relics);
+    if (restored.mode.kind !== "bot" || restored.game.heroPowers[1]) return restored.game;
+    return {
+      ...restored.game,
+      heroPowers: heroPowersForDuel(restored.mode, restored.game.heroPowers[0], String(restored.game.rngSeed)),
+    };
+  });
   const [events, setEvents] = useState<GameEvent[]>(() =>
     restored ? [...restored.events, { kind: "info" as const, text: "Duel restored from your last session." }] : [openingEvent],
   );
@@ -1151,10 +1167,11 @@ export default function App() {
     duelRecorded.current = false;
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     // A restart keeps the mode, so it keeps the opponent's cheats too.
+    const seed = createDuelSeed();
     setGame(
-      createInitialGame(cards, createDuelSeed(), relics, {
+      createInitialGame(cards, seed, relics, {
         foresightFor: foresightSeat(mode),
-        heroPowers: mode.kind === "hotseat" ? [selectedHeroPower, selectedHeroPower] : [selectedHeroPower, null],
+        heroPowers: heroPowersForDuel(mode, selectedHeroPower, seed),
       }),
     );
     setHistory([]);
@@ -1177,10 +1194,11 @@ export default function App() {
     duelRecorded.current = false;
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setMode(next);
+    const seed = createDuelSeed();
     setGame(
-      createInitialGame(cards, createDuelSeed(), relics, {
+      createInitialGame(cards, seed, relics, {
         foresightFor: foresightSeat(next),
-        heroPowers: next.kind === "hotseat" ? [selectedHeroPower, selectedHeroPower] : [selectedHeroPower, null],
+        heroPowers: heroPowersForDuel(next, selectedHeroPower, seed),
       }),
     );
     setHistory([]);

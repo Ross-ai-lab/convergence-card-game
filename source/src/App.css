@@ -3868,9 +3868,9 @@ button:disabled {
   pointer-events: none;
   border-radius: 10px;
   background:
-    linear-gradient(45deg, transparent 42%, rgba(104, 0, 8, 0.86) 44%, #ff2939 47%, #ff2939 53%, rgba(104, 0, 8, 0.86) 56%, transparent 58%),
-    linear-gradient(-45deg, transparent 42%, rgba(104, 0, 8, 0.86) 44%, #ff2939 47%, #ff2939 53%, rgba(104, 0, 8, 0.86) 56%, transparent 58%);
-  box-shadow: inset 0 0 0 3px rgba(255, 55, 65, 0.9), 0 0 22px rgba(190, 15, 25, 0.55);
+    linear-gradient(45deg, transparent 48.8%, #ff1834 48.8%, #ff1834 51.2%, transparent 51.2%),
+    linear-gradient(-45deg, transparent 48.8%, #ff1834 48.8%, #ff1834 51.2%, transparent 51.2%);
+  box-shadow: inset 0 0 0 3px #ff1834;
 }
 
 .hero-power-intro {

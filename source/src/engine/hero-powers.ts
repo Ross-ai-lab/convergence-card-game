@@ -36,6 +36,16 @@ export const HERO_POWER_DEFINITIONS: readonly HeroPowerDefinition[] = [
 
 export const HERO_POWER_IDS = HERO_POWER_DEFINITIONS.map(({ id }) => id) as HeroPowerId[];
 
+/** Pick one of all ten powers from a fresh duel seed for the bot. */
+export function randomHeroPower(seed: string): HeroPowerId {
+  let hash = 2166136261;
+  for (const char of seed) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return HERO_POWER_IDS[(hash >>> 0) % HERO_POWER_IDS.length];
+}
+
 /** The unlock track shown in the Hero Powers menu, from one win to ten wins. */
 export const HERO_POWER_UNLOCK_ORDER: readonly HeroPowerId[] = [
   "core_heal",

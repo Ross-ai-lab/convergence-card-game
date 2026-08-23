@@ -161,7 +161,7 @@ Multiple threads usually work on Convergence at the same time. Files, generated 
 
 - Both cores begin at **75 health**. Reduce the opposing core to zero to win.
 - Both players draw from the same shuffled deck and open with **3 cards**. Player One may replace any number of those cards once during the mulligan; Player Two keeps the opening hand. The second player also receives **The Coin**.
-- Hero Powers are selected from the title-screen **Hero Powers** menu. Each bot win unlocks the next power permanently, in the order shown in that menu. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
+- Hero Powers are selected from the title-screen **Hero Powers** menu. Each bot win unlocks the next player power permanently, in the order shown in that menu. In a bot duel, the opponent receives one random power from all ten and needs no unlocks. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
 - At the start of a turn, draw one card. Mana starts at **1**, refills each turn, and increases by one each turn up to **10**.
 - Your hand holds at most **10 cards**. A card drawn into a full hand burns and is discarded.
 - Play a hand card into one of **five board slots** by paying its cost. Effects that summon minions also need an open slot.
@@ -262,7 +262,7 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 ### During a duel
 
 - Each player starts with three cards. Player One may select any number to replace once; the second player also receives **The Coin**, which spends for +1 mana that turn.
-- Choose an unlocked Hero Power from the title-screen menu before starting. Bot wins unlock the ten powers in order; the selected power appears beside the Core and costs 2 mana once per turn.
+- Choose an unlocked Hero Power from the title-screen menu before starting. Bot wins unlock the ten player powers in order; the selected power appears beside the Core and costs 2 mana once per turn. The bot receives one random power from all ten each duel.
 - Click or drag a hand card onto an empty slot to play it.
 - Click or drag a ready minion onto an enemy minion or the enemy core to attack.
 - Press **Space** or **Enter** to end the turn.

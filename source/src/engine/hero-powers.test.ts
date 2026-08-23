@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { cards } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
-import { HERO_POWER_DEFINITIONS, HERO_POWER_UNLOCK_ORDER, firstUnlockedHeroPower, isHeroPowerUnlocked } from "./hero-powers";
+import {
+  HERO_POWER_DEFINITIONS,
+  HERO_POWER_IDS,
+  HERO_POWER_UNLOCK_ORDER,
+  firstUnlockedHeroPower,
+  isHeroPowerUnlocked,
+  randomHeroPower,
+} from "./hero-powers";
 import type { GameState, HeroPowerId, MinionInstance } from "./types";
 import { spawnTestMinion } from "./test-utils";
 
@@ -70,6 +77,12 @@ describe("menu Hero Powers", () => {
     expect(firstUnlockedHeroPower(10)).toBe(HERO_POWER_UNLOCK_ORDER[9]);
   });
 
+  it("can give the bot any of the ten powers from a fresh duel seed", () => {
+    const picked = randomHeroPower("bot-duel-seed");
+    expect(HERO_POWER_IDS).toContain(picked);
+    expect(randomHeroPower("bot-duel-seed")).toBe(picked);
+  });
+
   it("keeps every power at two mana and exposes the shared text", () => {
     expect(HERO_POWER_DEFINITIONS).toHaveLength(10);
     for (const power of HERO_POWER_DEFINITIONS) {
@@ -114,6 +127,13 @@ describe("menu Hero Powers", () => {
     const mend = mainState("core_heal");
     mend.players[0].health = 20;
     expect(usePower(mend).players[0].health).toBe(22);
+
+    const almostFull = mainState("core_heal");
+    almostFull.players[0].health = 74;
+    expect(usePower(almostFull).players[0].health).toBe(75);
+
+    const full = mainState("core_heal");
+    expect(usePower(full).players[0].health).toBe(75);
 
     const recruit = usePower(mainState("summon_recruit"));
     expect(recruit.players[0].board[0]).toMatchObject({
