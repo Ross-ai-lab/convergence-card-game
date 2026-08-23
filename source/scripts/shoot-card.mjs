@@ -61,7 +61,7 @@ import { mkdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { launch } from "./browser.mjs";
-import { readCards } from "./card-tools.mjs";
+import { readCards, readRelics } from "./card-tools.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, ".preview", "cards");
@@ -188,7 +188,15 @@ function resolveRequested(names, cards) {
 }
 
 const requested = process.argv.slice(2).filter((argument) => !argument.startsWith("--"));
-const cards = readCards();
+// Relics are part of the roster this script exists to photograph, and were
+// missing from it: `readCards` reads cards.csv only, so all 21 of them answered
+// "matches no card" and a fifth of the printed roster could not be looked at.
+// They also cannot be PLACED — `__debug.place` refuses a non-minion — so they
+// are dealt into the hand instead and cloned from there. The hand renders the
+// same `CardFace`, minus the board variant's dropped flavour line.
+const relics = readRelics();
+const relicNames = new Set(relics.map((relic) => relic.name.toLowerCase()));
+const cards = [...readCards(), ...relics];
 const wanted = resolveRequested(requested, cards);
 
 rmSync(OUT, { recursive: true, force: true });
@@ -222,14 +230,20 @@ try {
 
   const written = [];
   for (const name of wanted) {
-    const placed = await page.evaluate((cardName) => window.__debug.place(cardName, "me", 0), name);
-    if (typeof placed === "string" && placed.startsWith("no card")) {
-      console.log(`  SKIPPED ${name}: ${placed}`);
+    const isRelic = relicNames.has(name.toLowerCase());
+    const source = isRelic ? ".hand-card .card-face" : ".board-slot.occupied .card-face";
+    const dealt = isRelic
+      ? await page.evaluate((cardName) => window.__debug.giveCard(cardName, "me"), name)
+      : await page.evaluate((cardName) => window.__debug.place(cardName, "me", 0), name);
+    if (typeof dealt === "string" && dealt.startsWith("no card")) {
+      console.log(`  SKIPPED ${name}: ${dealt}`);
       continue;
     }
     await page.waitForTimeout(250);
 
-    const card = page.locator(".board-slot.occupied .card-face").first();
+    // A relic lands at the END of the hand, so take the last face rather than
+    // the first — the opening hand is still sitting in front of it.
+    const card = isRelic ? page.locator(source).last() : page.locator(source).first();
     if (!(await card.count())) {
       console.log(`  SKIPPED ${name}: no card face rendered`);
       continue;
@@ -254,8 +268,9 @@ try {
     // re-lay-out at the new size exactly as they would in any large context.
     // 750x1050 is the card's design coordinate system; keeping that ratio is
     // what stops the art and gems being stretched.
-    await page.evaluate(() => {
-      const source = document.querySelector(".board-slot.occupied .card-face");
+    await page.evaluate((selector) => {
+      const faces = document.querySelectorAll(selector);
+      const source = faces[selector.startsWith(".hand-card") ? faces.length - 1 : 0];
       const stage = document.createElement("div");
       stage.id = "__cardstage";
       stage.style.cssText = [
@@ -274,7 +289,7 @@ try {
       clone.style.margin = "0";
       stage.appendChild(clone);
       document.body.appendChild(stage);
-    });
+    }, source);
     await page.waitForTimeout(400);
 
     const file = join(OUT, `${name.replace(/[\\/:*?"<>|]/g, "-")}.png`);

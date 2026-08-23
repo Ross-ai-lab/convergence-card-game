@@ -5409,33 +5409,27 @@ button:disabled {
   box-shadow: 0 0 0 1px rgba(246, 236, 216, 0.14);
 }
 
-/* A MARK, not a censor.
+/* A SEAL, not a badge — and it is meant to be in the way.
 
-   The first build filled a third of the card width with a solid cream padlock,
-   which sat straight over the rules text and made the gallery unreadable — the
-   point of showing locked cards at all is that you can see what is coming, and
-   a badge big enough to hide the card deletes the reason it is on screen. It is
-   now a small disc high on the artwork, where the card face prints nothing. */
+   This was briefly shrunk to a small disc so the rules text underneath stayed
+   readable, and that was the wrong goal: a locked card the player can read is a
+   card already spent. Owner's ruling, and it is the right one — the padlock
+   covers the middle of the face so a locked card shows its name, its frame
+   colour and a shape behind the glass, and nothing that tells you what it does.
+   What arrives in a pack should still be news. Keep it large. */
 .gallery-lock {
   position: absolute;
   inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 21%;
+  display: grid;
+  place-items: center;
   pointer-events: none;
+  color: rgba(246, 236, 216, 0.86);
 }
 
 .gallery-lock svg {
-  width: 15%;
+  width: 34%;
   height: auto;
-  padding: 3.4%;
-  box-sizing: content-box;
-  border-radius: 50%;
-  border: 1px solid rgba(246, 236, 216, 0.22);
-  background: rgba(10, 8, 16, 0.66);
-  color: rgba(246, 236, 216, 0.72);
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8));
+  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.9));
 }
 
 .gallery-help {
@@ -5844,4 +5838,138 @@ button:disabled {
   .pack-stage {
     gap: 10px;
   }
+}
+
+/* ===========================================================================
+   ASCENSION RELICS GLIMMER
+
+   Relics are the only card class that changes what another card DOES rather
+   than adding a body to the board, and the only thing saying so was a teal
+   frame. This is what says it instead.
+
+   FOUR layers, not one, because a single moving thing reads as a loop inside
+   about two seconds:
+
+     .rfx-aurora   teal light pooling and drifting across the card
+     .rfx-motes    slow rising sparks
+     .rfx-sweep    one foil highlight that crosses and then leaves
+     .rfx-rim      the inner edge breathing
+
+   **Every period is deliberately mismatched — 13s, 19s, 7.5s, 5.3s — and none
+   is a multiple of another**, so the four never realign into a visible beat.
+   Matching them, or making one a multiple, turns four layers back into one.
+
+   **Every size is in `--u`, the card's design unit, never in px.** The first
+   build sized the motes in absolute pixels and they were invisible: a 1.5px
+   dot is a speck on a card rendered 1400px tall, and the layer looked like
+   nothing at all rather than like a bug.
+
+   **Transform and opacity only.** The gallery can hold every relic on screen at
+   once, so nothing here may reflow; `content-visibility` on `.gallery-cell`
+   then parks the off-screen ones for free. Scoped to `.rarity-relic`, so the
+   175 character cards pay nothing.
+   =========================================================================== */
+
+.cf-relicfx {
+  position: absolute;
+  /* Matches `.cf-well`, so the glimmer fills the card's inner face and stops at
+     the metal frame rather than spilling over it. */
+  inset: calc(9 * var(--u));
+  z-index: 4;
+  border-radius: calc(10 * var(--u));
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cf-relicfx > span {
+  position: absolute;
+  display: block;
+}
+
+/* --- aurora: the slowest layer, and the one carrying the colour ------------
+   Oversized on purpose: a blob sized to its container shows its own edge the
+   moment it drifts, and the parent clips anyway. */
+.rfx-aurora {
+  inset: -35%;
+  background:
+    radial-gradient(40% 30% at 26% 30%, rgba(126, 240, 255, 0.42), transparent 66%),
+    radial-gradient(34% 26% at 76% 62%, rgba(64, 180, 224, 0.4), transparent 68%),
+    radial-gradient(28% 22% at 52% 88%, rgba(168, 250, 255, 0.3), transparent 70%);
+  mix-blend-mode: screen;
+  animation: rfx-aurora 13s ease-in-out infinite alternate;
+}
+
+@keyframes rfx-aurora {
+  0% { transform: translate3d(-5%, 3%, 0) scale(1); opacity: 0.72; }
+  50% { transform: translate3d(4%, -4%, 0) scale(1.14); opacity: 1; }
+  100% { transform: translate3d(6%, 5%, 0) scale(1.05); opacity: 0.8; }
+}
+
+/* --- motes: sparks rising through the whole face --------------------------
+   Two dot scales in one element. One field alone reads as a texture scrolling
+   past; two at different sizes read as depth. 200% tall so the upward travel
+   can run a full container height and loop with nothing to see at the seam. */
+.rfx-motes {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 200%;
+  background-image:
+    radial-gradient(circle at 16% 6%, rgba(226, 252, 255, 0.95) 0, transparent calc(2.6 * var(--u))),
+    radial-gradient(circle at 63% 13%, rgba(170, 240, 255, 0.85) 0, transparent calc(3.6 * var(--u))),
+    radial-gradient(circle at 86% 4%, rgba(226, 252, 255, 0.8) 0, transparent calc(2.2 * var(--u))),
+    radial-gradient(circle at 31% 22%, rgba(200, 248, 255, 0.9) 0, transparent calc(4 * var(--u))),
+    radial-gradient(circle at 73% 29%, rgba(226, 252, 255, 0.78) 0, transparent calc(2.8 * var(--u))),
+    radial-gradient(circle at 7% 35%, rgba(170, 240, 255, 0.85) 0, transparent calc(3.4 * var(--u))),
+    radial-gradient(circle at 46% 43%, rgba(226, 252, 255, 0.92) 0, transparent calc(2.4 * var(--u))),
+    radial-gradient(circle at 93% 47%, rgba(200, 248, 255, 0.8) 0, transparent calc(3.8 * var(--u)));
+  background-repeat: repeat;
+  background-size: 100% 50%;
+  mix-blend-mode: screen;
+  animation: rfx-motes 19s linear infinite;
+}
+
+@keyframes rfx-motes {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -50%, 0); }
+}
+
+/* --- sweep: one foil highlight crossing the card ---------------------------
+   It spends most of its cycle offscreen, and that is the point. A highlight
+   always somewhere on the card is just a gradient; one that arrives, crosses
+   and leaves is a surface catching light. */
+.rfx-sweep {
+  inset: 0;
+  background: linear-gradient(
+    104deg,
+    transparent 36%,
+    rgba(214, 250, 255, 0.22) 45%,
+    rgba(255, 255, 255, 0.52) 50%,
+    rgba(214, 250, 255, 0.22) 55%,
+    transparent 64%
+  );
+  mix-blend-mode: screen;
+  animation: rfx-sweep 7.5s ease-in-out infinite;
+}
+
+@keyframes rfx-sweep {
+  0% { transform: translate3d(-160%, 0, 0); }
+  /* Crosses in the first third, then waits out the rest. The pause is what
+     stops it reading as a windscreen wiper. */
+  34%, 100% { transform: translate3d(160%, 0, 0); }
+}
+
+/* --- rim: the inner edge breathing ----------------------------------------- */
+.rfx-rim {
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 calc(26 * var(--u)) rgba(150, 240, 255, 0.5),
+    inset 0 0 0 calc(2 * var(--u)) rgba(196, 248, 255, 0.5);
+  animation: rfx-rim 5.3s ease-in-out infinite alternate;
+}
+
+@keyframes rfx-rim {
+  from { opacity: 0.3; }
+  to { opacity: 0.92; }
 }

@@ -194,17 +194,17 @@ export function newlyUnlocked(order: string[], before: number, after: number): s
  * which cards are in it — the pack's contents are settled by `unlockOrder`
  * before this is consulted, so weighting the reveal cannot bias what you get.
  *
- * Relics rank above Epic and below Legendary. By bare scarcity they sit level
- * with Mythic (21 of 196 against 19), but a relic is a good find and a Mythic
- * character is the headline, so scarcity is not the axis that decides which one
- * a player would rather see turn over last.
+ * Relics rank ABOVE every character tier, Mythic included. Owner's call, and
+ * scarcity backs it: 21 relics against 19 Mythics. A relic is also the only card
+ * class that changes what another card does rather than adding a body, so it is
+ * the one worth waiting for.
  */
 const REVEAL_RANK: Record<string, number> = {
   Black: 0,
   Purple: 1,
-  Relic: 2,
-  Yellow: 3,
-  Red: 4,
+  Yellow: 2,
+  Red: 3,
+  Relic: 4,
 };
 
 /**

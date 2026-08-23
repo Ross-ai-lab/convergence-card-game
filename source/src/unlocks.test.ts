@@ -223,6 +223,16 @@ describe("the order a pack deals itself out in", () => {
     expect(revealed[revealed.length - 1].id).toBe(mythic.id);
   });
 
+  it("puts a relic last even against a Mythic", () => {
+    const mythic = roster.find((card) => card.kind !== "relic" && card.rarity === "Red");
+    const relic = roster.find((card) => card.kind === "relic");
+    if (!mythic || !relic) throw new Error("roster is missing a Mythic or a relic");
+    // Owner's call, and the reason it is worth a test of its own: relics
+    // outrank every character tier, which is the opposite of the first build.
+    expect(revealOrder([relic, mythic]).map((card) => card.id)).toEqual([mythic.id, relic.id]);
+    expect(revealOrder([mythic, relic]).map((card) => card.id)).toEqual([mythic.id, relic.id]);
+  });
+
   it("never lets a lower tier land after a higher one", () => {
     const revealed = revealOrder(roster.slice(0, 40));
     const ranks = revealed.map((card) => REVEAL_ORDER.indexOf(rarityOf(card)));
@@ -249,7 +259,7 @@ describe("the order a pack deals itself out in", () => {
 });
 
 /** Weakest to strongest, mirroring REVEAL_RANK in unlocks.ts. */
-const REVEAL_ORDER = ["Black", "Purple", "Relic", "Yellow", "Red"];
+const REVEAL_ORDER = ["Black", "Purple", "Yellow", "Red", "Relic"];
 
 describe("ensureUnlockOrder", () => {
   it("returns the same object when there is nothing to do", () => {

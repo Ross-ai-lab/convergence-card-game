@@ -55,21 +55,30 @@ await page.evaluate(() => {
 await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForTimeout(1400);
 
-// --- the gallery, with most of the roster still locked
+// --- the title screen, where the tally rides inside the Cards button
+await shoot("00-title-tally", 400);
+
+// --- the gallery. It OPENS on Unlocked: there is no combined view, so the
+// first thing a player sees is their own collection, and Locked is the
+// deliberate second stop.
 // The title screen's gallery door is an icon button labelled "Cards".
 await page.locator(".gallery-trigger").first().click().catch(() => {});
 await page.locator(".gallery-panel").waitFor({ state: "visible", timeout: 8000 });
-await shoot("01-gallery-locked", 1400);
+await shoot("01-gallery-unlocked", 1400);
 
 await page.locator(".gallery-help").click();
 await shoot("02-gallery-help", 700);
 await page.locator(".gallery-help").click();
 
-// The Collection filter, set to Locked, is the whole point of the new control.
-await page.locator(".gallery-filter select[aria-label*='unlocked']").selectOption("unlocked");
-await shoot("03-gallery-unlocked-only", 1200);
-await page.locator(".gallery-filter select[aria-label*='unlocked']").selectOption("locked");
-await shoot("04-gallery-locked-only", 1200);
+const collection = page.locator(".gallery-filter select[aria-label*='unlocked']");
+await collection.selectOption("locked");
+await shoot("03-gallery-locked", 1400);
+// Relics carry the glimmer, and the gallery is where several are on screen at
+// once — the one place a per-card animation can cost something.
+await collection.selectOption("unlocked");
+await page.locator(".gallery-filter select[aria-label*='rarity']").selectOption("Relic");
+await shoot("04-gallery-relics", 1400);
+await page.locator(".gallery-filter select[aria-label*='rarity']").selectOption("");
 await page.keyboard.press("Escape");
 
 // --- end a duel on purpose and open the pack

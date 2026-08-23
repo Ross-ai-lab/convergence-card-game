@@ -293,20 +293,23 @@ export function TitleScreen({
             <UsersThree size={22} weight="fill" aria-hidden="true" />
             <span>2 players</span>
           </button>
+          {/* The tally rides INSIDE this button, stacked under its label, so the
+              door to the gallery and the count of what is behind it are one
+              object. Deliberately faint: the full unlock rules live one click
+              away behind the gallery's "?", and this is a number to notice in
+              passing, not an announcement. Once the roster is complete it
+              disappears rather than reading 196 of 196 forever. */}
           <button type="button" className="gallery-trigger" onClick={onGallery}>
             <Cards size={22} weight="fill" aria-hidden="true" />
-            <span>Cards</span>
+            <span className="gallery-trigger-stack">
+              <span>Cards</span>
+              {unlocked < rosterSize ? (
+                <small className="unlock-tally">
+                  {unlocked} / {rosterSize}
+                </small>
+              ) : null}
+            </span>
           </button>
-          {/* Deliberately faint, and deliberately NOT inside the button. It is a
-              number to notice in passing on the way to somewhere else, not a
-              control and not an announcement — the full unlock rules live one
-              click away behind the gallery's "?". Once the roster is complete it
-              disappears rather than sitting there reading 196 of 196 forever. */}
-          {unlocked < rosterSize ? (
-            <p className="unlock-tally">
-              {unlocked} / {rosterSize} cards
-            </p>
-          ) : null}
           <button
             type="button"
             className="gallery-trigger"

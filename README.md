@@ -136,24 +136,35 @@ library, so cutting the deck cuts all of them at once. The library passed to the
 purpose: a saved duel or a minion already in play can name a locked card, and every one of those has
 to keep resolving.
 
-**Locked cards are shown, not hidden.** The gallery greys them and marks them with a small lock disc
-high on the artwork, and a Collection filter switches between Unlocked and Locked. The lock is a badge
-and must stay one — the first build filled a third of the card width with it, which covered the rules
-text and deleted the reason locked cards are on screen at all. A "?" button in the gallery header
-prints the table above, because none of this is visible from the board.
+**Locked cards are SEALED, not merely marked, and the padlock is meant to be in the way.** The gallery
+greys them and covers the middle of the face with a large padlock, so a locked card shows its name,
+its frame colour and a shape behind the glass, and nothing that tells you what it does. It was briefly
+shrunk to a small disc so the rules text underneath stayed readable, and that was the wrong goal: a
+locked card the player can read is a card already spent, and what arrives in a pack should still be
+news. Owner's ruling, twice. Keep it large.
+
+**The Collection filter has NO "any" option and starts on Unlocked.** It is the only filter that
+behaves that way. The gallery is your collection first and the locked wall second, so mixing 50
+readable cards into 146 sealed ones is a list that answers neither question. The deliberate cost is
+that no view shows all 196 at once. A "?" button in the gallery header prints the table above, because
+none of this is visible from the board.
 
 **The pack.** A duel that earns cards ends on a sealed pack that takes three strikes to open, then
-bursts and deals the cards out one at a time. It deals in `revealOrder`, rarest and dearest LAST, so
-the best card of the batch lands on the moment the player is watching rather than in the middle of the
-row; that ordering is cosmetic and is applied after the contents are settled, so it cannot bias the
-reward. Pack cards are **206px minimum and never lazy-loaded** — see the 200px floor under
-[Interface and card faces](#interface-and-card-faces), and note that a card dealing itself onto the
-table as an empty black frame is the reward arriving broken. Rows are balanced by an explicit width
-rather than left to wrap, because six cards wrapping naturally strand one under a row of five.
+bursts and deals the cards out one at a time. It deals in `revealOrder`, best LAST, so the prize of the
+batch lands on the moment the player is watching rather than in the middle of the row. Rarity decides
+and cost breaks the tie, and **relics outrank every character tier, Mythic included** — owner's call,
+with scarcity behind it (21 relics against 19 Mythics) and the fact that a relic changes what another
+card does rather than adding a body. The ordering is cosmetic and runs after the contents are settled,
+so it cannot bias the reward; a test pins that. Pack cards are **206px minimum and never
+lazy-loaded** — see the 200px floor under [Interface and card faces](#interface-and-card-faces), and
+note that a card dealing itself onto the table as an empty black frame is the reward arriving broken.
+Rows are balanced by an explicit width rather than left to wrap, because six cards wrapping naturally
+strand one under a row of five.
 
-**The title screen carries a faint tally under the Cards button** and drops it once the roster is
-complete. It is low-contrast on purpose: it sits in a column of gold pill buttons, and at any normal
-weight it read as a fifth control to press.
+**The tally rides inside the Cards button** on the title screen, stacked under its label, and
+disappears once the roster is complete rather than reading 196 of 196 forever. It lived outside the
+button first and had to be nearly invisible there, because between two gold pills it read as a third
+one; inside a button it cannot be mistaken for a control, so it can afford to be legible.
 
 **`progress` is at v2 and v1 is deleted on load, not migrated.** v1 described a roster that was
 entirely unlocked, so carrying it forward would hand a returning player all 196 cards and delete the
@@ -297,6 +308,12 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 
 The current relic pool contains **21 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
 
+**A relic card face prints NO side rails**, unlike every character card. It has no camp and no alignment: it carried the placeholders "Ascension" and "Relic" purely so the two rails had something to say, and two rails naming a thing that is not a property of the card is worse than no rails. The teal frame and the diamond gem already say relic.
+
+**A relic card GLIMMERS, and that animation is a feature with a check behind it.** Four layers inside `.cf-relicfx` — a drifting aurora, rising motes, a foil sweep that crosses and leaves, and a breathing rim — at four deliberately mismatched periods (13s, 19s, 7.5s, 5.3s, none a multiple of another) so they never realign into a visible beat. Every size is in `--u`, the card's design unit: the first build sized the motes in absolute pixels and they vanished, because a 1.5px dot is a speck on a card rendered 1400px tall, and the layer looked like nothing rather than like a bug. It is transform and opacity only, and scoped to `.rarity-relic`, so the 175 character cards pay nothing and the gallery can hold all 21 relics at once. `npm run check:ui` asserts both halves — that four animations are actually running, and that the card's pixels change between two frames a second apart. Neither alone is enough: a typo in one keyword name leaves the other three moving, which the pixel diff happily passes.
+
+An unmet relic in the gallery does NOT glimmer, and that is correct rather than a bug: the collection's own grayscale dimming sits on the whole card face and wins. The glimmer is for cards you have actually met, and for the pack, the hand and the preview, where nothing dims them.
+
 - A minion can carry up to two relics. The first and second slots are independent;
   a full bearer cannot accept a third.
 - A bearer cannot manually return an attached relic to its owner's hand. A relic
@@ -391,7 +408,7 @@ After changing the **How to play** guide, run `node scripts/shoot-rules.mjs http
 
 To look at the card pack or the gallery's locked state, run `node scripts/shoot-pack.mjs http://127.0.0.1:5177 hard` with the dev server up. It clears the browser's stored progress so the pool really is the starting 50, photographs the gallery locked, the "?" panel and both Collection filters, then ends a duel on purpose through the dev `setCore` hook and walks the pack open one strike at a time. The last argument picks the opponent and therefore the pack size: `easy` for three cards, `normal` for six, `hard` for ten — shoot `hard` after any layout change, because ten is the only size that has to wrap. `setCore` does not end the duel by itself; the engine's own win check does, so the record, the reward and the pack all run the path a real duel takes.
 
-To look at a specific card after changing its text, stats or art, run `node scripts/shoot-card.mjs "Kaku Kaioh"` with any number of card names or ids. It starts and stops its own dev server, deals itself each card through the `window.__debug` hook, and writes a full-frame PNG per card into `.preview/cards/`. Call it with `node` rather than `npm run` whenever a name contains a space, because npm on Windows strips the quotes; the `npm run shoot:card` alias is for the no-argument whole-roster run. The capture proves content — name, cost, rules text, stats, rails, origin, art — and deliberately not layout at play size, since the face is enlarged to fill the frame and `.card-face` is `container-type: size`. It photographs the board variant, which prints no flavour line. Gem and text collisions at real hand and board sizes stay the job of `npm run check:cardface`.
+To look at a specific card after changing its text, stats or art, run `node scripts/shoot-card.mjs "Kaku Kaioh"` with any number of card names or ids. **Relics work here too** — they did not until 23 August 2026, because the script read `cards.csv` alone and answered "matches no card" for a fifth of the printed roster. They also cannot be placed, since `__debug.place` refuses a non-minion, so a relic is dealt into the hand and cloned from there instead. It starts and stops its own dev server, deals itself each card through the `window.__debug` hook, and writes a full-frame PNG per card into `.preview/cards/`. Call it with `node` rather than `npm run` whenever a name contains a space, because npm on Windows strips the quotes; the `npm run shoot:card` alias is for the no-argument whole-roster run. The capture proves content — name, cost, rules text, stats, rails, origin, art — and deliberately not layout at play size, since the face is enlarged to fill the frame and `.card-face` is `container-type: size`. It photographs the board variant, which prints no flavour line. Gem and text collisions at real hand and board sizes stay the job of `npm run check:cardface`.
 
 ### README-only documentation policy
 

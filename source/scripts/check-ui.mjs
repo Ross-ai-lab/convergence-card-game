@@ -805,6 +805,47 @@ await newBoard({ place: false });
   }
 }
 
+// --- the relic glimmer actually moves ---------------------------------------
+//
+// A still screenshot cannot tell a running animation from a dead one: four
+// layers with a typo in a keyframe name look exactly like four layers mid-pause.
+// So this asserts the two things a picture cannot — that the browser is running
+// the animations it was handed, and that the card LOOKS different a second
+// apart. Both halves matter: `getAnimations` alone passes on an animation that
+// only moves something invisible, and a pixel diff alone passes on a card that
+// happens to be lazily loading its art.
+await newBoard({ place: false });
+{
+  const ready = await page.evaluate(() => Boolean(window.__debug));
+  if (!ready) {
+    skip("the relic glimmer runs", "no __debug hook (production build?)");
+  } else {
+    await page.evaluate(() => window.__debug.giveCard("Elder wand"));
+    await page.waitForTimeout(350);
+    const relic = page.locator(".hand-card .card-face.rarity-relic").last();
+    const mounted = await relic.count();
+    if (!mounted) {
+      check("the relic glimmer runs", false, "no relic card face in hand");
+    } else {
+      const running = await relic.evaluate((face) =>
+        [...face.querySelectorAll(".cf-relicfx > span")]
+          .flatMap((layer) => layer.getAnimations())
+          .filter((animation) => animation.playState === "running")
+          .map((animation) => animation.animationName ?? "?"),
+      );
+      // Four layers, four independent periods. Three means one keyframe name no
+      // longer matches its rule, which is silent in every other check.
+      check("the relic glimmer runs", running.length === 4, `${running.length} running: ${running.join(", ")}`);
+
+      const frameOne = await relic.screenshot();
+      await page.waitForTimeout(1100);
+      const frameTwo = await relic.screenshot();
+      const moved = frameOne.length !== frameTwo.length || !frameOne.equals(frameTwo);
+      check("the relic glimmer changes the card between frames", moved, `${frameOne.length} vs ${frameTwo.length} bytes`);
+    }
+  }
+}
+
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);

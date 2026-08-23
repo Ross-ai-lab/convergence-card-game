@@ -2710,13 +2710,19 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
  * same machinery would mean inventing a fake face attribute for it and then
  * hiding that attribute from the option lists. Two controls that look identical
  * and are built differently is the honest arrangement here.
+ *
+ * It is also the only filter with NO "any" option, and the only one that starts
+ * switched on. Owner's ruling: the gallery is your collection first and the
+ * locked wall second, so mixing 50 readable cards into 146 sealed ones is a
+ * list that answers neither question. There is therefore no view showing all
+ * 196 at once, which is the deliberate cost of that.
  */
-type UnlockFilter = "" | "unlocked" | "locked";
+type UnlockFilter = "unlocked" | "locked";
 
 function CardGallery({ progress, onClose }: { progress: Progress; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [help, setHelp] = useState(false);
-  const [status, setStatus] = useState<UnlockFilter>("");
+  const [status, setStatus] = useState<UnlockFilter>("unlocked");
   const [filters, setFilters] = useState<Record<FilterKey, string>>({
     cost: "",
     rarity: "",
@@ -2813,10 +2819,8 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
     let kept = active.length
       ? entries.filter((entry) => active.every((key) => faceValue(entry.face, key) === filters[key]))
       : entries;
-    if (status) {
-      const wantUnlocked = status === "unlocked";
-      kept = kept.filter((entry) => collection.unlocked.has(entry.key) === wantUnlocked);
-    }
+    const wantUnlocked = status === "unlocked";
+    kept = kept.filter((entry) => collection.unlocked.has(entry.key) === wantUnlocked);
     // Always mana then name. A filtered list in raw roster order is barely a
     // list, and this removes the need for a separate ordering control.
     return [...kept].sort(
@@ -2888,14 +2892,13 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
                 </select>
               </label>
             ))}
-            <label className={status ? "gallery-filter is-active" : "gallery-filter"}>
+            <label className="gallery-filter is-active">
               <span className="gallery-filter-label">Collection</span>
               <select
                 value={status}
                 aria-label="Filter by unlocked or locked"
                 onChange={(event) => setStatus(event.target.value as UnlockFilter)}
               >
-                <option value="">Any status</option>
                 <option value="unlocked">Unlocked</option>
                 <option value="locked">Locked</option>
               </select>
@@ -3008,8 +3011,8 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
       <h3>Unlocking cards</h3>
       <p>
         The shared deck does not start with everything. It opens on {STARTING_POOL} cards and grows every time you
-        finish a duel against the practice opponent. Locked cards are shown here greyed out with a lock, so you can
-        always see what is still to come.
+        finish a duel against the practice opponent. Switch Collection to Locked to see what is still sealed: those
+        cards keep their name and their frame, and the padlock holds back the rest until you win them.
       </p>
       <table className="gallery-help-table">
         <tbody>
@@ -3116,6 +3119,7 @@ function CardFace({
     "--cf-flavfit": fitParagraph(quote, FLAVOR_BOX.w, FLAVOR_BOX.h, FLAVOR_BOX.lineHeight, FLAVOR_CEILING, "flavor"),
   } as CSSProperties;
   const rarity = (card.rarity ?? "Black").toLowerCase();
+  const isRelicFace = rarity === "relic";
   // Keyword artwork. On the board the live flags win, because a Divine Shield
   // can be popped while the printed keyword stays on the card forever.
   // Conditions belong to the BOARD, never the hand (owner ruling). A card you are
@@ -3137,14 +3141,36 @@ function CardFace({
         <div className="cf-well" aria-hidden="true" />
         <CardArtwork card={card} lazy={lazyArt} />
         <div className="cf-desc"><p>{text}</p></div>
-        <span className="cf-rail cf-camp">{card.camp}</span>
-        <span className="cf-rail cf-align">{card.alignment}</span>
+        {/* A relic has no camp and no alignment. It carried the placeholders
+            "Ascension" and "Relic" purely so the rails had something to print,
+            and two rails naming a thing that is not a property of the card is
+            worse than empty rails — the frame colour and the gem already say
+            "relic" without help. Characters keep both. */}
+        {isRelicFace ? null : (
+          <>
+            <span className="cf-rail cf-camp">{card.camp}</span>
+            <span className="cf-rail cf-align">{card.alignment}</span>
+          </>
+        )}
         {quote ? <div className="cf-flavor"><span>{`“${quote}”`}</span></div> : null}
         <div className="cf-origin">{card.origin}</div>
         <div className="cf-banner"><span className="cf-name">{card.name}</span></div>
         <div className="cf-gem cf-mana">{card.cost}</div>
         <div className={`cf-gem cf-atk ${atkClass}`}>{card.atk}</div>
         <div className={`cf-gem cf-hp ${hpClass}`}>{card.hp}</div>
+        {/* Relics glimmer. Its own element rather than pseudo-elements on the
+            existing layers, because `.cf-art::after` is already the glass sheen
+            and `.cf-stage::after` is spoken for by the board's rim states — a
+            relic effect written on top of either would fight a condition the
+            player needs to see. Four spans, four independent periods. */}
+        {isRelicFace ? (
+          <div className="cf-relicfx" aria-hidden="true">
+            <span className="rfx-aurora" />
+            <span className="rfx-motes" />
+            <span className="rfx-sweep" />
+            <span className="rfx-rim" />
+          </div>
+        ) : null}
         <div className="cf-fx" aria-hidden="true" />
         {states.includes("is-sleeping") ? (
           <span className="cf-sleep" aria-hidden="true"><i>z</i><i>z</i></span>
