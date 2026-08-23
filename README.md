@@ -143,10 +143,17 @@ text and deleted the reason locked cards are on screen at all. A "?" button in t
 prints the table above, because none of this is visible from the board.
 
 **The pack.** A duel that earns cards ends on a sealed pack that takes three strikes to open, then
-bursts and deals the cards out one at a time. Pack cards are **206px minimum and never lazy-loaded**:
-`.card-face` drops its rules text below roughly 200px, and a card that deals itself onto the table as
-an empty black frame is the reward arriving broken. Rows are balanced by an explicit width rather than
-left to wrap, because six cards wrapping naturally strand one under a row of five.
+bursts and deals the cards out one at a time. It deals in `revealOrder`, rarest and dearest LAST, so
+the best card of the batch lands on the moment the player is watching rather than in the middle of the
+row; that ordering is cosmetic and is applied after the contents are settled, so it cannot bias the
+reward. Pack cards are **206px minimum and never lazy-loaded** — see the 200px floor under
+[Interface and card faces](#interface-and-card-faces), and note that a card dealing itself onto the
+table as an empty black frame is the reward arriving broken. Rows are balanced by an explicit width
+rather than left to wrap, because six cards wrapping naturally strand one under a row of five.
+
+**The title screen carries a faint tally under the Cards button** and drops it once the roster is
+complete. It is low-contrast on purpose: it sits in a column of gold pill buttons, and at any normal
+weight it read as a fifth control to press.
 
 **`progress` is at v2 and v1 is deleted on load, not migrated.** v1 described a roster that was
 entirely unlocked, so carrying it forward would hand a returning player all 196 cards and delete the
@@ -526,6 +533,8 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 Cards are DOM-rendered by `CardFace` and CSS, using a 750 × 1050 design coordinate system. Keep full card faces readable in hand and on the board. Text fitting must use `source/src/textfit.ts`, which measures the real fonts and finds the largest size that fits the box; the 64/32 caps are upper bounds, not a substitute for measurement.
 
 Choice prompts that offer cards or Ascension Relics must show the complete readable card face, including its rules text, cost, and stats where applicable. Names and artwork alone are never enough to make a choice.
+
+**`CardFace` DROPS ITS RULES TEXT below roughly 200px wide, so 200px is a hard floor on any screen that shows cards to be read.** `.card-face` is `container-type: size` and switches to the compact board-minion layout under that width — correct for a minion on a crowded board, and wrong everywhere else. It is a floor rather than a preference, and it holds at every screen size: a narrow viewport is a reason to show fewer cards or wrap them onto more rows, never a reason to shrink them past the point where the card stops saying what it does. It has now caught two builds, the gallery's grid and the card pack's reveal, and in both the failure looked like a layout choice rather than missing content. `just wall` and a wide screenshot both hide it, because the cards look fine — they are simply no longer telling you anything.
 
 Conditions have distinct, composable visual channels:
 

@@ -2009,6 +2009,24 @@ button.duel-trigger:hover:not(:disabled) {
   color: #fff0bd;
 }
 
+/* The unlock tally under the Cards button.
+
+   Very low contrast on purpose. It sits in a column of gold pill buttons, and
+   at any normal weight it competed with them and read as a fifth control the
+   player could press. The job is peripheral: legible when looked at, invisible
+   when not. */
+.unlock-tally {
+  margin: -4px 0 0;
+  color: rgba(245, 220, 155, 0.26);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
 .settings-trigger {
   position: static;
 }

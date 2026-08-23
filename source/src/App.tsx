@@ -53,6 +53,7 @@ import {
   UNLOCK_REWARD,
   ensureUnlockOrder,
   newlyUnlocked,
+  revealOrder,
   unlockedPool,
 } from "./unlocks";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
@@ -2186,6 +2187,8 @@ export default function App() {
           onRecord={() => setOverlay("record")}
           onHeroPowers={() => setOverlay("heroPowers")}
           duelsPlayed={totalDuels}
+          unlocked={progress.unlocked}
+          rosterSize={progress.unlockOrder.length || cards.length + relics.length}
         />
       ) : null}
 
@@ -3839,8 +3842,14 @@ function CardPack({
   const [hits, setHits] = useState(0);
   const [dealt, setDealt] = useState(0);
   const opened = hits >= PACK_HITS;
+  // Sorted so the rarest and dearest card is the last one to land. What the pack
+  // CONTAINS is already settled by the unlock order; this only decides the order
+  // they arrive in, so it cannot bias the reward.
   const faces = useMemo(
-    () => ids.map((id) => library[id]).filter((card): card is PlayableCard => Boolean(card)).map((card) => playableFace(card)),
+    () =>
+      revealOrder(ids.map((id) => library[id]).filter((card): card is PlayableCard => Boolean(card))).map((card) =>
+        playableFace(card),
+      ),
     [ids, library],
   );
   // One roll per mount. `useState` with an initialiser, not `useMemo`: a memo is

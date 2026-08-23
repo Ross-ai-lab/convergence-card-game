@@ -188,6 +188,46 @@ export function newlyUnlocked(order: string[], before: number, after: number): s
 }
 
 /**
+ * How good a card looks when it lands on the table.
+ *
+ * Used ONLY to decide the order a pack deals itself out in, never to decide
+ * which cards are in it — the pack's contents are settled by `unlockOrder`
+ * before this is consulted, so weighting the reveal cannot bias what you get.
+ *
+ * Relics rank above Epic and below Legendary. By bare scarcity they sit level
+ * with Mythic (21 of 196 against 19), but a relic is a good find and a Mythic
+ * character is the headline, so scarcity is not the axis that decides which one
+ * a player would rather see turn over last.
+ */
+const REVEAL_RANK: Record<string, number> = {
+  Black: 0,
+  Purple: 1,
+  Relic: 2,
+  Yellow: 3,
+  Red: 4,
+};
+
+/**
+ * Orders one pack's cards so the best of them is the LAST to arrive.
+ *
+ * A pack that deals in unlock order buries its Mythic in the middle and finishes
+ * on a 1-cost common, which spends the best card of the batch on the moment
+ * nobody is looking at yet. Rarity decides it, cost breaks the tie.
+ */
+export function revealOrder(cards: PlayableCard[]): PlayableCard[] {
+  const score = (card: PlayableCard) => {
+    const rarity = card.kind === "relic" ? "Relic" : card.rarity;
+    return (REVEAL_RANK[rarity] ?? 0) * 100 + Math.max(0, Math.min(10, Math.round(card.cost ?? 0)));
+  };
+  // Stable by index, so two cards of equal score keep the order the unlock gave
+  // them rather than depending on the sort implementation.
+  return cards
+    .map((card, index) => ({ card, index, score: score(card) }))
+    .sort((left, right) => left.score - right.score || left.index - right.index)
+    .map((entry) => entry.card);
+}
+
+/**
  * The same generator the engine shuffles the deck with, kept here rather than
  * imported so the unlock order never moves when the engine's shuffle is tuned.
  * The two have no reason to stay identical and one reason not to: a change to

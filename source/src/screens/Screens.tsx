@@ -193,6 +193,8 @@ export function TitleScreen({
   canContinue,
   playerCount,
   duelsPlayed,
+  unlocked,
+  rosterSize,
   onContinue,
   onStart,
   onSettings,
@@ -204,6 +206,9 @@ export function TitleScreen({
   playerCount: number | null;
   /** Total duels finished on this device; the Record door is also useful at zero. */
   duelsPlayed: number;
+  /** Cards the shared deck may currently draw from, and the whole roster. */
+  unlocked: number;
+  rosterSize: number;
   onContinue: () => void;
   onStart: (mode: GameMode) => void;
   onSettings: () => void;
@@ -292,6 +297,16 @@ export function TitleScreen({
             <Cards size={22} weight="fill" aria-hidden="true" />
             <span>Cards</span>
           </button>
+          {/* Deliberately faint, and deliberately NOT inside the button. It is a
+              number to notice in passing on the way to somewhere else, not a
+              control and not an announcement — the full unlock rules live one
+              click away behind the gallery's "?". Once the roster is complete it
+              disappears rather than sitting there reading 196 of 196 forever. */}
+          {unlocked < rosterSize ? (
+            <p className="unlock-tally">
+              {unlocked} / {rosterSize} cards
+            </p>
+          ) : null}
           <button
             type="button"
             className="gallery-trigger"
