@@ -1,4 +1,5 @@
 import type { BotSkill } from "./engine/bot";
+import { STARTING_POOL, unlockReward } from "./unlocks";
 
 /**
  * What survives a duel.
@@ -61,10 +62,30 @@ export interface Progress {
   played: string[];
   /** Card and relic ids you have played in a duel you went on to win. */
   wonWith: string[];
+  /**
+   * Every card id in the order they will be unlocked, generated once on the
+   * first load and then never reshuffled. See `unlocks.ts` for why this is an
+   * order rather than a set.
+   */
+  unlockOrder: string[];
+  /** How far down `unlockOrder` the shared deck currently reaches. */
+  unlocked: number;
 }
 
-const PROGRESS_VERSION = 1;
+const PROGRESS_VERSION = 2;
 const PROGRESS_KEY = `convergence.progress.v${PROGRESS_VERSION}`;
+
+/**
+ * Keys this game wrote before the current one. Removed on load rather than left
+ * to rot, because a browser profile is the only place any of this lives and a
+ * dead key is indistinguishable from a live one when someone comes to debug it.
+ *
+ * v1 held the record and the collection with no unlock track. It is not migrated
+ * on purpose: the roster it described was the whole roster, so carrying it
+ * forward would hand a returning player 196 unlocked cards and delete the
+ * feature on the machine that most needed it.
+ */
+const RETIRED_KEYS = ["convergence.progress.v1"];
 
 /** How many finished duels the recent list keeps. */
 export const RECENT_LIMIT = 10;
@@ -86,6 +107,11 @@ export function emptyProgress(): Progress {
     seen: [],
     played: [],
     wonWith: [],
+    // Filled by `ensureUnlockOrder` on the first load that has the roster in
+    // hand. This file is deliberately kept free of card data: it is pure and
+    // testable precisely because it has never read a CSV.
+    unlockOrder: [],
+    unlocked: STARTING_POOL,
   };
 }
 
@@ -99,6 +125,7 @@ export function emptyProgress(): Progress {
  */
 export function loadProgress(): Progress {
   try {
+    for (const key of RETIRED_KEYS) window.localStorage.removeItem(key);
     const raw = window.localStorage.getItem(PROGRESS_KEY);
     if (!raw) return emptyProgress();
     const parsed = JSON.parse(raw) as Partial<Progress>;
@@ -127,6 +154,10 @@ export function loadProgress(): Progress {
       seen: ids(parsed.seen),
       played: ids(parsed.played),
       wonWith: ids(parsed.wonWith),
+      unlockOrder: ids(parsed.unlockOrder),
+      // Clamped at the floor, never below it. A corrupted or missing count must
+      // fail towards a playable duel: a pool of zero is not a game.
+      unlocked: Math.max(STARTING_POOL, Math.floor(Number(parsed.unlocked)) || 0),
     };
   } catch {
     return emptyProgress();
@@ -157,8 +188,15 @@ export function recordDuel(
   cards: { seen: readonly string[]; played: readonly string[] },
 ): Progress {
   const ladder = progress.ladders[result.ladder] ?? { played: 0, won: 0, lost: 0, drawn: 0 };
+  // The reward is capped by the roster, not just added. Everything downstream
+  // reads `unlocked` as an index into `unlockOrder`, and an index past the end
+  // would quietly report cards that do not exist as newly unlocked.
+  const earned = unlockReward(result);
+  const unlocked = Math.min(progress.unlockOrder.length || progress.unlocked, progress.unlocked + earned);
   return {
     version: PROGRESS_VERSION,
+    unlockOrder: progress.unlockOrder,
+    unlocked,
     ladders: {
       ...progress.ladders,
       [result.ladder]: {

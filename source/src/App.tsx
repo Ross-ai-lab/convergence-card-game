@@ -48,6 +48,13 @@ import type {
 } from "./engine/types";
 import { clearSave, loadGame, saveGame } from "./storage";
 import { botWins, finishDuel, loadProgress, saveProgress, totals, type Progress } from "./progress";
+import {
+  STARTING_POOL,
+  UNLOCK_REWARD,
+  ensureUnlockOrder,
+  newlyUnlocked,
+  unlockedPool,
+} from "./unlocks";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
@@ -363,12 +370,43 @@ function makeParticles(kind: ImpactKind | "death" | "stasis", camp?: Camp): Part
 }
 
 export default function App() {
+  // The FULL roster, always. A restricted pool decides what a new duel is dealt
+  // from; it must never decide what the engine can resolve. A saved duel, a
+  // minion already on the board, or a card copied out of the enemy's hand can
+  // all name a card that is not currently unlocked, and every one of them has to
+  // keep working.
   const library = useMemo(() => makeCardLibrary(cards, relics), []);
+  /**
+   * The unlocked slice of the roster: what a NEW duel is dealt from.
+   *
+   * Restricting the deck is the whole of the feature, because every effect that
+   * fetches a card — summon-from-deck, the relic grants, the Discover offers —
+   * reads `state.deck` rather than the library. Cut the deck and they are all
+   * cut with it, with no per-effect work at all.
+   */
+  const initialProgress = useMemo(() => ensureUnlockOrder(loadProgress(), [...cards, ...relics]), []);
+  /**
+   * The only thing in this game that outlives a duel. Held in state so the title
+   * screen and the gallery re-render the moment a duel is folded in, and written
+   * straight through to localStorage whenever it changes.
+   */
+  const [progress, setProgress] = useState<Progress>(initialProgress);
+  // The unlock order is generated on the first load that ever runs, and it has
+  // to reach disk before the first duel ends — otherwise the pack that duel
+  // hands over would be torn from an order nothing had saved.
+  useEffect(() => {
+    if (initialProgress.unlockOrder.length) saveProgress(initialProgress);
+  }, [initialProgress]);
+  const pool = useMemo(() => {
+    const ids = new Set(unlockedPool(progress.unlockOrder, progress.unlocked));
+    if (!ids.size) return { cards, relics };
+    return { cards: cards.filter((card) => ids.has(card.id)), relics: relics.filter((relic) => ids.has(relic.id)) };
+  }, [progress.unlockOrder, progress.unlocked]);
   // A duel in progress is restored from localStorage; anything unreadable or
   // from an older engine falls back to a fresh game (see storage.ts).
   const restored = useMemo(() => loadGame(), []);
   const [game, setGame] = useState(() => {
-    if (!restored) return createInitialGame(cards, createDuelSeed(), relics);
+    if (!restored) return createInitialGame(pool.cards, createDuelSeed(), pool.relics);
     if (restored.mode.kind !== "bot" || restored.game.heroPowers[1]) return restored.game;
     return {
       ...restored.game,
@@ -386,12 +424,12 @@ export default function App() {
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
   const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "heroPowers">(null);
   /**
-   * The only thing in this game that outlives a duel. Held in state so the title
-   * screen and the gallery re-render the moment a duel is folded in, and written
-   * straight through to localStorage whenever it changes.
+   * The pack a just-won duel earned, waiting to be torn open. Null whenever
+   * there is nothing to open — a loss that earned one card still fills it, and
+   * hotseat never does.
    */
-  const [progress, setProgress] = useState<Progress>(() => loadProgress());
-  const [selectedHeroPower, setSelectedHeroPower] = useState<HeroPowerId | null>(() => firstUnlockedHeroPower(botWins(loadProgress())));
+  const [pack, setPack] = useState<string[] | null>(null);
+  const [selectedHeroPower, setSelectedHeroPower] = useState<HeroPowerId | null>(() => firstUnlockedHeroPower(botWins(initialProgress)));
   const botWinCount = useMemo(() => botWins(progress), [progress]);
   const totalDuels = useMemo(() => totals(progress).played, [progress]);
   useEffect(() => {
@@ -722,6 +760,27 @@ export default function App() {
             return { ...current, players };
           });
           return card.name;
+        },
+
+        /**
+         * Set a core to any value, so a duel can be brought to the brink.
+         *
+         * Added for the card-pack screen, which only exists after a duel ends
+         * and was otherwise reachable only by playing twenty real turns. It does
+         * NOT end the duel by itself, on purpose: the phase flip belongs to the
+         * engine's own win check, so a duel finished this way finishes through
+         * exactly the path a real one takes. Drop a core to 1, swing at it, and
+         * everything downstream — the record, the reward, the pack — runs for
+         * real.
+         */
+        setCore(side = "them", value = 1) {
+          const owner = sideOf(side);
+          setGame((current) => {
+            const players = [...current.players] as GameState["players"];
+            players[owner] = { ...players[owner], health: value };
+            return { ...current, players };
+          });
+          return `${side} core = ${value}`;
         },
 
         /** Hang a relic on a minion already on the board. */
@@ -1156,6 +1215,11 @@ export default function App() {
     );
     setProgress(next);
     saveProgress(next);
+    // The pack is read from the two counts rather than recomputed from the
+    // reward table, so the cards torn out of it are exactly the cards the record
+    // just committed. Recomputing here is how the screen and the save drift.
+    const earned = newlyUnlocked(next.unlockOrder, progress.unlocked, next.unlocked);
+    if (earned.length) setPack(earned);
   }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress]);
 
   function restart() {
@@ -1165,11 +1229,12 @@ export default function App() {
     clearSave();
     duelCards.current = { seen: new Set(), played: new Set() };
     duelRecorded.current = false;
+    setPack(null);
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     // A restart keeps the mode, so it keeps the opponent's cheats too.
     const seed = createDuelSeed();
     setGame(
-      createInitialGame(cards, seed, relics, {
+      createInitialGame(pool.cards, seed, pool.relics, {
         foresightFor: foresightSeat(mode),
         heroPowers: heroPowersForDuel(mode, selectedHeroPower, seed),
       }),
@@ -1192,11 +1257,12 @@ export default function App() {
     clearSave();
     duelCards.current = { seen: new Set(), played: new Set() };
     duelRecorded.current = false;
+    setPack(null);
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setMode(next);
     const seed = createDuelSeed();
     setGame(
-      createInitialGame(cards, seed, relics, {
+      createInitialGame(pool.cards, seed, pool.relics, {
         foresightFor: foresightSeat(next),
         heroPowers: heroPowersForDuel(next, selectedHeroPower, seed),
       }),
@@ -2087,6 +2153,12 @@ export default function App() {
         <GameOver game={game} library={library} vsBot={vsBot} onRestart={restart} onMenu={toTitle} />
       ) : null}
 
+      {/* Above the result screen, not beside it. The pack is the reward for the
+          duel that just ended, so it has to be the thing in the way. */}
+      {pack ? (
+        <CardPack ids={pack} library={library} total={progress.unlocked} onDone={() => setPack(null)} />
+      ) : null}
+
       {/* The curtain sits above every other overlay: nothing behind it may be
           readable, including an open prompt belonging to the other player. */}
       {curtainUp ? (
@@ -2627,8 +2699,21 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
   return key === "cost" ? String(face.cost ?? "") : (face[key] ?? "");
 }
 
+/**
+ * The unlock filter, which is deliberately NOT a fifth `FilterKey`.
+ *
+ * The other four read a value printed on the card face and match it. This one
+ * asks a question about the player's record instead, and folding it into the
+ * same machinery would mean inventing a fake face attribute for it and then
+ * hiding that attribute from the option lists. Two controls that look identical
+ * and are built differently is the honest arrangement here.
+ */
+type UnlockFilter = "" | "unlocked" | "locked";
+
 function CardGallery({ progress, onClose }: { progress: Progress; onClose: () => void }) {
   const [query, setQuery] = useState("");
+  const [help, setHelp] = useState(false);
+  const [status, setStatus] = useState<UnlockFilter>("");
   const [filters, setFilters] = useState<Record<FilterKey, string>>({
     cost: "",
     rarity: "",
@@ -2673,6 +2758,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
       seen: new Set(progress.seen),
       played: new Set(progress.played),
       wonWith: new Set(progress.wonWith),
+      unlocked: new Set(unlockedPool(progress.unlockOrder, progress.unlocked)),
     }),
     [progress],
   );
@@ -2721,21 +2807,25 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
 
   const sorted = useMemo(() => {
     const active = (Object.keys(filters) as FilterKey[]).filter((key) => filters[key] !== "");
-    const kept = active.length
+    let kept = active.length
       ? entries.filter((entry) => active.every((key) => faceValue(entry.face, key) === filters[key]))
       : entries;
+    if (status) {
+      const wantUnlocked = status === "unlocked";
+      kept = kept.filter((entry) => collection.unlocked.has(entry.key) === wantUnlocked);
+    }
     // Always mana then name. A filtered list in raw roster order is barely a
     // list, and this removes the need for a separate ordering control.
     return [...kept].sort(
       (a, b) => (a.face.cost ?? 99) - (b.face.cost ?? 99) || a.face.name.localeCompare(b.face.name),
     );
-  }, [entries, filters]);
+  }, [entries, filters, status, collection]);
 
   // A new search or a new order means a different first screen, so the batch
   // starts again rather than leaving the top of the list unmounted.
   useEffect(() => {
     setMounted(FIRST_GALLERY_BATCH);
-  }, [needle, filters]);
+  }, [needle, filters, status]);
 
   useEffect(() => {
     if (mounted >= sorted.length) return;
@@ -2795,12 +2885,34 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
                 </select>
               </label>
             ))}
+            <label className={status ? "gallery-filter is-active" : "gallery-filter"}>
+              <span className="gallery-filter-label">Collection</span>
+              <select
+                value={status}
+                aria-label="Filter by unlocked or locked"
+                onChange={(event) => setStatus(event.target.value as UnlockFilter)}
+              >
+                <option value="">Any status</option>
+                <option value="unlocked">Unlocked</option>
+                <option value="locked">Locked</option>
+              </select>
+            </label>
           </div>
           <span className="gallery-count">{sorted.length}</span>
+          <button
+            type="button"
+            className={help ? "gallery-help is-open" : "gallery-help"}
+            onClick={() => setHelp((open) => !open)}
+            aria-expanded={help}
+            aria-label="How unlocking works"
+          >
+            ?
+          </button>
           <button type="button" className="screen-x" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
+        {help ? <UnlockHelp progress={progress} onClose={() => setHelp(false)} /> : null}
         <div className="screen-panel-body gallery-body">
           {sorted.length ? (
             <div className="gallery-grid">
@@ -2808,6 +2920,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
                 <GalleryCell
                   key={entry.key}
                   face={entry.face}
+                  locked={!collection.unlocked.has(entry.key)}
                   mark={
                     collection.wonWith.has(entry.key)
                       ? "won"
@@ -2841,16 +2954,100 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
 const GalleryCell = memo(function GalleryCell({
   face,
   mark,
+  locked = false,
 }: {
   face: CardFaceModel;
   mark: CollectionMark;
+  /** Not yet in the shared deck. Shown, never hidden — see `UnlockHelp`. */
+  locked?: boolean;
 }) {
   return (
-    <div className={`gallery-cell mark-${mark}`} data-mark={mark} title={COLLECTION_TITLE[mark]}>
+    <div
+      className={locked ? `gallery-cell mark-${mark} is-locked` : `gallery-cell mark-${mark}`}
+      data-mark={mark}
+      title={locked ? "Locked — not yet in the shared deck" : COLLECTION_TITLE[mark]}
+    >
       <CardFace card={face} lazyArt />
+      {locked ? (
+        <span className="gallery-lock" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26">
+            <path
+              d="M7 10V7a5 5 0 0 1 10 0v3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.1"
+              strokeLinecap="round"
+            />
+            <rect x="4.5" y="10" width="15" height="11" rx="2.2" fill="currentColor" />
+          </svg>
+        </span>
+      ) : null}
     </div>
   );
 });
+
+/**
+ * What the "?" in the gallery header opens.
+ *
+ * It exists because every part of this system is invisible from the board: a
+ * player who wins a duel sees a pack, and nothing anywhere tells them why it
+ * held six cards instead of three, or why the hotseat duel they just played held
+ * none. The rules are three lines and a table, so they are printed rather than
+ * left to be inferred.
+ */
+function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => void }) {
+  const left = Math.max(0, progress.unlockOrder.length - progress.unlocked);
+  return (
+    <div className="gallery-help-panel" role="region" aria-label="How unlocking works">
+      <button type="button" className="gallery-help-x" onClick={onClose} aria-label="Close">
+        ×
+      </button>
+      <h3>Unlocking cards</h3>
+      <p>
+        The shared deck does not start with everything. It opens on {STARTING_POOL} cards and grows every time you
+        finish a duel against the practice opponent. Locked cards are shown here greyed out with a lock, so you can
+        always see what is still to come.
+      </p>
+      <table className="gallery-help-table">
+        <tbody>
+          <tr>
+            <th scope="row">Beat the Ascendant</th>
+            <td>+{UNLOCK_REWARD.hard.won} cards</td>
+          </tr>
+          <tr>
+            <th scope="row">Beat the Veteran</th>
+            <td>+{UNLOCK_REWARD.normal.won} cards</td>
+          </tr>
+          <tr>
+            <th scope="row">Beat the Recruit</th>
+            <td>+{UNLOCK_REWARD.easy.won} cards</td>
+          </tr>
+          <tr>
+            <th scope="row">Lose or draw</th>
+            <td>+{UNLOCK_REWARD.normal.lost} card</td>
+          </tr>
+          <tr>
+            <th scope="row">Hotseat</th>
+            <td>nothing</td>
+          </tr>
+        </tbody>
+      </table>
+      <p className="gallery-help-note">
+        Hotseat pays nothing because both seats are the same person, so a win there could be handed over in one turn.
+      </p>
+      <p className="gallery-help-note">
+        Each batch is drawn to keep the deck balanced: the mix of mana costs and the share of Ascension Relics stays
+        close to the full roster at every size, so a small pool is never all cheap cards or all expensive ones.
+      </p>
+      <p className="gallery-help-state">
+        <strong>
+          {progress.unlocked} of {progress.unlockOrder.length || 196}
+        </strong>{" "}
+        unlocked{left ? `, ${left} still to find` : " — the whole roster is yours"}.
+      </p>
+    </div>
+  );
+}
 
 /** How far a card has got in your collection. Ordered weakest to strongest. */
 type CollectionMark = "unseen" | "seen" | "played" | "won";
@@ -3593,6 +3790,178 @@ function DrawChoiceOverlay({
             {locked ? "Bot is choosing" : selectedChoice === null ? "Pick a card" : "Choose Card"}
           </button>
         </div>
+      </section>
+    </div>
+  );
+}
+
+/**
+ * The card pack a finished duel hands over.
+ *
+ * Three deliberate choices, because the obvious build of this is worse:
+ *
+ * The pack takes THREE hits, not one. A single click is a dialog with a picture
+ * on it — the reward arrives before the player has done anything, so nothing
+ * builds. Three hits with escalating damage on the pack itself is the smallest
+ * structure that has a middle, and the middle is where the anticipation lives.
+ *
+ * The cards deal themselves out one at a time rather than appearing as a grid.
+ * A grid of ten is read as "ten"; a stagger is read as ten separate arrivals,
+ * which is the same information and a completely different feeling.
+ *
+ * The fireworks are generated once per mount and held in a ref. Generating them
+ * during render would re-roll every spark on every state change, so the burst
+ * would visibly reshuffle itself the moment the first card landed.
+ */
+const PACK_HITS = 3;
+
+/** Card width and gap from `.pack-card` / `.pack-reveal`; keep the three in step. */
+const PACK_CARD_WIDTH = 206;
+const PACK_CARD_GAP = 14;
+
+/** How wide the reveal must be to hold a balanced row of `count` cards. */
+function packRowWidth(count: number): number {
+  const perRow = count <= 5 ? Math.max(1, count) : Math.ceil(count / 2);
+  return perRow * PACK_CARD_WIDTH + (perRow - 1) * PACK_CARD_GAP;
+}
+
+function CardPack({
+  ids,
+  library,
+  total,
+  onDone,
+}: {
+  ids: string[];
+  library: CardLibrary;
+  total: number;
+  onDone: () => void;
+}) {
+  const [hits, setHits] = useState(0);
+  const [dealt, setDealt] = useState(0);
+  const opened = hits >= PACK_HITS;
+  const faces = useMemo(
+    () => ids.map((id) => library[id]).filter((card): card is PlayableCard => Boolean(card)).map((card) => playableFace(card)),
+    [ids, library],
+  );
+  // One roll per mount. `useState` with an initialiser, not `useMemo`: a memo is
+  // allowed to be thrown away and recomputed, and a re-rolled firework is a
+  // visible glitch rather than a cheap recovery.
+  const [sparks] = useState(() =>
+    Array.from({ length: 92 }, (_, index) => {
+      // Two shells, not one ring. A single evenly spaced ring reads as a circle
+      // of dots however fast it moves; a dense near shell inside a sparser far
+      // one is what a firework actually looks like.
+      const near = index % 3 !== 0;
+      const angle = (index / 92) * Math.PI * 2 + Math.random() * 0.7;
+      const distance = near ? 120 + Math.random() * 200 : 300 + Math.random() * 320;
+      return {
+        key: index,
+        x: Math.cos(angle) * distance,
+        y: Math.sin(angle) * distance * 0.8,
+        size: near ? 6 + Math.random() * 10 : 3 + Math.random() * 6,
+        delay: Math.random() * (near ? 0.2 : 0.4),
+        dur: near ? 0.9 + Math.random() * 0.6 : 1.2 + Math.random() * 0.8,
+        hue: [46, 190, 276, 12][index % 4],
+      };
+    }),
+  );
+
+  // Cards deal themselves; there is nothing left to click once the pack is open,
+  // so making the player click ten more times would only be in the way.
+  useEffect(() => {
+    if (!opened || dealt >= faces.length) return;
+    const handle = window.setTimeout(() => {
+      setDealt((count) => count + 1);
+      sfx.play("draw");
+    }, dealt === 0 ? 420 : 160);
+    return () => window.clearTimeout(handle);
+  }, [opened, dealt, faces.length]);
+
+  function strike() {
+    if (opened) return;
+    const next = hits + 1;
+    setHits(next);
+    if (next >= PACK_HITS) {
+      sfx.play("summonMythic");
+    } else {
+      sfx.play(next === 1 ? "hit" : "shieldBreak");
+    }
+  }
+
+  const allDealt = opened && dealt >= faces.length;
+
+  return (
+    <div className={opened ? "pack-veil is-open" : "pack-veil"}>
+      {opened ? (
+        <div className="pack-burst" aria-hidden="true">
+          {sparks.map((spark) => (
+            <span
+              key={spark.key}
+              className="pack-spark"
+              style={
+                {
+                  "--sx": `${spark.x}px`,
+                  "--sy": `${spark.y}px`,
+                  "--ss": `${spark.size}px`,
+                  "--sd": `${spark.delay}s`,
+                  "--st": `${spark.dur}s`,
+                  "--sh": `${spark.hue}`,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
+      ) : null}
+
+      <section className="pack-stage" role="dialog" aria-label="New cards unlocked">
+        {opened ? null : (
+          <>
+            <p className="pack-kicker">{faces.length === 1 ? "One new card" : `${faces.length} new cards`}</p>
+            <button
+              type="button"
+              className={`pack-box hits-${hits}`}
+              onClick={strike}
+              aria-label={`Strike the pack to open it. ${PACK_HITS - hits} to go.`}
+            >
+              <span className="pack-box-face" aria-hidden="true">
+                <span className="pack-box-sigil">✦</span>
+              </span>
+              <span className="pack-box-crack c1" aria-hidden="true" />
+              <span className="pack-box-crack c2" aria-hidden="true" />
+              <span className="pack-box-crack c3" aria-hidden="true" />
+              <span className="pack-box-glow" aria-hidden="true" />
+            </button>
+            <p className="pack-hint">{hits === 0 ? "Strike it open" : hits === 1 ? "Again" : "Once more"}</p>
+          </>
+        )}
+
+        {opened ? (
+          <>
+            <p className="pack-kicker is-open">Added to the shared deck</p>
+            {/* Rows are balanced rather than left to wrap. Six cards wrapping
+                naturally gave a row of five and one card stranded underneath it,
+                which reads as a mistake; three and three reads as a hand. The
+                width is what does it, because flex-wrap has no notion of an
+                even split. */}
+            <div className="pack-reveal" style={{ maxWidth: `min(${packRowWidth(faces.length)}px, 96vw)` }}>
+              {faces.slice(0, dealt).map((face, index) => (
+                <div className="pack-card" key={`${face.name}-${index}`}>
+                  {/* NOT lazy, unlike the gallery. At most ten images, and each
+                      one is the thing the player is here to look at — a card
+                      that deals itself onto the table with an empty black frame
+                      is the reward arriving broken. */}
+                  <CardFace card={face} />
+                </div>
+              ))}
+            </div>
+            <p className={allDealt ? "pack-total is-in" : "pack-total"}>
+              {total} of 196 cards unlocked
+            </p>
+            <button type="button" className="primary pack-collect" onClick={onDone} disabled={!allDealt}>
+              Collect
+            </button>
+          </>
+        ) : null}
       </section>
     </div>
   );

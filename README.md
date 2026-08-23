@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- KB-JUMP-START -->
-**Jump:** Play · What the game still needs · Rules · Card language · Relics · Controls and modes · Project structure · Parallel work · Run and verify · Cards and effects · Engine rules · Interface · Balance · Assets and audio · Contributing · Development lessons
+**Jump:** Play · What the game still needs · Gradual card unlocking · Rules · Card language · Relics · Controls and modes · Project structure · Parallel work · Run and verify · Cards and effects · Engine rules · Interface · Balance · Assets and audio · Contributing · Development lessons
 <!-- KB-JUMP-END -->
 
 ## Version 1.0 — complete, 21 August 2026
@@ -49,7 +49,7 @@ Convergence is a non-commercial browser card duel where 172 named characters and
 
 **Owner play location:** Play only through the public [GitHub Pages game URL](https://ross-ai-lab.github.io/convergence-card-game/play/). The local `play/` folder is a generated deployment artifact for building and publishing; it is not the owner's play location.
 
-No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The current game uses all **172 character cards, 3 Basic reference cards, and 21 Ascension Relics** in one shared 196-card draw pool; there is no deck-building screen. Each new duel generates fresh browser entropy, shuffles that complete pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
+No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **172 character cards, 3 Basic reference cards, and 21 Ascension Relics**, 196 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
 The live game and `source/data/cards.csv` now contain 172 named character cards plus 3 Basic reference cards, 175 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
 
@@ -60,16 +60,17 @@ turn feel good" as an answered question, not an open one, and do not put a human
 list of remaining work. Older notes that describe the playtest as pending are stale; correct them
 where you find them.
 
-**Meta-progression exists now, in its two smallest forms.** A duel used to end and leave nothing
-behind, so the tenth duel was indistinguishable from the first. Built 20 August 2026:
+**Meta-progression exists now, in three forms.** A duel used to end and leave nothing behind, so the
+tenth duel was indistinguishable from the first. Built 20 August 2026, extended 23 August 2026:
 
 - **A record.** Duels played, won and lost per opponent level, plus the last ten results. Reached from
   the title screen, which only shows the door once a duel has finished.
 - **A collection.** Every card is marked in the gallery by how far it has got: dimmed until it has
   been in your hand, plain once it has, a teal ring once you have played it, a gold ring once you have
   won a duel with it on the board.
+- **Gradual unlocking**, described in its own section below.
 
-Both live in `source/src/progress.ts`, under their own localStorage key with their own version.
+All three live in `source/src/progress.ts`, under their own localStorage key with their own version.
 **They are deliberately NOT part of the save**: a save holds one duel and is cleared at game over,
 and a record has to survive exactly that. The React side is three lines calling `finishDuel`, because
 the judgement — which ladder, what counts as a loss — is the part that goes quietly wrong, so it lives
@@ -84,6 +85,72 @@ re-proposes them as gaps:
   game: this engine deals both players from ONE shared deck, and that is what makes Foresight and
   Clairvoyance mean anything — the card the Ascendant rejects is the card you were about to draw. Give
   each player their own deck and that whole layer is deleted. Do not propose it as an addition.
+
+Gradual unlocking is neither of those two and does not reopen them. It locks no opponent and starts no
+run: it narrows the ONE shared deck and widens it again, which is a change to a single argument.
+
+## Gradual card unlocking
+
+**The shared deck opens on 50 cards and grows by finishing duels.** Built 23 August 2026, in
+`source/src/unlocks.ts`, with `source/src/unlocks.test.ts` covering every claim below.
+
+| Result | Cards |
+|---|---|
+| Beat the Ascendant | +10 |
+| Beat the Veteran | +6 |
+| Beat the Recruit | +3 |
+| Lose or draw, any level | +1 |
+| Hotseat, any outcome | 0 |
+
+**Hotseat pays nothing on purpose.** Both seats are the same person and `progress.ts` records every
+hotseat duel as won, so paying it would make conceding to yourself the fastest route to the roster.
+
+**Why the reason for the feature is recurrence, not collecting.** A duel is a median 22 player-turns,
+so it consumes roughly 30 of 196 cards and about 15 of them reach one player's hand. At the full
+roster a given card reaches your hand about once every thirteen duels, which is far too rare to form
+an opinion about it. At 50 it is about once every three.
+
+**The count is an ORDER plus an INDEX, never a growing set of ids.** `progress.unlockOrder` holds all
+196 ids and `progress.unlocked` says how far down it the deck reaches. An order is fixed once, so
+every prefix of it can be balanced by construction; a set built batch by batch can only be balanced
+batch by batch, and batches that are each fair still stack into a lopsided whole. An index also cannot
+re-lock a card, cannot lose one, and cannot disagree with itself.
+
+**The order is balanced on two axes, in two passes, and this is the part that matters.** A plain
+shuffle would hand out a 50-card pool whose mana curve wanders by several cards per bucket, and a pool
+holding four 10-cost cards and one 1-cost card is a pool you cannot open a turn with — the duel's
+measured pacing rests on the printed curve. Minions and relics are spread by cost separately, then
+interleaved by their share of the roster, both passes using the Sainte-Laguë divisor. Measured across
+400 seeds and every pool size: the minion curve drifts at most **0.87 of a card**, the relic share at
+most **0.5**, and the combined curve at most **1.34**. The single-pass version that treated relics as
+an eleventh cost bucket drifted **3.99**, which is why it is not the version that shipped.
+
+**50 cards does not deck anyone out — measured, not assumed.** 600 self-play duels at a 50-card shared
+pool: the deck empties in **1.3%** of them, fatigue is dealt in **1.0%**, and the median duel runs 24
+turns against 25 at the full roster. The arithmetic that said otherwise assumed the 54-turn outlier
+was common; it is not. Anything below 50 has not been measured and must be before it is used.
+
+**Restricting the deck restricts everything, with no per-effect work.** Every effect that fetches a
+card — summon-from-deck, the relic grants, the Discover offers — reads `state.deck`, never the card
+library, so cutting the deck cuts all of them at once. The library passed to the engine stays FULL on
+purpose: a saved duel or a minion already in play can name a locked card, and every one of those has
+to keep resolving.
+
+**Locked cards are shown, not hidden.** The gallery greys them and marks them with a small lock disc
+high on the artwork, and a Collection filter switches between Unlocked and Locked. The lock is a badge
+and must stay one — the first build filled a third of the card width with it, which covered the rules
+text and deleted the reason locked cards are on screen at all. A "?" button in the gallery header
+prints the table above, because none of this is visible from the board.
+
+**The pack.** A duel that earns cards ends on a sealed pack that takes three strikes to open, then
+bursts and deals the cards out one at a time. Pack cards are **206px minimum and never lazy-loaded**:
+`.card-face` drops its rules text below roughly 200px, and a card that deals itself onto the table as
+an empty black frame is the reward arriving broken. Rows are balanced by an explicit width rather than
+left to wrap, because six cards wrapping naturally strand one under a row of five.
+
+**`progress` is at v2 and v1 is deleted on load, not migrated.** v1 described a roster that was
+entirely unlocked, so carrying it forward would hand a returning player all 196 cards and delete the
+feature on the machine that most needed it. The version bump is also what resets the record.
 
 **The balance gate was red on the fresh baseline measured 18 August 2026** — three of eleven checks.
 One is fixed; the other two are below. In the order they matter:
@@ -287,6 +354,7 @@ The board communicates conditions visually: a wall means Taunt, a gold rim means
 - `docs/Convergence Browser Game Roadmap.html` is useful for design direction and browsing, but its embedded roster can lag behind the live CSV.
 - `materials/local-production/` contains optional rebuild tools and source libraries. It is not required to play the included build.
 - `counter/` is the small aggregate player-count service used by the public landing page.
+- `source/src/progress.ts` is everything that outlives a duel: the record, the collection marks, and the unlock index. `source/src/unlocks.ts` decides WHICH cards the unlock index points at — see [Gradual card unlocking](#gradual-card-unlocking). Both are pure and both are tested; neither reads a CSV.
 - `source/src/screens/Screens.tsx` holds the **How to play** guide as `HowToPlayContent`. It is the player-facing twin of [Rules at a glance](#rules-at-a-glance) and [Conditions and keywords](#conditions-and-keywords) above: a rules change has to land in both, and the guide is the copy a player will actually read.
 - `source/scripts/` holds the tooling. `simulate.ts` is the balance harness: self-play, fuzzing, the dial sweep, and the difficulty ladder. `balance-gate.ts` and `balance-gate.test.ts` hold the pure pass, fail, and skip logic, with one planted failure per check. `ladder-compare.ts` is the paired ladder comparison. `source/balance.config.json` carries every threshold with the reasoning for it written alongside. The `apply-balance-pass*.mjs` files record each past pass with the measured number behind every change.
 
@@ -313,6 +381,8 @@ Measured 2026-08-22, before and after that pass: **452 seconds down to 123.8**, 
 Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
 
 After changing the **How to play** guide, run `node scripts/shoot-rules.mjs http://127.0.0.1:5177` against a running dev server. It starts a duel, answers the Hero Power offer, opens the guide, and walks the panel down in overlapping screen-height steps into `.preview/rules/`, plus one full-height capture. That step exists because the guide is roughly 2,500 pixels of content inside a 600-pixel window: a single screenshot photographs the first quarter of it and proves nothing about the rest, and no other harness opens the panel at all.
+
+To look at the card pack or the gallery's locked state, run `node scripts/shoot-pack.mjs http://127.0.0.1:5177 hard` with the dev server up. It clears the browser's stored progress so the pool really is the starting 50, photographs the gallery locked, the "?" panel and both Collection filters, then ends a duel on purpose through the dev `setCore` hook and walks the pack open one strike at a time. The last argument picks the opponent and therefore the pack size: `easy` for three cards, `normal` for six, `hard` for ten — shoot `hard` after any layout change, because ten is the only size that has to wrap. `setCore` does not end the duel by itself; the engine's own win check does, so the record, the reward and the pack all run the path a real duel takes.
 
 To look at a specific card after changing its text, stats or art, run `node scripts/shoot-card.mjs "Kaku Kaioh"` with any number of card names or ids. It starts and stops its own dev server, deals itself each card through the `window.__debug` hook, and writes a full-frame PNG per card into `.preview/cards/`. Call it with `node` rather than `npm run` whenever a name contains a space, because npm on Windows strips the quotes; the `npm run shoot:card` alias is for the no-argument whole-roster run. The capture proves content — name, cost, rules text, stats, rails, origin, art — and deliberately not layout at play size, since the face is enlarged to fill the frame and `.card-face` is `container-type: size`. It photographs the board variant, which prints no flavour line. Gem and text collisions at real hand and board sizes stay the job of `npm run check:cardface`.
 

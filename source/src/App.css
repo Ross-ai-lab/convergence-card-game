@@ -5380,3 +5380,468 @@ button:disabled {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Locked cards in the gallery.
+
+   Locked is a HEAVIER version of the unseen treatment above, not a different
+   one: full grayscale where unseen is partial, and a lock in the middle of the
+   frame rather than a ring around it. That ordering is deliberate — the two
+   states stack (a card is locked first and unmet second), and a player scanning
+   the grid has to be able to tell "I have not drawn this yet" from "this is not
+   in the deck at all" without reading anything.
+
+   The lock sits dead centre, which is the one part of a card face that is pure
+   artwork. Every edge and corner already carries a number or a rail.
+   --------------------------------------------------------------------------- */
+.gallery-cell.is-locked .card-face {
+  filter: grayscale(1) brightness(0.4) contrast(0.86);
+  opacity: 0.72;
+  transition: filter 180ms ease, opacity 180ms ease;
+}
+
+.gallery-cell.is-locked:hover .card-face {
+  filter: grayscale(0.82) brightness(0.56) contrast(0.9);
+  opacity: 0.88;
+}
+
+.gallery-cell.is-locked {
+  box-shadow: 0 0 0 1px rgba(246, 236, 216, 0.14);
+}
+
+/* A MARK, not a censor.
+
+   The first build filled a third of the card width with a solid cream padlock,
+   which sat straight over the rules text and made the gallery unreadable — the
+   point of showing locked cards at all is that you can see what is coming, and
+   a badge big enough to hide the card deletes the reason it is on screen. It is
+   now a small disc high on the artwork, where the card face prints nothing. */
+.gallery-lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 21%;
+  pointer-events: none;
+}
+
+.gallery-lock svg {
+  width: 15%;
+  height: auto;
+  padding: 3.4%;
+  box-sizing: content-box;
+  border-radius: 50%;
+  border: 1px solid rgba(246, 236, 216, 0.22);
+  background: rgba(10, 8, 16, 0.66);
+  color: rgba(246, 236, 216, 0.72);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8));
+}
+
+.gallery-help {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 236, 190, 0.34);
+  background: rgba(18, 14, 26, 0.7);
+  color: rgba(246, 236, 216, 0.82);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gallery-help:hover,
+.gallery-help.is-open {
+  border-color: rgba(224, 169, 58, 0.85);
+  color: #f4d489;
+  background: rgba(52, 36, 16, 0.8);
+}
+
+.gallery-help-panel {
+  position: relative;
+  margin: 0 2px 14px;
+  padding: 16px 20px 14px;
+  border: 1px solid rgba(224, 169, 58, 0.4);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(224, 169, 58, 0.1), transparent 60%), rgba(22, 16, 30, 0.94);
+  color: rgba(246, 236, 216, 0.86);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.gallery-help-panel h3 {
+  margin: 0 0 8px;
+  color: #f4d489;
+  font-size: 1.02rem;
+}
+
+.gallery-help-panel p {
+  margin: 0 0 10px;
+  max-width: 76ch;
+}
+
+.gallery-help-table {
+  border-collapse: collapse;
+  margin: 0 0 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gallery-help-table th,
+.gallery-help-table td {
+  padding: 3px 18px 3px 0;
+  text-align: left;
+  font-weight: 500;
+}
+
+.gallery-help-table th {
+  color: rgba(246, 236, 216, 0.72);
+}
+
+.gallery-help-table td {
+  color: #f4d489;
+  font-weight: 800;
+}
+
+.gallery-help-note {
+  color: rgba(246, 236, 216, 0.62);
+  font-size: 0.86rem;
+}
+
+.gallery-help-state {
+  margin: 0;
+  color: rgba(246, 236, 216, 0.8);
+}
+
+.gallery-help-state strong {
+  color: #43cdbd;
+  font-variant-numeric: tabular-nums;
+}
+
+.gallery-help-x {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(246, 236, 216, 0.6);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gallery-help-x:hover {
+  color: #f4d489;
+}
+
+/* ---------------------------------------------------------------------------
+   The card pack.
+
+   Sits above `.overlay` (85) because it is the reward for the duel the result
+   screen is reporting, and a reward the player can click past without noticing
+   is not a reward.
+   --------------------------------------------------------------------------- */
+/* Nearly opaque, and blurred behind.
+
+   The first build used a translucent radial wash, and the result screen it sits
+   on top of read straight through it: "Player One Wins" at 2rem competed with
+   the pack for the whole screen, and the Rematch and Menu buttons looked live
+   while being unclickable. A reward screen has to be the only thing on screen.
+   The remaining transparency is just enough to keep the duel behind it as
+   colour, not as text. */
+.pack-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 92;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(58, 32, 88, 0.82), transparent 64%),
+    rgba(5, 3, 10, 0.94);
+  backdrop-filter: blur(9px) saturate(0.7);
+  animation: pack-veil-in 320ms ease both;
+}
+
+@keyframes pack-veil-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pack-veil.is-open {
+  background:
+    radial-gradient(circle at 50% 44%, rgba(104, 66, 148, 0.7), transparent 66%),
+    rgba(5, 3, 10, 0.95);
+}
+
+.pack-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  width: min(1180px, 96vw);
+  max-height: 94vh;
+  text-align: center;
+}
+
+.pack-kicker {
+  margin: 0;
+  color: rgba(246, 236, 216, 0.68);
+  font-size: 0.8rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pack-kicker.is-open {
+  color: #f4d489;
+  animation: pack-fade-up 460ms ease both;
+}
+
+/* The pack itself: a foil brick that visibly takes damage.
+
+   The dark base is listed LAST so it sits at the bottom of the stack and the two
+   sheen bands read as light across foil rather than as the pack's own colour.
+   An earlier pass had the glow child washing the whole body to pale lavender,
+   which made a sealed pack look like an empty card sleeve. */
+.pack-box {
+  position: relative;
+  width: min(276px, 44vw);
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  border: 2px solid rgba(240, 199, 103, 0.72);
+  border-radius: 16px;
+  background:
+    linear-gradient(152deg, rgba(255, 236, 190, 0.2) 4%, transparent 34%),
+    linear-gradient(320deg, rgba(120, 226, 255, 0.16), transparent 44%),
+    linear-gradient(180deg, #33205a, #120a1f 58%, #2a1846);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.78),
+    0 0 40px rgba(240, 199, 103, 0.22),
+    inset 0 0 46px rgba(240, 199, 103, 0.12);
+  cursor: pointer;
+  animation: pack-float 3.4s ease-in-out infinite;
+}
+
+.pack-box:focus-visible {
+  outline: 2px solid rgba(120, 226, 255, 0.8);
+  outline-offset: 4px;
+}
+
+@keyframes pack-float {
+  0%, 100% { transform: translateY(0) rotate(-1.2deg); }
+  50% { transform: translateY(-14px) rotate(1.2deg); }
+}
+
+.pack-box-face {
+  position: absolute;
+  inset: 12px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(240, 199, 103, 0.34);
+  border-radius: 10px;
+}
+
+.pack-box-sigil {
+  color: rgba(244, 212, 137, 0.9);
+  font-size: 3.4rem;
+  line-height: 1;
+  text-shadow: 0 0 24px rgba(240, 199, 103, 0.7);
+  animation: pack-sigil 2.6s ease-in-out infinite;
+}
+
+@keyframes pack-sigil {
+  0%, 100% { opacity: 0.72; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+
+/* Light building up INSIDE the pack. Kept weak at rest so the body stays dark;
+   the two hit states are what turn it up, and that climb is the only thing
+   telling the player the pack is about to give. */
+.pack-box-glow {
+  position: absolute;
+  inset: -26%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 199, 103, 0.3), transparent 58%);
+  opacity: 0.22;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+/* Cracks are thin bright wedges, revealed one hit at a time. */
+.pack-box-crack {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 62%;
+  background: linear-gradient(180deg, transparent, rgba(255, 246, 214, 0.95), transparent);
+  opacity: 0;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  box-shadow: 0 0 18px rgba(255, 236, 190, 0.9);
+}
+
+.pack-box-crack.c1 { transform: translate(-50%, -50%) rotate(16deg); }
+.pack-box-crack.c2 { transform: translate(-50%, -50%) rotate(-38deg) scaleY(0.8); }
+.pack-box-crack.c3 { transform: translate(-50%, -50%) rotate(72deg) scaleY(0.66); }
+
+.pack-box.hits-1 .pack-box-crack.c1 { opacity: 0.85; }
+.pack-box.hits-2 .pack-box-crack.c1,
+.pack-box.hits-2 .pack-box-crack.c2,
+.pack-box.hits-2 .pack-box-crack.c3 { opacity: 1; }
+
+.pack-box.hits-1 { animation: pack-shake 340ms ease both; }
+.pack-box.hits-2 {
+  border-color: rgba(255, 246, 214, 0.95);
+  animation: pack-shake-hard 380ms ease both;
+}
+
+.pack-box.hits-1 .pack-box-glow { opacity: 0.6; }
+.pack-box.hits-2 .pack-box-glow { opacity: 1; }
+
+@keyframes pack-shake {
+  0% { transform: translate(0, 0) rotate(0); }
+  22% { transform: translate(-9px, 3px) rotate(-3deg) scale(1.04); }
+  46% { transform: translate(8px, -4px) rotate(3deg) scale(0.98); }
+  72% { transform: translate(-4px, 2px) rotate(-1.4deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+
+@keyframes pack-shake-hard {
+  0% { transform: translate(0, 0) rotate(0) scale(1); }
+  16% { transform: translate(-16px, 6px) rotate(-6deg) scale(1.08); }
+  38% { transform: translate(15px, -8px) rotate(6deg) scale(1.06); }
+  60% { transform: translate(-11px, 4px) rotate(-4deg) scale(1.04); }
+  82% { transform: translate(6px, -2px) rotate(2deg) scale(1.02); }
+  100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+.pack-hint {
+  margin: 0;
+  color: rgba(246, 236, 216, 0.58);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+}
+
+/* Fireworks. One element per spark, thrown outward from the pack's position. */
+.pack-burst {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  /* ABOVE the cards, not behind them. Behind, the dealt cards covered the half
+     of the burst nearest the middle and it read as sparks off to one side. */
+  z-index: 3;
+}
+
+.pack-spark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--ss);
+  height: var(--ss);
+  border-radius: 50%;
+  background: hsl(var(--sh) 100% 72%);
+  /* Three shadows, not one. A single glow at this size disappears against a
+     dark veil; the tight white core plus a wide coloured bloom is what makes a
+     6px dot read as a burning ember. */
+  box-shadow:
+    0 0 6px 1px hsl(var(--sh) 100% 86%),
+    0 0 20px 4px hsl(var(--sh) 100% 62%),
+    0 0 44px 10px hsl(var(--sh) 96% 52% / 0.55);
+  animation: pack-spark-fly var(--st) cubic-bezier(0.1, 0.66, 0.24, 1) var(--sd) both;
+}
+
+@keyframes pack-spark-fly {
+  0% { transform: translate(0, 0) scale(0.25); opacity: 0; }
+  10% { opacity: 1; transform: translate(calc(var(--sx) * 0.14), calc(var(--sy) * 0.14)) scale(1.3); }
+  /* Gravity: the tail sags below the straight line out, which is the difference
+     between a firework and an expanding circle. */
+  100% { transform: translate(var(--sx), calc(var(--sy) + 90px)) scale(0.7); opacity: 0; }
+}
+
+/* The revealed cards.
+
+   206px is a FLOOR, not a taste call. `.card-face` switches to the compact
+   board-minion layout below roughly 200px and drops the rules text with it, so
+   the first build's 150px cards showed six freshly unlocked cards with no way to
+   see what any of them did — the one thing this screen exists to tell you. Ten
+   cards therefore wrap to two rows rather than shrinking to fit one. */
+.pack-reveal {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  width: min(1130px, 96vw);
+  min-height: 300px;
+}
+
+.pack-card {
+  width: 206px;
+  aspect-ratio: 750 / 1050;
+  animation: pack-deal 520ms cubic-bezier(0.2, 1.1, 0.36, 1) both;
+}
+
+.pack-card .card-face {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes pack-deal {
+  0% { transform: translateY(-64px) rotate(-14deg) scale(0.5); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: translateY(0) rotate(0) scale(1); opacity: 1; }
+}
+
+@keyframes pack-fade-up {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.pack-total {
+  margin: 0;
+  color: rgba(246, 236, 216, 0.6);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  opacity: 0;
+}
+
+.pack-total.is-in {
+  animation: pack-fade-up 420ms ease both;
+}
+
+.pack-collect {
+  min-width: 180px;
+}
+
+.pack-collect:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* A phone gets one or two cards per row and more of them. The card width does
+   NOT shrink here: 206px is the rules-text floor at every screen size, and a
+   narrow screen is not a reason to hand over cards you cannot read. */
+@media (max-width: 620px) {
+  .pack-reveal {
+    min-height: 240px;
+    gap: 10px;
+  }
+
+  .pack-stage {
+    gap: 10px;
+  }
+}
