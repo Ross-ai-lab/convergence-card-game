@@ -3112,11 +3112,12 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
 const SHINE_RARITIES = new Set(["purple", "yellow", "red", "relic"]);
 
 /**
- * Camps with a mark actually built. Magic only, for now.
+ * Camps whose RAIL is animated. Magic only, for now.
  *
- * This is a trial: a camp mark is a second, much quieter layer under the tier
- * shine, and whether two animated systems on one card read as depth or as soup
- * is a question only looking at it answers. Tech and Nature wait on that.
+ * The camp mark lives on the rail — the vertical word down the card's left edge
+ * — rather than as artwork behind the picture. That was tried and scrapped: two
+ * animated systems in the middle of one card compete for the same space, and a
+ * card has one middle. Tech and Nature keep the plain rail until this is judged.
  */
 const CAMP_MARKS = new Set(["magic"]);
 
@@ -3217,7 +3218,12 @@ function CardFace({
             "relic" without help. Characters keep both. */}
         {isRelicFace ? null : (
           <>
-            <span className="cf-rail cf-camp">{card.camp}</span>
+            {/* The camp rail is where a camp announces itself now. An earlier
+                build put a turning arcane circle behind the artwork instead,
+                and it was scrapped: a second animated system in the middle of
+                the card competes with the tier shine for the same space, and
+                the card only has one middle. The word was already there. */}
+            <span className={campMark ? `cf-rail cf-camp rail-${campMark}` : "cf-rail cf-camp"}>{card.camp}</span>
             <span className="cf-rail cf-align">{card.alignment}</span>
           </>
         )}
@@ -3238,16 +3244,6 @@ function CardFace({
             element list per rarity — puts the layer count in two places at once
             and lets the markup and the stylesheet disagree silently. Rare gets
             no shine at all: it is the baseline the other tiers escalate from. */}
-        {/* The camp mark sits BELOW the tier shine, at z-index 3 against its 4,
-            because a camp says what kind of thing a card is and a tier says how
-            rare it is — and when they disagree about which is louder, the tier
-            has to win. */}
-        {campMark ? (
-          <div className={`cf-sigil sigil-${campMark}`} aria-hidden="true">
-            <span className="cm-ring" />
-            <span className="cm-glyph" />
-          </div>
-        ) : null}
         {SHINE_RARITIES.has(rarity) ? (
           <div className="cf-shine" aria-hidden="true">
             <span className="sh-field" />

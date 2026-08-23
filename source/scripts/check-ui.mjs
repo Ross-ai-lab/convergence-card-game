@@ -820,7 +820,7 @@ await newBoard({ place: false });
 // layer stops escalating, and nothing else in this project would notice.
 const SHINE_TIERS = [
   { rarity: "purple", name: "Epic", card: "Aizen", layers: 4 },
-  { rarity: "yellow", name: "Legendary", card: "Detective L", layers: 4 },
+  { rarity: "yellow", name: "Legendary", card: "Detective L", layers: 3 },
   { rarity: "red", name: "Mythic", card: "Yujiro", layers: 5 },
   { rarity: "relic", name: "Relic", card: "Elder wand", layers: 4 },
 ];
@@ -883,27 +883,48 @@ await newBoard({ place: false });
       sweeps.join(" "),
     );
 
-    // The Magic camp mark, which is a trial and the first of its kind. It has to
-    // be PRESENT and it has to be quieter than the tier: if a camp reads louder
-    // than a rarity, the two systems are fighting rather than layering.
+    // The Magic rail, which is a trial and the first of its kind. Three things
+    // have to hold at once, and the middle one is the whole trick: the glyphs
+    // are painted by a gradient clipped to the text, so a card whose
+    // `background-clip` silently stopped applying would show an INVISIBLE camp
+    // word rather than a plain one — transparent fill with nothing behind it.
     await page.evaluate(() => window.__debug.giveCard("Doctor Strange"));
     await page.waitForTimeout(300);
     const magic = page.locator(".hand-card .card-face").last();
-    const camp = await magic.evaluate((face) => {
-      const mark = face.querySelector(".cf-sigil.sigil-magic");
-      if (!mark) return { found: false, running: 0, over: false };
-      const running = [...mark.querySelectorAll("span")]
-        .flatMap((layer) => layer.getAnimations())
-        .filter((animation) => animation.playState === "running").length;
-      const campZ = Number(getComputedStyle(mark).zIndex);
-      const shine = face.querySelector(".cf-shine");
-      const shineZ = shine ? Number(getComputedStyle(shine).zIndex) : Infinity;
-      return { found: true, running, over: campZ >= shineZ };
+    const railFx = await magic.evaluate((face) => {
+      const rail = face.querySelector(".cf-rail.cf-camp.rail-magic");
+      if (!rail) return { found: false };
+      const style = getComputedStyle(rail);
+      return {
+        found: true,
+        running: rail.getAnimations().filter((animation) => animation.playState === "running").length,
+        clipped: (style.webkitBackgroundClip || style.backgroundClip) === "text",
+        painted: style.backgroundImage !== "none",
+      };
     });
     check(
-      "the Magic camp mark turns beneath the tier shine",
-      camp.found && camp.running === 2 && !camp.over,
-      JSON.stringify(camp),
+      "the Magic rail flows a gradient through its letters",
+      railFx.found && railFx.running === 1 && railFx.clipped && railFx.painted,
+      JSON.stringify(railFx),
+    );
+
+    // And a camp WITHOUT a built mark keeps the plain rail. Guards the reverse
+    // failure: a selector that stopped naming the camp would leave every card
+    // animated, which is the same bug wearing the opposite face.
+    await page.evaluate(() => window.__debug.giveCard("Godzilla"));
+    await page.waitForTimeout(300);
+    const plain = await page
+      .locator(".hand-card .card-face")
+      .last()
+      .evaluate((face) => {
+        const rail = face.querySelector(".cf-rail.cf-camp");
+        if (!rail) return { found: false };
+        return { found: true, text: (rail.textContent ?? "").trim(), animated: rail.getAnimations().length > 0 };
+      });
+    check(
+      "a camp with no mark keeps a plain rail",
+      plain.found && plain.text !== "Magic" && !plain.animated,
+      JSON.stringify(plain),
     );
 
     // The camp RAIL — the vertical word down the left edge — is a different
@@ -912,7 +933,7 @@ await newBoard({ place: false });
     // owned, which silently rewrote the rail's position and writing mode and
     // dropped the word "Magic" rotated across the middle of the card. Nothing
     // errored, every test stayed green, and it was visible only by looking.
-    const rail = await magic.evaluate((face) => {
+    const rail = await page.locator(".hand-card .card-face").last().evaluate((face) => {
       const element = face.querySelector(".cf-rail.cf-camp");
       if (!element) return { found: false };
       const style = getComputedStyle(element);
@@ -933,9 +954,13 @@ await newBoard({ place: false });
         narrow: box.width < card.width * 0.15,
       };
     });
+    // Any real camp word will do. Pinning it to "Magic" tied this check to
+    // whichever card the check ABOVE happened to leave last in hand, and it
+    // went red the moment a Nature card was added there — a failure about the
+    // harness, not about the rail.
     check(
       "the camp rail still runs down the left edge",
-      rail.found && rail.text === "Magic" && rail.vertical && rail.onTheLeft && rail.narrow,
+      rail.found && ["Magic", "Tech", "Nature", "ALL"].includes(rail.text) && rail.vertical && rail.onTheLeft && rail.narrow,
       JSON.stringify(rail),
     );
   }

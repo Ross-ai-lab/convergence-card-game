@@ -560,8 +560,8 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 | Tier | Colour | What it does | Layers |
 |---|---|---|---|
 | Epic | violet | mist drifting sideways, dust settling through it | 4 |
-| Legendary | gold | radiant rays turning, a bloom swelling behind them | 4 |
-| Mythic | crimson | flame tongues licking upward, embers off the top | 5 |
+| Legendary | gold | one thin ray set turning about the card's centre | 3 |
+| Mythic | crimson | tapered flame tongues, embers off the top | 5 |
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
 
@@ -594,17 +594,31 @@ The colours are not reusable. These five rules are, and they are the whole reaso
 
 **Six fixed slots in the markup for every tier**, with the ones a tier does not use switched off in CSS. A different element list per rarity puts the layer count in two places at once and lets the markup and the stylesheet disagree silently.
 
+### Making fire, specifically
+
+Mythic was rebuilt after the first version read as a red glow rather than as flame. The published CSS-fire techniques were read before rebuilding and they agree on two things it had wrong:
+
+- **A temperature ramp is the biggest single realism cue.** Real fire is white-hot at the base, then yellow, orange, deep red, gone. The first build gave every lobe one flat orange, so it had no temperature at all and could only ever look like coloured light. Every tongue now runs white → gold → orange → red → transparent along its own length.
+- **Tongues must be NARROW AND TAPERED.** They were wide ellipses, which is the shape of a glow. Each is now about a tenth of the card wide and several times taller than wide, and no two share a width, a height or an even spacing — even spacing is the tell that turns a fire back into a pattern.
+
+**What could not be taken from those sources:** both end at either a prerendered Perlin-noise texture scrolled upward, or a `filter: contrast()`/`blur()` stack over sliding noise. The filter route is barred by rule 5 and a texture is an asset this project does not need. The substitute for noise is two tongue rows on different fast clocks — 1.7s and 1.1s — at different widths and offsets, with a **`skewX` lean** in the keyframes. The lean is what sells it: a flame that only grows and shrinks is a lamp; a flame that also bends is fire.
+
+**Speed was the other half of the fix.** The first build swelled over 12 seconds. Fire flickers in about one.
+
+**Height is capped low on purpose**, at roughly a fifth of the card. Fire that climbs to the middle of the artwork stops being a card that is burning and becomes a card behind a bonfire.
+
 ### Camp marks, a trial
 
-A tier says how RARE a card is. A camp says what KIND of thing it is, and both have to be readable at once on the same card, so a camp mark can never work the way a tier does. **Magic is the first and currently the only one**: a slowly turning arcane circle behind the artwork, built from two counter-rotating conic gradients. Tech and Nature are not built, pending whether this reads as depth or as soup.
+A tier says how RARE a card is. A camp says what KIND of thing it is. **The camp mark lives on the RAIL** — the vertical camp word already printed down the card's left edge — where it costs no new space, cannot fight the artwork, and names itself rather than requiring anyone to learn a symbol. **Magic is the first and currently the only one**: a prismatic gradient clipped to the glyphs and travelling along them, violet → cyan → white → magenta → gold. Tech and Nature keep the plain rail pending judgement on this.
 
-Three rules keep the two systems apart:
+**An arcane circle behind the artwork was tried first and scrapped.** However faint it was made, a second animated system in the middle of the card competed with the tier shine for the same space, and a card has one middle.
 
-- **A camp mark is a SHAPE, never a field or a particle.** Every tier owns a colour wash and a particle system already; a fifth cloud on top of a Mythic card is just more soup.
-- **It sits UNDER the tier shine** (z-index 3 against 4) at roughly a third of any tier layer's alpha. If you notice it before you notice the tier, it is too loud.
-- **One motion, and that motion is slow.** 90 and 131 seconds here. The tier is what moves.
+Two rules survive from that attempt:
 
-It is `.cf-sigil`, **not** `.cf-camp`. `.cf-camp` was already the vertical camp rail printed down the left edge of every character card, and claiming it silently rewrote that rail's box, dropping the word "Magic" rotated across the middle of the card. Nothing errored and every test stayed green. `check:ui` now measures the rail's WIDTH, because every obvious assertion about it — present, vertical, left-hand side, correct text — kept passing while it was broken.
+- **Every stop in the gradient is light.** The first pass used a mid violet as its darkest colour and, at the moment the sweep parked that stop on the word, the label was harder to read than the plain white rail it replaced. A decoration may not cost legibility at any point in its cycle.
+- **This is the one deliberate exception to rule 5.** A travelling gradient needs `background-position` animated, which repaints every frame. The rule exists because a gallery can hold a screen of large animated layers; this one is a single word about 12 by 46 CSS pixels, roughly a thousandth of a card's area. **The exception is the size, not the effect** — it is not licence to animate a position anywhere bigger.
+
+The class is `.rail-magic` on the existing rail. An earlier attempt named its layer `.cf-camp`, which was already that rail's own class, and claiming it silently rewrote the rail's box and dropped the word "Magic" rotated across the middle of the card. Nothing errored and every test stayed green. `check:ui` now measures the rail's WIDTH, because every obvious assertion about it — present, vertical, left-hand side, correct text — kept passing while it was broken.
 
 ### Proving it, because a screenshot cannot
 
