@@ -623,7 +623,9 @@ A tier says how RARE a card is. The two rails say what KIND of thing it is. **Bo
 
 `ALL` belongs to two cards only, and it earns a palette because that palette is not a seventh invention: it cycles the other three camp hues in turn, which is what the camp itself means. Relics print no rails at all.
 
-**The rails are tracked wide** — 3 design units against the 0.5 they started at. These words run VERTICALLY, one glyph above the next, and vertical text at normal tracking reads as a stack rather than a word: the letters touch and the eye has to work them out. There is room, since the longest of the seven uses about a third of the rail's 354-unit height even at this spacing.
+**The rails are tracked very wide** — 28 design units against the 0.5 they started at. These words run VERTICALLY, one glyph above the next, and vertical text at normal tracking reads as a stack rather than a word: the letters touch and the eye has to work them out.
+
+**The ceiling is measured, and the arithmetic that guessed it was wrong by a third.** Reasoning from a nominal glyph advance put the limit near 24 units; two real readings of the longest word, "Neutral", against its own box gave 55.9% filled at 14 units and 82.4% at 28, which puts 95% at about 34. `check:ui` re-measures it on every run, because the rail has a fixed top and bottom and `white-space: nowrap`, so a word too long for it spills out of BOTH ends rather than wrapping or clipping.
 
 **An arcane circle behind the artwork was tried first and scrapped.** However faint it was made, a second animated system in the middle of the card competed with the tier shine for the same space, and a card has one middle.
 

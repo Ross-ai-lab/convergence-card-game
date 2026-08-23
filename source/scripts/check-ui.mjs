@@ -1013,6 +1013,37 @@ await newBoard({ place: false });
       rail.found && ["Magic", "Tech", "Nature", "ALL"].includes(rail.text) && rail.vertical && rail.onTheLeft && rail.narrow,
       JSON.stringify(rail),
     );
+
+    // The rails are tracked very wide, and tracking is what can overflow them:
+    // the box has a fixed top and bottom, the text is centred in it, and
+    // `white-space: nowrap` means a word too long for the box spills out of
+    // BOTH ends rather than wrapping or clipping. The longest word decides the
+    // ceiling, so this measures the longest one there is.
+    await page.evaluate(() => window.__debug.giveCard("Vegapunk"));
+    await page.waitForTimeout(280);
+    const fit = await page
+      .locator(".hand-card .card-face")
+      .last()
+      .evaluate((face) => {
+        const rail = face.querySelector(".cf-rail.cf-align");
+        if (!rail) return { found: false };
+        // The span has no inner element to measure, so borrow a range over its
+        // text: that reports the ink, where the element reports its own box.
+        const range = document.createRange();
+        range.selectNodeContents(rail);
+        const text = range.getBoundingClientRect();
+        const box = rail.getBoundingClientRect();
+        return {
+          found: true,
+          word: (rail.textContent ?? "").trim(),
+          used: Number((text.height / box.height).toFixed(3)),
+        };
+      });
+    check(
+      "the widest rail word still fits its box",
+      fit.found && fit.word === "Neutral" && fit.used < 0.95,
+      JSON.stringify(fit),
+    );
   }
 }
 

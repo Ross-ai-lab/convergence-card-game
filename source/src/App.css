@@ -2934,12 +2934,23 @@ button:disabled {
   font-family: "Nunito", sans-serif;
   font-weight: 800;
   font-size: calc(26 * var(--u));
-  /* Set wide on purpose. These words run VERTICALLY, one glyph above the next,
-     and vertical text at normal tracking reads as a stack rather than a word —
-     the letters touch and the eye has to work them out. There is room: the rail
-     box is 354 design units tall and the longest of the six, "Neutral", uses
-     about a third of it even at this spacing. */
-  letter-spacing: calc(3 * var(--u));
+  /* Set VERY wide on purpose - 28 units against the 0.5 it started at.
+
+     These words run vertically, one glyph above the next, and vertical text at
+     normal tracking reads as a stack rather than a word: the letters touch and
+     the eye has to work them out.
+
+     THE CEILING IS MEASURED, and the arithmetic that guessed it was wrong by a
+     third. Two readings of the longest word, "Neutral", against its own box:
+     14 units of tracking fills 55.9% of it, 28 units fills 82.4%. That is a
+     base of about 104 units of glyph plus 6.7 gaps, so 95% of the box would be
+     reached at roughly 34 - which is the real limit, not the 24 that reasoning
+     from a nominal glyph advance produced.
+
+     28 keeps about a sixth of the box in reserve. check:ui re-measures it on
+     every run, because the box has a fixed top and bottom and `nowrap`, so a
+     word too long for it spills out of BOTH ends rather than wrapping. */
+  letter-spacing: calc(28 * var(--u));
   white-space: nowrap;
   text-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.85);
 }
@@ -6140,7 +6151,7 @@ button:disabled {
      thinner, because a 1.1-degree wedge at the old opacity is a scratch. */
   background: repeating-conic-gradient(
     from 12deg at 50% 50%,
-    rgba(255, 246, 212, 0.2) 0deg 1.1deg,
+    rgba(255, 246, 212, 0.1) 0deg 1.1deg,
     transparent 1.1deg 60deg
   );
   /* Slow enough that you never catch it turning — you only notice, some seconds
