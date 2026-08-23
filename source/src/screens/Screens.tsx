@@ -374,7 +374,7 @@ export function HeroPowersScreen({
     <Overlay title="Hero Powers" onClose={onClose} wide>
       <div className="hero-power-menu">
         <p className="hero-power-menu-intro">
-          Beat the bot to unlock powers permanently. Your first unlock arrives after one win; the tenth arrives after ten.
+          Win against the bot to unlock one Hero Power per win. Each unlock is permanent.
           <b>{` ${Math.min(botWins, HERO_POWER_UNLOCK_ORDER.length)}/${HERO_POWER_UNLOCK_ORDER.length} unlocked`}</b>
         </p>
         <div className="hero-power-menu-grid">
@@ -420,17 +420,7 @@ export function HeroPowersScreen({
   );
 }
 
-/**
- * What has survived every duel so far: the results, and how much of the roster
- * you have actually met.
- *
- * The collection is counted three ways on purpose, because they are three
- * different facts and only the first is close to automatic. SEEN is "this card
- * has been in my hand". PLAYED is "I have put it on the board". WON WITH is "it
- * was on the board in a duel I won". With one shared deck and no deckbuilding, a
- * match shows roughly 25 to 30 of 196 cards, so seeing the whole roster is a real
- * long game rather than a formality.
- */
+/** The persistent duel record, grouped by opponent level. */
 export function RecordScreen({ progress, onClose }: { progress: Progress; onClose: () => void }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -441,8 +431,6 @@ export function RecordScreen({ progress, onClose }: { progress: Progress; onClos
   }, [onClose]);
 
   const overall = totals(progress);
-  const overallPct = winPct(overall);
-  const rosterSize = cards.length;
   const played = LADDER_KEYS.filter((key) => progress.ladders[key].played > 0);
 
   return (
@@ -463,10 +451,6 @@ export function RecordScreen({ progress, onClose }: { progress: Progress; onClos
             <div className="record-figure">
               <b>{overall.won}</b>
               <span>won</span>
-            </div>
-            <div className="record-figure">
-              <b>{overallPct === null ? "—" : `${overallPct}%`}</b>
-              <span>win rate</span>
             </div>
           </div>
 
@@ -497,40 +481,6 @@ export function RecordScreen({ progress, onClose }: { progress: Progress; onClos
               })}
             </tbody>
           </table>
-
-          <h3 className="record-heading">Your collection</h3>
-          <ul className="record-collection">
-            <li>
-              <b>{progress.seen.length}</b> of {rosterSize} cards have been in your hand
-            </li>
-            <li>
-              <b>{progress.played.length}</b> you have put on the board
-            </li>
-            <li>
-              <b>{progress.wonWith.length}</b> were on the board when you won
-            </li>
-          </ul>
-          <p className="record-note">
-            Marked on every card in the gallery. One duel deals you roughly 25 to 30 of them, so the whole
-            roster takes a while.
-          </p>
-
-          {progress.recent.length ? (
-            <>
-              <h3 className="record-heading">Last {progress.recent.length === 1 ? "duel" : `${progress.recent.length} duels`}</h3>
-              <ol className="record-recent">
-                {progress.recent.map((entry, index) => (
-                  <li key={`${entry.at}-${index}`} className={`record-result is-${entry.outcome}`}>
-                    <span className="record-outcome">
-                      {entry.outcome === "won" ? "Won" : entry.outcome === "lost" ? "Lost" : "Draw"}
-                    </span>
-                    <span className="record-versus">{LADDER_LABEL[entry.ladder]}</span>
-                    <span className="record-turns">{entry.turns} turns</span>
-                  </li>
-                ))}
-              </ol>
-            </>
-          ) : null}
         </div>
       </section>
     </div>
@@ -596,8 +546,8 @@ function HowToPlayContent() {
           <li><b>End the turn</b> with Space.</li>
         </ol>
         <p className="rules-aside">
-          Hero Powers are chosen from the <b>Hero Powers</b> menu. Beat the bot to unlock them one at a time,
-          from the weakest unlock to the strongest at ten wins. A selected power costs 2 mana and works once per turn.
+          Hero Powers are chosen from the <b>Hero Powers</b> menu. Win against the bot to unlock them one at a time,
+          in the order shown there. A selected power costs 2 mana and works once per turn.
         </p>
       </section>
 

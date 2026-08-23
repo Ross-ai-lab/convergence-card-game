@@ -36,21 +36,18 @@ export const HERO_POWER_DEFINITIONS: readonly HeroPowerDefinition[] = [
 
 export const HERO_POWER_IDS = HERO_POWER_DEFINITIONS.map(({ id }) => id) as HeroPowerId[];
 
-/**
- * The unlock track is intentionally opinionated: small, situational effects
- * arrive first and the broadest swing effects arrive at ten wins.
- */
+/** The unlock track shown in the Hero Powers menu, from one win to ten wins. */
 export const HERO_POWER_UNLOCK_ORDER: readonly HeroPowerId[] = [
-  "summon_recruit",
-  "minion_hp",
-  "minion_atk",
-  "give_taunt",
-  "minion_atk_down",
   "core_heal",
-  "minion_hp_down",
-  "core_trade_draw",
   "enemy_core_damage",
+  "give_taunt",
   "chain_growth",
+  "summon_recruit",
+  "minion_atk",
+  "minion_hp",
+  "core_trade_draw",
+  "minion_atk_down",
+  "minion_hp_down",
 ];
 
 export function isHeroPowerUnlocked(id: HeroPowerId, botWins: number): boolean {

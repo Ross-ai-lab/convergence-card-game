@@ -161,7 +161,7 @@ Multiple threads usually work on Convergence at the same time. Files, generated 
 
 - Both cores begin at **75 health**. Reduce the opposing core to zero to win.
 - Both players draw from the same shuffled deck and open with **3 cards**. Player One may replace any number of those cards once during the mulligan; Player Two keeps the opening hand. The second player also receives **The Coin**.
-- Hero Powers are selected from the title-screen **Hero Powers** menu. Bot wins unlock them one at a time — first win through tenth win, weakest first and strongest last. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
+- Hero Powers are selected from the title-screen **Hero Powers** menu. Each bot win unlocks the next power permanently, in the order shown in that menu. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
 - At the start of a turn, draw one card. Mana starts at **1**, refills each turn, and increases by one each turn up to **10**.
 - Your hand holds at most **10 cards**. A card drawn into a full hand burns and is discarded.
 - Play a hand card into one of **five board slots** by paying its cost. Effects that summon minions also need an open slot.

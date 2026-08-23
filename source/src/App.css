@@ -5303,65 +5303,6 @@ button:disabled {
   color: rgba(246, 236, 216, 0.92);
 }
 
-.record-collection {
-  margin: 0;
-  padding-left: 20px;
-  line-height: 1.75;
-  color: rgba(246, 236, 216, 0.82);
-}
-
-.record-collection b {
-  color: var(--gold, #e0a93a);
-  font-size: 1.05rem;
-}
-
-.record-note {
-  margin: 8px 0 0;
-  font-size: 0.84rem;
-  color: rgba(246, 236, 216, 0.55);
-}
-
-.record-recent {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.record-result {
-  display: grid;
-  grid-template-columns: 62px 1fr auto;
-  gap: 10px;
-  align-items: baseline;
-  padding: 7px 10px;
-  border-bottom: 1px solid rgba(246, 236, 216, 0.1);
-  font-size: 0.92rem;
-}
-
-.record-outcome {
-  font-weight: 700;
-}
-
-.record-result.is-won .record-outcome {
-  color: #7fe0a4;
-}
-
-.record-result.is-lost .record-outcome {
-  color: #e08a8a;
-}
-
-.record-result.is-drawn .record-outcome {
-  color: rgba(246, 236, 216, 0.65);
-}
-
-.record-versus {
-  color: rgba(246, 236, 216, 0.82);
-}
-
-.record-turns {
-  color: rgba(246, 236, 216, 0.5);
-  font-size: 0.84rem;
-}
-
 /* ---------------------------------------------------------------------------
    Gallery filters. One control per attribute, sitting in a row in the header.
 

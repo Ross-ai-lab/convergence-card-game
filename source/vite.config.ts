@@ -7,4 +7,9 @@ export default defineConfig({
   // The public game is served from /convergence-card-game/play/. Relative
   // asset URLs keep audio, artwork, and fonts under that published folder.
   base: './',
+  build: {
+    // This project intentionally ships one main game bundle. Do not warn just
+    // because that bundle crosses Vite's default 500 KB advisory threshold.
+    chunkSizeWarningLimit: Number.POSITIVE_INFINITY,
+  },
 })
