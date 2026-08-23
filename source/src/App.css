@@ -2934,7 +2934,7 @@ button:disabled {
   font-family: "Nunito", sans-serif;
   font-weight: 800;
   font-size: calc(26 * var(--u));
-  /* Set VERY wide on purpose - 28 units against the 0.5 it started at.
+  /* Set wide on purpose - 15 units against the 0.5 it started at.
 
      These words run vertically, one glyph above the next, and vertical text at
      normal tracking reads as a stack rather than a word: the letters touch and
@@ -2947,10 +2947,12 @@ button:disabled {
      reached at roughly 34 - which is the real limit, not the 24 that reasoning
      from a nominal glyph advance produced.
 
-     28 keeps about a sixth of the box in reserve. check:ui re-measures it on
+     28 was tried and was too much - the letters read as separate marks rather
+     than as a word. 15 fills a little under 60% of the box, which leaves the
+     word plainly spaced and plainly still a word. check:ui re-measures it on
      every run, because the box has a fixed top and bottom and `nowrap`, so a
      word too long for it spills out of BOTH ends rather than wrapping. */
-  letter-spacing: calc(28 * var(--u));
+  letter-spacing: calc(15 * var(--u));
   white-space: nowrap;
   text-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.85);
 }
@@ -6130,29 +6132,38 @@ button:disabled {
    frame. The fade now runs out at the corners themselves. */
 .rarity-yellow .sh-veil {
   -webkit-mask: radial-gradient(
-    farthest-corner circle at 50% 50%,
-    transparent 4%,
-    rgba(0, 0, 0, 0.9) 22%,
-    rgba(0, 0, 0, 0.55) 62%,
-    rgba(0, 0, 0, 0.22) 88%,
+    farthest-corner circle at 50% 78%,
+    transparent 3%,
+    rgba(0, 0, 0, 0.9) 18%,
+    rgba(0, 0, 0, 0.55) 58%,
+    rgba(0, 0, 0, 0.22) 86%,
     transparent 100%
   );
   mask: radial-gradient(
-    farthest-corner circle at 50% 50%,
-    transparent 4%,
-    rgba(0, 0, 0, 0.9) 22%,
-    rgba(0, 0, 0, 0.55) 62%,
-    rgba(0, 0, 0, 0.22) 88%,
+    farthest-corner circle at 50% 78%,
+    transparent 3%,
+    rgba(0, 0, 0, 0.9) 18%,
+    rgba(0, 0, 0, 0.55) 58%,
+    rgba(0, 0, 0, 0.22) 86%,
     transparent 100%
   );
-  /* Six rays, 60 degrees apart, half the width they were.
-     Nineteen at 19 degrees was a texture; eight at 45 was a burst; six at 60 is
-     a shape you can count without trying. The alpha goes UP as the ray goes
-     thinner, because a 1.1-degree wedge at the old opacity is a scratch. */
+  /* FIVE rays, and the origin sits low — 78% down the card rather than in the
+     middle of it.
+
+     A centred burst reads as a sun behind the subject. Dropping the origin to
+     the flavour line turns it into light rising FROM the card's own foot, and
+     the lower half of the circle then falls outside the frame entirely, so only
+     the fan above it is ever seen. That is why five wedges around a full circle
+     look like about three at a time: the other two are below the card.
+
+     Nineteen rays at 19 degrees was a texture; eight at 45 was a burst; five at
+     72 is a fan. The alpha stayed at 0.1 through the last two thinnings, which
+     is as faint as a 1.1-degree wedge can go and still be light rather than a
+     scratch. */
   background: repeating-conic-gradient(
-    from 12deg at 50% 50%,
+    from 12deg at 50% 78%,
     rgba(255, 246, 212, 0.1) 0deg 1.1deg,
-    transparent 1.1deg 60deg
+    transparent 1.1deg 72deg
   );
   /* Slow enough that you never catch it turning — you only notice, some seconds
      later, that the light is not where it was. */
@@ -6171,7 +6182,11 @@ button:disabled {
   right: -30%;
   top: -30%;
   height: 160%;
-  background: radial-gradient(40% 28% at 50% 50%, rgba(255, 232, 168, 0.32), transparent 72%);
+  /* Moved down with the rays. The bloom is the thing the light comes OUT of, so
+     leaving it centred while the rays turned about the foot of the card put the
+     source in one place and its glow in another. This layer is inset -30%, so
+     50% 68% here lands on the same point the rays use. */
+  background: radial-gradient(40% 26% at 50% 68%, rgba(255, 232, 168, 0.32), transparent 72%);
   background-repeat: no-repeat;
   background-size: auto;
   animation: sh-bloom 19s ease-in-out infinite alternate;
@@ -6249,18 +6264,18 @@ button:disabled {
   -webkit-mask: linear-gradient(
     to top,
     transparent 0%,
-    rgba(0, 0, 0, 0.55) 3%,
-    #000 7%,
-    rgba(0, 0, 0, 0.62) 12%,
-    transparent 18%
+    rgba(0, 0, 0, 0.55) 2%,
+    #000 4.5%,
+    rgba(0, 0, 0, 0.62) 7.5%,
+    transparent 11%
   );
   mask: linear-gradient(
     to top,
     transparent 0%,
-    rgba(0, 0, 0, 0.55) 3%,
-    #000 7%,
-    rgba(0, 0, 0, 0.62) 12%,
-    transparent 18%
+    rgba(0, 0, 0, 0.55) 2%,
+    #000 4.5%,
+    rgba(0, 0, 0, 0.62) 7.5%,
+    transparent 11%
   );
 }
 
@@ -6270,14 +6285,14 @@ button:disabled {
   inset: 0;
   transform-origin: 50% 100%;
   background:
-    radial-gradient(7% 10.4% at 8% 100%, rgba(255, 252, 238, 0.95) 0%, rgba(255, 208, 108, 0.82) 24%, rgba(250, 124, 40, 0.56) 52%, rgba(206, 40, 24, 0.26) 76%, transparent 90%),
-    radial-gradient(5% 14.0% at 21% 100%, rgba(255, 254, 246, 0.98) 0%, rgba(255, 220, 132, 0.86) 20%, rgba(252, 138, 44, 0.6) 46%, rgba(214, 44, 26, 0.28) 72%, transparent 88%),
-    radial-gradient(8% 8.8% at 33% 100%, rgba(255, 250, 232, 0.92) 0%, rgba(255, 202, 100, 0.8) 26%, rgba(246, 116, 38, 0.54) 54%, rgba(200, 38, 24, 0.24) 78%, transparent 92%),
-    radial-gradient(5% 12.5% at 45% 100%, rgba(255, 254, 244, 0.96) 0%, rgba(255, 216, 124, 0.84) 22%, rgba(250, 130, 42, 0.58) 48%, rgba(210, 42, 26, 0.27) 74%, transparent 89%),
-    radial-gradient(7% 15.1% at 58% 100%, rgba(255, 255, 250, 1) 0%, rgba(255, 226, 146, 0.88) 18%, rgba(254, 146, 48, 0.62) 44%, rgba(218, 46, 28, 0.3) 70%, transparent 87%),
-    radial-gradient(6% 9.9% at 70% 100%, rgba(255, 250, 234, 0.93) 0%, rgba(255, 204, 104, 0.8) 25%, rgba(248, 120, 38, 0.55) 53%, rgba(204, 38, 24, 0.25) 77%, transparent 91%),
-    radial-gradient(5% 13.0% at 82% 100%, rgba(255, 254, 245, 0.97) 0%, rgba(255, 218, 128, 0.85) 21%, rgba(251, 134, 43, 0.59) 47%, rgba(212, 43, 26, 0.28) 73%, transparent 88%),
-    radial-gradient(8% 8.3% at 94% 100%, rgba(255, 248, 230, 0.9) 0%, rgba(255, 198, 96, 0.78) 27%, rgba(244, 112, 36, 0.52) 55%, rgba(198, 36, 24, 0.23) 79%, transparent 93%);
+    radial-gradient(7% 6.2% at 8% 100%, rgba(255, 252, 238, 0.95) 0%, rgba(255, 208, 108, 0.82) 24%, rgba(250, 124, 40, 0.56) 52%, rgba(206, 40, 24, 0.26) 76%, transparent 90%),
+    radial-gradient(5% 8.4% at 21% 100%, rgba(255, 254, 246, 0.98) 0%, rgba(255, 220, 132, 0.86) 20%, rgba(252, 138, 44, 0.6) 46%, rgba(214, 44, 26, 0.28) 72%, transparent 88%),
+    radial-gradient(8% 5.3% at 33% 100%, rgba(255, 250, 232, 0.92) 0%, rgba(255, 202, 100, 0.8) 26%, rgba(246, 116, 38, 0.54) 54%, rgba(200, 38, 24, 0.24) 78%, transparent 92%),
+    radial-gradient(5% 7.5% at 45% 100%, rgba(255, 254, 244, 0.96) 0%, rgba(255, 216, 124, 0.84) 22%, rgba(250, 130, 42, 0.58) 48%, rgba(210, 42, 26, 0.27) 74%, transparent 89%),
+    radial-gradient(7% 9.1% at 58% 100%, rgba(255, 255, 250, 1) 0%, rgba(255, 226, 146, 0.88) 18%, rgba(254, 146, 48, 0.62) 44%, rgba(218, 46, 28, 0.3) 70%, transparent 87%),
+    radial-gradient(6% 5.9% at 70% 100%, rgba(255, 250, 234, 0.93) 0%, rgba(255, 204, 104, 0.8) 25%, rgba(248, 120, 38, 0.55) 53%, rgba(204, 38, 24, 0.25) 77%, transparent 91%),
+    radial-gradient(5% 7.8% at 82% 100%, rgba(255, 254, 245, 0.97) 0%, rgba(255, 218, 128, 0.85) 21%, rgba(251, 134, 43, 0.59) 47%, rgba(212, 43, 26, 0.28) 73%, transparent 88%),
+    radial-gradient(8% 5.0% at 94% 100%, rgba(255, 248, 230, 0.9) 0%, rgba(255, 198, 96, 0.78) 27%, rgba(244, 112, 36, 0.52) 55%, rgba(198, 36, 24, 0.23) 79%, transparent 93%);
   animation: sh-lick 3.4s ease-in-out infinite alternate;
 }
 
@@ -6287,13 +6302,13 @@ button:disabled {
   inset: 0;
   transform-origin: 50% 100%;
   background:
-    radial-gradient(9% 6.0% at 15% 100%, rgba(255, 255, 252, 0.95) 0%, rgba(255, 232, 168, 0.7) 30%, rgba(252, 150, 52, 0.36) 62%, transparent 86%),
-    radial-gradient(7% 7.5% at 28% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
-    radial-gradient(10% 5.0% at 39% 100%, rgba(255, 254, 248, 0.9) 0%, rgba(255, 226, 154, 0.66) 34%, rgba(250, 142, 48, 0.32) 66%, transparent 88%),
-    radial-gradient(8% 7.0% at 52% 100%, rgba(255, 255, 254, 0.98) 0%, rgba(255, 238, 182, 0.72) 28%, rgba(253, 156, 54, 0.38) 60%, transparent 85%),
-    radial-gradient(9% 5.5% at 65% 100%, rgba(255, 254, 250, 0.92) 0%, rgba(255, 230, 162, 0.68) 32%, rgba(251, 146, 50, 0.34) 64%, transparent 87%),
-    radial-gradient(7% 7.5% at 77% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
-    radial-gradient(10% 4.5% at 89% 100%, rgba(255, 254, 246, 0.88) 0%, rgba(255, 224, 148, 0.64) 36%, rgba(249, 138, 46, 0.3) 68%, transparent 89%);
+    radial-gradient(9% 3.6% at 15% 100%, rgba(255, 255, 252, 0.95) 0%, rgba(255, 232, 168, 0.7) 30%, rgba(252, 150, 52, 0.36) 62%, transparent 86%),
+    radial-gradient(7% 4.5% at 28% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
+    radial-gradient(10% 3.0% at 39% 100%, rgba(255, 254, 248, 0.9) 0%, rgba(255, 226, 154, 0.66) 34%, rgba(250, 142, 48, 0.32) 66%, transparent 88%),
+    radial-gradient(8% 4.2% at 52% 100%, rgba(255, 255, 254, 0.98) 0%, rgba(255, 238, 182, 0.72) 28%, rgba(253, 156, 54, 0.38) 60%, transparent 85%),
+    radial-gradient(9% 3.3% at 65% 100%, rgba(255, 254, 250, 0.92) 0%, rgba(255, 230, 162, 0.68) 32%, rgba(251, 146, 50, 0.34) 64%, transparent 87%),
+    radial-gradient(7% 4.5% at 77% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
+    radial-gradient(10% 2.7% at 89% 100%, rgba(255, 254, 246, 0.88) 0%, rgba(255, 224, 148, 0.64) 36%, rgba(249, 138, 46, 0.3) 68%, transparent 89%);
   animation: sh-lick-far 2.2s ease-in-out infinite alternate;
 }
 

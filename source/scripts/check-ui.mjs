@@ -789,6 +789,29 @@ await newBoard({ place: false });
     await page.locator(".hand-card").last().click();
     await page.locator(".board-slot.placeable.empty").first().click();
     await page.locator(".target-prompt.card-choice-prompt .prompt-card-choice").first().waitFor({ state: "visible", timeout: 5000 });
+    // Wait for the row to SETTLE, not merely for its first card to exist.
+    //
+    // This check flaked, and the reason was here: waiting on the FIRST choice
+    // and then measuring all three could catch the prompt with two mounted, or
+    // with three mounted mid-animation and their tops still converging. Either
+    // reads as a broken layout when it is really a slow frame.
+    //
+    // The poll below waits for the condition the assertion is about. It
+    // swallows its own timeout on purpose, so a genuine break still falls
+    // through to the check and fails with the real measurements rather than
+    // being hidden behind a Playwright error.
+    await page
+      .waitForFunction(
+        () => {
+          const cards = [...document.querySelectorAll(".target-prompt.card-choice-prompt .prompt-card-choice")];
+          if (cards.length !== 3) return false;
+          const tops = cards.map((card) => card.getBoundingClientRect().top);
+          return Math.max(...tops) - Math.min(...tops) <= 2;
+        },
+        null,
+        { timeout: 5000 },
+      )
+      .catch(() => {});
     const choiceBoxes = await page.locator(".target-prompt.card-choice-prompt .prompt-card-choice").evaluateAll((elements) =>
       elements.map((element) => {
         const box = element.getBoundingClientRect();

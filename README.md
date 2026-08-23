@@ -560,7 +560,7 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 | Tier | Colour | What it does | Layers |
 |---|---|---|---|
 | Epic | violet | mist drifting sideways, dust settling through it | 4 |
-| Legendary | gold | six thin rays turning about the card centre | 3 |
+| Legendary | gold | five thin rays fanning up from the card foot | 3 |
 | Mythic | crimson | a low bed of tapered flame, embers off the top | 5 |
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
@@ -605,7 +605,11 @@ Mythic was rebuilt after the first version read as a red glow rather than as fla
 
 **Speed was the other half of the fix, and it has been tuned in both directions.** The first build swelled over 12 seconds, which is not fire. Real fire flickers in about one, which turned out to be too fast: a thumbnail-sized flame at that rate reads as a strobe, and a gallery row of them is unusable. It runs at 3.4s and 2.2s now. **Slow enough to watch beats accurate**, and the same held for the Legendary rays, which turn once every 134 seconds — slow enough that you never catch them moving, only notice some seconds later that the light is not where it was.
 
-**Height is capped low on purpose**, at roughly a fifth of the card. Fire that climbs to the middle of the artwork stops being a card that is burning and becomes a card behind a bonfire.
+**Height is capped low on purpose** — a thin band along the bottom edge, ending at the flavour line. It came down three times on the owner's call, from half the card to a fifth to about a tenth. Fire that climbs into the artwork stops being a card that is burning and becomes a card behind a bonfire.
+
+**The mask's top stop is what caps the height, but the LOBES have to come down with it.** Cut the mask alone and it slices each tongue through its widest part, so what survives is a bright band rather than tongue shapes — which looks like a gradient bug rather than a height setting. Both were halved together each time.
+
+**The Legendary rays sit low too**, with their origin 78% down the card rather than in the middle. The lower half of the circle then falls outside the frame and only the fan above it is ever seen, so five wedges around a full circle read as about three at a time — light rising from the card's own foot rather than a sun behind the subject. The bloom moved down with them: leaving it centred put the source in one place and its glow in another.
 
 ### Living rails, and tier-coloured names
 
@@ -623,9 +627,9 @@ A tier says how RARE a card is. The two rails say what KIND of thing it is. **Bo
 
 `ALL` belongs to two cards only, and it earns a palette because that palette is not a seventh invention: it cycles the other three camp hues in turn, which is what the camp itself means. Relics print no rails at all.
 
-**The rails are tracked very wide** — 28 design units against the 0.5 they started at. These words run VERTICALLY, one glyph above the next, and vertical text at normal tracking reads as a stack rather than a word: the letters touch and the eye has to work them out.
+**The rails are tracked wide** — 15 design units against the 0.5 they started at. These words run VERTICALLY, one glyph above the next, and vertical text at normal tracking reads as a stack rather than a word: the letters touch and the eye has to work them out.
 
-**The ceiling is measured, and the arithmetic that guessed it was wrong by a third.** Reasoning from a nominal glyph advance put the limit near 24 units; two real readings of the longest word, "Neutral", against its own box gave 55.9% filled at 14 units and 82.4% at 28, which puts 95% at about 34. `check:ui` re-measures it on every run, because the rail has a fixed top and bottom and `white-space: nowrap`, so a word too long for it spills out of BOTH ends rather than wrapping or clipping.
+**The ceiling is measured, and the arithmetic that guessed it was wrong by a third.** Reasoning from a nominal glyph advance put the limit near 24 units; two real readings of the longest word, "Neutral", against its own box gave 55.9% filled at 14 units and 82.4% at 28, which puts 95% at about 34. 28 was then tried and was too much — the letters read as separate marks rather than as a word — so it sits at 15, a little under 60% of the box. `check:ui` re-measures it on every run, because the rail has a fixed top and bottom and `white-space: nowrap`, so a word too long for it spills out of BOTH ends rather than wrapping or clipping.
 
 **An arcane circle behind the artwork was tried first and scrapped.** However faint it was made, a second animated system in the middle of the card competed with the tier shine for the same space, and a card has one middle.
 
