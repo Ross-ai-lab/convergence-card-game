@@ -358,9 +358,15 @@ npm run changed-cards
 
 Reach for both of these before investigating by hand, and before telling the owner anything about whether a change survived.
 
-### Screenshot requests are exact-scope changes
+### Reference requests must be globally safe and future-proof
 
-**Never use a shared display name as the scope of a screenshot request.** First identify the exact card id or token constructor shown in the screenshot. A request for Photo 3, the **Heroic Recruit** created by the 2-mana `summon_recruit` Hero Power, changes only that token's name, art, and summon path. It must not rename card `c169`, **An Order of Heavy Knights**, or change any other card with similar wording. Never run a global name or artwork replacement for a screenshot request. Before reporting completion, state the exact card or token name, id, and asset path changed.
+**Never use a display name, partial name, screenshot label, or artwork filename as an edit scope.** Those are search clues, not identities. The failure mode is fuzzy matching: a request for one card or token can silently change another card whose name or artwork partly matches it.
+
+For every reference-based request, first resolve the exact runtime identity: a stable card id for a card, a token constructor or effect id for a summoned token, and the exact asset path. Search all matching names and paths before editing. If more than one entity matches, stop and resolve the ambiguity. Apply the change only to the explicitly identified entity. Never use a global replace, substring match, or shared display name to rename cards, replace artwork, or change effects.
+
+Keep cards and generated tokens separate even when they share a name. Photo 3 is an example: the **Heroic Recruit** from the 2-mana `summon_recruit` Hero Power is a token request. It does not authorize changes to **An Order of Heavy Knights**, a roster card, or to any future card with a similar name. The same rule applies to every future screenshot, photo, label, and asset request.
+
+Before reporting completion, state the exact entities changed and the similar entities deliberately left untouched. Prefer general ambiguity guards and collision-class checks over a one-card exception test, so the protection covers future dragons, knights, tokens, and every other partial-name collision.
 
 ### Card wording is uniform, and that is a mechanical requirement
 
