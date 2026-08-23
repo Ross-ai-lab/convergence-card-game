@@ -3112,14 +3112,19 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
 const SHINE_RARITIES = new Set(["purple", "yellow", "red", "relic"]);
 
 /**
- * Camps whose RAIL is animated. Magic only, for now.
+ * Rail values with a lit palette built for them.
  *
- * The camp mark lives on the rail — the vertical word down the card's left edge
- * — rather than as artwork behind the picture. That was tried and scrapped: two
- * animated systems in the middle of one card compete for the same space, and a
- * card has one middle. Tech and Nature keep the plain rail until this is judged.
+ * The camp and alignment marks live on the RAILS — the two vertical words down
+ * the card's edges — rather than as artwork behind the picture. That was tried
+ * and scrapped: two animated systems in the middle of one card compete for the
+ * same space, and a card has one middle.
+ *
+ * `ALL` is deliberately absent from the camps. Two cards carry it, it is an
+ * umbrella rather than a camp, and inventing a seventh palette to distinguish
+ * two cards would cost more than it says.
  */
-const CAMP_MARKS = new Set(["magic"]);
+const RAIL_CAMPS = new Set(["magic", "tech", "nature"]);
+const RAIL_ALIGNMENTS = new Set(["good", "neutral", "evil"]);
 
 /** How far a card has got in your collection. Ordered weakest to strongest. */
 type CollectionMark = "unseen" | "seen" | "played" | "won";
@@ -3186,10 +3191,14 @@ function CardFace({
   } as CSSProperties;
   const rarity = (card.rarity ?? "Black").toLowerCase();
   const isRelicFace = rarity === "relic";
-  // Only camps with a mark BUILT get one. A relic's camp is the placeholder
-  // "Ascension" and would resolve to nothing anyway, but naming the built set
-  // explicitly is what stops a future camp silently rendering two empty spans.
-  const campMark = CAMP_MARKS.has((card.camp ?? "").toLowerCase()) ? (card.camp ?? "").toLowerCase() : null;
+  // Only values with a palette BUILT get a lit rail. A relic's camp and
+  // alignment are the placeholders "Ascension" and "Relic", and relics print no
+  // rails at all; naming the built sets explicitly is what stops a future camp
+  // or alignment silently rendering a class nothing styles.
+  const campMark = RAIL_CAMPS.has((card.camp ?? "").toLowerCase()) ? (card.camp ?? "").toLowerCase() : null;
+  const alignMark = RAIL_ALIGNMENTS.has((card.alignment ?? "").toLowerCase())
+    ? (card.alignment ?? "").toLowerCase()
+    : null;
   // Keyword artwork. On the board the live flags win, because a Divine Shield
   // can be popped while the printed keyword stays on the card forever.
   // Conditions belong to the BOARD, never the hand (owner ruling). A card you are
@@ -3218,13 +3227,15 @@ function CardFace({
             "relic" without help. Characters keep both. */}
         {isRelicFace ? null : (
           <>
-            {/* The camp rail is where a camp announces itself now. An earlier
+            {/* Both rails are where a card announces itself now. An earlier
                 build put a turning arcane circle behind the artwork instead,
                 and it was scrapped: a second animated system in the middle of
                 the card competes with the tier shine for the same space, and
-                the card only has one middle. The word was already there. */}
+                the card only has one middle. The words were already there. */}
             <span className={campMark ? `cf-rail cf-camp rail-${campMark}` : "cf-rail cf-camp"}>{card.camp}</span>
-            <span className="cf-rail cf-align">{card.alignment}</span>
+            <span className={alignMark ? `cf-rail cf-align rail-${alignMark}` : "cf-rail cf-align"}>
+              {card.alignment}
+            </span>
           </>
         )}
         {quote ? <div className="cf-flavor"><span>{`“${quote}”`}</span></div> : null}

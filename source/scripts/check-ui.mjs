@@ -883,48 +883,66 @@ await newBoard({ place: false });
       sweeps.join(" "),
     );
 
-    // The Magic rail, which is a trial and the first of its kind. Three things
-    // have to hold at once, and the middle one is the whole trick: the glyphs
-    // are painted by a gradient clipped to the text, so a card whose
-    // `background-clip` silently stopped applying would show an INVISIBLE camp
-    // word rather than a plain one — transparent fill with nothing behind it.
-    await page.evaluate(() => window.__debug.giveCard("Doctor Strange"));
-    await page.waitForTimeout(300);
-    const magic = page.locator(".hand-card .card-face").last();
-    const railFx = await magic.evaluate((face) => {
-      const rail = face.querySelector(".cf-rail.cf-camp.rail-magic");
-      if (!rail) return { found: false };
-      const style = getComputedStyle(rail);
-      return {
-        found: true,
-        running: rail.getAnimations().filter((animation) => animation.playState === "running").length,
-        clipped: (style.webkitBackgroundClip || style.backgroundClip) === "text",
-        painted: style.backgroundImage !== "none",
-      };
-    });
+    // The lit rails. Both words on a card carry a gradient clipped to the
+    // glyphs, and the CLIP is the load-bearing assertion: a card whose
+    // `background-clip` silently stopped applying would show an INVISIBLE word
+    // rather than a plain one, because the fill is transparent and the colour
+    // lives entirely in the background.
+    //
+    // Every gradient is also compared against every other. Six palettes have to
+    // be distinct, and "distinct" is the one property that cannot survive
+    // someone copying a block and forgetting to change the colours — which is
+    // exactly how these six were written.
+    const railCards = ["Doctor Strange", "Vegapunk", "Boros"];
+    const seenGradients = new Map();
+    for (const name of railCards) {
+      await page.evaluate((cardName) => window.__debug.giveCard(cardName), name);
+      await page.waitForTimeout(280);
+      const rails = await page
+        .locator(".hand-card .card-face")
+        .last()
+        .evaluate((face) =>
+          [...face.querySelectorAll(".cf-rail")].map((rail) => {
+            const style = getComputedStyle(rail);
+            return {
+              text: (rail.textContent ?? "").trim(),
+              running: rail.getAnimations().filter((animation) => animation.playState === "running").length,
+              clipped: (style.webkitBackgroundClip || style.backgroundClip) === "text",
+              gradient: style.backgroundImage,
+            };
+          }),
+        );
+      const lit = rails.filter((rail) => rail.running === 1 && rail.clipped && rail.gradient !== "none");
+      check(
+        `both rails on ${name} are lit and clipped`,
+        rails.length === 2 && lit.length === 2,
+        rails.map((rail) => `${rail.text}:${rail.running}/${rail.clipped}`).join(" "),
+      );
+      for (const rail of lit) seenGradients.set(rail.text, rail.gradient);
+    }
+    const gradientValues = [...seenGradients.values()];
     check(
-      "the Magic rail flows a gradient through its letters",
-      railFx.found && railFx.running === 1 && railFx.clipped && railFx.painted,
-      JSON.stringify(railFx),
+      "every rail palette is different from every other",
+      seenGradients.size === 6 && new Set(gradientValues).size === 6,
+      `${seenGradients.size} words, ${new Set(gradientValues).size} distinct gradients: ${[...seenGradients.keys()].join(", ")}`,
     );
 
-    // And a camp WITHOUT a built mark keeps the plain rail. Guards the reverse
-    // failure: a selector that stopped naming the camp would leave every card
-    // animated, which is the same bug wearing the opposite face.
-    await page.evaluate(() => window.__debug.giveCard("Godzilla"));
-    await page.waitForTimeout(300);
-    const plain = await page
-      .locator(".hand-card .card-face")
-      .last()
-      .evaluate((face) => {
-        const rail = face.querySelector(".cf-rail.cf-camp");
-        if (!rail) return { found: false };
-        return { found: true, text: (rail.textContent ?? "").trim(), animated: rail.getAnimations().length > 0 };
-      });
+    // Card names carry their tier's colour, and Rare stays plain white — the
+    // baseline the others read against, exactly as it is for the shine.
+    const nameColours = {};
+    for (const [name, tier] of [["Aizen", "purple"], ["Detective L", "yellow"], ["Yujiro", "red"], ["John Wick", "black"]]) {
+      await page.evaluate((cardName) => window.__debug.giveCard(cardName), name);
+      await page.waitForTimeout(260);
+      nameColours[tier] = await page
+        .locator(`.hand-card .card-face.rarity-${tier}`)
+        .last()
+        .evaluate((face) => getComputedStyle(face.querySelector(".cf-name")).color)
+        .catch(() => "missing");
+    }
     check(
-      "a camp with no mark keeps a plain rail",
-      plain.found && plain.text !== "Magic" && !plain.animated,
-      JSON.stringify(plain),
+      "card names are tinted by tier, and Rare stays white",
+      new Set(Object.values(nameColours)).size === 4 && nameColours.black === "rgb(255, 255, 255)",
+      JSON.stringify(nameColours),
     );
 
     // The camp RAIL — the vertical word down the left edge — is a different

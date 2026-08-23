@@ -560,8 +560,8 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 | Tier | Colour | What it does | Layers |
 |---|---|---|---|
 | Epic | violet | mist drifting sideways, dust settling through it | 4 |
-| Legendary | gold | one thin ray set turning about the card's centre | 3 |
-| Mythic | crimson | tapered flame tongues, embers off the top | 5 |
+| Legendary | gold | eight thin rays turning about the card centre | 3 |
+| Mythic | crimson | a low bed of tapered flame, embers off the top | 5 |
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
 
@@ -607,18 +607,37 @@ Mythic was rebuilt after the first version read as a red glow rather than as fla
 
 **Height is capped low on purpose**, at roughly a fifth of the card. Fire that climbs to the middle of the artwork stops being a card that is burning and becomes a card behind a bonfire.
 
-### Camp marks, a trial
+### Living rails, and tier-coloured names
 
-A tier says how RARE a card is. A camp says what KIND of thing it is. **The camp mark lives on the RAIL** — the vertical camp word already printed down the card's left edge — where it costs no new space, cannot fight the artwork, and names itself rather than requiring anyone to learn a symbol. **Magic is the first and currently the only one**: a prismatic gradient clipped to the glyphs and travelling along them, violet → cyan → white → magenta → gold. Tech and Nature keep the plain rail pending judgement on this.
+A tier says how RARE a card is. The two rails say what KIND of thing it is. **Both vertical words down the card's edges now carry a gradient clipped to their glyphs and travelling along them**, so each says what it is in its own colours.
+
+| Rail | Value | Palette |
+|---|---|---|
+| camp | Magic | violet → cyan → white → magenta |
+| camp | Tech | electric blue → cyan → white → steel |
+| camp | Nature | leaf → lime → white → amber |
+| alignment | Good | white → pale gold → sky → white |
+| alignment | Neutral | steel → pale bronze → white |
+| alignment | Evil | crimson → rose → white → ember |
+
+`ALL` has no palette — two cards carry it, it is an umbrella rather than a camp, and a seventh palette to distinguish two cards would cost more than it says. Relics print no rails at all.
 
 **An arcane circle behind the artwork was tried first and scrapped.** However faint it was made, a second animated system in the middle of the card competed with the tier shine for the same space, and a card has one middle.
 
-Two rules survive from that attempt:
+Four rules, each learned by getting it wrong first:
 
-- **Every stop in the gradient is light.** The first pass used a mid violet as its darkest colour and, at the moment the sweep parked that stop on the word, the label was harder to read than the plain white rail it replaced. A decoration may not cost legibility at any point in its cycle.
-- **This is the one deliberate exception to rule 5.** A travelling gradient needs `background-position` animated, which repaints every frame. The rule exists because a gallery can hold a screen of large animated layers; this one is a single word about 12 by 46 CSS pixels, roughly a thousandth of a card's area. **The exception is the size, not the effect** — it is not licence to animate a position anywhere bigger.
+- **Every stop is light.** The first pass used a mid violet as its darkest colour and, at the moment the sweep parked that stop on the word, the label was harder to read than the plain white rail it replaced. **A decoration may not cost legibility at any point in its cycle.**
+- **Pastel reads as DIM, not as bright.** These words sit at 26 design units against a plain white original, so a palette of soft tints looks like the colour was turned down rather than turned on. Stops are saturated AND high-luminance, and white recurs twice per cycle so the word keeps flashing back to at least what it used to be.
+- **The halo is what makes it look lit rather than tinted.** `text-shadow` cannot be seen through transparent glyphs, so it is a tight coloured `drop-shadow` on the element, in that rail's own hue, over the dark shadow that keeps it legible on pale artwork.
+- **The alignment set is one notch lower in chroma than the camp set.** A card wears one of each at the same moment on opposite edges, and two equally loud words pull the eye off the card itself. Neutral is the dullest of the six on purpose — a middle option that shimmers as hard as Good and Evil looks like the interesting one.
 
-The class is `.rail-magic` on the existing rail. An earlier attempt named its layer `.cf-camp`, which was already that rail's own class, and claiming it silently rewrote the rail's box and dropped the word "Magic" rotated across the middle of the card. Nothing errored and every test stayed green. `check:ui` now measures the rail's WIDTH, because every obvious assertion about it — present, vertical, left-hand side, correct text — kept passing while it was broken.
+No two periods match: 6.5 / 7.4 / 8.3 / 5.9 / 9.7 / 6.9 seconds. Six words on one screen sharing a beat is a disco.
+
+**This is the one deliberate exception to rule 5.** A travelling gradient needs `background-position` animated, which repaints every frame. The rule exists because a gallery can hold a screen of large animated layers; these are two words of about 12 by 46 CSS pixels each, together roughly a five-hundredth of a card's area. **The exception is the size, not the effect** — it is not licence to animate a position anywhere bigger.
+
+**Card names carry their tier's colour too**, as a PALE tint and never the saturated one: lilac for Epic, gold for Legendary, rose for Mythic, cyan for Relic, plain white for Rare. The banner behind the name is already painted in that tier's palette, so a saturated gold name would be gold on gold, and the name is the one thing on a card that must never be hard to read.
+
+An earlier attempt named its layer `.cf-camp`, which was already the left rail's own class, and claiming it silently rewrote the rail's box and dropped the word "Magic" rotated across the middle of the card. Nothing errored and every test stayed green. `check:ui` now measures the rail's WIDTH, because every obvious assertion about it — present, vertical, left-hand side, correct text — kept passing while it was broken. It also compares all six gradients against each other, because "distinct" is the one property that cannot survive someone copying a block and forgetting to change the colours.
 
 ### Proving it, because a screenshot cannot
 

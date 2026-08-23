@@ -6101,25 +6101,38 @@ button:disabled {
      50% 2%, so light appeared to come from two places at once and from neither
      of them convincingly. There is now ONE origin, the middle of the card, and
      every layer uses it. */
+/* EIGHT rays, 45 degrees apart, reaching the corners.
+
+   There were nineteen. Nineteen rays 19 degrees apart is a texture, not a
+   burst — at that spacing the eye reads the gaps as noise rather than counting
+   spokes, and the whole thing goes back to being a wash. Eight is few enough to
+   see as eight.
+
+   `farthest-corner`, not `closest-side`. A card is 750 by 1050 design units, so
+   `closest-side` measures 375 and the rays died about halfway to a corner,
+   which looked like a circle with a soft edge instead of light filling the
+   frame. The fade now runs out at the corners themselves. */
 .rarity-yellow .sh-veil {
   -webkit-mask: radial-gradient(
-    closest-side circle at 50% 50%,
-    transparent 5%,
-    rgba(0, 0, 0, 0.88) 26%,
-    rgba(0, 0, 0, 0.36) 56%,
-    transparent 76%
+    farthest-corner circle at 50% 50%,
+    transparent 4%,
+    rgba(0, 0, 0, 0.9) 22%,
+    rgba(0, 0, 0, 0.55) 62%,
+    rgba(0, 0, 0, 0.22) 88%,
+    transparent 100%
   );
   mask: radial-gradient(
-    closest-side circle at 50% 50%,
-    transparent 5%,
-    rgba(0, 0, 0, 0.88) 26%,
-    rgba(0, 0, 0, 0.36) 56%,
-    transparent 76%
+    farthest-corner circle at 50% 50%,
+    transparent 4%,
+    rgba(0, 0, 0, 0.9) 22%,
+    rgba(0, 0, 0, 0.55) 62%,
+    rgba(0, 0, 0, 0.22) 88%,
+    transparent 100%
   );
   background: repeating-conic-gradient(
     from 12deg at 50% 50%,
-    rgba(255, 246, 212, 0.11) 0deg 1.5deg,
-    transparent 1.5deg 19deg
+    rgba(255, 246, 212, 0.16) 0deg 2.2deg,
+    transparent 2.2deg 45deg
   );
   animation: sh-turn-back 67s linear infinite;
 }
@@ -6179,10 +6192,11 @@ button:disabled {
    with a `skewX` lean in the keyframes. The lean is what sells it: a flame that
    only grows and shrinks is a lamp, and a flame that also bends is fire.
 
-   **Height is deliberately low.** The tongues reach about a fifth of the way up
-   the card, not half. Fire that climbs to the middle of the artwork stops being
-   a card that is burning and becomes a card behind a bonfire — owner's call,
-   and it also keeps the illustration readable.
+   **Height is deliberately low** — a bed of flame along the bottom edge, ending
+   just above the flavour line, not a bonfire the card is standing behind. It
+   has been lowered twice on the owner's call and is now roughly a ninth of the
+   card. The mask's top stop is what caps it; the lobe heights only decide how
+   the tongues taper before they get there.
 
      .sh-field   the main row of tongues, 1.7s
      .sh-veil    a hotter, shorter core row at the base, 1.1s
@@ -6213,18 +6227,18 @@ button:disabled {
   -webkit-mask: linear-gradient(
     to top,
     transparent 0%,
-    rgba(0, 0, 0, 0.5) 5%,
-    #000 12%,
-    rgba(0, 0, 0, 0.66) 21%,
-    transparent 31%
+    rgba(0, 0, 0, 0.55) 3%,
+    #000 7%,
+    rgba(0, 0, 0, 0.62) 12%,
+    transparent 18%
   );
   mask: linear-gradient(
     to top,
     transparent 0%,
-    rgba(0, 0, 0, 0.5) 5%,
-    #000 12%,
-    rgba(0, 0, 0, 0.66) 21%,
-    transparent 31%
+    rgba(0, 0, 0, 0.55) 3%,
+    #000 7%,
+    rgba(0, 0, 0, 0.62) 12%,
+    transparent 18%
   );
 }
 
@@ -6234,14 +6248,14 @@ button:disabled {
   inset: 0;
   transform-origin: 50% 100%;
   background:
-    radial-gradient(7% 20% at 8% 100%, rgba(255, 252, 238, 0.95) 0%, rgba(255, 208, 108, 0.82) 24%, rgba(250, 124, 40, 0.56) 52%, rgba(206, 40, 24, 0.26) 76%, transparent 90%),
-    radial-gradient(5% 27% at 21% 100%, rgba(255, 254, 246, 0.98) 0%, rgba(255, 220, 132, 0.86) 20%, rgba(252, 138, 44, 0.6) 46%, rgba(214, 44, 26, 0.28) 72%, transparent 88%),
-    radial-gradient(8% 17% at 33% 100%, rgba(255, 250, 232, 0.92) 0%, rgba(255, 202, 100, 0.8) 26%, rgba(246, 116, 38, 0.54) 54%, rgba(200, 38, 24, 0.24) 78%, transparent 92%),
-    radial-gradient(5% 24% at 45% 100%, rgba(255, 254, 244, 0.96) 0%, rgba(255, 216, 124, 0.84) 22%, rgba(250, 130, 42, 0.58) 48%, rgba(210, 42, 26, 0.27) 74%, transparent 89%),
-    radial-gradient(7% 29% at 58% 100%, rgba(255, 255, 250, 1) 0%, rgba(255, 226, 146, 0.88) 18%, rgba(254, 146, 48, 0.62) 44%, rgba(218, 46, 28, 0.3) 70%, transparent 87%),
-    radial-gradient(6% 19% at 70% 100%, rgba(255, 250, 234, 0.93) 0%, rgba(255, 204, 104, 0.8) 25%, rgba(248, 120, 38, 0.55) 53%, rgba(204, 38, 24, 0.25) 77%, transparent 91%),
-    radial-gradient(5% 25% at 82% 100%, rgba(255, 254, 245, 0.97) 0%, rgba(255, 218, 128, 0.85) 21%, rgba(251, 134, 43, 0.59) 47%, rgba(212, 43, 26, 0.28) 73%, transparent 88%),
-    radial-gradient(8% 16% at 94% 100%, rgba(255, 248, 230, 0.9) 0%, rgba(255, 198, 96, 0.78) 27%, rgba(244, 112, 36, 0.52) 55%, rgba(198, 36, 24, 0.23) 79%, transparent 93%);
+    radial-gradient(7% 10.4% at 8% 100%, rgba(255, 252, 238, 0.95) 0%, rgba(255, 208, 108, 0.82) 24%, rgba(250, 124, 40, 0.56) 52%, rgba(206, 40, 24, 0.26) 76%, transparent 90%),
+    radial-gradient(5% 14.0% at 21% 100%, rgba(255, 254, 246, 0.98) 0%, rgba(255, 220, 132, 0.86) 20%, rgba(252, 138, 44, 0.6) 46%, rgba(214, 44, 26, 0.28) 72%, transparent 88%),
+    radial-gradient(8% 8.8% at 33% 100%, rgba(255, 250, 232, 0.92) 0%, rgba(255, 202, 100, 0.8) 26%, rgba(246, 116, 38, 0.54) 54%, rgba(200, 38, 24, 0.24) 78%, transparent 92%),
+    radial-gradient(5% 12.5% at 45% 100%, rgba(255, 254, 244, 0.96) 0%, rgba(255, 216, 124, 0.84) 22%, rgba(250, 130, 42, 0.58) 48%, rgba(210, 42, 26, 0.27) 74%, transparent 89%),
+    radial-gradient(7% 15.1% at 58% 100%, rgba(255, 255, 250, 1) 0%, rgba(255, 226, 146, 0.88) 18%, rgba(254, 146, 48, 0.62) 44%, rgba(218, 46, 28, 0.3) 70%, transparent 87%),
+    radial-gradient(6% 9.9% at 70% 100%, rgba(255, 250, 234, 0.93) 0%, rgba(255, 204, 104, 0.8) 25%, rgba(248, 120, 38, 0.55) 53%, rgba(204, 38, 24, 0.25) 77%, transparent 91%),
+    radial-gradient(5% 13.0% at 82% 100%, rgba(255, 254, 245, 0.97) 0%, rgba(255, 218, 128, 0.85) 21%, rgba(251, 134, 43, 0.59) 47%, rgba(212, 43, 26, 0.28) 73%, transparent 88%),
+    radial-gradient(8% 8.3% at 94% 100%, rgba(255, 248, 230, 0.9) 0%, rgba(255, 198, 96, 0.78) 27%, rgba(244, 112, 36, 0.52) 55%, rgba(198, 36, 24, 0.23) 79%, transparent 93%);
   animation: sh-lick 1.7s ease-in-out infinite alternate;
 }
 
@@ -6251,13 +6265,13 @@ button:disabled {
   inset: 0;
   transform-origin: 50% 100%;
   background:
-    radial-gradient(9% 12% at 15% 100%, rgba(255, 255, 252, 0.95) 0%, rgba(255, 232, 168, 0.7) 30%, rgba(252, 150, 52, 0.36) 62%, transparent 86%),
-    radial-gradient(7% 15% at 28% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
-    radial-gradient(10% 10% at 39% 100%, rgba(255, 254, 248, 0.9) 0%, rgba(255, 226, 154, 0.66) 34%, rgba(250, 142, 48, 0.32) 66%, transparent 88%),
-    radial-gradient(8% 14% at 52% 100%, rgba(255, 255, 254, 0.98) 0%, rgba(255, 238, 182, 0.72) 28%, rgba(253, 156, 54, 0.38) 60%, transparent 85%),
-    radial-gradient(9% 11% at 65% 100%, rgba(255, 254, 250, 0.92) 0%, rgba(255, 230, 162, 0.68) 32%, rgba(251, 146, 50, 0.34) 64%, transparent 87%),
-    radial-gradient(7% 15% at 77% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
-    radial-gradient(10% 9% at 89% 100%, rgba(255, 254, 246, 0.88) 0%, rgba(255, 224, 148, 0.64) 36%, rgba(249, 138, 46, 0.3) 68%, transparent 89%);
+    radial-gradient(9% 6.0% at 15% 100%, rgba(255, 255, 252, 0.95) 0%, rgba(255, 232, 168, 0.7) 30%, rgba(252, 150, 52, 0.36) 62%, transparent 86%),
+    radial-gradient(7% 7.5% at 28% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
+    radial-gradient(10% 5.0% at 39% 100%, rgba(255, 254, 248, 0.9) 0%, rgba(255, 226, 154, 0.66) 34%, rgba(250, 142, 48, 0.32) 66%, transparent 88%),
+    radial-gradient(8% 7.0% at 52% 100%, rgba(255, 255, 254, 0.98) 0%, rgba(255, 238, 182, 0.72) 28%, rgba(253, 156, 54, 0.38) 60%, transparent 85%),
+    radial-gradient(9% 5.5% at 65% 100%, rgba(255, 254, 250, 0.92) 0%, rgba(255, 230, 162, 0.68) 32%, rgba(251, 146, 50, 0.34) 64%, transparent 87%),
+    radial-gradient(7% 7.5% at 77% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
+    radial-gradient(10% 4.5% at 89% 100%, rgba(255, 254, 246, 0.88) 0%, rgba(255, 224, 148, 0.64) 36%, rgba(249, 138, 46, 0.3) 68%, transparent 89%);
   animation: sh-lick-far 1.1s ease-in-out infinite alternate;
 }
 
@@ -6381,81 +6395,195 @@ button:disabled {
   animation: sh-breathe 5.3s ease-in-out infinite alternate;
 }
 
+
 /* ===========================================================================
-   THE MAGIC RAIL — a camp that says its own name in moving light.
+   LIVING RAILS — the two words down the card's edges, lit and moving.
 
-   The first attempt at marking a camp was a turning arcane circle behind the
-   artwork. It was scrapped: however faint it was made, a second animated system
-   in the middle of the card competed with the tier shine for the same space,
-   and the card only has one middle. Owner's call and the right one.
+   Every character card already prints its camp down the left rail and its
+   alignment down the right. Both now carry a gradient clipped to the glyphs and
+   travelling along them, so each word says what it is in its own colours.
 
-   The camp is already written on the card — a vertical word down the left rail
-   — so the mark goes THERE instead. It costs no new space, it cannot fight the
-   artwork, and it names itself rather than requiring anyone to learn a symbol.
+   An earlier attempt put a turning arcane circle behind the artwork instead.
+   Scrapped: however faint it was made, a second animated system in the middle
+   of the card competed with the tier shine for the same space, and a card has
+   one middle. The rails cost no new space and cannot fight the illustration.
 
-   YES, THE FONT COLOUR CAN CHANGE, and it can do considerably more than that:
-   `background-clip: text` paints any gradient through the glyphs, so the word
-   can carry a prismatic sweep that travels along its own letters. Violet, cyan,
-   magenta, gold, back to violet — spectral rather than a literal rainbow,
-   because six saturated bands in a 12px word is mush, and four wide ones read.
+   SIX PALETTES, ALL DISTINCT, and distinct is the hard part with six of them:
 
-   THE ONE PLACE THIS BREAKS RULE 5 (transform and opacity only), and it is a
-   deliberate exception with a measurement behind it. A travelling gradient
-   needs `background-position` animated, which repaints every frame. The rule
-   exists because a gallery can hold a screen of large animated layers; this
-   layer is a single word about 12 by 46 CSS pixels, roughly a thousandth of a
-   card's area, against tier layers that cover the whole face. The exception is
-   the size, not the effect — do not take it as licence to animate a position
-   anywhere bigger.
+     camp    magic    violet → cyan → white → magenta      arcane, prismatic
+     camp    tech     electric blue → cyan → white → steel cold, metallic
+     camp    nature   leaf → lime → white → amber          living, warm
+     align   good     white → pale gold → sky → white      radiant, low chroma
+     align   neutral  steel → pale bronze → white          the quietest of six
+     align   evil     crimson → rose → white → ember       hot, no green at all
 
-   Tech and Nature keep the plain rail for now. This is the trial.
+   The two systems must not collide either, which is why the alignment set is
+   built one notch lower in saturation than the camp set: a card shows one of
+   each at the same time, six inches apart, and two equally loud words on
+   opposite edges pull the eye off the card.
+
+   FOUR RULES, learned by getting each of them wrong first:
+
+   1. **Every stop is light.** The first build used a mid violet as its darkest
+      colour, and at the moment the sweep parked that stop on the word the label
+      was harder to read than the plain white rail it replaced. A decoration may
+      not cost legibility at any point in its cycle.
+
+   2. **Pastel reads as DIM, not as bright.** These words sit at 26 design units
+      against a plain white original, so a palette of soft tints looks like the
+      colour was turned down. The stops are saturated AND high-luminance, and
+      white recurs twice per cycle so the word keeps flashing back to at least
+      what it used to be.
+
+   3. **The halo is what makes it look lit rather than tinted.** `text-shadow`
+      cannot be seen through transparent glyphs, so it is a tight coloured
+      `drop-shadow` on the element, in that rail's own hue, over the dark
+      shadow that keeps it legible on pale artwork.
+
+   4. **No two periods match.** Six words on one screen sharing a beat is a
+      disco. They run 6.5 / 7.4 / 8.3 / 5.9 / 9.7 / 6.9 seconds.
+
+   THE ONE PLACE THIS BREAKS the transform-and-opacity rule, deliberately: a
+   travelling gradient needs `background-position` animated, which repaints
+   every frame. That rule exists because a gallery can hold a screen of large
+   animated layers; these are two words of about 12 by 46 CSS pixels each,
+   together roughly a five-hundredth of a card's area, against tier layers that
+   cover the whole face. **The exception is the size, not the effect.**
    =========================================================================== */
-.cf-rail.cf-camp.rail-magic {
-  /* The gradient is 300% tall so there is somewhere for it to travel to; the
-     word itself is `writing-mode: vertical-rl`, so "along the letters" is
-     vertical here and the sweep runs top to bottom through them. */
-  /* EVERY stop is light. The first pass used a mid violet as its darkest
-     colour, and at the moment the sweep parked that stop on the word the label
-     was harder to read than the plain white rail it replaced. A decoration is
-     not allowed to cost legibility at any point in its cycle, so the palette
-     runs bright-to-bright and the hue is the only thing that travels. */
-  background-image: linear-gradient(
-    180deg,
-    #cdb2ff 0%,
-    #8ff0ff 14%,
-    #ffffff 22%,
-    #ffaaea 34%,
-    #ffe6a4 46%,
-    #cdb2ff 58%,
-    #8ff0ff 72%,
-    #ffffff 80%,
-    #ffaaea 90%,
-    #cdb2ff 100%
-  );
+.cf-rail.rail-magic,
+.cf-rail.rail-tech,
+.cf-rail.rail-nature,
+.cf-rail.rail-good,
+.cf-rail.rail-neutral,
+.cf-rail.rail-evil {
+  /* 300% tall so the gradient has somewhere to travel. The rails are
+     `writing-mode: vertical-rl`, so "along the letters" is vertical here. */
   background-size: 100% 300%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  /* `text-shadow` cannot be seen through transparent glyphs, so the halo has to
-     be a drop-shadow on the element instead. It is static: the SWEEP is the
-     animation, and a pulsing glow underneath it made the word look like it was
-     failing rather than shimmering. */
-  filter: drop-shadow(0 0 calc(3 * var(--u)) rgba(150, 120, 255, 0.75))
-    drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
-  animation: rail-magic-flow 6.5s linear infinite;
 }
 
-@keyframes rail-magic-flow {
+@keyframes rail-flow {
   from { background-position: 0% 0%; }
   to { background-position: 0% -200%; }
 }
 
-/* A locked card shows its seal and nothing else — the shine, and this. */
-.gallery-cell.is-locked .cf-rail.cf-camp.rail-magic {
+/* --- camps ---------------------------------------------------------------- */
+.cf-rail.rail-magic {
+  background-image: linear-gradient(
+    180deg,
+    #c98cff 0%, #4fe8ff 13%, #ffffff 21%, #ff7ce0 33%,
+    #ffd166 44%, #c98cff 57%, #4fe8ff 70%, #ffffff 79%,
+    #ff7ce0 90%, #c98cff 100%
+  );
+  filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(196, 128, 255, 0.95))
+    drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
+  animation: rail-flow 6.5s linear infinite;
+}
+
+.cf-rail.rail-tech {
+  background-image: linear-gradient(
+    180deg,
+    #4ea8ff 0%, #2ef0ff 14%, #ffffff 22%, #cfe6ff 32%,
+    #7fd4ff 44%, #4ea8ff 57%, #2ef0ff 71%, #ffffff 80%,
+    #cfe6ff 90%, #4ea8ff 100%
+  );
+  filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(70, 200, 255, 0.95))
+    drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
+  animation: rail-flow 7.4s linear infinite;
+}
+
+.cf-rail.rail-nature {
+  background-image: linear-gradient(
+    180deg,
+    #5ce07a 0%, #c4f24a 14%, #ffffff 23%, #ffcf52 34%,
+    #8ae86a 45%, #5ce07a 57%, #c4f24a 71%, #ffffff 80%,
+    #ffcf52 91%, #5ce07a 100%
+  );
+  filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(110, 232, 120, 0.95))
+    drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
+  animation: rail-flow 8.3s linear infinite;
+}
+
+/* --- alignments -----------------------------------------------------------
+   One notch lower in chroma than the camps above. A card wears one of each at
+   the same moment on opposite edges, and two equally loud words pull the eye
+   off the card itself. */
+.cf-rail.rail-good {
+  background-image: linear-gradient(
+    180deg,
+    #ffffff 0%, #ffeab0 15%, #ffffff 26%, #bfe4ff 38%,
+    #ffffff 50%, #ffeab0 64%, #ffffff 76%, #bfe4ff 88%,
+    #ffffff 100%
+  );
+  filter: drop-shadow(0 0 calc(2.4 * var(--u)) rgba(255, 232, 170, 0.9))
+    drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
+  animation: rail-flow 5.9s linear infinite;
+}
+
+/* Deliberately the dullest of the six. Neutral that shimmered as hard as Good
+   and Evil made the middle option look like the interesting one. */
+.cf-rail.rail-neutral {
+  background-image: linear-gradient(
+    180deg,
+    #d8dee8 0%, #ffffff 18%, #e8d3ac 34%, #ffffff 50%,
+    #d8dee8 66%, #ffffff 82%, #e8d3ac 100%
+  );
+  filter: drop-shadow(0 0 calc(1.8 * var(--u)) rgba(214, 222, 234, 0.75))
+    drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
+  animation: rail-flow 9.7s linear infinite;
+}
+
+/* No green anywhere in this one, which is what keeps it clear of Nature at a
+   glance even though both run warm. */
+.cf-rail.rail-evil {
+  background-image: linear-gradient(
+    180deg,
+    #ff5c6e 0%, #ff8ab4 14%, #ffffff 23%, #ff9a5c 34%,
+    #ff6b7e 45%, #ff5c6e 57%, #ff8ab4 71%, #ffffff 80%,
+    #ff9a5c 91%, #ff5c6e 100%
+  );
+  filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(255, 96, 110, 0.95))
+    drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
+  animation: rail-flow 6.9s linear infinite;
+}
+
+/* A locked card shows its seal and nothing else — no shine, and no lit rails. */
+.gallery-cell.is-locked .cf-rail {
   animation: none;
   background-image: none;
-  color: inherit;
-  -webkit-text-fill-color: currentColor;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
   filter: none;
+}
+
+/* ===========================================================================
+   CARD NAMES CARRY THEIR TIER'S COLOUR.
+
+   A PALE tint of the tier, never the saturated one. The banner behind the name
+   is already painted in that tier's palette — `--banner-light` to
+   `--banner-dark` — so a gold name on a gold banner is gold on gold and the
+   name is the one thing on a card that must never be hard to read. Each colour
+   below is the tier's hue at high luminance, which keeps the contrast the plain
+   white name had while still naming the tier.
+
+   Rare keeps plain white on purpose. It is the baseline the others read
+   against, exactly as it is for the shine.
+   =========================================================================== */
+.card-face.rarity-purple .cf-name {
+  color: #e8d4ff;
+}
+
+.card-face.rarity-yellow .cf-name {
+  color: #ffe9a8;
+}
+
+.card-face.rarity-red .cf-name {
+  color: #ffd2c4;
+}
+
+.card-face.rarity-relic .cf-name {
+  color: #d4f6ff;
 }
