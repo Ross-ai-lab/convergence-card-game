@@ -805,44 +805,66 @@ await newBoard({ place: false });
   }
 }
 
-// --- the relic glimmer actually moves ---------------------------------------
+// --- the rarity shine actually moves, on every tier that has one -------------
 //
 // A still screenshot cannot tell a running animation from a dead one: four
 // layers with a typo in a keyframe name look exactly like four layers mid-pause.
 // So this asserts the two things a picture cannot — that the browser is running
 // the animations it was handed, and that the card LOOKS different a second
-// apart. Both halves matter: `getAnimations` alone passes on an animation that
-// only moves something invisible, and a pixel diff alone passes on a card that
-// happens to be lazily loading its art.
+// apart. Both halves matter, and the second alone is not enough: a broken
+// keyframe name leaves the other layers moving and a pixel diff passes it. That
+// has been live-fired, not assumed.
+//
+// The counts are the escalation itself. Epic is the quietest with three layers,
+// Legendary and Relic carry four, Mythic five. A tier that silently loses a
+// layer stops escalating, and nothing else in this project would notice.
+const SHINE_TIERS = [
+  { rarity: "purple", name: "Epic", card: "Aizen", layers: 3 },
+  { rarity: "yellow", name: "Legendary", card: "Detective L", layers: 4 },
+  { rarity: "red", name: "Mythic", card: "Yujiro", layers: 5 },
+  { rarity: "relic", name: "Relic", card: "Elder wand", layers: 4 },
+];
+
 await newBoard({ place: false });
 {
   const ready = await page.evaluate(() => Boolean(window.__debug));
   if (!ready) {
-    skip("the relic glimmer runs", "no __debug hook (production build?)");
+    skip("the rarity shine runs", "no __debug hook (production build?)");
   } else {
-    await page.evaluate(() => window.__debug.giveCard("Elder wand"));
-    await page.waitForTimeout(350);
-    const relic = page.locator(".hand-card .card-face.rarity-relic").last();
-    const mounted = await relic.count();
-    if (!mounted) {
-      check("the relic glimmer runs", false, "no relic card face in hand");
-    } else {
-      const running = await relic.evaluate((face) =>
-        [...face.querySelectorAll(".cf-relicfx > span")]
+    for (const tier of SHINE_TIERS) {
+      await page.evaluate((cardName) => window.__debug.giveCard(cardName), tier.card);
+      await page.waitForTimeout(300);
+      const face = page.locator(`.hand-card .card-face.rarity-${tier.rarity}`).last();
+      if (!(await face.count())) {
+        check(`the ${tier.name} shine runs`, false, `no ${tier.rarity} card face in hand (${tier.card})`);
+        continue;
+      }
+      const running = await face.evaluate((element) =>
+        [...element.querySelectorAll(".cf-shine > span")]
+          .filter((layer) => getComputedStyle(layer).display !== "none")
           .flatMap((layer) => layer.getAnimations())
           .filter((animation) => animation.playState === "running")
           .map((animation) => animation.animationName ?? "?"),
       );
-      // Four layers, four independent periods. Three means one keyframe name no
-      // longer matches its rule, which is silent in every other check.
-      check("the relic glimmer runs", running.length === 4, `${running.length} running: ${running.join(", ")}`);
+      check(
+        `the ${tier.name} shine runs`,
+        running.length === tier.layers,
+        `${running.length}/${tier.layers}: ${running.join(", ")}`,
+      );
 
-      const frameOne = await relic.screenshot();
-      await page.waitForTimeout(1100);
-      const frameTwo = await relic.screenshot();
+      const frameOne = await face.screenshot();
+      await page.waitForTimeout(900);
+      const frameTwo = await face.screenshot();
       const moved = frameOne.length !== frameTwo.length || !frameOne.equals(frameTwo);
-      check("the relic glimmer changes the card between frames", moved, `${frameOne.length} vs ${frameTwo.length} bytes`);
+      check(`the ${tier.name} shine changes the card between frames`, moved, `${frameOne.length} vs ${frameTwo.length} bytes`);
     }
+
+    // Rare is the baseline the others escalate from, so it must carry nothing.
+    await page.evaluate(() => window.__debug.giveCard("John Wick"));
+    await page.waitForTimeout(300);
+    const rare = page.locator(".hand-card .card-face.rarity-black").last();
+    const bare = (await rare.count()) ? await rare.evaluate((element) => element.querySelectorAll(".cf-shine").length) : -1;
+    check("Rare cards carry no shine at all", bare === 0, `${bare} shine layer group(s)`);
   }
 }
 

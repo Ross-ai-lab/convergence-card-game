@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- KB-JUMP-START -->
-**Jump:** Play · What the game still needs · Gradual card unlocking · Rules · Card language · Relics · Controls and modes · Project structure · Parallel work · Run and verify · Cards and effects · Engine rules · Interface · Balance · Assets and audio · Contributing · Development lessons
+**Jump:** Play · What the game still needs · Gradual card unlocking · Rules · The rarity shine · Card language · Relics · Controls and modes · Project structure · Parallel work · Run and verify · Cards and effects · Engine rules · Interface · Balance · Assets and audio · Contributing · Development lessons
 <!-- KB-JUMP-END -->
 
 ## Version 1.0 — complete, 21 August 2026
@@ -137,17 +137,27 @@ purpose: a saved duel or a minion already in play can name a locked card, and ev
 to keep resolving.
 
 **Locked cards are SEALED, not merely marked, and the padlock is meant to be in the way.** The gallery
-greys them and covers the middle of the face with a large padlock, so a locked card shows its name,
-its frame colour and a shape behind the glass, and nothing that tells you what it does. It was briefly
-shrunk to a small disc so the rules text underneath stayed readable, and that was the wrong goal: a
-locked card the player can read is a card already spent, and what arrives in a pack should still be
-news. Owner's ruling, twice. Keep it large.
+greys them and covers the middle of the face with a padlock at **68% of the card width**, so a locked
+card shows its name, its frame colour and a shape behind the glass, and nothing that tells you what it
+does. It was twice shrunk so the rules text underneath stayed readable, and that was the wrong goal
+both times: a locked card the player can read is a card already spent, and what arrives in a pack
+should still be news. Owner's ruling. Keep it large.
+
+The padlock is drawn rather than fetched because it is furniture — an icon, in the same family as the
+keyword artwork, not a photograph. It is an old castle lock on purpose, with a tapered shackle and its
+two anchor bosses, a banded body, four corner rivets, a raised escutcheon plate and a keyhole cut
+clean through. The detail is what stops it reading as a grey blob at that size.
 
 **The Collection filter has NO "any" option and starts on Unlocked.** It is the only filter that
 behaves that way. The gallery is your collection first and the locked wall second, so mixing 50
 readable cards into 146 sealed ones is a list that answers neither question. The deliberate cost is
-that no view shows all 196 at once. A "?" button in the gallery header prints the table above, because
-none of this is visible from the board.
+that no view shows all 196 at once.
+
+**The "?" opens a POPUP, and it prints the reward table and nothing else.** A panel pushed in above
+the grid shoved 200 cards down the page to make room, so opening it lost the reader's place in the
+list and closing it lost the place again. Everything it used to print around the table — a paragraph
+of preamble, the reason hotseat pays nothing, a paragraph on how batches are balanced — was true and
+unread: the table already answers the only question anyone opens it to ask.
 
 **The pack.** A duel that earns cards ends on a sealed pack that takes three strikes to open, then
 bursts and deals the cards out one at a time. It deals in `revealOrder`, best LAST, so the prize of the
@@ -310,9 +320,7 @@ The current relic pool contains **21 relics**. Relics are equipment cards: they 
 
 **A relic card face prints NO side rails**, unlike every character card. It has no camp and no alignment: it carried the placeholders "Ascension" and "Relic" purely so the two rails had something to say, and two rails naming a thing that is not a property of the card is worse than no rails. The teal frame and the diamond gem already say relic.
 
-**A relic card GLIMMERS, and that animation is a feature with a check behind it.** Four layers inside `.cf-relicfx` — a drifting aurora, rising motes, a foil sweep that crosses and leaves, and a breathing rim — at four deliberately mismatched periods (13s, 19s, 7.5s, 5.3s, none a multiple of another) so they never realign into a visible beat. Every size is in `--u`, the card's design unit: the first build sized the motes in absolute pixels and they vanished, because a 1.5px dot is a speck on a card rendered 1400px tall, and the layer looked like nothing rather than like a bug. It is transform and opacity only, and scoped to `.rarity-relic`, so the 175 character cards pay nothing and the gallery can hold all 21 relics at once. `npm run check:ui` asserts both halves — that four animations are actually running, and that the card's pixels change between two frames a second apart. Neither alone is enough: a typo in one keyword name leaves the other three moving, which the pixel diff happily passes.
-
-An unmet relic in the gallery does NOT glimmer, and that is correct rather than a bug: the collection's own grayscale dimming sits on the whole card face and wins. The glimmer is for cards you have actually met, and for the pack, the hand and the preview, where nothing dims them.
+**A relic card carries the teal shine** — a drifting aurora, rising motes, a rare foil sweep and a breathing rim. It is one of four tiers built on the same technique; see [The rarity shine](#the-rarity-shine).
 
 - A minion can carry up to two relics. The first and second slots are independent;
   a full bearer cannot accept a third.
@@ -544,6 +552,47 @@ Printed timing must match play. For every target or choice, specify whether it s
 - The bot evaluates legal actions on a throwaway state. A new effect usually needs no separate bot branch, but bot valuation changes affect balance measurements and need a fresh balance run.
 
 The engine’s central contract is `applyAction(state, action, library) -> { state, events, legalActions }`. An action outside the legal-action list is rejected without changing the state. Targeting pauses the game in a target-selection state so human and bot choices follow the same route and survive saving, cloning, and undo.
+
+## The rarity shine
+
+**Every card above Rare carries an animated shine, and each tier's is a different KIND of thing rather than the same thing in a different colour.** Built 23 August 2026, in `source/src/App.css` under the same heading, driven by `.cf-shine` in `App.tsx`.
+
+| Tier | Colour | What it does | Layers |
+|---|---|---|---|
+| Epic | violet | arcane mist drifting sideways | 3 |
+| Legendary | gold | dust falling, one slow gleam | 4 |
+| Mythic | crimson | embers rising out of a heat pool, pulsing | 5 |
+| Relic | teal | aurora, motes rising, a rare foil sweep | 4 |
+| Rare | — | nothing at all | 0 |
+
+**Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 58 Rare cards stop costing anything at the same time, which is what keeps a gallery of 196 affordable.
+
+### The technique, which is the transferable part
+
+The colours are not reusable. These five rules are, and they are the whole reason this reads as magic rather than as a blinking light.
+
+1. **Three layers minimum, and they must differ in KIND.** A colour field, a particle field and an edge do three different jobs. One layer, however pretty, is read as a loop within about two seconds.
+
+2. **Mismatched, non-multiple periods.** Every duration is chosen so no two share a factor: 17/29/8.7, 15/23/11/6.1, 12/14/9.3/19/5.7, 13/19/16.5/5.3. Two layers on 8s and 16s realign every 16 seconds and the whole thing snaps back into one visible beat.
+
+3. **Direction carries identity more than colour does.** Relic motes rise, Legendary dust falls, Epic mist drifts sideways, Mythic embers rise fast out of a pool that swells. Recolour all four teal and they are still four different cards.
+
+4. **Size everything in `--u`, never px.** The first build sized particles in pixels and they vanished: a 1.5px dot is a speck on a card rendered 1400px tall, so the layer looked like nothing rather than like a bug.
+
+5. **Transform and opacity only.** Nothing may reflow or repaint layout, because a gallery can hold a screen of these at once. Anything animating `background-position`, `width`, `filter` or `box-shadow` belongs somewhere else.
+
+Two things learned tuning it, and both cost a round:
+
+- **Particles need a near-white CORE, not a flat tier colour.** Screen-blending a mid-tone orange over bright artwork barely moves it, so the first Mythic embers disappeared entirely against Yujiro's silver-white figure. A white centre with a warm falloff reads on anything.
+- **The rim is the loudest channel available, because it is the only one not competing with the artwork.** A field or a particle over a busy illustration gets swallowed; a glow burning inward from the frame always reads. The escalation between tiers is therefore spent mostly on the rim: 30 design units on Epic, 40 on Legendary, 52 on Mythic.
+
+**Five fixed slots in the markup for every tier**, with the ones a tier does not use switched off in CSS. A different element list per rarity puts the layer count in two places at once and lets the markup and the stylesheet disagree silently.
+
+### Proving it, because a screenshot cannot
+
+`npm run check:ui` asserts two things per tier: that the expected number of animations are actually RUNNING, and that the card's pixels change between two frames a second apart. **Neither alone is enough, and that is not a guess** — live-fired by misspelling one keyframe name, which left the other layers moving and passed the pixel diff while the animation count went red. The counts in that check are the escalation itself: a tier that silently loses a layer stops escalating, and nothing else in this project would notice.
+
+An unmet card in the gallery does NOT shine, and that is correct rather than a bug: the collection's own grayscale dimming sits on the whole card face and wins. The shine is for cards you have met, and for the pack, the hand and the preview, where nothing dims them.
 
 ## Interface and card faces
 

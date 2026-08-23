@@ -49,7 +49,6 @@ import type {
 import { clearSave, loadGame, saveGame } from "./storage";
 import { botWins, finishDuel, loadProgress, saveProgress, totals, type Progress } from "./progress";
 import {
-  STARTING_POOL,
   UNLOCK_REWARD,
   ensureUnlockOrder,
   newlyUnlocked,
@@ -2976,15 +2975,50 @@ const GalleryCell = memo(function GalleryCell({
       <CardFace card={face} lazyArt />
       {locked ? (
         <span className="gallery-lock" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="26" height="26">
-            <path
-              d="M7 10V7a5 5 0 0 1 10 0v3"
+          {/* An old castle padlock, not a UI glyph.
+              It is drawn rather than fetched because it is furniture — an icon
+              in the same family as the keyword artwork, not a photograph.
+              The detail is what stops it reading as a grey blob at this size:
+              a tapered shackle with its two anchor bosses, a raised escutcheon
+              plate, four corner rivets, a banded body, and a keyhole cut clean
+              through so the card shows in it. Every dark mark is a hole or a
+              shadow, so the whole thing works as one flat colour on any art. */}
+          <svg viewBox="0 0 64 84" width="64" height="84">
+            <g fill="currentColor">
+              {/* shackle: tapered, with the bosses it pivots on */}
+              <path
+                d="M32 4c-8.8 0-16 7.2-16 16v12h8V20c0-4.4 3.6-8 8-8s8 3.6 8 8v12h8V20c0-8.8-7.2-16-16-16z"
+                opacity="0.92"
+              />
+              <circle cx="20" cy="33" r="3.4" opacity="0.92" />
+              <circle cx="44" cy="33" r="3.4" opacity="0.92" />
+              {/* body */}
+              <rect x="6" y="31" width="52" height="49" rx="7" />
+              {/* raised escutcheon plate */}
+              <rect x="13" y="38" width="38" height="35" rx="5" opacity="0.55" />
+            </g>
+            <g fill="rgba(16,12,22,0.82)">
+              {/* banding across the body */}
+              <rect x="6" y="43.6" width="52" height="1.8" />
+              <rect x="6" y="67.4" width="52" height="1.8" />
+              {/* corner rivets */}
+              <circle cx="10.5" cy="35.5" r="1.9" />
+              <circle cx="53.5" cy="35.5" r="1.9" />
+              <circle cx="10.5" cy="75.5" r="1.9" />
+              <circle cx="53.5" cy="75.5" r="1.9" />
+              {/* keyhole, cut through */}
+              <circle cx="32" cy="52" r="6.2" />
+              <path d="M28.8 55.5h6.4l2.1 12.4H26.7z" />
+            </g>
+            {/* escutcheon ring around the keyhole */}
+            <circle
+              cx="32"
+              cy="54.5"
+              r="11.4"
               fill="none"
-              stroke="currentColor"
-              strokeWidth="2.1"
-              strokeLinecap="round"
+              stroke="rgba(16,12,22,0.5)"
+              strokeWidth="1.6"
             />
-            <rect x="4.5" y="10" width="15" height="11" rx="2.2" fill="currentColor" />
           </svg>
         </span>
       ) : null}
@@ -2996,64 +3030,86 @@ const GalleryCell = memo(function GalleryCell({
  * What the "?" in the gallery header opens.
  *
  * It exists because every part of this system is invisible from the board: a
- * player who wins a duel sees a pack, and nothing anywhere tells them why it
- * held six cards instead of three, or why the hotseat duel they just played held
- * none. The rules are three lines and a table, so they are printed rather than
- * left to be inferred.
+ * player who wins a duel sees a pack, and nothing tells them why it held six
+ * cards instead of three.
+ *
+ * A POPUP over the gallery, not a panel pushed in above the grid. The inline
+ * version shoved 200 cards down the page to make room for itself, so opening it
+ * lost the reader's place in the list and closing it lost it again.
+ *
+ * It is also down to a table and one line of state. Everything else it used to
+ * print — a paragraph of preamble, the reason hotseat pays nothing, a paragraph
+ * on how batches are balanced — was true and unread: the table already answers
+ * the only question anyone opens this to ask.
  */
 function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => void }) {
   const left = Math.max(0, progress.unlockOrder.length - progress.unlocked);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // Stops the gallery's own Escape handler closing the whole screen
+        // behind this. One press should shut one thing.
+        event.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
+
   return (
-    <div className="gallery-help-panel" role="region" aria-label="How unlocking works">
-      <button type="button" className="gallery-help-x" onClick={onClose} aria-label="Close">
-        ×
-      </button>
-      <h3>Unlocking cards</h3>
-      <p>
-        The shared deck does not start with everything. It opens on {STARTING_POOL} cards and grows every time you
-        finish a duel against the practice opponent. Switch Collection to Locked to see what is still sealed: those
-        cards keep their name and their frame, and the padlock holds back the rest until you win them.
-      </p>
-      <table className="gallery-help-table">
-        <tbody>
-          <tr>
-            <th scope="row">Beat the Ascendant</th>
-            <td>+{UNLOCK_REWARD.hard.won} cards</td>
-          </tr>
-          <tr>
-            <th scope="row">Beat the Veteran</th>
-            <td>+{UNLOCK_REWARD.normal.won} cards</td>
-          </tr>
-          <tr>
-            <th scope="row">Beat the Recruit</th>
-            <td>+{UNLOCK_REWARD.easy.won} cards</td>
-          </tr>
-          <tr>
-            <th scope="row">Lose or draw</th>
-            <td>+{UNLOCK_REWARD.normal.lost} card</td>
-          </tr>
-          <tr>
-            <th scope="row">Hotseat</th>
-            <td>nothing</td>
-          </tr>
-        </tbody>
-      </table>
-      <p className="gallery-help-note">
-        Hotseat pays nothing because both seats are the same person, so a win there could be handed over in one turn.
-      </p>
-      <p className="gallery-help-note">
-        Each batch is drawn to keep the deck balanced: the mix of mana costs and the share of Ascension Relics stays
-        close to the full roster at every size, so a small pool is never all cheap cards or all expensive ones.
-      </p>
-      <p className="gallery-help-state">
-        <strong>
-          {progress.unlocked} of {progress.unlockOrder.length || 196}
-        </strong>{" "}
-        unlocked{left ? `, ${left} still to find` : " — the whole roster is yours"}.
-      </p>
+    <div
+      className="help-veil"
+      onPointerDown={(event) => event.target === event.currentTarget && onClose()}
+    >
+      <section className="help-pop" role="dialog" aria-label="How unlocking works">
+        <button type="button" className="help-x" onClick={onClose} aria-label="Close">
+          ×
+        </button>
+        <h3>Unlocking cards</h3>
+        <table className="help-table">
+          <tbody>
+            <tr>
+              <th scope="row">Beat the Ascendant</th>
+              <td>+{UNLOCK_REWARD.hard.won} cards</td>
+            </tr>
+            <tr>
+              <th scope="row">Beat the Veteran</th>
+              <td>+{UNLOCK_REWARD.normal.won} cards</td>
+            </tr>
+            <tr>
+              <th scope="row">Beat the Recruit</th>
+              <td>+{UNLOCK_REWARD.easy.won} cards</td>
+            </tr>
+            <tr>
+              <th scope="row">Lose or draw</th>
+              <td>+{UNLOCK_REWARD.normal.lost} card</td>
+            </tr>
+            <tr>
+              <th scope="row">Hotseat</th>
+              <td>–</td>
+            </tr>
+          </tbody>
+        </table>
+        <p className="help-state">
+          <strong>
+            {progress.unlocked} of {progress.unlockOrder.length || 196}
+          </strong>{" "}
+          unlocked{left ? `, ${left} still to find` : " — the whole roster is yours"}.
+        </p>
+      </section>
     </div>
   );
 }
+
+/**
+ * Which tiers carry an animated shine, and Rare is deliberately absent.
+ *
+ * The escalation only reads as an escalation if the bottom of it is still. Give
+ * every card a shine and the tiers stop meaning anything; 58 Rare cards then
+ * also stop costing anything, which is what keeps a gallery of 196 affordable.
+ */
+const SHINE_RARITIES = new Set(["purple", "yellow", "red", "relic"]);
 
 /** How far a card has got in your collection. Ordered weakest to strongest. */
 type CollectionMark = "unseen" | "seen" | "played" | "won";
@@ -3158,17 +3214,24 @@ function CardFace({
         <div className="cf-gem cf-mana">{card.cost}</div>
         <div className={`cf-gem cf-atk ${atkClass}`}>{card.atk}</div>
         <div className={`cf-gem cf-hp ${hpClass}`}>{card.hp}</div>
-        {/* Relics glimmer. Its own element rather than pseudo-elements on the
+        {/* The rarity shine. Its own element rather than pseudo-elements on the
             existing layers, because `.cf-art::after` is already the glass sheen
             and `.cf-stage::after` is spoken for by the board's rim states — a
-            relic effect written on top of either would fight a condition the
-            player needs to see. Four spans, four independent periods. */}
-        {isRelicFace ? (
-          <div className="cf-relicfx" aria-hidden="true">
-            <span className="rfx-aurora" />
-            <span className="rfx-motes" />
-            <span className="rfx-sweep" />
-            <span className="rfx-rim" />
+            shine written on top of either would fight a condition the player
+            needs to see.
+
+            FIVE FIXED SLOTS for every tier, styled per rarity, with the ones a
+            tier does not use switched off in CSS. The alternative — a different
+            element list per rarity — puts the layer count in two places at once
+            and lets the markup and the stylesheet disagree silently. Rare gets
+            no shine at all: it is the baseline the other tiers escalate from. */}
+        {SHINE_RARITIES.has(rarity) ? (
+          <div className="cf-shine" aria-hidden="true">
+            <span className="sh-field" />
+            <span className="sh-grain" />
+            <span className="sh-grain2" />
+            <span className="sh-sweep" />
+            <span className="sh-rim" />
           </div>
         ) : null}
         <div className="cf-fx" aria-hidden="true" />

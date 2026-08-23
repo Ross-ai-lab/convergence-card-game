@@ -68,7 +68,10 @@ await shoot("01-gallery-unlocked", 1400);
 
 await page.locator(".gallery-help").click();
 await shoot("02-gallery-help", 700);
-await page.locator(".gallery-help").click();
+// Close it by its OWN button. The help is a popup now, so its veil covers the
+// "?" that opened it and clicking that again just times out against the veil.
+await page.locator(".help-x").click();
+await page.locator(".help-veil").waitFor({ state: "detached", timeout: 5000 });
 
 const collection = page.locator(".gallery-filter select[aria-label*='unlocked']");
 await collection.selectOption("locked");
@@ -130,7 +133,40 @@ await page.waitForTimeout(900);
 await page.locator(".gallery-trigger").first().click().catch(() => {});
 await page.locator(".gallery-panel").waitFor({ state: "visible", timeout: 8000 }).catch(() => {});
 await page.locator(".gallery-help").click().catch(() => {});
+await page.locator(".help-pop").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
 await shoot("11-gallery-after", 900);
+
+// --- the four shines side by side, which is the only way to judge them
+//
+// Each tier looks fine alone; the question is whether they read as an
+// ESCALATION next to each other, and that cannot be answered one card at a
+// time. Everything is unlocked and marked met first, because the gallery's own
+// grayscale dimming sits on top of the shine and would hide all four.
+await page.keyboard.press("Escape");
+await page.evaluate(() => {
+  const key = "convergence.progress.v2";
+  const progress = JSON.parse(localStorage.getItem(key) ?? "null");
+  if (!progress) return;
+  progress.unlocked = progress.unlockOrder.length;
+  progress.seen = [...progress.unlockOrder];
+  progress.played = [...progress.unlockOrder];
+  localStorage.setItem(key, JSON.stringify(progress));
+});
+await page.reload({ waitUntil: "domcontentloaded" });
+await page.waitForTimeout(1400);
+await page.locator(".gallery-trigger").first().click();
+await page.locator(".gallery-panel").waitFor({ state: "visible", timeout: 8000 });
+const rarity = page.locator(".gallery-filter select[aria-label*='rarity']");
+for (const [value, name] of [
+  ["Red", "12-shine-mythic"],
+  ["Yellow", "13-shine-legendary"],
+  ["Purple", "14-shine-epic"],
+  ["Relic", "15-shine-relic"],
+  ["Black", "16-shine-rare-none"],
+]) {
+  await rarity.selectOption(value);
+  await shoot(name, 1500);
+}
 
 console.log(`\n${shots.length} shots in .preview/pack/`);
 await browser.close();
