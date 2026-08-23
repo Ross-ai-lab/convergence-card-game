@@ -320,7 +320,7 @@ The current relic pool contains **21 relics**. Relics are equipment cards: they 
 
 **A relic card face prints NO side rails**, unlike every character card. It has no camp and no alignment: it carried the placeholders "Ascension" and "Relic" purely so the two rails had something to say, and two rails naming a thing that is not a property of the card is worse than no rails. The teal frame and the diamond gem already say relic.
 
-**A relic card carries the teal shine** — a drifting aurora, rising motes, a rare foil sweep and a breathing rim. It is one of four tiers built on the same technique; see [The rarity shine](#the-rarity-shine).
+**A relic card carries the teal shine** — a drifting aurora, rising motes, a breathing rim, and the one crossing light bar in the game, every 15 seconds. It is one of four tiers built on the same technique; see [The rarity shine](#the-rarity-shine).
 
 - A minion can carry up to two relics. The first and second slots are independent;
   a full bearer cannot accept a third.
@@ -559,10 +559,10 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 
 | Tier | Colour | What it does | Layers |
 |---|---|---|---|
-| Epic | violet | arcane mist drifting sideways | 3 |
-| Legendary | gold | dust falling, one slow gleam | 4 |
-| Mythic | crimson | embers rising out of a heat pool, pulsing | 5 |
-| Relic | teal | aurora, motes rising, a rare foil sweep | 4 |
+| Epic | violet | mist drifting sideways, dust settling through it | 4 |
+| Legendary | gold | radiant rays turning, a bloom swelling behind them | 4 |
+| Mythic | crimson | flame tongues licking upward, embers off the top | 5 |
+| Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
 
 **Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 58 Rare cards stop costing anything at the same time, which is what keeps a gallery of 196 affordable.
@@ -575,24 +575,44 @@ The colours are not reusable. These five rules are, and they are the whole reaso
 
 2. **Mismatched, non-multiple periods.** Every duration is chosen so no two share a factor: 17/29/8.7, 15/23/11/6.1, 12/14/9.3/19/5.7, 13/19/16.5/5.3. Two layers on 8s and 16s realign every 16 seconds and the whole thing snaps back into one visible beat.
 
-3. **Direction carries identity more than colour does.** Relic motes rise, Legendary dust falls, Epic mist drifts sideways, Mythic embers rise fast out of a pool that swells. Recolour all four teal and they are still four different cards.
+3. **Motion KIND carries identity far more than colour does.** Epic drifts sideways, Legendary ROTATES, Mythic licks upward in fast irregular tongues, Relic rises slowly. Recolour all four teal and they are still four different cards. **Two tiers sharing a motion is the failure**, and it happened: an earlier build had gold dust falling and crimson embers rising, which are the same motion mirrored, and Legendary read as a paler Mythic because of it.
 
 4. **Size everything in `--u`, never px.** The first build sized particles in pixels and they vanished: a 1.5px dot is a speck on a card rendered 1400px tall, so the layer looked like nothing rather than like a bug.
 
-5. **Transform and opacity only.** Nothing may reflow or repaint layout, because a gallery can hold a screen of these at once. Anything animating `background-position`, `width`, `filter` or `box-shadow` belongs somewhere else.
+5. **Transform and opacity only.** Nothing may reflow or repaint layout, because a gallery can hold a screen of these at once. Anything animating `background-position`, `width`, `filter` or `box-shadow` belongs somewhere else. Most published CSS fire ends at a `filter: contrast()` over two sliding noise layers, and that filter is exactly what this rule forbids.
 
-Two things learned tuning it, and both cost a round:
+6. **Particles need a near-white CORE, not a flat tier colour.** Screen-blending a mid-tone over bright artwork barely moves it, so the first Mythic embers disappeared entirely against Yujiro's silver-white figure. A white centre with a coloured falloff reads on anything.
 
-- **Particles need a near-white CORE, not a flat tier colour.** Screen-blending a mid-tone orange over bright artwork barely moves it, so the first Mythic embers disappeared entirely against Yujiro's silver-white figure. A white centre with a warm falloff reads on anything.
-- **The rim is the loudest channel available, because it is the only one not competing with the artwork.** A field or a particle over a busy illustration gets swallowed; a glow burning inward from the frame always reads. The escalation between tiers is therefore spent mostly on the rim: 30 design units on Epic, 40 on Legendary, 52 on Mythic.
+7. **The card has to survive the shine, and a MASK is what makes that true.** Three separate layers had to be masked back, and in each case the unmasked version looked like a sticker laid over the illustration rather than light inside it:
+   - The Mythic flame is masked off the bottom 14%, because its brightest part sat exactly on the ATK and HP gems and screen blending turned both to pale mush.
+   - The Legendary rays are masked into a halo with a clear centre, because edge-to-edge they erased the subject of the picture entirely.
+   - The camp sigil is masked to the art window, because faint tick marks drawn through a sentence read as a rendering fault.
 
-**Five fixed slots in the markup for every tier**, with the ones a tier does not use switched off in CSS. A different element list per rarity puts the layer count in two places at once and lets the markup and the stylesheet disagree silently.
+**The rim is the loudest channel available, because it is the only one not competing with the artwork.** A field or a particle over a busy illustration gets swallowed; a glow burning inward from the frame always reads. The escalation between tiers is therefore spent mostly on the rim: 30 design units on Epic, 40 on Legendary, 52 on Mythic.
+
+**A light bar crossing the card belongs to relics and to nothing else.** It was on Legendary and Mythic too, and having three tiers share the single most noticeable motion in the system flattened all three. There is a check that stops it creeping back one tier at a time.
+
+**Six fixed slots in the markup for every tier**, with the ones a tier does not use switched off in CSS. A different element list per rarity puts the layer count in two places at once and lets the markup and the stylesheet disagree silently.
+
+### Camp marks, a trial
+
+A tier says how RARE a card is. A camp says what KIND of thing it is, and both have to be readable at once on the same card, so a camp mark can never work the way a tier does. **Magic is the first and currently the only one**: a slowly turning arcane circle behind the artwork, built from two counter-rotating conic gradients. Tech and Nature are not built, pending whether this reads as depth or as soup.
+
+Three rules keep the two systems apart:
+
+- **A camp mark is a SHAPE, never a field or a particle.** Every tier owns a colour wash and a particle system already; a fifth cloud on top of a Mythic card is just more soup.
+- **It sits UNDER the tier shine** (z-index 3 against 4) at roughly a third of any tier layer's alpha. If you notice it before you notice the tier, it is too loud.
+- **One motion, and that motion is slow.** 90 and 131 seconds here. The tier is what moves.
+
+It is `.cf-sigil`, **not** `.cf-camp`. `.cf-camp` was already the vertical camp rail printed down the left edge of every character card, and claiming it silently rewrote that rail's box, dropping the word "Magic" rotated across the middle of the card. Nothing errored and every test stayed green. `check:ui` now measures the rail's WIDTH, because every obvious assertion about it — present, vertical, left-hand side, correct text — kept passing while it was broken.
 
 ### Proving it, because a screenshot cannot
 
 `npm run check:ui` asserts two things per tier: that the expected number of animations are actually RUNNING, and that the card's pixels change between two frames a second apart. **Neither alone is enough, and that is not a guess** — live-fired by misspelling one keyframe name, which left the other layers moving and passed the pixel diff while the animation count went red. The counts in that check are the escalation itself: a tier that silently loses a layer stops escalating, and nothing else in this project would notice.
 
 An unmet card in the gallery does NOT shine, and that is correct rather than a bug: the collection's own grayscale dimming sits on the whole card face and wins. The shine is for cards you have met, and for the pack, the hand and the preview, where nothing dims them.
+
+**A LOCKED card carries no shine and no camp mark at all**, and that is an explicit rule rather than a side effect. A blend-mode layer is not a colour a grayscale filter can drain, so sealed relics went on flickering with teal light while sealed characters sat dead, and the locked wall stopped reading as one wall. A locked card shows its seal and nothing else.
 
 ## Interface and card faces
 

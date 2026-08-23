@@ -819,7 +819,7 @@ await newBoard({ place: false });
 // Legendary and Relic carry four, Mythic five. A tier that silently loses a
 // layer stops escalating, and nothing else in this project would notice.
 const SHINE_TIERS = [
-  { rarity: "purple", name: "Epic", card: "Aizen", layers: 3 },
+  { rarity: "purple", name: "Epic", card: "Aizen", layers: 4 },
   { rarity: "yellow", name: "Legendary", card: "Detective L", layers: 4 },
   { rarity: "red", name: "Mythic", card: "Yujiro", layers: 5 },
   { rarity: "relic", name: "Relic", card: "Elder wand", layers: 4 },
@@ -865,6 +865,79 @@ await newBoard({ place: false });
     const rare = page.locator(".hand-card .card-face.rarity-black").last();
     const bare = (await rare.count()) ? await rare.evaluate((element) => element.querySelectorAll(".cf-shine").length) : -1;
     check("Rare cards carry no shine at all", bare === 0, `${bare} shine layer group(s)`);
+
+    // The light bar belongs to relics and to nothing else. Three tiers sharing
+    // the most noticeable motion in the system flattened all three, and this is
+    // the check that stops it creeping back one tier at a time.
+    const sweeps = await page.evaluate(() =>
+      ["purple", "yellow", "red", "relic"].map((tier) => {
+        const face = [...document.querySelectorAll(`.hand-card .card-face.rarity-${tier}`)].pop();
+        if (!face) return `${tier}:missing`;
+        const bar = face.querySelector(".cf-shine > .sh-sweep");
+        return `${tier}:${bar && getComputedStyle(bar).display !== "none" ? "on" : "off"}`;
+      }),
+    );
+    check(
+      "only relics carry the crossing light bar",
+      sweeps.join(",") === "purple:off,yellow:off,red:off,relic:on",
+      sweeps.join(" "),
+    );
+
+    // The Magic camp mark, which is a trial and the first of its kind. It has to
+    // be PRESENT and it has to be quieter than the tier: if a camp reads louder
+    // than a rarity, the two systems are fighting rather than layering.
+    await page.evaluate(() => window.__debug.giveCard("Doctor Strange"));
+    await page.waitForTimeout(300);
+    const magic = page.locator(".hand-card .card-face").last();
+    const camp = await magic.evaluate((face) => {
+      const mark = face.querySelector(".cf-sigil.sigil-magic");
+      if (!mark) return { found: false, running: 0, over: false };
+      const running = [...mark.querySelectorAll("span")]
+        .flatMap((layer) => layer.getAnimations())
+        .filter((animation) => animation.playState === "running").length;
+      const campZ = Number(getComputedStyle(mark).zIndex);
+      const shine = face.querySelector(".cf-shine");
+      const shineZ = shine ? Number(getComputedStyle(shine).zIndex) : Infinity;
+      return { found: true, running, over: campZ >= shineZ };
+    });
+    check(
+      "the Magic camp mark turns beneath the tier shine",
+      camp.found && camp.running === 2 && !camp.over,
+      JSON.stringify(camp),
+    );
+
+    // The camp RAIL — the vertical word down the left edge — is a different
+    // thing from the mark above, and this check exists because the two collided.
+    // The sigil layer was first written as `.cf-camp`, a class the rail already
+    // owned, which silently rewrote the rail's position and writing mode and
+    // dropped the word "Magic" rotated across the middle of the card. Nothing
+    // errored, every test stayed green, and it was visible only by looking.
+    const rail = await magic.evaluate((face) => {
+      const element = face.querySelector(".cf-rail.cf-camp");
+      if (!element) return { found: false };
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      const card = face.getBoundingClientRect();
+      return {
+        found: true,
+        text: (element.textContent ?? "").trim(),
+        vertical: style.writingMode.startsWith("vertical"),
+        // Within the left fifth of the card, which is where a rail lives.
+        onTheLeft: box.left - card.left < card.width * 0.2,
+        // The one that actually catches it. The collision left the rail sitting
+        // at the same left edge with the same vertical text and the same DOM
+        // content — every obvious assertion still passed. What changed was its
+        // BOX: an `inset` shorthand from the other rule blew it out to the whole
+        // card, and the vertical text then ran down the middle. Measure the
+        // width, not the position.
+        narrow: box.width < card.width * 0.15,
+      };
+    });
+    check(
+      "the camp rail still runs down the left edge",
+      rail.found && rail.text === "Magic" && rail.vertical && rail.onTheLeft && rail.narrow,
+      JSON.stringify(rail),
+    );
   }
 }
 

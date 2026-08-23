@@ -3111,6 +3111,15 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
  */
 const SHINE_RARITIES = new Set(["purple", "yellow", "red", "relic"]);
 
+/**
+ * Camps with a mark actually built. Magic only, for now.
+ *
+ * This is a trial: a camp mark is a second, much quieter layer under the tier
+ * shine, and whether two animated systems on one card read as depth or as soup
+ * is a question only looking at it answers. Tech and Nature wait on that.
+ */
+const CAMP_MARKS = new Set(["magic"]);
+
 /** How far a card has got in your collection. Ordered weakest to strongest. */
 type CollectionMark = "unseen" | "seen" | "played" | "won";
 
@@ -3176,6 +3185,10 @@ function CardFace({
   } as CSSProperties;
   const rarity = (card.rarity ?? "Black").toLowerCase();
   const isRelicFace = rarity === "relic";
+  // Only camps with a mark BUILT get one. A relic's camp is the placeholder
+  // "Ascension" and would resolve to nothing anyway, but naming the built set
+  // explicitly is what stops a future camp silently rendering two empty spans.
+  const campMark = CAMP_MARKS.has((card.camp ?? "").toLowerCase()) ? (card.camp ?? "").toLowerCase() : null;
   // Keyword artwork. On the board the live flags win, because a Divine Shield
   // can be popped while the printed keyword stays on the card forever.
   // Conditions belong to the BOARD, never the hand (owner ruling). A card you are
@@ -3225,9 +3238,20 @@ function CardFace({
             element list per rarity — puts the layer count in two places at once
             and lets the markup and the stylesheet disagree silently. Rare gets
             no shine at all: it is the baseline the other tiers escalate from. */}
+        {/* The camp mark sits BELOW the tier shine, at z-index 3 against its 4,
+            because a camp says what kind of thing a card is and a tier says how
+            rare it is — and when they disagree about which is louder, the tier
+            has to win. */}
+        {campMark ? (
+          <div className={`cf-sigil sigil-${campMark}`} aria-hidden="true">
+            <span className="cm-ring" />
+            <span className="cm-glyph" />
+          </div>
+        ) : null}
         {SHINE_RARITIES.has(rarity) ? (
           <div className="cf-shine" aria-hidden="true">
             <span className="sh-field" />
+            <span className="sh-veil" />
             <span className="sh-grain" />
             <span className="sh-grain2" />
             <span className="sh-sweep" />

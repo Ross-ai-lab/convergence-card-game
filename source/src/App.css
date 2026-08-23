@@ -5866,46 +5866,60 @@ button:disabled {
    THE RARITY SHINE
 
    Every card above Rare carries an animated shine, and each tier's is a
-   different KIND of thing rather than the same thing in a different colour.
+   different KIND of thing rather than the same thing in another colour:
 
-     Epic       purple   arcane mist drifting sideways        3 layers
-     Legendary  gold     dust falling, one slow gleam         4 layers
-     Mythic     crimson  embers rising out of a heat pool     5 layers
-     Relic      teal     aurora, motes rising, a foil sweep   4 layers
+     Epic       violet   mist drifting sideways, dust settling through it
+     Legendary  gold     radiant rays turning, a bloom swelling behind them
+     Mythic     crimson  flame tongues licking upward, embers off the top
+     Relic      teal     aurora, motes rising, one rare foil sweep
+     Rare       —        nothing at all
 
-   Rare has none. That is what makes the others read as an escalation: give
-   every card a shine and the tiers stop meaning anything.
+   Rare having none is load-bearing. Give every card a shine and the tiers stop
+   meaning anything, and 58 of the 196 cards stop costing anything at the same
+   time, which is what keeps a gallery of this size affordable.
 
-   THE FIVE RULES THIS IS BUILT ON. They are the transferable part — the
-   colours are not.
+   THE SIX RULES THIS IS BUILT ON. They are the transferable part — the colours
+   are not.
 
    1. **Three layers minimum, and they must differ in KIND.** A colour field, a
       particle field and an edge do three different jobs. One layer, however
       pretty, is read as a loop within about two seconds.
 
-   2. **Mismatched, non-multiple periods.** Every duration below is chosen so no
-      two share a factor: 17/29/8.7, 15/23/11/6.1, 12/14/9.3/19/5.7,
-      13/19/16.5/5.3. Two layers on 8s and 16s realign every 16 seconds and the
-      whole thing snaps back into one visible beat.
+   2. **Mismatched, non-multiple periods.** Every duration here is chosen so no
+      two share a factor. Two layers on 8s and 16s realign every 16 seconds and
+      the whole thing snaps back into one visible beat.
 
-   3. **Direction carries identity more than colour does.** Relic motes rise,
-      Legendary dust falls, Epic mist drifts sideways, Mythic embers rise fast
-      out of a pool that swells. Recolour them all teal and they are still four
-      different cards.
+   3. **Motion KIND carries identity far more than colour does.** Epic drifts
+      sideways, Legendary ROTATES, Mythic licks upward in fast irregular
+      tongues, Relic rises slowly. Recolour all four teal and they are still
+      four different cards. Two tiers sharing a motion is the failure — an
+      earlier build had gold dust falling and crimson embers rising, and they
+      read as one effect with the hue changed.
 
-   4. **Size everything in `--u`, never px.** The first build sized particles in
-      pixels and they vanished: a 1.5px dot is a speck on a card rendered
-      1400px tall, so the layer looked like nothing rather than like a bug.
+   4. **Size everything in `--u`, never px.** A 1.5px dot is a speck on a card
+      rendered 1400px tall, so a particle layer sized in pixels looks like
+      nothing at all rather than like a bug.
 
-   5. **Transform and opacity only.** Nothing here may reflow or repaint layout,
-      because a gallery can hold a screen of these at once. Anything animating
-      `background-position`, `width`, `filter` or `box-shadow` belongs somewhere
-      else.
+   5. **Transform and opacity only.** Nothing may reflow or repaint layout: a
+      gallery can hold a screen of these at once. Anything animating
+      `background-position`, `width`, `filter` or `box-shadow` belongs
+      somewhere else. `filter: contrast()` is how most CSS fire on the web is
+      built and it is exactly what cannot be used here.
+
+   6. **Particles need a near-white CORE, not a flat tier colour.** Screen
+      blending a mid-tone over bright artwork barely moves it; the first Mythic
+      embers vanished completely against a silver-white figure. A white centre
+      with a coloured falloff reads on anything.
+
+   And one rule about the SWEEP specifically: **a light bar crossing the card
+   belongs to relics and to nothing else.** It was on Legendary and Mythic too,
+   and having three tiers share the single most noticeable motion in the system
+   flattened all three. It is now the relic's signature.
 
    Proof, not vibes: `npm run check:ui` asserts the expected number of
-   animations are RUNNING and that the card's pixels change between two frames a
-   second apart. Neither alone is enough — a typo in one keyframe name leaves
-   the others moving, and the pixel diff passes it happily.
+   animations are RUNNING per tier, and that the card's pixels change between
+   two frames a second apart. Neither alone is enough — live-fired by
+   misspelling one keyframe name, which the pixel diff passed happily.
    =========================================================================== */
 
 .cf-shine {
@@ -5925,12 +5939,16 @@ button:disabled {
 }
 
 /* Off by default. Each tier switches on only the slots it uses, so the markup
-   can carry all five without any tier having to know about the others. */
-.cf-shine > .sh-field,
-.cf-shine > .sh-grain,
-.cf-shine > .sh-grain2,
-.cf-shine > .sh-sweep,
-.cf-shine > .sh-rim {
+   can carry all six without any tier having to know about the others. */
+.cf-shine > span {
+  display: none;
+}
+
+/* A locked card shows NOTHING but its seal. The shine survived the collection's
+   grayscale — a blend-mode layer is not a colour the filter can drain — so
+   sealed relics flickered with teal light while sealed characters sat dead, and
+   the wall stopped reading as one wall. */
+.gallery-cell.is-locked .cf-shine {
   display: none;
 }
 
@@ -5939,7 +5957,8 @@ button:disabled {
    the moment it drifts, and the parent clips anyway. A grain layer is 200% tall
    so its travel can run a full container height and loop with nothing to see at
    the seam. */
-.sh-field {
+.sh-field,
+.sh-veil {
   inset: -35%;
   mix-blend-mode: screen;
 }
@@ -5965,69 +5984,83 @@ button:disabled {
   border-radius: inherit;
 }
 
-/* Two travel directions, shared by every tier that wants one. Which way a tier
-   goes is most of its identity — see rule 3. */
 @keyframes sh-rise {
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(0, -50%, 0); }
 }
 
-@keyframes sh-fall {
-  from { transform: translate3d(0, -50%, 0); }
-  to { transform: translate3d(0, 0, 0); }
+/* One breathe for every tier; only the period and the glow differ. */
+@keyframes sh-breathe {
+  from { opacity: 0.3; }
+  to { opacity: 0.92; }
 }
 
 /* ===========================================================================
-   EPIC — arcane mist. The quietest of the four, and it has to stay that way:
-   58 Epic cards means this is the one a player sees most, and the tier above it
-   only reads as brighter if this one is restrained.
+   EPIC — violet mist with dust settling through it.
+
+   Two layers that must both be visible, which is the whole note here: the first
+   build's mist was so faint that only the dust registered, and a tier whose
+   name is "mist" reading as "specks" is the effect failing quietly. The field
+   is now roughly twice the alpha it was.
    =========================================================================== */
 .rarity-purple .sh-field,
 .rarity-purple .sh-grain,
+.rarity-purple .sh-grain2,
 .rarity-purple .sh-rim {
   display: block;
 }
 
 .rarity-purple .sh-field {
   background:
-    radial-gradient(42% 34% at 30% 34%, rgba(178, 122, 240, 0.34), transparent 68%),
-    radial-gradient(36% 28% at 72% 68%, rgba(132, 86, 210, 0.32), transparent 70%);
+    radial-gradient(46% 38% at 28% 32%, rgba(186, 132, 252, 0.62), transparent 66%),
+    radial-gradient(40% 32% at 74% 66%, rgba(142, 92, 226, 0.58), transparent 68%),
+    radial-gradient(32% 26% at 50% 92%, rgba(206, 164, 255, 0.42), transparent 70%);
   animation: sh-mist 17s ease-in-out infinite alternate;
 }
 
 /* Sideways, not up or down. That is the whole of Epic's identity next to the
-   two tiers that travel vertically. */
+   tier that licks upward and the tier that turns. */
 @keyframes sh-mist {
-  0% { transform: translate3d(-7%, 1%, 0) scale(1); opacity: 0.6; }
-  50% { transform: translate3d(3%, -2%, 0) scale(1.12); opacity: 0.9; }
-  100% { transform: translate3d(8%, 2%, 0) scale(1.04); opacity: 0.68; }
+  0% { transform: translate3d(-8%, 1%, 0) scale(1); opacity: 0.66; }
+  50% { transform: translate3d(3%, -3%, 0) scale(1.16); opacity: 1; }
+  100% { transform: translate3d(9%, 2%, 0) scale(1.06); opacity: 0.74; }
 }
 
-/* Fewer and softer than the tiers above, on purpose: 58 Epic cards means this is
-   the shine a player sees most, and the two tiers above it only read as louder
-   if this one stays restrained. */
+/* Dust SETTLING, not rising: it drifts sideways and sinks, which is what dust
+   in still air does and what keeps it away from the Mythic embers. */
 .rarity-purple .sh-grain {
   background-image:
-    radial-gradient(circle at 22% 9%, rgba(244, 228, 255, 0.92) 0, rgba(186, 136, 250, 0.5) calc(1.2 * var(--u)), transparent calc(3.4 * var(--u))),
-    radial-gradient(circle at 68% 19%, rgba(238, 218, 255, 0.85) 0, rgba(168, 118, 240, 0.46) calc(1.6 * var(--u)), transparent calc(4.2 * var(--u))),
-    radial-gradient(circle at 40% 31%, rgba(244, 228, 255, 0.88) 0, rgba(186, 136, 250, 0.48) calc(1.3 * var(--u)), transparent calc(3.6 * var(--u))),
-    radial-gradient(circle at 88% 41%, rgba(238, 218, 255, 0.8) 0, rgba(168, 118, 240, 0.44) calc(1.5 * var(--u)), transparent calc(4 * var(--u)));
+    radial-gradient(circle at 22% 9%, rgba(246, 232, 255, 1) 0, rgba(184, 128, 250, 0.62) calc(1.3 * var(--u)), transparent calc(3.6 * var(--u))),
+    radial-gradient(circle at 68% 19%, rgba(240, 222, 255, 0.95) 0, rgba(164, 110, 240, 0.58) calc(1.7 * var(--u)), transparent calc(4.4 * var(--u))),
+    radial-gradient(circle at 40% 31%, rgba(246, 232, 255, 1) 0, rgba(184, 128, 250, 0.6) calc(1.4 * var(--u)), transparent calc(3.8 * var(--u))),
+    radial-gradient(circle at 88% 41%, rgba(240, 222, 255, 0.92) 0, rgba(164, 110, 240, 0.56) calc(1.6 * var(--u)), transparent calc(4.2 * var(--u))),
+    radial-gradient(circle at 9% 44%, rgba(246, 232, 255, 0.96) 0, rgba(184, 128, 250, 0.58) calc(1.2 * var(--u)), transparent calc(3.4 * var(--u)));
+  animation: sh-settle 26s linear infinite;
+}
+
+/* A second, finer dust at a different speed. Two fields at different scales is
+   what turns a moving texture into depth. */
+.rarity-purple .sh-grain2 {
+  background-image:
+    radial-gradient(circle at 51% 6%, rgba(240, 226, 255, 0.8) 0, rgba(172, 120, 244, 0.45) calc(0.9 * var(--u)), transparent calc(2.5 * var(--u))),
+    radial-gradient(circle at 15% 24%, rgba(246, 232, 255, 0.75) 0, rgba(158, 106, 236, 0.42) calc(1 * var(--u)), transparent calc(2.8 * var(--u))),
+    radial-gradient(circle at 79% 15%, rgba(240, 226, 255, 0.8) 0, rgba(172, 120, 244, 0.44) calc(0.8 * var(--u)), transparent calc(2.3 * var(--u))),
+    radial-gradient(circle at 33% 42%, rgba(246, 232, 255, 0.7) 0, rgba(158, 106, 236, 0.4) calc(1.1 * var(--u)), transparent calc(3 * var(--u))),
+    radial-gradient(circle at 94% 34%, rgba(240, 226, 255, 0.75) 0, rgba(172, 120, 244, 0.42) calc(0.9 * var(--u)), transparent calc(2.6 * var(--u)));
   opacity: 0.8;
-  animation: sh-mist-drift 29s linear infinite;
+  animation: sh-settle-slow 37s linear infinite;
 }
 
-/* Diagonal drift: the specks are IN the mist, so they must not travel straight
-   up like an ember or straight down like dust. */
-@keyframes sh-mist-drift {
-  from { transform: translate3d(-6%, 0, 0); }
-  to { transform: translate3d(6%, -50%, 0); }
+@keyframes sh-settle {
+  from { transform: translate3d(-5%, -50%, 0); }
+  to { transform: translate3d(5%, 0, 0); }
 }
 
-/* The rim is the loudest channel any of these tiers has, and the reason is that
-   it is the only one not competing with the artwork. A colour field or a
-   particle screen-blended over a bright, busy illustration gets swallowed; a
-   glow burning inward from the frame always reads. So the rim is where the
-   escalation is actually spent: 30u here, 40u on Legendary, 52u on Mythic. */
+@keyframes sh-settle-slow {
+  from { transform: translate3d(4%, -50%, 0); }
+  to { transform: translate3d(-4%, 0, 0); }
+}
+
 .rarity-purple .sh-rim {
   box-shadow:
     inset 0 0 calc(30 * var(--u)) rgba(178, 122, 240, 0.5),
@@ -6036,60 +6069,100 @@ button:disabled {
 }
 
 /* ===========================================================================
-   LEGENDARY — falling gold. Dust FALLS here and rises everywhere else, which is
-   the single cheapest way to tell this tier apart at a glance.
+   LEGENDARY — radiant rays turning behind the card.
+
+   ROTATION is the point. Nothing else in the system rotates, so this tier is
+   identifiable from the corner of an eye without reading a colour. It replaced
+   falling gold dust, which was the right colour and the wrong idea: dust
+   falling and embers rising are the same motion mirrored, and Legendary read as
+   a paler Mythic because of it.
+
+   A `repeating-conic-gradient` gives the spokes for free. It rotates as a whole
+   under one transform, so it costs a composite and nothing else.
    =========================================================================== */
 .rarity-yellow .sh-field,
+.rarity-yellow .sh-veil,
 .rarity-yellow .sh-grain,
-.rarity-yellow .sh-sweep,
 .rarity-yellow .sh-rim {
   display: block;
 }
 
-/* Weighted to the TOP, because the light the dust is falling through has to
-   come from somewhere. */
-.rarity-yellow .sh-field {
-  background:
-    radial-gradient(58% 34% at 50% 2%, rgba(255, 216, 122, 0.42), transparent 72%),
-    radial-gradient(34% 26% at 22% 46%, rgba(255, 190, 84, 0.3), transparent 70%);
-  animation: sh-gild 15s ease-in-out infinite alternate;
-}
+/* The rays are MASKED into a halo, and the alpha is a fifth of what the first
+   build used.
 
-@keyframes sh-gild {
-  0% { transform: translate3d(-3%, -2%, 0) scale(1); opacity: 0.66; }
-  100% { transform: translate3d(3%, 2%, 0) scale(1.1); opacity: 1; }
-}
-
-/* Same white-core trick as the Mythic embers, for the same reason. */
-.rarity-yellow .sh-grain {
-  background-image:
-    radial-gradient(circle at 14% 7%, rgba(255, 252, 234, 1) 0, rgba(255, 202, 96, 0.62) calc(1.4 * var(--u)), transparent calc(3.8 * var(--u))),
-    radial-gradient(circle at 58% 15%, rgba(255, 248, 224, 1) 0, rgba(255, 190, 78, 0.6) calc(1.9 * var(--u)), transparent calc(5 * var(--u))),
-    radial-gradient(circle at 82% 5%, rgba(255, 252, 234, 0.95) 0, rgba(255, 206, 108, 0.58) calc(1.2 * var(--u)), transparent calc(3.2 * var(--u))),
-    radial-gradient(circle at 34% 24%, rgba(255, 250, 228, 1) 0, rgba(255, 190, 78, 0.6) calc(2.1 * var(--u)), transparent calc(5.4 * var(--u))),
-    radial-gradient(circle at 70% 32%, rgba(255, 252, 234, 0.92) 0, rgba(255, 202, 96, 0.56) calc(1.5 * var(--u)), transparent calc(4 * var(--u))),
-    radial-gradient(circle at 6% 38%, rgba(255, 248, 224, 0.95) 0, rgba(255, 190, 78, 0.58) calc(1.8 * var(--u)), transparent calc(4.6 * var(--u))),
-    radial-gradient(circle at 45% 45%, rgba(255, 252, 234, 1) 0, rgba(255, 206, 108, 0.6) calc(1.3 * var(--u)), transparent calc(3.6 * var(--u))),
-    radial-gradient(circle at 94% 48%, rgba(255, 250, 228, 0.95) 0, rgba(255, 190, 78, 0.56) calc(2 * var(--u)), transparent calc(5.2 * var(--u)));
-  animation: sh-fall 23s linear infinite;
-}
-
-/* A gleam, not a sweep: slower, warmer and much rarer than the relic's. */
-.rarity-yellow .sh-sweep {
-  background: linear-gradient(
-    100deg,
-    transparent 38%,
-    rgba(255, 226, 150, 0.24) 46%,
-    rgba(255, 248, 214, 0.5) 50%,
-    rgba(255, 226, 150, 0.24) 54%,
-    transparent 62%
+   Unmasked and at 0.34 they covered the whole card edge to edge and read as a
+   sunburst sticker laid over the artwork — the subject of the illustration
+   disappeared behind them. A radial mask with a clear centre and a soft outer
+   falloff turns the same gradient into light coming from BEHIND the subject,
+   which is what it was always meant to be. The card has to survive the shine. */
+.rarity-yellow .sh-field,
+.rarity-yellow .sh-veil {
+  -webkit-mask: radial-gradient(
+    closest-side circle at 50% 34%,
+    transparent 6%,
+    rgba(0, 0, 0, 0.9) 30%,
+    rgba(0, 0, 0, 0.4) 58%,
+    transparent 78%
   );
-  animation: sh-gleam 11s ease-in-out infinite;
+  mask: radial-gradient(
+    closest-side circle at 50% 34%,
+    transparent 6%,
+    rgba(0, 0, 0, 0.9) 30%,
+    rgba(0, 0, 0, 0.4) 58%,
+    transparent 78%
+  );
 }
 
-@keyframes sh-gleam {
-  0% { transform: translate3d(-160%, 0, 0); }
-  22%, 100% { transform: translate3d(160%, 0, 0); }
+/* Soft-edged wedges rather than hard spokes: hard edges read as a loading
+   spinner, and the softness is what makes it light instead. */
+.rarity-yellow .sh-field {
+  background: repeating-conic-gradient(
+    from 0deg at 50% 34%,
+    rgba(255, 232, 164, 0.16) 0deg 6deg,
+    transparent 6deg 27deg
+  );
+  animation: sh-turn 44s linear infinite;
+}
+
+@keyframes sh-turn {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* A counter-turning second set, slower and finer. Two rotations in opposite
+   directions never line up, so the rays keep crossing each other instead of
+   marching. */
+.rarity-yellow .sh-veil {
+  background: repeating-conic-gradient(
+    from 12deg at 50% 34%,
+    rgba(255, 246, 212, 0.09) 0deg 2.4deg,
+    transparent 2.4deg 18deg
+  );
+  animation: sh-turn-back 67s linear infinite;
+}
+
+@keyframes sh-turn-back {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+/* The bloom the rays come out of, swelling on its own clock. */
+.rarity-yellow .sh-grain {
+  left: -30%;
+  right: -30%;
+  top: -30%;
+  height: 160%;
+  background:
+    radial-gradient(38% 26% at 50% 34%, rgba(255, 232, 168, 0.3), transparent 70%),
+    radial-gradient(70% 38% at 50% 2%, rgba(255, 206, 108, 0.26), transparent 76%);
+  background-repeat: no-repeat;
+  background-size: auto;
+  animation: sh-bloom 19s ease-in-out infinite alternate;
+}
+
+@keyframes sh-bloom {
+  0% { transform: scale(0.94); opacity: 0.6; }
+  100% { transform: scale(1.14); opacity: 1; }
 }
 
 .rarity-yellow .sh-rim {
@@ -6100,40 +6173,106 @@ button:disabled {
 }
 
 /* ===========================================================================
-   MYTHIC — embers rising out of a heat pool. The loudest tier, and the only one
-   with five layers: two ember fields at different speeds and sizes, so the
-   sparks have depth rather than moving as one sheet.
+   MYTHIC — the card is on fire.
+
+   The published CSS-fire techniques all end at a `filter: contrast()` over two
+   sliding noise layers, and that filter is exactly what rule 5 forbids: it
+   rasterises the whole layer every frame, and a gallery row of these would pay
+   for it. What survives from that approach is the idea underneath it — TWO
+   irregular fields sliding past each other at different speeds is what makes
+   flame look alive, because neither one alone ever repeats visibly.
+
+   So the tongues are built as radial-gradient lobes anchored to the bottom
+   edge, in two sets at different scales, each stretching on its own fast clock.
+   Fire flickers in about a second; the earlier 12-second swell was the single
+   biggest reason this tier read as "a red card" instead of "a burning card".
+
+     .sh-field   near tongues, tall, bright, 1.7s
+     .sh-veil    far tongues, shorter, deeper red, 1.1s
+     .sh-grain   near embers coming off the top, 14s
+     .sh-grain2  far embers, 19s
+     .sh-rim     the crimson heartbeat, 5.7s
+
+   `transform-origin: bottom` on both tongue layers is load-bearing: scaling
+   from the centre makes the flame grow downward out of the card as well as up,
+   which reads as a pulsing blob rather than as fire.
    =========================================================================== */
 .rarity-red .sh-field,
+.rarity-red .sh-veil,
 .rarity-red .sh-grain,
 .rarity-red .sh-grain2,
-.rarity-red .sh-sweep,
 .rarity-red .sh-rim {
   display: block;
 }
 
-/* Weighted to the BOTTOM — the fire the embers come off. The exact mirror of
-   Legendary's top-lit field, on purpose. */
+/* The tongues are MASKED off the bottom 14% of the card.
+
+   Unmasked, the brightest part of the flame sat exactly on the ATK and HP gems
+   and the origin line, and screen blending turned all three to pale mush — the
+   card was on fire and unreadable, which is a worse card. Pulling the flame up
+   off the bottom edge costs nothing visually, because a flame's base is its
+   least interesting part, and it hands the numbers their contrast back. */
+.rarity-red .sh-field,
+.rarity-red .sh-veil {
+  -webkit-mask: linear-gradient(
+    to top,
+    transparent 0%,
+    rgba(0, 0, 0, 0.45) 10%,
+    #000 30%,
+    rgba(0, 0, 0, 0.72) 56%,
+    transparent 82%
+  );
+  mask: linear-gradient(
+    to top,
+    transparent 0%,
+    rgba(0, 0, 0, 0.45) 10%,
+    #000 30%,
+    rgba(0, 0, 0, 0.72) 56%,
+    transparent 82%
+  );
+}
+
 .rarity-red .sh-field {
+  inset: 0;
+  transform-origin: 50% 100%;
   background:
-    radial-gradient(70% 46% at 50% 106%, rgba(255, 122, 58, 0.72), transparent 70%),
-    radial-gradient(44% 34% at 24% 76%, rgba(238, 58, 42, 0.6), transparent 72%),
-    radial-gradient(38% 28% at 78% 84%, rgba(255, 162, 78, 0.52), transparent 72%);
-  animation: sh-forge 12s ease-in-out infinite alternate;
+    radial-gradient(22% 46% at 14% 100%, rgba(255, 196, 96, 0.86), rgba(238, 78, 34, 0.5) 46%, transparent 76%),
+    radial-gradient(17% 62% at 33% 100%, rgba(255, 232, 170, 0.9), rgba(246, 96, 38, 0.52) 40%, transparent 72%),
+    radial-gradient(24% 40% at 52% 100%, rgba(255, 184, 84, 0.82), rgba(228, 62, 32, 0.48) 48%, transparent 78%),
+    radial-gradient(15% 68% at 71% 100%, rgba(255, 238, 186, 0.92), rgba(250, 108, 40, 0.54) 38%, transparent 70%),
+    radial-gradient(21% 44% at 89% 100%, rgba(255, 190, 92, 0.84), rgba(234, 70, 32, 0.5) 46%, transparent 76%);
+  animation: sh-lick 1.7s ease-in-out infinite alternate;
 }
 
-@keyframes sh-forge {
-  0% { transform: translate3d(-3%, 4%, 0) scale(1); opacity: 0.62; }
-  50% { transform: translate3d(2%, 0%, 0) scale(1.16); opacity: 1; }
-  100% { transform: translate3d(4%, 3%, 0) scale(1.06); opacity: 0.78; }
+.rarity-red .sh-veil {
+  inset: 0;
+  transform-origin: 50% 100%;
+  background:
+    radial-gradient(28% 32% at 6% 100%, rgba(246, 106, 40, 0.72), transparent 74%),
+    radial-gradient(20% 48% at 24% 100%, rgba(226, 52, 30, 0.7), transparent 72%),
+    radial-gradient(30% 30% at 44% 100%, rgba(250, 128, 46, 0.66), transparent 76%),
+    radial-gradient(19% 52% at 62% 100%, rgba(226, 52, 30, 0.72), transparent 72%),
+    radial-gradient(27% 34% at 82% 100%, rgba(246, 106, 40, 0.68), transparent 74%),
+    radial-gradient(22% 40% at 97% 100%, rgba(232, 66, 32, 0.66), transparent 74%);
+  animation: sh-lick-far 1.1s ease-in-out infinite alternate;
 }
 
-/* Near embers: bigger, brighter, faster.
-   Each one has a NEAR-WHITE core rather than a flat orange. Screen blending a
-   mid-tone over bright artwork barely moves it, so an ember drawn in orange
-   alone disappears the moment the art behind it is pale — which is exactly what
-   happened on the first pass over Yujiro's silver-white figure. A white core
-   with a warm falloff reads on anything. */
+/* Asymmetric scaling, and a horizontal shift on the way. A flame that only
+   grows and shrinks is a lamp; a flame that also leans is fire. */
+@keyframes sh-lick {
+  0% { transform: translate3d(-1.5%, 0, 0) scale(1, 0.82); opacity: 0.6; }
+  40% { transform: translate3d(1%, 0, 0) scale(1.06, 1.14); opacity: 0.82; }
+  70% { transform: translate3d(-0.5%, 0, 0) scale(0.97, 0.94); opacity: 0.68; }
+  100% { transform: translate3d(2%, 0, 0) scale(1.03, 1.24); opacity: 0.78; }
+}
+
+@keyframes sh-lick-far {
+  0% { transform: translate3d(2%, 0, 0) scale(1.04, 1.12); opacity: 0.72; }
+  55% { transform: translate3d(-2%, 0, 0) scale(0.95, 0.78); opacity: 0.5; }
+  100% { transform: translate3d(1%, 0, 0) scale(1.01, 1.02); opacity: 0.68; }
+}
+
+/* Near embers: bigger, brighter, faster, each with a near-white core. */
 .rarity-red .sh-grain {
   background-image:
     radial-gradient(circle at 18% 8%, rgba(255, 250, 236, 1) 0, rgba(255, 150, 70, 0.7) calc(1.6 * var(--u)), transparent calc(4.4 * var(--u))),
@@ -6144,8 +6283,6 @@ button:disabled {
   animation: sh-rise 14s linear infinite;
 }
 
-/* Far embers: smaller, dimmer, slower. Two fields at different speeds is what
-   turns a moving texture into depth. */
 .rarity-red .sh-grain2 {
   background-image:
     radial-gradient(circle at 44% 4%, rgba(255, 236, 206, 0.9) 0, rgba(255, 150, 78, 0.5) calc(1 * var(--u)), transparent calc(2.8 * var(--u))),
@@ -6158,29 +6295,6 @@ button:disabled {
   animation: sh-rise 19s linear infinite;
 }
 
-/* A flare, not a highlight. Vertical rather than diagonal, so it reads as the
-   fire flaring up rather than as light crossing a surface. */
-.rarity-red .sh-sweep {
-  inset: -20% 0;
-  background: linear-gradient(
-    to top,
-    transparent 30%,
-    rgba(255, 138, 68, 0.3) 44%,
-    rgba(255, 226, 178, 0.44) 50%,
-    rgba(255, 138, 68, 0.3) 56%,
-    transparent 70%
-  );
-  animation: sh-flare 9.3s ease-in-out infinite;
-}
-
-@keyframes sh-flare {
-  0% { transform: translate3d(0, 120%, 0); opacity: 0; }
-  12% { opacity: 1; }
-  30%, 100% { transform: translate3d(0, -120%, 0); opacity: 0; }
-}
-
-/* The loudest rim in the game, and the fastest breath. Mythic is the top of the
-   ladder, so it has to be unmistakable from across a gallery row. */
 .rarity-red .sh-rim {
   box-shadow:
     inset 0 0 calc(52 * var(--u)) rgba(255, 88, 44, 0.8),
@@ -6199,10 +6313,7 @@ button:disabled {
 }
 
 /* ===========================================================================
-   RELIC — aurora, rising motes, a foil sweep. The tier this technique was built
-   for, and the one whose sweep is deliberately rare: at 7.5s it crossed often
-   enough to read as a wiper, so the period is now 16.5s with the crossing
-   itself still taking the same 2.5 seconds it always did.
+   RELIC — aurora, motes rising, and the one light bar in the game.
    =========================================================================== */
 .rarity-relic .sh-field,
 .rarity-relic .sh-grain,
@@ -6238,6 +6349,7 @@ button:disabled {
   animation: sh-rise 19s linear infinite;
 }
 
+/* The only light bar left in the game, and it is deliberately rare. */
 .rarity-relic .sh-sweep {
   background: linear-gradient(
     104deg,
@@ -6247,14 +6359,14 @@ button:disabled {
     rgba(214, 250, 255, 0.22) 55%,
     transparent 64%
   );
-  animation: sh-sweep 16.5s ease-in-out infinite;
+  animation: sh-sweep 15s ease-in-out infinite;
 }
 
 @keyframes sh-sweep {
   0% { transform: translate3d(-160%, 0, 0); }
-  /* 15.5% of 16.5s is the same 2.5-second crossing the 7.5s version had. Only
-     the WAIT got longer, which is the whole of what "make it rarer" means. */
-  15.5%, 100% { transform: translate3d(160%, 0, 0); }
+  /* 17% of 15s is the same 2.5-second crossing this always had. Only the WAIT
+     between passes changes when the period does. */
+  17%, 100% { transform: translate3d(160%, 0, 0); }
 }
 
 .rarity-relic .sh-rim {
@@ -6264,8 +6376,108 @@ button:disabled {
   animation: sh-breathe 5.3s ease-in-out infinite alternate;
 }
 
-/* One breathe for every tier; only the period and the glow differ. */
-@keyframes sh-breathe {
-  from { opacity: 0.3; }
-  to { opacity: 0.92; }
+/* ===========================================================================
+   CAMP MARKS — a second, quieter layer under the tier shine.
+
+   A tier says how RARE a card is. A camp says what KIND of thing it is, and the
+   two have to be readable at the same time on the same card, so a camp mark can
+   never work the way a tier does. Three rules keep them apart:
+
+     - A camp mark is a SHAPE, never a field or a particle. Every tier owns a
+       colour wash and a particle system already; a fifth cloud on top of a
+       Mythic card is just more soup.
+     - It sits UNDER the tier shine and behind the artwork's own subject, at
+       roughly a third of any tier layer's alpha. If you notice it before you
+       notice the tier, it is too loud.
+     - It has one motion and that motion is slow. The tier is what moves.
+
+   MAGIC is the first and, for now, the only one: a slowly turning arcane
+   circle. Two concentric rings and a ring of tick marks, all drawn with
+   gradients, rotating against each other. Tech and Nature are not built.
+
+   NAMED `.cf-sigil`, NOT `.cf-camp`. `.cf-camp` was already taken — it is the
+   vertical camp rail printed down the left edge of every character card — and
+   claiming it here silently rewrote that rail's position and writing mode, so
+   the word "Magic" ended up rotated across the middle of the card. Nothing
+   errored and every test stayed green; it was visible only by looking.
+   =========================================================================== */
+/* Masked to the ART WINDOW and nowhere else.
+
+   The camp mark is a background for the picture, so it must never reach the
+   rules panel: faint tick marks drawn through a sentence read as a rendering
+   fault, not as atmosphere. The art window runs 68 to 560 design units down a
+   1050-unit card, which after this layer's 9-unit inset is 5.7% to 53.4%. */
+.cf-sigil {
+  position: absolute;
+  inset: calc(9 * var(--u));
+  z-index: 3;
+  border-radius: calc(10 * var(--u));
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(to bottom, transparent 4%, #000 9%, #000 47%, transparent 54%);
+  mask: linear-gradient(to bottom, transparent 4%, #000 9%, #000 47%, transparent 54%);
+}
+
+/* Sized and placed to sit INSIDE the art window, centred on it.
+   The art window runs from 68 to 560 design units, so its centre is about 314
+   down the card and 305 down this layer. A 360-unit circle placed at 125 lands
+   on it. The first build used a 430-unit circle starting at 30, which put half
+   the ring across the rules text — a camp mark drawn over the card's own words
+   is a camp mark that has stopped being a background. */
+.cf-sigil > span {
+  position: absolute;
+  display: block;
+  left: 50%;
+  top: calc(125 * var(--u));
+  width: calc(360 * var(--u));
+  height: calc(360 * var(--u));
+  margin-left: calc(-180 * var(--u));
+  border-radius: 50%;
+  mix-blend-mode: screen;
+}
+
+/* The outer ring plus its tick marks, turning one way. */
+.sigil-magic .cm-ring {
+  background:
+    repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(196, 178, 255, 0.5) 0deg 1.1deg,
+      transparent 1.1deg 9deg
+    );
+  -webkit-mask: radial-gradient(circle, transparent 63%, #000 65%, #000 71%, transparent 73%);
+  mask: radial-gradient(circle, transparent 63%, #000 65%, #000 71%, transparent 73%);
+  opacity: 0.32;
+  animation: cm-turn 90s linear infinite;
+}
+
+/* The inner ring and its glyph spokes, turning the other way and slower. Two
+   opposed rotations never realign, which is the same rule the Legendary rays
+   are built on. */
+.sigil-magic .cm-glyph {
+  background:
+    repeating-conic-gradient(
+      from 18deg at 50% 50%,
+      rgba(214, 200, 255, 0.55) 0deg 2.6deg,
+      transparent 2.6deg 30deg
+    ),
+    radial-gradient(circle, transparent 40%, rgba(178, 156, 250, 0.34) 41%, transparent 43%);
+  -webkit-mask: radial-gradient(circle, transparent 27%, #000 29%, #000 52%, transparent 54%);
+  mask: radial-gradient(circle, transparent 27%, #000 29%, #000 52%, transparent 54%);
+  opacity: 0.26;
+  animation: cm-turn-back 131s linear infinite;
+}
+
+@keyframes cm-turn {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cm-turn-back {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+/* Locked cards show their seal and nothing else, camp marks included. */
+.gallery-cell.is-locked .cf-sigil {
+  display: none;
 }
