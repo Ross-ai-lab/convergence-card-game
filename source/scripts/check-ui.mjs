@@ -214,14 +214,20 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   // that module first — and a fixed wait that is usually long enough is exactly
   // the kind of thing that fails one run in ten and looks like a real bug.
   // Production builds deliberately remove both the Cheat button and the
-  // __debug hook. The title checks above remain valid there, but the board
-  // scenarios below need deterministic injection and must be skipped as a
-  // group rather than timing out on the first dev-only control.
+  // __debug hook. The Cheat button is the environment boundary: it is rendered
+  // synchronously, while __debug arrives through a dynamic import. The title
+  // checks above remain valid in production, but the board scenarios below need
+  // both dev tools and must be skipped as a group there.
+  const cheatButtonAvailable = (await page.getByRole("button", { name: /Cheat Off|Cheat On/ }).count()) > 0;
+  if (!cheatButtonAvailable) return false;
   const debugReady = await page
     .waitForFunction(() => Boolean(window.__debug), null, { timeout: 15000 })
     .then(() => true)
     .catch(() => false);
-  if (!debugReady) return false;
+  if (!debugReady) {
+    check("dev debug hook registers beside the Cheat button", false, "Cheat exists but window.__debug did not register");
+    return false;
+  }
   if (cheat) {
     // Cheat is a top-bar action in the current layout, so use its accessible
     // name directly. Deliberately NOT wrapped in a silent catch: a failure here
@@ -238,7 +244,7 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
     }
   }
 
-  if (!place) return; // leave the hand full and the board empty
+  if (!place) return true; // leave the hand full and the board empty
 
   if (!awake) {
     // Summoning-sick body, and it has to arrive BY BEING PLAYED, because the two
@@ -250,7 +256,7 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
     await page.locator(".board-slot.placeable").first().click();
     await page.waitForTimeout(600);
     await answerAnyPrompt();
-    return;
+    return true;
   }
 
   // A RESTED MINION IS PLANTED, NOT PLAYED.
@@ -278,6 +284,7 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
     .first()
     .waitFor({ state: "visible", timeout: 8000 })
     .catch(() => {});
+  return true;
 }
 
 /**
