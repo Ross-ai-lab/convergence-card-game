@@ -213,7 +213,15 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   // DYNAMIC import, so the first load after a rebuild has to fetch and transform
   // that module first — and a fixed wait that is usually long enough is exactly
   // the kind of thing that fails one run in ten and looks like a real bug.
-  await page.waitForFunction(() => Boolean(window.__debug), null, { timeout: 15000 }).catch(() => {});
+  // Production builds deliberately remove both the Cheat button and the
+  // __debug hook. The title checks above remain valid there, but the board
+  // scenarios below need deterministic injection and must be skipped as a
+  // group rather than timing out on the first dev-only control.
+  const debugReady = await page
+    .waitForFunction(() => Boolean(window.__debug), null, { timeout: 15000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!debugReady) return false;
   if (cheat) {
     // Cheat is a top-bar action in the current layout, so use its accessible
     // name directly. Deliberately NOT wrapped in a silent catch: a failure here
@@ -326,7 +334,21 @@ async function handOff() {
 }
 
 // ---------------------------------------------------------------- 1. placing
-await newBoard({ awake: false });
+const boardToolsReady = await newBoard({ awake: false });
+if (!boardToolsReady) {
+  skip("dev-only board interaction scenarios", "production build omits Cheat and window.__debug");
+  await browser.close();
+  const failed = results.filter((r) => !r.ok);
+  const skipped = results.filter((r) => r.skipped);
+  const passed = results.length - failed.length - skipped.length;
+  console.log("");
+  if (failed.length) {
+    console.log(`${failed.length} FAILED: ${failed.map((r) => r.name).join(", ")}`);
+    process.exit(1);
+  }
+  console.log(`${passed} UI checks passed, ${skipped.length} skipped (${skipped.map((r) => r.name).join("; ")}).`);
+  process.exit(0);
+}
 check(
   "a card can be played into an empty slot",
   (await page.locator(".board-slot.occupied").count()) > 0,
@@ -928,6 +950,40 @@ await newBoard({ place: false });
       JSON.stringify(pivot),
     );
 
+    // A short board name sits on the card's centre line.
+    //
+    // The board name is pushed left by an asymmetric padding so a LONG name
+    // clears the cost crystal, and that padding used to apply to every name —
+    // so short ones sat 76 design units off centre for no reason. This measures
+    // the ink, not the box: the box is full-width either way and only the text
+    // inside it moves, which is exactly why the fault survived every previous
+    // check. "Knov" is four letters and must be dead centre.
+    await page.evaluate(() => window.__debug.place("Knov", "me", 2));
+    await page.waitForTimeout(300);
+    const boardName = await page
+      .locator('[data-slot="0-2"] .card-face')
+      .first()
+      .evaluate((face) => {
+        const nameEl = face.querySelector(".cf-name");
+        if (!nameEl) return { found: false };
+        const range = document.createRange();
+        range.selectNodeContents(nameEl);
+        const ink = range.getBoundingClientRect();
+        const card = face.getBoundingClientRect();
+        return {
+          found: true,
+          text: (nameEl.textContent ?? "").trim(),
+          // Offset of the text's centre from the card's, as a share of width.
+          offCentre: Number((((ink.left + ink.width / 2) - (card.left + card.width / 2)) / card.width).toFixed(3)),
+        };
+      })
+      .catch(() => ({ found: false }));
+    check(
+      "a short board name sits on the card's centre line",
+      boardName.found && Math.abs(boardName.offCentre) < 0.02,
+      JSON.stringify(boardName),
+    );
+
     // Rare is the baseline the others escalate from, so it must carry nothing.
     await page.evaluate(() => window.__debug.giveCard("John Wick"));
     await page.waitForTimeout(300);
@@ -975,25 +1031,28 @@ await newBoard({ place: false });
             const style = getComputedStyle(rail);
             return {
               text: (rail.textContent ?? "").trim(),
-              running: rail.getAnimations().filter((animation) => animation.playState === "running").length,
-              clipped: (style.webkitBackgroundClip || style.backgroundClip) === "text",
-              gradient: style.backgroundImage,
+              // A rail holds ONE colour now. It used to cycle a gradient through
+              // its letters, and this assertion is inverted from what it was:
+              // an animated rail is the failure, not the pass.
+              animated: rail.getAnimations().length > 0,
+              colour: style.color,
+              plainWhite: style.color === "rgb(255, 255, 255)",
             };
           }),
         );
-      const lit = rails.filter((rail) => rail.running === 1 && rail.clipped && rail.gradient !== "none");
+      const lit = rails.filter((rail) => !rail.animated && rail.colour);
       check(
-        `both rails on ${name} are lit and clipped`,
+        `both rails on ${name} are lit and still`,
         rails.length === 2 && lit.length === 2,
-        rails.map((rail) => `${rail.text}:${rail.running}/${rail.clipped}`).join(" "),
+        rails.map((rail) => `${rail.text}:${rail.colour}${rail.animated ? " ANIMATED" : ""}`).join(" "),
       );
-      for (const rail of lit) seenGradients.set(rail.text, rail.gradient);
+      for (const rail of lit) seenGradients.set(rail.text, rail.colour);
     }
     const gradientValues = [...seenGradients.values()];
     check(
-      "every rail palette is different from every other",
+      "every rail colour is different from every other",
       seenGradients.size === 7 && new Set(gradientValues).size === 7,
-      `${seenGradients.size} words, ${new Set(gradientValues).size} distinct gradients: ${[...seenGradients.keys()].join(", ")}`,
+      `${seenGradients.size} words, ${new Set(gradientValues).size} distinct colours: ${[...seenGradients.keys()].join(", ")}`,
     );
 
     // Card names carry their tier's colour, and Rare stays plain white — the

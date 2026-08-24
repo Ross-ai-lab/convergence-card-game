@@ -363,8 +363,8 @@ describe("2026 card replacements", () => {
   it("loads Rudeus Greyrat and Prince Lloyd with their requested card text", () => {
     expect(cards.find((card) => card.name === "Rudeus Greyrat")).toMatchObject({
       cost: 4,
-      atk: 4,
-      hp: 4,
+      atk: 2,
+      hp: 2,
       keywords: ["Divine Shield", "Passive"],
       effectId: "rudeus_hero_power_free",
       effectTiming: "passive",
@@ -373,8 +373,9 @@ describe("2026 card replacements", () => {
     });
     expect(cards.find((card) => card.name === "Prince Lloyd")).toMatchObject({
       cost: 6,
-      atk: 4,
-      hp: 5,
+      atk: 2,
+      hp: 2,
+      rarity: "Purple",
       keywords: ["Divine Shield", "Passive"],
       effectId: "prince_lloyd_damage_ward",
       effectTiming: "passive",
