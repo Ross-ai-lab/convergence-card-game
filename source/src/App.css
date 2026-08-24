@@ -6681,3 +6681,7 @@ button:disabled {
 .card-face.rarity-relic .cf-origin {
   color: #d4f6ff;
 }
+
+.card-face.rarity-relic .cf-flavor {
+  font-size: calc(64 * var(--u));
+}
