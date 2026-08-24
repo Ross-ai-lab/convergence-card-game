@@ -2975,50 +2975,92 @@ const GalleryCell = memo(function GalleryCell({
       <CardFace card={face} lazyArt />
       {locked ? (
         <span className="gallery-lock" aria-hidden="true">
-          {/* An old castle padlock, not a UI glyph.
-              It is drawn rather than fetched because it is furniture — an icon
-              in the same family as the keyword artwork, not a photograph.
-              The detail is what stops it reading as a grey blob at this size:
-              a tapered shackle with its two anchor bosses, a raised escutcheon
-              plate, four corner rivets, a banded body, and a keyhole cut clean
-              through so the card shows in it. Every dark mark is a hole or a
-              shadow, so the whole thing works as one flat colour on any art. */}
-          <svg viewBox="0 0 64 84" width="64" height="84">
-            <g fill="currentColor">
-              {/* shackle: tapered, with the bosses it pivots on */}
-              <path
-                d="M32 4c-8.8 0-16 7.2-16 16v12h8V20c0-4.4 3.6-8 8-8s8 3.6 8 8v12h8V20c0-8.8-7.2-16-16-16z"
-                opacity="0.92"
-              />
-              <circle cx="20" cy="33" r="3.4" opacity="0.92" />
-              <circle cx="44" cy="33" r="3.4" opacity="0.92" />
-              {/* body */}
-              <rect x="6" y="31" width="52" height="49" rx="7" />
-              {/* raised escutcheon plate */}
-              <rect x="13" y="38" width="38" height="35" rx="5" opacity="0.55" />
-            </g>
-            <g fill="rgba(16,12,22,0.82)">
-              {/* banding across the body */}
-              <rect x="6" y="43.6" width="52" height="1.8" />
-              <rect x="6" y="67.4" width="52" height="1.8" />
-              {/* corner rivets */}
-              <circle cx="10.5" cy="35.5" r="1.9" />
-              <circle cx="53.5" cy="35.5" r="1.9" />
-              <circle cx="10.5" cy="75.5" r="1.9" />
-              <circle cx="53.5" cy="75.5" r="1.9" />
-              {/* keyhole, cut through */}
-              <circle cx="32" cy="52" r="6.2" />
-              <path d="M28.8 55.5h6.4l2.1 12.4H26.7z" />
-            </g>
-            {/* escutcheon ring around the keyhole */}
-            <circle
-              cx="32"
-              cy="54.5"
-              r="11.4"
+          {/* An ANTIQUE ORNATE padlock, drawn rather than fetched because it is
+              furniture — an icon in the same family as the keyword artwork, not
+              a photograph.
+
+              The shape does the work, and the first version got that wrong: a
+              plain rounded rectangle with a band and four rivets reads as a
+              padlock ICON, the kind of thing a browser puts in an address bar,
+              and no amount of extra rivets rescues it. What makes a lock look
+              OLD is its silhouette — horns at the four corners, sides that
+              pinch inward, a body that comes to a point at the foot — and then
+              scrollwork inside that outline.
+
+              Every dark mark is a hole, a groove or a shadow, so the whole
+              thing still works as one flat colour over any artwork. */}
+          <svg viewBox="0 0 120 152" width="120" height="152">
+            {/* shackle, drawn first so the body's shoulders overlap its feet */}
+            <path
+              d="M34 70V48a26 26 0 0 1 52 0v22"
               fill="none"
-              stroke="rgba(16,12,22,0.5)"
-              strokeWidth="1.6"
+              stroke="currentColor"
+              strokeWidth="13"
+              strokeLinecap="round"
+              opacity="0.94"
             />
+            <path
+              d="M38 66V48a22 22 0 0 1 44 0v18"
+              fill="none"
+              stroke="rgba(16,12,22,0.28)"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+
+            {/* The body: horns at the four corners, sides that pinch inward, a
+                broad foot with only a slight dip.
+
+                The foot was a long spike first and the lock read as a shield or
+                a pendant. An antique padlock is WIDE at the bottom — it has to
+                hold a mechanism — so the curve is shallow and the corners flare
+                out past it. */}
+            <path
+              fill="currentColor"
+              d="M33 63 L16 48 L26 70
+                 C11 75 11 84 24 89
+                 C11 94 11 103 26 108
+                 L16 126 L34 112
+                 C40 126 48 132 60 134
+                 C72 132 80 126 86 112
+                 L104 126 L94 108
+                 C109 103 109 94 96 89
+                 C109 84 109 75 94 70
+                 L104 48 L87 63 Z"
+            />
+
+            {/* inner bevel, one step darker, following the same silhouette */}
+            <path
+              fill="rgba(16,12,22,0.16)"
+              d="M37 70 C27 74 27 81 34 87 C27 93 27 100 37 105
+                 C43 118 49 124 60 127 C71 124 77 118 83 105
+                 C93 100 93 93 86 87 C93 81 93 74 83 70 Z"
+            />
+
+            {/* Scrollwork in the SHOULDERS and the HAUNCHES, not around the
+                keyhole. Two curls level with the keyhole plus a curve beneath
+                it read as a face — eyes and a mouth — which is the one thing an
+                ornate lock must not do. Pushed out to the corners they read as
+                what they are: iron scrollwork following the body's edge. */}
+            <g fill="none" stroke="rgba(16,12,22,0.6)" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M41 72 C31 73 28 81 35 84 C40 86 44 82 42 78" />
+              <path d="M79 72 C89 73 92 81 85 84 C80 86 76 82 78 78" />
+              <path d="M40 105 C31 108 30 117 38 118 C43 118 45 114 43 110" />
+              <path d="M80 105 C89 108 90 117 82 118 C77 118 75 114 77 110" />
+            </g>
+
+            <g fill="rgba(16,12,22,0.82)">
+              {/* screws set into the horns, where a real lock is bolted */}
+              <circle cx="27" cy="66" r="2.4" />
+              <circle cx="93" cy="66" r="2.4" />
+              <circle cx="29" cy="111" r="2.2" />
+              <circle cx="91" cy="111" r="2.2" />
+              {/* keyhole, cut clean through */}
+              <circle cx="60" cy="92" r="7.4" />
+              <path d="M55.4 96.5h9.2l2.6 15H52.8z" />
+            </g>
+
+            {/* the escutcheon ring the keyhole sits in */}
+            <circle cx="60" cy="95" r="13" fill="none" stroke="rgba(16,12,22,0.4)" strokeWidth="1.8" />
           </svg>
         </span>
       ) : null}

@@ -144,9 +144,18 @@ both times: a locked card the player can read is a card already spent, and what 
 should still be news. Owner's ruling. Keep it large.
 
 The padlock is drawn rather than fetched because it is furniture — an icon, in the same family as the
-keyword artwork, not a photograph. It is an old castle lock on purpose, with a tapered shackle and its
-two anchor bosses, a banded body, four corner rivets, a raised escutcheon plate and a keyhole cut
-clean through. The detail is what stops it reading as a grey blob at that size.
+keyword artwork, not a photograph. **The SILHOUETTE is what makes it look antique**, and the first
+version got that wrong: a rounded rectangle with a band and four rivets reads as a padlock ICON, the
+kind a browser puts in an address bar, and no amount of extra rivets rescues it. What says "old" is
+the outline — broad flared horns at the four corners, sides that pinch inward between them, a wide
+foot with only a slight dip — and scrollwork inside it.
+
+Two things learned drawing it. **The foot must be BROAD**: a long central spike made it a shield or a
+pendant, and a real padlock is wide at the bottom because it has to hold a mechanism. And **the
+scrollwork must stay out of the middle**: two curls level with the keyhole plus a curve beneath it
+read as eyes and a mouth, which is the one thing an ornate lock must not do. They sit in the
+shoulders and the haunches instead, following the body's edge. Every dark mark is a hole, a groove or
+a shadow, so the whole thing still works as one flat colour over any artwork.
 
 **The Collection filter has NO "any" option and starts on Unlocked.** It is the only filter that
 behaves that way. The gallery is your collection first and the locked wall second, so mixing 50
@@ -562,7 +571,7 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 | Tier | Colour | What it does | Layers |
 |---|---|---|---|
 | Epic | violet | mist drifting sideways, dust settling through it | 4 |
-| Legendary | gold | five thin rays fanning up from the card foot | 3 |
+| Legendary | gold | five short rays spinning at the card foot | 3 |
 | Mythic | crimson | a low bed of tapered flame, embers off the top | 5 |
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
@@ -611,7 +620,16 @@ Mythic was rebuilt after the first version read as a red glow rather than as fla
 
 **The mask's top stop is what caps the height, but the LOBES have to come down with it.** Cut the mask alone and it slices each tongue through its widest part, so what survives is a bright band rather than tongue shapes — which looks like a gradient bug rather than a height setting. Both were halved together each time.
 
-**The Legendary rays sit low too**, with their origin 78% down the card rather than in the middle. The lower half of the circle then falls outside the frame and only the fan above it is ever seen, so five wedges around a full circle read as about three at a time — light rising from the card's own foot rather than a sun behind the subject. The bloom moved down with them: leaving it centred put the source in one place and its glow in another.
+**The Legendary rays sit at the card's FOOT**, and they are short — the last of the light is gone before the rules plaque, whose bottom edge is 130 design units up. Light rising from the card rather than a sun behind the subject.
+
+**They must SPIN, not travel, and getting that right took two geometry corrections that both looked like something else.**
+
+- **`transform: rotate()` turns an element about its OWN centre.** The conic gradient's origin was elsewhere on that element, so the origin orbited the centre once per turn: the rays crawled sideways across the card and swept off its edge. It read as a timing or easing problem and was neither. The layer is now a big square whose centre IS the gradient origin, so gradient origin, element centre and rotation pivot are one point.
+- **A percentage margin resolves against the containing block's WIDTH on BOTH axes.** `margin-top: -130%` therefore pulled the layer up by 130% of the card's *width* instead of its height, leaving the pivot about a quarter of a card below its foot. Everything here is sized and offset in design units instead, which has no such trap.
+
+`check:ui` pins all three properties — the pivot does not drift while the animation runs, it sits on the card's centre line, and it sits at the foot. It measures on a BOARD minion, not a hand card: **the hand fans its cards**, so a card there is tilted several degrees, and once it is, comparing the screen-space position of a point at the card's foot against the centre of the whole card is meaningless. That produced a ten-pixel "failure" that was the check being wrong rather than the CSS.
+
+The bloom moved down and shrank with the rays: leaving it centred put the source in one place and its glow in another.
 
 ### Living rails, and tier-coloured names
 
@@ -629,9 +647,9 @@ A tier says how RARE a card is. The two rails say what KIND of thing it is. **Bo
 
 `ALL` belongs to two cards only, and it earns a palette because that palette is not a seventh invention: it cycles the other three camp hues in turn, which is what the camp itself means. Relics print no rails at all.
 
-**The rails are tracked wide** — 15 design units against the 0.5 they started at. These words run VERTICALLY, one glyph above the next, and vertical text at normal tracking reads as a stack rather than a word: the letters touch and the eye has to work them out.
+**The rails are tracked wide** — 12 design units against the 0.5 they started at. These words run VERTICALLY, one glyph above the next, and vertical text at normal tracking reads as a stack rather than a word: the letters touch and the eye has to work them out.
 
-**The ceiling is measured, and the arithmetic that guessed it was wrong by a third.** Reasoning from a nominal glyph advance put the limit near 24 units; two real readings of the longest word, "Neutral", against its own box gave 55.9% filled at 14 units and 82.4% at 28, which puts 95% at about 34. 28 was then tried and was too much — the letters read as separate marks rather than as a word — so it sits at 15, a little under 60% of the box. `check:ui` re-measures it on every run, because the rail has a fixed top and bottom and `white-space: nowrap`, so a word too long for it spills out of BOTH ends rather than wrapping or clipping.
+**The ceiling is measured, and the arithmetic that guessed it was wrong by a third.** Reasoning from a nominal glyph advance put the limit near 24 units; two real readings of the longest word, "Neutral", against its own box gave 55.9% filled at 14 units and 82.4% at 28, which puts 95% at about 34. 28 was then tried and was too much — the letters read as separate marks rather than as a word — so the useful range turned out to be well under the measured ceiling. It sits at 12, about half the box. `check:ui` re-measures it on every run, because the rail has a fixed top and bottom and `white-space: nowrap`, so a word too long for it spills out of BOTH ends rather than wrapping or clipping.
 
 **An arcane circle behind the artwork was tried first and scrapped.** However faint it was made, a second animated system in the middle of the card competed with the tier shine for the same space, and a card has one middle.
 

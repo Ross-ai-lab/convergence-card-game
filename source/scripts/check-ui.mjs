@@ -882,6 +882,52 @@ await newBoard({ place: false });
       check(`the ${tier.name} shine changes the card between frames`, moved, `${frameOne.length} vs ${frameTwo.length} bytes`);
     }
 
+    // The Legendary rays must SPIN, not travel.
+    //
+    // `transform: rotate()` turns an element about its own centre. When the
+    // conic gradient's origin sat somewhere else on that element, the origin
+    // ORBITED the centre once per turn and the rays crawled across the card and
+    // off its edge — a geometry fault that looks exactly like a timing one, and
+    // that no animation-count or pixel-diff check can see.
+    //
+    // Two things pin it: the layer's centre has to stay put while the animation
+    // runs, and it has to be at the foot of the card, which is where the light
+    // is meant to come from.
+    // Measured on a BOARD minion, not a hand card. The hand fans its cards, so
+    // a card there is tilted several degrees — and once it is, comparing the
+    // screen-space centre of a point at the card's FOOT against the centre of
+    // the whole card is meaningless: the two are legitimately offset by the
+    // tilt. That produced a ten-pixel "failure" that was the check being wrong,
+    // not the CSS. A board slot holds the card square.
+    await page.evaluate(() => window.__debug.place("Detective L", "me", 1));
+    await page.waitForTimeout(300);
+    const pivot = await page
+      .locator(".board-slot.occupied .card-face.rarity-yellow")
+      .last()
+      .evaluate(async (face) => {
+        const veil = face.querySelector(".cf-shine > .sh-veil");
+        if (!veil) return { found: false };
+        const card = face.getBoundingClientRect();
+        const centre = () => {
+          const box = veil.getBoundingClientRect();
+          return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+        };
+        const before = centre();
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        const after = centre();
+        return {
+          found: true,
+          drift: Number(Math.max(Math.abs(after.x - before.x), Math.abs(after.y - before.y)).toFixed(2)),
+          offCentre: Number(Math.abs(before.x - (card.left + card.width / 2)).toFixed(1)),
+          aboveFoot: Number(((card.bottom - before.y) / card.height).toFixed(3)),
+        };
+      });
+    check(
+      "the Legendary rays spin in place at the card's foot",
+      pivot.found && pivot.drift < 0.5 && pivot.offCentre < 2 && Math.abs(pivot.aboveFoot) < 0.06,
+      JSON.stringify(pivot),
+    );
+
     // Rare is the baseline the others escalate from, so it must carry nothing.
     await page.evaluate(() => window.__debug.giveCard("John Wick"));
     await page.waitForTimeout(300);

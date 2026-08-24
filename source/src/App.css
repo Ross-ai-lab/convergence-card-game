@@ -2948,11 +2948,12 @@ button:disabled {
      from a nominal glyph advance produced.
 
      28 was tried and was too much - the letters read as separate marks rather
-     than as a word. 15 fills a little under 60% of the box, which leaves the
-     word plainly spaced and plainly still a word. check:ui re-measures it on
-     every run, because the box has a fixed top and bottom and `nowrap`, so a
-     word too long for it spills out of BOTH ends rather than wrapping. */
-  letter-spacing: calc(15 * var(--u));
+     than as a word - so the useful range turned out to be well under the
+     measured ceiling. 12 is the settled value: plainly spaced, plainly still a
+     word, and about half the box. check:ui re-measures it on every run, because
+     the box has a fixed top and bottom and `nowrap`, so a word too long for it
+     spills out of BOTH ends rather than wrapping. */
+  letter-spacing: calc(12 * var(--u));
   white-space: nowrap;
   text-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.85);
 }
@@ -6128,23 +6129,56 @@ button:disabled {
 
    `farthest-corner`, not `closest-side`. A card is 750 by 1050 design units, so
    `closest-side` measures 375 and the rays died about halfway to a corner,
-   which looked like a circle with a soft edge instead of light filling the
-   frame. The fade now runs out at the corners themselves. */
+     which looked like a circle with a soft edge instead of light filling the
+     frame. The fade now runs out at the corners themselves. */
+/* THE ELEMENT IS CENTRED ON THE RAYS' OWN ORIGIN, and that is the whole fix.
+
+   `transform: rotate()` spins an element about ITS OWN centre. The conic
+   gradient's origin was at 50% 78% while the element's centre was at 50% 50%,
+   so the origin ORBITED that centre once per turn: the rays did not spin in
+   place, they crawled sideways across the card and swept off its edge. It read
+   as a searchlight rather than a sun, and it is the sort of fault that looks
+   like a timing problem while being a geometry one.
+
+   So the layer is now a big square whose centre sits exactly where the light
+   comes from — the middle of the card's foot. The gradient origin, the
+   element's centre and the rotation pivot are then all the same point, and the
+   fan turns without going anywhere. 260% of the container in each direction is
+   enough for the corners to stay covered at every angle. */
 .rarity-yellow .sh-veil {
+  inset: auto;
+  left: 50%;
+  top: 100%;
+  /* Sized and offset in DESIGN UNITS, never in percentages.
+     A percentage margin resolves against the containing block's WIDTH on BOTH
+     axes — that is the CSS rule, and it is easy to forget. `margin-top: -130%`
+     therefore pulled the layer up by 130% of the card's WIDTH instead of its
+     height, leaving the pivot about a quarter of a card below the foot: the
+     rays stopped travelling, which was the real bug, but they were centred on
+     the wrong point. Units have no such trap.
+     2400 square, so half of it (1200) still reaches the card's top corners
+     (1098 away from the foot) at every angle of rotation. */
+  width: calc(2400 * var(--u));
+  height: calc(2400 * var(--u));
+  margin-left: calc(-1200 * var(--u));
+  margin-top: calc(-1200 * var(--u));
+  /* Radius in DESIGN UNITS, not a percentage keyword. The rays must stop below
+     the rules plaque, whose bottom edge sits 130 units up from the card's foot,
+     and a percentage of this oversized box would have had to be recomputed
+     every time the box changed size. 150 units puts the last of the light just
+     past the plaque's edge and gone. */
   -webkit-mask: radial-gradient(
-    farthest-corner circle at 50% 78%,
-    transparent 3%,
-    rgba(0, 0, 0, 0.9) 18%,
-    rgba(0, 0, 0, 0.55) 58%,
-    rgba(0, 0, 0, 0.22) 86%,
+    circle calc(150 * var(--u)) at 50% 50%,
+    transparent 2%,
+    rgba(0, 0, 0, 0.92) 24%,
+    rgba(0, 0, 0, 0.5) 66%,
     transparent 100%
   );
   mask: radial-gradient(
-    farthest-corner circle at 50% 78%,
-    transparent 3%,
-    rgba(0, 0, 0, 0.9) 18%,
-    rgba(0, 0, 0, 0.55) 58%,
-    rgba(0, 0, 0, 0.22) 86%,
+    circle calc(150 * var(--u)) at 50% 50%,
+    transparent 2%,
+    rgba(0, 0, 0, 0.92) 24%,
+    rgba(0, 0, 0, 0.5) 66%,
     transparent 100%
   );
   /* FIVE rays, and the origin sits low — 78% down the card rather than in the
@@ -6161,7 +6195,7 @@ button:disabled {
      is as faint as a 1.1-degree wedge can go and still be light rather than a
      scratch. */
   background: repeating-conic-gradient(
-    from 12deg at 50% 78%,
+    from 12deg at 50% 50%,
     rgba(255, 246, 212, 0.1) 0deg 1.1deg,
     transparent 1.1deg 72deg
   );
@@ -6182,11 +6216,11 @@ button:disabled {
   right: -30%;
   top: -30%;
   height: 160%;
-  /* Moved down with the rays. The bloom is the thing the light comes OUT of, so
-     leaving it centred while the rays turned about the foot of the card put the
-     source in one place and its glow in another. This layer is inset -30%, so
-     50% 68% here lands on the same point the rays use. */
-  background: radial-gradient(40% 26% at 50% 68%, rgba(255, 232, 168, 0.32), transparent 72%);
+  /* Moved down with the rays, and shrunk with them. The bloom is the thing the
+     light comes OUT of, so it has to sit on the same point the rays turn about
+     — the middle of the card's foot — and it has to stop where they stop. This
+     layer is inset -30% top and sides, so 50% 88% here lands on that point. */
+  background: radial-gradient(26% 13% at 50% 88%, rgba(255, 232, 168, 0.34), transparent 72%);
   background-repeat: no-repeat;
   background-size: auto;
   animation: sh-bloom 19s ease-in-out infinite alternate;
