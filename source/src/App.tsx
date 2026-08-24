@@ -3238,7 +3238,9 @@ function CardFace({
             </span>
           </>
         )}
-        {quote ? <div className="cf-flavor"><span>{`“${quote}”`}</span></div> : null}
+        {/* Relics use SPELL as a bare slot label. Character flavour keeps its
+            decorative quotation marks. */}
+        {quote ? <div className="cf-flavor"><span>{isRelicFace ? quote : `“${quote}”`}</span></div> : null}
         <div className="cf-origin">{card.origin}</div>
         <div className="cf-banner"><span className="cf-name">{card.name}</span></div>
         <div className="cf-gem cf-mana">{card.cost}</div>
