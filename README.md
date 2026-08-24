@@ -320,7 +320,7 @@ The current relic pool contains **21 relics**. Relics are equipment cards: they 
 
 **A relic card face prints NO side rails**, unlike every character card. It has no camp and no alignment: it carried the placeholders "Ascension" and "Relic" purely so the two rails had something to say, and two rails naming a thing that is not a property of the card is worse than no rails. The teal frame and the diamond gem already say relic.
 
-**Every relic card prints bare `SPELL` in the flavour-text slot, without quotation marks.** Relics do not carry individual flavour text; `SPELL` is the fixed label for that exact card-face position.
+**Every relic card prints bare `RELIC` in the flavour-text slot, without quotation marks.** Relics do not carry individual flavour text; `RELIC` is the fixed label for that exact card-face position.
 
 **A relic card carries the teal shine** — a drifting aurora, rising motes, a breathing rim, and the one crossing light bar in the game, every 15 seconds. It is one of four tiers built on the same technique; see [The rarity shine](#the-rarity-shine).
 
