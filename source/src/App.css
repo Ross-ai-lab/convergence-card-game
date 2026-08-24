@@ -6683,5 +6683,5 @@ button:disabled {
 }
 
 .card-face.rarity-relic .cf-flavor {
-  font-size: calc(64 * var(--u));
+  font-size: calc(58 * var(--u));
 }
