@@ -571,7 +571,7 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 | Tier | Colour | What it does | Layers |
 |---|---|---|---|
 | Epic | violet | mist drifting sideways, dust settling through it | 4 |
-| Legendary | gold | five short rays spinning at the card foot | 3 |
+| Legendary | gold | five rays spinning at the card foot | 3 |
 | Mythic | crimson | a low bed of tapered flame, embers off the top | 5 |
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
@@ -635,17 +635,19 @@ The bloom moved down and shrank with the rays: leaving it centred put the source
 
 A tier says how RARE a card is. The two rails say what KIND of thing it is. **Both vertical words down the card's edges now carry a gradient clipped to their glyphs and travelling along them**, so each says what it is in its own colours.
 
-| Rail | Value | Palette |
+| Rail | Value | Colour |
 |---|---|---|
-| camp | Magic | violet → cyan → white → magenta |
-| camp | Tech | electric blue → cyan → white → steel |
-| camp | Nature | leaf → lime → white → amber |
-| alignment | Good | white → pale gold → sky → white |
-| alignment | Neutral | steel → pale bronze → white |
-| alignment | Evil | crimson → rose → white → ember |
-| camp | ALL | the other three camp hues in turn, slowest of the seven |
+| camp | Magic | violet |
+| camp | Tech | electric blue |
+| camp | Nature | leaf green |
+| camp | ALL | white, being every colour at once |
+| alignment | Good | pale gold |
+| alignment | Neutral | steel, the dullest of the seven on purpose |
+| alignment | Evil | crimson |
 
-`ALL` belongs to two cards only, and it earns a palette because that palette is not a seventh invention: it cycles the other three camp hues in turn, which is what the camp itself means. Relics print no rails at all.
+**They used to CYCLE a prismatic gradient through their letters, and that was worse than it looked.** It made each word an event: the eye went to whichever rail happened to be flashing white, twice a cycle, on every card on screen. A camp is a FACT about a card, not a thing that happens to it, and a fact is best said once in one colour. Owner's call, and it removed three problems at once — the cards stopped competing for attention, seven words stopped needing seven non-clashing periods, and **the one place this system broke the transform-and-opacity rule went away**, because nothing on a rail animates at all now.
+
+`ALL` belongs to two cards only, and white is the right answer for it rather than a seventh invented hue: white IS every colour at once, which is what the camp means. Relics print no rails at all.
 
 **The rails are tracked wide** — 12 design units against the 0.5 they started at. These words run VERTICALLY, one glyph above the next, and vertical text at normal tracking reads as a stack rather than a word: the letters touch and the eye has to work them out.
 
@@ -653,16 +655,22 @@ A tier says how RARE a card is. The two rails say what KIND of thing it is. **Bo
 
 **An arcane circle behind the artwork was tried first and scrapped.** However faint it was made, a second animated system in the middle of the card competed with the tier shine for the same space, and a card has one middle.
 
-Four rules, each learned by getting it wrong first:
+Two rules survive from the cycling version:
 
-- **Every stop is light.** The first pass used a mid violet as its darkest colour and, at the moment the sweep parked that stop on the word, the label was harder to read than the plain white rail it replaced. **A decoration may not cost legibility at any point in its cycle.**
-- **Pastel reads as DIM, not as bright.** These words sit at 26 design units against a plain white original, so a palette of soft tints looks like the colour was turned down rather than turned on. Stops are saturated AND high-luminance, and white recurs twice per cycle so the word keeps flashing back to at least what it used to be.
+- **Every colour is LIGHT.** A mid-tone rail on a dark plaque is a rail you have to look for, and these words are 26 design units tall against artwork that can be any colour at all. **A decoration may not cost legibility.**
 - **The halo is what makes it look lit rather than tinted.** `text-shadow` cannot be seen through transparent glyphs, so it is a tight coloured `drop-shadow` on the element, in that rail's own hue, over the dark shadow that keeps it legible on pale artwork.
-- **The alignment set is one notch lower in chroma than the camp set.** A card wears one of each at the same moment on opposite edges, and two equally loud words pull the eye off the card itself. Neutral is the dullest of the six on purpose — a middle option that shimmers as hard as Good and Evil looks like the interesting one.
 
-No two periods match: 6.5 / 7.4 / 8.3 / 5.9 / 9.7 / 6.9 seconds. Six words on one screen sharing a beat is a disco.
 
-**This is the one deliberate exception to rule 5.** A travelling gradient needs `background-position` animated, which repaints every frame. The rule exists because a gallery can hold a screen of large animated layers; these are two words of about 12 by 46 CSS pixels each, together roughly a five-hundredth of a card's area. **The exception is the size, not the effect** — it is not licence to animate a position anywhere bigger.
+
+**The cost crystal and the ATK/HP gems are a third larger everywhere the card is NOT on a board** — in hand, in the preview, in the gallery, in a pack, in a discover prompt. A minion in play already has its own much bigger gems (150 and 156 design units against the printed card's 84 and 72), so the board is untouched by construction rather than by a rule.
+
+**A BIGGER CRYSTAL AND A BIGGER NAME COMPETE FOR THE SAME ROW, and the name is centred, so every unit the crystal gains costs the name's box two.** The crystal's left edge walks from 664 to 636, so `NAME_BOX` comes down from 580 to 500 to keep the name clear of it. All of this was measured rather than reasoned: before the change every name on the roster inked at the 45.5 cap with the widest stopping 52 units short of the crystal; after it, names run 32.5 to 54.5 and the tightest clearance is 12 units. Nothing collides, and **the longest few names are now box-limited and end up smaller than the rest** — the honest cost of the trade, not a bug.
+
+**The name cap rose a fifth, 46 to 55**, and that is the only thing that could make a name bigger: every name was pinned by the cap rather than by its box, so widening boxes would have done nothing. The BOARD keeps its own 46 cap, because a minion in play has far less room across the top.
+
+**A board name is CENTRED whenever it can afford to be.** It is pushed left by an asymmetric padding so a long name clears the cost crystal, and that padding used to apply to every name — so short ones sat 76 design units off the centre line for no reason, which is what the eye actually noticed. `CardFace` now centres any name that fits at full board size inside a symmetric box, which is most of them.
+
+**That test compares two fits rather than testing one against the cap**, and it has to. `fitOneLine` floors its answer to half units, so a name that fits comfortably at a 46 cap comes back as 45.5 and never as 46 — a `>= 46` test is dead code that silently centres nothing, which is exactly how it shipped the first time. Every name on the roster measures 45.5 for this reason. `check:ui` measures the text's INK, not its box: the box is full-width either way and only the text inside it moves, which is why the fault survived every earlier check.
 
 **The name, the flavour line and the origin line all carry the tier's colour**, as a PALE tint and never the saturated one: lilac for Epic, gold for Legendary, rose for Mythic, cyan for Relic, plain white for Rare. That puts the tier's colour at the top of the card and at the bottom, which frames the artwork in it rather than labelling it once.
 

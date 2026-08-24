@@ -2561,7 +2561,13 @@ function TargetingArrow({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number
 /** Usable banner width. NOT the full 740: the mana gem sits on top of the
  *  banner's right end, so the name has to stop clear of it or it renders
  *  underneath the number. Symmetric because the name is centred. */
-const NAME_BOX = 580;        // full-size card, 78-px gem
+/* 500, down from 580, because the mana crystal grew a third: 84 design units to
+ * 112, which walks its left edge from 664 to 636. MEASURED, not reasoned: the
+ * widest name on the roster inks 475 units at the old 46 cap and stopped 52
+ * short of the crystal. Raise the cap to 55 and that ink becomes ~570 and ends
+ * at 660 — 24 units UNDER the enlarged crystal. The name is centred, so every
+ * unit the crystal gains costs the box two. */
+const NAME_BOX = 500;        // full-size card, 112-unit crystal
 // Small card. The compact mana crystal grew 104 -> 240 design units (see the
 // @container block in App.css), and this is the width the name is allowed to
 // use before it slides under the cost number — so it had to come down with it.
@@ -2579,6 +2585,19 @@ const NAME_BOX_COMPACT = 470;
  * reserve.
  */
 const NAME_BOX_BOARD = 540;
+/**
+ * The width a board name may use and still sit CENTRED.
+ *
+ * A minion in play carries a 150-unit cost crystal whose left edge is at 598, so
+ * a centred name has to stay 152 units clear of BOTH edges: 750 - 2 x 152 = 446,
+ * and 440 keeps a little back. Names that fit here are centred; the rest keep
+ * the old left-shifted layout, because for them the space to the left of the
+ * crystal is space they genuinely need.
+ */
+const NAME_BOX_BOARD_CENTRED = 440;
+/** The board's own name cap, written in CSS as `min(46, …)`. Kept here so the
+ *  centring test and the stylesheet cannot disagree about it. */
+const BOARD_NAME_CAP = 46;
 
 /** The description plaque's inner box: 618 x 302 design units, line-height 1.16. */
 const RULES_BOX = { w: 618, h: 302, lineHeight: 1.16 } as const;
@@ -2604,7 +2623,14 @@ const FLAVOR_BOX = { w: 610, h: 84, lineHeight: 1.1 } as const;
  */
 const RULES_CEILING = 64;
 const FLAVOR_CEILING = 32;
-const NAME_CEILING = 46;
+/* 55, up a fifth from 46. Every name on the roster was measured before this
+ * moved: they all sat at 45.5, pinned by this ceiling rather than by their box,
+ * so raising it is the only thing that makes a name bigger. The two longest —
+ * "Rennala Queen of the Full Moon" and "Mastered Ultra Instinct Goku" — are
+ * box-limited instead and grow less, which is the honest outcome rather than a
+ * bug. The BOARD keeps its own 46 cap in CSS: a minion in play has far less
+ * room across the top and nothing there was asking to be bigger. */
+const NAME_CEILING = 55;
 const NAME_CEILING_COMPACT = 72;
 
 /**
@@ -3233,6 +3259,19 @@ function CardFace({
   } as CSSProperties;
   const rarity = (card.rarity ?? "Black").toLowerCase();
   const isRelicFace = rarity === "relic";
+  /* Centre the board name only when centring costs it nothing — that is, when
+   * the symmetric box fits the name at the same size the wider asymmetric box
+   * would. The centred box is the smaller of the two, so its fit can never be
+   * larger; equality means both were capped by the ceiling rather than by width.
+   *
+   * COMPARING THE TWO FITS, not testing one against the cap. `fitOneLine` floors
+   * its answer to half units (`Math.floor(lo * 2) / 2`), so a name that fits
+   * comfortably at the 46 cap comes back as 45.5 and never as 46 — a `>= 46`
+   * test is dead code that silently centres nothing. Every name on the roster
+   * measures 45.5 for exactly this reason. */
+  const boardNameCentred =
+    fitOneLine(card.name, NAME_BOX_BOARD_CENTRED, BOARD_NAME_CAP) >=
+    fitOneLine(card.name, NAME_BOX_BOARD, BOARD_NAME_CAP);
   // Only values with a palette BUILT get a lit rail. A relic's camp and
   // alignment are the placeholders "Ascension" and "Relic", and relics print no
   // rails at all; naming the built sets explicitly is what stops a future camp
@@ -3284,7 +3323,16 @@ function CardFace({
             decorative quotation marks. */}
         {quote ? <div className="cf-flavor"><span>{isRelicFace ? quote : `“${quote}”`}</span></div> : null}
         <div className="cf-origin">{card.origin}</div>
-        <div className="cf-banner"><span className="cf-name">{card.name}</span></div>
+        {/* A board name is CENTRED when it can be.
+            On a board the name used to be pushed left by an asymmetric padding
+            so it cleared the cost crystal, which left short names — most of
+            them — visibly off-centre for no reason. They are centred now, and
+            only a name too wide for the symmetric safe box falls back to the
+            old layout, because for that name the space beside the crystal is
+            space it genuinely needs. */}
+        <div className="cf-banner">
+          <span className={boardNameCentred ? "cf-name is-centred" : "cf-name"}>{card.name}</span>
+        </div>
         <div className="cf-gem cf-mana">{card.cost}</div>
         <div className={`cf-gem cf-atk ${atkClass}`}>{card.atk}</div>
         <div className={`cf-gem cf-hp ${hpClass}`}>{card.hp}</div>

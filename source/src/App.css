@@ -2602,7 +2602,7 @@ button:disabled {
   /* Text auto-fit ceilings, overwritten per card by App.tsx. These defaults only
      apply to a face rendered without the fit variables at all, so they match the
      `min(…)` ceilings used below rather than the old pre-measurement numbers. */
-  --cf-namefit: 46;
+  --cf-namefit: 55;
   --cf-namefitc: 72;
   --cf-namefitb: 46;
   --cf-efffit: 64;
@@ -2777,7 +2777,7 @@ button:disabled {
   color: #fff;
   font-family: "Baloo 2", cursive;
   font-weight: 700;
-  font-size: calc(min(46, var(--cf-namefit)) * var(--u));
+  font-size: calc(min(55, var(--cf-namefit)) * var(--u));
   line-height: 1;
   white-space: nowrap;
   text-shadow: 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.75);
@@ -2816,9 +2816,9 @@ button:disabled {
 .cf-mana {
   top: calc(2 * var(--u));
   right: calc(2 * var(--u));
-  width: calc(84 * var(--u));
-  height: calc(84 * var(--u));
-  font-size: calc(40 * var(--u));
+  width: calc(112 * var(--u));
+  height: calc(112 * var(--u));
+  font-size: calc(53 * var(--u));
   border: none;
   background: none;
   box-shadow: none;
@@ -2842,9 +2842,9 @@ button:disabled {
 .cf-atk,
 .cf-hp {
   bottom: calc(12 * var(--u));
-  width: calc(72 * var(--u));
-  height: calc(72 * var(--u));
-  font-size: calc(40 * var(--u));
+  width: calc(96 * var(--u));
+  height: calc(96 * var(--u));
+  font-size: calc(53 * var(--u));
 }
 
 .cf-atk { left: calc(10 * var(--u)); }
@@ -3181,23 +3181,23 @@ button:disabled {
 }
 
 .hand-card .cf-name {
-  font-size: calc(min(46, var(--cf-namefit)) * var(--u));
+  font-size: calc(min(55, var(--cf-namefit)) * var(--u));
   padding: 0 calc(8 * var(--u));
 }
 
 .hand-card .cf-mana {
   right: calc(2 * var(--u));
   left: auto;
-  width: calc(84 * var(--u));
-  height: calc(84 * var(--u));
-  font-size: calc(40 * var(--u));
+  width: calc(112 * var(--u));
+  height: calc(112 * var(--u));
+  font-size: calc(53 * var(--u));
 }
 
 .hand-card .cf-atk,
 .hand-card .cf-hp {
-  width: calc(72 * var(--u));
-  height: calc(72 * var(--u));
-  font-size: calc(40 * var(--u));
+  width: calc(96 * var(--u));
+  height: calc(96 * var(--u));
+  font-size: calc(53 * var(--u));
 }
 
 .card-face.on-board .cf-desc,
@@ -3262,6 +3262,16 @@ button:disabled {
 .card-face.on-board .cf-name {
   font-size: calc(min(46, var(--cf-namefitb)) * var(--u));
   padding: 0 calc(160 * var(--u)) 0 calc(8 * var(--u));
+}
+
+/* CENTRED whenever the name can afford it.
+   The asymmetric padding above exists to keep a long name clear of the cost
+   crystal, and it works — but it also shifted every SHORT name 76 units left of
+   the card's centre line for no reason, which is what the eye actually noticed.
+   `is-centred` is set in `CardFace` for any name that still fits at the full
+   board size inside a symmetric box, which is most of them. */
+.card-face.on-board .cf-name.is-centred {
+  padding: 0 calc(8 * var(--u));
 }
 
 /* THE PLAQUE STOPS SHORT OF THE BOTTOM GEMS: the blade and the heart are 150-156
@@ -4735,22 +4745,22 @@ button:disabled {
 
 .prompt-card-choice .cf-name {
   padding: 0 calc(8 * var(--u));
-  font-size: calc(min(46, var(--cf-namefit)) * var(--u));
+  font-size: calc(min(55, var(--cf-namefit)) * var(--u));
 }
 
 .prompt-card-choice .cf-mana {
   right: calc(2 * var(--u));
   left: auto;
-  width: calc(84 * var(--u));
-  height: calc(84 * var(--u));
-  font-size: calc(40 * var(--u));
+  width: calc(112 * var(--u));
+  height: calc(112 * var(--u));
+  font-size: calc(53 * var(--u));
 }
 
 .prompt-card-choice .cf-atk,
 .prompt-card-choice .cf-hp {
-  width: calc(72 * var(--u));
-  height: calc(72 * var(--u));
-  font-size: calc(40 * var(--u));
+  width: calc(96 * var(--u));
+  height: calc(96 * var(--u));
+  font-size: calc(53 * var(--u));
 }
 
 .target-prompt-art {
@@ -6196,8 +6206,8 @@ button:disabled {
      scratch. */
   background: repeating-conic-gradient(
     from 12deg at 50% 50%,
-    rgba(255, 246, 212, 0.1) 0deg 1.1deg,
-    transparent 1.1deg 72deg
+    rgba(255, 246, 212, 0.2) 0deg 2.2deg,
+    transparent 2.2deg 72deg
   );
   /* Slow enough that you never catch it turning — you only notice, some seconds
      later, that the light is not where it was. */
@@ -6473,58 +6483,36 @@ button:disabled {
 
 
 /* ===========================================================================
-   LIVING RAILS — the two words down the card's edges, lit and moving.
+   LIVING RAILS — the two words down the card's edges, each in its own colour.
 
-   Every character card already prints its camp down the left rail and its
-   alignment down the right. Both now carry a gradient clipped to the glyphs and
-   travelling along them, so each word says what it is in its own colours.
+   Every character card prints its camp down the left rail and its alignment
+   down the right. Each word is painted in the ONE colour that suits it, and
+   holds it: violet is magic, cyan is tech, green is nature, gold is good, steel
+   is neutral, crimson is evil, white is every camp at once.
 
-   An earlier attempt put a turning arcane circle behind the artwork instead.
-   Scrapped: however faint it was made, a second animated system in the middle
-   of the card competed with the tier shine for the same space, and a card has
-   one middle. The rails cost no new space and cannot fight the illustration.
+   THEY USED TO CYCLE, and that was a worse idea than it looked. A travelling
+   prismatic gradient made each word an event — the eye went to whichever rail
+   happened to be flashing white, twice a cycle, on every card on screen. A camp
+   is a FACT about a card, not a thing that happens to it, and a fact is best
+   said once in one colour. Owner's call, and it removed three problems with it:
+   the cards stopped competing for attention, seven words stopped needing seven
+   non-clashing periods, and the one place this system broke the
+   transform-and-opacity rule went away — nothing here animates at all now.
 
-   SIX PALETTES, ALL DISTINCT, and distinct is the hard part with six of them:
+   WHAT SURVIVES from the cycling version, because it is what makes a word look
+   LIT rather than merely coloured:
 
-     camp    magic    violet → cyan → white → magenta      arcane, prismatic
-     camp    tech     electric blue → cyan → white → steel cold, metallic
-     camp    nature   leaf → lime → white → amber          living, warm
-     align   good     white → pale gold → sky → white      radiant, low chroma
-     align   neutral  steel → pale bronze → white          the quietest of six
-     align   evil     crimson → rose → white → ember       hot, no green at all
-
-   The two systems must not collide either, which is why the alignment set is
-   built one notch lower in saturation than the camp set: a card shows one of
-   each at the same time, six inches apart, and two equally loud words on
-   opposite edges pull the eye off the card.
-
-   FOUR RULES, learned by getting each of them wrong first:
-
-   1. **Every stop is light.** The first build used a mid violet as its darkest
-      colour, and at the moment the sweep parked that stop on the word the label
-      was harder to read than the plain white rail it replaced. A decoration may
-      not cost legibility at any point in its cycle.
-
-   2. **Pastel reads as DIM, not as bright.** These words sit at 26 design units
-      against a plain white original, so a palette of soft tints looks like the
-      colour was turned down. The stops are saturated AND high-luminance, and
-      white recurs twice per cycle so the word keeps flashing back to at least
-      what it used to be.
-
-   3. **The halo is what makes it look lit rather than tinted.** `text-shadow`
-      cannot be seen through transparent glyphs, so it is a tight coloured
-      `drop-shadow` on the element, in that rail's own hue, over the dark
-      shadow that keeps it legible on pale artwork.
-
-   4. **No two periods match.** Six words on one screen sharing a beat is a
-      disco. They run 6.5 / 7.4 / 8.3 / 5.9 / 9.7 / 6.9 seconds.
-
-   THE ONE PLACE THIS BREAKS the transform-and-opacity rule, deliberately: a
-   travelling gradient needs `background-position` animated, which repaints
-   every frame. That rule exists because a gallery can hold a screen of large
-   animated layers; these are two words of about 12 by 46 CSS pixels each,
-   together roughly a five-hundredth of a card's area, against tier layers that
-   cover the whole face. **The exception is the size, not the effect.**
+   - **A tight coloured halo in the rail's own hue**, over the dark shadow that
+     keeps it legible on pale artwork. `text-shadow` cannot be seen through
+     glyphs painted by `background-clip: text`, so it is a `drop-shadow` on the
+     element; with a flat colour it could be a text-shadow now, but the halo is
+     the same either way and this keeps one mechanism instead of two.
+   - **Every colour is LIGHT.** A mid-tone rail on a dark plaque is a rail you
+     have to look for. These words are 26 design units tall against artwork that
+     can be any colour at all.
+   - **The alignment set is a notch lower in chroma than the camp set.** A card
+     wears one of each at the same moment on opposite edges, and two equally
+     loud words pull the eye off the card itself.
    =========================================================================== */
 .cf-rail.rail-magic,
 .cf-rail.rail-all,
@@ -6533,108 +6521,65 @@ button:disabled {
 .cf-rail.rail-good,
 .cf-rail.rail-neutral,
 .cf-rail.rail-evil {
-  /* 300% tall so the gradient has somewhere to travel. The rails are
-     `writing-mode: vertical-rl`, so "along the letters" is vertical here. */
-  background-size: 100% 300%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
-
-@keyframes rail-flow {
-  from { background-position: 0% 0%; }
-  to { background-position: 0% -200%; }
+  text-shadow: none;
 }
 
 /* --- camps ---------------------------------------------------------------- */
 .cf-rail.rail-magic {
-  background-image: linear-gradient(
-    180deg,
-    #c98cff 0%, #4fe8ff 13%, #ffffff 21%, #ff7ce0 33%,
-    #ffd166 44%, #c98cff 57%, #4fe8ff 70%, #ffffff 79%,
-    #ff7ce0 90%, #c98cff 100%
-  );
+  color: #c98cff;
   filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(196, 128, 255, 0.95))
     drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
-  animation: rail-flow 6.5s linear infinite;
 }
 
 .cf-rail.rail-tech {
-  background-image: linear-gradient(
-    180deg,
-    #4ea8ff 0%, #2ef0ff 14%, #ffffff 22%, #cfe6ff 32%,
-    #7fd4ff 44%, #4ea8ff 57%, #2ef0ff 71%, #ffffff 80%,
-    #cfe6ff 90%, #4ea8ff 100%
-  );
+  color: #45d4ff;
   filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(70, 200, 255, 0.95))
     drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
-  animation: rail-flow 7.4s linear infinite;
 }
 
 .cf-rail.rail-nature {
-  background-image: linear-gradient(
-    180deg,
-    #5ce07a 0%, #c4f24a 14%, #ffffff 23%, #ffcf52 34%,
-    #8ae86a 45%, #5ce07a 57%, #c4f24a 71%, #ffffff 80%,
-    #ffcf52 91%, #5ce07a 100%
-  );
+  color: #6ee87a;
   filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(110, 232, 120, 0.95))
     drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
-  animation: rail-flow 8.3s linear infinite;
 }
 
-/* --- alignments -----------------------------------------------------------
-   One notch lower in chroma than the camps above. A card wears one of each at
-   the same moment on opposite edges, and two equally loud words pull the eye
-   off the card itself. */
+/* Every camp at once, so: white. The one colour that IS all the others, which
+   is a better answer than inventing a seventh hue for two cards. */
+.cf-rail.rail-all {
+  color: #ffffff;
+  filter: drop-shadow(0 0 calc(2.4 * var(--u)) rgba(214, 226, 255, 0.9))
+    drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
+}
+
+/* --- alignments ----------------------------------------------------------- */
 .cf-rail.rail-good {
-  background-image: linear-gradient(
-    180deg,
-    #ffffff 0%, #ffeab0 15%, #ffffff 26%, #bfe4ff 38%,
-    #ffffff 50%, #ffeab0 64%, #ffffff 76%, #bfe4ff 88%,
-    #ffffff 100%
-  );
-  filter: drop-shadow(0 0 calc(2.4 * var(--u)) rgba(255, 232, 170, 0.9))
+  color: #ffe08a;
+  filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(255, 224, 138, 0.85))
     drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
-  animation: rail-flow 5.9s linear infinite;
 }
 
-/* Deliberately the dullest of the six. Neutral that shimmered as hard as Good
-   and Evil made the middle option look like the interesting one. */
+/* Deliberately the dullest of the seven. Neutral that reads as hard as Good and
+   Evil makes the middle option look like the interesting one. */
 .cf-rail.rail-neutral {
-  background-image: linear-gradient(
-    180deg,
-    #d8dee8 0%, #ffffff 18%, #e8d3ac 34%, #ffffff 50%,
-    #d8dee8 66%, #ffffff 82%, #e8d3ac 100%
-  );
-  filter: drop-shadow(0 0 calc(1.8 * var(--u)) rgba(214, 222, 234, 0.75))
+  color: #cdd6e2;
+  filter: drop-shadow(0 0 calc(1.8 * var(--u)) rgba(205, 214, 226, 0.7))
     drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
-  animation: rail-flow 9.7s linear infinite;
 }
 
-/* No green anywhere in this one, which is what keeps it clear of Nature at a
-   glance even though both run warm. */
+/* No green anywhere near this one, which is what keeps it clear of Nature at a
+   glance. */
 .cf-rail.rail-evil {
-  background-image: linear-gradient(
-    180deg,
-    #ff5c6e 0%, #ff8ab4 14%, #ffffff 23%, #ff9a5c 34%,
-    #ff6b7e 45%, #ff5c6e 57%, #ff8ab4 71%, #ffffff 80%,
-    #ff9a5c 91%, #ff5c6e 100%
-  );
-  filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(255, 96, 110, 0.95))
+  color: #ff5c6e;
+  filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(255, 92, 110, 0.95))
     drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
-  animation: rail-flow 6.9s linear infinite;
 }
 
 /* A locked card shows its seal and nothing else — no shine, and no lit rails. */
 .gallery-cell.is-locked .cf-rail {
-  animation: none;
-  background-image: none;
   color: #fff;
-  -webkit-text-fill-color: #fff;
   filter: none;
 }
+
 
 /* ===========================================================================
    CARD NAMES CARRY THEIR TIER'S COLOUR.
@@ -6663,23 +6608,6 @@ button:disabled {
 
 .card-face.rarity-relic .cf-name {
   color: #d4f6ff;
-}
-
-/* The ALL camp — two cards, and it is not a camp so much as every camp at once.
-   Its palette says exactly that: violet, electric blue and leaf green, the
-   three camp hues in turn, on the slowest cycle of the seven. Nothing else in
-   the set borrows another rail's colours, so this reads as "all of them"
-   rather than as a seventh thing. */
-.cf-rail.rail-all {
-  background-image: linear-gradient(
-    180deg,
-    #c98cff 0%, #ffffff 10%, #4ea8ff 20%, #ffffff 30%,
-    #5ce07a 40%, #ffffff 50%, #c98cff 60%, #ffffff 70%,
-    #4ea8ff 80%, #ffffff 90%, #5ce07a 100%
-  );
-  filter: drop-shadow(0 0 calc(2.2 * var(--u)) rgba(190, 200, 255, 0.9))
-    drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9));
-  animation: rail-flow 12.1s linear infinite;
 }
 
 /* ===========================================================================
