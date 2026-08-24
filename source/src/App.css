@@ -6191,27 +6191,44 @@ button:disabled {
     rgba(0, 0, 0, 0.5) 66%,
     transparent 100%
   );
-  /* FIVE rays, and the origin sits low — 78% down the card rather than in the
-     middle of it.
+  /* TEN wedges around the full circle, so FIVE are over the card at once.
 
-     A centred burst reads as a sun behind the subject. Dropping the origin to
-     the flavour line turns it into light rising FROM the card's own foot, and
-     the lower half of the circle then falls outside the frame entirely, so only
-     the fan above it is ever seen. That is why five wedges around a full circle
-     look like about three at a time: the other two are below the card.
+     The origin sits on the card's foot, so the lower half of the circle is
+     always outside the frame: the number of rays you can COUNT is half the
+     number in the gradient. Nineteen at 19 degrees was a texture, eight at 45
+     was a burst, five at 72 showed as about three, and ten at 36 shows as five.
 
-     Nineteen rays at 19 degrees was a texture; eight at 45 was a burst; five at
-     72 is a fan. The alpha stayed at 0.1 through the last two thinnings, which
-     is as faint as a 1.1-degree wedge can go and still be light rather than a
-     scratch. */
-  background: repeating-conic-gradient(
+     NOT a `repeating-conic-gradient` any more. A repeating one stamps the same
+     wedge every time, so every ray is necessarily the same colour. Naming the
+     stops out gives each ray its own tint of yellow, and because the whole
+     gradient turns, any one spot on the card is lit by a slightly different
+     gold each time a ray passes over it. THAT is where the colour change comes
+     from -- the rotation, not from animating a colour, which would repaint. */
+  background: conic-gradient(
     from 12deg at 50% 50%,
-    rgba(255, 246, 212, 0.2) 0deg 2.2deg,
-    transparent 2.2deg 72deg
+    rgba(255, 246, 204, 0.4) 0deg 4.4deg,
+    transparent 4.4deg 36deg,
+    rgba(255, 232, 154, 0.4) 36deg 40.4deg,
+    transparent 40.4deg 72deg,
+    rgba(255, 215, 102, 0.4) 72deg 76.4deg,
+    transparent 76.4deg 108deg,
+    rgba(255, 242, 184, 0.4) 108deg 112.4deg,
+    transparent 112.4deg 144deg,
+    rgba(255, 223, 127, 0.4) 144deg 148.4deg,
+    transparent 148.4deg 180deg,
+    rgba(255, 250, 224, 0.4) 180deg 184.4deg,
+    transparent 184.4deg 216deg,
+    rgba(255, 207, 77, 0.4) 216deg 220.4deg,
+    transparent 220.4deg 252deg,
+    rgba(255, 234, 168, 0.4) 252deg 256.4deg,
+    transparent 256.4deg 288deg,
+    rgba(255, 217, 140, 0.4) 288deg 292.4deg,
+    transparent 292.4deg 324deg,
+    rgba(255, 248, 214, 0.4) 324deg 328.4deg,
+    transparent 328.4deg 360deg
   );
-  /* Slow enough that you never catch it turning — you only notice, some seconds
-     later, that the light is not where it was. */
-  animation: sh-turn-back 134s linear infinite;
+  /* 67s, half of what it was. Fast enough to notice, slow enough not to nag. */
+  animation: sh-turn-back 67s linear infinite;
 }
 
 @keyframes sh-turn-back {

@@ -571,7 +571,7 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 | Tier | Colour | What it does | Layers |
 |---|---|---|---|
 | Epic | violet | mist drifting sideways, dust settling through it | 4 |
-| Legendary | gold | five rays spinning at the card foot | 3 |
+| Legendary | gold | five tinted rays spinning at the card foot | 3 |
 | Mythic | crimson | a low bed of tapered flame, embers off the top | 5 |
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
@@ -621,6 +621,10 @@ Mythic was rebuilt after the first version read as a red glow rather than as fla
 **The mask's top stop is what caps the height, but the LOBES have to come down with it.** Cut the mask alone and it slices each tongue through its widest part, so what survives is a bright band rather than tongue shapes — which looks like a gradient bug rather than a height setting. Both were halved together each time.
 
 **The Legendary rays sit at the card's FOOT**, and they are short — the last of the light is gone before the rules plaque, whose bottom edge is 130 design units up. Light rising from the card rather than a sun behind the subject.
+
+**Ten wedges in the gradient show as FIVE rays on the card.** The origin sits on the card's foot, so the lower half of the circle is always outside the frame and the number you can count is half the number in the gradient. Nineteen wedges at 19 degrees read as a texture, eight at 45 as a burst, five at 72 as about three, and ten at 36 as five.
+
+**It is a plain `conic-gradient`, not a `repeating-conic-gradient`, and that is what lets the rays differ in colour.** A repeating one stamps the same wedge every time, so every ray is necessarily identical. Naming the stops out gives each ray its own tint of yellow, and because the whole gradient turns, any one spot on the card is lit by a slightly different gold each time a ray passes over it — the colour change comes from the rotation, not from animating a colour, which would repaint every frame.
 
 **They must SPIN, not travel, and getting that right took two geometry corrections that both looked like something else.**
 
