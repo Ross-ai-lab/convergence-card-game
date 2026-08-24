@@ -667,6 +667,7 @@ function HowToPlayContent() {
         <ul className="rules-list">
           <li>The <b>21 relics</b> ride in the same shared deck and arrive in hand like any other card.</li>
           <li>Play one onto a friendly minion to equip it. A minion carries up to <b>two</b>, in independent slots.</li>
+          <li>Every relic prints <b>SPELL</b> in its flavour-text slot. This is the fixed relic label, not individual lore text.</li>
           <li>An attached relic stays with its bearer. A minion cannot choose to return it to its owner, and a relic cannot be manually returned to hand.</li>
           <li>A relic dies with its bearer unless its own text says otherwise. Effects that return a minion to hand discard its attached relics.</li>
         </ul>
