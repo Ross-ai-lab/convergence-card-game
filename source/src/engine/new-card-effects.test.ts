@@ -360,6 +360,29 @@ describe("2026 card replacements", () => {
     }
   });
 
+  it("loads Rudeus Greyrat and Prince Lloyd with their requested card text", () => {
+    expect(cards.find((card) => card.name === "Rudeus Greyrat")).toMatchObject({
+      cost: 4,
+      atk: 4,
+      hp: 4,
+      keywords: ["Divine Shield", "Passive"],
+      effectId: "rudeus_hero_power_free",
+      effectTiming: "passive",
+      effect: "Divine Shield. Passive: Your Hero Power costs 0.",
+      origin: "Mushoku Tensei",
+    });
+    expect(cards.find((card) => card.name === "Prince Lloyd")).toMatchObject({
+      cost: 6,
+      atk: 4,
+      hp: 5,
+      keywords: ["Divine Shield", "Passive"],
+      effectId: "prince_lloyd_damage_ward",
+      effectTiming: "passive",
+      effect: "Divine Shield. Passive: Other friendly minions take 1 less damage.",
+      origin: "7th Prince",
+    });
+  });
+
   it("Eye of Sauron taxes every enemy card while its passive is active", () => {
     const state = mainState("eye-of-sauron-tax");
     state.cheatMode = false;
@@ -2154,5 +2177,45 @@ describe("direct effect reachability", () => {
     const after = asking.pendingTarget ? choose(asking, 0) : asking;
     expect(after.players[1].board[0]?.name).toBe("John Wick");
     expect(after.players[1].board[1]).toBeNull();
+  });
+
+  it("Rudeus makes the Hero Power free while active, but not while silenced", () => {
+    const state = mainState("rudeus-free-hero-power");
+    state.cheatMode = false;
+    state.heroPowers = ["minion_hp", null];
+    state.players[0].mana = 0;
+    state.players[0].board[0] = minion("Rudeus Greyrat", 0);
+    state.players[0].board[1] = minion("John Wick", 0);
+
+    expect(getLegalActions(state, library)).toContainEqual({ type: "use_hero_power", player: 0 });
+    const pending = applyAction(state, { type: "use_hero_power", player: 0 }, library).state;
+    expect(pending.players[0].mana).toBe(0);
+    expect(pending.heroPowerUsed[0]).toBe(true);
+
+    pending.players[0].board[0]!.silenced = true;
+    pending.pendingTarget = null;
+    pending.phase = "main";
+    pending.heroPowerUsed = [false, false];
+    expect(getLegalActions(pending, library)).not.toContainEqual({ type: "use_hero_power", player: 0 });
+  });
+
+  it("Prince Lloyd reduces damage to other friendly minions, not to himself", () => {
+    const state = mainState("lloyd-damage-ward");
+    state.players[0].board[0] = minion("Prince Lloyd", 0);
+    state.players[0].board[1] = minion("John Wick", 0, { hp: 5, maxHp: 5 });
+    state.players[1].board[0] = minion("John Wick", 1, { hp: 5, maxHp: 5 });
+
+    const after = play(state, 0, "Dabi", 2);
+    expect(after.players[0].board[0]?.divineShield).toBe(false);
+    expect(after.players[0].board[1]?.hp).toBe(5);
+    expect(after.players[1].board[0]?.hp).toBe(4);
+
+    const silenced = mainState("lloyd-silenced");
+    silenced.players[0].board[0] = minion("Prince Lloyd", 0, { silenced: true });
+    silenced.players[0].board[1] = minion("John Wick", 0, { hp: 5, maxHp: 5 });
+    silenced.players[1].board[0] = minion("John Wick", 1, { hp: 5, maxHp: 5 });
+    const withoutWard = play(silenced, 0, "Dabi", 2);
+    expect(withoutWard.players[0].board[1]?.hp).toBe(4);
+    expect(withoutWard.players[1].board[0]?.hp).toBe(4);
   });
 });

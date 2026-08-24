@@ -232,8 +232,10 @@ def load_offsets() -> dict[str, float]:
 
 def track_index() -> dict[str, Path]:
     index: dict[str, Path] = {}
-    for path in AUDIO_SRC.glob("*.mp3"):
-        m = re.match(r"^\d{3} - (.+) \(([^()]*)\)\.mp3$", path.name)
+    for path in AUDIO_SRC.iterdir():
+        if path.suffix.lower() not in {".mp3", ".mp4"}:
+            continue
+        m = re.match(r"^\d{3} - (.+) \(([^()]*)\)\.(?:mp3|mp4)$", path.name, re.IGNORECASE)
         if m:
             index[norm(m.group(1))] = path
     return index

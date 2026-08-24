@@ -39,7 +39,7 @@ march toward a finish line that has already been crossed.
 
 ## What Convergence is
 
-Convergence is a non-commercial browser card duel where 172 named characters and forces from fiction collide alongside three Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
+Convergence is a non-commercial browser card duel where 174 named characters and forces from fiction collide alongside three Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
 
 - **Recruit** — deliberately forgiving.
 - **Veteran** — plays each move correctly but does not plan beyond it.
@@ -49,9 +49,9 @@ Convergence is a non-commercial browser card duel where 172 named characters and
 
 **Owner play location:** Play only through the public [GitHub Pages game URL](https://ross-ai-lab.github.io/convergence-card-game/play/). The local `play/` folder is a generated deployment artifact for building and publishing; it is not the owner's play location.
 
-No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **172 character cards, 3 Basic reference cards, and 21 Ascension Relics**, 196 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
+No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **174 character cards, 3 Basic reference cards, and 21 Ascension Relics**, 198 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
-The live game and `source/data/cards.csv` now contain 172 named character cards plus 3 Basic reference cards, 175 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
+The live game and `source/data/cards.csv` now contain 174 named character cards plus 3 Basic reference cards, 177 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
 
 ## What the game still needs
 
@@ -106,12 +106,12 @@ run: it narrows the ONE shared deck and widens it again, which is a change to a 
 hotseat duel as won, so paying it would make conceding to yourself the fastest route to the roster.
 
 **Why the reason for the feature is recurrence, not collecting.** A duel is a median 22 player-turns,
-so it consumes roughly 30 of 196 cards and about 15 of them reach one player's hand. At the full
+so it consumes roughly 30 of 198 cards and about 15 of them reach one player's hand. At the full
 roster a given card reaches your hand about once every thirteen duels, which is far too rare to form
 an opinion about it. At 50 it is about once every three.
 
 **The count is an ORDER plus an INDEX, never a growing set of ids.** `progress.unlockOrder` holds all
-196 ids and `progress.unlocked` says how far down it the deck reaches. An order is fixed once, so
+198 ids and `progress.unlocked` says how far down it the deck reaches. An order is fixed once, so
 every prefix of it can be balanced by construction; a set built batch by batch can only be balanced
 batch by batch, and batches that are each fair still stack into a lopsided whole. An index also cannot
 re-lock a card, cannot lose one, and cannot disagree with itself.
@@ -159,8 +159,8 @@ a shadow, so the whole thing still works as one flat colour over any artwork.
 
 **The Collection filter has NO "any" option and starts on Unlocked.** It is the only filter that
 behaves that way. The gallery is your collection first and the locked wall second, so mixing 50
-readable cards into 146 sealed ones is a list that answers neither question. The deliberate cost is
-that no view shows all 196 at once.
+readable cards into 148 sealed ones is a list that answers neither question. The deliberate cost is
+that no view shows all 198 at once.
 
 **The "?" opens a POPUP, and it prints the reward table and nothing else.** A panel pushed in above
 the grid shoved 200 cards down the page to make room, so opening it lost the reader's place in the
@@ -181,12 +181,12 @@ Rows are balanced by an explicit width rather than left to wrap, because six car
 strand one under a row of five.
 
 **The tally rides inside the Cards button** on the title screen, stacked under its label, and
-disappears once the roster is complete rather than reading 196 of 196 forever. It lived outside the
+disappears once the roster is complete rather than reading 198 of 198 forever. It lived outside the
 button first and had to be nearly invisible there, because between two gold pills it read as a third
 one; inside a button it cannot be mistaken for a control, so it can afford to be legible.
 
 **`progress` is at v2 and v1 is deleted on load, not migrated.** v1 described a roster that was
-entirely unlocked, so carrying it forward would hand a returning player all 196 cards and delete the
+entirely unlocked, so carrying it forward would hand a returning player all 198 cards and delete the
 feature on the machine that most needed it. The version bump is also what resets the record.
 
 **The balance gate was red on the fresh baseline measured 18 August 2026** — three of eleven checks.
@@ -576,7 +576,7 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
 
-**Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 58 Rare cards stop costing anything at the same time, which is what keeps a gallery of 196 affordable.
+**Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 58 Rare cards stop costing anything at the same time, which is what keeps a gallery of 198 affordable.
 
 ### The technique, which is the transferable part
 

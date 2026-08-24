@@ -2714,7 +2714,7 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
  * switched on. Owner's ruling: the gallery is your collection first and the
  * locked wall second, so mixing 50 readable cards into 146 sealed ones is a
  * list that answers neither question. There is therefore no view showing all
- * 196 at once, which is the deliberate cost of that.
+ * 198 at once, which is the deliberate cost of that.
  */
 type UnlockFilter = "unlocked" | "locked";
 
@@ -2731,7 +2731,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
   /**
    * How many cells are mounted right now.
    *
-   * Building all 196 card faces in one go is about 850 ms of DOM work, which is
+   * Building all 198 card faces in one go is about 850 ms of DOM work, which is
    * a visible hitch on a screen that should just appear. The first batch is
    * roughly two screens deep and lands immediately; the rest arrive on the next
    * idle callback, by which time the reader is still looking at row one. Nothing
@@ -2750,7 +2750,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
 
   const needle = query.trim().toLowerCase();
   // Built ONCE and then only filtered. Rebuilding the faces on every keystroke
-  // handed React 196 brand-new objects, so every cell re-rendered for every
+  // handed React 198 brand-new objects, so every cell re-rendered for every
   // letter typed even though the cards had not changed.
   const allEntries = useMemo(
     () => [
@@ -2953,7 +2953,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
  * The gallery mounts every card in the game at once, and each card face is a
  * size container with its own gradients, shadows and six text measurements. Two
  * things keep that affordable and they belong together: this memo stops a search
- * keystroke re-rendering all 196, and `content-visibility: auto` on
+ * keystroke re-rendering all 198, and `content-visibility: auto` on
  * `.gallery-cell` stops the browser laying out and painting the ones off screen.
  */
 const GalleryCell = memo(function GalleryCell({
@@ -3135,7 +3135,7 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
         </table>
         <p className="help-state">
           <strong>
-            {progress.unlocked} of {progress.unlockOrder.length || 196}
+            {progress.unlocked} of {progress.unlockOrder.length || 198}
           </strong>{" "}
           unlocked{left ? `, ${left} still to find` : " — the whole roster is yours"}.
         </p>
@@ -3149,7 +3149,7 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
  *
  * The escalation only reads as an escalation if the bottom of it is still. Give
  * every card a shine and the tiers stop meaning anything; 58 Rare cards then
- * also stop costing anything, which is what keeps a gallery of 196 affordable.
+ * also stop costing anything, which is what keeps a gallery of 198 affordable.
  */
 const SHINE_RARITIES = new Set(["purple", "yellow", "red", "relic"]);
 
@@ -3392,7 +3392,7 @@ function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boole
   //
   // The GALLERY is the one exception, and it is a different situation, not a
   // relaxation of the rule above. Its cells mount once and stay put, so there is
-  // no churn to lose a load in — while requesting all 196 images at once is the
+  // no churn to lose a load in — while requesting all 198 images at once is the
   // single biggest cost of opening the screen.
   if (!card.art) return <div className="cf-art empty-art" aria-hidden="true" />;
   return (
@@ -4128,7 +4128,7 @@ function CardPack({
               ))}
             </div>
             <p className={allDealt ? "pack-total is-in" : "pack-total"}>
-              {total} of 196 cards unlocked
+              {total} of 198 cards unlocked
             </p>
             <button type="button" className="primary pack-collect" onClick={onDone} disabled={!allDealt}>
               Collect

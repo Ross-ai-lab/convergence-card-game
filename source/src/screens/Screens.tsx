@@ -272,7 +272,7 @@ export function TitleScreen({
               </span>
             ))}
           </h1>
-          <p className="title-kicker">175 worlds. One arena.</p>
+          <p className="title-kicker">177 worlds. One arena.</p>
         </div>
 
         {canContinue ? (
@@ -298,7 +298,7 @@ export function TitleScreen({
               object. Deliberately faint: the full unlock rules live one click
               away behind the gallery's "?", and this is a number to notice in
               passing, not an announcement. Once the roster is complete it
-              disappears rather than reading 196 of 196 forever. */}
+              disappears rather than reading 198 of 198 forever. */}
           <button type="button" className="gallery-trigger" onClick={onGallery}>
             <Cards size={22} weight="fill" aria-hidden="true" />
             <span className="gallery-trigger-stack">
@@ -548,7 +548,7 @@ function HowToPlayContent() {
       <section className="rules-chapter">
         <h4><span className="rules-step-no">2</span> The shared deck</h4>
         <ul className="rules-list">
-          <li>Both players draw from the <b>same shuffled deck</b> — 175 minions and 21 relics, one copy of each.</li>
+          <li>Both players draw from the <b>same shuffled deck</b> — 177 minions and 21 relics, one copy of each.</li>
           <li>You open with <b>3 cards</b>. Player One may replace any number of them once before the duel begins. Going second also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
           <li>Your hand holds <b>10 cards</b>. A card drawn into a full hand burns and is gone.</li>
           <li>When the deck runs dry, every further draw costs you core health: <b>1, then 2, then 3</b>, and up from there.</li>

@@ -306,7 +306,9 @@ export type EffectId =
   | "battleship_tech_aura"
   | "star_destroyer_tie_fighters"
   | "planetary_defense_grid_taunt_buff"
-  | "black_hole_deathrattle";
+  | "black_hole_deathrattle"
+  | "rudeus_hero_power_free"
+  | "prince_lloyd_damage_ward";
 
 export interface CardDefinition {
   kind: "minion";

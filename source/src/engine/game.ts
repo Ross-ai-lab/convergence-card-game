@@ -400,10 +400,18 @@ function heroPowerTargetOptions(state: GameState, playerId: PlayerId, powerId: H
 function heroPowerIsUsable(state: GameState, playerId: PlayerId): boolean {
   const powerId = state.heroPowers[playerId];
   if (!powerId || state.heroPowerUsed[playerId]) return false;
-  if (!state.cheatMode && state.players[playerId].mana < HERO_POWER_COST) return false;
+  if (!state.cheatMode && state.players[playerId].mana < effectiveHeroPowerCost(state, playerId)) return false;
   const definition = heroPowerDefinition(powerId);
   if (!definition) return false;
   return definition.target === "none" || heroPowerTargetOptions(state, playerId, powerId).length > 0;
+}
+
+/** Rudeus makes the controller's one Hero Power payment free while active. */
+function effectiveHeroPowerCost(state: GameState, playerId: PlayerId): number {
+  const free = state.players[playerId].board.some(
+    (minion) => minion && hasEffect(minion, "rudeus_hero_power_free"),
+  );
+  return free ? 0 : HERO_POWER_COST;
 }
 
 function toggleMulligan(state: GameState, playerId: PlayerId, handIndex: number): void {
@@ -472,7 +480,7 @@ function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[])
   const definition = heroPowerDefinition(powerId);
   if (!powerId || !definition || !heroPowerIsUsable(state, playerId)) return;
   const player = state.players[playerId];
-  if (!state.cheatMode) player.mana -= HERO_POWER_COST;
+  if (!state.cheatMode) player.mana -= effectiveHeroPowerCost(state, playerId);
   state.heroPowerUsed[playerId] = true;
   events.push({ kind: "effect", text: `${player.name} uses ${definition.name}.`, player: playerId });
 
@@ -4703,12 +4711,22 @@ function modifyIncoming(
   amount: number,
 ): number {
   const relics = attachedRelics(target);
-  if (relics.some((relic) => relic.relicId === "half_from_nature") && source.camp === "Nature") return Math.floor(amount / 2);
-  if (relics.some((relic) => relic.relicId === "half_from_tech") && source.camp === "Tech") return Math.floor(amount / 2);
-  if (relics.some((relic) => relic.relicId === "half_from_magic") && source.camp === "Magic") return Math.floor(amount / 2);
+  let modified = amount;
+  if (relics.some((relic) => relic.relicId === "half_from_nature") && source.camp === "Nature") {
+    modified = Math.floor(modified / 2);
+  } else if (relics.some((relic) => relic.relicId === "half_from_tech") && source.camp === "Tech") {
+    modified = Math.floor(modified / 2);
+  } else if (relics.some((relic) => relic.relicId === "half_from_magic") && source.camp === "Magic") {
+    modified = Math.floor(modified / 2);
+  }
   // Philosopher's Stone: untouchable on your own turn, brittle on theirs.
-  if (relics.some((relic) => relic.relicId === "philosophers_stone") && state.activePlayer !== target.owner) return amount * 2;
-  return amount;
+  else if (relics.some((relic) => relic.relicId === "philosophers_stone") && state.activePlayer !== target.owner) {
+    modified = amount * 2;
+  }
+  const damageReduction = state.players[target.owner].board.filter(
+    (minion) => minion && minion.instanceId !== target.instanceId && hasEffect(minion, "prince_lloyd_damage_ward"),
+  ).length;
+  return Math.max(0, modified - damageReduction);
 }
 
 function canDamage(
