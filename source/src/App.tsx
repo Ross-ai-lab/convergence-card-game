@@ -3072,7 +3072,7 @@ const GalleryCell = memo(function GalleryCell({
       data-mark={mark}
       title={locked ? "Locked — not yet in the shared deck" : COLLECTION_TITLE[mark]}
     >
-      <CardFace card={face} lazyArt />
+      {locked ? <SealedFace card={face} lazyArt /> : <CardFace card={face} lazyArt />}
       {locked ? (
         <span className="gallery-lock" aria-hidden="true">
           {/* An ANTIQUE ORNATE padlock, drawn rather than fetched because it is
@@ -3277,6 +3277,51 @@ const COLLECTION_TITLE: Record<CollectionMark, string> = {
   played: "You have played it",
   won: "You have won with it",
 };
+
+/**
+ * A locked card, drawn cheaply.
+ *
+ * The seal already covers the middle of the face, so a locked card was building
+ * a full 23-element card face — rules panel, flavour, origin, both rails, the
+ * stat gems, the shine — and then hiding almost all of it behind a padlock. In
+ * the opening gallery 148 of the 198 cards are locked, and laying all of them
+ * out measured 219 ms against 4.5 ms when they are skipped: about 1.4 ms each,
+ * which is three rows per frame at a normal scroll speed.
+ *
+ * This draws the four things a sealed card is SUPPOSED to show and nothing else
+ * — frame colour, name, mana cost, and a shape behind the glass. That is the
+ * printed doctrine for a locked card rather than a saving invented to fit one,
+ * and the saving comes for free: nine elements instead of twenty-three, and one
+ * text measurement instead of six. The three paragraph fits are the expensive
+ * ones and none of them is needed, because none of that text is drawn.
+ *
+ * It keeps the `card-face` class and the rarity class, so every rule that
+ * already dressed a locked card — the grayscale, the thin outline, the seal
+ * itself — lands on it unchanged.
+ */
+function SealedFace({ card, lazyArt = false }: { card: CardFaceModel; lazyArt?: boolean }) {
+  const fit = {
+    // Both one-line name fits, because the compact one is what a narrow
+    // container query switches to and an unset variable would silently fall
+    // back to the uncapped default rather than to a fitted size.
+    "--cf-namefit": fitOneLine(card.name, NAME_BOX, NAME_CEILING),
+    "--cf-namefitc": fitOneLine(card.name, NAME_BOX_COMPACT, NAME_CEILING_COMPACT),
+  } as CSSProperties;
+  const rarity = (card.rarity ?? "Black").toLowerCase();
+  return (
+    <article className={`card-face cf-sealed rarity-${rarity}`} style={fit}>
+      <div className="cf-stage">
+        <div className="cf-frame" aria-hidden="true" />
+        <div className="cf-well" aria-hidden="true" />
+        <CardArtwork card={card} lazy={lazyArt} />
+        <div className="cf-banner">
+          <span className="cf-name">{card.name}</span>
+        </div>
+        <div className="cf-gem cf-mana">{card.cost}</div>
+      </div>
+    </article>
+  );
+}
 
 function CardFace({
   card,

@@ -5270,20 +5270,39 @@ button:disabled {
   border-radius: 12px;
 }
 
-.gallery-cell.mark-unseen .card-face {
-  /* Dimmed, never blacked out. brightness(0.5) looked right on the average card
-     and turned the already-dark art -- G-Man, Time Bomb -- into a black
-     rectangle, which in this project is the known signature of BROKEN artwork
-     rather than of an unmet card. Desaturation carries the meaning; the
-     brightness cut only supports it. */
-  filter: grayscale(0.85) brightness(0.68);
-  opacity: 0.78;
-  transition: filter 160ms ease, opacity 160ms ease;
+/* AN UNLOCKED CARD IS NEVER DIMMED. Owner's ruling, 26 August 2026, and it
+   reverses the build before it.
+
+   Unseen used to be the loud state: the whole face was desaturated and darkened
+   until the pointer touched it, so the wall answered "how much of this have I
+   actually met" from across the room. It answered it by hiding the artwork,
+   which is the one thing a gallery exists to show, and it left the art of a card
+   you own visible only while you were hovering it.
+
+   The mark moved onto the CELL instead, where the played and won marks already
+   live. Cards you have MET carry a pale ring; unmet cards carry nothing. The
+   same fact, read the other way round — the wall fills with rings as the
+   collection grows, rather than clearing of shadow — and no card face is ever
+   touched. */
+.gallery-cell.mark-seen {
+  box-shadow: 0 0 0 2px rgba(246, 236, 216, 0.32);
 }
 
-.gallery-cell.mark-unseen:hover .card-face {
-  filter: grayscale(0.15) brightness(0.9);
-  opacity: 1;
+/* A SEALED CARD SPENDS ITS WHOLE FACE ON THE PICTURE.
+
+   The printed art window stops at 560 of the card's 1050 units, and the 490
+   below it belong to the rules plaque, the flavour line, the origin and the two
+   stat gems — none of which a sealed card draws. Left as it was, a locked card
+   was a picture in the top half and a flat dark slab in the bottom half, which
+   reads as a card that failed to load rather than a card that is sealed.
+
+   The same rule the rest of the face already follows: the artwork is the card,
+   and when nothing else is claiming the space the artwork takes it. It runs to
+   the frame's own inset, matching the 9 units the left and right edges use, so
+   the picture is inset by the same amount on all four sides. */
+.card-face.cf-sealed .cf-art {
+  bottom: calc(9 * var(--u));
+  height: auto;
 }
 
 .gallery-cell.mark-played {

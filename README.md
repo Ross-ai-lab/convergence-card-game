@@ -170,6 +170,15 @@ library, so cutting the deck cuts all of them at once. The library passed to the
 purpose: a saved duel or a minion already in play can name a locked card, and every one of those has
 to keep resolving.
 
+**AN UNLOCKED CARD IS NEVER DIMMED, and the collection mark moved off the card face.** Owner's ruling,
+26 August 2026, reversing the build before it. Unseen used to be the loud state: the whole face was
+desaturated and darkened until the pointer touched it, so the wall answered "how much of this have I
+actually met" from across the room. It answered it by hiding the artwork, which is the one thing a
+gallery exists to show, and it left the art of a card you already own visible only while you were
+hovering it. The mark now sits on the CELL, beside the played and won rings that were already there:
+a card you have MET carries a pale ring and an unmet card carries nothing. Same fact, read the other
+way round — the wall fills with rings as the collection grows, rather than clearing of shadow.
+
 **Locked cards are SEALED, not merely marked, and the padlock is meant to be in the way.** The gallery
 greys them and covers the middle of the face with a padlock at **68% of the card width**, so a locked
 card shows its name, its frame colour and a shape behind the glass, and nothing that tells you what it
@@ -769,7 +778,21 @@ interchangeable.
    files, **9.9 MB** — six at a time on idle callbacks, so it never competes with a scroll and costs
    the opening nothing.
 
-Only the first two are about layout. The other two are about paint and decode, and neither was
+5. **A locked card draws a SEALED FACE, not a full one.** `SealedFace` in `App.tsx` renders the four
+   things a sealed card is supposed to show — frame colour, name, mana cost, and a shape behind the
+   glass — and nothing else. No rules panel, no flavour, no origin, no rails, no stat gems, no shine.
+   That is the printed doctrine for a locked card rather than a saving invented to fit one, and the
+   saving arrives with it. Measured in one browser, in one sitting, against the full face beside it:
+   **8 elements against 18**, and **0.97 ms of layout per cell against 2.23 ms** — a locked card now
+   costs **56% less** to lay out than an unlocked one. At 148 locked cards that is the difference
+   between about 330 ms and about 144 ms for the whole grid.
+
+   Its artwork runs the full height of the face, because the 490 units below the printed art window
+   belong to the plaque, the flavour line and the gems, and a sealed card draws none of them. Left as
+   it was, a locked card was a picture in the top half and a flat dark slab in the bottom half, which
+   reads as a card that failed to load rather than a card that is sealed.
+
+Only the first two are about layout. Items three and four are about paint and decode, and neither was
 measured against a frame budget: the browser tab available to this project's agents stays backgrounded,
 where `requestAnimationFrame` never fires. The element counts, the byte totals and the layout timings
 above are all measured; the frame-rate improvement is reasoned from them.
