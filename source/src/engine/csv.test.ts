@@ -33,14 +33,14 @@ describe("card CSV data", () => {
     expect(changed.get("King")?.keywords).not.toContain("Taunt");
     expect(changed.get("Kaku Kaioh")?.keywords).not.toContain("Taunt");
     expect(changed.get("Gandalf the White")?.keywords).toContain("Divine Shield");
-    expect(changed.get("Gandalf the White")?.effect).toBe("Divine Shield. Battlecry: Give all friendly Good minions Divine Shield.");
-    expect(changed.get("Kaido")?.effect).toBe("Battlecry: Destroy an enemy Taunt minion.");
+    expect(changed.get("Gandalf the White")?.effect).toBe("Divine Shield. Battlecry: Give all friendly Good minions Divine Shield");
+    expect(changed.get("Kaido")?.effect).toBe("Battlecry: Destroy an enemy Taunt minion");
     expect(changed.get("Rennala Queen of the Full Moon")).toMatchObject({
       atk: 2,
       hp: 3,
       effectId: "rebirth_friendly_dead",
       effectTiming: "onPlay",
-      effect: "Battlecry: Rebirth a random friendly minion that died this game.",
+      effect: "Battlecry: Rebirth a random friendly minion that died this game",
     });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
     expect(changed.get("Eye of Sauron")).toMatchObject({
@@ -50,10 +50,10 @@ describe("card CSV data", () => {
       effectId: "enemy_cards_cost_1_more",
       effectTiming: "passive",
       keywords: ["Passive"],
-      effect: "Passive: Enemy cards cost 1 more.",
+      effect: "Passive: Enemy cards cost 1 more",
     });
     expect(changed.get("Kizaru")).toMatchObject({ atk: 4, hp: 4 });
-    expect(changed.get("Ten Tails")?.effect).toBe("Battlecry: Chain all other minions.");
+    expect(changed.get("Ten Tails")?.effect).toBe("Battlecry: Chain all other minions");
     // Mothership was retired: four consecutive Basic cards were all large
     // spacecraft, and its hand-drawn SVG was the only non-photograph in the game.
     expect(changed.get("Mothership")).toBeUndefined();
@@ -63,7 +63,7 @@ describe("card CSV data", () => {
       hp: 3,
       origin: "Basic",
       effectId: "aoe_all_4",
-      effect: "Battlecry: Deal 4 damage to all other minions.",
+      effect: "Battlecry: Deal 4 damage to all other minions",
     });
     expect(changed.get("Planetary Defense Grid")).toMatchObject({
       cost: 9,
@@ -90,7 +90,7 @@ describe("card CSV data", () => {
 
   it("loads Luffy's chained-minion rescue Battlecry", () => {
     expect(cards.find((card) => card.name === "Monkey D. Luffy")?.effect).toBe(
-      "Battlecry: Free all friendly Chained minions. They may attack immediately and gain Divine Shield.",
+      "Battlecry: Free all friendly Chained minions. They may attack immediately and gain Divine Shield",
     );
   });
 

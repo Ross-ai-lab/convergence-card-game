@@ -2765,6 +2765,8 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
    * the off-screen ones — this is about the cost of CREATING them.
    */
   const [mounted, setMounted] = useState(FIRST_GALLERY_BATCH);
+  /** The scrolling element, so the scroll handler can flag it without a render. */
+  const bodyRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -2879,6 +2881,78 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
     return () => cancel(handle);
   }, [mounted, sorted.length]);
 
+  /**
+   * Warms every card image the moment the screen has finished appearing.
+   *
+   * `lazyArt` is right for the FIRST paint and wrong for the twentieth: asking
+   * for all 198 files at once is the single biggest cost of opening the gallery,
+   * which is why the cells load lazily — but the browser's lazy heuristics only
+   * look a short way ahead, and a fast flick outruns them, which is what leaves
+   * a screenful of cards showing a frame and no picture.
+   *
+   * Warming them AFTER the open costs the opening nothing. The whole set is
+   * 9.9 MB across 198 files, fetched a few at a time on idle callbacks so it
+   * never competes with a scroll, and decoded off the main thread. By the time
+   * anyone has scrolled anywhere the file is already in the cache and the lazy
+   * <img> resolves instantly.
+   */
+  useEffect(() => {
+    if (mounted < sorted.length) return;
+    const urls = sorted.map((entry) => entry.face.art).filter((art): art is string => Boolean(art));
+    let index = 0;
+    let stopped = false;
+    let handle = 0;
+    // Bound to window for the same reason the batch loader is: calling
+    // requestIdleCallback bare throws "Illegal invocation" in Chromium.
+    const idle: (fn: () => void) => number = window.requestIdleCallback
+      ? (fn) => window.requestIdleCallback(fn, { timeout: 500 })
+      : (fn) => window.setTimeout(fn, 32);
+    const cancel = (id: number) =>
+      window.cancelIdleCallback ? window.cancelIdleCallback(id) : window.clearTimeout(id);
+    const pump = () => {
+      if (stopped) return;
+      for (let taken = 0; taken < 6 && index < urls.length; taken += 1, index += 1) {
+        const image = new Image();
+        image.decoding = "async";
+        image.src = urls[index];
+      }
+      if (index < urls.length) handle = idle(pump);
+    };
+    handle = idle(pump);
+    return () => {
+      stopped = true;
+      cancel(handle);
+    };
+  }, [mounted, sorted]);
+
+  /**
+   * Flags the body while it is being scrolled, so the CSS can park the card
+   * shine for the duration.
+   *
+   * Deliberately a classList write and not a state update. A scroll fires far
+   * more often than a frame, and re-rendering a grid of 198 memoised cells to
+   * say "we are moving" would cost more than the animations it is trying to
+   * quieten.
+   */
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    let idleTimer = 0;
+    const onScroll = () => {
+      body.classList.add("is-scrolling");
+      window.clearTimeout(idleTimer);
+      // Long enough to cover the tail of a flick, short enough that letting go
+      // and looking brings the shine straight back.
+      idleTimer = window.setTimeout(() => body.classList.remove("is-scrolling"), 140);
+    };
+    body.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      body.removeEventListener("scroll", onScroll);
+      window.clearTimeout(idleTimer);
+      body.classList.remove("is-scrolling");
+    };
+  }, []);
+
   return (
     <div
       className="screen-veil gallery-veil"
@@ -2944,7 +3018,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
           </button>
         </header>
         {help ? <UnlockHelp progress={progress} onClose={() => setHelp(false)} /> : null}
-        <div className="screen-panel-body gallery-body">
+        <div className="screen-panel-body gallery-body" ref={bodyRef}>
           {sorted.length ? (
             <div className="gallery-grid">
               {sorted.slice(0, mounted).map((entry) => (

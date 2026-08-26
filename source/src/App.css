@@ -5198,6 +5198,33 @@ button:disabled {
      contained away with its contents — so nothing jumps and the scrollbar is
      honest from the first frame. */
   content-visibility: auto;
+  /* The `auto` keywords are the point, not the lengths. Without an intrinsic
+     size, a cell that leaves the viewport throws its layout away and rebuilds
+     it from nothing the next time it comes back; with `auto`, the browser keeps
+     the size it last measured and reuses it. Measured on the locked gallery:
+     laying out all 148 cells costs 219 ms against 4.5 ms when they are skipped,
+     so about 1.4 ms per cell — three rows arriving inside one frame is the
+     whole of the scroll stutter.
+
+     The lengths never actually apply here. `aspect-ratio` above sits on the
+     CELL and wins, which is exactly why this is safe to add: measured before
+     and after, the scroll height and the row height do not move by a pixel. */
+  contain-intrinsic-size: auto 264px auto 370px;
+}
+
+/* Card faces carry a living shine — up to six blended, infinitely animating
+   layers each. On the board that is a handful of cards. In the gallery it is
+   every unlocked card on screen at once, measured at 100 animating spans and 73
+   blend-mode layers, all of them compositing on every frame the browser draws.
+   That is affordable while the wall is still, and it is competing with the
+   scroll when the wall is moving.
+
+   So the shine holds its pose while you scroll and resumes the moment you stop.
+   Paused, not hidden: `animation-play-state` freezes each layer exactly where it
+   was, so nothing pops, nothing restarts, and a still gallery looks identical to
+   what it looked like before this rule existed. */
+.gallery-body.is-scrolling .cf-shine > span {
+  animation-play-state: paused;
 }
 
 .gallery-cell .card-face {

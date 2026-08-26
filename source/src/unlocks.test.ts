@@ -4,6 +4,7 @@ import { cards, relics } from "./data/cards";
 import { emptyProgress, recordDuel, type DuelResult } from "./progress";
 import {
   STARTING_POOL,
+  UNLOCK_REWARD,
   balancedOrder,
   ensureUnlockOrder,
   newlyUnlocked,
@@ -126,9 +127,9 @@ describe("what a finished duel is worth", () => {
     unlockReward({ ladder, outcome });
 
   it("pays more for a harder opponent", () => {
-    expect(reward("easy", "won")).toBe(3);
-    expect(reward("normal", "won")).toBe(6);
-    expect(reward("hard", "won")).toBe(10);
+    expect(reward("easy", "won")).toBe(5);
+    expect(reward("normal", "won")).toBe(10);
+    expect(reward("hard", "won")).toBe(15);
   });
 
   it("pays one card for a loss or a draw at any level", () => {
@@ -161,9 +162,10 @@ describe("folding an unlock into the record", () => {
   it("advances by exactly the reward", () => {
     const before = started();
     const after = recordDuel(before, { ladder: "hard", outcome: "won", turns: 20, at: 1 }, { seen: [], played: [] });
-    expect(after.unlocked).toBe(STARTING_POOL + 10);
+    const paid = UNLOCK_REWARD.hard.won;
+    expect(after.unlocked).toBe(STARTING_POOL + paid);
     expect(newlyUnlocked(after.unlockOrder, before.unlocked, after.unlocked)).toEqual(
-      after.unlockOrder.slice(STARTING_POOL, STARTING_POOL + 10),
+      after.unlockOrder.slice(STARTING_POOL, STARTING_POOL + paid),
     );
   });
 
@@ -260,6 +262,87 @@ describe("the order a pack deals itself out in", () => {
 
 /** Weakest to strongest, mirroring REVEAL_RANK in unlocks.ts. */
 const REVEAL_ORDER = ["Black", "Purple", "Yellow", "Red", "Relic"];
+
+describe("the opening pool rules", () => {
+  const byId = new Map(roster.map((card) => [card.id, card]));
+  const tierOf = (id: string) => {
+    const card = byId.get(id);
+    return !card || card.kind === "relic" ? "Relic" : card.rarity;
+  };
+  const basics = roster.filter(
+    (card) => (card.origin ?? "").trim().toUpperCase() === "BASIC",
+  );
+  const opening = (progress: ReturnType<typeof emptyProgress>) =>
+    unlockedPool(progress.unlockOrder, STARTING_POOL);
+
+  it("hands over every BASIC card before the first duel", () => {
+    // They are one card at every cost from 1 to 10, so they are the spine the
+    // opening curve is built on. There is no seed where one is missing.
+    expect(basics.length).toBeGreaterThan(0);
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      const held = new Set(opening(ensureUnlockOrder(emptyProgress(), roster)));
+      for (const card of basics) expect(held.has(card.id)).toBe(true);
+    }
+  });
+
+  it("holds no Mythic at all", () => {
+    // Owner's ruling: a Mythic is what a duel pays you, never what you start on.
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      for (const id of opening(ensureUnlockOrder(emptyProgress(), roster))) {
+        expect(tierOf(id)).not.toBe("Red");
+      }
+    }
+  });
+
+  it("re-locks a Mythic that an older record had already handed out", () => {
+    // The migration case, and the one place this feature is allowed to take a
+    // card back. A record written before the rule existed opens on the raw
+    // balanced order; loading it must move the Mythics out of the first 50.
+    const raw = balancedOrder(roster, "seed-with-mythics");
+    const stale = { ...emptyProgress(), unlockOrder: raw, unlocked: STARTING_POOL };
+    const fixed = ensureUnlockOrder(stale, roster);
+    const before = raw.slice(0, STARTING_POOL).filter((id) => tierOf(id) === "Red");
+    expect(before.length).toBeGreaterThan(0);
+    for (const id of opening(fixed)) expect(tierOf(id)).not.toBe("Red");
+    // Evicted, not lost, and not handed straight back either.
+    const held = new Set(opening(fixed));
+    const pushedOut = raw.slice(0, STARTING_POOL).filter((id) => !held.has(id));
+    expect(pushedOut).toEqual(expect.arrayContaining(before));
+    for (const id of pushedOut) expect(fixed.unlockOrder).toContain(id);
+  });
+
+  it("spreads the locked Mythics instead of paying them out all at once", () => {
+    // The failure this guards: parking every evicted Mythic at the front of the
+    // remainder hands the six best cards in the game over on the first win,
+    // which is the same mistake as starting with them.
+    const mythics = roster.filter((card) => tierOf(card.id) === "Red");
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const order = ensureUnlockOrder(emptyProgress(), roster).unlockOrder;
+      const locked = order.slice(STARTING_POOL);
+      const share = mythics.length / locked.length;
+      // Proportional at EVERY prefix, not just at the end. The divisor rule
+      // holds each prefix within one card of its fair share.
+      for (let size = 1; size <= locked.length; size += 1) {
+        const seen = locked.slice(0, size).filter((id) => tierOf(id) === "Red").length;
+        expect(Math.abs(seen - size * share)).toBeLessThan(1.5);
+      }
+      // Concretely: the first win at the top ladder cannot be a Mythic shower.
+      const firstWin = locked.slice(0, UNLOCK_REWARD.hard.won);
+      expect(firstWin.filter((id) => tierOf(id) === "Red").length).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it("settles after one pass and then leaves the record alone", () => {
+    const first = ensureUnlockOrder(emptyProgress(), roster);
+    expect(ensureUnlockOrder(first, roster)).toBe(first);
+  });
+
+  it("still holds the whole roster, once each", () => {
+    const progress = ensureUnlockOrder(emptyProgress(), roster);
+    expect(progress.unlockOrder).toHaveLength(roster.length);
+    expect(new Set(progress.unlockOrder).size).toBe(roster.length);
+  });
+});
 
 describe("ensureUnlockOrder", () => {
   it("returns the same object when there is nothing to do", () => {

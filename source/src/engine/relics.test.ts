@@ -127,20 +127,20 @@ describe("relic effects", () => {
 
   it("ships the requested relic costs and replacement effects", () => {
     const requested = [
-      ["Lostvayne", 3, "The bearer is invulnerable to Magic attacks while defending."],
-      ["One Ring", 4, "The first time the bearer would die, set it to full HP instead and destroy this relic."],
-      ["White Whistle", 3, "The bearer's Battlecry effect turns into Ongoing effect."],
-      ["Chamber of Secrets", 3, "The bearer is invulnerable to Nature attacks while defending."],
-      ["Cyber-Enchantment", 3, "The bearer is invulnerable to Tech attacks while defending."],
-      ["Ea", 3, "The bearer's ATK is doubled."],
-      ["Elder wand", 1, "The bearer is immune to Silence."],
-      ["Monster Cell", 2, "The bearer gains +2/+2 and Taunt."],
-      ["Philosopher's Stone", 4, "The bearer takes double damage on the enemy's turn but is invulnerable on your own."],
-      ["Anti-magic Mask", 1, "The bearer is immune to Freeze and Chained."],
-      ["Queen's Cocoon", 2, "The bearer is Chained for a turn. When it awakens, it gains +3/+3."],
-      ["The Green Mask", 2, "Return the bearer to your hand after death."],
-      ["Tesseract", 4, "The bearer can attack twice each turn."],
-      ["Infinity Castle", 4, "The bearer's Evade chance is 50%."],
+      ["Lostvayne", 3, "The bearer is invulnerable to Magic attacks while defending"],
+      ["One Ring", 4, "The first time the bearer would die, set it to full HP instead and destroy this relic"],
+      ["White Whistle", 3, "The bearer's Battlecry effect turns into Ongoing effect"],
+      ["Chamber of Secrets", 3, "The bearer is invulnerable to Nature attacks while defending"],
+      ["Cyber-Enchantment", 3, "The bearer is invulnerable to Tech attacks while defending"],
+      ["Ea", 3, "The bearer's ATK is doubled"],
+      ["Elder wand", 1, "The bearer is immune to Silence"],
+      ["Monster Cell", 2, "The bearer gains +2/+2 and Taunt"],
+      ["Philosopher's Stone", 4, "The bearer takes double damage on the enemy's turn but is invulnerable on your own"],
+      ["Anti-magic Mask", 1, "The bearer is immune to Freeze and Chained"],
+      ["Queen's Cocoon", 2, "The bearer is Chained for a turn. When it awakens, it gains +3/+3"],
+      ["The Green Mask", 2, "Return the bearer to your hand after death"],
+      ["Tesseract", 4, "The bearer can attack twice each turn"],
+      ["Infinity Castle", 4, "The bearer's Evade chance is 50%"],
     ] as const;
 
     for (const [name, cost, effect] of requested) {

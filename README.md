@@ -39,7 +39,7 @@ march toward a finish line that has already been crossed.
 
 ## What Convergence is
 
-Convergence is a non-commercial browser card duel where 174 named characters and forces from fiction collide alongside three Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
+Convergence is a non-commercial browser card duel where 167 named characters and forces from fiction collide alongside ten Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
 
 - **Recruit** — deliberately forgiving.
 - **Veteran** — plays each move correctly but does not plan beyond it.
@@ -49,9 +49,9 @@ Convergence is a non-commercial browser card duel where 174 named characters and
 
 **Owner play location:** Play only through the public [GitHub Pages game URL](https://ross-ai-lab.github.io/convergence-card-game/play/). The local `play/` folder is a generated deployment artifact for building and publishing; it is not the owner's play location.
 
-No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **174 character cards, 3 Basic reference cards, and 21 Ascension Relics**, 198 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
+No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **167 character cards, 10 Basic reference cards, and 21 Ascension Relics**, 198 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
-The live game and `source/data/cards.csv` now contain 174 named character cards plus 3 Basic reference cards, 177 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
+The live game and `source/data/cards.csv` now contain 167 named character cards plus 10 Basic reference cards, 177 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
 
 ## What the game still needs
 
@@ -96,11 +96,15 @@ run: it narrows the ONE shared deck and widens it again, which is a change to a 
 
 | Result | Cards |
 |---|---|
-| Beat the Ascendant | +10 |
-| Beat the Veteran | +6 |
-| Beat the Recruit | +3 |
+| Beat the Ascendant | +15 |
+| Beat the Veteran | +10 |
+| Beat the Recruit | +5 |
 | Lose or draw, any level | +1 |
 | Hotseat, any outcome | 0 |
+
+Raised from 10 / 6 / 3 on 26 August 2026. Owner's ruling, and the table is the only place the numbers
+live: `UNLOCK_REWARD` in `unlocks.ts` feeds the in-game "?" panel directly, so nothing has to be kept
+in step by hand.
 
 **Hotseat pays nothing on purpose.** Both seats are the same person and `progress.ts` records every
 hotseat duel as won, so paying it would make conceding to yourself the fastest route to the roster.
@@ -124,6 +128,36 @@ interleaved by their share of the roster, both passes using the Sainte-Laguë di
 400 seeds and every pool size: the minion curve drifts at most **0.87 of a card**, the relic share at
 most **0.5**, and the combined curve at most **1.34**. The single-pass version that treated relics as
 an eleventh cost bucket drifted **3.99**, which is why it is not the version that shipped.
+
+**The opening 50 holds every BASIC card and no Mythic at all.** Owner's ruling, laid over the balanced
+order on 26 August 2026 by `applyOpeningRules` in `unlocks.ts`. Two rules, and each fixes a different
+thing the plain balanced order got wrong.
+
+The ten BASIC cards are the plain, no-franchise ones — Modern Tank, Fort, Battleship, Meteor and the
+rest — and they are exactly one card at every mana cost from 1 to 10. They are the cleanest possible
+spine for a first pool, and leaving them to chance meant half of them were missing from it.
+
+No Mythic belongs there for the opposite reason. A Mythic is what a duel PAYS you, and a roster of 19
+of them handed six over before the first duel had been played, which spends the best moment the
+feature has. Each evicted Mythic is traded for a Rare, the tier the BASIC cards themselves sit in, so
+the pool keeps its size and its shape.
+
+**The evicted Mythics are SPREAD through the locked remainder, never parked at the front of it.** That
+was the first build and it is the wrong shape: it hands those six cards straight back on the very
+first win, which is the same mistake as starting with them, delayed by one duel. They are interleaved
+with the same Sainte-Laguë divisor the roster order uses, so a Mythic arrives roughly every eighth
+unlock and every prefix of the remainder holds them within about one card of their fair share. Stop
+after any number of wins and the proportion still holds.
+
+**This is a REORDER, not a re-generation, and it is applied to the opening slice only.** The balanced
+order still decides which cards land where past card 50, and both lanes of the spread keep the
+relative order the balanced pass gave them, so the mana curve underneath is undisturbed. It also
+settles in one pass: run it twice and the second finds nothing to move.
+
+**It is the one place a card can be taken back, and that is deliberate.** A record written before these
+rules existed already had Mythics in its opening 50; loading it moves them out. `ensureUnlockOrder`
+runs on every load, so the migration needs no version bump and no reset. Every other path still obeys
+"a card that has been unlocked can never leave".
 
 **50 cards does not deck anyone out — measured, not assumed.** 600 self-play duels at a 50-card shared
 pool: the deck empties in **1.3%** of them, fatigue is dealt in **1.0%**, and the median duel runs 24
@@ -279,6 +313,20 @@ Multiple threads usually work on Convergence at the same time. Files, generated 
 Nothing damages a core automatically just because a turn starts; core damage comes from a minion attacking it or from an effect that explicitly says it damages a core.
 
 ## Cards and card language
+
+**The last sentence of a printed effect carries NO full stop.** Owner's ruling, 26 August 2026. The
+rules panel is a box of its own on the card face and its edge already ends the sentence, so a closing
+period is a glyph that says nothing and costs a character of the auto-fit budget on the longest cards.
+Internal sentences keep their periods — only the last one goes, across all 177 cards and all 21
+relics.
+
+It is a build failure, not a style note. `scripts/validate-cards.mjs` rejects any effect ending in
+`.`, `,`, `;` or `:`, and `npm run publish:pages` runs that validator before it builds, so a card with
+a trailing period cannot reach the public site. The rule it replaced REQUIRED that period; both exist
+for the same reason, which is that 198 cards cannot be kept consistent by hand. A keyword-only card
+now prints `Taunt` rather than `Taunt.`, and the validator's leading-keyword patterns were widened to
+match.
+
 
 Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an **alignment**. The four camps are **Magic**, **Nature**, **Tech**, and **ALL**. An **ALL** card receives positive buffs aimed at any of the three source camps, but never camp-specific debuffs. The three alignments are **Good**, **Evil**, and **Neutral**. Many effects target a camp or alignment, so read both labels before playing a card.
 
@@ -691,6 +739,41 @@ An unmet card in the gallery does NOT shine, and that is correct rather than a b
 **A LOCKED card carries no shine and no camp mark at all**, and that is an explicit rule rather than a side effect. A blend-mode layer is not a colour a grayscale filter can drain, so sealed relics went on flickering with teal light while sealed characters sat dead, and the locked wall stopped reading as one wall. A locked card shows its seal and nothing else.
 
 ## Interface and card faces
+
+**What keeps a gallery of 198 card faces scrollable, and the measurements behind each part.** Every
+cell is a full card face: about 23 elements, its own size container, gradients, rails, gems and six
+text measurements. Measured on the locked gallery at 148 cells, laying all of them out costs
+**219 ms** against **4.5 ms** when they are skipped — roughly **1.4 ms per cell**, which is why three
+rows arriving inside one frame is felt as a stutter. Four things hold it together and they are not
+interchangeable.
+
+1. **`content-visibility: auto` on `.gallery-cell`** skips layout and paint for off-screen cells. The
+   cell keeps its box because `aspect-ratio` sits on the CELL and is not contained away with its
+   contents, so nothing jumps and the scrollbar is honest from the first frame.
+2. **`contain-intrinsic-size: auto 264px auto 370px`** on the same rule. The `auto` keywords are the
+   point, not the lengths: without an intrinsic size a cell that leaves the viewport throws its layout
+   away and rebuilds it from nothing on the way back, and with `auto` the browser reuses the size it
+   last measured. The lengths themselves never apply, because `aspect-ratio` wins — measured before
+   and after, neither the scroll height nor the row height moves by a pixel.
+3. **The card shine pauses while the body is scrolling.** A card face carries up to six blended,
+   infinitely animating layers; measured in the unlocked gallery that is **112 animating spans**, all
+   of them compositing on every frame the browser draws. `.gallery-body` gets an `is-scrolling` class
+   from a passive scroll listener that writes to `classList` rather than to state — re-rendering 198
+   memoised cells to say "we are moving" would cost more than the animations it is quietening — and
+   the CSS sets `animation-play-state: paused`. Paused, not hidden: every layer freezes where it was,
+   so a still gallery is pixel-identical to what it was before this rule existed.
+4. **Card art warms on idle once the screen has finished appearing.** The cells load their art lazily,
+   which is right for the first paint and wrong for the twentieth: the browser's lazy heuristics look
+   only a short way ahead and a fast flick outruns them, which is what leaves a screenful of cards
+   showing a frame and no picture. After the last cell mounts, the gallery pulls the whole set — 198
+   files, **9.9 MB** — six at a time on idle callbacks, so it never competes with a scroll and costs
+   the opening nothing.
+
+Only the first two are about layout. The other two are about paint and decode, and neither was
+measured against a frame budget: the browser tab available to this project's agents stays backgrounded,
+where `requestAnimationFrame` never fires. The element counts, the byte totals and the layout timings
+above are all measured; the frame-rate improvement is reasoned from them.
+
 
 Cards are DOM-rendered by `CardFace` and CSS, using a 750 × 1050 design coordinate system. Keep full card faces readable in hand and on the board. Text fitting must use `source/src/textfit.ts`, which measures the real fonts and finds the largest size that fits the box; the 64/32 caps are upper bounds, not a substitute for measurement.
 

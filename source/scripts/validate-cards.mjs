@@ -60,7 +60,7 @@ const TIMING_WORD = {
  *  then the timing word. Only the LEADING block counts as a declaration — The
  *  Driller's "Give another minion Taunt" is about someone else's Taunt, so a
  *  plain substring search would wave it through. */
-const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained|Charge|Deathrattle|Cannot attack)\.\s*)*)/;
+const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained|Charge|Deathrattle|Cannot attack)(?:\.\s*|$))*)/;
 const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained|Charge|Cannot attack)\.\s*)*(Battlecry and Deathrattle|Battlecry\/Ongoing|Battlecry|Ongoing|Passive|Deathrattle):\s/;
 
 function checkPrintedText(card, line, errors) {
@@ -87,9 +87,10 @@ function checkPrintedText(card, line, errors) {
     ),
   );
   if (/^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*Deathrattle:\s/.test(text)) declared.add("Deathrattle");
+  if (/^(?:(?:Divine Shield|Taunt|Chained|Charge|Cannot attack)\.\s*)*Deathrattle$/.test(text)) declared.add("Deathrattle");
   if (dualTiming && /\bDeathrattle:\s/.test(text)) declared.add("Deathrattle");
   if (/^(?:(?:Divine Shield|Taunt|Chained)\.\s*)*Battlecry and Deathrattle:\s/.test(text)) declared.add("Deathrattle");
-  if (/^Charge\.\s*/.test(text)) declared.add("Charge");
+  if (/^Charge(?:\.\s*|$)/.test(text)) declared.add("Charge");
   const carried = new Set(
     (card.keywords ?? "").split(";").map((k) => k.trim()).filter((k) => MECHANICAL.includes(k)),
   );
@@ -111,9 +112,30 @@ function checkPrintedText(card, line, errors) {
   }
 }
 
+/**
+ * NO FULL STOP ON THE LAST SENTENCE (owner ruling, and the reason it is a hard
+ * error rather than a style note).
+ *
+ * The rules panel is a box of its own on the card face. Its edge already ends
+ * the sentence, so a final period is a glyph that says nothing and costs a
+ * character of the auto-fit budget on the longest cards. Internal sentences keep
+ * their periods - only the last one goes.
+ *
+ * This inverts the rule that stood here before, which REQUIRED the period. Both
+ * versions exist for the same reason: 197 cards cannot be kept consistent by
+ * hand, so the build decides it.
+ */
 function checkEffectPunctuation(name, line, text, errors) {
-  if (text && text !== "-" && !/[.!?]$/.test(text.trim())) {
-    errors.push(`Line ${line}: ${name}'s printed effect must end with punctuation.`);
+  const trimmed = (text ?? "").trim();
+  if (!trimmed || trimmed === "-") return;
+  if (/\.$/.test(trimmed)) {
+    errors.push(
+      `Line ${line}: ${name}'s printed effect ends with a full stop. ` +
+        `The last sentence carries none - write "${trimmed.slice(0, -1)}".`,
+    );
+  }
+  if (/[,;:]$/.test(trimmed)) {
+    errors.push(`Line ${line}: ${name}'s printed effect ends mid-sentence on "${trimmed.slice(-1)}".`);
   }
 }
 

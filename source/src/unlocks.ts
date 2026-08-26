@@ -37,9 +37,9 @@ export const STARTING_POOL = 50;
  * roster a duel against yourself that you concede immediately.
  */
 export const UNLOCK_REWARD: Record<LadderKey, { won: number; lost: number; drawn: number }> = {
-  easy: { won: 3, lost: 1, drawn: 1 },
-  normal: { won: 6, lost: 1, drawn: 1 },
-  hard: { won: 10, lost: 1, drawn: 1 },
+  easy: { won: 5, lost: 1, drawn: 1 },
+  normal: { won: 10, lost: 1, drawn: 1 },
+  hard: { won: 15, lost: 1, drawn: 1 },
   hotseat: { won: 0, lost: 0, drawn: 0 },
 };
 
@@ -147,6 +147,87 @@ export function reconcileOrder(order: string[], cards: PlayableCard[], seed: str
 }
 
 /**
+ * The origin tag on the ten plain, no-franchise cards - one at every mana cost
+ * from 1 to 10. They are the deliberate spine of the opening pool.
+ */
+const OPENING_ORIGIN = "BASIC";
+
+/** Rarity codes. Mythic is the tier the opening pool must not hold; Rare is what it trades for. */
+const MYTHIC_RARITY = "Red";
+const RARE_RARITY = "Black";
+
+/**
+ * Two rules laid over the balanced order, applied to the opening slice only.
+ *
+ * OWNER'S RULING, not a balance measurement: the first `STARTING_POOL` cards
+ * hold every BASIC card and no Mythic at all. A Mythic is meant to be the thing
+ * a duel pays you, so being handed six of them before the first duel spends the
+ * best moment the unlock feature has. Each Mythic it evicts is traded for a
+ * Rare, which is the tier the BASIC cards themselves sit in.
+ *
+ * Deliberately a REORDER of an existing order rather than a re-generation, and
+ * deliberately applied at the opening slice rather than across the whole
+ * roster. Both keep the damage contained: the balanced order still governs
+ * which cards land where past card 50.
+ *
+ * The Mythics this evicts are then SPREAD across the locked remainder rather
+ * than parked at the front of it. Parking them there was the first build and it
+ * is the wrong shape: it hands the six best cards in the game back on the very
+ * first win, which is the same mistake as starting with them, only delayed by
+ * one duel. Spread proportionally, a Mythic arrives roughly every eighth
+ * unlock, so the tier stays an event for the whole climb.
+ *
+ * The one invariant this knowingly breaks is "a card that has been unlocked can
+ * never leave" - re-locking those Mythics on a record that already exists is
+ * the whole point of the change. It breaks once: run this twice and the second
+ * pass finds nothing to move.
+ */
+function applyOpeningRules(order: string[], cards: PlayableCard[]): string[] {
+  const byId = new Map(cards.map((card) => [card.id, card]));
+  const isBasic = (id: string) => (byId.get(id)?.origin ?? "").trim().toUpperCase() === OPENING_ORIGIN;
+  // Relics carry no character tier, so they are neither Mythic nor Rare here.
+  const rarityOf = (id: string) => {
+    const card = byId.get(id);
+    return !card || card.kind === "relic" ? "Relic" : card.rarity;
+  };
+  const isMythic = (id: string) => rarityOf(id) === MYTHIC_RARITY;
+  const isRare = (id: string) => rarityOf(id) === RARE_RARITY;
+  const size = Math.min(STARTING_POOL, order.length);
+  const chosen = new Set<string>();
+
+  // 1. Every BASIC card, wherever in the order it happened to be sitting.
+  for (const id of order) {
+    if (chosen.size >= size) break;
+    if (isBasic(id)) chosen.add(id);
+  }
+  // 2. The opening slice as the balanced order left it, minus the Mythics.
+  for (const id of order.slice(0, size)) {
+    if (chosen.size >= size) break;
+    if (!isMythic(id)) chosen.add(id);
+  }
+  // 3. The slots that freed up, Rare first - a Mythic is traded for a Rare.
+  for (const rareOnly of [true, false]) {
+    for (const id of order) {
+      if (chosen.size >= size) break;
+      if (chosen.has(id) || isMythic(id)) continue;
+      if (rareOnly && !isRare(id)) continue;
+      chosen.add(id);
+    }
+  }
+
+  const head = order.filter((id) => chosen.has(id));
+  const tail = order.filter((id) => !chosen.has(id));
+
+  // The same divisor rule the roster order is built with, so the Mythics are in
+  // proportion at EVERY prefix of the remainder - not "they even out by the
+  // end", but "stop after any number of wins and it is still in proportion".
+  // Both lanes keep the relative order the balanced pass gave them, so the cost
+  // curve underneath is undisturbed.
+  const spread = divisorMerge([tail.filter((id) => !isMythic(id)), tail.filter(isMythic)]);
+  return [...head, ...spread];
+}
+
+/**
  * Gives a record its unlock order, once, and keeps it honest afterwards.
  *
  * Returns the SAME object when nothing needed doing, so the caller can save on
@@ -155,9 +236,10 @@ export function reconcileOrder(order: string[], cards: PlayableCard[], seed: str
  * do not meet the roster in the same sequence.
  */
 export function ensureUnlockOrder(progress: Progress, cards: PlayableCard[]): Progress {
-  const order = progress.unlockOrder.length
+  const generated = progress.unlockOrder.length
     ? reconcileOrder(progress.unlockOrder, cards, "convergence-unlocks")
     : balancedOrder(cards, createDuelSeed());
+  const order = applyOpeningRules(generated, cards);
   const unlocked = Math.max(STARTING_POOL, Math.min(order.length, progress.unlocked));
   if (order.length === progress.unlockOrder.length && unlocked === progress.unlocked) {
     let same = true;
