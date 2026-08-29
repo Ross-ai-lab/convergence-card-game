@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import "./App.css";
 // Board effects (camp signatures, the Mythic entrance, the killing blow). Loaded
 // HERE, immediately after App.css, on purpose: that is the exact cascade slot
@@ -11,6 +11,7 @@ import "./board-fx.css";
 if (import.meta.env.DEV) import("./dev-only.css");
 import { sfx, type SfxName } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
+import { LORE_DETAILS, type LoreDetail } from "./data/lore";
 import { chooseBotAction, BOT_CHEATS } from "./engine/bot";
 import {
   HERO_POWER_COST,
@@ -69,6 +70,7 @@ import {
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
+import { spawnTestMinion } from "./engine/test-utils";
 import {
   DuelIntro,
   HowToPlay,
@@ -85,6 +87,16 @@ type Selection =
   | { kind: "hand"; handIndex: number }
   | { kind: "attacker"; slotIndex: number }
   | null;
+
+const STAR_CHART_AXES = ["STR", "TUF", "WIL", "MAG", "INT", "AGI"] as const;
+
+const RARITY_LABEL: Record<string, string> = {
+  Black: "Rare",
+  Purple: "Epic",
+  Yellow: "Legendary",
+  Red: "Mythic",
+  Relic: "Relic",
+};
 
 function heroPowersForDuel(
   mode: GameMode,
@@ -141,6 +153,14 @@ function relicFace(relic: RelicInstance | RelicDefinition): CardFaceModel {
 function playableFace(card: PlayableCard, costOverride?: number): CardFaceModel {
   const face = isRelicCard(card) ? relicFace(card) : card;
   return costOverride === undefined || face.cost === costOverride ? face : { ...face, cost: costOverride };
+}
+
+function loreFor(card: PlayableCard): LoreDetail | null {
+  return isMinionCard(card) ? LORE_DETAILS[card.id] ?? null : null;
+}
+
+function rarityName(value: string): string {
+  return RARITY_LABEL[value] ?? value;
 }
 
 function attachedRelics(minion: MinionInstance): Array<{ relic: RelicInstance; index: number }> {
@@ -424,6 +444,7 @@ export default function App() {
       heroPowers: heroPowersForDuel(restored.mode, restored.game.heroPowers[0], String(restored.game.rngSeed)),
     };
   });
+  const [hasLiveSave, setHasLiveSave] = useState(() => Boolean(restored));
   const [events, setEvents] = useState<GameEvent[]>(() =>
     restored ? [...restored.events, { kind: "info" as const, text: "Duel restored from your last session." }] : [openingEvent],
   );
@@ -435,6 +456,9 @@ export default function App() {
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
   const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "heroPowers">(null);
   const [developerCheatRevealed, setDeveloperCheatRevealed] = useState(false);
+  const [developerToolsOpen, setDeveloperToolsOpen] = useState(false);
+  const [developerDuelActive, setDeveloperDuelActive] = useState(false);
+  const [tutorialActive, setTutorialActive] = useState(false);
   /**
    * The pack a just-won duel earned, waiting to be torn open. Null whenever
    * there is nothing to open — a loss that earned one card still fills it, and
@@ -454,7 +478,7 @@ export default function App() {
   }, [botWinCount]);
 
   useEffect(() => {
-    if (screen !== "title" || overlay !== null) return;
+    if (!import.meta.env.DEV || screen !== "title" || overlay !== null) return;
     let buffer = "";
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) return;
@@ -581,10 +605,14 @@ export default function App() {
   // Persist after every change. A finished duel is not worth resuming, so the
   // slot is cleared instead of holding a game-over screen forever.
   useEffect(() => {
-    if (game.phase === "gameOver") clearSave();
-
-    else saveGame(game, events, mode, Date.now());
-  }, [game, events, mode]);
+    if (tutorialActive || developerDuelActive || game.phase === "gameOver") {
+      clearSave();
+      setHasLiveSave(false);
+    } else if (screen === "playing") {
+      saveGame(game, events, mode, Date.now());
+      setHasLiveSave(true);
+    }
+  }, [game, events, mode, screen, tutorialActive, developerDuelActive]);
 
   // The practice opponent. One move per tick, driven off the current state, so
   // it walks through draw picks and targeting prompts exactly like a human does
@@ -1237,7 +1265,7 @@ export default function App() {
    * phase catches every one of those; hooking the handler caught only the first.
    */
   useEffect(() => {
-    if (game.phase !== "gameOver" || duelRecorded.current) return;
+    if (game.phase !== "gameOver" || duelRecorded.current || tutorialActive || developerDuelActive) return;
     duelRecorded.current = true;
     const next = finishDuel(
       progress,
@@ -1251,13 +1279,16 @@ export default function App() {
     // just committed. Recomputing here is how the screen and the save drift.
     const earned = newlyUnlocked(next.unlockOrder, progress.unlocked, next.unlocked);
     if (earned.length) setPack(earned);
-  }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress]);
+  }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress, tutorialActive, developerDuelActive]);
 
   function restart() {
     sfx.play("button");
     sfx.unlock();
     sfx.stopCardTheme();
     clearSave();
+    setTutorialActive(false);
+    setDeveloperDuelActive(false);
+    setDeveloperToolsOpen(false);
     duelCards.current = { seen: new Set(), played: new Set() };
     duelRecorded.current = false;
     setPack(null);
@@ -1297,23 +1328,29 @@ export default function App() {
   }
 
   /** Starts a fresh duel in the chosen mode, straight from the title screen. */
-  function beginDuel(next: GameMode) {
+  function beginDuel(next: GameMode, options: { testCardId?: string } = {}) {
     sfx.play("button");
     sfx.unlock();
     sfx.stopCardTheme();
     clearSave();
+    setTutorialActive(false);
+    setDeveloperDuelActive(Boolean(options.testCardId));
+    setDeveloperToolsOpen(false);
     duelCards.current = { seen: new Set(), played: new Set() };
     duelRecorded.current = false;
     setPack(null);
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setMode(next);
     const seed = createDuelSeed();
-    setGame(
-      createInitialGame(pool.cards, seed, pool.relics, {
-        foresightFor: foresightSeat(next),
-        heroPowers: heroPowersForDuel(next, selectedHeroPower, seed),
-      }),
-    );
+    const nextGame = createInitialGame(pool.cards, seed, pool.relics, {
+      foresightFor: foresightSeat(next),
+      heroPowers: heroPowersForDuel(next, selectedHeroPower, seed),
+    });
+    if (options.testCardId && library[options.testCardId]) {
+      nextGame.players[0].hand = [options.testCardId, ...nextGame.players[0].hand].slice(0, 10);
+      nextGame.cheatMode = true;
+    }
+    setGame(nextGame);
     setHistory([]);
     setSelection(null);
     clearFx();
@@ -1332,10 +1369,45 @@ export default function App() {
     setScreen("playing");
   }
 
+  /** Starts the real rules engine in a deterministic teaching position. */
+  function beginTutorial() {
+    sfx.play("button");
+    sfx.unlock();
+    sfx.stopCardTheme();
+    clearSave();
+    setTutorialActive(true);
+    setDeveloperDuelActive(false);
+    setDeveloperToolsOpen(false);
+    duelCards.current = { seen: new Set(), played: new Set() };
+    duelRecorded.current = false;
+    setPack(null);
+    setDuelIntro({ id: fxId.current++, phase: "prelude" });
+    setMode({ kind: "bot", skill: "easy" });
+    const seed = createDuelSeed();
+    setGame(
+      createInitialGame(cards, seed, relics, {
+        heroPowers: ["core_heal", null],
+        tutorial: true,
+      }),
+    );
+    setHistory([]);
+    setSelection(null);
+    clearFx();
+    setSeatedPlayer(0);
+    setLethal(0);
+    heraldSaid.current = new Set();
+    sfx.playOpeningCue(0.35);
+    setEvents([{ kind: "info", text: "Guided duel started. Follow the Rift guide." }]);
+    setScreen("playing");
+  }
+
   function toTitle() {
     sfx.play("button");
     sfx.stopCardTheme();
     setDuelIntro(null);
+    setTutorialActive(false);
+    setDeveloperDuelActive(false);
+    setDeveloperToolsOpen(false);
     setScreen("title");
   }
 
@@ -1381,6 +1453,7 @@ export default function App() {
    */
   function toggleCheatMode() {
     sfx.play("button");
+    setDeveloperDuelActive(true);
     // Read the switch from the live state inside the updater. The settings
     // overlay can stay mounted across game changes, so closing over `game`
     // could toggle from an older render and show ON without changing the
@@ -1396,6 +1469,105 @@ export default function App() {
           text: enabled ? "Cheat mode enabled. Mana is infinite." : "Cheat mode disabled. Mana costs restored.",
         },
       ].slice(-80),
+    );
+  }
+
+  function developerSetMana() {
+    if (!import.meta.env.DEV) return;
+    setDeveloperDuelActive(true);
+    setGame((current) => {
+      const players = [...current.players] as GameState["players"];
+      const player = players[viewerId];
+      players[viewerId] = { ...player, mana: player.maxMana };
+      return { ...current, players };
+    });
+    setEvents((items) => [...items, { kind: "info" as const, text: "Developer mode filled your mana." }].slice(-80));
+  }
+
+  function developerSetCore(owner: PlayerId, value: number) {
+    if (!import.meta.env.DEV) return;
+    setDeveloperDuelActive(true);
+    setGame((current) => {
+      const players = [...current.players] as GameState["players"];
+      players[owner] = { ...players[owner], health: value };
+      return { ...current, players };
+    });
+    setEvents((items) =>
+      [...items, { kind: "info" as const, text: `Developer mode set ${owner === viewerId ? "your" : "the opponent's"} Core to ${value}.` }].slice(-80),
+    );
+  }
+
+  function developerGiveCard(cardId: string, owner: PlayerId) {
+    if (!import.meta.env.DEV || !library[cardId]) return;
+    setDeveloperDuelActive(true);
+    setGame((current) => {
+      const players = [...current.players] as GameState["players"];
+      if (players[owner].hand.length >= 10) return current;
+      players[owner] = { ...players[owner], hand: [...players[owner].hand, cardId] };
+      return { ...current, players };
+    });
+    setEvents((items) =>
+      [...items, { kind: "info" as const, text: `Developer mode added ${library[cardId].name} to ${owner === viewerId ? "your" : "the opponent's"} hand.` }].slice(-80),
+    );
+  }
+
+  function developerPlaceCard(cardId: string, owner: PlayerId) {
+    if (!import.meta.env.DEV) return;
+    const card = library[cardId];
+    if (!card || !isMinionCard(card)) return;
+    setDeveloperDuelActive(true);
+    setGame((current) => {
+      const players = [...current.players] as GameState["players"];
+      const slotIndex = players[owner].board.findIndex((slot) => !slot);
+      if (slotIndex < 0) return current;
+      const board = [...players[owner].board];
+      board[slotIndex] = spawnTestMinion(card, owner, { sleeping: false });
+      players[owner] = { ...players[owner], board };
+      return { ...current, players };
+    });
+    setEvents((items) =>
+      [...items, { kind: "info" as const, text: `Developer mode placed ${card.name} on ${owner === viewerId ? "your" : "the opponent's"} board.` }].slice(-80),
+    );
+  }
+
+  function developerEquipRelic(cardId: string, owner: PlayerId) {
+    if (!import.meta.env.DEV) return;
+    const relicDef = library[cardId];
+    if (!relicDef || !isRelicCard(relicDef)) return;
+    setDeveloperDuelActive(true);
+    const relic: RelicInstance = {
+      id: relicDef.id,
+      relicId: relicDef.relicId,
+      name: relicDef.name,
+      effect: relicDef.effect,
+      art: relicDef.art,
+    };
+    setGame((current) => {
+      const players = [...current.players] as GameState["players"];
+      const board = [...players[owner].board];
+      const slotIndex = board.findIndex((slot) => slot && (!slot.relic || !slot.relic2));
+      if (slotIndex < 0) return current;
+      const bearer = board[slotIndex];
+      if (!bearer) return current;
+      board[slotIndex] = bearer.relic ? { ...bearer, relic2: relic } : { ...bearer, relic };
+      players[owner] = { ...players[owner], board };
+      return { ...current, players };
+    });
+    setEvents((items) =>
+      [...items, { kind: "info" as const, text: `Developer mode equipped ${relic.name} on the first available minion.` }].slice(-80),
+    );
+  }
+
+  function developerClearBoard(owner: PlayerId) {
+    if (!import.meta.env.DEV) return;
+    setDeveloperDuelActive(true);
+    setGame((current) => {
+      const players = [...current.players] as GameState["players"];
+      players[owner] = { ...players[owner], board: [null, null, null, null, null] };
+      return { ...current, players };
+    });
+    setEvents((items) =>
+      [...items, { kind: "info" as const, text: `Developer mode cleared ${owner === viewerId ? "your" : "the opponent's"} board.` }].slice(-80),
     );
   }
 
@@ -1780,7 +1952,16 @@ export default function App() {
   }, [screen, overlay, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length]);
 
   return (
-    <main className={drag?.active ? "hs-shell grabbing" : "hs-shell"}>
+    <main
+      className={[
+        "hs-shell",
+        drag?.active ? "grabbing" : "",
+        tutorialActive ? "tutorial-mode" : "",
+        developerDuelActive ? "developer-duel" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="table-glow" aria-hidden="true" />
 
       <div
@@ -1839,6 +2020,16 @@ export default function App() {
           >
             ⚙ Settings
           </button>
+          {import.meta.env.DEV && developerCheatRevealed ? (
+            <button
+              type="button"
+              className="developer-tools-trigger"
+              onClick={() => setDeveloperToolsOpen(true)}
+              title="Open developer tools"
+            >
+              DEV tools
+            </button>
+          ) : null}
           {/* DEVELOPMENT ONLY, and it must stay that way. The owner asked for this
               button to be gone while playing, and `import.meta.env.DEV` is false
               in the built bundle, so the published game has no cheat control at
@@ -2197,8 +2388,17 @@ export default function App() {
       ) : null}
 
       {game.phase === "gameOver" ? (
-        <GameOver game={game} library={library} vsBot={vsBot} onRestart={restart} onMenu={toTitle} />
+        <GameOver
+          game={game}
+          library={library}
+          vsBot={vsBot}
+          tutorial={tutorialActive}
+          onRestart={tutorialActive ? beginTutorial : restart}
+          onMenu={toTitle}
+        />
       ) : null}
+
+      {tutorialActive && game.phase !== "gameOver" && !duelIntro ? <TutorialCoach game={game} events={events} onSkip={toTitle} /> : null}
 
       {/* Above the result screen, not beside it. The pack is the reward for the
           duel that just ended, so it has to be the thing in the way. */}
@@ -2219,7 +2419,7 @@ export default function App() {
 
       {screen === "title" ? (
         <TitleScreen
-          canContinue={game.phase !== "gameOver" && (game.turnNumber > 1 || game.phase === "mulligan")}
+          canContinue={hasLiveSave && game.phase !== "gameOver" && (game.turnNumber > 1 || game.phase === "mulligan")}
           playerCount={playerCount}
           onContinue={() => {
             sfx.play("button");
@@ -2232,6 +2432,8 @@ export default function App() {
           onGallery={() => setOverlay("gallery")}
           onRecord={() => setOverlay("record")}
           onHeroPowers={() => setOverlay("heroPowers")}
+          onTutorial={beginTutorial}
+          onDeveloperTools={() => setDeveloperToolsOpen(true)}
           developerCheatRevealed={developerCheatRevealed}
           developerCheatActive={progress.developerCheat}
           onDeveloperUnlock={activateDeveloperCheat}
@@ -2260,6 +2462,24 @@ export default function App() {
             setOverlay(null);
             toTitle();
           }}
+        />
+      ) : null}
+      {import.meta.env.DEV && developerToolsOpen ? (
+        <DeveloperTools
+          screen={screen}
+          cards={Object.values(library)}
+          game={game}
+          viewerId={viewerId}
+          onClose={() => setDeveloperToolsOpen(false)}
+          onToggleCheat={toggleCheatMode}
+          onSetMana={developerSetMana}
+          onSetCore={developerSetCore}
+          onGiveCard={developerGiveCard}
+          onPlaceCard={developerPlaceCard}
+          onEquipRelic={developerEquipRelic}
+          onClearBoard={developerClearBoard}
+          onRestart={restart}
+          onTestCard={(cardId) => beginDuel({ kind: "bot", skill: "easy" }, { testCardId: cardId })}
         />
       ) : null}
     </main>
@@ -2794,10 +3014,12 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
  * all at once, which is the deliberate cost of that.
  */
 type UnlockFilter = "unlocked" | "locked";
+type GalleryEntry = { key: string; card: PlayableCard; face: CardFaceModel };
 
 function CardGallery({ progress, onClose }: { progress: Progress; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [help, setHelp] = useState(false);
+  const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const [status, setStatus] = useState<UnlockFilter>("unlocked");
   const [filters, setFilters] = useState<Record<FilterKey, string>>({
     cost: "",
@@ -2818,6 +3040,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
   const [mounted, setMounted] = useState(FIRST_GALLERY_BATCH);
   /** The scrolling element, so the scroll handler can flag it without a render. */
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  const openEntry = useCallback((entryKey: string) => setSelectedEntryKey(entryKey), []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -2832,9 +3055,9 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
   // handed React a brand-new object for every card, so every cell re-rendered for every
   // letter typed even though the cards had not changed.
   const allEntries = useMemo(
-    () => [
-      ...cards.map((card) => ({ key: card.id, face: playableFace(card) })),
-      ...relics.map((relic) => ({ key: relic.id, face: relicFace(relic) })),
+    (): GalleryEntry[] => [
+      ...cards.map((card) => ({ key: card.id, card, face: playableFace(card) })),
+      ...relics.map((relic) => ({ key: relic.id, card: relic, face: relicFace(relic) })),
     ],
     [],
   );
@@ -2905,6 +3128,12 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
       (a, b) => (a.face.cost ?? 99) - (b.face.cost ?? 99) || a.face.name.localeCompare(b.face.name),
     );
   }, [entries, filters, status, collection]);
+
+  const selectedEntry = selectedEntryKey ? sorted.find((entry) => entry.key === selectedEntryKey) ?? null : null;
+
+  useEffect(() => {
+    if (selectedEntryKey && !selectedEntry) setSelectedEntryKey(null);
+  }, [selectedEntryKey, selectedEntry]);
 
   // A new search or a new order means a different first screen, so the batch
   // starts again rather than leaving the top of the list unmounted.
@@ -3077,6 +3306,8 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
                   key={entry.key}
                   face={entry.face}
                   locked={!collection.unlocked.has(entry.key)}
+                  entryKey={entry.key}
+                  onOpen={openEntry}
                   mark={
                     collection.wonWith.has(entry.key)
                       ? "won"
@@ -3094,7 +3325,243 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
           )}
         </div>
       </section>
+      {selectedEntry ? (
+        <GalleryDetailModal
+          entry={selectedEntry}
+          locked={!collection.unlocked.has(selectedEntry.key)}
+          position={sorted.findIndex((entry) => entry.key === selectedEntry.key) + 1}
+          total={sorted.length}
+          onClose={() => setSelectedEntryKey(null)}
+          onNavigate={(direction) => {
+            const index = sorted.findIndex((entry) => entry.key === selectedEntry.key);
+            if (index < 0 || !sorted.length) return;
+            const next = sorted[(index + direction + sorted.length) % sorted.length];
+            setSelectedEntryKey(next.key);
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function StarChart({ values, accent, name }: { values: number[]; accent: string; name: string }) {
+  const size = 240;
+  const centre = size / 2;
+  const radius = 72;
+  const point = (index: number, value: number, extra = 0) => {
+    const angle = (-90 + index * 60) * (Math.PI / 180);
+    const distance = radius * Math.max(0, Math.min(10, value)) / 10 + extra;
+    return {
+      x: centre + Math.cos(angle) * distance,
+      y: centre + Math.sin(angle) * distance,
+      angle,
+    };
+  };
+  const polygon = (value: number) =>
+    STAR_CHART_AXES.map((_axis, index) => {
+      const pointValue = point(index, value);
+      return `${pointValue.x.toFixed(1)},${pointValue.y.toFixed(1)}`;
+    }).join(" ");
+  const dataPoints = STAR_CHART_AXES.map((_axis, index) => point(index, values[index] ?? 0));
+
+  return (
+    <svg className="star-chart" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${name} Star Chart`}>
+      {[2, 4, 6, 8, 10].map((level) => (
+        <polygon key={level} className="star-chart-ring" points={polygon(level)} />
+      ))}
+      {STAR_CHART_AXES.map((_axis, index) => {
+        const end = point(index, 10);
+        return <line key={index} className="star-chart-axis" x1={centre} y1={centre} x2={end.x} y2={end.y} />;
+      })}
+      <polygon
+        className="star-chart-data"
+        points={dataPoints.map((item) => `${item.x.toFixed(1)},${item.y.toFixed(1)}`).join(" ")}
+        style={{ "--chart-accent": accent } as CSSProperties}
+      />
+      {dataPoints.map((item, index) => (
+        <circle
+          key={index}
+          className="star-chart-point"
+          cx={item.x}
+          cy={item.y}
+          r="4"
+          style={{ "--chart-accent": accent } as CSSProperties}
+        />
+      ))}
+      {STAR_CHART_AXES.map((axis, index) => {
+        const label = point(index, 10, 21);
+        const anchor = Math.cos(label.angle) > 0.28 ? "start" : Math.cos(label.angle) < -0.28 ? "end" : "middle";
+        return (
+          <text key={axis} className="star-chart-label" x={label.x} y={label.y} textAnchor={anchor}>
+            {axis} <tspan>{values[index] ?? 0}</tspan>
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+function campAccent(camp: string): string {
+  if (camp === "Nature") return "#79c66a";
+  if (camp === "Tech") return "#70c9ff";
+  if (camp === "ALL") return "#f0c767";
+  return "#b996ff";
+}
+
+function GalleryDetailModal({
+  entry,
+  locked,
+  position,
+  total,
+  onClose,
+  onNavigate,
+}: {
+  entry: GalleryEntry;
+  locked: boolean;
+  position: number;
+  total: number;
+  onClose: () => void;
+  onNavigate: (direction: number) => void;
+}) {
+  const profile = locked ? null : loreFor(entry.card);
+  const accent = campAccent(entry.face.camp);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onClose();
+      } else if (!locked && event.key === "ArrowLeft") {
+        event.preventDefault();
+        event.stopPropagation();
+        onNavigate(-1);
+      } else if (!locked && event.key === "ArrowRight") {
+        event.preventDefault();
+        event.stopPropagation();
+        onNavigate(1);
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [locked, onClose, onNavigate]);
+
+  return (
+    <div className="gallery-detail-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="gallery-detail-panel" role="dialog" aria-modal="true" aria-label={`${entry.face.name} Star Chart`}>
+        <header className="gallery-detail-top">
+          <div className="gallery-detail-title">
+            <span className="gallery-detail-kicker">{locked ? "Sealed profile" : "Star Chart profile"}</span>
+            <h2>{entry.face.name}</h2>
+            <p>
+              {entry.face.origin}
+              {profile?.epithet ? ` · ${profile.epithet}` : ""}
+            </p>
+            <div className="gallery-detail-chips">
+              <span className={`detail-chip rarity-chip-${entry.face.rarity.toLowerCase()}`}>{rarityName(entry.face.rarity)}</span>
+              <span className="detail-chip">{entry.face.camp}</span>
+              <span className="detail-chip">{entry.face.alignment}</span>
+              <span className="detail-chip">{entry.face.cost ?? "—"} mana · {entry.face.atk ?? "—"} / {entry.face.hp ?? "—"}</span>
+            </div>
+            {profile?.rank ? <strong className="gallery-detail-rank">{profile.rank}</strong> : null}
+          </div>
+          <button type="button" className="screen-x" onClick={onClose} aria-label="Close Star Chart">×</button>
+        </header>
+
+        <div className="gallery-detail-body">
+          <div className="gallery-detail-primary">
+            <div className="gallery-detail-card">{locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} />}</div>
+            {locked ? (
+              <div className="gallery-detail-rule">
+                <span>Rules sealed</span>
+                <p>Unlock this card to reveal its effect.</p>
+              </div>
+            ) : (
+              <div className="gallery-detail-rule">
+                <span>In Convergence</span>
+                <p>{entry.face.effect || "No printed effect"}</p>
+                {entry.face.flavor ? <em>{entry.face.flavor}</em> : null}
+              </div>
+            )}
+          </div>
+
+          {locked ? (
+            <div className="gallery-detail-locked">
+              <span className="gallery-detail-kicker">The Rift is holding this profile</span>
+              <h3>Unlock this card to read its Star Chart</h3>
+              <p>The artwork, name, and cost remain visible. Its lore profile stays sealed until the card enters your shared deck.</p>
+            </div>
+          ) : profile ? (
+            <>
+              <div className="gallery-detail-chart-row">
+                <div className="gallery-detail-chart-wrap">
+                  <StarChart values={profile.vals} accent={accent} name={entry.face.name} />
+                  <span className="gallery-detail-chart-caption">Lore attributes · 0 to 10</span>
+                </div>
+                <div className="gallery-detail-lore">
+                  <p>{profile.lore}</p>
+                  {profile.quote ? <blockquote style={{ "--quote-accent": accent } as CSSProperties}>“{profile.quote}”</blockquote> : null}
+                </div>
+              </div>
+
+              <div className="gallery-detail-columns">
+                <DetailList title="Strengths" tone="strength" items={profile.str} />
+                <DetailList title="Weaknesses" tone="weakness" items={profile.wk} />
+              </div>
+              <div className="gallery-detail-columns">
+                <DetailBox title="Signature move">
+                  {profile.sig_name ? <strong>{profile.sig_name}</strong> : null}
+                  <span>{profile.sig_desc || "No signature move recorded."}</span>
+                </DetailBox>
+                <DetailBox title="Lore interpretation">
+                  <span>{profile.ability}</span>
+                  <em>{profile.playstyle}.</em>
+                </DetailBox>
+              </div>
+              <div className="gallery-detail-rivals">
+                <span>Rivals and ties</span>
+                <div>
+                  {profile.rivals.length ? profile.rivals.map((rival) => (
+                    <span key={`${rival.who}-${rival.rel}`} className={rival.id ? "detail-rival linked" : "detail-rival"}>
+                      {rival.who}{rival.rel ? ` · ${rival.rel}` : ""}
+                    </span>
+                  )) : <span className="detail-rival">No recorded rival</span>}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="gallery-detail-locked">
+              <span className="gallery-detail-kicker">Card profile</span>
+              <h3>This card has no Star Chart entry yet</h3>
+              <p>The current card rules remain authoritative above. The lore page has not profiled this card.</p>
+            </div>
+          )}
+        </div>
+
+        <footer className="gallery-detail-nav">
+          <button type="button" onClick={() => onNavigate(-1)} disabled={locked || total < 2}>← Previous</button>
+          <span>{position > 0 ? `${position} of ${total}` : "Card profile"}</span>
+          <button type="button" onClick={() => onNavigate(1)} disabled={locked || total < 2}>Next →</button>
+        </footer>
+        <p className="gallery-detail-hint">Esc closes · arrow keys browse the filtered gallery</p>
+      </section>
+    </div>
+  );
+}
+
+function DetailList({ title, tone, items }: { title: string; tone: "strength" | "weakness"; items: string[] }) {
+  return (
+    <section className={`gallery-detail-box ${tone}`}>
+      <h3>{title}</h3>
+      <ul>{items.length ? items.map((item) => <li key={item}>{item}</li>) : <li>Not recorded</li>}</ul>
+    </section>
+  );
+}
+
+function DetailBox({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="gallery-detail-box">
+      <h3>{title}</h3>
+      <div className="gallery-detail-box-copy">{children}</div>
+    </section>
   );
 }
 
@@ -3108,20 +3575,34 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
  * `.gallery-cell` stops the browser laying out and painting the ones off screen.
  */
 const GalleryCell = memo(function GalleryCell({
+  entryKey,
   face,
   mark,
   locked = false,
+  onOpen,
 }: {
+  entryKey: string;
   face: CardFaceModel;
   mark: CollectionMark;
   /** Not yet in the shared deck. Shown, never hidden — see `UnlockHelp`. */
   locked?: boolean;
+  onOpen: (entryKey: string) => void;
 }) {
   return (
     <div
       className={locked ? `gallery-cell mark-${mark} is-locked` : `gallery-cell mark-${mark}`}
       data-mark={mark}
       title={locked ? "Locked — not yet in the shared deck" : COLLECTION_TITLE[mark]}
+      role="button"
+      tabIndex={0}
+      aria-label={locked ? `${face.name}, locked card` : `Open Star Chart for ${face.name}`}
+      onClick={() => onOpen(entryKey)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(entryKey);
+        }
+      }}
     >
       {locked ? <SealedFace card={face} lazyArt /> : <CardFace card={face} lazyArt />}
       {locked ? (
@@ -4358,16 +4839,247 @@ function CardPack({
   );
 }
 
+function TutorialCoach({
+  game,
+  events,
+  onSkip,
+}: {
+  game: GameState;
+  events: GameEvent[];
+  onSkip: () => void;
+}) {
+  const hasPlayed = events.some((event) => event.kind === "play" && event.player === 0);
+  const hasAttacked = events.some((event) => event.kind === "combat" && event.player === 0);
+  const hasPassed = events.some((event) => event.kind === "turn" && event.player === 1);
+  const step =
+    game.phase === "mulligan"
+      ? 0
+      : game.phase === "targeting" && game.pendingTarget?.player === 0
+        ? 3
+        : !hasPlayed
+          ? 1
+          : !hasAttacked
+            ? 2
+            : !hasPassed
+              ? 4
+              : 5;
+  const lessonList = [
+    {
+      title: "Shape your opening hand",
+      body: "Click a card you do not want, then confirm. Keep the cards that give you an early plan.",
+      hint: "You may replace any number of cards once.",
+    },
+    {
+      title: "Play a card",
+      body: "Choose a blue-glowing card, then click an empty slot on your side of the board.",
+      hint: "Blue means you can afford the card.",
+    },
+    {
+      title: "Take your first swing",
+      body: "When a minion has a green rim, click it, then choose an enemy minion or the enemy Core.",
+      hint: "Combat is simultaneous, so defenders strike back.",
+    },
+    {
+      title: "Answer the prompt",
+      body: "A Battlecry can pause the duel. Click one of the teal-highlighted legal targets.",
+      hint: "The board lights up only the choices the card allows.",
+    },
+    {
+      title: "Close your turn",
+      body: "Use the Hero Power when it helps, then press End Turn to hand the board over.",
+      hint: "Space or Enter also ends your turn.",
+    },
+    {
+      title: "You know the loop",
+      body: "Draw, spend mana, attack, and read every effect before committing your next move.",
+      hint: "The rest of the roster teaches itself through play.",
+    },
+  ];
+  const lesson = lessonList[step];
+
+  return (
+    <aside className="tutorial-coach" aria-label="Guided duel">
+      <div className="tutorial-coach-top">
+        <span>Guided duel</span>
+        <small>{step + 1} / 6</small>
+      </div>
+      <div className="tutorial-progress" aria-hidden="true">
+        {lessonList.map((_lesson, index) => <i key={index} className={index <= step ? "on" : ""} />)}
+      </div>
+      <strong>{lesson.title}</strong>
+      <p>{lesson.body}</p>
+      <small className="tutorial-coach-hint">{lesson.hint}</small>
+      <button type="button" onClick={onSkip}>Leave tutorial</button>
+    </aside>
+  );
+}
+
+function DeveloperTools({
+  screen,
+  cards: allCards,
+  game,
+  viewerId,
+  onClose,
+  onToggleCheat,
+  onSetMana,
+  onSetCore,
+  onGiveCard,
+  onPlaceCard,
+  onEquipRelic,
+  onClearBoard,
+  onRestart,
+  onTestCard,
+}: {
+  screen: "title" | "playing";
+  cards: PlayableCard[];
+  game: GameState;
+  viewerId: PlayerId;
+  onClose: () => void;
+  onToggleCheat: () => void;
+  onSetMana: () => void;
+  onSetCore: (owner: PlayerId, value: number) => void;
+  onGiveCard: (cardId: string, owner: PlayerId) => void;
+  onPlaceCard: (cardId: string, owner: PlayerId) => void;
+  onEquipRelic: (cardId: string, owner: PlayerId) => void;
+  onClearBoard: (owner: PlayerId) => void;
+  onRestart: () => void;
+  onTestCard: (cardId: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState(allCards[0]?.id ?? "");
+  const otherId: PlayerId = viewerId === 0 ? 1 : 0;
+  const selected = allCards.find((card) => card.id === selectedId) ?? allCards[0];
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return allCards
+      .filter((card) =>
+        !needle || [card.name, card.origin, card.effect].join(" ").toLowerCase().includes(needle),
+      )
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }, [allCards, query]);
+
+  useEffect(() => {
+    if (selected && filtered.some((card) => card.id === selected.id)) return;
+    if (filtered[0]) setSelectedId(filtered[0].id);
+  }, [filtered, selected]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
+
+  return (
+    <div className="developer-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="developer-panel" role="dialog" aria-modal="true" aria-label="Developer mode">
+        <header className="developer-panel-top">
+          <div>
+            <span className="developer-kicker">Ross access</span>
+            <h2>Developer mode</h2>
+          </div>
+          <button type="button" className="screen-x" onClick={onClose} aria-label="Close developer mode">×</button>
+        </header>
+
+        <div className="developer-controls">
+          {screen === "playing" ? (
+            <>
+              <button type="button" className={game.cheatMode ? "developer-action active" : "developer-action"} onClick={onToggleCheat}>
+                {game.cheatMode ? "Infinite mana: ON" : "Infinite mana: OFF"}
+              </button>
+              <button type="button" className="developer-action" onClick={onSetMana}>Fill my mana</button>
+              <button type="button" className="developer-action" onClick={() => onSetCore(viewerId, 1)}>My Core → 1</button>
+              <button type="button" className="developer-action" onClick={() => onSetCore(otherId, 1)}>Enemy Core → 1</button>
+              <button type="button" className="developer-action" onClick={() => onSetCore(viewerId, STARTING_CORE)}>Restore my Core</button>
+              <button type="button" className="developer-action" onClick={() => onClearBoard(viewerId)}>Clear my board</button>
+              <button type="button" className="developer-action" onClick={() => onClearBoard(otherId)}>Clear enemy board</button>
+              <button type="button" className="developer-action" onClick={onRestart}>Restart test duel</button>
+            </>
+          ) : null}
+        </div>
+
+        <div className="developer-workbench">
+          <div className="developer-card-list-wrap">
+            <label className="developer-search">
+              <span>Find any card</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Name, origin, or effect"
+                autoFocus
+              />
+            </label>
+            <div className="developer-card-list">
+              {filtered.map((card) => (
+                <button
+                  type="button"
+                  key={card.id}
+                  className={card.id === selected?.id ? "developer-card-row selected" : "developer-card-row"}
+                  onClick={() => setSelectedId(card.id)}
+                >
+                  <span className="developer-card-kind">{isRelicCard(card) ? "RELIC" : `${card.cost}M`}</span>
+                  <span className="developer-card-name">{card.name}</span>
+                  <small>{card.origin}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {selected ? (
+            <div className="developer-inspector">
+              <div className="developer-card-preview">
+                <CardFace card={playableFace(selected)} />
+              </div>
+              <div className="developer-card-copy">
+                <span className="developer-kicker">Selected card</span>
+                <h3>{selected.name}</h3>
+                <p>{selected.effect}</p>
+                {screen === "title" ? (
+                  <button type="button" className="developer-primary" onClick={() => onTestCard(selected.id)}>
+                    Start test duel with this card
+                  </button>
+                ) : (
+                  <div className="developer-card-actions">
+                    <button type="button" className="developer-primary" onClick={() => onGiveCard(selected.id, viewerId)}>Give to my hand</button>
+                    <button type="button" className="developer-secondary" onClick={() => onGiveCard(selected.id, otherId)}>Give to enemy hand</button>
+                    {!isRelicCard(selected) ? (
+                      <>
+                        <button type="button" className="developer-secondary" onClick={() => onPlaceCard(selected.id, viewerId)}>Place on my board</button>
+                        <button type="button" className="developer-secondary" onClick={() => onPlaceCard(selected.id, otherId)}>Place on enemy board</button>
+                      </>
+                    ) : (
+                      <button type="button" className="developer-secondary" onClick={() => onEquipRelic(selected.id, viewerId)}>Equip on my first minion</button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : <p className="developer-empty">No cards match this search.</p>}
+        </div>
+
+        <p className="developer-note">Developer actions affect this test duel only and do not enter your record or unlock track.</p>
+      </section>
+    </div>
+  );
+}
+
 function GameOver({
   game,
   library,
   vsBot,
+  tutorial = false,
   onRestart,
   onMenu,
 }: {
   game: GameState;
   library: CardLibrary;
   vsBot: boolean;
+  tutorial?: boolean;
   onRestart: () => void;
   onMenu: () => void;
 }) {
@@ -4382,7 +5094,13 @@ function GameOver({
   const survivors = winner ? winner.board.filter((minion): minion is MinionInstance => Boolean(minion)) : [];
   const banner = winner ? biggestSurvivor(winner) : null;
   const bannerArt = banner?.art ?? library[game.players[0].hand[0]]?.art;
-  const botLine = vsBot ? (winner?.id === 1 ? "The practice bot takes it." : "You beat the practice bot.") : null;
+  const botLine = tutorial
+    ? "The guided duel is complete."
+    : vsBot
+      ? winner?.id === 1
+        ? "The practice bot takes it."
+        : "You beat the practice bot."
+      : null;
   return (
     <div className={draw ? "overlay result-overlay draw" : "overlay result-overlay"}>
       <div className="result-rays" aria-hidden="true" />
@@ -4421,7 +5139,7 @@ function GameOver({
           </div>
         ) : null}
         <div className="gameover-buttons">
-          <button type="button" className="primary" onClick={onRestart}>Rematch</button>
+          <button type="button" className="primary" onClick={onRestart}>{tutorial ? "Play tutorial again" : "Rematch"}</button>
           <button type="button" onClick={onMenu}>Menu</button>
         </div>
       </section>

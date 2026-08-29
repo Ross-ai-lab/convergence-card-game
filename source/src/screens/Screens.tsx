@@ -206,6 +206,8 @@ export function TitleScreen({
   onGallery,
   onRecord,
   onHeroPowers,
+  onTutorial,
+  onDeveloperTools,
   onDeveloperUnlock,
   onDeveloperReset,
 }: {
@@ -224,6 +226,8 @@ export function TitleScreen({
   onGallery: () => void;
   onRecord: () => void;
   onHeroPowers: () => void;
+  onTutorial: () => void;
+  onDeveloperTools: () => void;
   onDeveloperUnlock: () => void;
   onDeveloperReset: () => void;
 }) {
@@ -296,6 +300,18 @@ export function TitleScreen({
         <div className="title-links title-actions">
           <button
             type="button"
+            className="tutorial-trigger"
+            onClick={() => {
+              sfx.play("button");
+              onTutorial();
+            }}
+            title="Learn the game in a guided duel"
+          >
+            <Sparkle size={22} weight="fill" aria-hidden="true" />
+            <span>Guided Duel</span>
+          </button>
+          <button
+            type="button"
             className="hotseat-trigger"
             onClick={() => {
               sfx.play("button");
@@ -346,9 +362,19 @@ export function TitleScreen({
           </button>
         </div>
 
-        {developerCheatRevealed ? (
+        {import.meta.env.DEV && developerCheatRevealed ? (
           <div className="developer-cheat-panel" aria-label="Developer cheat">
             <span className="developer-cheat-label">Developer access</span>
+            <button
+              type="button"
+              className="developer-tools-open"
+              onClick={() => {
+                sfx.play("button");
+                onDeveloperTools();
+              }}
+            >
+              Open developer tools
+            </button>
             <button
               type="button"
               className="developer-cheat-unlock"
@@ -358,7 +384,7 @@ export function TitleScreen({
               }}
               disabled={developerCheatActive}
             >
-              {developerCheatActive ? "All cards and powers unlocked" : "Unlock all cards + 2-mana powers"}
+              {developerCheatActive ? "All cards and powers unlocked" : "Unlock all cards + powers"}
             </button>
             <button
               type="button"

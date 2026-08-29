@@ -85,10 +85,10 @@ await page.keyboard.type("Ross");
 await page.locator(".developer-cheat-panel").waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
 check(
   "typing Ross reveals the developer cheat",
-  (await page.getByRole("button", { name: "Unlock all cards + 2-mana powers", exact: true }).count()) === 1,
+  (await page.getByRole("button", { name: "Unlock all cards + powers", exact: true }).count()) === 1,
   "secret unlock button is visible",
 );
-await page.getByRole("button", { name: "Unlock all cards + 2-mana powers", exact: true }).click();
+await page.getByRole("button", { name: "Unlock all cards + powers", exact: true }).click();
 await page.getByRole("button", { name: "All cards and powers unlocked", exact: true }).waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
 check(
   "developer cheat unlocks the full roster",

@@ -6,7 +6,9 @@
   "description": "Editable source for the Convergence browser card game",
   "scripts": {
     "dev": "vite",
+    "predev": "npm run build:lore",
     "build": "tsc -b && vite build",
+    "build:lore": "node scripts/build-lore-data.mjs",
     "publish:pages": "node scripts/publish-pages.mjs",
     "build:codex": "node scripts/build-codex.mjs",
     "preview": "vite preview",
@@ -24,7 +26,7 @@
     "shoot:card": "node scripts/shoot-card.mjs",
     "shoot:rules": "node scripts/shoot-rules.mjs",
     "validate:data": "npm run validate:docs && node scripts/validate-cards.mjs",
-    "prebuild": "npm run validate:docs",
+    "prebuild": "npm run validate:docs && npm run build:lore",
     "check:ui": "node scripts/check-ui.mjs",
     "check:cardface": "node scripts/check-cardface.mjs",
     "check:coverage": "node scripts/check-effect-coverage.mjs"

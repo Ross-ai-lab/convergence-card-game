@@ -122,6 +122,8 @@ export interface GameSetup {
   foresightFor?: PlayerId | null;
   /** Hero Powers assigned to each seat for this duel. */
   heroPowers?: [HeroPowerId | null, HeroPowerId | null];
+  /** Build the deterministic first-duel teaching position instead of a normal deal. */
+  tutorial?: boolean;
 }
 
 export function createInitialGame(
@@ -172,7 +174,45 @@ export function createInitialGame(
   drawDirect(state, 0, 3, []);
   drawDirect(state, 1, 3, []);
   players[1].coins = 1;
+  if (setup.tutorial) configureTutorialState(state, cards);
   return state;
+}
+
+/**
+ * A small deterministic teaching position for the first guided duel.
+ *
+ * The normal game stays random. The tutorial deliberately puts a basic body,
+ * a targeted Battlecry, and a draw card in the player's hand, with one harmless
+ * enemy body ready to be selected. The position still uses the real engine, so
+ * the controls and card resolution are genuine rather than a fake slideshow.
+ */
+function configureTutorialState(state: GameState, cards: CardDefinition[]): void {
+  const byId = new Map(cards.map((card) => [card.id, card]));
+  const playerHand = ["c169", "c005", "c173"].filter((id) => byId.has(id));
+  const enemyHand = ["c139", "c142", "c173"].filter((id) => byId.has(id));
+  const target = byId.get("c171") ?? byId.get("c139");
+
+  state.players[0].hand = playerHand;
+  state.players[1].hand = enemyHand;
+  state.mulligan = { player: 0, selected: playerHand.map(() => false) };
+  state.phase = "mulligan";
+  state.activePlayer = 0;
+  state.turnNumber = 1;
+  state.players[0].board = [null, null, null, null, null];
+  state.players[1].board = [null, null, null, null, null];
+  state.players[0].coins = 0;
+  state.players[1].coins = 1;
+  state.bottomDeck = [];
+  state.discard = [];
+
+  const removed = new Set([...playerHand, ...enemyHand, target?.id].filter((id): id is string => Boolean(id)));
+  state.deck = state.deck.filter((id) => !removed.has(id));
+
+  if (target) {
+    const minion = createMinion(target, 1, state);
+    minion.sleeping = false;
+    state.players[1].board[2] = minion;
+  }
 }
 
 export function applyAction(

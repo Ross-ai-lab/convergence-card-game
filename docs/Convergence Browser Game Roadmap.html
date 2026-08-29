@@ -190,7 +190,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
     <h1>Convergence Browser Game</h1>
     <p class="kicker">Where the build stands &mdash; what it is, how it really plays, every card in the
       roster, the relic system, and exactly what is left to do.</p>
-    <span class="stamp">Hotseat &amp; practice bot &middot; 177 minions &middot; 21 relics</span>
+    <span class="stamp">Hotseat &amp; practice bot &middot; 178 minions &middot; 27 relics</span>
   </div>
 </header>
 
@@ -207,9 +207,9 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 
   <div class="grid g4">
     <div class="stat"><span>Shell</span><b>~95%</b><small>Board, drag &amp; drop, FX, sound, hero powers, victory screen</small></div>
-    <div class="stat t"><span>Game</span><b>~85%</b><small>Played and enjoyed by a human. What is missing is meta-progression and a fresh balance measurement</small></div>
-    <div class="stat g"><span>Minions wired</span><b>118<span style="font-size:1rem">/177</span></b><small>45 of them ask you to pick a target</small></div>
-    <div class="stat"><span>Blank characters</span><b>0</b><small>Ultron Prime and Gordon Freeman were the last two and both now have effects. The 5 remaining blank cards are Basic reference beaters, plain on purpose</small></div>
+    <div class="stat t"><span>Game</span><b>1.0</b><small>Duel, progression, collection, Hero Powers, Relics, and the practice bot are shipped</small></div>
+    <div class="stat g"><span>Minions wired</span><b>119<span style="font-size:1rem">/178</span></b><small>45 of them ask you to pick a target</small></div>
+    <div class="stat"><span>Blank characters</span><b>0</b><small>Every named character has an effect or keyword. Basic reference cards may stay plain by design</small></div>
   </div>
 
   <div class="card good">
@@ -221,10 +221,9 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
         generator so every roll is reproducible but nothing is predictable.</li>
       <li><b>Real choices.</b> 44 effects stop and ask their controller &mdash; point at a
         minion, pick a card out of the enemy's hand, or choose a value.</li>
-      <li><b>Hero Powers.</b> Both players are offered 2 of 10 powers at the opening and keep one for
-        the duel. It costs 2 mana and fires once a turn, so every duel has a small repeatable plan
-        under it that does not depend on the draw.</li>
-      <li><b>Ascension Relics.</b> A working equipment system: 21 relics shuffled into the shared deck,
+      <li><b>Hero Powers.</b> The player chooses one unlocked power before the duel. The bot receives
+        one random power from all ten. It costs 2 mana and works once per turn.</li>
+      <li><b>Ascension Relics.</b> A working equipment system: 27 relics shuffled into the shared deck,
         drawn into hand, paid for, worn two at a time, and dying with their bearer.</li>
       <li><b>An opponent.</b> A practice bot plays Player Two, including draw picks and targeting prompts,
         so the game can be played alone.</li>
@@ -243,9 +242,11 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
       <li><b>The audio.</b> Convolution reverb on every voice, layered impacts, inharmonic FM metal,
         taiko under big plays, four escalating rarity fanfares, and a generated lofi bed looped
         seamlessly by folding its tail over its head.</li>
-      <li><b>The art.</b> All 177 minion faces plus 21 relic faces, web-optimised from the
+      <li><b>The art.</b> All 178 minion faces plus 27 relic faces, web-optimised from the
         1500&times;2100 print masters, rendered full-bleed on every card.</li>
-      <li><b>Tests.</b> 307 tests over combat, the face rule, Battlecry and Ongoing timing, targeting, randomness, relics, hero powers, pacing and all three bot skills &mdash; plus a self-play harness that fuzzes the engine with tens of thousands of random legal moves. Every one of the 159 card effects in the roster is named by at least one test.</li>
+      <li><b>Tests.</b> Focused tests cover combat, card timing, targeting, randomness, Relics, Hero Powers,
+        pacing, bot behavior, and saved-state invariants. A separate self-play harness fuzzes the engine
+        with random legal moves, while effect coverage checks keep the roster tied to the engine.</li>
     </ul>
   </div>
 
@@ -255,8 +256,8 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
       <li><b>Nothing, for the first time.</b> The last gap was two licensed characters that printed no
         effect and no keyword at all. Both are done: <b>Ultron Prime</b> is a 6/3 Taunt whose Deathrattle
         replaces him with Vision, another 6/3 Taunt, and <b>Gordon Freeman</b> is a 1/3 whose passive
-        gives every friendly minion Charge. The five remaining blank cards are the Basic reference
-        beaters, which are supposed to be plain.</li>
+        gives every friendly minion Charge. The current roster has no unfinished named character effects;
+        Basic reference cards may remain plain.</li>
     </ul>
     <p style="margin-bottom:0">Everything else that was once on this list is either built or parked on
     purpose. Meta-progression exists now; fine balance is deliberately retired until a larger audience
@@ -269,7 +270,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
     product and it plays like one: it has been played by a human, and it was fun. A match is good, and
     now it is also remembered &mdash; the result goes into a record, and every card you meet is marked
     in the gallery.</p>
-    <p style="margin:0">177 cards and 21 relics, none blank, every one carrying real artwork and its own
+    <p style="margin:0">178 minion cards and 27 relics, none blank, every one carrying real artwork and its own
     theme. Three opponent levels. A duel runs about eleven turns each, the same shape as the games it
     sits beside. What is left is maintenance, not a missing piece.</p>
   </div>
@@ -311,13 +312,15 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
   <div class="instr">
     <h3>The core clock</h3>
     <p class="muted" style="margin-top:2px">One clock, and it counts <b>power</b>: a ready minion swings at
-    the enemy core for its full ATK unless a Taunt blocks the way. The old passive ping &mdash; 1 per body
-    per turn, regardless of anything printed on the card &mdash; was removed, and the core went from 25 to 30, and then to <b>76</b> once the machine playtest measured what duels actually cost. An accelerated mana ramp was tried instead and reverted: it skipped mana values 3 and 7, which quietly left every card costed at 3 or 7 with no on-curve turn. Move the dials and see how long a board needs.</p>
+    the enemy core for its full ATK unless a Taunt blocks the way. The current duel starts each core at <b>75</b>
+    health, giving the ten-cost Greats room to reach the board without bending the mana curve. An accelerated
+    mana ramp was tried instead and reverted: it skipped mana values 3 and 7, which quietly left every card
+    costed at 3 or 7 with no on-curve turn. Move the dials and see how long a board needs.</p>
     <div class="dials">
       <div class="dial"><label for="d-mine">Minions you keep alive <output id="o-mine">4</output></label>
         <input type="range" id="d-mine" min="0" max="5" value="4"></div>
-      <div class="dial"><label for="d-hp">Enemy core HP <output id="o-hp">30</output></label>
-        <input type="range" id="d-hp" min="5" max="40" value="30"></div>
+      <div class="dial"><label for="d-hp">Enemy core HP <output id="o-hp">75</output></label>
+        <input type="range" id="d-hp" min="5" max="100" value="75"></div>
       <div class="dial"><label for="d-avgatk">Average ATK of those minions <output id="o-atk">4</output></label>
         <input type="range" id="d-avgatk" min="0" max="12" value="4"></div>
     </div>
@@ -346,7 +349,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
   </div>
 
   <h2 class="sec">Ongoing effects</h2>
-  <p>18 of 177 cards are <b>ongoing</b>: they fire at the start of
+  <p>15 of 178 cards are <b>ongoing</b>: they fire at the start of
   <em>every</em> one of your turns, forever. That convention still shapes the game &mdash; a board
   that survives compounds &mdash; but it is no longer the roster's centre of gravity. Most of the
   repeating text was re-read and re-labelled as <b>Passive</b>, which is continuously true rather than
@@ -369,7 +372,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
   <div class="grid g2">
     <div class="card"><h3>How they work</h3>
       <ul class="tight">
-        <li>All <b>21 relics are shuffled into the shared deck</b>, alongside the 177 minions. Each exists
+        <li>All <b>27 relics are shuffled into the shared deck</b>, alongside the 178 minions. Each exists
           once per game, and either player can draw it.</li>
         <li>A relic is a card you <b>pay for</b>. Costs run from 1 (Elder wand, Allspark Cube and three more) to 5 (The Holy Grail). You
           play it onto a friendly minion with a free relic slot.</li>
@@ -401,21 +404,21 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
   </div>
 
   <h2 class="sec">The relic shelf</h2>
-  <p>All 21 are wired. Click one for its engine hook.</p>
+  <p>All 27 are wired. Click one for its engine hook.</p>
   <div class="rostergrid" id="relicgrid"></div>
 </section>
 
 <!-- ============================================================= ROSTER -->
 <section class="panel" id="p-roster" role="tabpanel">
   <h2 class="sec">The roster</h2>
-  <p class="lede">All 177 minions, live from <code>data/cards.csv</code>. The stripe on each card says
+  <p class="lede">All 178 minions, live from <code>data/cards.csv</code>. The stripe on each card says
   how far its effect actually got. Click any card for its full text and engine status.</p>
 
   <div class="grid g4">
-    <div class="stat g"><span>Wired</span><b>114</b><small>Effect runs automatically</small></div>
-    <div class="stat t"><span>Targeted</span><b>44</b><small>Effect asks you to pick</small></div>
-    <div class="stat"><span>Keyword only</span><b>10</b><small>Taunt / Shield / Chained / Charge</small></div>
-    <div class="stat"><span>Vanilla by design</span><b>7</b><small>Stat-only beaters, no effect</small></div>
+    <div class="stat g"><span>Wired</span><b>119</b><small>Effect runs automatically</small></div>
+    <div class="stat t"><span>Targeted</span><b>45</b><small>Effect asks you to pick</small></div>
+    <div class="stat"><span>Keyword only</span><b>13</b><small>Taunt / Shield / Chained / Charge</small></div>
+    <div class="stat"><span>Vanilla by design</span><b>1</b><small>Stat-only beater, no effect</small></div>
   </div>
 
   <div style="margin-top:16px"><input type="search" id="search" placeholder="Search name, effect text or origin&hellip;" aria-label="Search the roster"></div>
@@ -452,8 +455,8 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
       <li><b>A record.</b> Duels played, won and lost against each opponent level, an overall win rate,
         and your last ten results with the turn count of each. Reached from the title screen, which only
         offers the door once you have finished a duel.</li>
-      <li><b>A collection.</b> Every one of the 198 cards and relics is marked in the gallery by how far
-        it has got with you: <b>dimmed</b> until it has been in your hand, full colour once it has, a
+      <li><b>A collection.</b> Every one of the 205 cards and relics is marked in the gallery by how far
+      it has got with you: <b>dimmed</b> until it has been in your hand, full colour once it has, a
         <b>teal ring</b> once you have played it, and a <b>gold ring</b> once you have won a duel with it
         on the board. One match deals you roughly 25 to 30 cards, so the roster is a long game.</li>
     </ul>
@@ -589,7 +592,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 
   <div class="card"><h3><span class="tag done">not doing</span> &nbsp;The mode that would make the roster matter</h3>
     <p>One shared deck, one card drawn a turn, duels running a median of <b>22 turns</b> &mdash; a match shows
-    roughly 25&ndash;30 of 177 cards, and the player chooses none of them. <b>A draft or deckbuilding mode is
+    roughly 25&ndash;30 of 205 cards, and the player chooses none of them. <b>A draft or deckbuilding mode is
     the single change that would make the roster size mean something</b>, and the engine already carries
     everything it needs: a card pool, a shuffler, and a state that serialises cleanly.</p>
     <p>It also pairs with item 1. A drafted deck is the most natural thing for a run to carry forward,
@@ -700,7 +703,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
   <code>source/data/cards.csv</code> and <code>source/data/relics.csv</code>, so they cannot disagree with the
   game.<br>
   The maintained written guide is the project&rsquo;s <code>README.md</code>; this page is the browsable view of
-  it. Last updated 17 August 2026.</p>
+  it. Last updated 30 August 2026.</p>
 </footer>
 
 <script>
