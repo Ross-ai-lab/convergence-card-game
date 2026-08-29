@@ -169,7 +169,7 @@ c170,Davy Jones,1,1,1,Black,Magic,Evil,,steal_hand_relic,onPlay,"Battlecry: Stea
 c171,Goblins,1,2,1,Black,Nature,Evil,Taunt,none,none,Taunt,"Many, loud, briefly in the way.",Myth,/card-art/raw/c171.webp
 c172,Mr. Poopybutthole,1,1,1,Black,Nature,Neutral,Deathrattle,reborn_75,deathrattle,Deathrattle: Reborn-75% chance,He was there the whole time,Rick and Morty,/card-art/raw/c172.webp
 c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,onPlay,Battlecry: Draw 1 card,The smartest thing here is a mouse.,MHA,/card-art/raw/c173.webp
-c174,Shibukawa,1,1,1,Black,Nature,Neutral,Divine Shield,silence_enemy,onPlay,Divine Shield. Battlecry: Silence one enemy minion of your choice,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
+c174,Shibukawa,1,1,1,Black,Nature,Neutral,Divine Shield;Passive,shibukawa_defense_damage_2x,passive,Divine Shield. Passive: Do 2x damage when defending against an attack,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
 c175,V,1,1,1,Black,Nature,Neutral,Deathrattle,deathrattle_random_evil,deathrattle,"Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
 c176,Meteor,8,4,3,Black,Nature,Neutral,,aoe_all_4,onPlay,Battlecry: Deal 4 damage to all other minions,It was never going to miss.,Basic,/card-art/raw/c176.webp
 c177,Planetary Defense Grid,9,4,8,Black,Tech,Neutral,Taunt;Passive,planetary_defense_grid_taunt_buff,passive,"Taunt. Passive: All other Taunt minions have +2/+2",The shield watches from orbit.,Basic,/card-art/raw/planetary-defense-grid.webp

@@ -14,6 +14,7 @@ import { cards, relics } from "./data/cards";
 import { chooseBotAction, BOT_CHEATS } from "./engine/bot";
 import {
   HERO_POWER_COST,
+  HERO_POWER_UNLOCK_ORDER,
   firstUnlockedHeroPower,
   heroPowerDefinition,
   isHeroPowerUnlocked,
@@ -47,7 +48,17 @@ import type {
   SlotAuraId,
 } from "./engine/types";
 import { clearSave, loadGame, saveGame } from "./storage";
-import { botWins, finishDuel, loadProgress, saveProgress, totals, type Progress } from "./progress";
+import {
+  botWins,
+  clearProgress,
+  emptyProgress,
+  finishDuel,
+  loadProgress,
+  saveProgress,
+  totals,
+  unlockAllProgress,
+  type Progress,
+} from "./progress";
 import {
   UNLOCK_REWARD,
   ensureUnlockOrder,
@@ -423,19 +434,39 @@ export default function App() {
   const [screen, setScreen] = useState<"title" | "playing">("title");
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
   const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "heroPowers">(null);
+  const [developerCheatRevealed, setDeveloperCheatRevealed] = useState(false);
   /**
    * The pack a just-won duel earned, waiting to be torn open. Null whenever
    * there is nothing to open — a loss that earned one card still fills it, and
    * hotseat never does.
    */
   const [pack, setPack] = useState<string[] | null>(null);
-  const [selectedHeroPower, setSelectedHeroPower] = useState<HeroPowerId | null>(() => firstUnlockedHeroPower(botWins(initialProgress)));
-  const botWinCount = useMemo(() => botWins(progress), [progress]);
+  const initialBotWinCount = initialProgress.developerCheat ? HERO_POWER_UNLOCK_ORDER.length : botWins(initialProgress);
+  const [selectedHeroPower, setSelectedHeroPower] = useState<HeroPowerId | null>(() => firstUnlockedHeroPower(initialBotWinCount));
+  const botWinCount = useMemo(
+    () => (progress.developerCheat ? HERO_POWER_UNLOCK_ORDER.length : botWins(progress)),
+    [progress],
+  );
   const totalDuels = useMemo(() => totals(progress).played, [progress]);
   useEffect(() => {
     const first = firstUnlockedHeroPower(botWinCount);
     setSelectedHeroPower((current) => (current && isHeroPowerUnlocked(current, botWinCount) ? current : first));
   }, [botWinCount]);
+
+  useEffect(() => {
+    if (screen !== "title" || overlay !== null) return;
+    let buffer = "";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) return;
+      buffer = `${buffer}${event.key.toLowerCase()}`.slice(-4);
+      if (buffer === "ross") {
+        setDeveloperCheatRevealed(true);
+        sfx.play("button", 0.08);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [screen, overlay]);
   /**
    * What THIS duel has shown the viewer, as a ref rather than state: it changes
    * several times a turn, nothing renders from it until the duel ends, and making
@@ -1247,6 +1278,22 @@ export default function App() {
     heraldSaid.current = new Set();
     sfx.playOpeningCue(0.35);
     setEvents([{ kind: "info", text: "A new shared deck is prepared." }]);
+  }
+
+  function activateDeveloperCheat() {
+    const next = unlockAllProgress(progress);
+    setProgress(next);
+    saveProgress(next);
+    setSelectedHeroPower(firstUnlockedHeroPower(HERO_POWER_UNLOCK_ORDER.length));
+  }
+
+  function resetDeveloperProgress() {
+    clearProgress();
+    const next = ensureUnlockOrder(emptyProgress(), [...cards, ...relics]);
+    setProgress(next);
+    saveProgress(next);
+    setSelectedHeroPower(null);
+    setDeveloperCheatRevealed(false);
   }
 
   /** Starts a fresh duel in the chosen mode, straight from the title screen. */
@@ -2185,6 +2232,10 @@ export default function App() {
           onGallery={() => setOverlay("gallery")}
           onRecord={() => setOverlay("record")}
           onHeroPowers={() => setOverlay("heroPowers")}
+          developerCheatRevealed={developerCheatRevealed}
+          developerCheatActive={progress.developerCheat}
+          onDeveloperUnlock={activateDeveloperCheat}
+          onDeveloperReset={resetDeveloperProgress}
           duelsPlayed={totalDuels}
           unlocked={progress.unlocked}
           rosterSize={progress.unlockOrder.length || cards.length + relics.length}

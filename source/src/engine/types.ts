@@ -309,7 +309,8 @@ export type EffectId =
   | "black_hole_deathrattle"
   | "rudeus_hero_power_free"
   | "prince_lloyd_damage_ward"
-  | "motoko_kusanagi";
+  | "motoko_kusanagi"
+  | "shibukawa_defense_damage_2x";
 
 export interface CardDefinition {
   kind: "minion";

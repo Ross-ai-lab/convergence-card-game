@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { emptyProgress, finishDuel, recordDuel, totals, winPct, RECENT_LIMIT, type DuelResult } from "./progress";
+import {
+  emptyProgress,
+  finishDuel,
+  recordDuel,
+  totals,
+  unlockAllProgress,
+  winPct,
+  RECENT_LIMIT,
+  type DuelResult,
+} from "./progress";
 
 const won: DuelResult = { ladder: "hard", outcome: "won", turns: 21, at: 1_000 };
 const lost: DuelResult = { ladder: "hard", outcome: "lost", turns: 18, at: 2_000 };
@@ -10,6 +19,15 @@ function cardsPlayed(...ids: string[]) {
 }
 
 describe("the duel record", () => {
+  it("unlocks the full roster without inventing a duel win", () => {
+    const before = { ...emptyProgress(), unlockOrder: ["c001", "r001", "c002"], unlocked: 2 };
+    const after = unlockAllProgress(before);
+    expect(after.developerCheat).toBe(true);
+    expect(after.unlocked).toBe(3);
+    expect(after.ladders).toEqual(before.ladders);
+    expect(after.recent).toEqual(before.recent);
+  });
+
   it("counts a result against the opponent it was played against", () => {
     const after = recordDuel(emptyProgress(), won, cardsPlayed("c001"));
     expect(after.ladders.hard).toEqual({ played: 1, won: 1, lost: 0, drawn: 0 });

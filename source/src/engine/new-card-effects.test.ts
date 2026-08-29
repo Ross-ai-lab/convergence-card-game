@@ -299,9 +299,10 @@ describe("2026 card replacements", () => {
         cost: 1,
         atk: 1,
         hp: 1,
-        effectId: "silence_enemy",
-        effectTiming: "onPlay",
-        keywords: ["Divine Shield"],
+        effectId: "shibukawa_defense_damage_2x",
+        effectTiming: "passive",
+        keywords: ["Divine Shield", "Passive"],
+        effect: "Divine Shield. Passive: Do 2x damage when defending against an attack",
       },
       Sans: { cost: 4, atk: 1, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks" },
       "Doom Slayer": { cost: 8, atk: 3, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
@@ -1985,13 +1986,23 @@ describe("2026 card replacements", () => {
     expect(after.deck).toEqual([cardId("John Wick"), cardId("Zoro")]);
   });
 
-  it("Shibukawa has Divine Shield and silences one enemy on its Battlecry", () => {
-    const state = mainState("shibukawa-silence");
-    state.players[1].board[0] = minion("John Wick", 1, { atk: 7, hp: 10, maxHp: 10 });
+  it("Shibukawa has Divine Shield and doubles its defending retaliation damage", () => {
+    const state = mainState("shibukawa-defense");
+    state.players[0].board[0] = minion("Shibukawa", 0, { sleeping: false });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 2, hp: 10, maxHp: 10, sleeping: false });
+    state.activePlayer = 1;
 
-    const after = play(state, 0, "Shibukawa", 0);
-    expect(after.players[0].board[0]).toMatchObject({ divineShield: true, atk: 1 });
-    expect(after.players[1].board[0]?.silenced).toBe(true);
+    const after = applyAction(
+      state,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(after.players[0].board[0]).toMatchObject({
+      divineShield: false,
+      effectId: "shibukawa_defense_damage_2x",
+      atk: 1,
+    });
+    expect(after.players[1].board[0]?.hp).toBe(8);
   });
 
   it("Mugen & Jin gains exactly +1 ATK only with another friendly minion", () => {

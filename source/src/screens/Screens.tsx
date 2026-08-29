@@ -198,12 +198,16 @@ export function TitleScreen({
   duelsPlayed,
   unlocked,
   rosterSize,
+  developerCheatRevealed,
+  developerCheatActive,
   onContinue,
   onStart,
   onSettings,
   onGallery,
   onRecord,
   onHeroPowers,
+  onDeveloperUnlock,
+  onDeveloperReset,
 }: {
   canContinue: boolean;
   playerCount: number | null;
@@ -212,15 +216,20 @@ export function TitleScreen({
   /** Cards the shared deck may currently draw from, and the whole roster. */
   unlocked: number;
   rosterSize: number;
+  developerCheatRevealed: boolean;
+  developerCheatActive: boolean;
   onContinue: () => void;
   onStart: (mode: GameMode) => void;
   onSettings: () => void;
   onGallery: () => void;
   onRecord: () => void;
   onHeroPowers: () => void;
+  onDeveloperUnlock: () => void;
+  onDeveloperReset: () => void;
 }) {
   const [skill, setSkill] = useState<BotSkill>("normal");
   const [hotseatConfirmOpen, setHotseatConfirmOpen] = useState(false);
+  const [developerResetConfirmOpen, setDeveloperResetConfirmOpen] = useState(false);
   const skillIcon = {
     easy: Sparkle,
     normal: Target,
@@ -337,6 +346,33 @@ export function TitleScreen({
           </button>
         </div>
 
+        {developerCheatRevealed ? (
+          <div className="developer-cheat-panel" aria-label="Developer cheat">
+            <span className="developer-cheat-label">Developer access</span>
+            <button
+              type="button"
+              className="developer-cheat-unlock"
+              onClick={() => {
+                sfx.play("button");
+                onDeveloperUnlock();
+              }}
+              disabled={developerCheatActive}
+            >
+              {developerCheatActive ? "All cards and powers unlocked" : "Unlock all cards + 2-mana powers"}
+            </button>
+            <button
+              type="button"
+              className="developer-cheat-reset"
+              onClick={() => {
+                sfx.play("button");
+                setDeveloperResetConfirmOpen(true);
+              }}
+            >
+              Reset progress
+            </button>
+          </div>
+        ) : null}
+
         {playerCount !== null ? (
           <p className="title-player-count"><b>{playerCount.toLocaleString()}</b> played this game</p>
         ) : null}
@@ -371,6 +407,40 @@ export function TitleScreen({
                 }}
               >
                 Start duel
+              </button>
+            </div>
+          </div>
+        </Overlay>
+      ) : null}
+
+      {developerResetConfirmOpen ? (
+        <Overlay title="Reset progress?" onClose={() => setDeveloperResetConfirmOpen(false)}>
+          <div className="hotseat-confirm developer-reset-confirm">
+            <p className="hotseat-confirm-question">Reset card progress?</p>
+            <p className="hotseat-confirm-note">
+              This clears card unlocks, collection marks, and the duel record. Your current duel stays untouched.
+            </p>
+            <div className="hotseat-confirm-actions">
+              <button
+                type="button"
+                className="hotseat-confirm-cancel"
+                onClick={() => {
+                  sfx.play("button");
+                  setDeveloperResetConfirmOpen(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="hotseat-confirm-start"
+                onClick={() => {
+                  sfx.play("button");
+                  setDeveloperResetConfirmOpen(false);
+                  onDeveloperReset();
+                }}
+              >
+                Reset progression
               </button>
             </div>
           </div>

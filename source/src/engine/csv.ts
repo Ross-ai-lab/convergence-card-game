@@ -300,6 +300,7 @@ const effectIds = new Set<EffectId>([
   "rudeus_hero_power_free",
   "prince_lloyd_damage_ward",
   "motoko_kusanagi",
+  "shibukawa_defense_damage_2x",
 ]);
 
 const relicIds = new Set<RelicId>([

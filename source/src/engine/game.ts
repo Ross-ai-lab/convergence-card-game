@@ -1278,7 +1278,11 @@ function attackMinion(
     // Retaliation is combat damage, but it is not an attack declared by the
     // relic bearer. Defensive attack-immunity relics must not absorb this
     // return blow when their bearer started the fight.
-    dealMinionDamage(state, playerId, attackerSlot, defender.atk, defender, events, false, new Set(), true, false);
+    const retaliation =
+      hasEffect(defender, "shibukawa_defense_damage_2x") && !defender.silenced
+        ? defender.atk * 2
+        : defender.atk;
+    dealMinionDamage(state, playerId, attackerSlot, retaliation, defender, events, false, new Set(), true, false);
   } else {
     events.push(effectEvent(`${attacker.name} strikes from outside space — no retaliation.`, attacker));
   }

@@ -76,6 +76,52 @@ check(
   "the equipped power name is not printed on the title menu",
 );
 
+check(
+  "developer cheat stays hidden until its code is typed",
+  (await page.locator(".developer-cheat-panel").count()) === 0,
+  "no developer controls before the Ross code",
+);
+await page.keyboard.type("Ross");
+await page.locator(".developer-cheat-panel").waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
+check(
+  "typing Ross reveals the developer cheat",
+  (await page.getByRole("button", { name: "Unlock all cards + 2-mana powers", exact: true }).count()) === 1,
+  "secret unlock button is visible",
+);
+await page.getByRole("button", { name: "Unlock all cards + 2-mana powers", exact: true }).click();
+await page.getByRole("button", { name: "All cards and powers unlocked", exact: true }).waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
+check(
+  "developer cheat unlocks the full roster",
+  (await page.getByRole("button", { name: "All cards and powers unlocked", exact: true }).count()) === 1 &&
+    (await page.locator(".unlock-tally").count()) === 0,
+  "all cards are unlocked without an inflated tally",
+);
+await page.getByRole("button", { name: "Hero Powers", exact: true }).click();
+const developerPowerDialog = page.locator('[role="dialog"][aria-label="Hero Powers"]');
+check(
+  "developer cheat unlocks every 2-mana Hero Power",
+  (await developerPowerDialog.locator(".hero-power-menu-card").count()) === 10 &&
+    (await developerPowerDialog.locator(".hero-power-menu-card.locked").count()) === 0 &&
+    (await developerPowerDialog.getByText("Costs 2 mana · once per turn", { exact: true }).count()) === 10,
+  "10 powers unlocked and each still costs 2 mana",
+);
+await developerPowerDialog.locator(".screen-x").click();
+await page.getByRole("button", { name: "Reset progress", exact: true }).click();
+const resetProgressDialog = page.locator('[role="dialog"][aria-label="Reset progress?"]');
+check(
+  "developer cheat offers a reset confirmation",
+  await resetProgressDialog.count() === 1 && await resetProgressDialog.isVisible(),
+  "reset is confirmed before it runs",
+);
+await resetProgressDialog.getByRole("button", { name: "Reset progression", exact: true }).click();
+await page.waitForTimeout(200);
+check(
+  "developer reset restores normal progression",
+  (await page.locator(".developer-cheat-panel").count()) === 0 &&
+    (await page.locator(".unlock-tally").textContent()) === "50 / 205",
+  "developer controls hide and the starting pool returns",
+);
+
 // These four buttons live on the rift artwork, beneath the transparent title
 // layer. A full-screen decorative wrapper once caught their pointer events,
 // leaving the right-side buttons clickable while every duel control was dead.

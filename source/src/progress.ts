@@ -52,6 +52,8 @@ export interface DuelResult {
 
 export interface Progress {
   version: number;
+  /** Whether the title-screen developer cheat has unlocked the full roster. */
+  developerCheat: boolean;
   /** Result counts per opponent level. */
   ladders: Record<LadderKey, LadderRecord>;
   /** Most recent duels, newest first. */
@@ -102,6 +104,7 @@ function emptyLadders(): Record<LadderKey, LadderRecord> {
 export function emptyProgress(): Progress {
   return {
     version: PROGRESS_VERSION,
+    developerCheat: false,
     ladders: emptyLadders(),
     recent: [],
     seen: [],
@@ -145,6 +148,7 @@ export function loadProgress(): Progress {
       Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
     return {
       version: PROGRESS_VERSION,
+      developerCheat: parsed.developerCheat === true,
       ladders,
       recent: Array.isArray(parsed.recent)
         ? parsed.recent
@@ -172,6 +176,15 @@ export function saveProgress(progress: Progress): void {
   }
 }
 
+/** Unlock the full card roster without fabricating any duel results. */
+export function unlockAllProgress(progress: Progress): Progress {
+  return {
+    ...progress,
+    developerCheat: true,
+    unlocked: progress.unlockOrder.length,
+  };
+}
+
 /** Union of two id lists, kept sorted so the stored file is stable to diff. */
 function merge(existing: readonly string[], added: readonly string[]): string[] {
   if (added.length === 0) return [...existing];
@@ -195,6 +208,7 @@ export function recordDuel(
   const unlocked = Math.min(progress.unlockOrder.length || progress.unlocked, progress.unlocked + earned);
   return {
     version: PROGRESS_VERSION,
+    developerCheat: progress.developerCheat,
     unlockOrder: progress.unlockOrder,
     unlocked,
     ladders: {
