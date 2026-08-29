@@ -299,6 +299,7 @@ const effectIds = new Set<EffectId>([
   "black_hole_deathrattle",
   "rudeus_hero_power_free",
   "prince_lloyd_damage_ward",
+  "motoko_kusanagi",
 ]);
 
 const relicIds = new Set<RelicId>([
@@ -333,6 +334,13 @@ const relicIds = new Set<RelicId>([
   "evade_50",
   "double_attack",
   "no_retaliation",
+  "pandora_box",
+  "monkeys_paw",
+  "ark_divine_shield",
+  "necronomicon",
+  "dragon_balls",
+  "mjolnir",
+  "excalibur",
 ]);
 
 export function parseCsv(text: string): Record<string, string>[] {

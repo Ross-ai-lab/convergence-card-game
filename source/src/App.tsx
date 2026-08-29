@@ -2740,7 +2740,7 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
  * switched on. Owner's ruling: the gallery is your collection first and the
  * locked wall second, so mixing 50 readable cards into 146 sealed ones is a
  * list that answers neither question. There is therefore no view showing all
- * 198 at once, which is the deliberate cost of that.
+ * all at once, which is the deliberate cost of that.
  */
 type UnlockFilter = "unlocked" | "locked";
 
@@ -2757,7 +2757,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
   /**
    * How many cells are mounted right now.
    *
-   * Building all 198 card faces in one go is about 850 ms of DOM work, which is
+   * Building the full roster of card faces in one go is about 850 ms of DOM work, which is
    * a visible hitch on a screen that should just appear. The first batch is
    * roughly two screens deep and lands immediately; the rest arrive on the next
    * idle callback, by which time the reader is still looking at row one. Nothing
@@ -2778,7 +2778,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
 
   const needle = query.trim().toLowerCase();
   // Built ONCE and then only filtered. Rebuilding the faces on every keystroke
-  // handed React 198 brand-new objects, so every cell re-rendered for every
+  // handed React a brand-new object for every card, so every cell re-rendered for every
   // letter typed even though the cards had not changed.
   const allEntries = useMemo(
     () => [
@@ -2885,14 +2885,14 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
    * Warms every card image the moment the screen has finished appearing.
    *
    * `lazyArt` is right for the FIRST paint and wrong for the twentieth: asking
-   * for all 198 files at once is the single biggest cost of opening the gallery,
+   * for the whole roster at once is the single biggest cost of opening the gallery,
    * which is why the cells load lazily — but the browser's lazy heuristics only
    * look a short way ahead, and a fast flick outruns them, which is what leaves
    * a screenful of cards showing a frame and no picture.
    *
    * Warming them AFTER the open costs the opening nothing. The whole set is
-   * 9.9 MB across 198 files, fetched a few at a time on idle callbacks so it
-   * never competes with a scroll, and decoded off the main thread. By the time
+   * fetched a few at a time on idle callbacks so it never competes with a
+   * scroll, and decoded off the main thread. By the time
    * anyone has scrolled anywhere the file is already in the cache and the lazy
    * <img> resolves instantly.
    */
@@ -2930,7 +2930,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
    * shine for the duration.
    *
    * Deliberately a classList write and not a state update. A scroll fires far
-   * more often than a frame, and re-rendering a grid of 198 memoised cells to
+   * more often than a frame, and re-rendering the full memoised grid to
    * say "we are moving" would cost more than the animations it is trying to
    * quieten.
    */
@@ -3053,7 +3053,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
  * The gallery mounts every card in the game at once, and each card face is a
  * size container with its own gradients, shadows and six text measurements. Two
  * things keep that affordable and they belong together: this memo stops a search
- * keystroke re-rendering all 198, and `content-visibility: auto` on
+ * keystroke re-rendering the full roster, and `content-visibility: auto` on
  * `.gallery-cell` stops the browser laying out and painting the ones off screen.
  */
 const GalleryCell = memo(function GalleryCell({
@@ -3235,7 +3235,7 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
         </table>
         <p className="help-state">
           <strong>
-            {progress.unlocked} of {progress.unlockOrder.length || 198}
+            {progress.unlocked} of {progress.unlockOrder.length || cards.length + relics.length}
           </strong>{" "}
           unlocked{left ? `, ${left} still to find` : " — the whole roster is yours"}.
         </p>
@@ -3249,7 +3249,7 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
  *
  * The escalation only reads as an escalation if the bottom of it is still. Give
  * every card a shine and the tiers stop meaning anything; 58 Rare cards then
- * also stop costing anything, which is what keeps a gallery of 198 affordable.
+ * also stop costing anything, which is what keeps a full gallery affordable.
  */
 const SHINE_RARITIES = new Set(["purple", "yellow", "red", "relic"]);
 
@@ -3284,7 +3284,7 @@ const COLLECTION_TITLE: Record<CollectionMark, string> = {
  * The seal already covers the middle of the face, so a locked card was building
  * a full 23-element card face — rules panel, flavour, origin, both rails, the
  * stat gems, the shine — and then hiding almost all of it behind a padlock. In
- * the opening gallery 148 of the 198 cards are locked, and laying all of them
+ * the opening gallery's locked cards are not all laid out, and laying all of them
  * out measured 219 ms against 4.5 ms when they are skipped: about 1.4 ms each,
  * which is three rows per frame at a normal scroll speed.
  *
@@ -3559,7 +3559,7 @@ function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boole
   //
   // The GALLERY is the one exception, and it is a different situation, not a
   // relaxation of the rule above. Its cells mount once and stay put, so there is
-  // no churn to lose a load in — while requesting all 198 images at once is the
+  // no churn to lose a load in — while requesting the full roster at once is the
   // single biggest cost of opening the screen.
   if (!card.art) return <div className="cf-art empty-art" aria-hidden="true" />;
   return (
@@ -4295,7 +4295,7 @@ function CardPack({
               ))}
             </div>
             <p className={allDealt ? "pack-total is-in" : "pack-total"}>
-              {total} of 198 cards unlocked
+              {total} of {cards.length + relics.length} cards unlocked
             </p>
             <button type="button" className="primary pack-collect" onClick={onDone} disabled={!allDealt}>
               Collect

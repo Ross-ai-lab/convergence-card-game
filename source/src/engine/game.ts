@@ -25,6 +25,7 @@ import type {
   RelicInstance,
   ResolvedChoiceWithProgress as ResolvedChoice,
   TargetOption,
+  TemporaryMinionControl,
   TemporaryMinionTransform,
 } from "./types";
 
@@ -340,7 +341,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
         if (!hasHeroPower && !opponentHasKratosLockdown) {
           opponentHasKratosLockdown = opponentHasKratosLock(state, player.id);
         }
-        if (!opponentHasKratosLockdown && slot && hasFreeRelicSlot(slot)) {
+        if (!opponentHasKratosLockdown && slot && hasFreeRelicSlot(slot) && canEquipRelicToBearer(card, slot)) {
           actions.push({ type: "play_relic", player: player.id, handIndex, slotIndex });
         }
       }
@@ -757,7 +758,7 @@ function playRelic(
   const cardId = player.hand[handIndex];
   const relic = library[cardId];
   const bearer = player.board[slotIndex];
-  if (!isRelicCard(relic) || !bearer || !hasFreeRelicSlot(bearer)) return;
+  if (!isRelicCard(relic) || !bearer || !hasFreeRelicSlot(bearer) || !canEquipRelicToBearer(relic, bearer)) return;
   player.hand.splice(handIndex, 1);
   if (!state.cheatMode) player.mana -= effectiveCardCost(state, playerId, relic);
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
@@ -833,6 +834,7 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     relic2: null,
     suppressArrivalTheme: false,
     temporaryTransform: null,
+    temporaryControl: null,
     attackedBy: [],
     attackLocked: false,
     attackLockedUntilTurn: null,
@@ -887,6 +889,7 @@ function applyOnPlayEffects(
 function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, events: GameEvent[]): void {
   state.activePlayer = playerId;
   state.turnNumber += 1;
+  resolveDueMonkeyPaws(state, events);
   restoreExpiredTransforms(state, playerId, events);
   const player = state.players[playerId];
   player.turnsStarted += 1;
@@ -1099,6 +1102,38 @@ function resolveUpkeep(state: GameState, playerId: PlayerId, library: CardLibrar
         events.push(effectEvent(`${minion.name} emerges from the Cocoon (+3/+3).`, minion));
       }
     }
+  }
+}
+
+/** The Monkey's Paw claims its bearer at the start of the next turn. */
+function resolveDueMonkeyPaws(state: GameState, events: GameEvent[]): void {
+  const due = state.players.flatMap((player) =>
+    player.board
+      .map((minion, slot) => ({ owner: player.id, minion, slot }))
+      .filter(({ minion }) =>
+        minion &&
+        attachedRelics(minion).some(
+          (relic) => relic.relicId === "monkeys_paw" && (relic.destroyOnTurn ?? Infinity) <= state.turnNumber,
+        ),
+      ),
+  );
+
+  for (const entry of due) {
+    const minion = state.players[entry.owner].board[entry.slot];
+    if (!minion) continue;
+    const pawIndex = firstRelicIndex(minion, (relic) => relic.relicId === "monkeys_paw");
+    const paw = pawIndex >= 0 ? relicAt(minion, pawIndex) : null;
+    if (!paw || (paw.destroyOnTurn ?? Infinity) > state.turnNumber) continue;
+    unequipRelic(minion, pawIndex);
+    state.discard.push(paw.id);
+    events.push({
+      kind: "effect",
+      text: `${minion.name} dies from The Monkey's Paw.`,
+      player: entry.owner,
+      cardId: paw.id,
+      instanceId: minion.instanceId,
+    });
+    destroyAtSlot(state, entry.owner, entry.slot, events, `${minion.name} falls to The Monkey's Paw`, null);
   }
 }
 
@@ -1544,7 +1579,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   steal_and_equip_relic: {
     side: "enemy",
     prompt: "Take an enemy minion's Ascension Relic",
-    filter: (m) => hasAnyRelic(m),
+    filter: (m, source) => hasAnyRelic(m) && attachedRelics(m).some((relic) => canEquipRelicToBearer(relic, source)),
     enabled: (_state, source) => hasFreeRelicSlot(source),
   },
   steal_hand_relic: {
@@ -1557,6 +1592,11 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   mark_for_death: { side: "enemy", prompt: "Mark an enemy minion for death", filter: (m) => m.markedBy === null },
   mind_control_2: { side: "enemy", prompt: "Seize an enemy minion with 2 or less HP", filter: (m) => m.hp <= 2 },
   mind_control_enemy: { side: "enemy", prompt: "Gain control of an enemy minion" },
+  motoko_kusanagi: {
+    side: "enemy",
+    prompt: "Take control of an enemy Tech minion with 4 HP or less",
+    filter: (m) => m.camp === "Tech" && m.hp <= 4 && !m.temporaryControl,
+  },
   copy_and_trigger: {
     side: "enemy",
     prompt: "Copy and fire an enemy minion's effect",
@@ -1917,8 +1957,9 @@ function summonRandomMinionFromDeck(
   library: CardLibrary,
   events: GameEvent[],
   preferredSlot?: number,
+  summoner: PlayerId = source.owner,
 ): void {
-  const player = state.players[source.owner];
+  const player = state.players[summoner];
   const slot =
     preferredSlot !== undefined && preferredSlot >= 0 && preferredSlot < player.board.length && !player.board[preferredSlot]
       ? preferredSlot
@@ -1930,9 +1971,54 @@ function summonRandomMinionFromDeck(
   if (!cardId || !removeCardFromDrawPile(state, cardId)) return;
   const card = library[cardId];
   if (!isMinionCard(card)) return;
-  const summoned = createMinion(card, source.owner, state);
+  const summoned = createMinion(card, summoner, state);
   player.board[slot] = summoned;
-  events.push(effectEvent(`${source.name} summons ${summoned.name} from the deck.`, source));
+  events.push({
+    kind: "effect",
+    text: `${source.name} summons ${summoned.name} from the deck.`,
+    player: summoner,
+    cardId,
+    instanceId: summoned.instanceId,
+  });
+}
+
+function summonShenron(
+  state: GameState,
+  dead: MinionInstance,
+  deadSlot: number,
+  events: GameEvent[],
+): void {
+  const owner = dead.owner;
+  const player = state.players[owner];
+  const slot = !player.board[deadSlot] ? deadSlot : player.board.findIndex((minion) => !minion);
+  if (slot < 0) return;
+  const shenron: CardDefinition = {
+    kind: "minion",
+    id: "token:shenron",
+    name: "Shenron",
+    cost: 7,
+    atk: 7,
+    hp: 7,
+    rarity: "Black",
+    camp: "Magic",
+    alignment: "Neutral",
+    keywords: ["Taunt"],
+    effectId: "none",
+    effectTiming: "none",
+    effect: "Taunt.",
+    flavor: "The wish dragon answers.",
+    origin: dead.origin,
+    art: resolvePublicAssetUrl("/card-art/raw/token-shenron.webp"),
+  };
+  const summoned = createMinion(shenron, owner, state);
+  player.board[slot] = summoned;
+  events.push({
+    kind: "effect",
+    text: `${dead.name}'s Dragon Balls summon Shenron.`,
+    player: owner,
+    cardId: summoned.cardId,
+    instanceId: summoned.instanceId,
+  });
 }
 
 function drawRandomKeywordMinion(
@@ -3247,7 +3333,7 @@ function runEffect(
     if (picked && hasAnyRelic(picked) && hasFreeRelicSlot(source)) {
       const relicIndex = firstRelicIndex(picked);
       const stolen = relicAt(picked, relicIndex);
-      if (!stolen) return false;
+      if (!stolen || !canEquipRelicToBearer(stolen, source)) return false;
       unequipRelic(picked, relicIndex);
       equipRelic(state, source, stolen, events);
       events.push(effectEvent(`${label} takes ${stolen.name} from ${picked.name} and equips it.`, source));
@@ -3268,6 +3354,8 @@ function runEffect(
     }
   } else if (source.effectId === "mind_control_2" || source.effectId === "mind_control_enemy") {
     if (picked) seizeMinion(state, source, picked, events);
+  } else if (source.effectId === "motoko_kusanagi") {
+    if (picked) seizeMinionTemporarily(state, source, picked, events);
   } else if (source.effectId === "copy_and_trigger") {
     if (picked && picked.effectId !== "none") {
       const borrowed = printedEffectId(picked);
@@ -3769,9 +3857,15 @@ function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, libr
   const available = relicsInDeck(state, library).map((relic) => relic.id);
   let granted = 0;
   for (const bearer of bearers) {
-    if (available.length === 0) break;
-    const index = rollInt(state, available.length);
-    const [cardId] = available.splice(index, 1);
+    const eligible = available.filter((cardId) => {
+      const relic = library[cardId];
+      return isRelicCard(relic) && canEquipRelicToBearer(relic, bearer);
+    });
+    if (eligible.length === 0) break;
+    const cardId = eligible[rollInt(state, eligible.length)];
+    const availableIndex = available.indexOf(cardId);
+    if (availableIndex < 0) continue;
+    available.splice(availableIndex, 1);
     if (!cardId || !removeCardFromDrawPile(state, cardId)) continue;
     const relic = library[cardId];
     if (!isRelicCard(relic)) continue;
@@ -3782,7 +3876,7 @@ function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, libr
 }
 
 function equipRandomRelic(state: GameState, source: MinionInstance, library: CardLibrary, events: GameEvent[]): void {
-  const available = relicsInDeck(state, library);
+  const available = relicsInDeck(state, library).filter((relic) => canEquipRelicToBearer(relic, source));
   if (available.length === 0) {
     events.push(effectEvent(`${source.name} finds no Ascension Relic.`, source));
     return;
@@ -3939,17 +4033,19 @@ function resolveEndOfTurn(state: GameState, playerId: PlayerId, _library: CardLi
   const source = state.players[playerId].board.find(
     (minion) => minion && hasEffect(minion, "ragnaros_end_turn") && !minion.silenced,
   );
-  if (!source) return;
-  const target = randomEnemyMinion(state, source);
-  if (target) {
-    const slot = slotOf(state, target);
-    if (slot >= 0) dealMinionDamage(state, target.owner, slot, 3, source, events, true);
-  } else {
-    const enemyId = opponent(playerId);
-    if (dealCoreDamage(state, enemyId, 3, events)) {
-      events.push(effectEvent(`${source.name} burns the enemy core for 3 damage.`, source));
+  if (source) {
+    const target = randomEnemyMinion(state, source);
+    if (target) {
+      const slot = slotOf(state, target);
+      if (slot >= 0) dealMinionDamage(state, target.owner, slot, 3, source, events, true);
+    } else {
+      const enemyId = opponent(playerId);
+      if (dealCoreDamage(state, enemyId, 3, events)) {
+        events.push(effectEvent(`${source.name} burns the enemy core for 3 damage.`, source));
+      }
     }
   }
+  resolveTemporaryControls(state, playerId, events);
 }
 
 function refreshPassiveAuras(state: GameState): void {
@@ -4270,7 +4366,13 @@ function grantRelic(state: GameState, playerId: PlayerId, source: MinionInstance
   events.push({ kind: "effect", text: `${source.name} adds an Ascension Relic to hand.`, player: playerId, instanceId: source.instanceId, cardId });
 }
 
+function canEquipRelicToBearer(relic: Pick<RelicDefinition | RelicInstance, "relicId">, bearer: MinionInstance): boolean {
+  if (relic.relicId === "mjolnir" || relic.relicId === "excalibur") return bearer.alignment === "Good";
+  return true;
+}
+
 function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstance, events: GameEvent[]): void {
+  if (!canEquipRelicToBearer(relic, bearer)) return;
   const slot = bearer.relic === null ? 0 : bearer.relic2 === null || bearer.relic2 === undefined ? 1 : -1;
   if (slot < 0) return;
   setRelicAt(bearer, slot, relic);
@@ -4288,7 +4390,12 @@ function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstan
     bearer.hp *= 2;
   } else if (relic.relicId === "double_bearer_attack") {
     bearer.atk *= 2;
-  } else if (relic.relicId === "bearer_divine_shield") {
+  } else if (relic.relicId === "pandora_box") {
+    buffMinion(bearer, 4, 4);
+  } else if (relic.relicId === "monkeys_paw") {
+    buffMinion(bearer, 5, 5);
+    relic.destroyOnTurn = state.turnNumber + 1;
+  } else if (relic.relicId === "ark_divine_shield" || relic.relicId === "bearer_divine_shield") {
     bearer.divineShield = true;
   } else if (relic.relicId === "heal_full_now") {
     bearer.hp = bearer.maxHp;
@@ -4298,6 +4405,9 @@ function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstan
   } else if (relic.relicId === "cocoon") {
     bearer.chained = Math.max(bearer.chained, 1);
     relic.readyOnTurn = state.turnNumber + 2;
+  } else if (relic.relicId === "excalibur") {
+    if (!hasKeyword(bearer, "Charge")) bearer.keywords.push("Charge");
+    bearer.sleeping = false;
   }
 }
 
@@ -4343,6 +4453,92 @@ function seizeMinion(state: GameState, source: MinionInstance, victim: MinionIns
   victim.attacksUsed = 0;
   taker.board[freeSlot] = victim;
   events.push(effectEvent(`${source.name} seizes ${victim.name}.`, source));
+}
+
+/** Motoko's temporary seizure: the victim returns after her controller's next turn. */
+function seizeMinionTemporarily(
+  state: GameState,
+  source: MinionInstance,
+  victim: MinionInstance,
+  events: GameEvent[],
+): void {
+  if (blockedByDominionAuthority(state, source, victim.owner)) {
+    events.push(effectEvent(`${victim.name} is protected by Dominion Authority.`, victim));
+    return;
+  }
+  const fromSlot = slotOf(state, victim);
+  const taker = state.players[source.owner];
+  const freeSlot = taker.board.findIndex((slot) => !slot);
+  if (fromSlot < 0 || freeSlot < 0) {
+    events.push(effectEvent(`${source.name} has no room to seize ${victim.name}.`, source));
+    return;
+  }
+  state.players[victim.owner].board[fromSlot] = null;
+  const originalOwner = victim.owner;
+  victim.owner = source.owner;
+  victim.sleeping = !hasKeyword(victim, "Charge");
+  victim.attacksUsed = 0;
+  victim.temporaryControl = {
+    originalOwner,
+    originalSlot: fromSlot,
+    expiresAtTurn: state.turnNumber + 2,
+    expiresAfterPlayer: source.owner,
+  } satisfies TemporaryMinionControl;
+  taker.board[freeSlot] = victim;
+  events.push(effectEvent(`${source.name} takes control of ${victim.name} until the end of your next turn.`, source));
+}
+
+/** Return every still-living Motoko victim when the promised control window ends. */
+function resolveTemporaryControls(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
+  const due = state.players.flatMap((player) =>
+    player.board
+      .map((minion, slot) => ({ owner: player.id, minion, slot }))
+      .filter(({ minion }) =>
+        minion &&
+        minion.temporaryControl &&
+        minion.temporaryControl.expiresAfterPlayer === playerId &&
+        minion.temporaryControl.expiresAtTurn <= state.turnNumber,
+      ),
+  );
+
+  for (const entry of due) {
+    const victim = entry.minion;
+    if (!victim?.temporaryControl) continue;
+    const control = victim.temporaryControl;
+    const currentSlot = state.players[entry.owner].board.findIndex(
+      (minion) => minion?.instanceId === victim.instanceId,
+    );
+    if (currentSlot < 0) continue;
+
+    state.players[entry.owner].board[currentSlot] = null;
+    victim.owner = control.originalOwner;
+    victim.temporaryControl = null;
+    victim.sleeping = !hasKeyword(victim, "Charge");
+    victim.attacksUsed = 0;
+    const originalBoard = state.players[control.originalOwner].board;
+    const preferred = Math.max(0, Math.min(boardSize - 1, control.originalSlot));
+    const returnSlot = !originalBoard[preferred] ? preferred : originalBoard.findIndex((minion) => !minion);
+    if (returnSlot >= 0) {
+      originalBoard[returnSlot] = victim;
+      events.push({
+        kind: "effect",
+        text: `${victim.name} returns to its owner after Motoko's control ends.`,
+        player: control.originalOwner,
+        instanceId: victim.instanceId,
+        motion: "return",
+      });
+    } else {
+      discardAttachedRelics(state, victim);
+      putCardInHand(state, control.originalOwner, victim.cardId, events, victim.instanceId);
+      events.push({
+        kind: "effect",
+        text: `${victim.name} returns to its owner's hand after Motoko's control ends.`,
+        player: control.originalOwner,
+        instanceId: victim.instanceId,
+        motion: "return",
+      });
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -4738,6 +4934,10 @@ function canDamage(
   combatDamage: boolean,
   attackTarget: boolean,
 ): boolean {
+  if (combatDamage && !attackTarget && hasRelic(target, "mjolnir")) {
+    events.push(effectEvent(`${target.name} is Invulnerable while attacking with Mjolnir.`, target));
+    return false;
+  }
   if (!effectDamage && target.chained > 0) {
     events.push(effectEvent(`${target.name} is protected by its chains.`, target));
     return false;
@@ -5377,8 +5577,9 @@ function destroyAtSlot(
   }
   // Relics die with their bearer. They are cards again only in the discard pile;
   // nothing puts them into a satchel or onto another minion automatically.
+  const deathRelics = attachedRelics(minion);
   discardAttachedRelics(state, minion);
-  resolveDeathrattle(state, minion, killer, slotIndex, events);
+  resolveDeathrattle(state, minion, killer, slotIndex, events, deathRelics);
   releaseStolenPassive(state, minion, events);
   reactToDeath(state, minion, playerId, events, killer);
 }
@@ -5406,6 +5607,29 @@ function rescueWithOogway(state: GameState, playerId: PlayerId, slotIndex: numbe
 }
 
 function resolveDeathrattle(
+  state: GameState,
+  dead: MinionInstance,
+  killer: MinionInstance | null,
+  deadSlot: number,
+  events: GameEvent[],
+  deadRelics: RelicInstance[] = [],
+): void {
+  const library = libraryByState.get(state);
+  for (const relic of deadRelics) {
+    if (relic.relicId === "pandora_box" && library) {
+      summonRandomMinionFromDeck(state, dead, library, events, undefined, opponent(dead.owner));
+    } else if (relic.relicId === "dragon_balls") {
+      summonShenron(state, dead, deadSlot, events);
+    }
+  }
+
+  const triggerCount = deadRelics.some((relic) => relic.relicId === "necronomicon") ? 2 : 1;
+  for (let trigger = 0; trigger < triggerCount; trigger += 1) {
+    resolveCardDeathrattleOnce(state, dead, killer, deadSlot, events);
+  }
+}
+
+function resolveCardDeathrattleOnce(
   state: GameState,
   dead: MinionInstance,
   killer: MinionInstance | null,

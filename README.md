@@ -49,9 +49,9 @@ Convergence is a non-commercial browser card duel where 167 named characters and
 
 **Owner play location:** Play only through the public [GitHub Pages game URL](https://ross-ai-lab.github.io/convergence-card-game/play/). The local `play/` folder is a generated deployment artifact for building and publishing; it is not the owner's play location.
 
-No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **167 character cards, 10 Basic reference cards, and 21 Ascension Relics**, 198 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
+No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **168 character cards, 10 Basic reference cards, and 27 Ascension Relics**, 205 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
-The live game and `source/data/cards.csv` now contain 167 named character cards plus 10 Basic reference cards, 177 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
+The live game and `source/data/cards.csv` now contain 168 named character cards plus 10 Basic reference cards, 178 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
 
 ## What the game still needs
 
@@ -110,12 +110,12 @@ in step by hand.
 hotseat duel as won, so paying it would make conceding to yourself the fastest route to the roster.
 
 **Why the reason for the feature is recurrence, not collecting.** A duel is a median 22 player-turns,
-so it consumes roughly 30 of 198 cards and about 15 of them reach one player's hand. At the full
+so it consumes roughly 30 of 205 cards and about 15 of them reach one player's hand. At the full
 roster a given card reaches your hand about once every thirteen duels, which is far too rare to form
 an opinion about it. At 50 it is about once every three.
 
 **The count is an ORDER plus an INDEX, never a growing set of ids.** `progress.unlockOrder` holds all
-198 ids and `progress.unlocked` says how far down it the deck reaches. An order is fixed once, so
+205 ids and `progress.unlocked` says how far down it the deck reaches. An order is fixed once, so
 every prefix of it can be balanced by construction; a set built batch by batch can only be balanced
 batch by batch, and batches that are each fair still stack into a lopsided whole. An index also cannot
 re-lock a card, cannot lose one, and cannot disagree with itself.
@@ -202,8 +202,8 @@ a shadow, so the whole thing still works as one flat colour over any artwork.
 
 **The Collection filter has NO "any" option and starts on Unlocked.** It is the only filter that
 behaves that way. The gallery is your collection first and the locked wall second, so mixing 50
-readable cards into 148 sealed ones is a list that answers neither question. The deliberate cost is
-that no view shows all 198 at once.
+readable cards into the locked remainder is a list that answers neither question. The deliberate
+cost is that no view shows all 205 at once.
 
 **The "?" opens a POPUP, and it prints the reward table and nothing else.** A panel pushed in above
 the grid shoved 200 cards down the page to make room, so opening it lost the reader's place in the
@@ -215,7 +215,7 @@ unread: the table already answers the only question anyone opens it to ask.
 bursts and deals the cards out one at a time. It deals in `revealOrder`, best LAST, so the prize of the
 batch lands on the moment the player is watching rather than in the middle of the row. Rarity decides
 and cost breaks the tie, and **relics outrank every character tier, Mythic included** — owner's call,
-with scarcity behind it (21 relics against 19 Mythics) and the fact that a relic changes what another
+with scarcity behind it (27 relics against 19 Mythics) and the fact that a relic changes what another
 card does rather than adding a body. The ordering is cosmetic and runs after the contents are settled,
 so it cannot bias the reward; a test pins that. Pack cards are **206px minimum and never
 lazy-loaded** — see the 200px floor under [Interface and card faces](#interface-and-card-faces), and
@@ -224,12 +224,12 @@ Rows are balanced by an explicit width rather than left to wrap, because six car
 strand one under a row of five.
 
 **The tally rides inside the Cards button** on the title screen, stacked under its label, and
-disappears once the roster is complete rather than reading 198 of 198 forever. It lived outside the
+disappears once the roster is complete rather than reading 205 of 205 forever. It lived outside the
 button first and had to be nearly invisible there, because between two gold pills it read as a third
 one; inside a button it cannot be mistaken for a control, so it can afford to be legible.
 
 **`progress` is at v2 and v1 is deleted on load, not migrated.** v1 described a roster that was
-entirely unlocked, so carrying it forward would hand a returning player all 198 cards and delete the
+entirely unlocked, so carrying it forward would hand a returning player all 205 cards and delete the
 feature on the machine that most needed it. The version bump is also what resets the record.
 
 **The balance gate was red on the fresh baseline measured 18 August 2026** — three of eleven checks.
@@ -326,13 +326,13 @@ Nothing damages a core automatically just because a turn starts; core damage com
 **The last sentence of a printed effect carries NO full stop.** Owner's ruling, 26 August 2026. The
 rules panel is a box of its own on the card face and its edge already ends the sentence, so a closing
 period is a glyph that says nothing and costs a character of the auto-fit budget on the longest cards.
-Internal sentences keep their periods — only the last one goes, across all 177 cards and all 21
+Internal sentences keep their periods — only the last one goes, across all 178 cards and all 27
 relics.
 
 It is a build failure, not a style note. `scripts/validate-cards.mjs` rejects any effect ending in
 `.`, `,`, `;` or `:`, and `npm run publish:pages` runs that validator before it builds, so a card with
 a trailing period cannot reach the public site. The rule it replaced REQUIRED that period; both exist
-for the same reason, which is that 198 cards cannot be kept consistent by hand. A keyword-only card
+for the same reason, which is that 205 cards cannot be kept consistent by hand. A keyword-only card
 now prints `Taunt` rather than `Taunt.`, and the validator's leading-keyword patterns were widened to
 match.
 
@@ -382,7 +382,7 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 
 ## Ascension Relics
 
-The current relic pool contains **21 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
+The current relic pool contains **27 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
 
 **A relic card face prints NO side rails**, unlike every character card. It has no camp and no alignment: it carried the placeholders "Ascension" and "Relic" purely so the two rails had something to say, and two rails naming a thing that is not a property of the card is worse than no rails. The teal frame and the diamond gem already say relic.
 
@@ -633,7 +633,7 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
 
-**Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 58 Rare cards stop costing anything at the same time, which is what keeps a gallery of 198 affordable.
+**Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 58 Rare cards stop costing anything at the same time, which is what keeps a gallery of 205 affordable.
 
 ### The technique, which is the transferable part
 
@@ -749,7 +749,7 @@ An unmet card in the gallery does NOT shine, and that is correct rather than a b
 
 ## Interface and card faces
 
-**What keeps a gallery of 198 card faces scrollable, and the measurements behind each part.** Every
+**What keeps a gallery of 205 card faces scrollable, and the measurements behind each part.** Every
 cell is a full card face: about 23 elements, its own size container, gradients, rails, gems and six
 text measurements. Measured on the locked gallery at 148 cells, laying all of them out costs
 **219 ms** against **4.5 ms** when they are skipped — roughly **1.4 ms per cell**, which is why three
@@ -767,15 +767,15 @@ interchangeable.
 3. **The card shine pauses while the body is scrolling.** A card face carries up to six blended,
    infinitely animating layers; measured in the unlocked gallery that is **112 animating spans**, all
    of them compositing on every frame the browser draws. `.gallery-body` gets an `is-scrolling` class
-   from a passive scroll listener that writes to `classList` rather than to state — re-rendering 198
+   from a passive scroll listener that writes to `classList` rather than to state — re-rendering the full roster
    memoised cells to say "we are moving" would cost more than the animations it is quietening — and
    the CSS sets `animation-play-state: paused`. Paused, not hidden: every layer freezes where it was,
    so a still gallery is pixel-identical to what it was before this rule existed.
 4. **Card art warms on idle once the screen has finished appearing.** The cells load their art lazily,
    which is right for the first paint and wrong for the twentieth: the browser's lazy heuristics look
    only a short way ahead and a fast flick outruns them, which is what leaves a screenful of cards
-   showing a frame and no picture. After the last cell mounts, the gallery pulls the whole set — 198
-   files, **9.9 MB** — six at a time on idle callbacks, so it never competes with a scroll and costs
+   showing a frame and no picture. After the last cell mounts, the gallery pulls the whole set six at
+   a time on idle callbacks, so it never competes with a scroll and costs
    the opening nothing.
 
 5. **A locked card draws a SEALED FACE, not a full one.** `SealedFace` in `App.tsx` renders the four

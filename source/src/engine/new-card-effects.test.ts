@@ -353,6 +353,18 @@ describe("2026 card replacements", () => {
         effect: "Deathrattle: Silence then destroy all minions",
         origin: "Basic",
       },
+      "Motoko Kusanagi": {
+        cost: 4,
+        atk: 2,
+        hp: 1,
+        rarity: "Yellow",
+        camp: "Tech",
+        alignment: "Good",
+        effectId: "motoko_kusanagi",
+        effectTiming: "onPlay",
+        effect: "Battlecry: Take control of an enemy Tech minion with 4 HP or less until the end of your next turn",
+        origin: "Ghost in the Shell",
+      },
     };
     for (const [name, fields] of Object.entries(expected)) {
       const card = cards.find((entry) => entry.name === name);
@@ -1503,6 +1515,26 @@ describe("2026 card replacements", () => {
     const after = play(state, 0, "Kureo Mado", 1);
     expect(after.players[1].board[0]?.relic).toBeNull();
     expect(after.players[0].board[1]?.relic).toMatchObject({ id: "r001", name: relicDef.name });
+  });
+
+  it("Motoko Kusanagi temporarily controls an eligible Tech minion", () => {
+    const state = mainState("motoko-control");
+    state.players[1].board[0] = minion("Modern Tank", 1, { hp: 4, maxHp: 4, sleeping: false });
+    state.players[1].board[1] = minion("Dragon", 1, { hp: 5, maxHp: 5, sleeping: false });
+
+    const controlled = play(state, 0, "Motoko Kusanagi", 0);
+    const victim = controlled.players[0].board[1];
+    expect(victim).toMatchObject({ name: "Modern Tank", owner: 0, temporaryControl: { originalOwner: 1, originalSlot: 0 } });
+    expect(controlled.players[1].board[0]).toBeNull();
+    expect(controlled.players[1].board[1]?.name).toBe("Dragon");
+
+    const interveningTurn = endTurn(controlled, 0);
+    expect(interveningTurn.players[0].board[1]?.owner).toBe(0);
+    const nextOwnTurn = endTurn(interveningTurn, 1);
+    expect(nextOwnTurn.players[0].board[1]?.owner).toBe(0);
+    const returned = endTurn(nextOwnTurn, 0);
+    expect(returned.players[0].board[1]).toBeNull();
+    expect(returned.players[1].board[0]).toMatchObject({ name: "Modern Tank", owner: 1, temporaryControl: null });
   });
 
   it("Nyan's Charge ignores Taunt when selecting an attack target", () => {

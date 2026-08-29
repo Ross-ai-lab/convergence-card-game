@@ -308,7 +308,8 @@ export type EffectId =
   | "planetary_defense_grid_taunt_buff"
   | "black_hole_deathrattle"
   | "rudeus_hero_power_free"
-  | "prince_lloyd_damage_ward";
+  | "prince_lloyd_damage_ward"
+  | "motoko_kusanagi";
 
 export interface CardDefinition {
   kind: "minion";
@@ -361,6 +362,13 @@ export interface TemporaryMinionTransform {
   original: MinionTransformSnapshot;
 }
 
+export interface TemporaryMinionControl {
+  originalOwner: PlayerId;
+  originalSlot: number;
+  expiresAtTurn: number;
+  expiresAfterPlayer: PlayerId;
+}
+
 export interface MinionInstance {
   instanceId: string;
   cardId: string;
@@ -409,6 +417,8 @@ export interface MinionInstance {
   suppressArrivalTheme?: boolean;
   /** A temporary transformation that restores at the named player's next turn. */
   temporaryTransform: TemporaryMinionTransform | null;
+  /** Motoko Kusanagi: temporary control returns after the controller's next turn. */
+  temporaryControl: TemporaryMinionControl | null;
   /** Mahoraga: every attacker that has already swung at this minion. */
   attackedBy: string[];
   /** APR: this minion may never attack again. */
@@ -652,7 +662,14 @@ export type RelicId =
   | "evade_50"
   | "double_attack"
   /** Tesseract: the bearer strikes from outside space, so nothing strikes back. */
-  | "no_retaliation";
+  | "no_retaliation"
+  | "pandora_box"
+  | "monkeys_paw"
+  | "ark_divine_shield"
+  | "necronomicon"
+  | "dragon_balls"
+  | "mjolnir"
+  | "excalibur";
 
 export interface RelicDefinition {
   kind: "relic";
@@ -687,6 +704,8 @@ export interface RelicInstance {
   art: string;
   /** Queen's Cocoon: the turn its +3/+3 payoff lands. */
   readyOnTurn?: number;
+  /** The Monkey's Paw: the turn on which the bearer dies. */
+  destroyOnTurn?: number;
 }
 
 /**

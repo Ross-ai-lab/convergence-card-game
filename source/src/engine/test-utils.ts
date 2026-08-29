@@ -52,6 +52,7 @@ export function spawnTestMinion(
     relic2: null,
     suppressArrivalTheme: false,
     temporaryTransform: null,
+    temporaryControl: null,
     attackedBy: [],
     attackLocked: false,
     attackLockedUntilTurn: null,

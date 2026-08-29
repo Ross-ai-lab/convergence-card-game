@@ -69,9 +69,10 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // v21: the opening Hero Power draft became a player-only mulligan, and manual
 // attached-relic returns were removed. A mid-draft v20 save has no equivalent
 // state and is discarded rather than restoring a broken opening screen.
-const SAVE_VERSION = 21;
+// v22: MinionInstance gained temporary control state for Motoko Kusanagi.
+const SAVE_VERSION = 22;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v20";
+const LEGACY_SAVE_KEY = "convergence.save.v21";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -141,7 +142,9 @@ export function loadGame(): SavedGame | null {
       Array.isArray(player?.board) &&
       player.board.length === 5 &&
       player.board.every(
-        (minion) => minion === null || (Array.isArray(minion.gainedEffects) && "temporaryTransform" in minion),
+        (minion) =>
+          minion === null ||
+          (Array.isArray(minion.gainedEffects) && "temporaryTransform" in minion && "temporaryControl" in minion),
       ) &&
       Array.isArray(player.slotAuras) &&
       player.costReductions !== undefined &&
@@ -229,6 +232,7 @@ function migrateLegacyMechanics(game: GameState): void {
       if (minion.commandmentsTriggeredAtTurn === undefined) minion.commandmentsTriggeredAtTurn = null;
       if (minion.passiveSilenceSources === undefined) minion.passiveSilenceSources = [];
       if (minion.chainGrowthPending === undefined) minion.chainGrowthPending = false;
+      if (minion.temporaryControl === undefined) minion.temporaryControl = null;
     }
   }
   const savedMulligan = (game as GameState & { mulligan?: GameState["mulligan"] }).mulligan;

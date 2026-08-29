@@ -3206,7 +3206,7 @@ button:disabled {
   display: flex;
 }
 
-/* A VANILLA MINION IS ALL PICTURE. 21 of the 175 have no rules text at all, and
+/* A VANILLA MINION IS ALL PICTURE. 21 of the current 178 have no rules text at all, and
    an empty panel on those is worse than no panel: it reads as text that failed
    to load. They get the space back as artwork instead — which is the direction
    every trade on this card goes. */

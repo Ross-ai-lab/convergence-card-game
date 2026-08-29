@@ -149,6 +149,140 @@ describe("relic effects", () => {
     expect(relics.find((relic) => relic.name === "Devil Fruit")).toMatchObject({ cost: 2, effect: expect.stringContaining("+2/+1") });
   });
 
+  it("replaces Sunshine Grace with Ark of the Covenant", () => {
+    expect(relics.find((relic) => relic.name === "Sunshine Grace")).toBeUndefined();
+    expect(relics.find((relic) => relic.name === "Ark of the Covenant")).toMatchObject({
+      cost: 4,
+      relicId: "ark_divine_shield",
+      effect: "The bearer gains Divine Shield",
+    });
+
+    const state = mainState("ark-divine-shield");
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    const after = playRelicFor(state, 0, "Ark of the Covenant", 0);
+    expect(after.players[0].board[0]?.divineShield).toBe(true);
+  });
+
+  it("Pandora's Box buffs its bearer and gives the opponent a random deck minion on death", () => {
+    const state = mainState("pandora-box");
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 99, hp: 99, maxHp: 99, sleeping: false });
+    state.activePlayer = 1;
+    const afterEquip = playRelicFor(state, 0, "Pandora's Box", 0);
+    expect(afterEquip.players[0].board[0]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
+    afterEquip.activePlayer = 1;
+
+    const afterDeath = applyAction(
+      afterEquip,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(afterDeath.players[0].board[0]).toBeNull();
+    expect(afterDeath.players[1].board[1]).toMatchObject({ owner: 1 });
+    expect(afterDeath.players[1].board[1]?.cardId).not.toBe("token:shenron");
+  });
+
+  it("The Monkey's Paw buffs its bearer and kills it on the next turn", () => {
+    const state = mainState("monkeys-paw");
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    const afterEquip = playRelicFor(state, 0, "The Monkey's Paw", 0);
+    expect(afterEquip.players[0].board[0]).toMatchObject({ atk: 6, hp: 6, maxHp: 6 });
+
+    const result = applyAction(afterEquip, { type: "end_turn", player: 0 }, library);
+    expect(result.state.players[0].board[0]).toBeNull();
+    expect(result.state.discard).toContain(relicByName("The Monkey's Paw").id);
+    expect(result.events).toContainEqual(expect.objectContaining({ text: expect.stringContaining("dies from The Monkey's Paw") }));
+  });
+
+  it("Necronomicon repeats the bearer's Deathrattle", () => {
+    const state = mainState("necronomicon");
+    state.players[0].board[0] = makeMinion("Light Yagami", 0, { relic: relicByName("Necronomicon") });
+    state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
+    state.players[1].board[1] = makeMinion("Dragon", 1, { hp: 20, maxHp: 20, sleeping: false });
+    state.players[1].board[2] = makeMinion("Modern Tank", 1, { hp: 20, maxHp: 20, sleeping: false });
+    state.activePlayer = 1;
+
+    const after = applyAction(
+      state,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[1].board.filter(Boolean)).toHaveLength(1);
+  });
+
+  it("Dragon Balls summon a 7/7 Taunt Shenron after the bearer dies", () => {
+    const state = mainState("dragon-balls");
+    state.players[0].board[0] = makeMinion("John Wick", 0, { relic: relicByName("Dragon Balls") });
+    state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 99, hp: 99, maxHp: 99, sleeping: false });
+    state.activePlayer = 1;
+
+    const after = applyAction(
+      state,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(after.players[0].board[0]).toMatchObject({
+      cardId: "token:shenron",
+      name: "Shenron",
+      atk: 7,
+      hp: 7,
+      keywords: ["Taunt"],
+    });
+    expect(after.players[0].board[0]?.art).toContain("token-shenron.webp");
+  });
+
+  it("Mjolnir is Good-only and protects its attacking bearer from retaliation", () => {
+    const legalState = mainState("mjolnir-targets");
+    legalState.players[0].board[0] = makeMinion("John Wick", 0);
+    legalState.players[0].board[1] = makeMinion("Dumbledore", 0);
+    legalState.players[0].hand = [relicByName("Mjolnir").id];
+    legalState.players[0].mana = 10;
+    const legal = getLegalActions(legalState, library);
+    expect(legal).not.toContainEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 });
+    expect(legal).toContainEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 1 });
+
+    const state = mainState("mjolnir-retaliation");
+    state.players[0].board[0] = makeMinion("Dumbledore", 0);
+    state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 1, hp: 10, maxHp: 10, sleeping: false });
+    const equipped = playRelicFor(state, 0, "Mjolnir", 0);
+    const after = applyAction(
+      equipped,
+      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(after.players[0].board[0]?.hp).toBe(4);
+    expect(after.players[1].board[0]?.hp).toBe(8);
+
+    const defending = mainState("mjolnir-defending");
+    defending.players[0].board[0] = makeMinion("Dumbledore", 0);
+    defending.players[1].board[0] = makeMinion("John Wick", 1, { atk: 1, hp: 10, maxHp: 10, sleeping: false });
+    const defendingEquipped = playRelicFor(defending, 0, "Mjolnir", 0);
+    const defendingHit = applyAction(
+      { ...defendingEquipped, activePlayer: 1 },
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    expect(defendingHit.players[0].board[0]?.hp).toBe(3);
+  });
+
+  it("Excalibur is Good-only and gives its bearer Charge", () => {
+    const legalState = mainState("excalibur-targets");
+    legalState.players[0].board[0] = makeMinion("John Wick", 0);
+    legalState.players[0].board[1] = makeMinion("Dumbledore", 0);
+    legalState.players[0].hand = [relicByName("Excalibur").id];
+    legalState.players[0].mana = 10;
+    const legal = getLegalActions(legalState, library);
+    expect(legal).not.toContainEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 });
+    expect(legal).toContainEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 1 });
+
+    const state = mainState("excalibur-charge");
+    state.players[0].board[0] = makeMinion("Dumbledore", 0, { sleeping: true });
+    const after = playRelicFor(state, 0, "Excalibur", 0);
+    expect(after.players[0].board[0]?.keywords).toContain("Charge");
+    expect(after.players[0].board[0]?.sleeping).toBe(false);
+  });
+
   it("never exposes a manual attached-relic return action", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Mob Psycho", 0, { relic: relicByName("Elder wand") });

@@ -15,6 +15,7 @@
  */
 
 import { launch } from "./browser.mjs";
+import { readRelics } from "./card-tools.mjs";
 
 const BASE = process.argv[2] || "http://localhost:5177";
 
@@ -117,8 +118,7 @@ for (const [id, label] of themes) {
 // equip can never be proven by the minion-only sample above. Probe every relic
 // ID, including the locally cut Made in Abyss sting, to catch a missing mapping
 // or a missing file before the player reaches an equip action.
-for (let index = 1; index <= 21; index += 1) {
-  const relicId = `r${String(index).padStart(3, "0")}`;
+for (const { id: relicId } of readRelics()) {
   const result = await page.evaluate((cardId) => window.__sfx.probeCardTheme(cardId, 900), relicId);
   check(`relic theme: ${relicId}`, result.peak > 0.02 && result.activeMs > 200, `peak ${result.peak}, ${result.activeMs}ms audible`);
 }

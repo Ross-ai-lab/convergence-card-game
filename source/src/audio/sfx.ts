@@ -815,7 +815,6 @@ const RELIC_THEME_SOURCE: Record<string, string> = {
   r001: "c102", // Myth — Dragon
   r002: "c064", // Seven Deadly Sins — Seven Deadly Sins
   r003: "c080", // Lord of the Rings — Gandalf the White
-  r004: "c064", // Seven Deadly Sins — Seven Deadly Sins
   r005: "c015", // MCU — Avengers
   r006: "r006", // Made in Abyss — dedicated sting
   r007: "c030", // Harry Potter — Dumbledore
@@ -833,6 +832,13 @@ const RELIC_THEME_SOURCE: Record<string, string> = {
   r019: "c116", // The Mask — The Mask
   r020: "c015", // MCU — Avengers
   r021: "c109", // Demon Slayer — Nine Hashira
+  r022: "c061", // Myth — Chaos
+  r023: "c004", // Myth — Bigfoot
+  r024: "c159", // Indiana Jones — Indiana Jones
+  r025: "c154", // Myth — Gravelord Nito
+  r026: "c044", // Dragon Ball — Mastered Ultra Instinct Goku
+  r027: "c015", // Marvel — Avengers
+  r028: "c080", // Arthurian Legend — Gandalf the White
 };
 
 function isCardThemeId(cardId: string): boolean {

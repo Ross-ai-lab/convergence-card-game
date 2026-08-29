@@ -33,7 +33,7 @@ import {
 
 import "./Screens.css";
 import { sfx, type Bus, type Mix } from "../audio/sfx";
-import { cards } from "../data/cards";
+import { cards, relics } from "../data/cards";
 import {
   HERO_POWER_UNLOCK_ORDER,
   heroPowerDefinition,
@@ -52,6 +52,9 @@ import type { BotSkill } from "../engine/bot";
 
 export type GameMode = { kind: "hotseat" } | { kind: "bot"; skill: BotSkill };
 export type DuelIntroPhase = "prelude" | "reveal" | "draw" | "mana" | "exit";
+
+const MINION_COUNT = cards.length;
+const RELIC_COUNT = relics.length;
 
 const SKILL_BLURB: Record<BotSkill, { title: string; note: string }> = {
   easy: { title: "Recruit", note: "Plays one move ahead, badly, and will let you win." },
@@ -272,7 +275,7 @@ export function TitleScreen({
               </span>
             ))}
           </h1>
-          <p className="title-kicker">177 worlds. One arena.</p>
+          <p className="title-kicker">{MINION_COUNT} worlds. One arena.</p>
         </div>
 
         {canContinue ? (
@@ -298,7 +301,7 @@ export function TitleScreen({
               object. Deliberately faint: the full unlock rules live one click
               away behind the gallery's "?", and this is a number to notice in
               passing, not an announcement. Once the roster is complete it
-              disappears rather than reading 198 of 198 forever. */}
+              disappears rather than reading the whole roster forever. */}
           <button type="button" className="gallery-trigger" onClick={onGallery}>
             <Cards size={22} weight="fill" aria-hidden="true" />
             <span className="gallery-trigger-stack">
@@ -548,7 +551,7 @@ function HowToPlayContent() {
       <section className="rules-chapter">
         <h4><span className="rules-step-no">2</span> The shared deck</h4>
         <ul className="rules-list">
-          <li>Both players draw from the <b>same shuffled deck</b> — 177 minions and 21 relics, one copy of each.</li>
+          <li>Both players draw from the <b>same shuffled deck</b> — {MINION_COUNT} minions and {RELIC_COUNT} relics, one copy of each.</li>
           <li>You open with <b>3 cards</b>. Player One may replace any number of them once before the duel begins. Going second also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
           <li>Your hand holds <b>10 cards</b>. A card drawn into a full hand burns and is gone.</li>
           <li>When the deck runs dry, every further draw costs you core health: <b>1, then 2, then 3</b>, and up from there.</li>
@@ -665,7 +668,7 @@ function HowToPlayContent() {
       <section className="rules-chapter">
         <h4><span className="rules-step-no">9</span> Ascension Relics</h4>
         <ul className="rules-list">
-          <li>The <b>21 relics</b> ride in the same shared deck and arrive in hand like any other card.</li>
+          <li>The <b>{RELIC_COUNT} relics</b> ride in the same shared deck and arrive in hand like any other card.</li>
           <li>Play one onto a friendly minion to equip it. A minion carries up to <b>two</b>, in independent slots.</li>
           <li>Every relic prints bare <b>RELIC</b> in its flavour-text slot, without quotation marks. This is the fixed relic label, not individual lore text.</li>
           <li>An attached relic stays with its bearer. A minion cannot choose to return it to its owner, and a relic cannot be manually returned to hand.</li>
