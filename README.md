@@ -384,6 +384,12 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 
 The current relic pool contains **27 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
 
+**The relic roster target is about 15% of the full roster.** Count relics against
+all minion cards and relics together. With the current 182 minion cards, the
+first whole-number total that reaches or exceeds 15% is 33 relics in a 215-card
+roster, so the current pool needs 6 more relics. Thirty-two relics would be
+14.95%, which rounds to 15.0% but remains just below the threshold.
+
 **A relic card face prints NO side rails**, unlike every character card. It has no camp and no alignment: it carried the placeholders "Ascension" and "Relic" purely so the two rails had something to say, and two rails naming a thing that is not a property of the card is worse than no rails. The teal frame and the diamond gem already say relic.
 
 **Every relic card prints bare `RELIC` in the flavour-text slot, without quotation marks.** Relics do not carry individual flavour text; `RELIC` is the fixed label for that exact card-face position.
