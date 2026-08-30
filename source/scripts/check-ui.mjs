@@ -118,7 +118,7 @@ await page.waitForTimeout(200);
 check(
   "developer reset restores normal progression",
   (await page.locator(".developer-cheat-panel").count()) === 0 &&
-    (await page.locator(".unlock-tally").textContent()) === "50 / 205",
+    (await page.locator(".unlock-tally").textContent()) === "50 / 209",
   "developer controls hide and the starting pool returns",
 );
 
@@ -209,7 +209,7 @@ check(
 await page.locator(".mulligan-panel button.primary").click();
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
-await page.locator(".title-links").getByRole("button", { name: "Settings", exact: true }).click();
+await page.locator(".title-links").getByRole("button", { name: "Sound", exact: true }).click();
 check(
   "difficulty is not available inside Settings",
   (await page.getByRole("dialog").getByText("Recruit", { exact: true }).count()) === 0,

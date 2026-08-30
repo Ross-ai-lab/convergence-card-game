@@ -345,7 +345,7 @@ export function TitleScreen({
             title={duelsPlayed > 0 ? "View your duel record" : "View your record — no duels played yet"}
           >
             <Scroll size={22} weight="fill" aria-hidden="true" />
-            <span>Record</span>
+            <span>Win Record</span>
           </button>
           <button
             type="button"
@@ -358,7 +358,7 @@ export function TitleScreen({
           </button>
           <button type="button" className="settings-trigger" onClick={onSettings}>
             <GearSix size={22} weight="fill" aria-hidden="true" />
-            <span>Settings</span>
+            <span>Sound</span>
           </button>
         </div>
 
