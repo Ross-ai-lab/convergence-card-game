@@ -132,6 +132,15 @@ const referenceModalGeometry = await page.locator(".gallery-detail-panel").evalu
 });
 check("reference-size Star Chart fits without an internal scrollbar", referenceModalGeometry.overflow === "hidden" && referenceModalGeometry.fits);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-reference-size.png"), fullPage: false });
+await page.setViewportSize({ width: 1536, height: 736 });
+await page.waitForTimeout(200);
+const shortHeightGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
+  const body = panel.querySelector(".gallery-detail-body");
+  const rect = panel.getBoundingClientRect();
+  return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1, bottom: rect.bottom } : { overflow: "missing", fits: false, bottom: Infinity };
+});
+check("short-height Star Chart stays inside the viewport", shortHeightGeometry.overflow === "hidden" && shortHeightGeometry.fits && shortHeightGeometry.bottom <= 736);
+await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-short-height.png"), fullPage: false });
 await page.waitForTimeout(400);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart.png"), fullPage: false });
 await page.setViewportSize({ width: 390, height: 844 });
@@ -153,8 +162,10 @@ for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Gr
     const body = panel.querySelector(".gallery-detail-body");
     return body ? body.scrollHeight <= body.clientHeight + 1 : false;
   });
-  check(`${name} has a Star Chart profile`, await page.locator(".gallery-detail-panel").isVisible() && await page.locator(".star-chart").count() === 1 && await page.locator(".gallery-detail-rule").count() === 0 && profileGeometry);
+  const expectedChartCount = name === "Allspark Cube" ? 0 : 1;
+  check(`${name} has a Star Chart profile`, await page.locator(".gallery-detail-panel").isVisible() && await page.locator(".star-chart").count() === expectedChartCount && await page.locator(".gallery-detail-rule").count() === 0 && profileGeometry);
   if (name === "Allspark Cube") {
+    check("Relic Star Charts remove the radar", await page.locator(".star-chart").count() === 0);
     check("Relic Star Charts hide Lore attributes", await page.locator(".gallery-detail-chart-caption").count() === 0);
     await page.waitForTimeout(1000);
     await page.screenshot({ path: path.join(outputDir, "gallery-relic-star-chart.png"), fullPage: false });

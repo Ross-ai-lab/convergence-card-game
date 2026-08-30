@@ -5993,6 +5993,159 @@ button:disabled {
   }
 }
 
+/* A browser at 125% zoom commonly leaves a 1536x736 CSS viewport on a
+   1920x1012 screen. The modal must fit that real working area, not only a
+   generous headless viewport. Shrink the two large visual anchors and tighten
+   the chrome together so the final detail row stays visible. */
+@media (min-width: 761px) and (max-height: 800px) {
+  .gallery-detail-veil {
+    padding: 10px;
+  }
+
+  .gallery-detail-panel {
+    max-height: calc(100vh - 16px);
+  }
+
+  .gallery-detail-top {
+    padding: 8px 16px 7px;
+  }
+
+  .gallery-detail-title h2 {
+    font-size: 1.85rem;
+  }
+
+  .gallery-detail-title > p {
+    margin-bottom: 6px;
+    font-size: 0.74rem;
+  }
+
+  .gallery-detail-rank {
+    margin-top: 5px;
+    font-size: 0.62rem;
+  }
+
+  .gallery-detail-body {
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px 16px;
+  }
+
+  .gallery-detail-card {
+    width: 180px;
+  }
+
+  .gallery-detail-chart-row {
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .star-chart {
+    width: 180px;
+    height: 180px;
+  }
+
+  .gallery-detail-lore p {
+    font-size: 0.76rem;
+    line-height: 1.32;
+  }
+
+  .gallery-detail-lore blockquote {
+    margin-top: 8px;
+    font-size: 0.82rem;
+  }
+
+  .gallery-detail-columns {
+    gap: 8px;
+  }
+
+  .gallery-detail-box {
+    padding: 8px 10px;
+  }
+
+  .gallery-detail-box h3 {
+    margin-bottom: 6px;
+    font-size: 0.68rem;
+  }
+
+  .gallery-detail-box ul,
+  .gallery-detail-box-copy {
+    gap: 4px;
+    font-size: 0.66rem;
+    line-height: 1.25;
+  }
+
+  .gallery-detail-box ul {
+    padding-left: 14px;
+  }
+
+  .detail-rival {
+    padding: 4px 6px;
+    font-size: 0.62rem;
+  }
+
+  .gallery-detail-nav {
+    padding: 7px 16px 6px;
+  }
+
+  .gallery-detail-nav button {
+    min-width: 82px;
+    padding: 6px 8px;
+    font-size: 0.64rem;
+  }
+}
+
+/* Keep a short phone viewport readable after the Relic chart disappears. The
+   profile remains a two-column first row, while the narrative boxes stay
+   paired below it. */
+@media (max-width: 520px) and (max-height: 760px) {
+  .gallery-detail-top {
+    padding-top: 7px;
+    padding-bottom: 6px;
+  }
+
+  .gallery-detail-title h2 {
+    font-size: 1.58rem;
+  }
+
+  .gallery-detail-body {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  .gallery-detail-card {
+    width: clamp(92px, 27vw, 110px);
+  }
+
+  .gallery-detail-lore p {
+    font-size: 0.59rem;
+  }
+
+  .gallery-detail-lore blockquote {
+    margin-top: 4px;
+    font-size: 0.62rem;
+  }
+
+  .gallery-detail-box {
+    padding: 6px 7px;
+  }
+
+  .gallery-detail-box h3 {
+    margin-bottom: 4px;
+    font-size: 0.54rem;
+  }
+
+  .gallery-detail-box ul,
+  .gallery-detail-box-copy {
+    font-size: 0.56rem;
+    line-height: 1.18;
+  }
+
+  .detail-rival {
+    padding: 2px 4px;
+    font-size: 0.5rem;
+  }
+}
+
 /* NEVER let a cell fall below the card's compact-layout threshold.
    `.card-face` switches to the board-minion layout under roughly 200px and DROPS
    THE RULES TEXT — correct for a minion on a crowded board, and the exact

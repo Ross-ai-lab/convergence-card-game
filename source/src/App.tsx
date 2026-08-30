@@ -3508,16 +3508,25 @@ function GalleryDetailModal({
             </div>
           ) : profile ? (
             <>
-              <div className="gallery-detail-chart-row">
-                <div className="gallery-detail-chart-wrap">
-                  <StarChart values={profile.vals} accent={accent} name={entry.face.name} />
-                  {!isRelicCard(entry.card) ? <span className="gallery-detail-chart-caption">Lore attributes · 0 to 10</span> : null}
-                </div>
-                <div className="gallery-detail-lore">
-                  <p>{profile.lore}</p>
-                  {profile.quote ? <blockquote style={{ "--quote-accent": accent } as CSSProperties}>“{profile.quote}”</blockquote> : null}
-                </div>
-              </div>
+              {(() => {
+                const loreCopy = (
+                  <>
+                    <p>{profile.lore}</p>
+                    {profile.quote ? <blockquote style={{ "--quote-accent": accent } as CSSProperties}>“{profile.quote}”</blockquote> : null}
+                  </>
+                );
+                return isRelicCard(entry.card) ? (
+                  <div className="gallery-detail-lore">{loreCopy}</div>
+                ) : (
+                  <div className="gallery-detail-chart-row">
+                    <div className="gallery-detail-chart-wrap">
+                      <StarChart values={profile.vals} accent={accent} name={entry.face.name} />
+                      <span className="gallery-detail-chart-caption">Lore attributes · 0 to 10</span>
+                    </div>
+                    <div className="gallery-detail-lore">{loreCopy}</div>
+                  </div>
+                );
+              })()}
 
               <div className="gallery-detail-columns">
                 <DetailList title="Strengths" tone="strength" items={profile.str} />
