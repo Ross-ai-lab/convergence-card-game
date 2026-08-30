@@ -5469,11 +5469,12 @@ button:disabled {
 }
 
 .gallery-detail-top {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  padding: 5px 12px 4px;
+  padding: 5px 52px 4px 12px;
   border-bottom: 1px solid rgba(240, 199, 103, 0.24);
 }
 
@@ -5496,8 +5497,20 @@ button:disabled {
 }
 
 .gallery-detail-top > .screen-x {
-  flex: 0 0 auto;
-  align-self: center;
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  z-index: 1;
+  border: 1px solid rgba(239, 98, 88, 0.72);
+  background: rgba(88, 20, 24, 0.78);
+  color: #ffaaa0;
+  box-shadow: 0 0 12px rgba(217, 64, 59, 0.2);
+}
+
+.gallery-detail-top > .screen-x:hover {
+  border-color: rgba(255, 140, 126, 0.98);
+  background: rgba(131, 29, 31, 0.92);
+  color: #fff1ea;
 }
 
 .gallery-detail-title h2 {
@@ -5526,32 +5539,6 @@ button:disabled {
   white-space: nowrap;
 }
 
-.gallery-detail-chips {
-  display: flex;
-  min-width: 0;
-  flex: 0 1 auto;
-  flex-wrap: nowrap;
-  gap: 4px;
-  overflow: hidden;
-}
-
-.detail-chip {
-  padding: 3px 6px;
-  border: 1px solid rgba(255, 241, 207, 0.2);
-  border-radius: 999px;
-  color: rgba(255, 241, 207, 0.78);
-  background: rgba(255, 246, 222, 0.07);
-  font-size: 0.58rem;
-  font-weight: 850;
-  white-space: nowrap;
-}
-
-.rarity-chip-black { border-color: rgba(195, 190, 173, 0.5); color: #d8d0bb; }
-.rarity-chip-purple { border-color: rgba(185, 151, 255, 0.7); color: #d9c6ff; }
-.rarity-chip-yellow { border-color: rgba(240, 199, 103, 0.78); color: #ffe2a0; }
-.rarity-chip-red { border-color: rgba(223, 103, 84, 0.78); color: #ffc0b1; }
-.rarity-chip-relic { border-color: rgba(67, 205, 189, 0.78); color: #a7fff1; }
-
 .gallery-detail-rank {
   display: block;
   min-width: 0;
@@ -5567,8 +5554,8 @@ button:disabled {
 }
 
 /* The header is intentionally a single information rail on desktop: identity,
-   source, tags, and ranking all stay visible without spending four stacked
-   lines above the chart. */
+   source, and ranking stay visible without spending four stacked lines above
+   the chart. */
 @media (max-width: 760px) {
   .gallery-detail-top {
     display: grid;
@@ -5577,14 +5564,8 @@ button:disabled {
   }
 
   .gallery-detail-title,
-  .gallery-detail-chips,
   .gallery-detail-rank {
     grid-column: 1;
-  }
-
-  .gallery-detail-top > .screen-x {
-    grid-column: 2;
-    grid-row: 1;
   }
 
   .gallery-detail-title {
@@ -5600,10 +5581,6 @@ button:disabled {
     margin-top: 2px;
   }
 
-  .gallery-detail-chips {
-    flex-wrap: wrap;
-    overflow: visible;
-  }
 }
 
 /* Keep the effective 1536x736 browser viewport especially lean while leaving
@@ -5611,7 +5588,7 @@ button:disabled {
 @media (min-width: 761px) and (max-height: 800px) {
   .gallery-detail-top {
     gap: 6px;
-    padding: 3px 10px;
+    padding: 3px 48px 3px 10px;
   }
 
   .gallery-detail-title {
@@ -5624,15 +5601,6 @@ button:disabled {
 
   .gallery-detail-title > p {
     font-size: 0.64rem;
-  }
-
-  .gallery-detail-chips {
-    gap: 3px;
-  }
-
-  .detail-chip {
-    padding: 2px 4px;
-    font-size: 0.5rem;
   }
 
   .gallery-detail-rank {
@@ -5661,6 +5629,22 @@ button:disabled {
 .gallery-detail-card {
   width: 280px;
   aspect-ratio: 5 / 7;
+}
+
+/* The enlarged card occupies the left rail without forcing the prose rows on
+   the right to reserve a second copy of its height. Locked cards stay in flow
+   because their sealed explanation is the only body content beside them. */
+@media (min-width: 761px) {
+  .gallery-detail-primary:not(.is-locked) {
+    position: relative;
+    min-height: 0;
+  }
+
+  .gallery-detail-primary:not(.is-locked) .gallery-detail-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
 }
 
 .gallery-detail-card .card-face {
@@ -5792,7 +5776,7 @@ button:disabled {
 .gallery-detail-lore p {
   margin: 0;
   color: rgba(255, 243, 218, 0.85);
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   line-height: 1.45;
 }
 
@@ -5802,19 +5786,19 @@ button:disabled {
   border-left: 3px solid var(--quote-accent, var(--teal));
   color: rgba(255, 235, 192, 0.88);
   font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  font-size: 0.98rem;
+  font-size: 1.5rem;
   font-style: italic;
 }
 
 /* Relics no longer spend the first row on a radar. Give their lore the space
    back as readable prose instead of leaving a wide, empty column beside it. */
 .gallery-detail-panel.is-relic .gallery-detail-lore p {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   line-height: 1.48;
 }
 
 .gallery-detail-panel.is-relic .gallery-detail-lore blockquote {
-  font-size: 1.08rem;
+  font-size: 1.5rem;
 }
 
 .gallery-detail-columns {
@@ -5845,7 +5829,7 @@ button:disabled {
   margin: 0;
   padding-left: 17px;
   color: rgba(255, 243, 218, 0.78);
-  font-size: 1rem;
+  font-size: 1.5rem;
   line-height: 1.35;
 }
 
@@ -5856,7 +5840,7 @@ button:disabled {
   display: grid;
   gap: 6px;
   color: rgba(255, 243, 218, 0.78);
-  font-size: 1rem;
+  font-size: 1.5rem;
   line-height: 1.4;
 }
 
@@ -5866,7 +5850,7 @@ button:disabled {
 
 .gallery-detail-panel.is-relic .gallery-detail-box ul,
 .gallery-detail-panel.is-relic .gallery-detail-box-copy {
-  font-size: 1.125rem;
+  font-size: 1.5rem;
   line-height: 1.42;
 }
 
@@ -5891,12 +5875,12 @@ button:disabled {
   border-radius: 999px;
   color: rgba(255, 243, 218, 0.7);
   background: rgba(255, 246, 222, 0.045);
-  font-size: 0.72rem;
+  font-size: 1.5rem;
   line-height: 1.25;
 }
 
 .gallery-detail-panel.is-relic .detail-rival {
-  font-size: 0.78rem;
+  font-size: 1.5rem;
 }
 
 .detail-rival.linked {
@@ -5959,6 +5943,8 @@ button:disabled {
 }
 
 @media (max-width: 520px) {
+  /* Desktop profile copy is 24px by design. Narrow phones keep a compact
+     supporting-copy scale so all four records remain visible without scrolling. */
   .gallery-detail-veil {
     padding: 8px;
   }
@@ -5975,6 +5961,7 @@ button:disabled {
   .gallery-detail-top {
     padding-top: 7px;
     padding-bottom: 5px;
+    padding-right: 48px;
     gap: 8px;
   }
 
@@ -5985,15 +5972,6 @@ button:disabled {
   .gallery-detail-title > p {
     margin-bottom: 0;
     font-size: 0.7rem;
-  }
-
-  .gallery-detail-chips {
-    gap: 4px;
-  }
-
-  .detail-chip {
-    padding: 3px 6px;
-    font-size: 0.56rem;
   }
 
   .gallery-detail-rank {
@@ -6050,8 +6028,8 @@ button:disabled {
   }
 
   .gallery-detail-lore p {
-    font-size: 1.25rem;
-    line-height: 1.35;
+    font-size: 1.5rem;
+    line-height: 1.1;
   }
 
   .gallery-detail-lore blockquote {
@@ -6101,8 +6079,8 @@ button:disabled {
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-lore p {
-    font-size: 1.25rem;
-    line-height: 1.35;
+    font-size: 1.5rem;
+    line-height: 1.1;
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-lore blockquote {
@@ -6139,7 +6117,7 @@ button:disabled {
 
   .gallery-detail-top {
     gap: 6px;
-    padding: 3px 10px;
+    padding: 3px 48px 3px 10px;
   }
 
   .gallery-detail-title {
@@ -6153,15 +6131,6 @@ button:disabled {
   .gallery-detail-title > p {
     margin-bottom: 0;
     font-size: 0.64rem;
-  }
-
-  .gallery-detail-chips {
-    gap: 3px;
-  }
-
-  .detail-chip {
-    padding: 2px 4px;
-    font-size: 0.5rem;
   }
 
   .gallery-detail-rank {
@@ -6191,13 +6160,13 @@ button:disabled {
   }
 
   .gallery-detail-lore p {
-    font-size: 1.25rem;
-    line-height: 1.4;
+    font-size: 1.5rem;
+    line-height: 1.1;
   }
 
   .gallery-detail-lore blockquote {
     margin-top: 8px;
-    font-size: 0.9rem;
+    font-size: 1.5rem;
   }
 
   .gallery-detail-columns {
@@ -6216,7 +6185,7 @@ button:disabled {
   .gallery-detail-box ul,
   .gallery-detail-box-copy {
     gap: 4px;
-    font-size: 0.92rem;
+    font-size: 1.5rem;
     line-height: 1.27;
   }
 
@@ -6226,16 +6195,16 @@ button:disabled {
 
   .detail-rival {
     padding: 4px 6px;
-    font-size: 0.72rem;
+    font-size: 1.5rem;
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-lore p {
-    font-size: 1.25rem;
-    line-height: 1.42;
+    font-size: 1.5rem;
+    line-height: 1.1;
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-lore blockquote {
-    font-size: 0.94rem;
+    font-size: 1.5rem;
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-box h3 {
@@ -6244,12 +6213,30 @@ button:disabled {
 
   .gallery-detail-panel.is-relic .gallery-detail-box ul,
   .gallery-detail-panel.is-relic .gallery-detail-box-copy {
-    font-size: 1rem;
+    font-size: 1.5rem;
     line-height: 1.32;
   }
 
   .gallery-detail-panel.is-relic .detail-rival {
-    font-size: 0.74rem;
+    font-size: 1.5rem;
+  }
+
+  .gallery-detail-relationships .gallery-detail-box-copy {
+    display: block;
+    line-height: 1.25;
+  }
+
+  .gallery-detail-relationships .detail-rival {
+    display: inline;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 1.5rem;
+  }
+
+  .gallery-detail-relationships .detail-rival + .detail-rival::before {
+    content: "  •  ";
+    color: rgba(255, 241, 207, 0.46);
   }
 
 }
@@ -6269,13 +6256,13 @@ button:disabled {
 
   .gallery-detail-body {
     grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
-    gap: 4px;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    gap: 2px;
+    padding-top: 4px;
+    padding-bottom: 4px;
   }
 
   .gallery-detail-card {
-    width: clamp(120px, 34vw, 132px);
+    width: clamp(112px, 32vw, 124px);
   }
 
   .gallery-detail-primary {
@@ -6299,12 +6286,23 @@ button:disabled {
     align-self: start;
   }
 
+  .gallery-detail-panel.is-relic .gallery-detail-primary {
+    grid-column: 1 / -1;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-lore {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-self: start;
+  }
+
   .gallery-detail-columns {
     grid-column: 1 / -1;
   }
 
   .gallery-detail-lore p {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
+    line-height: 1.1;
   }
 
   .gallery-detail-lore blockquote {
@@ -6313,7 +6311,7 @@ button:disabled {
   }
 
   .gallery-detail-box {
-    padding: 6px 7px;
+    padding: 4px 5px;
   }
 
   .gallery-detail-box h3 {
@@ -6323,13 +6321,23 @@ button:disabled {
 
   .gallery-detail-box ul,
   .gallery-detail-box-copy {
-    font-size: 0.78rem;
-    line-height: 1.18;
+    font-size: 0.7rem;
+    line-height: 1.12;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-box ul,
+  .gallery-detail-panel.is-relic .gallery-detail-box-copy {
+    font-size: 0.7rem;
+    line-height: 1.12;
   }
 
   .detail-rival {
-    padding: 2px 4px;
-    font-size: 0.5rem;
+    padding: 1px 2px;
+    font-size: 0.46rem;
+  }
+
+  .gallery-detail-panel.is-relic .detail-rival {
+    font-size: 0.46rem;
   }
 }
 

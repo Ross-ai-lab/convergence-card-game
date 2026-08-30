@@ -91,14 +91,6 @@ type Selection =
 
 const STAR_CHART_AXES = ["STR", "TUF", "WIL", "MAG", "INT", "AGI"] as const;
 
-const RARITY_LABEL: Record<string, string> = {
-  Black: "Rare",
-  Purple: "Epic",
-  Yellow: "Legendary",
-  Red: "Mythic",
-  Relic: "Relic",
-};
-
 function heroPowersForDuel(
   mode: GameMode,
   playerPower: HeroPowerId | null,
@@ -158,10 +150,6 @@ function playableFace(card: PlayableCard, costOverride?: number): CardFaceModel 
 
 function loreFor(card: PlayableCard): LoreDetail | null {
   return LORE_DETAILS[card.id] ?? null;
-}
-
-function rarityName(value: string): string {
-  return RARITY_LABEL[value] ?? value;
 }
 
 function attachedRelics(minion: MinionInstance): Array<{ relic: RelicInstance; index: number }> {
@@ -3485,18 +3473,12 @@ function GalleryDetailModal({
               {profile?.epithet ? ` · ${profile.epithet}` : ""}
             </p>
           </div>
-          <div className="gallery-detail-chips">
-            <span className={`detail-chip rarity-chip-${entry.face.rarity.toLowerCase()}`}>{rarityName(entry.face.rarity)}</span>
-            <span className="detail-chip">{entry.face.camp}</span>
-            <span className="detail-chip">{entry.face.alignment}</span>
-            <span className="detail-chip">{entry.face.cost ?? "—"} mana · {entry.face.atk ?? "—"} / {entry.face.hp ?? "—"}</span>
-          </div>
           {profile?.rank ? <strong className="gallery-detail-rank">{profile.rank}</strong> : null}
           <button type="button" className="screen-x" onClick={onClose} aria-label="Close Star Chart">×</button>
         </header>
 
         <div className="gallery-detail-body">
-          <div className="gallery-detail-primary">
+          <div className={`gallery-detail-primary${locked ? " is-locked" : ""}`}>
             <div className="gallery-detail-card">{locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} />}</div>
             {locked ? <p className="gallery-detail-sealed-note">Rules remain sealed until this card joins your deck.</p> : null}
           </div>
