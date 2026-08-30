@@ -3474,7 +3474,12 @@ function GalleryDetailModal({
 
   return (
     <div className="gallery-detail-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="gallery-detail-panel" role="dialog" aria-modal="true" aria-label={`${entry.face.name} Star Chart`}>
+      <section
+        className={`gallery-detail-panel ${isRelicCard(entry.card) ? "is-relic" : "is-minion"}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${entry.face.name} Star Chart`}
+      >
         <header className="gallery-detail-top">
           <div className="gallery-detail-title">
             <span className="gallery-detail-kicker">{locked ? "Sealed profile" : "Star Chart profile"}</span>

@@ -3390,7 +3390,7 @@ button:disabled {
   display: flex;
 }
 
-/* A VANILLA MINION IS ALL PICTURE. 21 of the current 178 have no rules text at all, and
+/* A VANILLA MINION IS ALL PICTURE. 21 of the current 182 have no rules text at all, and
    an empty panel on those is worse than no panel: it reads as text that failed
    to load. They get the space back as artwork instead — which is the direction
    every trade on this card goes. */
@@ -5473,7 +5473,7 @@ button:disabled {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  padding: 13px 18px 11px;
+  padding: 8px 18px 6px;
   border-bottom: 1px solid rgba(240, 199, 103, 0.24);
 }
 
@@ -5491,7 +5491,7 @@ button:disabled {
 }
 
 .gallery-detail-title h2 {
-  margin: 4px 0 3px;
+  margin: 2px 0 2px;
   color: #fff0c1;
   font-family: "Baloo 2", cursive;
   font-size: clamp(1.45rem, 3vw, 2.1rem);
@@ -5499,9 +5499,9 @@ button:disabled {
 }
 
 .gallery-detail-title > p {
-  margin: 0 0 10px;
+  margin: 0 0 6px;
   color: rgba(255, 239, 205, 0.64);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .gallery-detail-chips {
@@ -5529,7 +5529,7 @@ button:disabled {
 
 .gallery-detail-rank {
   display: block;
-  margin-top: 10px;
+  margin-top: 6px;
   color: #f0c767;
   font-size: 0.7rem;
   letter-spacing: 0.03em;
@@ -5540,7 +5540,7 @@ button:disabled {
   min-height: 0;
   grid-template-columns: 210px minmax(0, 1fr);
   gap: 16px;
-  padding: 14px 18px;
+  padding: 12px 18px;
   overflow: hidden;
 }
 
@@ -5686,18 +5686,29 @@ button:disabled {
 .gallery-detail-lore p {
   margin: 0;
   color: rgba(255, 243, 218, 0.85);
-  font-size: 0.84rem;
+  font-size: 0.98rem;
   line-height: 1.45;
 }
 
 .gallery-detail-lore blockquote {
-  margin: 15px 0 0;
+  margin: 10px 0 0;
   padding: 5px 0 5px 12px;
   border-left: 3px solid var(--quote-accent, var(--teal));
   color: rgba(255, 235, 192, 0.88);
   font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   font-size: 0.98rem;
   font-style: italic;
+}
+
+/* Relics no longer spend the first row on a radar. Give their lore the space
+   back as readable prose instead of leaving a wide, empty column beside it. */
+.gallery-detail-panel.is-relic .gallery-detail-lore p {
+  font-size: 1.12rem;
+  line-height: 1.48;
+}
+
+.gallery-detail-panel.is-relic .gallery-detail-lore blockquote {
+  font-size: 1.08rem;
 }
 
 .gallery-detail-columns {
@@ -5708,16 +5719,16 @@ button:disabled {
 
 .gallery-detail-box {
   min-width: 0;
-  padding: 12px 13px;
+  padding: 10px 12px;
   border: 1px solid rgba(255, 241, 207, 0.16);
   border-radius: 11px;
   background: rgba(255, 246, 222, 0.055);
 }
 
 .gallery-detail-box h3 {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   color: #fff0c1;
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -5728,7 +5739,7 @@ button:disabled {
   margin: 0;
   padding-left: 17px;
   color: rgba(255, 243, 218, 0.78);
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   line-height: 1.35;
 }
 
@@ -5739,7 +5750,17 @@ button:disabled {
   display: grid;
   gap: 6px;
   color: rgba(255, 243, 218, 0.78);
-  font-size: 0.76rem;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.gallery-detail-panel.is-relic .gallery-detail-box h3 {
+  font-size: 0.84rem;
+}
+
+.gallery-detail-panel.is-relic .gallery-detail-box ul,
+.gallery-detail-panel.is-relic .gallery-detail-box-copy {
+  font-size: 0.9rem;
   line-height: 1.42;
 }
 
@@ -5764,8 +5785,12 @@ button:disabled {
   border-radius: 999px;
   color: rgba(255, 243, 218, 0.7);
   background: rgba(255, 246, 222, 0.045);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   line-height: 1.25;
+}
+
+.gallery-detail-panel.is-relic .detail-rival {
+  font-size: 0.78rem;
 }
 
 .detail-rival.linked {
@@ -5795,7 +5820,7 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 20px 8px;
+  padding: 8px 20px 6px;
   border-top: 1px solid rgba(240, 199, 103, 0.2);
 }
 
@@ -5871,13 +5896,13 @@ button:disabled {
   }
 
   .gallery-detail-top {
-    padding-top: 10px;
-    padding-bottom: 8px;
+    padding-top: 7px;
+    padding-bottom: 5px;
     gap: 8px;
   }
 
   .gallery-detail-title h2 {
-    font-size: 1.8rem;
+    font-size: 1.7rem;
   }
 
   .gallery-detail-title > p {
@@ -5936,14 +5961,14 @@ button:disabled {
   }
 
   .gallery-detail-lore p {
-    font-size: 0.64rem;
+    font-size: 0.72rem;
     line-height: 1.28;
   }
 
   .gallery-detail-lore blockquote {
     margin-top: 6px;
     padding-left: 7px;
-    font-size: 0.68rem;
+    font-size: 0.74rem;
   }
 
   .gallery-detail-columns {
@@ -5958,12 +5983,12 @@ button:disabled {
 
   .gallery-detail-box h3 {
     margin-bottom: 5px;
-    font-size: 0.58rem;
+    font-size: 0.62rem;
   }
 
   .gallery-detail-box ul,
   .gallery-detail-box-copy {
-    font-size: 0.6rem;
+    font-size: 0.68rem;
     line-height: 1.25;
   }
 
@@ -5978,7 +6003,29 @@ button:disabled {
 
   .detail-rival {
     padding: 3px 5px;
-    font-size: 0.54rem;
+    font-size: 0.62rem;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-lore p {
+    font-size: 0.8rem;
+    line-height: 1.32;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-lore blockquote {
+    font-size: 0.8rem;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-box h3 {
+    font-size: 0.66rem;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-box ul,
+  .gallery-detail-panel.is-relic .gallery-detail-box-copy {
+    font-size: 0.72rem;
+  }
+
+  .gallery-detail-panel.is-relic .detail-rival {
+    font-size: 0.66rem;
   }
 
   .gallery-detail-nav {
@@ -6007,27 +6054,27 @@ button:disabled {
   }
 
   .gallery-detail-top {
-    padding: 8px 16px 7px;
+    padding: 5px 16px 4px;
   }
 
   .gallery-detail-title h2 {
-    font-size: 1.85rem;
+    font-size: 1.75rem;
   }
 
   .gallery-detail-title > p {
     margin-bottom: 6px;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
   }
 
   .gallery-detail-rank {
     margin-top: 5px;
-    font-size: 0.62rem;
+    font-size: 0.58rem;
   }
 
   .gallery-detail-body {
     grid-template-columns: 180px minmax(0, 1fr);
     gap: 10px;
-    padding: 10px 16px;
+    padding: 8px 16px;
   }
 
   .gallery-detail-card {
@@ -6045,13 +6092,13 @@ button:disabled {
   }
 
   .gallery-detail-lore p {
-    font-size: 0.76rem;
-    line-height: 1.32;
+    font-size: 0.88rem;
+    line-height: 1.34;
   }
 
   .gallery-detail-lore blockquote {
     margin-top: 8px;
-    font-size: 0.82rem;
+    font-size: 0.9rem;
   }
 
   .gallery-detail-columns {
@@ -6064,14 +6111,14 @@ button:disabled {
 
   .gallery-detail-box h3 {
     margin-bottom: 6px;
-    font-size: 0.68rem;
+    font-size: 0.74rem;
   }
 
   .gallery-detail-box ul,
   .gallery-detail-box-copy {
     gap: 4px;
-    font-size: 0.66rem;
-    line-height: 1.25;
+    font-size: 0.78rem;
+    line-height: 1.27;
   }
 
   .gallery-detail-box ul {
@@ -6080,7 +6127,30 @@ button:disabled {
 
   .detail-rival {
     padding: 4px 6px;
-    font-size: 0.62rem;
+    font-size: 0.72rem;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-lore p {
+    font-size: 0.98rem;
+    line-height: 1.4;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-lore blockquote {
+    font-size: 0.94rem;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-box h3 {
+    font-size: 0.78rem;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-box ul,
+  .gallery-detail-panel.is-relic .gallery-detail-box-copy {
+    font-size: 0.84rem;
+    line-height: 1.32;
+  }
+
+  .gallery-detail-panel.is-relic .detail-rival {
+    font-size: 0.74rem;
   }
 
   .gallery-detail-nav {
