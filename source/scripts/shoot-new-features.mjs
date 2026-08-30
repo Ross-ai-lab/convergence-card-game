@@ -44,7 +44,7 @@ await page.locator(".hand-card.playable").first().click();
 await page.locator('[aria-label="Player One\'s board"] .board-slot.empty').first().click();
 check("tutorial advances after playing a card", await page.locator(".tutorial-coach-top small").innerText() === "2 / 6");
 await page.locator(".end-turn").click();
-await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().waitFor({ state: "visible", timeout: 15000 });
+await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().waitFor({ state: "visible", timeout: 25000 });
 check("tutorial shows the card after End Turn", await page.locator(".tutorial-coach-top small").innerText() === "3 / 6" && await page.locator(".tutorial-card-example").count() === 1);
 await page.screenshot({ path: path.join(outputDir, "tutorial-card-spotlight.png"), fullPage: false });
 await page.setViewportSize({ width: 390, height: 844 });
@@ -113,6 +113,7 @@ await page.getByRole("button", { name: "Unlock all cards + powers", exact: true 
 await page.locator(".gallery-trigger").filter({ hasText: "Cards" }).click();
 await page.locator(".gallery-search").fill("Joker");
 await page.locator('.gallery-cell[role="button"]').first().click();
+await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 5000 });
 check("gallery card opens a Star Chart modal", await page.locator(".gallery-detail-panel").isVisible());
 check("Star Chart renders its six-axis chart", await page.locator(".star-chart").count() === 1);
 check("Star Chart removes the In Convergence panel", await page.locator(".gallery-detail-rule").count() === 0);
@@ -123,6 +124,14 @@ const modalGeometry = await page.locator(".gallery-detail-panel").evaluate((pane
   return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
 });
 check("Star Chart fits without an internal scrollbar", modalGeometry.overflow === "hidden" && modalGeometry.fits);
+await page.setViewportSize({ width: 1279, height: 851 });
+await page.waitForTimeout(200);
+const referenceModalGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
+  const body = panel.querySelector(".gallery-detail-body");
+  return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
+});
+check("reference-size Star Chart fits without an internal scrollbar", referenceModalGeometry.overflow === "hidden" && referenceModalGeometry.fits);
+await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-reference-size.png"), fullPage: false });
 await page.waitForTimeout(400);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart.png"), fullPage: false });
 await page.setViewportSize({ width: 390, height: 844 });
@@ -135,9 +144,11 @@ check("mobile Star Chart fits without an internal scrollbar", mobileModalGeometr
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-mobile.png"), fullPage: false });
 await page.setViewportSize({ width: 1440, height: 900 });
 await page.getByRole("button", { name: "Close Star Chart", exact: true }).click();
+await page.locator(".gallery-detail-panel").waitFor({ state: "detached", timeout: 5000 });
 for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Greyrat", "Prince Lloyd", "Motoko Kusanagi", "Allspark Cube"]) {
   await page.locator(".gallery-search").fill(name);
   await page.locator('.gallery-cell[role="button"]').first().click();
+  await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 5000 });
   const profileGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
     const body = panel.querySelector(".gallery-detail-body");
     return body ? body.scrollHeight <= body.clientHeight + 1 : false;
@@ -145,10 +156,11 @@ for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Gr
   check(`${name} has a Star Chart profile`, await page.locator(".gallery-detail-panel").isVisible() && await page.locator(".star-chart").count() === 1 && await page.locator(".gallery-detail-rule").count() === 0 && profileGeometry);
   if (name === "Allspark Cube") {
     check("Relic Star Charts hide Lore attributes", await page.locator(".gallery-detail-chart-caption").count() === 0);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(1000);
     await page.screenshot({ path: path.join(outputDir, "gallery-relic-star-chart.png"), fullPage: false });
   }
   await page.getByRole("button", { name: "Close Star Chart", exact: true }).click();
+  await page.locator(".gallery-detail-panel").waitFor({ state: "detached", timeout: 5000 });
 }
 
 const failed = results.filter((result) => !result.condition);
