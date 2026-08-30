@@ -3360,7 +3360,6 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
         <GalleryDetailModal
           entry={selectedEntry}
           locked={!collection.unlocked.has(selectedEntry.key)}
-          total={sorted.length}
           onClose={() => setSelectedEntryKey(null)}
           onNavigate={(direction) => {
             const index = sorted.findIndex((entry) => entry.key === selectedEntry.key);
@@ -3441,13 +3440,11 @@ function campAccent(camp: string): string {
 function GalleryDetailModal({
   entry,
   locked,
-  total,
   onClose,
   onNavigate,
 }: {
   entry: GalleryEntry;
   locked: boolean;
-  total: number;
   onClose: () => void;
   onNavigate: (direction: number) => void;
 }) {
@@ -3481,7 +3478,6 @@ function GalleryDetailModal({
         aria-label={`${entry.face.name} Star Chart`}
       >
         <header className="gallery-detail-top">
-          <span className="gallery-detail-kicker">{locked ? "Sealed profile" : "Star Chart profile"}</span>
           <div className="gallery-detail-title">
             <h2>{entry.face.name}</h2>
             <p>
@@ -3562,13 +3558,6 @@ function GalleryDetailModal({
             </div>
           )}
         </div>
-
-        {total > 1 ? (
-          <footer className="gallery-detail-nav" aria-label="Browse Star Chart profiles">
-            <button type="button" onClick={() => onNavigate(-1)} disabled={locked}>← Previous</button>
-            <button type="button" onClick={() => onNavigate(1)} disabled={locked}>Next →</button>
-          </footer>
-        ) : null}
       </section>
     </div>
   );

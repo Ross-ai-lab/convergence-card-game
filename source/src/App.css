@@ -5471,7 +5471,7 @@ button:disabled {
 .gallery-detail-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   padding: 5px 12px 4px;
   border-bottom: 1px solid rgba(240, 199, 103, 0.24);
@@ -5489,15 +5489,10 @@ button:disabled {
 .gallery-detail-title {
   display: flex;
   min-width: 0;
-  flex: 1 1 220px;
+  flex: 0 1 auto;
   align-items: baseline;
   gap: 8px;
   overflow: hidden;
-}
-
-.gallery-detail-top > .gallery-detail-kicker {
-  flex: 0 0 auto;
-  white-space: nowrap;
 }
 
 .gallery-detail-top > .screen-x {
@@ -5521,7 +5516,8 @@ button:disabled {
 
 .gallery-detail-title > p {
   min-width: 0;
-  flex: 1 1 150px;
+  flex: 0 1 auto;
+  max-width: 280px;
   margin: 0;
   overflow: hidden;
   color: rgba(255, 239, 205, 0.64);
@@ -5586,10 +5582,6 @@ button:disabled {
     grid-column: 1;
   }
 
-  .gallery-detail-top > .gallery-detail-kicker {
-    display: none;
-  }
-
   .gallery-detail-top > .screen-x {
     grid-column: 2;
     grid-row: 1;
@@ -5622,10 +5614,6 @@ button:disabled {
     padding: 3px 10px;
   }
 
-  .gallery-detail-top > .gallery-detail-kicker {
-    font-size: 0.52rem;
-  }
-
   .gallery-detail-title {
     gap: 6px;
   }
@@ -5656,8 +5644,8 @@ button:disabled {
 .gallery-detail-body {
   display: grid;
   min-height: 0;
-  grid-template-columns: 210px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 18px;
   padding: 12px 18px;
   overflow: hidden;
 }
@@ -5671,7 +5659,7 @@ button:disabled {
 }
 
 .gallery-detail-card {
-  width: 210px;
+  width: 280px;
   aspect-ratio: 5 / 7;
 }
 
@@ -5804,7 +5792,7 @@ button:disabled {
 .gallery-detail-lore p {
   margin: 0;
   color: rgba(255, 243, 218, 0.85);
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   line-height: 1.45;
 }
 
@@ -5821,7 +5809,7 @@ button:disabled {
 /* Relics no longer spend the first row on a radar. Give their lore the space
    back as readable prose instead of leaving a wide, empty column beside it. */
 .gallery-detail-panel.is-relic .gallery-detail-lore p {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   line-height: 1.48;
 }
 
@@ -5933,34 +5921,6 @@ button:disabled {
   line-height: 1.5;
 }
 
-.gallery-detail-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 20px 6px;
-  border-top: 1px solid rgba(240, 199, 103, 0.2);
-}
-
-.gallery-detail-nav button {
-  min-width: 94px;
-  padding: 7px 10px;
-  border-color: rgba(67, 205, 189, 0.4);
-  background: rgba(12, 59, 56, 0.48);
-  color: #c7fff1;
-  font-size: 0.7rem;
-}
-
-.gallery-detail-nav button:disabled {
-  opacity: 0.38;
-}
-
-.gallery-detail-nav span {
-  color: rgba(255, 241, 207, 0.48);
-  font-size: 0.68rem;
-  font-variant-numeric: tabular-nums;
-}
-
 @media (max-width: 760px) {
   .gallery-detail-body {
     grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
@@ -5982,7 +5942,7 @@ button:disabled {
   }
 
   .gallery-detail-card {
-    width: 150px;
+    width: 176px;
   }
 
   .gallery-detail-chart-row {
@@ -6004,8 +5964,7 @@ button:disabled {
   }
 
   .gallery-detail-top,
-  .gallery-detail-body,
-  .gallery-detail-nav {
+  .gallery-detail-body {
     padding-inline: 13px;
   }
 
@@ -6043,8 +6002,8 @@ button:disabled {
   }
 
   .gallery-detail-body {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 5px;
+    grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
+    gap: 4px;
     padding-top: 8px;
     padding-bottom: 8px;
   }
@@ -6057,7 +6016,7 @@ button:disabled {
   }
 
   .gallery-detail-card {
-    width: clamp(100px, 29vw, 122px);
+    width: clamp(128px, 36vw, 142px);
   }
 
   .gallery-detail-sealed-note {
@@ -6065,10 +6024,20 @@ button:disabled {
   }
 
   .gallery-detail-chart-row {
+    display: contents;
+  }
+
+  .gallery-detail-chart-wrap {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .gallery-detail-chart-row .gallery-detail-lore,
+  .gallery-detail-panel.is-relic .gallery-detail-lore {
     grid-column: 1 / -1;
-    grid-row: auto;
-    grid-template-columns: minmax(130px, 0.45fr) minmax(0, 1.55fr);
-    gap: 5px;
+    grid-row: 2;
+    align-self: start;
   }
 
   .star-chart {
@@ -6081,7 +6050,7 @@ button:disabled {
   }
 
   .gallery-detail-lore p {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     line-height: 1.35;
   }
 
@@ -6096,6 +6065,10 @@ button:disabled {
     grid-column: 1 / -1;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-primary {
+    grid-column: 1 / -1;
   }
 
   .gallery-detail-box {
@@ -6128,7 +6101,7 @@ button:disabled {
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-lore p {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     line-height: 1.35;
   }
 
@@ -6149,22 +6122,12 @@ button:disabled {
     font-size: 0.66rem;
   }
 
-  .gallery-detail-nav {
-    padding-top: 7px;
-    padding-bottom: 7px;
-  }
-
-  .gallery-detail-nav button {
-    min-width: 78px;
-    padding: 5px 7px;
-    font-size: 0.6rem;
-  }
 }
 
 /* A browser at 125% zoom commonly leaves a 1536x736 CSS viewport on a
    1920x1012 screen. The modal must fit that real working area, not only a
-   generous headless viewport. Shrink the two large visual anchors and tighten
-   the chrome together so the final detail row stays visible. */
+   generous headless viewport. Keep the compact chrome while giving the card
+   and chart the larger footprint requested for a Star Chart. */
 @media (min-width: 761px) and (max-height: 800px) {
   .gallery-detail-veil {
     padding: 10px;
@@ -6177,10 +6140,6 @@ button:disabled {
   .gallery-detail-top {
     gap: 6px;
     padding: 3px 10px;
-  }
-
-  .gallery-detail-top > .gallery-detail-kicker {
-    font-size: 0.52rem;
   }
 
   .gallery-detail-title {
@@ -6212,27 +6171,27 @@ button:disabled {
   }
 
   .gallery-detail-body {
-    grid-template-columns: 180px minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 16px;
     padding: 8px 16px;
   }
 
   .gallery-detail-card {
-    width: 180px;
+    width: 240px;
   }
 
   .gallery-detail-chart-row {
-    grid-template-columns: 180px minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 12px;
   }
 
   .star-chart {
-    width: 180px;
-    height: 180px;
+    width: 200px;
+    height: 200px;
   }
 
   .gallery-detail-lore p {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     line-height: 1.4;
   }
 
@@ -6271,7 +6230,7 @@ button:disabled {
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-lore p {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     line-height: 1.42;
   }
 
@@ -6293,15 +6252,6 @@ button:disabled {
     font-size: 0.74rem;
   }
 
-  .gallery-detail-nav {
-    padding: 7px 16px 6px;
-  }
-
-  .gallery-detail-nav button {
-    min-width: 82px;
-    padding: 6px 8px;
-    font-size: 0.64rem;
-  }
 }
 
 /* Keep a short phone viewport readable after the Relic chart disappears. The
@@ -6318,16 +6268,43 @@ button:disabled {
   }
 
   .gallery-detail-body {
-    padding-top: 7px;
-    padding-bottom: 7px;
+    grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
+    gap: 4px;
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
 
   .gallery-detail-card {
-    width: clamp(92px, 27vw, 110px);
+    width: clamp(120px, 34vw, 132px);
+  }
+
+  .gallery-detail-primary {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .gallery-detail-chart-row {
+    display: contents;
+  }
+
+  .gallery-detail-chart-wrap {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .gallery-detail-chart-row .gallery-detail-lore {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .gallery-detail-columns {
+    grid-column: 1 / -1;
   }
 
   .gallery-detail-lore p {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
   }
 
   .gallery-detail-lore blockquote {
