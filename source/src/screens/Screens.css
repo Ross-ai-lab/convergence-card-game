@@ -2009,23 +2009,6 @@ button.duel-trigger:hover:not(:disabled) {
   color: #fff0bd;
 }
 
-.title-actions .tutorial-trigger {
-  border-color: rgba(96, 220, 192, 0.72);
-  color: #c7fff1;
-  background: rgba(10, 58, 54, 0.72);
-  box-shadow: 0 10px 28px rgba(4, 1, 10, 0.5), 0 0 20px rgba(67, 205, 189, 0.16);
-}
-
-.title-actions .tutorial-trigger svg {
-  color: #8ff2dc;
-}
-
-.title-actions .tutorial-trigger:hover {
-  border-color: #b9fff0;
-  color: #effffb;
-  background: rgba(18, 88, 78, 0.9);
-}
-
 .developer-cheat-panel {
   position: absolute;
   top: clamp(14px, 2.8vh, 30px);

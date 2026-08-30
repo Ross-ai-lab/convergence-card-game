@@ -214,6 +214,14 @@ function configureTutorialState(state: GameState, cards: CardDefinition[]): void
   if (target) {
     const minion = createMinion(target, 1, state);
     minion.sleeping = false;
+    // Keep the teaching target alive after the first simultaneous combat so
+    // the following Battlecry lesson still has a legal enemy minion to pick.
+    // It remains the real Taunt card and is only reinforced in the curated
+    // tutorial position.
+    if (minion.keywords.includes("Taunt")) {
+      minion.maxHp = Math.max(minion.maxHp, 2);
+      minion.hp = minion.maxHp;
+    }
     state.players[1].board[2] = minion;
   }
 }
@@ -807,7 +815,7 @@ function playRelic(
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
   if (player.pressured?.cardId === cardId) player.pressured = null;
   const instance = createRelicInstance(relic);
-  equipRelic(state, bearer, instance, events);
+  equipRelic(state, bearer, instance, library, events);
   events.push({
     kind: "play",
     text: `${player.name} plays ${relic.name} on ${bearer.name}.`,
@@ -1125,6 +1133,8 @@ function resolveUpkeep(state: GameState, playerId: PlayerId, library: CardLibrar
     }
   }
 
+  resolveStartOfTurnRelics(state, playerId, library, events);
+
   // Permanent slot-growth blessings feed whoever is standing in the marked slot.
   for (const aura of player.slotAuras) {
     if (aura.auraId !== "slot_grow_1" && aura.auraId !== "slot_grow_2") continue;
@@ -1154,6 +1164,46 @@ function resolveUpkeep(state: GameState, playerId: PlayerId, library: CardLibrar
         buffMinion(minion, 3, 3);
         events.push(effectEvent(`${minion.name} emerges from the Cocoon (+3/+3).`, minion));
       }
+    }
+  }
+}
+
+/** Resolve relics whose printed text begins at the bearer's owner's turn. */
+function resolveStartOfTurnRelics(
+  state: GameState,
+  playerId: PlayerId,
+  library: CardLibrary,
+  events: GameEvent[],
+): void {
+  const player = state.players[playerId];
+
+  // Time Turner records the current start after applying the previous turn's
+  // snapshot, so a wounded bearer can be rewound repeatedly across turns.
+  for (const minion of player.board) {
+    if (!minion) continue;
+    for (const relic of attachedRelics(minion)) {
+      if (relic.relicId !== "time_turner") continue;
+      const previousStartHp = relic.previousTurnStartHp;
+      if (previousStartHp !== undefined && minion.hp < minion.maxHp) {
+        const restoredHp = Math.min(minion.maxHp, previousStartHp);
+        if (restoredHp > minion.hp) {
+          minion.hp = restoredHp;
+          events.push(effectEvent(`${minion.name} rewinds its wounds with the Time Turner.`, minion));
+        }
+      }
+      relic.previousTurnStartHp = minion.hp;
+    }
+  }
+
+  // Keep the Omnitrix attached through its own transformation. Other relics
+  // are discarded by transformation, just as they are for every other form
+  // change in the engine.
+  for (const original of [...player.board]) {
+    if (!original) continue;
+    const hasOmnitrix = attachedRelics(original).some((relic) => relic.relicId === "omnitrix");
+    if (!hasOmnitrix || slotOf(state, original) < 0) continue;
+    if (!transformMinionFromPool(state, original, original, 1, library, events, "omnitrix")) {
+      events.push(effectEvent(`${original.name} finds no Omnitrix form that costs 1 more.`, original));
     }
   }
 }
@@ -3444,7 +3494,7 @@ function runEffect(
       const stolen = relicAt(picked, relicIndex);
       if (!stolen || !canEquipRelicToBearer(stolen, source)) return false;
       unequipRelic(picked, relicIndex);
-      equipRelic(state, source, stolen, events);
+      equipRelic(state, source, stolen, library, events);
       events.push(effectEvent(`${label} takes ${stolen.name} from ${picked.name} and equips it.`, source));
     }
   } else if (source.effectId === "destroy_relic") {
@@ -3819,6 +3869,7 @@ function transformMinionFromPool(
   costDelta: number,
   library: CardLibrary,
   events: GameEvent[],
+  preserveRelicId?: string,
 ): boolean {
   const slot = slotOf(state, target);
   if (slot < 0) return false;
@@ -3828,8 +3879,20 @@ function transformMinionFromPool(
   if (candidates.length === 0) return false;
   const replacement = candidates[rollInt(state, candidates.length)];
   if (!replacement) return false;
-  discardAttachedRelics(state, target);
+  const preservedRelicIndex = preserveRelicId
+    ? firstRelicIndex(target, (relic) => relic.relicId === preserveRelicId)
+    : -1;
+  const preservedRelic = preservedRelicIndex >= 0 ? relicAt(target, preservedRelicIndex) : null;
+  if (preservedRelic) {
+    for (const index of [0, 1]) {
+      const relic = relicAt(target, index);
+      if (relic && index !== preservedRelicIndex) state.discard.push(relic.id);
+    }
+  } else {
+    discardAttachedRelics(state, target);
+  }
   const transformed = createMinion(replacement, target.owner, state);
+  if (preservedRelic) transformed.relic = preservedRelic;
   transformed.suppressArrivalTheme = true;
   state.players[target.owner].board[slot] = transformed;
   events.push(effectEvent(`${source.name} transforms ${target.name} into ${transformed.name}.`, source));
@@ -4034,7 +4097,7 @@ function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, libr
     if (!cardId || !removeCardFromDrawPile(state, cardId)) continue;
     const relic = library[cardId];
     if (!isRelicCard(relic)) continue;
-    equipRelic(state, bearer, createRelicInstance(relic), events);
+    equipRelic(state, bearer, createRelicInstance(relic), library, events);
     granted += 1;
   }
   events.push(effectEvent(`${source.name} grants Ascension Relics to ${granted} friendly minion${granted === 1 ? "" : "s"}.`, source));
@@ -4048,7 +4111,7 @@ function equipRandomRelic(state: GameState, source: MinionInstance, library: Car
   }
   const relic = available[rollInt(state, available.length)];
   if (!relic || !removeCardFromDrawPile(state, relic.id)) return;
-  equipRelic(state, source, createRelicInstance(relic), events);
+  equipRelic(state, source, createRelicInstance(relic), library, events);
 }
 
 function resolvePocketRooms(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
@@ -4540,12 +4603,55 @@ function grantRelic(state: GameState, playerId: PlayerId, source: MinionInstance
   events.push({ kind: "effect", text: `${source.name} adds an Ascension Relic to hand.`, player: playerId, instanceId: source.instanceId, cardId });
 }
 
+/** Remove the temporary disable and delayed-kill states a Neuralyzer can clear. */
+function cleanseNegativeStatuses(minion: MinionInstance, events: GameEvent[]): string[] {
+  const removed: string[] = [];
+  if (minion.silenced || minion.passiveSilenceSources.length > 0) {
+    minion.silenced = false;
+    minion.passiveSilenceSources = [];
+    removed.push("Silence");
+  }
+  if (minion.frozen || minion.thawPending) {
+    const wasFrozen = minion.frozen;
+    minion.frozen = false;
+    minion.thawPending = false;
+    if (wasFrozen) minion.attacksUsed = 0;
+    removed.push("Freeze");
+  }
+  if (minion.chained > 0) {
+    minion.chained = 0;
+    resolveChainGrowth(minion, events);
+    removed.push("Chained");
+  }
+  if (minion.attackLocked || minion.attackLockedUntilTurn !== null) {
+    minion.attackLocked = false;
+    minion.attackLockedUntilTurn = null;
+    removed.push("Attack Lock");
+  }
+  if (minion.markedBy !== null || minion.markedForDeathAtTurn != null) {
+    minion.markedBy = null;
+    minion.markedForDeathAtTurn = null;
+    removed.push("Death Mark");
+  }
+  if (minion.delayedDestroySource !== null) {
+    minion.delayedDestroySource = null;
+    removed.push("Delayed Destruction");
+  }
+  return removed;
+}
+
 function canEquipRelicToBearer(relic: Pick<RelicDefinition | RelicInstance, "relicId">, bearer: MinionInstance): boolean {
   if (relic.relicId === "mjolnir" || relic.relicId === "excalibur") return bearer.alignment === "Good";
   return true;
 }
 
-function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstance, events: GameEvent[]): void {
+function equipRelic(
+  state: GameState,
+  bearer: MinionInstance,
+  relic: RelicInstance,
+  library: CardLibrary,
+  events: GameEvent[],
+): void {
   if (!canEquipRelicToBearer(relic, bearer)) return;
   const slot = bearer.relic === null ? 0 : bearer.relic2 === null || bearer.relic2 === undefined ? 1 : -1;
   if (slot < 0) return;
@@ -4557,6 +4663,9 @@ function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstan
     cardId: relic.id,
     instanceId: bearer.instanceId,
   });
+  if (relic.relicId === "time_turner") {
+    relic.previousTurnStartHp = bearer.hp;
+  }
   // One-shot relics fire the moment they are strapped on.
   if (relic.relicId === "double_stats") {
     bearer.atk *= 2;
@@ -4582,6 +4691,18 @@ function equipRelic(state: GameState, bearer: MinionInstance, relic: RelicInstan
   } else if (relic.relicId === "excalibur") {
     if (!hasKeyword(bearer, "Charge")) bearer.keywords.push("Charge");
     bearer.sleeping = false;
+  } else if (relic.relicId === "stand_arrow") {
+    if (!coinFlip(state) || !transformMinionFromPool(state, bearer, bearer, 2, library, events)) {
+      applySilence(bearer);
+      events.push(effectEvent(`${bearer.name} is Silenced by the Stand Arrow.`, bearer));
+    }
+  } else if (relic.relicId === "poke_ball") {
+    returnMinionsToHand(state, bearer.owner, [bearer], events);
+    events.push(effectEvent(`${bearer.name} returns to hand in the Poké Ball.`, bearer));
+  } else if (relic.relicId === "neuralyzer") {
+    const removed = cleanseNegativeStatuses(bearer, events);
+    const curseText = removed.length > 0 ? removed.join(", ") : "no negative effects";
+    events.push(effectEvent(`The Neuralyzer removes ${curseText} from ${bearer.name}.`, bearer));
   }
 }
 
@@ -5741,6 +5862,18 @@ function destroyAtSlot(
     }
   }
   if (allowReplacement && rescueWithOogway(state, playerId, slotIndex, events)) return;
+  const symbioteIndex = firstRelicIndex(minion, (relic) => relic.relicId === "symbiote");
+  if (allowReplacement && symbioteIndex >= 0) {
+    const symbiote = relicAt(minion, symbioteIndex);
+    if (symbiote) {
+      unequipRelic(minion, symbioteIndex);
+      state.discard.push(symbiote.id);
+      minion.hp = 1;
+      minion.chained = Math.max(minion.chained, 2);
+      events.push(effectEvent(`${minion.name} survives at 1 HP and is Chained by the Symbiote.`, minion));
+      return;
+    }
+  }
   const rescued = allowReplacement && hasRelic(minion, "return_on_death"); // The Green Mask
   if (killer && !killer.silenced && hasEffect(killer, "grievous_on_kill_atk")) {
     killer.atk += minion.atk;

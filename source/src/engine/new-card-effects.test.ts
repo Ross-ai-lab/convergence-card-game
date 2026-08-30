@@ -156,8 +156,12 @@ describe("2026 card replacements", () => {
     expect(after.pendingTarget).toBeNull();
     expect(after.players[0].hand).toHaveLength(2);
 
-    const sameTurnRelic = after.players[0].hand[0];
+    // Keep this follow-up relic inert. New relics may have an immediate
+    // transformation or return effect, which would remove the second Frieren
+    // before the next-turn reset is tested.
+    const sameTurnRelic = relicId("Tesseract");
     after.players[0].hand = [sameTurnRelic];
+    after.deck = after.deck.filter((cardId) => cardId !== sameTurnRelic);
     const sameTurn = applyAction(
       after,
       { type: "play_relic", player: 0, handIndex: 0, slotIndex: 1 },

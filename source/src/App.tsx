@@ -448,6 +448,7 @@ export default function App() {
   const [developerToolsOpen, setDeveloperToolsOpen] = useState(false);
   const [developerDuelActive, setDeveloperDuelActive] = useState(false);
   const [tutorialActive, setTutorialActive] = useState(false);
+  const [tutorialCompleted, setTutorialCompleted] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   /**
    * The pack a just-won duel earned, waiting to be torn open. Null whenever
@@ -1239,26 +1240,29 @@ export default function App() {
       // Tutorial lessons advance from the action that just happened, not from
       // the entire event log. The old event-derived calculation could observe
       // the bot's automatic response after a Taunt attack and jump from the
-      // attack lesson straight to the finale. Keep the guide on the exact
+      // attack lesson straight to completion. Keep the guide on the exact
       // interaction the player completed.
-      if (tutorialActive && action.player === viewerId) {
+      if (tutorialActive && !tutorialCompleted && action.player === viewerId) {
         let nextStep: number | null = null;
         if (result.state.phase === "targeting" && result.state.pendingTarget?.player === viewerId) {
-          nextStep = 4;
+          nextStep = 3;
         } else if (action.type === "play_card" || action.type === "play_relic") {
           nextStep = 1;
         } else if (action.type === "choose_target") {
-          nextStep = 5;
+          nextStep = 3;
         } else if (action.type === "attack_minion" || action.type === "attack_core") {
-          nextStep = 4;
+          nextStep = 3;
         }
         if (action.type === "end_turn") {
           // The first body is asleep until the next turn. Passing advances to
-          // the card spotlight, then a deliberate coach action reveals the
-          // attack lesson once the Recruit has finished its turn.
-          setTutorialStep((current) => (current === 1 ? 2 : current >= 4 ? 5 : current));
+          // the combat lesson once the Recruit has finished its turn.
+          setTutorialStep((current) => (current === 1 ? 2 : current));
         } else if (nextStep !== null) {
-          setTutorialStep((current) => (current >= 4 && nextStep < current ? current : nextStep));
+          setTutorialStep((current) => Math.max(current, nextStep));
+        }
+        if (action.type === "choose_target" && tutorialStep === 3 && result.state.phase !== "targeting") {
+          setTutorialStep(3);
+          setTutorialCompleted(true);
         }
       }
     }
@@ -1303,6 +1307,7 @@ export default function App() {
     sfx.stopCardTheme();
     clearSave();
     setTutorialActive(false);
+    setTutorialCompleted(false);
     setTutorialStep(0);
     setDeveloperDuelActive(false);
     setDeveloperToolsOpen(false);
@@ -1351,6 +1356,7 @@ export default function App() {
     sfx.stopCardTheme();
     clearSave();
     setTutorialActive(false);
+    setTutorialCompleted(false);
     setTutorialStep(0);
     setDeveloperDuelActive(Boolean(options.testCardId));
     setDeveloperToolsOpen(false);
@@ -1394,6 +1400,7 @@ export default function App() {
     sfx.stopCardTheme();
     clearSave();
     setTutorialActive(true);
+    setTutorialCompleted(false);
     setTutorialStep(0);
     setDeveloperDuelActive(false);
     setDeveloperToolsOpen(false);
@@ -1427,6 +1434,7 @@ export default function App() {
     sfx.stopCardTheme();
     setDuelIntro(null);
     setTutorialActive(false);
+    setTutorialCompleted(false);
     setTutorialStep(0);
     setDeveloperDuelActive(false);
     setDeveloperToolsOpen(false);
@@ -2412,9 +2420,8 @@ export default function App() {
 
       {tutorialActive && game.phase !== "gameOver" && !duelIntro ? (
         <TutorialCoach
-          game={game}
           step={tutorialStep}
-          onAdvance={() => setTutorialStep((current) => (current === 2 ? 3 : current))}
+          completed={tutorialCompleted}
           onSkip={toTitle}
         />
       ) : null}
@@ -4828,18 +4835,14 @@ function CardPack({
 }
 
 function TutorialCoach({
-  game,
   step,
-  onAdvance,
+  completed,
   onSkip,
 }: {
-  game: GameState;
   step: number;
-  onAdvance: () => void;
+  completed: boolean;
   onSkip: () => void;
 }) {
-  const exampleRelic = relics.find((relic) => relic.id === "r010");
-  const exampleFace = exampleRelic ? relicFace(exampleRelic) : null;
   const lessonList = [
     {
       title: "Play a card",
@@ -4852,53 +4855,37 @@ function TutorialCoach({
       hint: "The Recruit takes its turn, then your minion can act.",
     },
     {
-      title: "Study a card",
-      body: "Card art, cost, effect, and origin tell you how a card belongs in the Rift before you play it.",
-      hint: "Read this example, then continue to your first swing.",
-    },
-    {
       title: "Take your first swing",
       body: "When a minion has a green rim, click it, then choose the enemy Taunt minion.",
       hint: "Combat is simultaneous, so defenders strike back.",
     },
     {
       title: "Answer the prompt",
-      body: "A Battlecry can pause the duel. Click one of the teal-highlighted legal targets.",
+      body: "A Battlecry can pause the duel. Click one of the teal-highlighted legal targets. Completing this prompt finishes the tutorial.",
       hint: "The board lights up only the choices the card allows.",
-    },
-    {
-      title: "You know the loop",
-      body: "Draw, spend mana, attack, and read every effect before committing your next move.",
-      hint: "The rest of the roster teaches itself through play.",
     },
   ];
   const safeStep = Math.max(0, Math.min(step, lessonList.length - 1));
-  const lesson = lessonList[safeStep];
+  const lesson = completed
+    ? {
+        title: "Tutorial complete",
+        body: "You completed all four guided lessons. Leave the tutorial to keep playing.",
+        hint: "The full duel remains available from developer mode.",
+      }
+    : lessonList[safeStep];
 
   return (
     <aside className="tutorial-coach" aria-label="Tutorial">
       <div className="tutorial-coach-top">
         <span>Tutorial</span>
-        <small>{safeStep + 1} / {lessonList.length}</small>
+        <small>{completed ? lessonList.length : safeStep + 1} / {lessonList.length}</small>
       </div>
       <div className="tutorial-progress" aria-hidden="true">
         {lessonList.map((_lesson, index) => <i key={index} className={index <= safeStep ? "on" : ""} />)}
       </div>
       <strong>{lesson.title}</strong>
       <p>{lesson.body}</p>
-      {safeStep === 2 && exampleFace ? (
-        <div className="tutorial-card-example">
-          <div className="tutorial-card-example-face"><CardFace card={exampleFace} /></div>
-          <div>
-            <strong>Elder wand</strong>
-            <span>Harry Potter · The Unbeatable Wand</span>
-          </div>
-        </div>
-      ) : null}
       <small className="tutorial-coach-hint">{lesson.hint}</small>
-      {safeStep === 2 && game.activePlayer === 0 && game.phase === "main" ? (
-        <button type="button" className="tutorial-advance" onClick={onAdvance}>Continue to first swing</button>
-      ) : null}
       <button type="button" onClick={onSkip}>Leave tutorial</button>
     </aside>
   );

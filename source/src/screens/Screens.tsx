@@ -300,18 +300,6 @@ export function TitleScreen({
         <div className="title-links title-actions">
           <button
             type="button"
-            className="tutorial-trigger"
-            onClick={() => {
-              sfx.play("button");
-              onTutorial();
-            }}
-            title="Learn the game in Tutorial"
-          >
-            <Sparkle size={22} weight="fill" aria-hidden="true" />
-            <span>Tutorial</span>
-          </button>
-          <button
-            type="button"
             className="hotseat-trigger"
             onClick={() => {
               sfx.play("button");
@@ -374,6 +362,16 @@ export function TitleScreen({
               }}
             >
               Open developer tools
+            </button>
+            <button
+              type="button"
+              className="developer-tools-open"
+              onClick={() => {
+                sfx.play("button");
+                onTutorial();
+              }}
+            >
+              Run tutorial
             </button>
             <button
               type="button"

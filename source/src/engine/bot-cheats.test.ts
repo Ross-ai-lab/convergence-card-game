@@ -24,6 +24,10 @@ import type { GameState, MinionInstance, PlayerId } from "./types";
 const library = makeCardLibrary(cards, relics);
 const BOT: PlayerId = 1;
 const HUMAN: PlayerId = 0;
+// Keep this seeded tactical sample on the pool it was authored against. The
+// live library remains complete; only this fixture stays stable as the roster
+// grows with relics that can change a random opening.
+const stableInsightRelics = relics.filter((relic) => Number(relic.id.slice(1)) <= 28);
 
 function cardId(name: string): string {
   const card = cards.find((entry) => entry.name === name);
@@ -288,7 +292,7 @@ describe("Insight+", () => {
     // Keep the sample's resource trade available explicitly. The old opening
     // draft happened to select a draw power in this seed; the menu no longer
     // rolls powers, so make that test fixture's tactical premise explicit.
-    let state = createInitialGame(cards, "insight-plus", relics, { heroPowers: ["core_trade_draw", "core_trade_draw"] });
+    let state = createInitialGame(cards, "insight-plus", stableInsightRelics, { heroPowers: ["core_trade_draw", "core_trade_draw"] });
     const collected: GameState[] = [];
     for (let step = 0; step < 400 && collected.length < 12; step += 1) {
       if (state.phase === "gameOver") break;

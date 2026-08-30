@@ -680,7 +680,13 @@ export type RelicId =
   | "necronomicon"
   | "dragon_balls"
   | "mjolnir"
-  | "excalibur";
+  | "excalibur"
+  | "omnitrix"
+  | "stand_arrow"
+  | "poke_ball"
+  | "time_turner"
+  | "symbiote"
+  | "neuralyzer";
 
 export interface RelicDefinition {
   kind: "relic";
@@ -717,6 +723,8 @@ export interface RelicInstance {
   readyOnTurn?: number;
   /** The Monkey's Paw: the turn on which the bearer dies. */
   destroyOnTurn?: number;
+  /** Time Turner: HP recorded when the bearer's previous turn began. */
+  previousTurnStartHp?: number;
 }
 
 /**

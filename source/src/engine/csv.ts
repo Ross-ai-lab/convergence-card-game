@@ -346,6 +346,12 @@ const relicIds = new Set<RelicId>([
   "dragon_balls",
   "mjolnir",
   "excalibur",
+  "omnitrix",
+  "stand_arrow",
+  "poke_ball",
+  "time_turner",
+  "symbiote",
+  "neuralyzer",
 ]);
 
 export function parseCsv(text: string): Record<string, string>[] {

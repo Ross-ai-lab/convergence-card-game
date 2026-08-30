@@ -71,9 +71,10 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // state and is discarded rather than restoring a broken opening screen.
 // v22: MinionInstance gained temporary control state for Motoko Kusanagi.
 // v23: MinionInstance gained Frieren's once-per-turn relic discovery marker.
-const SAVE_VERSION = 23;
+// v24: RelicInstance gained Time Turner's previous-turn HP snapshot.
+const SAVE_VERSION = 24;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v22";
+const LEGACY_SAVE_KEY = "convergence.save.v23";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -235,6 +236,11 @@ function migrateLegacyMechanics(game: GameState): void {
       if (minion.chainGrowthPending === undefined) minion.chainGrowthPending = false;
       if (minion.temporaryControl === undefined) minion.temporaryControl = null;
       if (minion.relicDiscoveryTurn === undefined) minion.relicDiscoveryTurn = null;
+      for (const relic of [minion.relic, minion.relic2 ?? null]) {
+        if (relic?.relicId === "time_turner" && relic.previousTurnStartHp === undefined) {
+          relic.previousTurnStartHp = minion.hp;
+        }
+      }
       const transform = minion.temporaryTransform;
       if (transform && transform.original.relicDiscoveryTurn === undefined) {
         transform.original.relicDiscoveryTurn = minion.relicDiscoveryTurn;

@@ -141,6 +141,12 @@ describe("relic effects", () => {
       ["The Green Mask", 2, "Return the bearer to your hand after death"],
       ["Tesseract", 4, "The bearer can attack twice each turn"],
       ["Infinity Castle", 4, "The bearer's Evade chance is 50%"],
+      ["Omnitrix", 3, "At the start of your turn transform the bearer into a random minion that costs 1 more"],
+      ["Stand Arrow", 2, "50% chance to transform the bearer into a random minion that costs 2 more; otherwise Silence it"],
+      ["Poké Ball", 1, "Return the bearer to your hand"],
+      ["Time Turner", 2, "At the start of your turn if the bearer is damaged restore it to the HP it had at the start of your previous turn"],
+      ["Symbiote", 1, "When the bearer dies leave it Chained with 1 HP instead"],
+      ["Neuralyzer", 1, "Remove all negative effects from the bearer"],
     ] as const;
 
     for (const [name, cost, effect] of requested) {
@@ -485,6 +491,114 @@ describe("relic effects", () => {
     expect(after.players[1].hand).toContain(deathStar);
     expect(after.discard).not.toContain(deathStar);
     expect(result.events).toContainEqual(expect.objectContaining({ motion: "return", instanceId: targetInstanceId }));
+  });
+
+  it("Omnitrix transforms its bearer upward at the start of its owner's turn", () => {
+    const state = mainState("omnitrix-transform");
+    state.players[0].board[0] = makeMinion("Dumbledore", 0);
+    const equipped = playRelicFor(state, 0, "Omnitrix", 0);
+    const nextTurn = toMyNextTurn(equipped);
+    const transformed = nextTurn.players[0].board[0]!;
+
+    expect(transformed.name).not.toBe("Dumbledore");
+    expect(transformed.cost).toBe(6);
+    expect(transformed.relic?.name).toBe("Omnitrix");
+  });
+
+  it("Stand Arrow either transforms upward or Silences its bearer", () => {
+    let transformed: GameState | undefined;
+    let silenced: GameState | undefined;
+
+    for (const seed of [1, 0x80000000]) {
+      const state = mainState(`stand-arrow-${seed}`);
+      state.rngSeed = seed;
+      state.players[0].board[0] = makeMinion("John Wick", 0);
+      const after = playRelicFor(state, 0, "Stand Arrow", 0);
+      const bearer = after.players[0].board[0];
+      if (bearer?.cost === 3) transformed = after;
+      if (bearer?.name === "John Wick" && bearer.silenced) silenced = after;
+    }
+
+    expect(transformed).toBeDefined();
+    expect(transformed?.players[0].board[0]?.relic).toBeNull();
+    expect(silenced).toBeDefined();
+    expect(silenced?.players[0].board[0]?.relic?.name).toBe("Stand Arrow");
+  });
+
+  it("Poké Ball returns its bearer to hand and is consumed with the equipment", () => {
+    const state = mainState("poke-ball-return");
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0);
+    const bearerCard = cardId("Mob Psycho");
+    const ballId = relicByName("Poké Ball").id;
+    const after = playRelicFor(state, 0, "Poké Ball", 0);
+
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[0].hand).toContain(bearerCard);
+    expect(after.discard).toContain(ballId);
+  });
+
+  it("Time Turner restores the HP recorded at the previous turn start", () => {
+    const state = mainState("time-turner-rewind");
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0);
+    const equipped = playRelicFor(state, 0, "Time Turner", 0);
+    equipped.players[0].board[0]!.hp = 2;
+
+    const firstRewind = toMyNextTurn(equipped);
+    expect(firstRewind.players[0].board[0]?.hp).toBe(5);
+    expect(firstRewind.players[0].board[0]?.relic?.previousTurnStartHp).toBe(5);
+
+    firstRewind.players[0].board[0]!.hp = 3;
+    const secondRewind = toMyNextTurn(firstRewind);
+    expect(secondRewind.players[0].board[0]?.hp).toBe(5);
+  });
+
+  it("Symbiote leaves a lethal bearer Chained at 1 HP once", () => {
+    const state = mainState("symbiote-survival");
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0);
+    const equipped = playRelicFor(state, 0, "Symbiote", 0);
+    equipped.players[1].board[0] = makeMinion("Death Star", 1, { atk: 99, sleeping: false });
+    equipped.activePlayer = 1;
+
+    const after = applyAction(
+      equipped,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    const survivor = after.players[0].board[0];
+
+    expect(survivor).toMatchObject({ hp: 1, chained: 2, relic: null });
+    expect(after.discard).toContain(relicByName("Symbiote").id);
+    expect(after.players[0].deadMinions ?? []).not.toContain(cardId("Mob Psycho"));
+  });
+
+  it("Neuralyzer removes the bearer's negative statuses", () => {
+    const state = mainState("neuralyzer-cleanse");
+    state.players[0].board[0] = makeMinion("Mob Psycho", 0, {
+      silenced: true,
+      frozen: true,
+      thawPending: true,
+      chained: 2,
+      attackLocked: true,
+      attackLockedUntilTurn: 20,
+      markedBy: "enemy-source",
+      markedForDeathAtTurn: 5,
+      delayedDestroySource: "enemy-delay",
+    });
+    const after = playRelicFor(state, 0, "Neuralyzer", 0);
+    const bearer = after.players[0].board[0]!;
+
+    expect(bearer).toMatchObject({
+      silenced: false,
+      frozen: false,
+      thawPending: false,
+      chained: 0,
+      attackLocked: false,
+      attackLockedUntilTurn: null,
+      markedBy: null,
+      markedForDeathAtTurn: null,
+      delayedDestroySource: null,
+    });
+    expect(bearer.relic?.name).toBe("Neuralyzer");
   });
 
   it("Allspark Cube marks a captured kill as a return to hand", () => {

@@ -34,33 +34,30 @@ function check(name, condition, detail = "") {
 
 // Tutorial first duel ------------------------------------------------------
 await fresh();
-await page.getByRole("button", { name: "Tutorial", exact: true }).click();
+check("normal menu has no Tutorial button", await page.getByRole("button", { name: "Tutorial", exact: true }).count() === 0);
+await page.keyboard.type("Ross");
+const runTutorialButton = page.locator(".developer-cheat-panel").getByRole("button", { name: "Run tutorial", exact: true });
+check("developer panel shows Run tutorial", await runTutorialButton.isVisible());
+await runTutorialButton.click();
 await waitForBoard();
 check("tutorial opens the coach", await page.locator(".tutorial-coach").isVisible());
 check("tutorial skips mulligan", await page.locator(".mulligan-panel").count() === 0);
 check("tutorial uses the curated opening", (await page.locator(".hand-card").count()) === 3);
-check("tutorial starts at lesson one", await page.locator(".tutorial-coach-top small").innerText() === "1 / 6");
+check("tutorial starts at lesson one", await page.locator(".tutorial-coach-top small").innerText() === "1 / 4");
 await page.locator(".hand-card.playable").first().click();
 await page.locator('[aria-label="Player One\'s board"] .board-slot.empty').first().click();
-check("tutorial advances after playing a card", await page.locator(".tutorial-coach-top small").innerText() === "2 / 6");
+check("tutorial advances after playing a card", await page.locator(".tutorial-coach-top small").innerText() === "2 / 4");
 await page.locator(".end-turn").click();
 await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().waitFor({ state: "visible", timeout: 25000 });
-check("tutorial shows the card after End Turn", await page.locator(".tutorial-coach-top small").innerText() === "3 / 6" && await page.locator(".tutorial-card-example").count() === 1);
-await page.screenshot({ path: path.join(outputDir, "tutorial-card-spotlight.png"), fullPage: false });
-await page.setViewportSize({ width: 390, height: 844 });
-await page.waitForTimeout(200);
-const tutorialMobileCoach = await page.locator(".tutorial-coach").evaluate((coach) => {
-  const box = coach.getBoundingClientRect();
-  return { right: box.right, bottom: box.bottom, viewportWidth: window.innerWidth, viewportHeight: window.innerHeight };
-});
-check("mobile Tutorial coach stays inside the viewport", tutorialMobileCoach.right <= tutorialMobileCoach.viewportWidth && tutorialMobileCoach.bottom <= tutorialMobileCoach.viewportHeight);
-await page.screenshot({ path: path.join(outputDir, "tutorial-card-spotlight-mobile.png"), fullPage: false });
-await page.setViewportSize({ width: 1440, height: 900 });
-await page.getByRole("button", { name: "Continue to first swing", exact: true }).click();
-check("tutorial reveals the swing lesson after the card", await page.locator(".tutorial-coach-top small").innerText() === "4 / 6");
+check("tutorial advances after End Turn", await page.locator(".tutorial-coach-top small").innerText() === "3 / 4");
 await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().click();
 await page.locator('[aria-label="Player Two\'s board"] .board-slot.targetable').first().click();
-check("tutorial advances one lesson after hitting Taunt", await page.locator(".tutorial-coach-top small").innerText() === "5 / 6");
+check("tutorial reaches the fourth lesson after hitting Taunt", await page.locator(".tutorial-coach-top small").innerText() === "4 / 4");
+await page.locator('[aria-label="Player One\'s hand"] .hand-card').filter({ hasText: "Batman" }).first().click();
+await page.locator('[aria-label="Player One\'s board"] .board-slot.empty').first().click();
+await page.locator('[aria-label="Player Two\'s board"] .board-slot.choosable').first().click();
+await page.locator(".target-prompt .prompt-value").first().click();
+check("tutorial marks complete after four lessons", await page.locator(".tutorial-coach").getByText("Tutorial complete", { exact: true }).count() === 1);
 await page.screenshot({ path: path.join(outputDir, "tutorial-after-taunt.png"), fullPage: false });
 
 // Developer mode ----------------------------------------------------------
@@ -68,7 +65,7 @@ await fresh();
 await page.keyboard.type("Ross");
 await page.getByRole("button", { name: "Open developer tools", exact: true }).click();
 check("developer mode opens its workbench", await page.locator(".developer-panel").isVisible());
-check("developer mode lists the complete library", (await page.locator(".developer-card-row").count()) === 209);
+check("developer mode lists the complete library", (await page.locator(".developer-card-row").count()) === 215);
 await page.screenshot({ path: path.join(outputDir, "developer-workbench.png"), fullPage: false });
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(250);

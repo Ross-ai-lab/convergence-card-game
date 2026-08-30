@@ -839,6 +839,12 @@ const RELIC_THEME_SOURCE: Record<string, string> = {
   r026: "c044", // Dragon Ball — Mastered Ultra Instinct Goku
   r027: "c015", // Marvel — Avengers
   r028: "c080", // Arthurian Legend — Gandalf the White
+  r029: "c106", // Ben 10 — Transformers fallback
+  r030: "c042", // JoJo — Giorno - Gold Experience Requiem
+  r031: "c106", // Pokémon — Transformers fallback
+  r032: "c030", // Harry Potter — Dumbledore
+  r033: "c015", // Marvel — Avengers
+  r034: "c030", // Men in Black — Harry Potter fallback
 };
 
 function isCardThemeId(cardId: string): boolean {
