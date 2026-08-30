@@ -2832,6 +2832,12 @@ button:disabled {
   object-position: center 0%;
 }
 
+/* Stand Arrow's source is a tall portrait. Anchor it to the top so the
+   complete spear tip survives the wide card-art crop. */
+.cf-art-stand-arrow img {
+  object-position: center 0%;
+}
+
 /* the soft glass sheen the old baked face had, kept so cards still read as objects */
 .cf-art::after {
   content: "";

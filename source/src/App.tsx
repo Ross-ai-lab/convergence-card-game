@@ -4092,7 +4092,13 @@ function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boole
   return (
     <div
       className={`cf-art ${
-        card.name === "Yujiro" ? "cf-art-yujiro" : card.name === "Conquest" ? "cf-art-conquest" : ""
+        card.name === "Yujiro"
+          ? "cf-art-yujiro"
+          : card.name === "Conquest"
+            ? "cf-art-conquest"
+            : card.name === "Stand Arrow"
+              ? "cf-art-stand-arrow"
+              : ""
       }`}
     >
       <img src={card.art} alt="" draggable={false} loading={lazy ? "lazy" : undefined} decoding={lazy ? "async" : undefined} />
