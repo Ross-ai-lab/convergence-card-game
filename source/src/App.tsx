@@ -3481,21 +3481,21 @@ function GalleryDetailModal({
         aria-label={`${entry.face.name} Star Chart`}
       >
         <header className="gallery-detail-top">
+          <span className="gallery-detail-kicker">{locked ? "Sealed profile" : "Star Chart profile"}</span>
           <div className="gallery-detail-title">
-            <span className="gallery-detail-kicker">{locked ? "Sealed profile" : "Star Chart profile"}</span>
             <h2>{entry.face.name}</h2>
             <p>
               {profile?.origin ?? entry.face.origin}
               {profile?.epithet ? ` · ${profile.epithet}` : ""}
             </p>
-            <div className="gallery-detail-chips">
-              <span className={`detail-chip rarity-chip-${entry.face.rarity.toLowerCase()}`}>{rarityName(entry.face.rarity)}</span>
-              <span className="detail-chip">{entry.face.camp}</span>
-              <span className="detail-chip">{entry.face.alignment}</span>
-              <span className="detail-chip">{entry.face.cost ?? "—"} mana · {entry.face.atk ?? "—"} / {entry.face.hp ?? "—"}</span>
-            </div>
-            {profile?.rank ? <strong className="gallery-detail-rank">{profile.rank}</strong> : null}
           </div>
+          <div className="gallery-detail-chips">
+            <span className={`detail-chip rarity-chip-${entry.face.rarity.toLowerCase()}`}>{rarityName(entry.face.rarity)}</span>
+            <span className="detail-chip">{entry.face.camp}</span>
+            <span className="detail-chip">{entry.face.alignment}</span>
+            <span className="detail-chip">{entry.face.cost ?? "—"} mana · {entry.face.atk ?? "—"} / {entry.face.hp ?? "—"}</span>
+          </div>
+          {profile?.rank ? <strong className="gallery-detail-rank">{profile.rank}</strong> : null}
           <button type="button" className="screen-x" onClick={onClose} aria-label="Close Star Chart">×</button>
         </header>
 
