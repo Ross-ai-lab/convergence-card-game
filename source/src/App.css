@@ -5455,6 +5455,7 @@ button:disabled {
 }
 
 .gallery-detail-panel {
+  position: relative;
   display: flex;
   width: min(1000px, 96vw);
   max-height: calc(100vh - 24px);
@@ -5468,35 +5469,7 @@ button:disabled {
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.78), 0 0 34px rgba(240, 199, 103, 0.12);
 }
 
-.gallery-detail-top {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 5px 52px 4px 12px;
-  border-bottom: 1px solid rgba(240, 199, 103, 0.24);
-}
-
-.gallery-detail-kicker,
-.gallery-detail-chart-caption {
-  color: rgba(118, 228, 237, 0.74);
-  font-size: 0.62rem;
-  font-weight: 950;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.gallery-detail-title {
-  display: flex;
-  min-width: 0;
-  flex: 0 1 auto;
-  align-items: baseline;
-  gap: 8px;
-  overflow: hidden;
-}
-
-.gallery-detail-top > .screen-x {
+.gallery-detail-close {
   position: absolute;
   top: 6px;
   right: 10px;
@@ -5507,106 +5480,10 @@ button:disabled {
   box-shadow: 0 0 12px rgba(217, 64, 59, 0.2);
 }
 
-.gallery-detail-top > .screen-x:hover {
+.gallery-detail-close:hover {
   border-color: rgba(255, 140, 126, 0.98);
   background: rgba(131, 29, 31, 0.92);
   color: #fff1ea;
-}
-
-.gallery-detail-title h2 {
-  min-width: 0;
-  flex: 0 1 auto;
-  max-width: none;
-  margin: 0;
-  overflow: hidden;
-  color: #fff0c1;
-  font-family: "Baloo 2", cursive;
-  font-size: clamp(1.3rem, 2.4vw, 1.75rem);
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gallery-detail-title > p {
-  min-width: 0;
-  flex: 0 1 auto;
-  max-width: 280px;
-  margin: 0;
-  overflow: hidden;
-  color: rgba(255, 239, 205, 0.64);
-  font-size: 0.72rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gallery-detail-rank {
-  display: block;
-  min-width: 0;
-  max-width: 190px;
-  flex: 0 1 auto;
-  margin: 0;
-  overflow: hidden;
-  color: #f0c767;
-  font-size: 0.62rem;
-  letter-spacing: 0.03em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* The header is intentionally a single information rail on desktop: identity,
-   source, and ranking stay visible without spending four stacked lines above
-   the chart. */
-@media (max-width: 760px) {
-  .gallery-detail-top {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-  }
-
-  .gallery-detail-title,
-  .gallery-detail-rank {
-    grid-column: 1;
-  }
-
-  .gallery-detail-title {
-    display: block;
-    flex: none;
-  }
-
-  .gallery-detail-title h2 {
-    max-width: none;
-  }
-
-  .gallery-detail-title > p {
-    margin-top: 2px;
-  }
-
-}
-
-/* Keep the effective 1536x736 browser viewport especially lean while leaving
-   the header as one row and the body prose at its readable minimum. */
-@media (min-width: 761px) and (max-height: 800px) {
-  .gallery-detail-top {
-    gap: 6px;
-    padding: 3px 48px 3px 10px;
-  }
-
-  .gallery-detail-title {
-    gap: 6px;
-  }
-
-  .gallery-detail-title h2 {
-    font-size: 1.5rem;
-  }
-
-  .gallery-detail-title > p {
-    font-size: 0.64rem;
-  }
-
-  .gallery-detail-rank {
-    max-width: 150px;
-    font-size: 0.52rem;
-  }
 }
 
 .gallery-detail-body {
@@ -5629,22 +5506,6 @@ button:disabled {
 .gallery-detail-card {
   width: 280px;
   aspect-ratio: 5 / 7;
-}
-
-/* The enlarged card occupies the left rail without forcing the prose rows on
-   the right to reserve a second copy of its height. Locked cards stay in flow
-   because their sealed explanation is the only body content beside them. */
-@media (min-width: 761px) {
-  .gallery-detail-primary:not(.is-locked) {
-    position: relative;
-    min-height: 0;
-  }
-
-  .gallery-detail-primary:not(.is-locked) .gallery-detail-card {
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
 }
 
 .gallery-detail-card .card-face {
@@ -5723,6 +5584,46 @@ button:disabled {
   display: grid;
   justify-items: center;
   gap: 2px;
+}
+
+/* On desktop the card owns the first left-hand row, while the six-point chart
+   gets the lower-left space directly beneath it. */
+@media (min-width: 761px) {
+  .gallery-detail-primary {
+    grid-row: 1;
+  }
+
+  .gallery-detail-chart-row {
+    display: contents;
+  }
+
+  .gallery-detail-chart-wrap {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .gallery-detail-chart-row .gallery-detail-lore,
+  .gallery-detail-panel.is-relic .gallery-detail-lore {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-primary:not(.is-locked) {
+    position: relative;
+    min-height: 0;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-primary:not(.is-locked) .gallery-detail-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .gallery-detail-panel.is-relic .gallery-detail-lore {
+    padding-top: 42px;
+  }
 }
 
 .star-chart {
@@ -5949,34 +5850,12 @@ button:disabled {
     padding: 8px;
   }
 
-  .gallery-detail-top,
   .gallery-detail-body {
     padding-inline: 13px;
   }
 
   .gallery-detail-panel {
     max-height: calc(100vh - 16px);
-  }
-
-  .gallery-detail-top {
-    padding-top: 7px;
-    padding-bottom: 5px;
-    padding-right: 48px;
-    gap: 8px;
-  }
-
-  .gallery-detail-title h2 {
-    font-size: 1.7rem;
-  }
-
-  .gallery-detail-title > p {
-    margin-bottom: 0;
-    font-size: 0.7rem;
-  }
-
-  .gallery-detail-rank {
-    margin-top: 5px;
-    font-size: 0.6rem;
   }
 
   .gallery-detail-body {
@@ -6115,34 +5994,10 @@ button:disabled {
     max-height: calc(100vh - 16px);
   }
 
-  .gallery-detail-top {
-    gap: 6px;
-    padding: 3px 48px 3px 10px;
-  }
-
-  .gallery-detail-title {
-    gap: 6px;
-  }
-
-  .gallery-detail-title h2 {
-    font-size: 1.5rem;
-  }
-
-  .gallery-detail-title > p {
-    margin-bottom: 0;
-    font-size: 0.64rem;
-  }
-
-  .gallery-detail-rank {
-    max-width: 150px;
-    margin-top: 0;
-    font-size: 0.52rem;
-  }
-
   .gallery-detail-body {
     grid-template-columns: 240px minmax(0, 1fr);
-    gap: 16px;
-    padding: 8px 16px;
+    gap: 6px;
+    padding: 0 12px;
   }
 
   .gallery-detail-card {
@@ -6155,8 +6010,8 @@ button:disabled {
   }
 
   .star-chart {
-    width: 200px;
-    height: 200px;
+    width: 180px;
+    height: 180px;
   }
 
   .gallery-detail-lore p {
@@ -6245,15 +6100,6 @@ button:disabled {
    profile remains a two-column first row, while the narrative boxes stay
    paired below it. */
 @media (max-width: 520px) and (max-height: 760px) {
-  .gallery-detail-top {
-    padding-top: 7px;
-    padding-bottom: 6px;
-  }
-
-  .gallery-detail-title h2 {
-    font-size: 1.58rem;
-  }
-
   .gallery-detail-body {
     grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
     gap: 2px;

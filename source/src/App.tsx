@@ -3465,17 +3465,7 @@ function GalleryDetailModal({
         aria-modal="true"
         aria-label={`${entry.face.name} Star Chart`}
       >
-        <header className="gallery-detail-top">
-          <div className="gallery-detail-title">
-            <h2>{entry.face.name}</h2>
-            <p>
-              {profile?.origin ?? entry.face.origin}
-              {profile?.epithet ? ` · ${profile.epithet}` : ""}
-            </p>
-          </div>
-          {profile?.rank ? <strong className="gallery-detail-rank">{profile.rank}</strong> : null}
-          <button type="button" className="screen-x" onClick={onClose} aria-label="Close Star Chart">×</button>
-        </header>
+        <button type="button" className="screen-x gallery-detail-close" onClick={onClose} aria-label="Close Star Chart">×</button>
 
         <div className="gallery-detail-body">
           <div className={`gallery-detail-primary${locked ? " is-locked" : ""}`}>
