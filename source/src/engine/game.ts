@@ -815,6 +815,15 @@ function playRelic(
     cardId: relic.id,
     instanceId: bearer.instanceId,
   });
+  triggerRelicDiscoveries(
+    state,
+    playerId,
+    player.board
+      .filter((minion): minion is MinionInstance => Boolean(minion && !minion.silenced && minion.effectId === "frieren_relic_discover"))
+      .map((minion) => minion.instanceId),
+    library,
+    events,
+  );
 }
 
 function createRelicInstance(relic: RelicDefinition): RelicInstance {
@@ -2125,6 +2134,30 @@ function takeRelicFromDeckToHand(
   return relic;
 }
 
+/** Resolve every live Frieren trigger caused by one relic play, pausing between
+ * discoveries when the player has more than one trigger to answer. */
+function triggerRelicDiscoveries(
+  state: GameState,
+  playerId: PlayerId,
+  sourceIds: string[],
+  library: CardLibrary,
+  events: GameEvent[],
+): void {
+  const remaining = [...sourceIds];
+  while (remaining.length > 0 && state.phase === "main") {
+    const sourceId = remaining.shift();
+    if (!sourceId) continue;
+    const sourceSlot = state.players[playerId].board.findIndex((minion) => minion?.instanceId === sourceId);
+    const source = sourceSlot >= 0 ? state.players[playerId].board[sourceSlot] : null;
+    if (!source || source.silenced || source.effectId !== "frieren_relic_discover") continue;
+    const suspended = runEffect(state, source, sourceSlot, library, events);
+    if (suspended) {
+      if (state.pendingTarget) state.pendingTarget.queuedRelicSources = remaining;
+      return;
+    }
+  }
+}
+
 /**
  * Runs a minion's effect. Returns TRUE when it suspended waiting for a target —
  * the caller must stop and let `choose_target` resume it.
@@ -2166,6 +2199,29 @@ function runEffect(
     if (relic) {
       events.push(effectEvent(`${label} claims ${relic.name}.`, source));
     }
+    return false;
+  }
+
+  if (source.effectId === "frieren_relic_discover") {
+    if (chosen?.kind !== "option") {
+      const next = requestChoice(
+        state,
+        source,
+        {
+          kind: "option",
+          side: "friendly",
+          prompt: "Discover 1 of 3 Ascension Relics",
+          values: relicsInDeck(state, library).slice(0, 3).map((relic) => ({ label: relic.name, value: relic.id })),
+        },
+        library,
+      );
+      if (next === "asked") return true;
+      if (next) return runEffect(state, source, sourceSlot, library, events, next);
+      return false;
+    }
+
+    const relic = takeRelicFromDeckToHand(state, source.owner, chosen.option.value, library, events);
+    if (relic) events.push(effectEvent(`${source.name} discovers ${relic.name}.`, source));
     return false;
   }
 
@@ -2570,6 +2626,8 @@ function runEffect(
     summonSkeletons(state, source, events);
   } else if (source.effectId === "summon_sins") {
     summonSins(state, source, events);
+  } else if (source.effectId === "naruto_shadow_clones") {
+    summonShadowClones(state, source, events);
   } else if (source.effectId === "star_destroyer_tie_fighters") {
     summonTieFighters(state, source, events);
   } else if (source.effectId === "chaos_random_summon") {
@@ -3829,6 +3887,64 @@ function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: Ga
   events.push({ kind: "effect", text: `${player.name} summons a 1/1 Knight.`, player: playerId, instanceId: summoned.instanceId });
 }
 
+function summonShadowClones(state: GameState, source: MinionInstance, events: GameEvent[]): void {
+  const shadowClone: CardDefinition = {
+    kind: "minion",
+    id: "token:shadow-clone",
+    name: "Shadow Clone",
+    cost: 0,
+    atk: 2,
+    hp: 2,
+    rarity: "Black",
+    camp: "Magic",
+    alignment: "Good",
+    keywords: [],
+    effectId: "none",
+    effectTiming: "none",
+    effect: "-",
+    flavor: "One body becomes many.",
+    origin: "Naruto",
+    art: resolvePublicAssetUrl("/card-art/raw/token-shadow-clone.webp"),
+  };
+  const player = state.players[source.owner];
+  let summoned = 0;
+  for (let slot = 0; slot < boardSize; slot += 1) {
+    if (player.board[slot]) continue;
+    player.board[slot] = createMinion(shadowClone, source.owner, state);
+    summoned += 1;
+  }
+  if (summoned > 0) events.push(effectEvent(`${source.name} fills the board with ${summoned} Shadow Clones.`, source));
+}
+
+function summonLarva(state: GameState, source: MinionInstance, dead: MinionInstance, events: GameEvent[]): void {
+  const player = state.players[source.owner];
+  const slot = player.board.findIndex((entry) => !entry);
+  if (slot < 0) return;
+  const larva: CardDefinition = {
+    kind: "minion",
+    id: "token:larva",
+    name: "Larva",
+    cost: 0,
+    atk: 1,
+    hp: 1,
+    rarity: "Black",
+    camp: "Nature",
+    alignment: "Evil",
+    keywords: [],
+    effectId: "none",
+    effectTiming: "none",
+    effect: "-",
+    flavor: "One more for the hive.",
+    origin: "Alien",
+    // No separate Larva photo was supplied. The Queen's supplied artwork keeps
+    // the token photographic and gives the small board token the right visual family.
+    art: source.art,
+  };
+  const summoned = createMinion(larva, source.owner, state);
+  player.board[slot] = summoned;
+  events.push(effectEvent(`${source.name} hatches a 1/1 Larva after ${dead.name} dies.`, source));
+}
+
 function summonSins(state: GameState, source: MinionInstance, events: GameEvent[]): void {
   const keywordOrder: Array<CardDefinition["keywords"][number]> = ["Taunt", "Divine Shield", "Charge", "Chained"];
   for (let index = keywordOrder.length - 1; index > 0; index -= 1) {
@@ -4205,6 +4321,15 @@ function refreshPassiveAuras(state: GameState): void {
           target.maxHp += 1;
           target.hp += 1;
           target.auraBonuses!.push({ sourceId: source.instanceId, atk: 2, hp: 1, keywords: [] });
+        }
+      }
+      if (hasEffect(source, "guts_missing_core_growth")) {
+        const missingCore = Math.floor(Math.max(0, STARTING_CORE - state.players[source.owner].health) / 20);
+        if (missingCore > 0) {
+          source.atk += missingCore;
+          source.maxHp += missingCore;
+          source.hp += missingCore;
+          source.auraBonuses!.push({ sourceId: source.instanceId, atk: missingCore, hp: missingCore, keywords: [] });
         }
       }
       if (!hasEffect(source, "glados_adjacent_tech")) continue;
@@ -4773,6 +4898,7 @@ function cancelPendingTarget(state: GameState, playerId: PlayerId, events: GameE
 function chooseTarget(state: GameState, choiceIndex: number, library: CardLibrary, events: GameEvent[]): void {
   const pending = state.pendingTarget;
   if (!pending) return;
+  const queuedRelicSources = pending.queuedRelicSources ?? [];
   let answer: ResolvedChoice | null = null;
   if ((pending.kind === "board" || pending.kind === "slot" || pending.kind === "boardOrCore") && pending.options[choiceIndex]) {
     answer = {
@@ -4830,7 +4956,12 @@ function chooseTarget(state: GameState, choiceIndex: number, library: CardLibrar
     }
     }
   }
-  if (state.phase === "main") processEffectQueue(state, library, events);
+  if (state.phase === "main") {
+    if (queuedRelicSources.length > 0) {
+      triggerRelicDiscoveries(state, pending.sourceOwner, queuedRelicSources, library, events);
+    }
+    if (state.phase === "main") processEffectQueue(state, library, events);
+  }
 }
 
 /**
@@ -6185,7 +6316,7 @@ function reactToDeath(
   for (const playerId of [0, 1] as PlayerId[]) {
     for (const minion of state.players[playerId].board) {
       if (!minion || minion.silenced || minion.instanceId === dead.instanceId) continue;
-      // The five death reactions below compare `minion.effectId` directly rather
+      // The death reactions below compare `minion.effectId` directly rather
       // than going through hasEffect, so they would be invisible to the coverage
       // trace. Recording here marks a death-reaction effect as exercised whenever
       // a death is resolved while its owner is on the board, which is the moment
@@ -6206,6 +6337,8 @@ function reactToDeath(
             minion,
           ),
         );
+      } else if (minion.effectId === "xenomorph_queen_brood" && playerId === deadOwner) {
+        summonLarva(state, minion, dead, events);
       } else if (minion.effectId === "nito_any_death_1_1") {
         // +1/+1, down from +2/+1 (pass 3): 62.3% vs a 48.2% bracket off the
         // smallest body in the game. It counts EVERY death on BOTH boards with

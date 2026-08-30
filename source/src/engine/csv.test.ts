@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { cards, resolvePublicAssetUrl } from "../data/cards";
 
 describe("card CSV data", () => {
-  it("loads the full 178-card roster", () => {
-    expect(cards).toHaveLength(178);
-    expect(new Set(cards.map((card) => card.id)).size).toBe(178);
-    expect(new Set(cards.map((card) => card.name)).size).toBe(178);
+  it("loads the full 182-card roster", () => {
+    expect(cards).toHaveLength(182);
+    expect(new Set(cards.map((card) => card.id)).size).toBe(182);
+    expect(new Set(cards.map((card) => card.name)).size).toBe(182);
   });
 
   it("contains the v1 systems needed for engine coverage", () => {

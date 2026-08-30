@@ -50,7 +50,7 @@ describe("Convergence engine", () => {
       ...relics.filter((relic) => relic.relicId !== "none").map((relic) => relic.id),
     ];
 
-    expect(cards).toHaveLength(178);
+    expect(cards).toHaveLength(182);
     expect(relics).toHaveLength(27);
     expect(drawableIds).toHaveLength(expectedIds.length);
     expect(new Set(drawableIds)).toEqual(new Set(expectedIds));

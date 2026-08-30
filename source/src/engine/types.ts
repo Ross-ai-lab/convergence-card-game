@@ -310,7 +310,11 @@ export type EffectId =
   | "rudeus_hero_power_free"
   | "prince_lloyd_damage_ward"
   | "motoko_kusanagi"
-  | "shibukawa_defense_damage_2x";
+  | "shibukawa_defense_damage_2x"
+  | "xenomorph_queen_brood"
+  | "naruto_shadow_clones"
+  | "frieren_relic_discover"
+  | "guts_missing_core_growth";
 
 export interface CardDefinition {
   kind: "minion";
@@ -598,6 +602,8 @@ export interface PendingTarget {
   priorLabelOptions: LabelOption[];
   /** Allows a freshly played target-card to be returned before it resolves. */
   cancelPlay?: PendingPlayReturn;
+  /** Frieren passive triggers waiting behind the relic discover prompt. */
+  queuedRelicSources?: string[];
 }
 
 /** The reversible part of a minion play while its target prompt is open. */

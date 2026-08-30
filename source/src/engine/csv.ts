@@ -301,6 +301,10 @@ const effectIds = new Set<EffectId>([
   "prince_lloyd_damage_ward",
   "motoko_kusanagi",
   "shibukawa_defense_damage_2x",
+  "xenomorph_queen_brood",
+  "naruto_shadow_clones",
+  "frieren_relic_discover",
+  "guts_missing_core_growth",
 ]);
 
 const relicIds = new Set<RelicId>([

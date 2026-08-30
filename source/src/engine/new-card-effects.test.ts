@@ -56,6 +56,117 @@ function endTurn(state: GameState, player: PlayerId): GameState {
 }
 
 describe("2026 card replacements", () => {
+  it("loads the four requested cards with their final metadata", () => {
+    expect(cards.find((card) => card.name === "Xenomorph Queen")).toMatchObject({
+      cost: 4,
+      atk: 3,
+      hp: 4,
+      rarity: "Black",
+      camp: "Nature",
+      alignment: "Evil",
+      keywords: ["Passive"],
+      effectId: "xenomorph_queen_brood",
+      effectTiming: "passive",
+    });
+    expect(cards.find((card) => card.name === "Naruto")).toMatchObject({
+      cost: 8,
+      atk: 2,
+      hp: 2,
+      rarity: "Yellow",
+      effectId: "naruto_shadow_clones",
+      effectTiming: "onPlay",
+    });
+    expect(cards.find((card) => card.name === "Frieren")).toMatchObject({
+      cost: 6,
+      atk: 2,
+      hp: 5,
+      rarity: "Purple",
+      effectId: "frieren_relic_discover",
+      effectTiming: "passive",
+    });
+    expect(cards.find((card) => card.name === "Guts")).toMatchObject({
+      cost: 2,
+      atk: 1,
+      hp: 1,
+      rarity: "Black",
+      effectId: "guts_missing_core_growth",
+      effectTiming: "passive",
+    });
+  });
+
+  it("Xenomorph Queen hatches one Larva after each friendly death", () => {
+    const state = mainState("xenomorph-queen-brood");
+    state.players[0].board[0] = minion("Xenomorph Queen", 0);
+    state.players[0].board[1] = minion("John Wick", 0, { atk: 0, hp: 1, maxHp: 1, sleeping: false });
+    state.players[1].board[0] = minion("Gordon Freeman", 1, { atk: 5, hp: 5, maxHp: 5, sleeping: false });
+    state.activePlayer = 1;
+
+    const after = applyAction(
+      state,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 },
+      library,
+    ).state;
+
+    expect(after.players[0].board[1]).toMatchObject({
+      cardId: "token:larva",
+      name: "Larva",
+      atk: 1,
+      hp: 1,
+    });
+  });
+
+  it("Naruto fills every empty friendly slot with 2/2 Shadow Clones", () => {
+    const state = mainState("naruto-shadow-clones");
+    state.players[0].board[1] = minion("John Wick", 0);
+
+    const after = play(state, 0, "Naruto", 0);
+    const clones = after.players[0].board.filter((entry) => entry?.cardId === "token:shadow-clone");
+
+    expect(clones).toHaveLength(3);
+    expect(clones.every((entry) => entry?.name === "Shadow Clone" && entry.atk === 2 && entry.hp === 2)).toBe(true);
+    expect(clones.every((entry) => entry?.art.includes("token-shadow-clone.webp"))).toBe(true);
+  });
+
+  it("Frieren discovers a relic after each relic play, including multiple Frieren triggers", () => {
+    const state = mainState("frieren-relic-discover");
+    state.players[0].board[0] = minion("Frieren", 0);
+    state.players[0].board[1] = minion("Frieren", 0);
+    const playedRelic = relicId("Elder wand");
+    state.players[0].hand = [playedRelic];
+    state.deck = state.deck.filter((cardId) => cardId !== playedRelic);
+
+    const asking = applyAction(
+      state,
+      { type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 },
+      library,
+    ).state;
+    expect(asking.phase).toBe("targeting");
+    expect(asking.pendingTarget?.prompt).toBe("Discover 1 of 3 Ascension Relics");
+    expect(asking.pendingTarget?.labelOptions).toHaveLength(3);
+    expect(asking.pendingTarget?.queuedRelicSources).toHaveLength(1);
+
+    const first = choose(asking, 0);
+    expect(first.phase).toBe("targeting");
+    expect(first.pendingTarget?.sourceInstanceId).toBe(first.players[0].board[1]?.instanceId);
+
+    const after = choose(first, 0);
+    expect(after.phase).toBe("main");
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[0].hand).toHaveLength(2);
+  });
+
+  it("Guts gains and loses a live +1/+1 aura as the Core crosses 20 HP thresholds", () => {
+    const state = mainState("guts-missing-core-growth");
+    state.players[0].health = 54;
+    const grown = play(state, 0, "Guts", 0);
+    expect(grown.players[0].board[0]).toMatchObject({ atk: 2, hp: 2, maxHp: 2 });
+
+    const healed: GameState = { ...grown, players: [...grown.players] as GameState["players"] };
+    healed.players[0] = { ...grown.players[0], health: 75 };
+    const afterHeal = applyAction(healed, { type: "end_turn", player: 0 }, library).state;
+    expect(afterHeal.players[0].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
+  });
+
   it("loads the requested stats, origins, keywords, timings, and effect IDs", () => {
     const expected: Record<string, Partial<(typeof cards)[number]>> = {
       "The Watcher": { atk: 10, hp: 7, effectId: "watcher_reveal_hand", effectTiming: "passive" },
