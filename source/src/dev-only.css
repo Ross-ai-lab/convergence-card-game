@@ -1,15 +1,8 @@
 /*
- * Styles that exist ONLY while developing, and must never reach a player.
- *
- * CSS is not tree-shaken the way code is: a rule in App.css ships whether or not
- * anything can ever match it. The cheat toggle is `import.meta.env.DEV`-gated in
- * App.tsx, so its markup is absent from the built bundle, but its styling still
- * rode along in the stylesheet a player downloads.
- *
- * This file is imported behind the same DEV check, so Vite drops the import in a
- * production build and the rules go with it. Anything else that is genuinely
- * development-only belongs here for the same reason — not in App.css with a
- * comment promising it is harmless.
+ * Ross mode surface styling. It lives separately from the main board sheet so
+ * the hidden developer workbench can be audited as one small, self-contained
+ * layer. The mode is intentionally available in the published game after the
+ * secret title-screen key is entered.
  */
 
 .cheat-toggle.active,

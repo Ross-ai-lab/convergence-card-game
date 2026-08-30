@@ -5,10 +5,11 @@ import "./App.css";
 // they occupied when they lived in screens/Screens.css, so moving the file could
 // not change which rule wins anything.
 import "./board-fx.css";
-// Development-only styling, dropped entirely from the production bundle. The
-// static analysis Vite does on this condition is what removes it, so the check
-// has to be exactly this shape -- do not hoist it into a variable.
-if (import.meta.env.DEV) import("./dev-only.css");
+// Ross mode is a deliberate, secret developer surface that the owner can use
+// in the published game too. Keep its styling separate from the main board
+// stylesheet so the mode remains easy to audit without hiding the feature from
+// the public build.
+import "./dev-only.css";
 import { sfx, type SfxName } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
 import { LORE_DETAILS, type LoreDetail } from "./data/lore";
@@ -156,7 +157,7 @@ function playableFace(card: PlayableCard, costOverride?: number): CardFaceModel 
 }
 
 function loreFor(card: PlayableCard): LoreDetail | null {
-  return isMinionCard(card) ? LORE_DETAILS[card.id] ?? null : null;
+  return LORE_DETAILS[card.id] ?? null;
 }
 
 function rarityName(value: string): string {
@@ -459,6 +460,7 @@ export default function App() {
   const [developerToolsOpen, setDeveloperToolsOpen] = useState(false);
   const [developerDuelActive, setDeveloperDuelActive] = useState(false);
   const [tutorialActive, setTutorialActive] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
   /**
    * The pack a just-won duel earned, waiting to be torn open. Null whenever
    * there is nothing to open — a loss that earned one card still fills it, and
@@ -478,7 +480,7 @@ export default function App() {
   }, [botWinCount]);
 
   useEffect(() => {
-    if (!import.meta.env.DEV || screen !== "title" || overlay !== null) return;
+    if (screen !== "title" || overlay !== null) return;
     let buffer = "";
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) return;
@@ -1245,6 +1247,32 @@ export default function App() {
       setSelection(null);
       setHover(null);
       if (bargainChoice) showToast(`Doctor Strange's bargain chosen: ${bargainChoice}`, 3000, "bargain");
+
+      // Tutorial lessons advance from the action that just happened, not from
+      // the entire event log. The old event-derived calculation could observe
+      // the bot's automatic response after a Taunt attack and jump from the
+      // attack lesson straight to the finale. Keep the guide on the exact
+      // interaction the player completed.
+      if (tutorialActive && action.player === viewerId) {
+        const nextStep =
+          result.state.phase === "targeting" && result.state.pendingTarget?.player === viewerId
+            ? 2
+            : action.type === "play_card" || action.type === "play_relic"
+              ? 1
+              : action.type === "choose_target"
+                ? 1
+                : action.type === "attack_minion" || action.type === "attack_core"
+                  ? 3
+              : null;
+        if (action.type === "end_turn") {
+          // The first body is asleep until the next turn. Passing before it
+          // can attack should not skip the swing lesson; only a pass after a
+          // completed attack advances to the final loop reminder.
+          setTutorialStep((current) => (current >= 3 ? 4 : current));
+        } else if (nextStep !== null) {
+          setTutorialStep((current) => (current >= 4 && nextStep < current ? current : nextStep));
+        }
+      }
     }
     const visibleEvents = hiddenEnemyDiscover
       ? result.events.map((event) =>
@@ -1287,6 +1315,7 @@ export default function App() {
     sfx.stopCardTheme();
     clearSave();
     setTutorialActive(false);
+    setTutorialStep(0);
     setDeveloperDuelActive(false);
     setDeveloperToolsOpen(false);
     duelCards.current = { seen: new Set(), played: new Set() };
@@ -1334,6 +1363,7 @@ export default function App() {
     sfx.stopCardTheme();
     clearSave();
     setTutorialActive(false);
+    setTutorialStep(0);
     setDeveloperDuelActive(Boolean(options.testCardId));
     setDeveloperToolsOpen(false);
     duelCards.current = { seen: new Set(), played: new Set() };
@@ -1376,6 +1406,7 @@ export default function App() {
     sfx.stopCardTheme();
     clearSave();
     setTutorialActive(true);
+    setTutorialStep(0);
     setDeveloperDuelActive(false);
     setDeveloperToolsOpen(false);
     duelCards.current = { seen: new Set(), played: new Set() };
@@ -1397,7 +1428,7 @@ export default function App() {
     setLethal(0);
     heraldSaid.current = new Set();
     sfx.playOpeningCue(0.35);
-    setEvents([{ kind: "info", text: "Guided duel started. Follow the Rift guide." }]);
+    setEvents([{ kind: "info", text: "Tutorial started. Follow the Rift guide." }]);
     setScreen("playing");
   }
 
@@ -1406,6 +1437,7 @@ export default function App() {
     sfx.stopCardTheme();
     setDuelIntro(null);
     setTutorialActive(false);
+    setTutorialStep(0);
     setDeveloperDuelActive(false);
     setDeveloperToolsOpen(false);
     setScreen("title");
@@ -1448,9 +1480,7 @@ export default function App() {
     setEvents((items) => [...items, { kind: "info" as const, text: "Last local action undone." }].slice(-80));
   }
 
-  /**
-   * Infinite mana. DEVELOPMENT ONLY — see the button below for why it survives.
-   */
+  /** Infinite mana, exposed inside the Ross-only developer workbench. */
   function toggleCheatMode() {
     sfx.play("button");
     setDeveloperDuelActive(true);
@@ -1473,7 +1503,6 @@ export default function App() {
   }
 
   function developerSetMana() {
-    if (!import.meta.env.DEV) return;
     setDeveloperDuelActive(true);
     setGame((current) => {
       const players = [...current.players] as GameState["players"];
@@ -1485,7 +1514,6 @@ export default function App() {
   }
 
   function developerSetCore(owner: PlayerId, value: number) {
-    if (!import.meta.env.DEV) return;
     setDeveloperDuelActive(true);
     setGame((current) => {
       const players = [...current.players] as GameState["players"];
@@ -1498,7 +1526,7 @@ export default function App() {
   }
 
   function developerGiveCard(cardId: string, owner: PlayerId) {
-    if (!import.meta.env.DEV || !library[cardId]) return;
+    if (!library[cardId]) return;
     setDeveloperDuelActive(true);
     setGame((current) => {
       const players = [...current.players] as GameState["players"];
@@ -1512,7 +1540,6 @@ export default function App() {
   }
 
   function developerPlaceCard(cardId: string, owner: PlayerId) {
-    if (!import.meta.env.DEV) return;
     const card = library[cardId];
     if (!card || !isMinionCard(card)) return;
     setDeveloperDuelActive(true);
@@ -1531,7 +1558,6 @@ export default function App() {
   }
 
   function developerEquipRelic(cardId: string, owner: PlayerId) {
-    if (!import.meta.env.DEV) return;
     const relicDef = library[cardId];
     if (!relicDef || !isRelicCard(relicDef)) return;
     setDeveloperDuelActive(true);
@@ -1559,7 +1585,6 @@ export default function App() {
   }
 
   function developerClearBoard(owner: PlayerId) {
-    if (!import.meta.env.DEV) return;
     setDeveloperDuelActive(true);
     setGame((current) => {
       const players = [...current.players] as GameState["players"];
@@ -2020,7 +2045,7 @@ export default function App() {
           >
             ⚙ Settings
           </button>
-          {import.meta.env.DEV && developerCheatRevealed ? (
+          {developerCheatRevealed ? (
             <button
               type="button"
               className="developer-tools-trigger"
@@ -2030,13 +2055,10 @@ export default function App() {
               DEV tools
             </button>
           ) : null}
-          {/* DEVELOPMENT ONLY, and it must stay that way. The owner asked for this
-              button to be gone while playing, and `import.meta.env.DEV` is false
-              in the built bundle, so the published game has no cheat control at
-              all. It is not dead code: `scripts/check-ui.mjs` clicks it to buy
-              itself infinite mana before playing cards, which is how the UI
-              checks reach a board state worth asserting on. Deleting it outright
-              broke that suite, which is how this comment came to be here. */}
+          {/* The quick toggle stays available only in a live duel through the
+              developer workbench. Keeping it out of the normal action rail
+              makes Ross mode discoverable only to the person who knows the
+              title-screen key, while the workbench remains fully useful. */}
           {import.meta.env.DEV ? (
             <button
               type="button"
@@ -2398,7 +2420,7 @@ export default function App() {
         />
       ) : null}
 
-      {tutorialActive && game.phase !== "gameOver" && !duelIntro ? <TutorialCoach game={game} events={events} onSkip={toTitle} /> : null}
+      {tutorialActive && game.phase !== "gameOver" && !duelIntro ? <TutorialCoach step={tutorialStep} onSkip={toTitle} /> : null}
 
       {/* Above the result screen, not beside it. The pack is the reward for the
           duel that just ended, so it has to be the thing in the way. */}
@@ -2464,7 +2486,7 @@ export default function App() {
           }}
         />
       ) : null}
-      {import.meta.env.DEV && developerToolsOpen ? (
+      {developerToolsOpen ? (
         <DeveloperTools
           screen={screen}
           cards={Object.values(library)}
@@ -4840,35 +4862,13 @@ function CardPack({
 }
 
 function TutorialCoach({
-  game,
-  events,
+  step,
   onSkip,
 }: {
-  game: GameState;
-  events: GameEvent[];
+  step: number;
   onSkip: () => void;
 }) {
-  const hasPlayed = events.some((event) => event.kind === "play" && event.player === 0);
-  const hasAttacked = events.some((event) => event.kind === "combat" && event.player === 0);
-  const hasPassed = events.some((event) => event.kind === "turn" && event.player === 1);
-  const step =
-    game.phase === "mulligan"
-      ? 0
-      : game.phase === "targeting" && game.pendingTarget?.player === 0
-        ? 3
-        : !hasPlayed
-          ? 1
-          : !hasAttacked
-            ? 2
-            : !hasPassed
-              ? 4
-              : 5;
   const lessonList = [
-    {
-      title: "Shape your opening hand",
-      body: "Click a card you do not want, then confirm. Keep the cards that give you an early plan.",
-      hint: "You may replace any number of cards once.",
-    },
     {
       title: "Play a card",
       body: "Choose a blue-glowing card, then click an empty slot on your side of the board.",
@@ -4895,16 +4895,17 @@ function TutorialCoach({
       hint: "The rest of the roster teaches itself through play.",
     },
   ];
-  const lesson = lessonList[step];
+  const safeStep = Math.max(0, Math.min(step, lessonList.length - 1));
+  const lesson = lessonList[safeStep];
 
   return (
-    <aside className="tutorial-coach" aria-label="Guided duel">
+    <aside className="tutorial-coach" aria-label="Tutorial">
       <div className="tutorial-coach-top">
-        <span>Guided duel</span>
-        <small>{step + 1} / 6</small>
+        <span>Tutorial</span>
+        <small>{safeStep + 1} / {lessonList.length}</small>
       </div>
       <div className="tutorial-progress" aria-hidden="true">
-        {lessonList.map((_lesson, index) => <i key={index} className={index <= step ? "on" : ""} />)}
+        {lessonList.map((_lesson, index) => <i key={index} className={index <= safeStep ? "on" : ""} />)}
       </div>
       <strong>{lesson.title}</strong>
       <p>{lesson.body}</p>
@@ -5095,7 +5096,7 @@ function GameOver({
   const banner = winner ? biggestSurvivor(winner) : null;
   const bannerArt = banner?.art ?? library[game.players[0].hand[0]]?.art;
   const botLine = tutorial
-    ? "The guided duel is complete."
+    ? "The tutorial is complete."
     : vsBot
       ? winner?.id === 1
         ? "The practice bot takes it."

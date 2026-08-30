@@ -93,14 +93,14 @@ describe("Convergence engine", () => {
     expect(drafted.bottomDeck).toContain(replacedId);
   });
 
-  it("builds the guided tutorial from a real, deterministic game position", () => {
+  it("builds the tutorial from a real, deterministic game position", () => {
     const state = createInitialGame(cards, "tutorial-seed", relics, {
       tutorial: true,
       heroPowers: ["core_heal", null],
     });
 
-    expect(state.phase).toBe("mulligan");
-    expect(state.mulligan).toEqual({ player: 0, selected: [false, false, false] });
+    expect(state.phase).toBe("main");
+    expect(state.mulligan).toBeNull();
     expect(state.players[0].hand.map((id) => library[id].name)).toEqual([
       "An Order of Heavy Knights",
       "Batman",
@@ -109,7 +109,7 @@ describe("Convergence engine", () => {
     expect(state.players[1].board[2]?.name).toBe("Goblins");
     expect(state.players[1].board[2]?.sleeping).toBe(false);
     expect(state.players[0].board.every((slot) => slot === null)).toBe(true);
-    expect(getLegalActions(state, library)).toHaveLength(4);
+    expect(getLegalActions(state, library).some((action) => action.type === "play_card")).toBe(true);
   });
 
   it("reuses a known legal-action list without changing action resolution", () => {

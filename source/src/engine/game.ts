@@ -179,7 +179,7 @@ export function createInitialGame(
 }
 
 /**
- * A small deterministic teaching position for the first guided duel.
+ * A small deterministic teaching position for the first Tutorial duel.
  *
  * The normal game stays random. The tutorial deliberately puts a basic body,
  * a targeted Battlecry, and a draw card in the player's hand, with one harmless
@@ -194,8 +194,11 @@ function configureTutorialState(state: GameState, cards: CardDefinition[]): void
 
   state.players[0].hand = playerHand;
   state.players[1].hand = enemyHand;
-  state.mulligan = { player: 0, selected: playerHand.map(() => false) };
-  state.phase = "mulligan";
+  // The first duel teaches the actual turn loop immediately. A mulligan is a
+  // useful normal-game choice, but it is an unnecessary branch before a new
+  // player has learned where cards go, so the tutorial opens in main phase.
+  state.mulligan = null;
+  state.phase = "main";
   state.activePlayer = 0;
   state.turnNumber = 1;
   state.players[0].board = [null, null, null, null, null];

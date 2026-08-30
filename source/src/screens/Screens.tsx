@@ -305,10 +305,10 @@ export function TitleScreen({
               sfx.play("button");
               onTutorial();
             }}
-            title="Learn the game in a guided duel"
+            title="Learn the game in a guided first duel"
           >
             <Sparkle size={22} weight="fill" aria-hidden="true" />
-            <span>Guided Duel</span>
+            <span>Tutorial</span>
           </button>
           <button
             type="button"
@@ -362,7 +362,7 @@ export function TitleScreen({
           </button>
         </div>
 
-        {import.meta.env.DEV && developerCheatRevealed ? (
+        {developerCheatRevealed ? (
           <div className="developer-cheat-panel" aria-label="Developer cheat">
             <span className="developer-cheat-label">Developer access</span>
             <button

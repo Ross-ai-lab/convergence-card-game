@@ -32,12 +32,22 @@ function check(name, condition, detail = "") {
   console.log(`${condition ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
 }
 
-// Guided first duel --------------------------------------------------------
+// Tutorial first duel ------------------------------------------------------
 await fresh();
-await page.getByRole("button", { name: "Guided Duel", exact: true }).click();
+await page.getByRole("button", { name: "Tutorial", exact: true }).click();
 await waitForBoard();
-check("guided duel opens the coach", await page.locator(".tutorial-coach").isVisible());
-check("guided duel uses the curated opening", (await page.locator(".hand-card").count()) === 3);
+check("tutorial opens the coach", await page.locator(".tutorial-coach").isVisible());
+check("tutorial skips mulligan", await page.locator(".mulligan-panel").count() === 0);
+check("tutorial uses the curated opening", (await page.locator(".hand-card").count()) === 3);
+check("tutorial starts at lesson one", await page.locator(".tutorial-coach-top small").innerText() === "1 / 5");
+await page.locator(".hand-card.playable").first().click();
+await page.locator('[aria-label="Player One\'s board"] .board-slot.empty').first().click();
+check("tutorial advances after playing a card", await page.locator(".tutorial-coach-top small").innerText() === "2 / 5");
+await page.locator(".end-turn").click();
+await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().waitFor({ state: "visible", timeout: 15000 });
+await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().click();
+await page.locator('[aria-label="Player Two\'s board"] .board-slot.targetable').first().click();
+check("tutorial keeps the attack lesson after hitting Taunt", await page.locator(".tutorial-coach-top small").innerText() === "4 / 5");
 await page.screenshot({ path: path.join(outputDir, "guided-duel-opening.png"), fullPage: false });
 
 // Developer mode ----------------------------------------------------------
@@ -98,6 +108,14 @@ await page.screenshot({ path: path.join(outputDir, "gallery-star-chart.png"), fu
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(250);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-mobile.png"), fullPage: false });
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.getByRole("button", { name: "Close Star Chart", exact: true }).click();
+for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Greyrat", "Prince Lloyd", "Motoko Kusanagi", "Allspark Cube"]) {
+  await page.locator(".gallery-search").fill(name);
+  await page.locator('.gallery-cell[role="button"]').first().click();
+  check(`${name} has a Star Chart profile`, await page.locator(".gallery-detail-panel").isVisible() && await page.locator(".star-chart").count() === 1);
+  await page.getByRole("button", { name: "Close Star Chart", exact: true }).click();
+}
 
 const failed = results.filter((result) => !result.condition);
 await browser.close();
