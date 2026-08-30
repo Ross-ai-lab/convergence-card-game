@@ -277,7 +277,7 @@ export function newlyUnlocked(order: string[], before: number, after: number): s
  * before this is consulted, so weighting the reveal cannot bias what you get.
  *
  * Relics rank ABOVE every character tier, Mythic included. Owner's call, and
- * scarcity backs it: 33 relics against 19 Mythics. A relic is also the only card
+ * scarcity backs it: 34 relics against 19 Mythics. A relic is also the only card
  * class that changes what another card does rather than adding a body, so it is
  * the one worth waiting for.
  */

@@ -147,12 +147,54 @@ describe("relic effects", () => {
       ["Time Turner", 2, "At the start of your turn if the bearer is damaged restore it to the HP it had at the start of your previous turn"],
       ["Symbiote", 1, "When the bearer dies leave it Chained with 1 HP instead"],
       ["Neuralyzer", 1, "Remove all negative effects from the bearer"],
+      ["Green Lantern Ring", 1, "At the end of your turn, if the bearer did not attack, give it +2/+1"],
+      ["Green Lantern Ring", 1, "At the end of your turn, if the bearer did not attack, give it +2/+1"],
     ] as const;
 
     for (const [name, cost, effect] of requested) {
       expect(relics.find((relic) => relic.name === name)).toMatchObject({ cost, effect });
     }
     expect(relics.find((relic) => relic.name === "Devil Fruit")).toMatchObject({ cost: 2, effect: expect.stringContaining("+2/+1") });
+  });
+
+  it("Green Lantern Ring gives +2/+1 when its bearer did not attack", () => {
+    const rested = mainState("green-lantern-rested");
+    rested.players[0].board[0] = makeMinion("John Wick", 0);
+    const afterRest = endTurnAndDraw(playRelicFor(rested, 0, "Green Lantern Ring", 0), 0);
+    expect(afterRest.players[0].board[0]).toMatchObject({ atk: 3, hp: 2, maxHp: 2 });
+
+    const fought = mainState("green-lantern-fought");
+    fought.players[0].board[0] = makeMinion("John Wick", 0);
+    fought.players[1].board[0] = makeMinion("Death Star", 1, { atk: 0, hp: 10, maxHp: 10, sleeping: false });
+    const equipped = playRelicFor(fought, 0, "Green Lantern Ring", 0);
+    equipped.players[0].board[0]!.sleeping = false;
+    const afterAttack = applyAction(
+      equipped,
+      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    const afterFight = endTurnAndDraw(afterAttack, 0);
+    expect(afterFight.players[0].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
+  });
+
+  it("Green Lantern Ring gives +2/+1 when its bearer did not attack", () => {
+    const rested = mainState("green-lantern-rested");
+    rested.players[0].board[0] = makeMinion("John Wick", 0);
+    const afterRest = endTurnAndDraw(playRelicFor(rested, 0, "Green Lantern Ring", 0), 0);
+    expect(afterRest.players[0].board[0]).toMatchObject({ atk: 3, hp: 2, maxHp: 2 });
+
+    const fought = mainState("green-lantern-fought");
+    fought.players[0].board[0] = makeMinion("John Wick", 0);
+    fought.players[1].board[0] = makeMinion("Death Star", 1, { atk: 0, hp: 10, maxHp: 10, sleeping: false });
+    const equipped = playRelicFor(fought, 0, "Green Lantern Ring", 0);
+    equipped.players[0].board[0]!.sleeping = false;
+    const afterAttack = applyAction(
+      equipped,
+      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 },
+      library,
+    ).state;
+    const afterFight = endTurnAndDraw(afterAttack, 0);
+    expect(afterFight.players[0].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
   });
 
   it("replaces Sunshine Grace with Ark of the Covenant", () => {

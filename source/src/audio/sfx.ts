@@ -845,6 +845,7 @@ const RELIC_THEME_SOURCE: Record<string, string> = {
   r032: "c030", // Harry Potter — Dumbledore
   r033: "c015", // Marvel — Avengers
   r034: "c030", // Men in Black — Harry Potter fallback
+  r035: "c020", // DC — Superman
 };
 
 function isCardThemeId(cardId: string): boolean {

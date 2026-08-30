@@ -189,7 +189,7 @@ function resolveRequested(names, cards) {
 
 const requested = process.argv.slice(2).filter((argument) => !argument.startsWith("--"));
 // Relics are part of the roster this script exists to photograph, and were
-// missing from it: `readCards` reads cards.csv only, so all 33 of them answered
+// missing from it: `readCards` reads cards.csv only, so all 34 of them answered
 // "matches no card" and a fifth of the printed roster could not be looked at.
 // They also cannot be PLACED — `__debug.place` refuses a non-minion — so they
 // are dealt into the hand instead and cloned from there. The hand renders the

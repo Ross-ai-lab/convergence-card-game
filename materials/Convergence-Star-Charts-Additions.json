@@ -1154,5 +1154,32 @@
       { "who": "Agent J", "rel": "partner learning the cost of secrecy", "id": "" },
       { "who": "The Arquillian Prince", "rel": "alien crisis hidden from humanity", "id": "" }
     ]
+  },
+  "r035": {
+    "name": "Green Lantern Ring",
+    "origin": "DC",
+    "epithet": "The Ring of Willpower",
+    "rar": "Relic",
+    "camp": "Ascension",
+    "align": "Relic",
+    "cost": 1,
+    "atk": 0,
+    "hp": 0,
+    "cc": "#54d6c3",
+    "vals": [8, 7, 8, 9, 9, 10],
+    "rank": "DC · Green Lantern power ring",
+    "lore": "A Green Lantern power ring is an advanced device powered by will and connected to the emotional spectrum. It translates a Lantern's imagination into solid light, grants flight and protection, and answers most strongly when its wielder refuses to surrender.",
+    "quote": "In brightest day, in blackest night.",
+    "str": ["Turns imagination into solid light", "Rewards courage and discipline", "Connects one bearer to a wider corps"],
+    "wk": ["Requires a strong will", "The ring's charge is finite", "Fear can interfere with its power"],
+    "sig_name": "Hard-Light Construct",
+    "sig_desc": "The ring shapes resolve into a weapon, shield, or bridge before the next choice has to be made.",
+    "playstyle": "A tool that grows through patience, courage, and creative defence",
+    "ability": "Green Lantern rings create hard-light constructs and empower their chosen wielders through willpower.",
+    "rivals": [
+      { "who": "Hal Jordan", "rel": "test pilot chosen by Abin Sur's ring", "id": "" },
+      { "who": "John Stewart", "rel": "architect and Lantern whose constructs reflect precision", "id": "" },
+      { "who": "The Guardians of the Universe", "rel": "creators and overseers of the Corps", "id": "" }
+    ]
   }
 }

@@ -51,7 +51,7 @@ describe("Convergence engine", () => {
     ];
 
     expect(cards).toHaveLength(182);
-    expect(relics).toHaveLength(33);
+    expect(relics).toHaveLength(34);
     expect(drawableIds).toHaveLength(expectedIds.length);
     expect(new Set(drawableIds)).toEqual(new Set(expectedIds));
     for (const id of expectedIds) {

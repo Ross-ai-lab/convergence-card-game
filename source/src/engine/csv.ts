@@ -352,6 +352,7 @@ const relicIds = new Set<RelicId>([
   "time_turner",
   "symbiote",
   "neuralyzer",
+  "green_lantern_ring",
 ]);
 
 export function parseCsv(text: string): Record<string, string>[] {

@@ -686,7 +686,8 @@ export type RelicId =
   | "poke_ball"
   | "time_turner"
   | "symbiote"
-  | "neuralyzer";
+  | "neuralyzer"
+  | "green_lantern_ring";
 
 export interface RelicDefinition {
   kind: "relic";

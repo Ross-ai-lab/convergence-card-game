@@ -4258,6 +4258,15 @@ function resolveDeathStar(state: GameState, playerId: PlayerId, events: GameEven
 }
 
 function resolveEndOfTurn(state: GameState, playerId: PlayerId, _library: CardLibrary, events: GameEvent[]): void {
+  for (const minion of state.players[playerId].board) {
+    if (!minion || minion.attacksUsed !== 0) continue;
+    for (const relic of attachedRelics(minion)) {
+      if (relic.relicId !== "green_lantern_ring") continue;
+      buffMinion(minion, 2, 1);
+      events.push(effectEvent(`${minion.name} grows through the Green Lantern Ring (+2/+1).`, minion));
+    }
+  }
+
   const source = state.players[playerId].board.find(
     (minion) => minion && hasEffect(minion, "ragnaros_end_turn") && !minion.silenced,
   );

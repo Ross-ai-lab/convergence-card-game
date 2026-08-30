@@ -65,7 +65,7 @@ await fresh();
 await page.keyboard.type("Ross");
 await page.getByRole("button", { name: "Open developer tools", exact: true }).click();
 check("developer mode opens its workbench", await page.locator(".developer-panel").isVisible());
-check("developer mode lists the complete library", (await page.locator(".developer-card-row").count()) === 215);
+check("developer mode lists the complete library", (await page.locator(".developer-card-row").count()) === 216);
 await page.screenshot({ path: path.join(outputDir, "developer-workbench.png"), fullPage: false });
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(250);
