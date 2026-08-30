@@ -59,7 +59,7 @@ describe("2026 card replacements", () => {
   it("loads the four requested cards with their final metadata", () => {
     expect(cards.find((card) => card.name === "Xenomorph Queen")).toMatchObject({
       cost: 4,
-      atk: 3,
+      atk: 1,
       hp: 4,
       rarity: "Black",
       camp: "Nature",
@@ -83,6 +83,7 @@ describe("2026 card replacements", () => {
       rarity: "Purple",
       effectId: "frieren_relic_discover",
       effectTiming: "passive",
+      effect: "Passive: The first time you cast a relic each turn, discover another relic",
     });
     expect(cards.find((card) => card.name === "Guts")).toMatchObject({
       cost: 2,
@@ -113,6 +114,7 @@ describe("2026 card replacements", () => {
       atk: 1,
       hp: 1,
     });
+    expect(after.players[0].board[1]?.art).toContain("token-larva.webp");
   });
 
   it("Naruto fills every empty friendly slot with 2/2 Shadow Clones", () => {
@@ -127,7 +129,7 @@ describe("2026 card replacements", () => {
     expect(clones.every((entry) => entry?.art.includes("token-shadow-clone.webp"))).toBe(true);
   });
 
-  it("Frieren discovers a relic after each relic play, including multiple Frieren triggers", () => {
+  it("Frieren discovers once per turn for each Frieren, then resets next turn", () => {
     const state = mainState("frieren-relic-discover");
     state.players[0].board[0] = minion("Frieren", 0);
     state.players[0].board[1] = minion("Frieren", 0);
@@ -153,6 +155,35 @@ describe("2026 card replacements", () => {
     expect(after.phase).toBe("main");
     expect(after.pendingTarget).toBeNull();
     expect(after.players[0].hand).toHaveLength(2);
+
+    const sameTurnRelic = after.players[0].hand[0];
+    after.players[0].hand = [sameTurnRelic];
+    const sameTurn = applyAction(
+      after,
+      { type: "play_relic", player: 0, handIndex: 0, slotIndex: 1 },
+      library,
+    ).state;
+    expect(sameTurn.phase).toBe("main");
+    expect(sameTurn.pendingTarget).toBeNull();
+    expect(sameTurn.players[0].hand).toHaveLength(0);
+
+    const nextTurn = endTurn(endTurn(sameTurn, 0), 1);
+    const nextRelic = relicId("Tesseract");
+    nextTurn.players[0].board[2] = minion("John Wick", 0);
+    nextTurn.players[0].hand = [nextRelic];
+    nextTurn.deck = nextTurn.deck.filter((cardId) => cardId !== nextRelic);
+    const nextAsking = applyAction(
+      nextTurn,
+      { type: "play_relic", player: 0, handIndex: 0, slotIndex: 2 },
+      library,
+    ).state;
+    expect(nextAsking.phase).toBe("targeting");
+    expect(nextAsking.pendingTarget?.queuedRelicSources).toHaveLength(1);
+
+    const nextFirst = choose(nextAsking, 0);
+    const nextAfter = choose(nextFirst, 0);
+    expect(nextAfter.phase).toBe("main");
+    expect(nextAfter.players[0].hand).toHaveLength(2);
   });
 
   it("Guts gains and loses a live +1/+1 aura as the Core crosses 20 HP thresholds", () => {

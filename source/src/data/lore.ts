@@ -9579,7 +9579,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Evil",
     "cost": 4,
-    "atk": 3,
+    "atk": 1,
     "hp": 4,
     "cc": "#2f9c63",
     "vals": [

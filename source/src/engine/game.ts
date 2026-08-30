@@ -907,6 +907,7 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     stolenPassiveFrom: null,
     stolenPassiveText: null,
     gainedEffects: [],
+    relicDiscoveryTurn: null,
     savedCoreHealth: null,
     chainGrowthPending: false,
     copyRestoreEffectId: null,
@@ -2134,8 +2135,8 @@ function takeRelicFromDeckToHand(
   return relic;
 }
 
-/** Resolve every live Frieren trigger caused by one relic play, pausing between
- * discoveries when the player has more than one trigger to answer. */
+/** Resolve every live Frieren trigger caused by one relic play, once per source
+ * each turn, pausing between discoveries when the player has more than one. */
 function triggerRelicDiscoveries(
   state: GameState,
   playerId: PlayerId,
@@ -2150,6 +2151,9 @@ function triggerRelicDiscoveries(
     const sourceSlot = state.players[playerId].board.findIndex((minion) => minion?.instanceId === sourceId);
     const source = sourceSlot >= 0 ? state.players[playerId].board[sourceSlot] : null;
     if (!source || source.silenced || source.effectId !== "frieren_relic_discover") continue;
+    if (source.relicDiscoveryTurn === state.turnNumber) continue;
+    if (relicsInDeck(state, library).length === 0) continue;
+    source.relicDiscoveryTurn = state.turnNumber;
     const suspended = runEffect(state, source, sourceSlot, library, events);
     if (suspended) {
       if (state.pendingTarget) state.pendingTarget.queuedRelicSources = remaining;
@@ -3936,9 +3940,7 @@ function summonLarva(state: GameState, source: MinionInstance, dead: MinionInsta
     effect: "-",
     flavor: "One more for the hive.",
     origin: "Alien",
-    // No separate Larva photo was supplied. The Queen's supplied artwork keeps
-    // the token photographic and gives the small board token the right visual family.
-    art: source.art,
+    art: resolvePublicAssetUrl("/card-art/raw/token-larva.webp"),
   };
   const summoned = createMinion(larva, source.owner, state);
   player.board[slot] = summoned;
@@ -5473,6 +5475,7 @@ function transformIntoLunarSlime(
     stolenPassiveFrom: target.stolenPassiveFrom,
     stolenPassiveText: target.stolenPassiveText,
     gainedEffects: target.gainedEffects.map((effect) => ({ ...effect })),
+    relicDiscoveryTurn: target.relicDiscoveryTurn,
   };
   target.temporaryTransform = {
     kind: "lunar_slime",

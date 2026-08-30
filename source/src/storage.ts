@@ -70,9 +70,10 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // attached-relic returns were removed. A mid-draft v20 save has no equivalent
 // state and is discarded rather than restoring a broken opening screen.
 // v22: MinionInstance gained temporary control state for Motoko Kusanagi.
-const SAVE_VERSION = 22;
+// v23: MinionInstance gained Frieren's once-per-turn relic discovery marker.
+const SAVE_VERSION = 23;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v21";
+const LEGACY_SAVE_KEY = "convergence.save.v22";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -233,6 +234,11 @@ function migrateLegacyMechanics(game: GameState): void {
       if (minion.passiveSilenceSources === undefined) minion.passiveSilenceSources = [];
       if (minion.chainGrowthPending === undefined) minion.chainGrowthPending = false;
       if (minion.temporaryControl === undefined) minion.temporaryControl = null;
+      if (minion.relicDiscoveryTurn === undefined) minion.relicDiscoveryTurn = null;
+      const transform = minion.temporaryTransform;
+      if (transform && transform.original.relicDiscoveryTurn === undefined) {
+        transform.original.relicDiscoveryTurn = minion.relicDiscoveryTurn;
+      }
     }
   }
   const savedMulligan = (game as GameState & { mulligan?: GameState["mulligan"] }).mulligan;
