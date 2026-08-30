@@ -1292,6 +1292,8 @@ Do not casually regenerate approved menu, battle, or tension music. Preserve the
 
 Contributions are welcome through a fork and pull request. Keep each change focused, explain the player-visible result, and run the relevant checks before proposing it.
 
+- **Visual and UI changes require browser proof.** Run the real browser and capture and inspect screenshots at every affected desktop and mobile viewport. When browser zoom changes CSS dimensions, verify the exact effective viewport, not only the nominal window size.
+
 - Cards and relics: `source/data/`
 - Game rules and practice opponents: `source/src/engine/`
 - Interface and controls: `source/src/App.tsx` and `source/src/*.css`
