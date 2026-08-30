@@ -305,7 +305,7 @@ export function TitleScreen({
               sfx.play("button");
               onTutorial();
             }}
-            title="Learn the game in a guided first duel"
+            title="Learn the game in Tutorial"
           >
             <Sparkle size={22} weight="fill" aria-hidden="true" />
             <span>Tutorial</span>

@@ -1254,21 +1254,21 @@ export default function App() {
       // attack lesson straight to the finale. Keep the guide on the exact
       // interaction the player completed.
       if (tutorialActive && action.player === viewerId) {
-        const nextStep =
-          result.state.phase === "targeting" && result.state.pendingTarget?.player === viewerId
-            ? 2
-            : action.type === "play_card" || action.type === "play_relic"
-              ? 1
-              : action.type === "choose_target"
-                ? 1
-                : action.type === "attack_minion" || action.type === "attack_core"
-                  ? 3
-              : null;
+        let nextStep: number | null = null;
+        if (result.state.phase === "targeting" && result.state.pendingTarget?.player === viewerId) {
+          nextStep = 4;
+        } else if (action.type === "play_card" || action.type === "play_relic") {
+          nextStep = 1;
+        } else if (action.type === "choose_target") {
+          nextStep = 5;
+        } else if (action.type === "attack_minion" || action.type === "attack_core") {
+          nextStep = 4;
+        }
         if (action.type === "end_turn") {
-          // The first body is asleep until the next turn. Passing before it
-          // can attack should not skip the swing lesson; only a pass after a
-          // completed attack advances to the final loop reminder.
-          setTutorialStep((current) => (current >= 3 ? 4 : current));
+          // The first body is asleep until the next turn. Passing advances to
+          // the card spotlight, then a deliberate coach action reveals the
+          // attack lesson once the Recruit has finished its turn.
+          setTutorialStep((current) => (current === 1 ? 2 : current >= 4 ? 5 : current));
         } else if (nextStep !== null) {
           setTutorialStep((current) => (current >= 4 && nextStep < current ? current : nextStep));
         }
@@ -1413,6 +1413,8 @@ export default function App() {
     duelRecorded.current = false;
     setPack(null);
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
+    // `easy` is the Recruit AI. It keeps the real bot loop while the curated
+    // Goblins Taunt body stays on the board as the first combat lesson.
     setMode({ kind: "bot", skill: "easy" });
     const seed = createDuelSeed();
     setGame(
@@ -2420,7 +2422,14 @@ export default function App() {
         />
       ) : null}
 
-      {tutorialActive && game.phase !== "gameOver" && !duelIntro ? <TutorialCoach step={tutorialStep} onSkip={toTitle} /> : null}
+      {tutorialActive && game.phase !== "gameOver" && !duelIntro ? (
+        <TutorialCoach
+          game={game}
+          step={tutorialStep}
+          onAdvance={() => setTutorialStep((current) => (current === 2 ? 3 : current))}
+          onSkip={toTitle}
+        />
+      ) : null}
 
       {/* Above the result screen, not beside it. The pack is the reward for the
           duel that just ended, so it has to be the thing in the way. */}
@@ -3351,7 +3360,6 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
         <GalleryDetailModal
           entry={selectedEntry}
           locked={!collection.unlocked.has(selectedEntry.key)}
-          position={sorted.findIndex((entry) => entry.key === selectedEntry.key) + 1}
           total={sorted.length}
           onClose={() => setSelectedEntryKey(null)}
           onNavigate={(direction) => {
@@ -3433,14 +3441,12 @@ function campAccent(camp: string): string {
 function GalleryDetailModal({
   entry,
   locked,
-  position,
   total,
   onClose,
   onNavigate,
 }: {
   entry: GalleryEntry;
   locked: boolean;
-  position: number;
   total: number;
   onClose: () => void;
   onNavigate: (direction: number) => void;
@@ -3474,7 +3480,7 @@ function GalleryDetailModal({
             <span className="gallery-detail-kicker">{locked ? "Sealed profile" : "Star Chart profile"}</span>
             <h2>{entry.face.name}</h2>
             <p>
-              {entry.face.origin}
+              {profile?.origin ?? entry.face.origin}
               {profile?.epithet ? ` · ${profile.epithet}` : ""}
             </p>
             <div className="gallery-detail-chips">
@@ -3491,18 +3497,7 @@ function GalleryDetailModal({
         <div className="gallery-detail-body">
           <div className="gallery-detail-primary">
             <div className="gallery-detail-card">{locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} />}</div>
-            {locked ? (
-              <div className="gallery-detail-rule">
-                <span>Rules sealed</span>
-                <p>Unlock this card to reveal its effect.</p>
-              </div>
-            ) : (
-              <div className="gallery-detail-rule">
-                <span>In Convergence</span>
-                <p>{entry.face.effect || "No printed effect"}</p>
-                {entry.face.flavor ? <em>{entry.face.flavor}</em> : null}
-              </div>
-            )}
+            {locked ? <p className="gallery-detail-sealed-note">Rules remain sealed until this card joins your deck.</p> : null}
           </div>
 
           {locked ? (
@@ -3516,7 +3511,7 @@ function GalleryDetailModal({
               <div className="gallery-detail-chart-row">
                 <div className="gallery-detail-chart-wrap">
                   <StarChart values={profile.vals} accent={accent} name={entry.face.name} />
-                  <span className="gallery-detail-chart-caption">Lore attributes · 0 to 10</span>
+                  {!isRelicCard(entry.card) ? <span className="gallery-detail-chart-caption">Lore attributes · 0 to 10</span> : null}
                 </div>
                 <div className="gallery-detail-lore">
                   <p>{profile.lore}</p>
@@ -3533,20 +3528,16 @@ function GalleryDetailModal({
                   {profile.sig_name ? <strong>{profile.sig_name}</strong> : null}
                   <span>{profile.sig_desc || "No signature move recorded."}</span>
                 </DetailBox>
-                <DetailBox title="Lore interpretation">
-                  <span>{profile.ability}</span>
-                  <em>{profile.playstyle}.</em>
-                </DetailBox>
-              </div>
-              <div className="gallery-detail-rivals">
-                <span>Rivals and ties</span>
-                <div>
-                  {profile.rivals.length ? profile.rivals.map((rival) => (
-                    <span key={`${rival.who}-${rival.rel}`} className={rival.id ? "detail-rival linked" : "detail-rival"}>
-                      {rival.who}{rival.rel ? ` · ${rival.rel}` : ""}
-                    </span>
-                  )) : <span className="detail-rival">No recorded rival</span>}
-                </div>
+                <section className="gallery-detail-box gallery-detail-relationships">
+                  <h3>Relationships</h3>
+                  <div className="gallery-detail-box-copy">
+                    {profile.rivals.length ? profile.rivals.map((rival) => (
+                      <span key={`${rival.who}-${rival.rel}`} className={rival.id ? "detail-rival linked" : "detail-rival"}>
+                        {rival.who}{rival.rel ? ` · ${rival.rel}` : ""}
+                      </span>
+                    )) : <span className="detail-rival">No recorded relationship</span>}
+                  </div>
+                </section>
               </div>
             </>
           ) : (
@@ -3558,12 +3549,12 @@ function GalleryDetailModal({
           )}
         </div>
 
-        <footer className="gallery-detail-nav">
-          <button type="button" onClick={() => onNavigate(-1)} disabled={locked || total < 2}>← Previous</button>
-          <span>{position > 0 ? `${position} of ${total}` : "Card profile"}</span>
-          <button type="button" onClick={() => onNavigate(1)} disabled={locked || total < 2}>Next →</button>
-        </footer>
-        <p className="gallery-detail-hint">Esc closes · arrow keys browse the filtered gallery</p>
+        {total > 1 ? (
+          <footer className="gallery-detail-nav" aria-label="Browse Star Chart profiles">
+            <button type="button" onClick={() => onNavigate(-1)} disabled={locked}>← Previous</button>
+            <button type="button" onClick={() => onNavigate(1)} disabled={locked}>Next →</button>
+          </footer>
+        ) : null}
       </section>
     </div>
   );
@@ -4862,12 +4853,18 @@ function CardPack({
 }
 
 function TutorialCoach({
+  game,
   step,
+  onAdvance,
   onSkip,
 }: {
+  game: GameState;
   step: number;
+  onAdvance: () => void;
   onSkip: () => void;
 }) {
+  const exampleRelic = relics.find((relic) => relic.id === "r010");
+  const exampleFace = exampleRelic ? relicFace(exampleRelic) : null;
   const lessonList = [
     {
       title: "Play a card",
@@ -4875,19 +4872,24 @@ function TutorialCoach({
       hint: "Blue means you can afford the card.",
     },
     {
+      title: "End your turn",
+      body: "Your new minion needs a turn to wake up. Press the green End Turn button to pass to the Recruit.",
+      hint: "The Recruit takes its turn, then your minion can act.",
+    },
+    {
+      title: "Study a card",
+      body: "Card art, cost, effect, and origin tell you how a card belongs in the Rift before you play it.",
+      hint: "Read this example, then continue to your first swing.",
+    },
+    {
       title: "Take your first swing",
-      body: "When a minion has a green rim, click it, then choose an enemy minion or the enemy Core.",
+      body: "When a minion has a green rim, click it, then choose the enemy Taunt minion.",
       hint: "Combat is simultaneous, so defenders strike back.",
     },
     {
       title: "Answer the prompt",
       body: "A Battlecry can pause the duel. Click one of the teal-highlighted legal targets.",
       hint: "The board lights up only the choices the card allows.",
-    },
-    {
-      title: "Close your turn",
-      body: "Use the Hero Power when it helps, then press End Turn to hand the board over.",
-      hint: "Space or Enter also ends your turn.",
     },
     {
       title: "You know the loop",
@@ -4909,7 +4911,19 @@ function TutorialCoach({
       </div>
       <strong>{lesson.title}</strong>
       <p>{lesson.body}</p>
+      {safeStep === 2 && exampleFace ? (
+        <div className="tutorial-card-example">
+          <div className="tutorial-card-example-face"><CardFace card={exampleFace} /></div>
+          <div>
+            <strong>Elder wand</strong>
+            <span>Harry Potter · The Unbeatable Wand</span>
+          </div>
+        </div>
+      ) : null}
       <small className="tutorial-coach-hint">{lesson.hint}</small>
+      {safeStep === 2 && game.activePlayer === 0 && game.phase === "main" ? (
+        <button type="button" className="tutorial-advance" onClick={onAdvance}>Continue to first swing</button>
+      ) : null}
       <button type="button" onClick={onSkip}>Leave tutorial</button>
     </aside>
   );

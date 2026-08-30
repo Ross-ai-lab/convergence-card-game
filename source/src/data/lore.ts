@@ -9264,8 +9264,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c176": {
     "name": "Meteor",
-    "origin": "Basic",
-    "epithet": "Orbital Impact",
+    "origin": "Astronomy",
+    "epithet": "A Visitor from Deep Space",
     "rar": "Rare",
     "camp": "Nature",
     "align": "Neutral",
@@ -9276,45 +9276,45 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "vals": [
       10,
       8,
-      4,
+      1,
       0,
-      2,
+      4,
       2
     ],
-    "rank": "Rare · #1 in Strength",
-    "lore": "Meteor is not a soldier or a strategist. It is the sky itself choosing a target, a clean line of impossible mass that turns a crowded battlefield into an impact site.",
-    "quote": "Look up.",
+    "rank": "Astronomy · Stony meteoroid",
+    "lore": "A meteor is the visible passage of a meteoroid through an atmosphere. Friction turns its descent into light, while the surviving mass may reach the ground as a meteorite.",
+    "quote": "The sky writes in fire.",
     "str": [
-      "Unmatched board-wide force",
-      "Punishes overextension instantly",
-      "Simple, reliable finish"
+      "Extreme kinetic energy",
+      "Can survive atmospheric entry",
+      "Leaves a measurable impact"
     ],
     "wk": [
-      "Arrives late",
-      "Cannot spare friendly minions",
-      "No influence beyond the impact"
+      "Ablates in an atmosphere",
+      "Can fragment before impact",
+      "Has no agency or intention"
     ],
     "sig_name": "Atmospheric Entry",
-    "sig_desc": "A burning descent that leaves no formation intact.",
-    "playstyle": "A reset button for crowded boards",
-    "ability": "Battlecry: Deal 4 damage to all other minions.",
+    "sig_desc": "A streak of ionized gas marks a piece of space meeting a world.",
+    "playstyle": "An impersonal event of speed and gravity",
+    "ability": "A meteoroid becomes luminous when atmospheric ablation excites the surrounding air.",
     "rivals": [
       {
-        "who": "Black Hole",
-        "rel": "mass meets gravity",
-        "id": "c178"
+        "who": "The asteroid belt",
+        "rel": "its possible birthplace",
+        "id": ""
       },
       {
-        "who": "Planetary Defense Grid",
-        "rel": "the shield tries to hold",
-        "id": "c177"
+        "who": "Earth's atmosphere",
+        "rel": "the passage that reveals it",
+        "id": ""
       }
     ]
   },
   "c177": {
     "name": "Planetary Defense Grid",
-    "origin": "Basic",
-    "epithet": "Orbital Shield Array",
+    "origin": "Science fiction",
+    "epithet": "The Orbital Shield",
     "rar": "Rare",
     "camp": "Tech",
     "align": "Neutral",
@@ -9323,47 +9323,47 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 8,
     "cc": "#70c9ff",
     "vals": [
-      6,
-      10,
-      8,
       7,
+      10,
+      6,
+      5,
       8,
-      3
+      8
     ],
-    "rank": "Rare · #1 in Toughness",
-    "lore": "The Grid is a machine built around one promise: the world below gets another minute. Its guns do not seek glory; they turn every willing defender into part of a single planetary wall.",
-    "quote": "The shield watches from orbit.",
+    "rank": "Science fiction · Planetary defense network",
+    "lore": "A planetary defense grid is a network of sensors, tracking systems, and interceptors built to detect threats before they reach a inhabited world. Its strength is coordination across distance.",
+    "quote": "The world below gets another minute.",
     "str": [
-      "Makes a Taunt board snowball",
-      "Exceptional staying power",
-      "Rewards a deliberate formation"
+      "Persistent surveillance",
+      "Works across enormous distances",
+      "Combines many systems into one response"
     ],
     "wk": [
-      "Needs other Taunt minions",
-      "Slow to deploy",
-      "Its aura is vulnerable to Silence"
+      "Depends on working infrastructure",
+      "Requires warning time",
+      "A blind spot can defeat the network"
     ],
-    "sig_name": "Orbital Interlock",
-    "sig_desc": "Every defensive body shares one reinforced perimeter.",
-    "playstyle": "A fortress engine for Taunt formations",
-    "ability": "Taunt. Passive: All other Taunt minions have +2/+2.",
+    "sig_name": "Orbital Intercept",
+    "sig_desc": "A tracked object meets a guided response beyond the atmosphere.",
+    "playstyle": "A patient guardian of a fragile world",
+    "ability": "A fictional defense network uses orbital assets to detect and intercept incoming objects.",
     "rivals": [
       {
-        "who": "Meteor",
-        "rel": "the impact it was built to stop",
-        "id": "c176"
+        "who": "An incoming asteroid",
+        "rel": "the threat it tracks",
+        "id": ""
       },
       {
-        "who": "Black Hole",
-        "rel": "a threat with no trajectory",
-        "id": "c178"
+        "who": "The atmosphere",
+        "rel": "the last line beneath it",
+        "id": ""
       }
     ]
   },
   "c178": {
     "name": "Black Hole",
-    "origin": "Basic",
-    "epithet": "Event Horizon",
+    "origin": "Astrophysics",
+    "epithet": "The Point of No Return",
     "rar": "Rare",
     "camp": "Magic",
     "align": "Neutral",
@@ -9374,38 +9374,38 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "vals": [
       10,
       10,
-      9,
+      8,
+      0,
       10,
-      9,
-      0
+      1
     ],
-    "rank": "Rare · #1 in Willpower",
-    "lore": "Black Hole is a battlefield reduced to a single question: what can escape? It does not negotiate with buffs, shields, or proud names; once the horizon closes, every board becomes silence.",
-    "quote": "Nothing escapes the singularity.",
+    "rank": "Astrophysics · Gravitational singularity",
+    "lore": "A black hole is a region of spacetime whose gravity prevents anything that crosses its event horizon from escaping. Matter outside it can form a luminous accretion disk while the hole itself remains dark.",
+    "quote": "Nothing escapes the event horizon.",
     "str": [
-      "Erases every minion",
-      "Silences before the final pull",
-      "Threatens any late-game board"
+      "Produces extraordinary gravity",
+      "Can power a bright accretion disk",
+      "Distorts light and time nearby"
     ],
     "wk": [
-      "Costs the full curve",
-      "Cannot attack before its collapse",
-      "Takes allies with it"
+      "Cannot be observed directly",
+      "Its interior is hidden beyond the horizon",
+      "Evaporation is unimaginably slow for stellar holes"
     ],
     "sig_name": "Event Horizon",
-    "sig_desc": "A point of no return where every advantage loses its shape.",
-    "playstyle": "The ultimate symmetrical board clear",
-    "ability": "Deathrattle: Silence then destroy all minions.",
+    "sig_desc": "The boundary where escape would require moving faster than light.",
+    "playstyle": "A patient force of spacetime rather than a thinking being",
+    "ability": "A black hole curves spacetime so strongly that the event horizon becomes a one-way boundary.",
     "rivals": [
       {
-        "who": "Meteor",
-        "rel": "another answer to a full board",
-        "id": "c176"
+        "who": "Hawking radiation",
+        "rel": "theoretical loss over deep time",
+        "id": ""
       },
       {
-        "who": "The Holy Grail",
-        "rel": "nothing is truly permanent",
-        "id": "r001"
+        "who": "A neutron star",
+        "rel": "another extreme stellar remnant",
+        "id": ""
       }
     ]
   },
@@ -9424,37 +9424,42 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       6,
       5,
       8,
-      9,
+      10,
       10,
       7
     ],
-    "rank": "Legendary · #1 in Intellect",
-    "lore": "Rudeus Greyrat carries the memory of a life wasted and the discipline to refuse a second one. His body is small, his mana is not, and every quiet calculation becomes a spell with frightening reach.",
-    "quote": "Silent casting. Overwhelming force.",
+    "rank": "Mushoku Tensei · Silent spellcaster",
+    "lore": "Rudeus Greyrat is a shut-in reborn in a world of magic, determined to use a second life better than the first. Under Roxy's teaching he becomes an exceptional mage, while his family, friends, and the mana catastrophe force him to grow beyond talent.",
+    "quote": "I will not waste this life.",
     "str": [
-      "Unusually deep magical theory",
-      "Turns Hero Power timing into a resource",
-      "Divine Shield buys a crucial opening"
+      "Prodigious mana reserves",
+      "Silent spellcasting",
+      "Broad knowledge of elemental magic"
     ],
     "wk": [
-      "Fragile once the shield is gone",
-      "Needs a plan for direct pressure",
-      "Power is easy to waste on small targets"
+      "Carries deep social and personal trauma",
+      "Relies on preparation and distance",
+      "His confidence can become recklessness"
     ],
-    "sig_name": "Disturbance Cannon",
-    "sig_desc": "A silent, compressed spell released before an opponent can read the casting.",
-    "playstyle": "A resource-free spell-control engine",
-    "ability": "Divine Shield. Passive: Your Hero Power costs 0.",
+    "sig_name": "Stone Cannon",
+    "sig_desc": "A compressed earth spell refined through control, range, and destructive force.",
+    "playstyle": "A calculating reincarnate learning responsibility",
+    "ability": "Rudeus is known for silent casting and advanced elemental magic, especially his Stone Cannon.",
     "rivals": [
       {
-        "who": "Prince Lloyd",
-        "rel": "a fellow prodigy who refuses limits",
-        "id": "c180"
+        "who": "Roxy Migurdia",
+        "rel": "teacher and first magical guide",
+        "id": ""
       },
       {
-        "who": "Motoko Kusanagi",
-        "rel": "mind against machine",
-        "id": "c181"
+        "who": "Sylphiette",
+        "rel": "childhood friend and partner",
+        "id": ""
+      },
+      {
+        "who": "Orsted",
+        "rel": "a terrifying turning point in his journey",
+        "id": ""
       }
     ]
   },
@@ -9472,45 +9477,50 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "vals": [
       4,
       5,
-      9,
+      8,
       10,
       10,
-      6
+      7
     ],
-    "rank": "Legendary · #1 in Magic",
-    "lore": "Prince Lloyd approaches sorcery like a child approaches a locked box: with complete confidence that it will open. Curiosity makes him reckless, but the people near him discover that his experiments carry a protective radius.",
-    "quote": "Magic is all he ever wanted to perfect.",
+    "rank": "7th Prince · Magical researcher",
+    "lore": "Lloyd de Saloum is reborn as the seventh prince and treats magic as the one subject worthy of total attention. His curiosity, immense talent, and willingness to test dangerous theories make him brilliant, troublesome, and impossible to discourage.",
+    "quote": "Let me perfect this spell.",
     "str": [
-      "Makes a whole board harder to break",
-      "Ridiculous magical precision",
-      "Divine Shield preserves his first turn"
+      "Exceptional magical aptitude",
+      "Relentless curiosity",
+      "Learns by testing first principles"
     ],
     "wk": [
-      "Low printed body",
-      "Needs friendly minions to justify the cost",
-      "Protection fades under Silence"
+      "Treats danger as a research opportunity",
+      "Can neglect ordinary social judgment",
+      "His obsession isolates him"
     ],
     "sig_name": "Perfected Formula",
-    "sig_desc": "A spell refined until its collateral damage becomes a defensive ward.",
-    "playstyle": "A protective aura around fragile threats",
-    "ability": "Divine Shield. Passive: Other friendly minions take 1 less damage.",
+    "sig_desc": "A spell is taken apart, understood, and rebuilt beyond its original limits.",
+    "playstyle": "An irrepressible royal scholar",
+    "ability": "Lloyd's defining talent is the obsessive study and refinement of magical techniques.",
     "rivals": [
       {
-        "who": "Rudeus Greyrat",
-        "rel": "compares notes on impossible magic",
-        "id": "c179"
+        "who": "Sylpha",
+        "rel": "loyal attendant and training partner",
+        "id": ""
       },
       {
-        "who": "The Philosopher's Stone",
-        "rel": "a shortcut he would happily dissect",
-        "id": "r012"
+        "who": "Tao",
+        "rel": "friend and fellow learner",
+        "id": ""
+      },
+      {
+        "who": "The Saloum royal family",
+        "rel": "his home and responsibility",
+        "id": ""
       }
     ]
   },
   "c181": {
     "name": "Motoko Kusanagi",
     "origin": "Ghost in the Shell",
-    "epithet": "Major",
+    "epithet": "The Major",
     "rar": "Legendary",
     "camp": "Tech",
     "align": "Good",
@@ -9519,47 +9529,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 1,
     "cc": "#70c9ff",
     "vals": [
-      7,
-      7,
       8,
-      8,
+      7,
       9,
-      9
+      8,
+      10,
+      10
     ],
-    "rank": "Legendary · #1 in Agility",
-    "lore": "Motoko Kusanagi treats identity as an operational question. A shell is equipment, a network is terrain, and the cleanest victory is the one where the hostile system wakes up serving your side.",
-    "quote": "The ghost can choose the shell.",
+    "rank": "Ghost in the Shell · Section 9 commander",
+    "lore": "Motoko Kusanagi is a full-body cyborg and the field commander of Japan's Public Security Section 9. She moves between physical and networked space while questioning what remains of a person when the body, memories, and identity can all be engineered.",
+    "quote": "The net is vast and infinite.",
     "str": [
-      "Turns enemy Tech against itself",
-      "Reads the board before committing",
-      "Excellent tempo swing"
+      "Elite tactical judgment",
+      "Deep cyberbrain access",
+      "Comfortable in both physical and digital combat"
     ],
     "wk": [
-      "Needs a legal Tech target",
-      "The borrowed body is temporary",
-      "Very vulnerable at 1 HP"
+      "Her body and memories can be compromised",
+      "Identity is a continuing uncertainty",
+      "Isolation follows exceptional capability"
     ],
-    "sig_name": "Ghost-Hack",
-    "sig_desc": "A precise intrusion that makes an enemy platform answer to a new operator.",
-    "playstyle": "Conditional theft and tempo disruption",
-    "ability": "Battlecry: Take control of an enemy Tech minion with 4 HP or less until the end of your next turn.",
+    "sig_name": "Ghost Dive",
+    "sig_desc": "A conscious descent into a network where information and identity share one space.",
+    "playstyle": "A disciplined investigator of the human-machine boundary",
+    "ability": "Motoko's signature capabilities come from her cyberbrain, prosthetic body, and network infiltration skills.",
     "rivals": [
       {
-        "who": "Planetary Defense Grid",
-        "rel": "the system she would infiltrate",
-        "id": "c177"
+        "who": "Batou",
+        "rel": "trusted field partner",
+        "id": ""
       },
       {
-        "who": "Cyber-Enchantment",
-        "rel": "hardware with an opinion",
-        "id": "r008"
+        "who": "Daisuke Aramaki",
+        "rel": "chief and strategic superior",
+        "id": ""
+      },
+      {
+        "who": "The Puppet Master",
+        "rel": "a crisis of consciousness and identity",
+        "id": ""
       }
     ]
   },
   "r001": {
     "name": "The Holy Grail",
-    "origin": "Myth",
-    "epithet": "Cup of the Impossible Wish",
+    "origin": "Arthurian Legend",
+    "epithet": "The Vessel of the Quest",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -9568,47 +9583,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
+      7,
       8,
       10,
-      9,
       8,
-      7,
-      2
+      8,
+      3
     ],
-    "rank": "Relic · Total investment",
-    "lore": "The Grail does not make a bearer wiser. It makes the bearer larger than the battlefield expected, turning every ordinary measurement into a promise with dangerous scale.",
-    "quote": "Ask for more.",
+    "rank": "Arthurian legend · Sacred vessel",
+    "lore": "The Holy Grail is a sacred vessel whose identity changes across medieval romances and later tradition. In Arthurian stories it becomes the object of a quest that tests purity, courage, and spiritual insight rather than simple strength.",
+    "quote": "The road matters as much as the cup.",
     "str": [
-      "Doubles both combat axes",
-      "Rewards a durable bearer",
-      "Scales into any board"
+      "Carries immense spiritual symbolism",
+      "Calls for the highest kind of quest",
+      "Endures through many retellings"
     ],
     "wk": [
-      "Needs a minion to carry it",
-      "Expensive for equipment",
-      "Loses value when the bearer is removed"
+      "Its form is uncertain",
+      "Its location is unreachable by ordinary means",
+      "The quest can expose the seeker's unworthiness"
     ],
-    "sig_name": "Wish Fulfilled",
-    "sig_desc": "A vessel that answers with mass instead of words.",
-    "playstyle": "A high-commitment stat multiplier",
-    "ability": "The bearer doubles its ATK and HP.",
+    "sig_name": "The Grail Quest",
+    "sig_desc": "A sacred search that turns a knight's character into the measure of success.",
+    "playstyle": "An elusive symbol of grace and fulfillment",
+    "ability": "The Grail is traditionally associated with sacred nourishment, revelation, and the test of the worthy seeker.",
     "rivals": [
       {
-        "who": "Black Hole",
-        "rel": "even wishes meet a limit",
-        "id": "c178"
+        "who": "Galahad",
+        "rel": "the pure knight who finds it",
+        "id": ""
       },
       {
-        "who": "Excalibur",
-        "rel": "two legends, different answers",
-        "id": "r028"
+        "who": "King Arthur",
+        "rel": "the court whose knights pursue it",
+        "id": ""
+      },
+      {
+        "who": "Joseph of Arimathea",
+        "rel": "a Christian origin in later tradition",
+        "id": ""
       }
     ]
   },
   "r002": {
     "name": "Lostvayne",
     "origin": "Seven Deadly Sins",
-    "epithet": "Demon King's Sacred Treasure",
+    "epithet": "Meliodas's Sacred Treasure",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -9617,47 +9637,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      7,
-      6,
+      8,
+      5,
       7,
       3,
-      4,
+      5,
       8
     ],
-    "rank": "Relic · Magic breaker",
-    "lore": "Lostvayne is a weapon for the moment an enchantment expects to be the final word. Its edge is not louder than magic; it simply refuses to let magic decide the exchange.",
-    "quote": "The spell ends here.",
+    "rank": "Seven Deadly Sins · Demon sword",
+    "lore": "Lostvayne is the sacred treasure of Meliodas, a short demon sword tied to his fighting style and the power of reflected magic. It represents the captain's violent history as much as his skill and loyalty to the Seven Deadly Sins.",
+    "quote": "A captain's blade remembers.",
     "str": [
-      "Shuts down Magic attackers",
-      "Excellent on a defending bearer",
-      "Cheap enough to hold up a curve"
+      "Belongs to an extraordinary swordsman",
+      "Supports clone-based combat techniques",
+      "Carries the weight of Meliodas's past"
     ],
     "wk": [
-      "Does nothing against other camps",
-      "Requires a combat-ready bearer",
-      "Defensive rather than proactive"
+      "Its power is tied to its wielder",
+      "Clones divide the original's strength",
+      "Its demonic history invites fear"
     ],
-    "sig_name": "Full Counter",
-    "sig_desc": "A reflected answer that makes hostile sorcery pay for arriving.",
-    "playstyle": "A matchup tool against Magic boards",
-    "ability": "The bearer is invulnerable to Magic attacks while defending.",
+    "sig_name": "Lostvayne's Clones",
+    "sig_desc": "The sacred treasure multiplies its wielder's presence at the price of divided power.",
+    "playstyle": "A personal weapon shaped by a demon captain's restraint",
+    "ability": "Lostvayne is Meliodas's sacred treasure and enables his physical clone technique.",
     "rivals": [
       {
-        "who": "Rudeus Greyrat",
-        "rel": "a bad matchup for a gifted caster",
-        "id": "c179"
+        "who": "Meliodas",
+        "rel": "its chosen wielder",
+        "id": ""
       },
       {
-        "who": "Mjolnir",
-        "rel": "different answers to different camps",
-        "id": "r027"
+        "who": "The Demon King",
+        "rel": "the origin of his demonic legacy",
+        "id": ""
+      },
+      {
+        "who": "Elizabeth",
+        "rel": "the bond behind his change",
+        "id": ""
       }
     ]
   },
   "r003": {
     "name": "One Ring",
-    "origin": "Lord of The Rings",
-    "epithet": "The Ring of Power",
+    "origin": "The Lord of the Rings",
+    "epithet": "The Ruling Ring",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -9666,46 +9691,51 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      6,
-      9,
+      8,
+      7,
       10,
       8,
       9,
       5
     ],
-    "rank": "Relic · Last chance",
-    "lore": "The One Ring is a bargain written in gold: survive the one moment that should end you, and pay for the rescue by giving the Ring away forever.",
-    "quote": "One more turn.",
+    "rank": "Middle-earth · Ring of Power",
+    "lore": "The One Ring is Sauron's instrument of domination, forged in the fires of Orodruin to control the other Rings of Power. Its promise of strength is inseparable from corruption, and its destruction requires returning it to the fire that made it.",
+    "quote": "One Ring to rule them all.",
     "str": [
-      "Cancels the first lethal blow",
-      "Restores the bearer completely",
-      "Creates a powerful threat of removal"
+      "Grants invisibility to a mortal wearer",
+      "Amplifies the will of its master",
+      "Can dominate lesser Rings"
     ],
     "wk": [
-      "Consumed after rescue",
-      "Needs a bearer worth saving",
-      "Cannot prevent repeated pressure"
+      "Corrupts those who carry it",
+      "Its power depends on Sauron",
+      "Can be destroyed only in its forging fire"
     ],
-    "sig_name": "The Ring Gives Time",
-    "sig_desc": "A vanished heartbeat becomes an entire second chance.",
-    "playstyle": "A delayed death insurance policy",
-    "ability": "The first time the bearer would die, set it to full HP instead and destroy this relic.",
+    "sig_name": "The Ring's Seduction",
+    "sig_desc": "A promise of power turns the bearer's own desire into the road home.",
+    "playstyle": "A beautiful object that makes possession a moral crisis",
+    "ability": "The One Ring grants invisibility and magnifies the power of its maker, while corrupting its bearer.",
     "rivals": [
       {
-        "who": "Black Hole",
-        "rel": "the rescue has to happen first",
-        "id": "c178"
+        "who": "Sauron",
+        "rel": "maker and true master",
+        "id": ""
       },
       {
-        "who": "The Green Mask",
-        "rel": "both make death negotiable",
-        "id": "r019"
+        "who": "Frodo Baggins",
+        "rel": "bearer during its final journey",
+        "id": ""
+      },
+      {
+        "who": "Gollum",
+        "rel": "its long-corrupted former keeper",
+        "id": ""
       }
     ]
   },
   "r005": {
     "name": "Infinity Stone",
-    "origin": "MCU",
+    "origin": "Marvel Cinematic Universe",
     "epithet": "A Fragment of Cosmic Law",
     "rar": "Relic",
     "camp": "Ascension",
@@ -9717,38 +9747,43 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "vals": [
       8,
       5,
-      8,
+      9,
       10,
-      7,
+      8,
       6
     ],
-    "rank": "Relic · Area control",
-    "lore": "An Infinity Stone turns one line of attack into a whole geometry. Distance stops protecting the formations beside the target; the adjacent battlefield becomes part of the equation.",
-    "quote": "Everything is connected.",
+    "rank": "MCU · Infinity Stone",
+    "lore": "An Infinity Stone is one of six primordial crystals formed at the beginning of the universe. Each embodies a fundamental aspect of existence, and together they can reshape life on a cosmic scale.",
+    "quote": "The universe is written in six laws.",
     "str": [
-      "Spreads pressure across a formation",
-      "Makes every attack matter twice",
-      "Strong against clustered boards"
+      "Embodies a fundamental force",
+      "Can be wielded on a cosmic scale",
+      "Connects distant worlds and eras"
     ],
     "wk": [
-      "Needs a clear attack",
-      "Can hit an inconvenient neighbor",
-      "Does not improve the bearer directly"
+      "A single Stone is incomplete",
+      "Its power can destroy its wielder",
+      "Concentration of the Stones invites conquest"
     ],
-    "sig_name": "Cosmic Cleave",
-    "sig_desc": "One strike refracts into the spaces around its destination.",
-    "playstyle": "Wide combat pressure",
-    "ability": "The bearer's attacks also strike the two minions adjacent to its target.",
+    "sig_name": "The Snap",
+    "sig_desc": "The six Stones act together to turn a thought into a universal event.",
+    "playstyle": "A cosmic artifact whose meaning depends on which force it contains",
+    "ability": "The six Infinity Stones govern Space, Mind, Reality, Power, Time, and Soul in the Marvel Cinematic Universe.",
     "rivals": [
       {
-        "who": "Tesseract",
-        "rel": "another Stone-shaped rule break",
-        "id": "r020"
+        "who": "Thanos",
+        "rel": "collector who seeks the complete set",
+        "id": ""
       },
       {
-        "who": "Shinigami Eyes",
-        "rel": "sees the opening in the formation",
-        "id": "r018"
+        "who": "The Avengers",
+        "rel": "defenders against its misuse",
+        "id": ""
+      },
+      {
+        "who": "The Eternals",
+        "rel": "beings shaped by the same cosmic history",
+        "id": ""
       }
     ]
   },
@@ -9766,38 +9801,43 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "vals": [
       5,
       6,
+      9,
       8,
-      7,
-      7,
+      8,
       4
     ],
-    "rank": "Relic · Persistent command",
-    "lore": "The White Whistle is permission to descend where ordinary rules fail. In Convergence, it teaches a single Battlecry not to end on arrival, but to keep sounding through the bearer.",
-    "quote": "The Abyss answers back.",
+    "rank": "Made in Abyss · Delver's relic",
+    "lore": "A White Whistle is the relic of a legendary cave raider, made from a human life and recognized by the Abyss as a symbol of authority. It grants access to the deepest layers while binding exploration to sacrifice.",
+    "quote": "The Abyss answers the brave and the cruel alike.",
     "str": [
-      "Converts a burst into an engine",
-      "Strong on utility Battlecries",
-      "Rewards careful sequencing"
+      "Marks the highest rank of delver",
+      "Opens the path to deeper layers",
+      "Carries the will of a sacrificed person"
     ],
     "wk": [
-      "Only helps a Battlecry bearer",
-      "Can prolong a weak effect",
-      "Needs the right minion first"
+      "Requires an irreversible sacrifice",
+      "The Abyss remains hostile",
+      "Authority does not protect against the curse"
     ],
-    "sig_name": "Sovereign's Echo",
-    "sig_desc": "One command repeats as an ongoing presence beneath the card.",
-    "playstyle": "Battlecry value that refuses to expire",
-    "ability": "The bearer's Battlecry effect turns into Ongoing effect.",
+    "sig_name": "The Sovereign's Call",
+    "sig_desc": "A whistle made from a life gives its owner permission to descend farther.",
+    "playstyle": "A badge of wonder, horror, and irreversible commitment",
+    "ability": "White Whistles are made from human souls and identify the highest-ranked cave raiders in Made in Abyss.",
     "rivals": [
       {
-        "who": "Necronomicon",
-        "rel": "another relic that repeats death",
-        "id": "r025"
+        "who": "Riko",
+        "rel": "young delver carrying Lyza's whistle",
+        "id": ""
       },
       {
-        "who": "The Holy Grail",
-        "rel": "power earned by commitment",
-        "id": "r001"
+        "who": "Lyza the Annihilator",
+        "rel": "legendary White Whistle and mother",
+        "id": ""
+      },
+      {
+        "who": "Bondrewd",
+        "rel": "a White Whistle whose experiments redefine sacrifice",
+        "id": ""
       }
     ]
   },
@@ -9813,46 +9853,51 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      5,
-      7,
+      6,
       7,
       8,
-      6,
-      3
+      9,
+      7,
+      2
     ],
-    "rank": "Relic · Nature breaker",
-    "lore": "The Chamber is a secret that becomes a shelter. Its stone remembers an older magic, and living attacks find no purchase against a bearer who carries that locked door.",
-    "quote": "Open the chamber.",
+    "rank": "Wizarding World · Slytherin's secret",
+    "lore": "The Chamber of Secrets is a hidden chamber beneath Hogwarts built by Salazar Slytherin. It contains a Basilisk and can be opened by the heir of Slytherin through Parseltongue, turning an old prejudice into a living threat.",
+    "quote": "Enemies of the heir, beware.",
     "str": [
-      "Stops Nature attackers cold",
-      "Reliable defensive protection",
-      "Cheap camp-specific answer"
+      "Conceals an ancient magical weapon",
+      "Links architecture to Parseltongue",
+      "Reveals Hogwarts's unresolved history"
     ],
     "wk": [
-      "Narrow protection",
-      "Does not stop effects",
-      "Needs the bearer to defend"
+      "Depends on a particular heir",
+      "Its monster can be opposed",
+      "Its ideology isolates its creator"
     ],
-    "sig_name": "Serpent's Ward",
-    "sig_desc": "An ancient threshold closes against the living world.",
-    "playstyle": "A defensive Nature matchup relic",
-    "ability": "The bearer is invulnerable to Nature attacks while defending.",
+    "sig_name": "The Basilisk's Awakening",
+    "sig_desc": "A serpent older than the school rises when the hidden language is spoken.",
+    "playstyle": "A secret legacy that turns fear into architecture",
+    "ability": "The Chamber houses Salazar Slytherin's Basilisk and opens through the heir's Parseltongue.",
     "rivals": [
       {
-        "who": "Meteor",
-        "rel": "nature's loudest impact",
-        "id": "c176"
+        "who": "Salazar Slytherin",
+        "rel": "builder and ideological origin",
+        "id": ""
       },
       {
-        "who": "Lostvayne",
-        "rel": "same wall, different school",
-        "id": "r002"
+        "who": "Tom Riddle",
+        "rel": "heir who reopens the Chamber",
+        "id": ""
+      },
+      {
+        "who": "Harry Potter",
+        "rel": "student who defeats its Basilisk",
+        "id": ""
       }
     ]
   },
   "r008": {
     "name": "Cyber-Enchantment",
-    "origin": "Myth",
+    "origin": "Cyberpunk fantasy",
     "epithet": "The Wired Ward",
     "rar": "Relic",
     "camp": "Ascension",
@@ -9865,37 +9910,37 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       5,
       7,
       7,
-      7,
       8,
-      5
+      9,
+      6
     ],
-    "rank": "Relic · Tech breaker",
-    "lore": "Cyber-Enchantment is the moment circuitry learns a spell. It wraps a bearer in a protocol no machine-born attack can complete, a quiet contradiction in the enemy's targeting logic.",
-    "quote": "The network says no.",
+    "rank": "Cyberpunk fantasy · Arcane interface",
+    "lore": "Cyber-Enchantment is the old fantasy dream translated into circuitry: a ward encoded as a living protocol, a spell that travels through a network instead of a ley line.",
+    "quote": "The network remembers the spell.",
     "str": [
-      "Stops Tech attackers",
-      "Protects valuable bodies",
-      "Fits a defensive tempo turn"
+      "Marries symbolic magic with systems thinking",
+      "Can protect information and identity",
+      "Makes invisible structures legible"
     ],
     "wk": [
-      "Narrow camp protection",
-      "Does not block non-combat effects",
-      "Needs a bearer"
+      "Depends on a compatible system",
+      "A corrupted network corrupts the spell",
+      "The interface can obscure the human cost"
     ],
     "sig_name": "Firewall Halo",
-    "sig_desc": "A closed loop that turns hostile hardware into harmless noise.",
-    "playstyle": "A camp-specific defensive lock",
-    "ability": "The bearer is invulnerable to Tech attacks while defending.",
+    "sig_desc": "An arcane boundary becomes a defensive loop around a connected mind.",
+    "playstyle": "A speculative bridge between ritual and code",
+    "ability": "Cyber-enchantment is a fantasy archetype in which magical wards are expressed through technology and networks.",
     "rivals": [
       {
-        "who": "Motoko Kusanagi",
-        "rel": "the ghost looking for a way through",
-        "id": "c181"
+        "who": "The golem",
+        "rel": "an older artificial life archetype",
+        "id": ""
       },
       {
-        "who": "Chamber of Secrets",
-        "rel": "a different kind of locked door",
-        "id": "r007"
+        "who": "The firewall",
+        "rel": "its technological counterpart",
+        "id": ""
       }
     ]
   },
@@ -9913,38 +9958,43 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "vals": [
       10,
       4,
-      6,
-      8,
-      5,
-      7
+      7,
+      9,
+      7,
+      8
     ],
-    "rank": "Relic · Direct force",
-    "lore": "Ea does not sharpen a weapon; it argues with the shape of reality. In a bearer’s hands, an ordinary attack becomes twice as certain and twice as difficult to answer.",
+    "rank": "Fate · Noble Phantasm of Gilgamesh",
+    "lore": "Ea is the ancient sword wielded by Gilgamesh in the Fate series. Its rotating body represents the primordial separation of heaven and earth, and its Noble Phantasm, Enuma Elish, tears at the world's texture.",
     "quote": "The world has a seam.",
     "str": [
-      "Doubles the bearer’s attack",
-      "Excellent on immediate threats",
-      "Turns small bodies into real clocks"
+      "Represents creation before recorded history",
+      "Belongs to the King of Heroes",
+      "Its attack is conceptual as well as physical"
     ],
     "wk": [
-      "Offers no durability",
-      "Needs a bearer that can attack",
-      "Can be wasted into a Taunt"
+      "Only Gilgamesh fully claims it",
+      "Its pride isolates its wielder",
+      "Its greatest release is difficult to control"
     ],
     "sig_name": "Enuma Elish",
-    "sig_desc": "A rupture in the world that expresses itself as overwhelming attack.",
-    "playstyle": "A clean, aggressive damage multiplier",
-    "ability": "The bearer's ATK is doubled.",
+    "sig_desc": "The Sword of Rupture rotates against the world and recreates the memory of its separation.",
+    "playstyle": "A king's relic that treats reality as an artifact",
+    "ability": "Ea is Gilgamesh's Noble Phantasm, and Enuma Elish is its anti-world release.",
     "rivals": [
       {
-        "who": "Excalibur",
-        "rel": "another legendary blade",
-        "id": "r028"
+        "who": "Gilgamesh",
+        "rel": "its sole recognized wielder",
+        "id": ""
       },
       {
-        "who": "Shinigami Eyes",
-        "rel": "power meets a bypass",
-        "id": "r018"
+        "who": "Enkidu",
+        "rel": "the king's closest equal",
+        "id": ""
+      },
+      {
+        "who": "Iskandar",
+        "rel": "another king who challenges his pride",
+        "id": ""
       }
     ]
   },
@@ -9960,46 +10010,51 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      4,
+      5,
       4,
       8,
-      9,
+      10,
       8,
-      5
+      6
     ],
-    "rank": "Relic · Anti-Silence",
-    "lore": "The Elder Wand's oldest trick is not greater damage. It is continuity: the bearer keeps its voice when a hostile hand tries to turn a living card into blank cardboard.",
+    "rank": "Wizarding World · Deathly Hallow",
+    "lore": "The Elder Wand is one of the three Deathly Hallows, made by Death in the tale told to the Peverell brothers. Its reputation as the most powerful wand makes allegiance more important than possession.",
     "quote": "The last word is mine.",
     "str": [
-      "Preserves a key passive",
-      "Costs only one mana",
-      "Protects against a hard counter"
+      "Channels exceptionally powerful magic",
+      "Carries the myth of unbeatable skill",
+      "Its allegiance can change history"
     ],
     "wk": [
-      "No combat stats",
-      "Only matters against Silence",
-      "Bearer still needs to survive"
+      "Can be won without being stolen",
+      "Its reputation encourages violence",
+      "A wand is not a substitute for judgment"
     ],
-    "sig_name": "The Wand Chooses",
-    "sig_desc": "A stubborn current of magic keeps the bearer from going quiet.",
-    "playstyle": "Low-cost insurance for text-heavy minions",
-    "ability": "The bearer is immune to Silence.",
+    "sig_name": "The Wand's Allegiance",
+    "sig_desc": "The wand's true loyalty follows defeat, not the hand that simply takes it.",
+    "playstyle": "A legendary instrument whose power creates its own temptation",
+    "ability": "The Elder Wand is unusually powerful, but its allegiance passes to the person who defeats its master.",
     "rivals": [
       {
-        "who": "Black Hole",
-        "rel": "silence is part of the pull",
-        "id": "c178"
+        "who": "Antioch Peverell",
+        "rel": "legendary first owner",
+        "id": ""
       },
       {
-        "who": "Anti-magic Mask",
-        "rel": "two answers to hostile magic",
-        "id": "r014"
+        "who": "Albus Dumbledore",
+        "rel": "keeper who defeats Grindelwald",
+        "id": ""
+      },
+      {
+        "who": "Harry Potter",
+        "rel": "last wielder in the Hallows story",
+        "id": ""
       }
     ]
   },
   "r011": {
     "name": "Monster Cell",
-    "origin": "OPM",
+    "origin": "One Punch Man",
     "epithet": "The Mutation Seed",
     "rar": "Relic",
     "camp": "Ascension",
@@ -10009,47 +10064,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      7,
       8,
+      7,
       6,
-      4,
-      4,
+      3,
+      5,
       5
     ],
-    "rank": "Relic · Front-line growth",
-    "lore": "A Monster Cell is a tiny decision with a large silhouette. The bearer gets stronger, but the new strength comes with the obligation to stand in front of everything that follows.",
-    "quote": "Become something worse.",
+    "rank": "One Punch Man · Monsterization agent",
+    "lore": "Monster Cells are created by the Monster Association to transform humans into monsters. Eating one can unlock a person's suppressed obsession, but the change usually means surrendering human identity for power.",
+    "quote": "What would you become to win?",
     "str": [
-      "Immediate +2/+2",
-      "Adds Taunt at the same time",
-      "Excellent on a modest body"
+      "Amplifies a person's latent fixation",
+      "Can create dramatic physical transformation",
+      "Reflects the psychology of its host"
     ],
     "wk": [
-      "Forces the bearer into danger",
-      "Can be ignored by removal",
-      "The transformation is obvious"
+      "The change can erase humanity",
+      "The result depends on the host",
+      "Power brings no guarantee of purpose"
     ],
     "sig_name": "Monsterization",
-    "sig_desc": "A single cell turns a body into a barricade.",
-    "playstyle": "A compact stat-and-Taunt stabilizer",
-    "ability": "The bearer gains +2/+2 and Taunt.",
+    "sig_desc": "An appetite or obsession is given a body large enough to rule the person who had it.",
+    "playstyle": "A dangerous shortcut from frustration to identity",
+    "ability": "Monster Cells transform humans into monsters by amplifying their desires and physical potential.",
     "rivals": [
       {
-        "who": "The Monkey's Paw",
-        "rel": "another dangerous growth bargain",
-        "id": "r023"
+        "who": "Orochi",
+        "rel": "Monster King shaped by the Association",
+        "id": ""
       },
       {
-        "who": "Planetary Defense Grid",
-        "rel": "one body becomes a wall",
-        "id": "c177"
+        "who": "Garou",
+        "rel": "a human who pursues monsterization by another path",
+        "id": ""
+      },
+      {
+        "who": "Saitama",
+        "rel": "the human ideal the monsters cannot understand",
+        "id": ""
       }
     ]
   },
   "r012": {
     "name": "Philosopher's Stone",
-    "origin": "Myth",
-    "epithet": "The Red Transmutation",
+    "origin": "Harry Potter",
+    "epithet": "The Red Stone of Alchemy",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10058,47 +10118,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      6,
-      9,
+      5,
+      7,
       9,
       10,
-      8,
-      3
+      9,
+      2
     ],
-    "rank": "Relic · Turn ownership",
-    "lore": "The Philosopher's Stone changes the price of damage depending on who is paying. On your turn it is inviolable; on the enemy's turn, every hit lands with doubled consequence.",
-    "quote": "Equivalent exchange.",
+    "rank": "Wizarding World · Alchemical masterpiece",
+    "lore": "The Philosopher's Stone is an alchemical object capable of producing the Elixir of Life and turning any metal into pure gold. In the wizarding world it is made by Nicolas Flamel, whose long life becomes inseparable from the stone's fate.",
+    "quote": "There are other ways to live forever.",
     "str": [
-      "Makes your own turn safe",
-      "Creates a terrifying attack window",
-      "Rewards precise timing"
+      "Represents the height of alchemical craft",
+      "Produces the Elixir of Life",
+      "Turns transformation into a literal object"
     ],
     "wk": [
-      "Enemy turns are dangerous",
-      "Needs a bearer worth protecting",
-      "Punishes careless passing"
+      "Its existence invites obsession",
+      "The maker must choose when to destroy it",
+      "Immortality cannot solve moral emptiness"
     ],
-    "sig_name": "Red Transmutation",
-    "sig_desc": "The same wound means something different under different hands.",
-    "playstyle": "A timing relic for tempo turns",
-    "ability": "The bearer takes double damage on the enemy's turn but is invulnerable on your own.",
+    "sig_name": "The Elixir of Life",
+    "sig_desc": "A red draught postpones death while the stone remains in the world.",
+    "playstyle": "A quiet answer to the fantasy of immortality",
+    "ability": "The Philosopher's Stone creates the Elixir of Life and transmutes base metals into gold.",
     "rivals": [
       {
-        "who": "Prince Lloyd",
-        "rel": "another school of perfect timing",
-        "id": "c180"
+        "who": "Nicolas Flamel",
+        "rel": "its creator and keeper",
+        "id": ""
       },
       {
-        "who": "The One Ring",
-        "rel": "both rewrite lethal math",
-        "id": "r003"
+        "who": "Albus Dumbledore",
+        "rel": "trusted friend of its maker",
+        "id": ""
+      },
+      {
+        "who": "Lord Voldemort",
+        "rel": "would use it to escape death",
+        "id": ""
       }
     ]
   },
   "r013": {
     "name": "Allspark Cube",
     "origin": "Transformers",
-    "epithet": "The Spark of New Machines",
+    "epithet": "The Spark of Cybertron",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10107,47 +10172,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      5,
-      5,
-      8,
-      8,
+      7,
+      6,
       9,
+      8,
+      8,
       7
     ],
-    "rank": "Relic · Salvage engine",
-    "lore": "The Allspark refuses to let a defeated machine become waste. Every kill by its bearer is a recovery operation, a hostile body converted into a future draw.",
+    "rank": "Transformers · Source of machine life",
+    "lore": "The AllSpark is the source of life for the Transformers and the object at the center of Cybertronian creation myths. It can awaken machines, sustain a civilization, and become the prize that turns Optimus Prime and Megatron against one another.",
     "quote": "Till all are one.",
     "str": [
-      "Turns kills into hand advantage",
-      "Costs only one mana",
-      "Rewards clean trades"
+      "Creates or awakens Cybertronian life",
+      "Carries the history of a world",
+      "Unites machine identity with purpose"
     ],
     "wk": [
-      "Needs the bearer to secure kills",
-      "Hand space can become a limit",
-      "No protection by itself"
+      "Its power can be weaponized",
+      "It is vulnerable when removed from Cybertron",
+      "Creation does not prevent civil war"
     ],
-    "sig_name": "Spark Extraction",
-    "sig_desc": "A fallen enemy leaves behind a usable blueprint.",
-    "playstyle": "A cheap value relic for trading minions",
-    "ability": "When the bearer kills an enemy minion, take that minion as a card to your hand.",
+    "sig_name": "The Spark of Creation",
+    "sig_desc": "A source of living energy gives metal a mind, a voice, and a choice.",
+    "playstyle": "A creation myth in mechanical form",
+    "ability": "The AllSpark gives life to Transformers and is central to Cybertronian creation in the franchise.",
     "rivals": [
       {
-        "who": "Motoko Kusanagi",
-        "rel": "another theft of enemy hardware",
-        "id": "c181"
+        "who": "Optimus Prime",
+        "rel": "protector of Cybertron's future",
+        "id": ""
       },
       {
-        "who": "The Green Mask",
-        "rel": "both refuse a clean ending",
-        "id": "r019"
+        "who": "Megatron",
+        "rel": "would use it to remake the world",
+        "id": ""
+      },
+      {
+        "who": "Bumblebee",
+        "rel": "one of the lives it helps preserve",
+        "id": ""
       }
     ]
   },
   "r014": {
     "name": "Anti-magic Mask",
-    "origin": "That time I got reincarnated as a Slime",
-    "epithet": "The Spell-Eating Visage",
+    "origin": "That Time I Got Reincarnated as a Slime",
+    "epithet": "Shizu's Sealed Face",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10159,44 +10229,49 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       4,
       6,
       8,
-      6,
-      6,
+      8,
+      7,
       5
     ],
-    "rank": "Relic · Status immunity",
-    "lore": "The Anti-magic Mask is a blank expression worn against the Rift's two favorite interruptions. Freeze cannot hold it, and chains cannot decide where its bearer belongs.",
-    "quote": "The spell slides off.",
+    "rank": "Tensura · Anti-magic mask",
+    "lore": "The anti-magic mask is worn by Shizue Izawa, the Otherworlder known as Shizu. It suppresses magical energy and becomes part of the mystery surrounding the people and worlds that shaped her life.",
+    "quote": "Some memories need a face.",
     "str": [
-      "Blocks Freeze and Chained",
-      "Costs one mana",
-      "Protects a minion's tempo"
+      "Suppresses magical signatures",
+      "Hides the wearer's identity",
+      "Connects Shizu to a wider history"
     ],
     "wk": [
-      "No offensive benefit",
-      "Does not stop damage",
-      "Narrow utility"
+      "Its protection is not absolute",
+      "The mask cannot heal its wearer",
+      "Its meaning depends on Shizu's past"
     ],
-    "sig_name": "Null Face",
-    "sig_desc": "A surface with nothing for hostile status magic to grip.",
-    "playstyle": "Low-cost protection against board control",
-    "ability": "The bearer is immune to Freeze and Chained.",
+    "sig_name": "The Sealed Face",
+    "sig_desc": "A mask turns overwhelming power into something a human body can carry.",
+    "playstyle": "A symbol of restraint, memory, and borrowed identity",
+    "ability": "Shizu's anti-magic mask suppresses magical energy and is associated with her Otherworlder history.",
     "rivals": [
       {
-        "who": "Elder wand",
-        "rel": "both refuse to be silenced",
-        "id": "r010"
+        "who": "Shizue Izawa",
+        "rel": "its wearer and emotional center",
+        "id": ""
       },
       {
-        "who": "Queen's Cocoon",
-        "rel": "chains meet a locked shell",
-        "id": "r017"
+        "who": "Leon Cromwell",
+        "rel": "connected to Shizu's summoning and past",
+        "id": ""
+      },
+      {
+        "who": "Rimuru Tempest",
+        "rel": "inherits Shizu's story and mask",
+        "id": ""
       }
     ]
   },
   "r015": {
     "name": "Devil Fruit",
     "origin": "One Piece",
-    "epithet": "A Taste of the Sea's Secret",
+    "epithet": "The Sea's Forbidden Fruit",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10206,46 +10281,51 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cc": "#54d6c3",
     "vals": [
       8,
-      6,
-      7,
-      6,
       5,
+      8,
+      6,
+      8,
       7
     ],
-    "rank": "Relic · Ongoing growth",
-    "lore": "The Devil Fruit is a permanent appetite. Once tasted, it keeps rewriting the bearer upward, trading ordinary comfort for a power that never stops asking for another turn.",
+    "rank": "One Piece · Devil Fruit",
+    "lore": "A Devil Fruit grants its eater a strange ability, but takes away the ability to swim. The fruits range from elemental powers to transformations, and their deepest mysteries connect to the lost history of the world.",
     "quote": "The sea takes its price.",
     "str": [
-      "Adds repeatable +2/+1 growth",
-      "Excellent on a surviving body",
-      "Builds pressure without more cards"
+      "Gives one person a singular ability",
+      "Allows wildly different forms of expression",
+      "Some powers awaken into greater states"
     ],
     "wk": [
-      "Needs time",
-      "The bearer cannot swim away from trouble",
-      "Weak if removed immediately"
+      "The sea rejects its eater",
+      "Seastone can suppress its power",
+      "Only one person can normally hold its power at a time"
     ],
     "sig_name": "Awakening",
-    "sig_desc": "An impossible power becomes ordinary through repetition.",
-    "playstyle": "A snowballing ongoing threat",
-    "ability": "The bearer gains an additional Ongoing: gain +2/+1.",
+    "sig_desc": "A Devil Fruit power reaches beyond its original host and changes the world around it.",
+    "playstyle": "A gift whose freedom always carries a maritime cost",
+    "ability": "Devil Fruits grant supernatural powers, while seawater and Seastone weaken their users in One Piece.",
     "rivals": [
       {
-        "who": "Monster Cell",
-        "rel": "two dangerous ways to grow",
-        "id": "r011"
+        "who": "Monkey D. Luffy",
+        "rel": "bearer of the Nika power",
+        "id": ""
       },
       {
-        "who": "Lostvayne",
-        "rel": "power always has a price",
-        "id": "r002"
+        "who": "Marshall D. Teach",
+        "rel": "the only known dual eater",
+        "id": ""
+      },
+      {
+        "who": "The World Government",
+        "rel": "seeks to control forbidden histories",
+        "id": ""
       }
     ]
   },
   "r016": {
     "name": "Healing Potion",
-    "origin": "That time I got reincarnated as a Slime",
-    "epithet": "The Full Restore",
+    "origin": "Fantasy folklore",
+    "epithet": "The Restorative Draught",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10257,44 +10337,44 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       2,
       8,
       6,
+      7,
       5,
-      5,
-      6
+      5
     ],
-    "rank": "Relic · Immediate sustain",
-    "lore": "The Healing Potion is a tiny reset button. It cannot make a bearer stronger, but it can make the damage already paid disappear before the opponent gets to count it.",
-    "quote": "Back to full.",
+    "rank": "Fantasy folklore · Apothecary staple",
+    "lore": "The healing potion is a recurring fantasy image: a bottle of concentrated restoration carried by adventurers, soldiers, and hedge wizards. Its meaning is simple, but its ingredients reveal the healer's culture and craft.",
+    "quote": "Every journey needs a remedy.",
     "str": [
-      "Immediate full heal",
-      "Costs one mana",
-      "Protects an already valuable minion"
+      "Represents practical care",
+      "Portable and immediate in folklore",
+      "Can be brewed by many traditions"
     ],
     "wk": [
-      "Adds no stats",
-      "Does not prevent the next hit",
-      "Needs damage to matter"
+      "Cannot replace a skilled healer",
+      "Ingredients may be rare or poisonous",
+      "A potion cannot undo every wound"
     ],
-    "sig_name": "Vital Reversal",
-    "sig_desc": "The last wound is erased in a single swallow.",
-    "playstyle": "Cheap sustain for a key bearer",
-    "ability": "The bearer is fully healed the moment it is equipped.",
+    "sig_name": "The Restorative Draught",
+    "sig_desc": "A small bottle carries the promise that damage does not have to be permanent.",
+    "playstyle": "A humble symbol of preparation and mercy",
+    "ability": "Healing potions are fantasy medicines that restore vitality through magical or alchemical ingredients.",
     "rivals": [
       {
-        "who": "The One Ring",
-        "rel": "another second chance",
-        "id": "r003"
+        "who": "The village apothecary",
+        "rel": "traditional maker",
+        "id": ""
       },
       {
-        "who": "The Holy Grail",
-        "rel": "restoration versus amplification",
-        "id": "r001"
+        "who": "The phoenix feather",
+        "rel": "a rarer restorative symbol",
+        "id": ""
       }
     ]
   },
   "r017": {
     "name": "Queen's Cocoon",
-    "origin": "Hxh",
-    "epithet": "The Patient Chrysalis",
+    "origin": "Hunter x Hunter",
+    "epithet": "The Chimera Ant Chrysalis",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10305,45 +10385,50 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "vals": [
       7,
       8,
-      7,
+      8,
       6,
       6,
       1
     ],
-    "rank": "Relic · Delayed evolution",
-    "lore": "Queen's Cocoon turns a bearer into a promise the opponent can see but cannot rush. The silence lasts one turn; the awakening comes back with three new reasons to be afraid.",
-    "quote": "Wait for the wings.",
+    "rank": "Hunter x Hunter · Royal birth",
+    "lore": "The Chimera Ant Queen's nest is a place of feeding, growth, and violent evolution. The Queen produces offspring by consuming living creatures, and the colony's future emerges from the bodies and traits brought into the nest.",
+    "quote": "The next generation is already moving.",
     "str": [
-      "Pays +3/+3 after a delay",
-      "Creates a protected setup turn",
-      "Strong on a high-value body"
+      "Turns adaptation into inheritance",
+      "Creates a collective identity",
+      "Produces the Royal Guards and King"
     ],
     "wk": [
-      "The bearer is Chained first",
-      "The payoff can be interrupted",
-      "No immediate combat help"
+      "Depends on a living colony",
+      "The Queen is bound to reproduction",
+      "Evolution does not guarantee compassion"
     ],
-    "sig_name": "Metamorphosis",
-    "sig_desc": "Stillness is the first phase of a much larger body.",
-    "playstyle": "A delayed stat investment",
-    "ability": "The bearer is Chained for a turn. When it awakens, it gains +3/+3.",
+    "sig_name": "Royal Birth",
+    "sig_desc": "A body formed from many lives emerges carrying the potential of a species.",
+    "playstyle": "A biological engine of hunger, hierarchy, and transformation",
+    "ability": "The Chimera Ant Queen produces offspring by consuming creatures and passing their traits into the colony.",
     "rivals": [
       {
-        "who": "Anti-magic Mask",
-        "rel": "chains meet their counter",
-        "id": "r014"
+        "who": "Meruem",
+        "rel": "the King born from the Queen",
+        "id": ""
       },
       {
-        "who": "Devil Fruit",
-        "rel": "growth by different clocks",
-        "id": "r015"
+        "who": "Neferpitou",
+        "rel": "Royal Guard of the next generation",
+        "id": ""
+      },
+      {
+        "who": "Komugi",
+        "rel": "the human bond that changes the King",
+        "id": ""
       }
     ]
   },
   "r018": {
     "name": "Shinigami Eyes",
     "origin": "Death Note",
-    "epithet": "The Sight Beyond Names",
+    "epithet": "The Eyes That Read Lifespans",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10355,44 +10440,49 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       6,
       3,
       10,
-      8,
+      9,
       10,
       8
     ],
-    "rank": "Relic · Targeting bypass",
-    "lore": "Shinigami Eyes make defenses legible. Taunt is only a sign, Divine Shield only a layer, and the bearer has already read the name beneath both.",
+    "rank": "Death Note · Shinigami eye deal",
+    "lore": "The Shinigami Eyes let a human see the name and remaining lifespan of another person. The price is half the human's remaining life, paid to a Shinigami in exchange for the sight.",
     "quote": "I can see your name.",
     "str": [
-      "Ignores Taunt and Divine Shield",
-      "Opens precise attacks",
-      "Costs one mana"
+      "Reveals hidden identity",
+      "Makes mortality visible",
+      "Turns uncertainty into knowledge"
     ],
     "wk": [
-      "No damage or health",
-      "Bearer remains targetable",
-      "Needs a meaningful target"
+      "Costs half a human lifespan",
+      "Requires a Shinigami bargain",
+      "Knowledge can destroy the person who uses it"
     ],
-    "sig_name": "True Sight",
-    "sig_desc": "The battlefield's protections become annotations rather than walls.",
-    "playstyle": "A surgical answer to defended targets",
-    "ability": "The bearer ignores Taunt and Divine Shield.",
+    "sig_name": "The Eye Deal",
+    "sig_desc": "A bargain trades years of life for the ability to see the truth written above a person.",
+    "playstyle": "A forbidden shortcut through identity and death",
+    "ability": "A human with Shinigami Eyes sees names and lifespans after accepting the Shinigami's price.",
     "rivals": [
       {
-        "who": "Ea",
-        "rel": "a bypass for the blade",
-        "id": "r009"
+        "who": "Misa Amane",
+        "rel": "human who accepts the deal",
+        "id": ""
       },
       {
-        "who": "Planetary Defense Grid",
-        "rel": "sees the gap in the wall",
-        "id": "c177"
+        "who": "Light Yagami",
+        "rel": "uses the deal as part of Kira's plans",
+        "id": ""
+      },
+      {
+        "who": "Ryuk",
+        "rel": "Shinigami observer of the human world",
+        "id": ""
       }
     ]
   },
   "r019": {
     "name": "The Green Mask",
     "origin": "The Mask",
-    "epithet": "The Face That Refuses Consequences",
+    "epithet": "The Face of Pure Cartoon Chaos",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10401,47 +10491,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      5,
-      6,
+      7,
+      4,
       9,
-      7,
-      7,
-      9
+      6,
+      6,
+      10
     ],
-    "rank": "Relic · Escape artist",
-    "lore": "The Green Mask treats death as a punchline with a delayed reveal. When its bearer falls, the joke is not over; the card returns to hand, ready to find a new face.",
+    "rank": "The Mask · Loki's wooden face",
+    "lore": "The Mask is a supernatural green face associated with Loki that releases the wearer's suppressed impulses. It turns Stanley Ipkiss into the elastic, fourth-wall-breaking Big Head, with reality bending around comic instinct.",
     "quote": "Somebody stop me!",
     "str": [
-      "Returns after the bearer dies",
-      "Creates repeatable relic value",
-      "Excellent on expendable attackers"
+      "Releases impossible imagination",
+      "Bends physical reality",
+      "Turns fear into theatrical confidence"
     ],
     "wk": [
-      "Does not save the bearer",
-      "Repeated recasts cost mana",
-      "The opponent still gains the trade"
+      "Amplifies the wearer's worst impulses",
+      "The wearer can lose self-control",
+      "Removing the mask removes the transformation"
     ],
-    "sig_name": "Back from the Void",
-    "sig_desc": "The fall is only an exit cue, not a final scene.",
-    "playstyle": "A recurring equipment loop",
-    "ability": "Return the bearer to your hand after death.",
+    "sig_name": "The Big Head",
+    "sig_desc": "A timid person becomes an animated force of impossible gags and elastic physics.",
+    "playstyle": "A comic identity that makes inhibition physically disappear",
+    "ability": "The Mask grants cartoon-like reality manipulation while amplifying the wearer's suppressed personality.",
     "rivals": [
       {
-        "who": "The One Ring",
-        "rel": "death is negotiable",
-        "id": "r003"
+        "who": "Stanley Ipkiss",
+        "rel": "the reluctant human wearer",
+        "id": ""
       },
       {
-        "who": "Allspark Cube",
-        "rel": "one body returns, another is salvaged",
-        "id": "r013"
+        "who": "Loki",
+        "rel": "mythic source of the mask",
+        "id": ""
+      },
+      {
+        "who": "Dorian Tyrell",
+        "rel": "criminal rival seeking its power",
+        "id": ""
       }
     ]
   },
   "r020": {
     "name": "Tesseract",
-    "origin": "MCU",
-    "epithet": "The Space Stone",
+    "origin": "Marvel Cinematic Universe",
+    "epithet": "The Space Stone's Cube",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10450,47 +10545,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      8,
+      7,
       5,
       8,
       10,
-      9,
-      10
+      8,
+      9
     ],
-    "rank": "Relic · Extra tempo",
-    "lore": "The Tesseract folds distance into opportunity. A bearer that already attacked can simply arrive at the same decision again, making one body occupy twice the turn it was given.",
+    "rank": "MCU · Space Stone containment vessel",
+    "lore": "The Tesseract is the crystalline containment vessel for the Space Stone in the Marvel Cinematic Universe. It powers the research of Project P.E.G.A.S.U.S., opens portals, and becomes a prize for the Red Skull, Loki, and Thanos.",
     "quote": "Space is negotiable.",
     "str": [
-      "Grants a second attack",
-      "Closes games quickly",
-      "Works with any attack trigger"
+      "Opens portals across vast distance",
+      "Contains one of the Infinity Stones",
+      "Connects Earth to cosmic powers"
     ],
     "wk": [
-      "Needs a bearer with a legal target",
-      "Offers no protection",
-      "Can invite retaliation"
+      "The container does not control the Stone",
+      "Its power attracts conquerors",
+      "Human experiments cannot safely master it"
     ],
-    "sig_name": "Space Fold",
-    "sig_desc": "The interval between attacks collapses to nothing.",
-    "playstyle": "An aggressive double-action finisher",
-    "ability": "The bearer can attack twice each turn.",
+    "sig_name": "The Space Bridge",
+    "sig_desc": "A blue gateway turns distance into a door and lets the universe arrive at once.",
+    "playstyle": "A cosmic container mistaken for a manageable machine",
+    "ability": "The Tesseract contains the Space Stone and enables portal travel in the Marvel Cinematic Universe.",
     "rivals": [
       {
-        "who": "Infinity Stone",
-        "rel": "two fragments of one cosmic language",
-        "id": "r005"
+        "who": "Loki",
+        "rel": "steals it for the Chitauri invasion",
+        "id": ""
       },
       {
-        "who": "Motoko Kusanagi",
-        "rel": "speed meets precision",
-        "id": "c181"
+        "who": "Red Skull",
+        "rel": "first modern seeker of its power",
+        "id": ""
+      },
+      {
+        "who": "Project P.E.G.A.S.U.S.",
+        "rel": "research program built around it",
+        "id": ""
       }
     ]
   },
   "r021": {
     "name": "Infinity Castle",
     "origin": "Demon Slayer",
-    "epithet": "The Impossible Floorplan",
+    "epithet": "The Shifting Fortress",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10499,47 +10599,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      5,
+      6,
       8,
       8,
       7,
       7,
       10
     ],
-    "rank": "Relic · Evasion",
-    "lore": "Infinity Castle makes the battlefield forget where its corridors were. Half of all attacks find an empty room, and the bearer survives by never being exactly where the blow expects.",
+    "rank": "Demon Slayer · Nakime's fortress",
+    "lore": "The Infinity Castle is the shifting extradimensional stronghold of Muzan Kibutsuji. Nakime controls its rooms with her biwa, moving demons and intruders through impossible distances as the Demon Slayer Corps closes in.",
     "quote": "The rooms keep moving.",
     "str": [
-      "A 50% chance to evade attacks",
-      "Great on a high-value bearer",
-      "Creates uncertainty every combat"
+      "Rewrites the architecture of a battlefield",
+      "Separates enemies at will",
+      "Makes distance meaningless inside the castle"
     ],
     "wk": [
-      "Randomness can fail",
-      "Does not block effects",
-      "No benefit on offense"
+      "Its structure depends on Nakime",
+      "Muzan's command is the castle's purpose",
+      "It offers no refuge from the outside world"
     ],
-    "sig_name": "Endless Corridors",
-    "sig_desc": "An attacker takes one route while the bearer is already elsewhere.",
-    "playstyle": "A probabilistic defensive shell",
-    "ability": "The bearer's Evade chance is 50%.",
+    "sig_name": "The Biwa's Corridors",
+    "sig_desc": "One plucked string rearranges the fortress and sends every traveler somewhere else.",
+    "playstyle": "A living maze shaped by a demon's instrument",
+    "ability": "Nakime's Blood Demon Art controls the Infinity Castle and rearranges its rooms through her biwa.",
     "rivals": [
       {
-        "who": "Motoko Kusanagi",
-        "rel": "a natural home for the Major",
-        "id": "c181"
+        "who": "Nakime",
+        "rel": "the castle's spatial controller",
+        "id": ""
       },
       {
-        "who": "Shinigami Eyes",
-        "rel": "sight against misdirection",
-        "id": "r018"
+        "who": "Muzan Kibutsuji",
+        "rel": "master of the fortress",
+        "id": ""
+      },
+      {
+        "who": "Tanjiro Kamado",
+        "rel": "Demon Slayer who enters its final battle",
+        "id": ""
       }
     ]
   },
   "r022": {
     "name": "Pandora's Box",
-    "origin": "Myth",
-    "epithet": "The Unopened Answer",
+    "origin": "Greek Mythology",
+    "epithet": "The Jar of What Was Unleashed",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10548,46 +10653,51 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      8,
-      8,
-      8,
       7,
-      7,
+      5,
+      9,
+      8,
+      8,
       2
     ],
-    "rank": "Relic · Death bargain",
-    "lore": "Pandora's Box is a promise made in two halves. First it makes the bearer larger; later, when the lid finally opens, it forces the opponent to accept whatever the deck sends them.",
-    "quote": "Do not open it.",
+    "rank": "Greek myth · The forbidden jar",
+    "lore": "Pandora's Box is more accurately a jar in the earliest Greek account. Zeus sends Pandora to humanity, and when the jar is opened, evils escape into the world while Hope remains inside or arrives last, depending on the reading.",
+    "quote": "Curiosity opens what fear keeps closed.",
     "str": [
-      "Immediate +4/+4",
-      "Summons a random enemy body on death",
-      "Creates a difficult removal decision"
+      "Explains the arrival of suffering",
+      "Preserves Hope as a final mystery",
+      "Endures as a warning about curiosity"
     ],
     "wk": [
-      "Gives the opponent a body",
-      "Payoff is delayed",
-      "Random summon can be strong"
+      "The story's details vary by translation",
+      "Pandora is blamed for a divine punishment",
+      "Hope's place inside the jar remains ambiguous"
     ],
-    "sig_name": "The Last Thing Inside",
-    "sig_desc": "Every answer creates the next problem.",
-    "playstyle": "A threatening deathrattle bargain",
-    "ability": "The bearer gains +4/+4. When it dies, your opponent summons a random minion from the deck.",
+    "sig_name": "The Lid Lifted",
+    "sig_desc": "One irreversible motion turns hidden possibility into the condition of the world.",
+    "playstyle": "A myth about blame, knowledge, and the survival of hope",
+    "ability": "Pandora's jar releases the world's evils, while Hope remains as the story's contested final presence.",
     "rivals": [
       {
-        "who": "Black Hole",
-        "rel": "the box wants a different ending",
-        "id": "c178"
+        "who": "Pandora",
+        "rel": "the first woman and opener of the jar",
+        "id": ""
       },
       {
-        "who": "Necronomicon",
-        "rel": "death with an attached clause",
-        "id": "r025"
+        "who": "Zeus",
+        "rel": "divine author of the punishment",
+        "id": ""
+      },
+      {
+        "who": "Epimetheus",
+        "rel": "husband who accepts Pandora",
+        "id": ""
       }
     ]
   },
   "r023": {
     "name": "The Monkey's Paw",
-    "origin": "Myth",
+    "origin": "W. W. Jacobs",
     "epithet": "The Crooked Wish",
     "rar": "Relic",
     "camp": "Ascension",
@@ -10597,47 +10707,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      10,
-      7,
       8,
-      6,
-      7,
+      4,
+      10,
+      4,
+      8,
       2
     ],
-    "rank": "Relic · Timed power",
-    "lore": "The Monkey's Paw grants exactly what was asked for and schedules the invoice. The bearer becomes enormous now, but next turn the wish collects its price without appeal.",
+    "rank": "The Monkey's Paw · Cautionary talisman",
+    "lore": "In W. W. Jacobs's short story, a mummified paw is said to grant three wishes. Sergeant-Major Morris warns the Whites about it, but the family wishes anyway and discovers that a fulfilled desire can arrive in the cruelest literal form.",
     "quote": "Be careful what you wish for.",
     "str": [
-      "Adds +5/+5 immediately",
-      "Can force a lethal clock",
-      "Strong on a disposable body"
+      "Makes desire physically consequential",
+      "Turns ordinary wishes into moral tests",
+      "Its ambiguity creates lasting dread"
     ],
     "wk": [
-      "Kills the bearer next turn",
-      "Easy for the opponent to time around",
-      "No defensive text"
+      "Grants wishes through malicious interpretation",
+      "The wisher cannot control the cost",
+      "Every wish deepens the family's grief"
     ],
-    "sig_name": "Twisted Wish",
-    "sig_desc": "Power arrives early because the consequence is already on its way.",
-    "playstyle": "A high-risk burst threat",
-    "ability": "The bearer gains +5/+5. It dies next turn.",
+    "sig_name": "The Third Wish",
+    "sig_desc": "The last wish is not a prize; it is an attempt to close the story the first two created.",
+    "playstyle": "A horror object built from regret and literal language",
+    "ability": "The paw grants three wishes whose outcomes twist the wisher's words into tragedy.",
     "rivals": [
       {
-        "who": "The Holy Grail",
-        "rel": "a wish without the fine print",
-        "id": "r001"
+        "who": "Sergeant-Major Morris",
+        "rel": "brings the paw and warns the family",
+        "id": ""
       },
       {
-        "who": "Monster Cell",
-        "rel": "growth with consequences",
-        "id": "r011"
+        "who": "Mr. White",
+        "rel": "wisher whose grief drives the story",
+        "id": ""
+      },
+      {
+        "who": "Herbert White",
+        "rel": "the loss behind the second wish",
+        "id": ""
       }
     ]
   },
   "r024": {
     "name": "Ark of the Covenant",
-    "origin": "Indiana Jones",
-    "epithet": "The Golden Presence",
+    "origin": "Hebrew Bible / Indiana Jones",
+    "epithet": "The Ark of the Testimony",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10646,47 +10761,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
-      5,
-      7,
-      9,
+      6,
       8,
-      7,
+      10,
+      8,
+      8,
       4
     ],
-    "rank": "Relic · First-hit protection",
-    "lore": "The Ark carries an authority that does not need to attack. Its bearer gets one perfect layer of protection, a sacred refusal to let the first answer land.",
+    "rank": "Biblical relic · Covenant chest",
+    "lore": "The Ark of the Covenant is the sacred chest described in the Hebrew Bible as the dwelling place of God's covenant with Israel. Indiana Jones and the Raiders of the Lost Ark turn its sacred imagery into an archaeological adventure about reverence and desecration.",
     "quote": "It belongs in a museum.",
     "str": [
-      "Grants Divine Shield",
-      "Protects a key combat trade",
-      "Reliable and immediate"
+      "Represents covenant and presence",
+      "Unites ritual, memory, and law",
+      "Carries immense cultural symbolism"
     ],
     "wk": [
-      "Shield is one-use",
-      "No stat improvement",
-      "Can be stripped before combat"
+      "Must not be treated as ordinary treasure",
+      "Its power is dangerous when profaned",
+      "Its historical location is unknown"
     ],
-    "sig_name": "The Wrath Behind the Lid",
-    "sig_desc": "A sealed presence makes the first hit feel like sacrilege.",
-    "playstyle": "Straightforward protection for a premium minion",
-    "ability": "The bearer gains Divine Shield.",
+    "sig_name": "The Presence",
+    "sig_desc": "The lid and cherubim mark a boundary between a sacred promise and human curiosity.",
+    "playstyle": "A holy object whose mystery resists possession",
+    "ability": "The Ark is associated with the tablets of the covenant and divine presence in biblical tradition.",
     "rivals": [
       {
-        "who": "The Holy Grail",
-        "rel": "two sacred artifacts, one bearer",
-        "id": "r001"
+        "who": "Moses",
+        "rel": "receives the covenant tablets",
+        "id": ""
       },
       {
-        "who": "Shinigami Eyes",
-        "rel": "the shield has a name",
-        "id": "r018"
+        "who": "Indiana Jones",
+        "rel": "archaeologist who recovers it",
+        "id": ""
+      },
+      {
+        "who": "René Belloq",
+        "rel": "rival who treats it as a prize",
+        "id": ""
       }
     ]
   },
   "r025": {
     "name": "Necronomicon",
-    "origin": "Myth",
-    "epithet": "The Book of Unquiet Names",
+    "origin": "H. P. Lovecraft",
+    "epithet": "The Book of the Dead",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10696,46 +10816,51 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cc": "#54d6c3",
     "vals": [
       6,
-      5,
+      4,
       10,
       9,
-      9,
+      10,
       2
     ],
-    "rank": "Relic · Deathrattle amplifier",
-    "lore": "The Necronomicon does not summon the dead from nowhere; it makes their last act refuse to finish. Every Deathrattle reads twice when the book is open beside its bearer.",
+    "rank": "Cthulhu Mythos · Forbidden grimoire",
+    "lore": "The Necronomicon is a fictional grimoire created by H. P. Lovecraft and attributed to the mad poet Abdul Alhazred. Its fragments describe cosmic entities and rituals that make human knowledge feel small, temporary, and dangerous.",
     "quote": "The dead have footnotes.",
     "str": [
-      "Doubles a Deathrattle payoff",
-      "Cheap engine piece",
-      "Enables explosive final turns"
+      "Contains forbidden cosmic knowledge",
+      "Expands horror beyond human scale",
+      "Infects every library that mentions it"
     ],
     "wk": [
-      "Needs a Deathrattle bearer",
-      "Does nothing on its own",
-      "The opponent can remove the bearer"
+      "Reading it threatens sanity",
+      "Its history is deliberately unreliable",
+      "Knowledge does not grant control"
     ],
-    "sig_name": "Second Reading",
-    "sig_desc": "The same final sentence is spoken once more from the dark.",
-    "playstyle": "A combo relic for death-trigger decks",
-    "ability": "The bearer's Deathrattle triggers twice.",
+    "sig_name": "The Unreadable Passage",
+    "sig_desc": "A page reveals a truth large enough to make the reader smaller.",
+    "playstyle": "A book-shaped breach in the limits of human understanding",
+    "ability": "The Necronomicon is a fictional occult book associated with Abdul Alhazred and the Cthulhu Mythos.",
     "rivals": [
       {
-        "who": "Black Hole",
-        "rel": "the book wants survivors of the silence",
-        "id": "c178"
+        "who": "Abdul Alhazred",
+        "rel": "fictional author of the book",
+        "id": ""
       },
       {
-        "who": "White Whistle",
-        "rel": "two ways to make text persist",
-        "id": "r006"
+        "who": "Cthulhu",
+        "rel": "one of the cosmic entities it invokes",
+        "id": ""
+      },
+      {
+        "who": "Ash Williams",
+        "rel": "modern horror hero who battles its derivatives",
+        "id": ""
       }
     ]
   },
   "r026": {
     "name": "Dragon Balls",
     "origin": "Dragon Ball",
-    "epithet": "Seven Pieces of a Wish",
+    "epithet": "Seven Orbs of the Dragon",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10745,39 +10870,44 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cc": "#54d6c3",
     "vals": [
       7,
-      8,
+      7,
       10,
       10,
       8,
       3
     ],
-    "rank": "Relic · Legendary return",
-    "lore": "The Dragon Balls ask for patience and pay it back with a legend. When the bearer falls, the wish is finally assembled and Shenron arrives to turn absence into a new body.",
+    "rank": "Dragon Ball · Earth's wish orbs",
+    "lore": "The Dragon Balls are seven magical orbs that summon Shenron when gathered. Their wishes are limited by the dragon and the creator of the set, while the search for them carries the story from a comic adventure into cosmic history.",
     "quote": "Your wish is granted.",
     "str": [
-      "Promises a post-death summon",
-      "Creates a huge late-game swing",
-      "Makes removal feel costly"
+      "Turns a scattered search into a miracle",
+      "Connects Earth to its guardians",
+      "Can restore lives and worlds"
     ],
     "wk": [
-      "Costs seven mana",
-      "Requires the bearer to die",
-      "The payoff is delayed and specific"
+      "Must be gathered before use",
+      "Shenron's power has limits",
+      "The orbs scatter after a wish"
     ],
-    "sig_name": "Shenron's Arrival",
-    "sig_desc": "Seven small lights become one impossible answer.",
-    "playstyle": "A late-game resurrection investment",
-    "ability": "Summon Shenron after the bearer dies.",
+    "sig_name": "Summon Shenron",
+    "sig_desc": "Seven lights gather, the dragon rises, and one request becomes history.",
+    "playstyle": "A journey object that makes hope a physical collection",
+    "ability": "Gathering the seven Dragon Balls summons Shenron, who grants a wish within his stated limits.",
     "rivals": [
       {
-        "who": "The One Ring",
-        "rel": "different versions of return",
-        "id": "r003"
+        "who": "Shenron",
+        "rel": "dragon summoned by the complete set",
+        "id": ""
       },
       {
-        "who": "Pandora's Box",
-        "rel": "death opens a container",
-        "id": "r022"
+        "who": "Bulma",
+        "rel": "finder who begins the original search",
+        "id": ""
+      },
+      {
+        "who": "Son Goku",
+        "rel": "hero whose life grows around the orbs",
+        "id": ""
       }
     ]
   },
@@ -10793,47 +10923,52 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
+      10,
+      8,
       9,
-      8,
-      8,
       7,
-      6,
-      6
+      7,
+      7
     ],
-    "rank": "Relic · Attack immunity",
-    "lore": "Mjolnir recognizes no résumé, only worthiness. A Good bearer carrying it can attack without fear, entering combat as thunder rather than as a target waiting to be traded.",
-    "quote": "Whosoever holds this hammer...",
+    "rank": "Marvel · Hammer of Thor",
+    "lore": "Mjolnir is the enchanted hammer of Thor, forged in a dying star and marked by Odin's worthiness enchantment. It returns to its wielder, commands storms, and has been lifted by heroes who prove themselves worthy of its responsibility.",
+    "quote": "Whosoever holds this hammer, if they be worthy...",
     "str": [
-      "Makes attacks invulnerable",
-      "Turns a Good finisher into a safe clock",
-      "Strong against wide boards"
+      "Commands thunder and flight",
+      "Returns when called by its worthy wielder",
+      "Makes worthiness a visible moral test"
     ],
     "wk": [
-      "Can only equip Good minions",
-      "Does not protect while defending",
-      "Premium cost"
+      "Cannot be lifted by the unworthy",
+      "Its power is tied to responsibility",
+      "The enchantment can be changed by its creator"
     ],
     "sig_name": "Worthiness",
-    "sig_desc": "The hammer answers an attack with absolute confidence.",
-    "playstyle": "A safe offensive relic for Good threats",
-    "ability": "Can only be equipped by Good minions. The bearer is Invulnerable while attacking.",
+    "sig_desc": "The hammer answers the person who can carry its power without being ruled by it.",
+    "playstyle": "A weapon that measures character before strength",
+    "ability": "Mjolnir grants Thor control over storms and can be lifted only by those judged worthy by its enchantment.",
     "rivals": [
       {
-        "who": "Excalibur",
-        "rel": "worthiness has another blade",
-        "id": "r028"
+        "who": "Thor Odinson",
+        "rel": "its principal wielder",
+        "id": ""
       },
       {
-        "who": "Ea",
-        "rel": "thunder versus rupture",
-        "id": "r009"
+        "who": "Odin",
+        "rel": "creator of the worthiness enchantment",
+        "id": ""
+      },
+      {
+        "who": "Jane Foster",
+        "rel": "worthy wielder during Thor's absence",
+        "id": ""
       }
     ]
   },
   "r028": {
     "name": "Excalibur",
     "origin": "Arthurian Legend",
-    "epithet": "The Sword in the Stone",
+    "epithet": "The Sword of the Once and Future King",
     "rar": "Relic",
     "camp": "Ascension",
     "align": "Relic",
@@ -10842,40 +10977,45 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "hp": 0,
     "cc": "#54d6c3",
     "vals": [
+      9,
+      6,
       8,
       6,
       7,
-      5,
-      6,
       8
     ],
-    "rank": "Relic · Immediate initiative",
-    "lore": "Excalibur is a decision made visible. A Good bearer draws it and does not wait for permission from the next turn; the sword makes readiness part of the equipment.",
+    "rank": "Arthurian legend · Sword of kingship",
+    "lore": "Excalibur is King Arthur's famous sword, usually given to him by the Lady of the Lake. Later retellings sometimes merge it with the sword drawn from the stone, but the legends consistently make it a sign of rightful kingship and a weapon beyond ordinary craft.",
     "quote": "The right hand finds the hilt.",
     "str": [
-      "Grants Charge immediately",
-      "Costs only two mana",
-      "Creates surprise attacks"
+      "Represents rightful authority",
+      "Carries supernatural sharpness and durability",
+      "Unites Arthur's rule with mythic destiny"
     ],
     "wk": [
-      "Requires a Good bearer",
-      "Adds no stats",
-      "A small bearer can still trade down"
+      "Its identity changes across traditions",
+      "The sword cannot preserve a failing kingdom",
+      "Its legend depends on Arthur's character"
     ],
-    "sig_name": "The Draw",
-    "sig_desc": "The moment the blade clears the stone, the turn has already begun.",
-    "playstyle": "Low-cost tempo and surprise combat",
-    "ability": "Can only be equipped by Good minions. The bearer gains Charge.",
+    "sig_name": "The Lady's Gift",
+    "sig_desc": "A blade rises from the lake as a sign that kingship can be granted, not merely seized.",
+    "playstyle": "A symbol of authority that outlives the person who carries it",
+    "ability": "Excalibur is Arthur's enchanted sword, associated with the Lady of the Lake and the king's legitimacy.",
     "rivals": [
       {
-        "who": "Mjolnir",
-        "rel": "two tests of worthiness",
-        "id": "r027"
+        "who": "King Arthur",
+        "rel": "the sword's chosen king",
+        "id": ""
       },
       {
-        "who": "Tesseract",
-        "rel": "initiative meets extra time",
-        "id": "r020"
+        "who": "The Lady of the Lake",
+        "rel": "giver of the blade",
+        "id": ""
+      },
+      {
+        "who": "Merlin",
+        "rel": "sage who guides Arthur's destiny",
+        "id": ""
       }
     ]
   }
