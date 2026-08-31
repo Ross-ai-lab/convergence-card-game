@@ -4644,7 +4644,7 @@ button:disabled {
 
 /* Hovering the badge swaps the preview to the relic's own full card. */
 .relic-badge.peekable {
-  cursor: help;
+  cursor: default;
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
