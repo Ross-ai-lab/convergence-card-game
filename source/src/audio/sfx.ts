@@ -791,9 +791,9 @@ export function stopMusic(): void {
 /**
  * Card themes.
  *
- * One 6-second sting per card, cut from that character's source music by
+ * One 6-second sting per card or relic, cut from that item's YouTube source by
  * `scripts/build-card-stings.py` and served from `public/audio/stings/`. They
- * are fetched on demand rather than preloaded — 175 clips is ~24 MB on disk and
+ * are fetched on demand rather than preloaded — 216 clips is ~29 MB on disk and
  * far more once decoded, so the cache holds the most recent handful.
  *
  * The battle loop is ducked almost to silence underneath, so a summon reads as
@@ -805,47 +805,36 @@ export function stopMusic(): void {
  */
 const CARD_THEME_ID = /^(?:c|r)\d+$/;
 
-/**
- * Relics use the same six-second theme-sting bus as minions. When the relic's
- * universe already has a card sting, point at that existing source so the game
- * does not ship two copies of the same audio. r006 is the one new universe and
- * has its own generated sting in public/audio/stings/r006.ogg.
- */
+// Older relics keep their established shared-universe themes. New cards and
+// relics are intentionally absent here and therefore load their own r### file.
 const RELIC_THEME_SOURCE: Record<string, string> = {
-  r001: "c102", // Myth — Dragon
-  r002: "c064", // Seven Deadly Sins — Seven Deadly Sins
-  r003: "c080", // Lord of the Rings — Gandalf the White
-  r005: "c015", // MCU — Avengers
-  r006: "r006", // Made in Abyss — dedicated sting
-  r007: "c030", // Harry Potter — Dumbledore
-  r008: "c102", // Myth — Dragon
-  r009: "c019", // Fate — Gilgamesh
-  r010: "c030", // Harry Potter — Dumbledore
-  r011: "c025", // One Punch Man — Saitama
-  r012: "c030", // Harry Potter — Dumbledore
-  r013: "c106", // Transformers — Transformers
-  r014: "c049", // Tensura — Rimuru Tempest
-  r015: "c017", // One Piece — Gol D. Roger
-  r016: "c049", // Tensura — Rimuru Tempest
-  r017: "c069", // Hunter x Hunter — Isaac Netero
-  r018: "c021", // Death Note — Light Yagami
-  r019: "c116", // The Mask — The Mask
-  r020: "c015", // MCU — Avengers
-  r021: "c109", // Demon Slayer — Nine Hashira
-  r022: "c061", // Myth — Chaos
-  r023: "c004", // Myth — Bigfoot
-  r024: "c159", // Indiana Jones — Indiana Jones
-  r025: "c154", // Myth — Gravelord Nito
-  r026: "c044", // Dragon Ball — Mastered Ultra Instinct Goku
-  r027: "c015", // Marvel — Avengers
-  r028: "c080", // Arthurian Legend — Gandalf the White
-  r029: "c106", // Ben 10 — Transformers fallback
-  r030: "c042", // JoJo — Giorno - Gold Experience Requiem
-  r031: "c106", // Pokémon — Transformers fallback
-  r032: "c030", // Harry Potter — Dumbledore
-  r033: "c015", // Marvel — Avengers
-  r034: "c030", // Men in Black — Harry Potter fallback
-  r035: "c020", // DC — Superman
+  r001: "c102",
+  r002: "c064",
+  r003: "c080",
+  r005: "c015",
+  r006: "r006",
+  r007: "c030",
+  r008: "c102",
+  r009: "c019",
+  r010: "c030",
+  r011: "c025",
+  r012: "c030",
+  r013: "c106",
+  r014: "c049",
+  r015: "c017",
+  r016: "c049",
+  r017: "c069",
+  r018: "c021",
+  r019: "c116",
+  r020: "c015",
+  r021: "c109",
+  r022: "c061",
+  r023: "c004",
+  r024: "c159",
+  r025: "c154",
+  r026: "c044",
+  r027: "c015",
+  r028: "c080",
 };
 
 function isCardThemeId(cardId: string): boolean {

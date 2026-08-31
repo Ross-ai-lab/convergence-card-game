@@ -1263,6 +1263,23 @@ ruling and have been replaced with real recordings, sourced with `yt-dlp` per
 | Black Hole | [NASA black hole sonification](https://www.youtube.com/watch?v=_tXhBLg3Wng) | NASA'''s own data made audible: a real recording, public domain |
 | Lord Voldemort | [Hedwig's Theme](https://www.youtube.com/watch?v=wtHra9tFISY) | Owner-selected iconic Harry Potter theme |
 
+The eleven newest cards each use a distinct YouTube source from their own universe. The sting cutter
+stores only the six-second excerpt in the game, while these source choices remain documented here:
+
+| Card | Source |
+|---|---|
+| Xenomorph Queen | [The Queen — James Horner, *Aliens*](https://www.youtube.com/watch?v=VLG94f_koQQ) |
+| Naruto | [Strong and Strike — *Naruto* Original Soundtrack](https://www.youtube.com/watch?v=scWSTDsj3IM) |
+| Frieren | [Journey of a Lifetime ~ Frieren Main Theme — Evan Call](https://www.youtube.com/watch?v=sSmK6-O-0gk) |
+| Guts | [Berserk OST — 04 Guts](https://www.youtube.com/watch?v=dIoILN_KrhU) |
+| Omnitrix | [Ben 10: Secret of the Omnitrix Theme](https://www.youtube.com/watch?v=eOU-7O-3hW8) |
+| Stand Arrow | [JoJo's Bizarre Adventure: Golden Wind OST — Stand Arrow](https://www.youtube.com/watch?v=omyS3-a0cwE) |
+| Poké Ball | [Pokémon Movie 01 BGM — Monster Balls / Poké Balls](https://www.youtube.com/watch?v=j-pNFMbi48o) |
+| Time Turner | [The Time Turner — *Harry Potter and the Cursed Child* Soundtrack](https://www.youtube.com/watch?v=Sdvauf-DyKg) |
+| Symbiote | [Symbiote Peter Boss Fight Theme — *Marvel's Spider-Man 2*](https://www.youtube.com/watch?v=Mb1AYDnzAkg) |
+| Neuralyzer | [M.I.B. Main Theme — Danny Elfman](https://www.youtube.com/watch?v=jyb33RgAxis) |
+| Green Lantern Ring | [The Ring Chooses Hal — *Green Lantern* Soundtrack](https://www.youtube.com/watch?v=E7_l6wuHwiw) |
+
 Each is the LOUDEST six-second window of its source, found by stepping `volumedetect` across the file
 rather than guessing an offset, then two-pass `loudnorm` to sit with the other 172. **volumedetect
 reports at ffmpeg'''s info level** — suppressing to `-v error` makes every window score nothing and the

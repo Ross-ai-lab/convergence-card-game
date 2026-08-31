@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Cut a short music sting for every Convergence card (6 seconds by default).
+Cut a short music sting for every Convergence card or relic (6 seconds by default).
 
 Source: materials/local-production/audio-tracks/
 Output: source/public/audio/stings/<cardId>.ogg
@@ -25,9 +25,10 @@ mid-phrase. What works, and what this does:
      than another, then fade 60 ms in and 250 ms out so nothing clicks.
 
 Usage:
-    python build-card-stings.py                 # build all missing
+    python build-card-stings.py                 # build all missing cards and relics
     python build-card-stings.py --force         # rebuild everything
     python build-card-stings.py --only c014     # one card (repeatable)
+    python build-card-stings.py --only r001     # one relic (repeatable)
     python build-card-stings.py --offset c014=41.5   # hand-pick a start time
     python build-card-stings.py --report        # print chosen offsets, build nothing
     python build-card-stings.py --seconds 3 --force  # go back to 3-second stings
@@ -54,6 +55,7 @@ ROOT = HERE.parents[2]
 GAME = ROOT / "source"
 AUDIO_SRC = ROOT / "materials" / "local-production" / "audio-tracks"
 CARDS_CSV = GAME / "data" / "cards.csv"
+RELICS_CSV = GAME / "data" / "relics.csv"
 OFFSETS_CSV = GAME / "data" / "sting-offsets.csv"
 OUT_DIR = GAME / "public" / "audio" / "stings"
 
@@ -235,7 +237,7 @@ def track_index() -> dict[str, Path]:
     for path in AUDIO_SRC.iterdir():
         if path.suffix.lower() not in {".mp3", ".mp4"}:
             continue
-        m = re.match(r"^\d{3} - (.+) \(([^()]*)\)\.(?:mp3|mp4)$", path.name, re.IGNORECASE)
+        m = re.match(r"^(?:\d{3}|r\d{3}) - (.+) \(([^()]*)\)\.(?:mp3|mp4)$", path.name, re.IGNORECASE)
         if m:
             index[norm(m.group(1))] = path
     return index
@@ -248,7 +250,7 @@ def main() -> None:
         except Exception:
             pass
 
-    ap = argparse.ArgumentParser(description="Cut a short music sting per card (6 s by default).")
+    ap = argparse.ArgumentParser(description="Cut a short music sting per card or relic (6 s by default).")
     ap.add_argument("--force", action="store_true", help="rebuild stings that already exist")
     ap.add_argument("--only", action="append", default=[], help="card id or name fragment (repeatable)")
     ap.add_argument("--offset", action="append", default=[], metavar="ID=SECONDS",
@@ -278,12 +280,14 @@ def main() -> None:
 
     tracks = track_index()
     cards = list(csv.DictReader(CARDS_CSV.open(encoding="utf-8")))
+    if RELICS_CSV.exists():
+        cards.extend(csv.DictReader(RELICS_CSV.open(encoding="utf-8")))
     if args.only:
         wanted = [w.lower() for w in args.only]
         cards = [c for c in cards
                  if any(w == c["id"].lower() or w in c["name"].lower() for w in wanted)]
     if not cards:
-        sys.exit("No cards matched.")
+        sys.exit("No cards or relics matched.")
 
     def resolve(card: dict) -> Path | None:
         key = norm(card["name"])
