@@ -88,11 +88,15 @@ describe("full-roster effects", () => {
 
   it("Gol D. Roger offers three relics and adds the chosen one to hand", () => {
     const state = mainState();
-    const offered = state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)).slice(0, 3);
+    const inDeck = state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId));
 
     const firstPrompt = playCardFor(state, 0, "Gol D. Roger", 2);
     expect(firstPrompt.pendingTarget?.kind).toBe("option");
-    expect(firstPrompt.pendingTarget?.labelOptions.map((option) => option.value)).toEqual(offered);
+    // Three distinct relics rolled out of the pile, not the first three of it.
+    const offered = firstPrompt.pendingTarget!.labelOptions.map((option) => option.value);
+    expect(offered).toHaveLength(3);
+    expect(new Set(offered).size).toBe(3);
+    expect(offered.every((cardId) => inDeck.includes(cardId))).toBe(true);
 
     const after = applyAction(firstPrompt, { type: "choose_target", player: 0, choiceIndex: 1 }, library).state;
     expect(after.players[0].hand).toContain(offered[1]);

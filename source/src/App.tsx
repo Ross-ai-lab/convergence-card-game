@@ -4361,18 +4361,15 @@ function minionStates(
   const effectIds = new Set([minion.effectId, ...minion.gainedEffects.map((effect) => effect.effectId)]);
   const effectsActive = !minion.silenced && minion.chained === 0;
   const otherGood = board?.some((other) => other && other.instanceId !== minion.instanceId && other.alignment === "Good") ?? false;
-  const goodCount = board?.filter((other) => other?.alignment === "Good").length ?? 0;
   const activeInvulnerable =
     effectsActive &&
     (effectIds.has("invuln_if_alone")
       ? (board?.filter(Boolean).length ?? 1) <= 1
       : effectIds.has("invuln_with_good_ally")
         ? otherGood
-        : effectIds.has("invuln_if_three_good")
-          ? goodCount >= 3
-          : effectIds.has("invulnerable_if_frozen")
-            ? (allBoard ?? board)?.some((other) => other?.frozen) ?? false
-            : false);
+        : effectIds.has("invulnerable_if_frozen")
+          ? (allBoard ?? board)?.some((other) => other?.frozen) ?? false
+          : false);
   return [
     minion.sleeping ? "is-sleeping" : "",
     minion.chained > 0 ? "is-chained" : "",

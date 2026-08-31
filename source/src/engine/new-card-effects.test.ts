@@ -1254,9 +1254,15 @@ describe("2026 card replacements", () => {
     const stasis = picked.state;
     expect(stasis.players[1].board[2]).toBeNull();
     expect(stasis.stasis).toHaveLength(1);
-    expect(stasis.stasis[0].returnAtTurn).toBe(stasis.turnNumber + 2);
+    // Four counter steps, because turnNumber advances once per PLAYER turn and
+    // the card promises two full ones. At +2 the victim missed a single turn.
+    expect(stasis.stasis[0].returnAtTurn).toBe(stasis.turnNumber + 4);
 
-    const twoTurnsLater = endTurn(endTurn(stasis, 0), 1);
+    const oneTurnLater = endTurn(endTurn(stasis, 0), 1);
+    expect(oneTurnLater.stasis).toHaveLength(1);
+    expect(oneTurnLater.players[1].board[2]).toBeNull();
+
+    const twoTurnsLater = endTurn(endTurn(oneTurnLater, 0), 1);
     expect(twoTurnsLater.stasis).toHaveLength(0);
     expect(twoTurnsLater.players[1].board[2]?.name).toBe("Zoro");
   });
@@ -2283,14 +2289,35 @@ describe("2026 card replacements", () => {
     expect(byItself.players[0].board[0]).toMatchObject({ atk: 1, hp: 2 });
   });
 
-  it("Kagaya Ubuyashiki draws a random Taunt, Divine Shield, or Passive minion", () => {
+  it("Kagaya Ubuyashiki offers one Taunt, one Divine Shield and one Passive minion", () => {
     const state = mainState("kagaya-keyword-draw");
-    state.deck = [cardId("John Wick"), cardId("The Five Convicts")];
+    // One card of each kind, so the offer is fully determined and the pick is
+    // the only thing left to check. John Wick is a Passive card that never had
+    // the keyword typed into the CSV, which is why the offer reads the timing.
+    state.deck = [cardId("John Wick"), cardId("The Five Convicts"), cardId("Survivors"), cardId("Nezu")];
+    const asking = play(state, 0, "Kagaya Ubuyashiki", 0);
+
+    expect(asking.phase).toBe("targeting");
+    expect(asking.pendingTarget?.kind).toBe("option");
+    expect(asking.pendingTarget?.labelOptions.map((option) => option.value).sort()).toEqual(
+      [cardId("John Wick"), cardId("Survivors"), cardId("The Five Convicts")].sort(),
+    );
+
+    const chosenIndex = asking.pendingTarget!.labelOptions.findIndex((option) => option.value === cardId("John Wick"));
+    const after = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: chosenIndex }, library).state;
+    expect(after.players[0].hand).toEqual([cardId("John Wick")]);
+    expect(after.deck).not.toContain(cardId("John Wick"));
+  });
+
+  it("Kagaya still resolves when only one kind is left in the deck", () => {
+    const state = mainState("kagaya-single-offer");
+    state.deck = [cardId("The Five Convicts")];
     const after = play(state, 0, "Kagaya Ubuyashiki", 0);
 
+    // One legal offer resolves without a pointless one-button prompt.
     expect(after.pendingTarget).toBeNull();
     expect(after.players[0].hand).toEqual([cardId("The Five Convicts")]);
-    expect(after.deck).toEqual([cardId("John Wick")]);
+    expect(after.deck).toEqual([]);
   });
 
   it("Sir Nighteye sees the card left on top of the shared deck", () => {

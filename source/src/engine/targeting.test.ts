@@ -432,24 +432,30 @@ describe("All for One aims a copied effect legally", () => {
   }
 
   it("aims a copied friendly power at its OWN board, never at the enemy it copied", () => {
-    const state = boardWithVictim("afo-heal", "heal_ally_full");
+    const state = boardWithVictim("afo-heal", "meleoron_protect_ally");
+    state.players[1].board[0]!.hp = 5;
+    // Two friendly targets, so the copy has a real question to ask rather than
+    // one forced answer that resolves without a prompt.
+    state.players[0].board[4] = dummy("Modern Tank", 0);
 
     const asking = playCardFor(state, 0, "All for One", 0);
 
-    // The victim is an enemy, so it is not a legal target for "fully heal a
-    // FRIENDLY minion" and is never handed over. The copy asks for its own
-    // target instead, and every option offered belongs to the copier.
+    // The victim is an enemy, so it is not a legal target for an effect that
+    // hides a FRIENDLY minion, and is never handed over. The copy asks for its
+    // own target instead, and every option offered belongs to the copier.
     expect(asking.phase).toBe("targeting");
     expect(asking.pendingTarget?.options.length).toBeGreaterThan(0);
     expect(asking.pendingTarget?.options.every((option) => option.owner === 0)).toBe(true);
-    expect(asking.players[1].board[0]?.hp).toBe(1);
+    expect(asking.players[1].board[0]?.hp).toBe(5);
 
     const mine = asking.pendingTarget!.options.findIndex((option) => option.owner === 0 && option.slot === 3);
     expect(mine).toBeGreaterThanOrEqual(0);
     const after = choose(asking, mine);
 
-    expect(after.players[0].board[3]?.hp).toBe(6); // our own minion, fully healed
-    expect(after.players[1].board[0]?.hp).toBe(1); // theirs, untouched
+    // Our own minion took the effect, and the enemy it was copied from did not.
+    expect(after.players[0].board[3]?.protectedByMeleoron).toBe(after.players[0].board[0]?.instanceId);
+    expect(after.players[1].board[0]?.protectedByMeleoron ?? null).toBeNull();
+    expect(after.players[1].board[0]?.hp).toBe(5); // theirs, untouched
     // And All for One takes its own effect back once the copy has finished.
     expect(after.players[0].board[0]?.effectId).toBe("copy_and_trigger");
     expect(after.players[0].board[0]?.copyRestoreEffectId ?? null).toBeNull();
@@ -475,35 +481,30 @@ describe("All for One aims a copied effect legally", () => {
   });
 
   it("carries a copied effect across its own prompts instead of dropping it", () => {
-    // `freeze_two` asks for TWO enemies, so a copy of it has to survive the
-    // question between them. The borrowed effect used to be handed back the
-    // instant the first prompt opened, which silently cancelled the whole copy.
-    // The effect is fitted to a stand-in body here rather than named on a card:
-    // no card in the roster prints it any more, and the mechanic it pins — a
-    // multi-step copy — is the point rather than the card that once carried it.
+    // Batman asks twice: a victim, then a gadget. A copy of him therefore has
+    // to survive the question in between. The borrowed effect used to be handed
+    // back the instant the first prompt opened, which cancelled the whole copy.
     const state = mainState("afo-multistep");
-    state.players[1].board[0] = dummy("Zoro", 1, { effectId: "freeze_two", effectTiming: "onPlay" });
+    state.players[1].board[0] = dummy("Zoro", 1, { effectId: "batman_gadget_choice", effectTiming: "onPlay" });
     state.players[1].board[1] = dummy("John Wick", 1);
-    state.players[1].board[2] = dummy("Sonic", 1);
 
     const asking = playCardFor(state, 0, "All for One", 0);
     expect(asking.phase).toBe("targeting");
-    const after = choose(asking, 0);
+    expect(asking.pendingTarget?.kind).toBe("option");
+    const after = choose(asking, 0); // the first gadget: Freeze it
 
-    const frozen = after.players[1].board.filter((minion) => minion?.frozen).length;
-    expect(frozen).toBe(2);
+    expect(after.players[1].board[0]?.frozen).toBe(true);
     expect(after.players[0].board[0]?.effectId).toBe("copy_and_trigger");
   });
 
   it("still fires a copied enemy-targeting effect on the minion it copied", () => {
-    const state = boardWithVictim("afo-legal", "set_attack_1");
-    const victimAtk = state.players[1].board[0]!.atk;
-    expect(victimAtk).toBeGreaterThan(1);
+    const state = boardWithVictim("afo-legal", "set_hp_1");
+    state.players[1].board[0]!.hp = 5;
 
     const after = playCardFor(state, 0, "All for One", 0);
 
     // The guard must not cost the card its normal use: an enemy victim IS a
     // legal target for an enemy-targeting effect, so the copy resolves as before.
-    expect(after.players[1].board[0]?.atk).toBe(1);
+    expect(after.players[1].board[0]?.hp).toBe(1);
   });
 });

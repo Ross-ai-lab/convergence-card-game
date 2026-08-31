@@ -228,8 +228,6 @@ function migrateLegacyMechanics(game: GameState): void {
       if (minion.protectedByMeleoron === undefined) minion.protectedByMeleoron = null;
       if (minion.auraBonuses === undefined) minion.auraBonuses = [];
       if (minion.evadedAttackAtTurn === undefined) minion.evadedAttackAtTurn = null;
-      if (minion.weakPointTargetId === undefined) minion.weakPointTargetId = null;
-      if (minion.weakPointReady === undefined) minion.weakPointReady = false;
       if (minion.rescueUsedAtTurn === undefined) minion.rescueUsedAtTurn = null;
       if (minion.divineShieldAuraSources === undefined) minion.divineShieldAuraSources = [];
       if (minion.brokenAuraSources === undefined) minion.brokenAuraSources = [];

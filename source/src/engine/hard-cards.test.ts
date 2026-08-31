@@ -105,6 +105,29 @@ describe("combat-reaction cards", () => {
     });
   });
 
+  it("RoboCop triples its damage on the counter-blow, not only on its own swing", () => {
+    // "Deal 3x damage against Evil minions" has no attacking clause, and combat
+    // here is simultaneous, so the rule has to hold on both blows. The
+    // retaliation used to be plain ATK.
+    const state = mainState("robocop-retaliation");
+    state.players[0].board[0] = dummy("John Wick", 0, { alignment: "Evil", atk: 1, hp: 99, maxHp: 99 });
+    state.players[1].board[0] = makeMinion("RoboCop", 1, { atk: 4, hp: 99, maxHp: 99 });
+
+    const after = attack(state, 0, 0);
+    expect(after.players[0].board[0]?.hp).toBe(99 - 12);
+  });
+
+  it("Doom Slayer triples and heals when it kills an Evil attacker on the counter-blow", () => {
+    const state = mainState("doom-retaliation");
+    state.players[0].board[0] = dummy("John Wick", 0, { alignment: "Evil", atk: 3, hp: 3, maxHp: 3 });
+    state.players[1].board[0] = makeMinion("Doom Slayer", 1, { atk: 2, hp: 20, maxHp: 20 });
+
+    const after = attack(state, 0, 0);
+    expect(after.players[0].board[0]).toBeNull();
+    // 20, minus the attacker's 3, plus the 3 the kill heals back.
+    expect(after.players[1].board[0]?.hp).toBe(20);
+  });
+
   it("Mahoraga refuses a second swing from the same attacker", () => {
     const state = mainState();
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, hp: 99, maxHp: 99, effectId: "attack_2x" });
@@ -353,17 +376,31 @@ describe("choice-driven cards", () => {
 
   it("Indiana Jones discovers a relic and adds it to hand", () => {
     const state = mainState();
-    const offered = state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)).slice(0, 3);
+    const inDeck = state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId));
 
     const asking = play(state, "Indiana Jones", 0);
     expect(asking.phase).toBe("targeting");
     expect(asking.pendingTarget?.kind).toBe("option");
-    expect(asking.pendingTarget?.labelOptions.map((option) => option.value)).toEqual(offered);
+    const offered = asking.pendingTarget!.labelOptions.map((option) => option.value);
+    expect(offered).toHaveLength(3);
+    expect(new Set(offered).size).toBe(3);
+    expect(offered.every((cardId) => inDeck.includes(cardId))).toBe(true);
 
     const after = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: 0 }, library).state;
     expect(after.pendingTarget).toBeNull();
     expect(after.players[0].board[0]?.relic).toBeNull();
     expect(after.players[0].hand).toContain(offered[0]);
     expect(after.deck).not.toContain(offered[0]);
+  });
+
+  it("rolls the relic Discover instead of reading the top of the deck", () => {
+    // The SAME deck, two different dice. Reading the top three gave one answer
+    // for both, which is why a second Discover in a duel repeated the first:
+    // deck order does not change while the duel runs.
+    const offerOf = (seed: number) => {
+      const asking = play({ ...mainState(), rngSeed: seed }, "Indiana Jones", 0);
+      return asking.pendingTarget!.labelOptions.map((option) => option.value).join(",");
+    };
+    expect(offerOf(12_345)).not.toBe(offerOf(6_789));
   });
 });
