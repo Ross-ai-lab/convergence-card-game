@@ -713,6 +713,8 @@ export default function App() {
    */
   useEffect(() => {
     if (screen !== "playing" || game.phase === "gameOver" || curtainUp || duelIntro) return;
+    // A turn can pass through drawChoice, targeting, and main without changing
+    // activePlayer. Those are phases of one turn, not new turn announcements.
     const mine = game.activePlayer === viewerId;
     const text = vsBot
       ? mine
@@ -723,7 +725,7 @@ export default function App() {
     setBanner(marker);
     const timer = window.setTimeout(() => setBanner((cur) => (cur && cur.id === marker.id ? null : cur)), 1500);
     return () => window.clearTimeout(timer);
-  }, [game.activePlayer, game.phase, screen, curtainUp, viewerId, vsBot, duelIntro]);
+  }, [game.activePlayer, screen, curtainUp, viewerId, vsBot, duelIntro]);
 
   // The crystal animation is a one-shot; letting it sit in state would re-apply
   // its classes to whatever pips happen to be in that range on a later turn.

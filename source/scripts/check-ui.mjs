@@ -541,11 +541,14 @@ if (armedBefore !== 1) {
   );
 }
 
-// -------------------------------------------- 5b. the turn's two announcements
+// -------------------------------------------- 5b. the turn's announcements
 // The draw flight and the turn banner both live under a second and then delete
 // themselves, so polling for them is a coin flip. A MutationObserver armed
 // BEFORE the click records whether each element ever existed, which is the only
 // honest way to assert a transient.
+//
+// A turn may cross drawChoice/targeting/main while activePlayer stays the same.
+// That is still one turn, so the banner must be mounted exactly once.
 //
 // Both of these replaced nothing: drawing a card had no picture and no sound at
 // all, and `banner-sweep` sat in App.css with a section header and no user.
@@ -575,7 +578,7 @@ await newBoard({ place: false });
 
   check(
     "ending a turn announces itself",
-    seen.banner > 0,
+    seen.banner === 1,
     `${seen.banner} turn banner(s)`,
   );
   check(
