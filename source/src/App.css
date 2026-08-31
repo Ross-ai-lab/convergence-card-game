@@ -1473,7 +1473,7 @@ button:disabled {
 
 /* ============================================================================
    DRAG & DROP — a card ghost that follows the cursor, and an SVG targeting
-   arrow drawn from the attacking minion to the pointer.
+   arrow drawn from a card or attacking minion to the pointer.
    ============================================================================ */
 .drag-layer {
   position: fixed;

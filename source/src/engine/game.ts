@@ -3038,7 +3038,9 @@ function runEffect(
     let destroyed = 0;
     for (let slot = 0; slot < boardSize; slot += 1) {
       const minion = enemy.board[slot];
-      if (!minion || minion.hp >= minion.maxHp || !enemyTargetable(state, minion)) continue;
+      // This is a direct destroy, not attack damage. Evade belongs to the
+      // combat-damage path and must never make a wounded minion survive this.
+      if (!minion || minion.hp >= minion.maxHp || isUntargetable(state, minion)) continue;
       destroyAtSlot(state, enemyId, slot, events, `${source.name} kills ${minion.name}`);
       destroyed += 1;
     }

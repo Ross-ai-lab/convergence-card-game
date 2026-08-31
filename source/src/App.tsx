@@ -1274,6 +1274,8 @@ export default function App() {
       setGame(result.state);
       setSelection(null);
       setHover(null);
+      setTargetArrowOrigin(null);
+      setTargetArrowPointer(null);
       if (bargainChoice) showToast(`Doctor Strange's bargain chosen: ${bargainChoice}`, 3000, "bargain");
 
       // Tutorial lessons advance from the action that just happened, not from
@@ -1701,6 +1703,10 @@ export default function App() {
   }
 
   function trackTargetPointer(event: React.PointerEvent<HTMLElement>) {
+    if (game.phase === "main" && selection?.kind === "attacker" && !drag?.active) {
+      setTargetArrowPointer({ x: event.clientX, y: event.clientY });
+      return;
+    }
     if (
       game.phase !== "targeting" ||
       !pendingTarget ||
@@ -1748,6 +1754,13 @@ export default function App() {
    */
   function armAttacker(slotIndex: number) {
     setSelection({ kind: "attacker", slotIndex });
+    const sourceElement = document.querySelector<HTMLElement>(`[data-slot="${viewerId}-${slotIndex}"]`);
+    const bounds = sourceElement?.getBoundingClientRect();
+    if (bounds) {
+      const origin = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
+      setTargetArrowOrigin(origin);
+      setTargetArrowPointer(origin);
+    }
     const minion = viewer.board[slotIndex];
     if (minion && attacksRandomly(game, minion)) showToast("Swinging blind — the target is rolled");
   }
@@ -1865,7 +1878,11 @@ export default function App() {
       setHover(null);
       sfx.play("pickup");
       if (drag.kind === "hand") setSelection({ kind: "hand", handIndex: drag.handIndex });
-      else armAttacker(drag.slotIndex);
+      else {
+        armAttacker(drag.slotIndex);
+        setTargetArrowOrigin(null);
+        setTargetArrowPointer(null);
+      }
     }
     if (drag.active || becameActive) setDrag({ ...drag, x: e.clientX, y: e.clientY, active: true });
   }
@@ -2484,7 +2501,7 @@ export default function App() {
         <TargetingArrow x1={drag.ox} y1={drag.oy} x2={drag.x} y2={drag.y} />
       ) : null}
 
-      {targetArrowOrigin && targetArrowPointer && pendingTarget ? (
+      {targetArrowOrigin && targetArrowPointer && (pendingTarget || (selection?.kind === "attacker" && !drag?.active)) ? (
         <TargetingArrow
           x1={targetArrowOrigin.x}
           y1={targetArrowOrigin.y}

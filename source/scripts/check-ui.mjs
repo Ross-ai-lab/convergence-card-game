@@ -235,7 +235,7 @@ const enemyPowerEarly = await page.locator(".enemy-power-card").evaluate((elemen
   const style = getComputedStyle(element);
   return { opacity: style.opacity, visibility: style.visibility };
 });
-await page.waitForTimeout(1700);
+await page.waitForTimeout(2000);
 const enemyPowerLate = await page.locator(".enemy-power-card").evaluate((element) => {
   const style = getComputedStyle(element);
   return { opacity: style.opacity, visibility: style.visibility };
@@ -493,13 +493,20 @@ check("a rested minion offers an attack", readyCount > 0, `${readyCount} ready`)
 if (readyCount > 0) {
   await page.locator(".board-slot.occupied.ready").first().click();
   await page.waitForTimeout(300);
+  const clickArrowCount = await page.locator(".target-arrow").count();
   check(
     "clicking a ready minion arms it",
     (await page.locator(".board-slot.armed").count()) === 1,
     "one attacker armed",
   );
+  check(
+    "clicking a ready minion shows a targeting arrow",
+    clickArrowCount === 1,
+    `${clickArrowCount} live targeting arrow(s)`,
+  );
 } else {
   skip("clicking a ready minion arms it", "no rested minion to click");
+  skip("clicking a ready minion shows a targeting arrow", "no rested minion to click");
 }
 
 // --------------------------------- 4. THE REGRESSION: attack with a card held

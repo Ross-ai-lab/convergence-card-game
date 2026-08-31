@@ -229,6 +229,18 @@ describe("targeted effects", () => {
     expect(after.players[1].board[3]).toBeNull();
   });
 
+  it("Musashi bypasses Evade when destroying damaged enemies", () => {
+    const state = mainState("musashi-evade");
+    state.players[1].board[0] = dummy("Modern Tank", 1, { hp: 2, maxHp: 3, effectId: "dodge_50" });
+    state.players[1].board[1] = makeMinion("Kojiro Sasaki", 1);
+    state.players[1].board[2] = dummy("John Wick", 1, { hp: 1, maxHp: 2 });
+
+    const after = playCardFor(state, 0, "Musashi", 4);
+    expect(after.players[1].board[0]).toBeNull();
+    expect(after.players[1].board[1]).not.toBeNull();
+    expect(after.players[1].board[2]).toBeNull();
+  });
+
   it("Darth Vader asks for a target and chains the minion the player names", () => {
     const state = mainState("vader-targeting");
     state.players[1].board[0] = dummy("John Wick", 1);
