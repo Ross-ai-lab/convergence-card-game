@@ -103,15 +103,18 @@ function heroPowersForDuel(
 function useFullscreen() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const isFullscreenActive = () =>
+    document.fullscreenElement !== null || document.documentElement.matches(":fullscreen");
+
   useEffect(() => {
-    const syncFullscreenState = () => setIsFullscreen(document.fullscreenElement !== null);
+    const syncFullscreenState = () => setIsFullscreen(isFullscreenActive());
     syncFullscreenState();
     document.addEventListener("fullscreenchange", syncFullscreenState);
     return () => document.removeEventListener("fullscreenchange", syncFullscreenState);
   }, []);
 
   const toggleFullscreen = useCallback(() => {
-    if (document.fullscreenElement) {
+    if (isFullscreenActive()) {
       void document.exitFullscreen().catch((error: unknown) => {
         console.warn("Could not exit full screen.", error);
       });
