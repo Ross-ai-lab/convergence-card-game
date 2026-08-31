@@ -72,9 +72,11 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // v22: MinionInstance gained temporary control state for Motoko Kusanagi.
 // v23: MinionInstance gained Frieren's once-per-turn relic discovery marker.
 // v24: RelicInstance gained Time Turner's previous-turn HP snapshot.
-const SAVE_VERSION = 24;
+// v25: GameState gained the developer-cheat owner, so infinite mana no longer
+// leaks to the opponent when a saved duel is resumed.
+const SAVE_VERSION = 25;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v23";
+const LEGACY_SAVE_KEY = "convergence.save.v24";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -195,6 +197,7 @@ function migrateLegacyTransforms(game: GameState): void {
 }
 
 function migrateLegacyMechanics(game: GameState): void {
+  if (game.cheatPlayer === undefined) game.cheatPlayer = game.cheatMode ? 0 : null;
   if (game.foresightFor === undefined) game.foresightFor = null;
   if (!game.pocketRooms) game.pocketRooms = [];
   if (!Array.isArray(game.stasis)) game.stasis = [];

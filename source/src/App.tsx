@@ -23,6 +23,7 @@ import {
   randomHeroPower,
 } from "./engine/hero-powers";
 import { isMinionCard, isRelicCard } from "./engine/types";
+import { isTokenCardId } from "./engine/tokens";
 import {
   actionKey,
   applyAction,
@@ -30,6 +31,7 @@ import {
   createInitialGame,
   effectiveCardCost,
   getLegalActions,
+  hasInfiniteMana,
   makeCardLibrary,
   STARTING_CORE,
   TARGETED_EFFECTS,
@@ -918,6 +920,8 @@ export default function App() {
     };
   }, [game, library, screen, viewerId]);
   const opponentId = otherPlayer(viewerId);
+  const viewerHasInfiniteMana = hasInfiniteMana(game, viewerId);
+  const opponentHasInfiniteMana = hasInfiniteMana(game, opponentId);
   const opponent = game.players[opponentId];
   const opponentHandRevealed = viewer.board.some(
     (minion) => minion && minion.effectId === "watcher_reveal_hand" && !minion.silenced && minion.chained === 0,
@@ -1200,7 +1204,7 @@ export default function App() {
     // --- the crystals ---------------------------------------------------
     // Only the viewer's own tray is on screen, so only the viewer's mana is
     // worth animating. Cheat mode shows an infinity sign and has no pips at all.
-    if (!next.cheatMode) {
+    if (!hasInfiniteMana(next, viewerId)) {
       const was = prev.players[viewerId].mana;
       const now = next.players[viewerId].mana;
       if (now < was) {
@@ -1414,6 +1418,7 @@ export default function App() {
     if (options.testCardId && library[options.testCardId]) {
       nextGame.players[0].hand = [options.testCardId, ...nextGame.players[0].hand].slice(0, 10);
       nextGame.cheatMode = true;
+      nextGame.cheatPlayer = 0;
     }
     setGame(nextGame);
     setHistory([]);
@@ -1527,8 +1532,12 @@ export default function App() {
     // overlay can stay mounted across game changes, so closing over `game`
     // could toggle from an older render and show ON without changing the
     // current duel's affordability rules.
-    const enabled = !game.cheatMode;
-    setGame((current) => ({ ...current, cheatMode: !current.cheatMode }));
+    const enabled = !hasInfiniteMana(game, viewerId);
+    setGame((current) =>
+      hasInfiniteMana(current, viewerId)
+        ? { ...current, cheatMode: false, cheatPlayer: null }
+        : { ...current, cheatMode: true, cheatPlayer: viewerId },
+    );
     setSelection(null);
     setEvents((items) =>
       [
@@ -2124,7 +2133,7 @@ export default function App() {
             enemy
             player={opponent}
             heroPower={game.heroPowers[opponentId]}
-            cheatMode={game.cheatMode}
+            cheatMode={opponentHasInfiniteMana}
             floats={floats.filter((f) => f.slot === "hero" && f.owner === opponentId)}
             impacts={heroFx(opponentId)}
             targetable={coreTargetable}
@@ -2178,12 +2187,12 @@ export default function App() {
           {import.meta.env.DEV ? (
             <button
               type="button"
-              className={game.cheatMode ? "cheat-toggle active" : "cheat-toggle"}
-              aria-pressed={game.cheatMode}
+              className={viewerHasInfiniteMana ? "cheat-toggle active" : "cheat-toggle"}
+              aria-pressed={viewerHasInfiniteMana}
               onClick={toggleCheatMode}
-              title={game.cheatMode ? "Infinite mana is on. Click to turn it off." : "Enable infinite mana"}
+              title={viewerHasInfiniteMana ? "Infinite mana is on. Click to turn it off." : "Enable infinite mana"}
             >
-              {game.cheatMode ? "⚡ Cheat On" : "⚡ Cheat Off"}
+              {viewerHasInfiniteMana ? "⚡ Cheat On" : "⚡ Cheat Off"}
             </button>
           ) : null}
           {/* The Coin exists for about one turn per duel. A button that is greyed
@@ -2291,7 +2300,7 @@ export default function App() {
             <HeroPlate
               player={viewer}
               heroPower={game.heroPowers[viewerId]}
-              cheatMode={game.cheatMode}
+              cheatMode={viewerHasInfiniteMana}
               floats={floats.filter((f) => f.slot === "hero" && f.owner === viewerId)}
               impacts={heroFx(viewerId)}
               active={game.activePlayer === viewerId && game.phase !== "gameOver"}
@@ -2378,8 +2387,8 @@ export default function App() {
             })}
           </div>
 
-          <div className="mana-tray" title={game.cheatMode ? "Infinite mana" : `${viewer.mana}/${viewer.maxMana} mana`}>
-            {game.cheatMode ? (
+          <div className="mana-tray" title={viewerHasInfiniteMana ? "Infinite mana" : `${viewer.mana}/${viewer.maxMana} mana`}>
+            {viewerHasInfiniteMana ? (
               <em className="mana-inf">∞</em>
             ) : (
               <>
@@ -2431,7 +2440,7 @@ export default function App() {
           {import.meta.env.DEV ? (
             <details className="debug-panel">
               <summary>Debug State</summary>
-              <pre>{JSON.stringify({ cheatMode: game.cheatMode, game, legalActions: legalActions.map(actionKey) }, null, 2)}</pre>
+              <pre>{JSON.stringify({ cheatMode: game.cheatMode, cheatPlayer: game.cheatPlayer, game, legalActions: legalActions.map(actionKey) }, null, 2)}</pre>
             </details>
           ) : null}
         </div>
@@ -2622,7 +2631,7 @@ export default function App() {
       {developerToolsOpen ? (
         <DeveloperTools
           screen={screen}
-          cards={Object.values(library)}
+          cards={Object.values(library).filter((card) => !isTokenCardId(card.id))}
           game={game}
           viewerId={viewerId}
           onClose={() => setDeveloperToolsOpen(false)}
@@ -4180,7 +4189,6 @@ function MinionFace({
           ]
             .filter(Boolean)
             .join(" ")}
-          title={`${relic.name} — ${relic.effect}`}
           onMouseEnter={
             onRelicPreview
               ? (e) => {

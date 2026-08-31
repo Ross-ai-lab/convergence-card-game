@@ -19,7 +19,7 @@ r018,Shinigami Eyes,1,Relic,relic,ignore_defences,The bearer ignores Taunt and D
 r019,The Green Mask,2,Relic,relic,return_on_death,Return the bearer to your hand after death,RELIC,The Mask,/card-art/raw/r019.webp
 r020,Tesseract,4,Relic,relic,double_attack,The bearer can attack twice each turn,RELIC,MCU,/card-art/raw/r020.webp
 r021,Infinity Castle,4,Relic,relic,evade_50,The bearer's Evade chance is 50%,RELIC,Demon Slayer,/card-art/raw/r021.webp
-r022,Pandora's Box,2,Relic,relic,pandora_box,"The bearer gains +4/+4. When it dies, your opponent summons a random minion from the deck",RELIC,Myth,/card-art/raw/r022.webp
+r022,Pandora's Box,2,Relic,relic,pandora_box,The bearer gains +4/+4. It dies at the start of your next turn,RELIC,Myth,/card-art/raw/r022.webp
 r023,The Monkey's Paw,3,Relic,relic,monkeys_paw,The bearer gains +5/+5. It dies next turn,RELIC,Myth,/card-art/raw/r023.webp
 r024,Ark of the Covenant,4,Relic,relic,ark_divine_shield,The bearer gains Divine Shield,RELIC,Indiana Jones,/card-art/raw/r024.webp
 r025,Necronomicon,2,Relic,relic,necronomicon,The bearer's Deathrattle triggers twice,RELIC,Myth,/card-art/raw/r025.webp
@@ -27,7 +27,7 @@ r026,Dragon Balls,7,Relic,relic,dragon_balls,Summon Shenron after the bearer die
 r027,Mjolnir,5,Relic,relic,mjolnir,Can only be equipped by Good minions. The bearer is Invulnerable while attacking,RELIC,Marvel,/card-art/raw/r027.webp
 r028,Excalibur,2,Relic,relic,excalibur,Can only be equipped by Good minions. The bearer gains Charge,RELIC,Arthurian Legend,/card-art/raw/r028.webp
 r029,Omnitrix,3,Relic,relic,omnitrix,At the start of your turn transform the bearer into a random minion that costs 1 more,RELIC,Ben 10,/card-art/raw/r029.webp
-r030,Stand Arrow,2,Relic,relic,stand_arrow,50% chance to transform the bearer into a random minion that costs 2 more; otherwise Silence it,RELIC,JoJo,/card-art/raw/r030.webp
+r030,Stand Arrow,1,Relic,relic,stand_arrow,50% chance to transform the bearer into a random minion that costs 2 more; otherwise Silence it,RELIC,JoJo,/card-art/raw/r030.webp
 r031,Poké Ball,1,Relic,relic,poke_ball,Return the bearer to your hand,RELIC,Pokémon,/card-art/raw/r031.webp
 r032,Time Turner,2,Relic,relic,time_turner,At the start of your turn if the bearer is damaged restore it to the HP it had at the start of your previous turn,RELIC,Harry Potter,/card-art/raw/r032.webp
 r033,Symbiote,1,Relic,relic,symbiote,When the bearer dies leave it Chained with 1 HP instead,RELIC,Marvel,/card-art/raw/r033.webp

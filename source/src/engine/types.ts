@@ -731,8 +731,10 @@ export interface RelicInstance {
   art: string;
   /** Queen's Cocoon: the turn its +3/+3 payoff lands. */
   readyOnTurn?: number;
-  /** The Monkey's Paw: the turn on which the bearer dies. */
+  /** The Monkey's Paw's global due turn, retained for its existing behavior. */
   destroyOnTurn?: number;
+  /** Pandora's Box: the owner's turn count on which the bearer dies. */
+  destroyOnOwnerTurn?: number;
   /** Time Turner: HP recorded when the bearer's previous turn began. */
   previousTurnStartHp?: number;
 }
@@ -752,6 +754,7 @@ export interface GameState {
   activePlayer: PlayerId;
   turnNumber: number;
   cheatMode: boolean;
+  cheatPlayer?: PlayerId | null;
   /**
    * How fast max mana climbs, in mana per turn. Lives in the state so a save and
    * an undo carry it, and so the simulator can sweep it without a global.

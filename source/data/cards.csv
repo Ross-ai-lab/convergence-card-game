@@ -180,4 +180,4 @@ c181,Motoko Kusanagi,4,2,1,Yellow,Tech,Good,,motoko_kusanagi,onPlay,"Battlecry: 
 c182,Xenomorph Queen,4,1,4,Black,Nature,Evil,Passive,xenomorph_queen_brood,passive,Passive: Whenever a friendly minion dies summon a 1/1 Larva,The hive has a mother.,Alien,/card-art/raw/c182.webp
 c183,Naruto,8,2,2,Yellow,Magic,Good,,naruto_shadow_clones,onPlay,Battlecry: Fill your board with 2/2 Shadow Clones in empty friendly slots,"A thousand bodies, one will.",Naruto,/card-art/raw/c183.webp
 c184,Frieren,6,2,5,Purple,Magic,Good,Passive,frieren_relic_discover,passive,"Passive: The first time you cast a relic each turn, discover another relic",Every spell is worth remembering.,Frieren: Beyond Journey's End,/card-art/raw/c184.webp
-c185,Guts,2,1,1,Black,Nature,Neutral,Passive,guts_missing_core_growth,passive,Passive: Gains +1/+1 for each 20 HP your Core is missing,Struggle is the only answer.,Berserk,/card-art/raw/c185.webp
+c185,Guts,2,1,1,Black,Nature,Neutral,Passive,guts_missing_core_growth,passive,Passive: Gains +2/+1 for each 20 HP your Core is missing,Struggle is the only answer.,Berserk,/card-art/raw/c185.webp

@@ -147,7 +147,7 @@ describe("relic effects", () => {
     expect(getLegalActions(second, library).some((action) => "relicIndex" in action)).toBe(false);
   });
 
-  it("makes every token disappear instead of putting an invisible card in hand", () => {
+  it("returns every token as a playable hand card without adding it to the gallery", () => {
     const tokenIds = [
       "token:shenron",
       "token:skeleton",
@@ -170,9 +170,18 @@ describe("relic effects", () => {
       const after = playRelicFor(state, 0, "Poké Ball", 0);
 
       expect(after.players[0].board[0], tokenId).toBeNull();
-      expect(after.players[0].hand, tokenId).not.toContain(tokenId);
-      expect(after.players[0].hand.filter((cardId) => cardId.startsWith("token:")), tokenId).toEqual([]);
-      expect(after.discard, tokenId).not.toContain(tokenId);
+      expect(after.players[0].hand, tokenId).toContain(tokenId);
+      expect(after.players[0].hand.filter((cardId) => cardId.startsWith("token:")), tokenId).toEqual([tokenId]);
+      expect(library[tokenId], tokenId).toMatchObject({ id: tokenId, kind: "minion" });
+      expect(cards.some((card) => card.id === tokenId), tokenId).toBe(false);
+      expect(relics.some((relic) => relic.id === tokenId), tokenId).toBe(false);
+
+      const playAction = getLegalActions(after, library).find(
+        (action) => action.type === "play_card" && action.handIndex === 0 && action.slotIndex === 0,
+      );
+      expect(playAction, tokenId).toEqual({ type: "play_card", player: 0, handIndex: 0, slotIndex: 0 });
+      const replayed = applyAction(after, playAction!, library).state;
+      expect(replayed.players[0].board[0]?.cardId, tokenId).toBe(tokenId);
     }
   });
 
@@ -192,8 +201,9 @@ describe("relic effects", () => {
       ["The Green Mask", 2, "Return the bearer to your hand after death"],
       ["Tesseract", 4, "The bearer can attack twice each turn"],
       ["Infinity Castle", 4, "The bearer's Evade chance is 50%"],
+      ["Pandora's Box", 2, "The bearer gains +4/+4. It dies at the start of your next turn"],
       ["Omnitrix", 3, "At the start of your turn transform the bearer into a random minion that costs 1 more"],
-      ["Stand Arrow", 2, "50% chance to transform the bearer into a random minion that costs 2 more; otherwise Silence it"],
+      ["Stand Arrow", 1, "50% chance to transform the bearer into a random minion that costs 2 more; otherwise Silence it"],
       ["Poké Ball", 1, "Return the bearer to your hand"],
       ["Time Turner", 2, "At the start of your turn if the bearer is damaged restore it to the HP it had at the start of your previous turn"],
       ["Symbiote", 1, "When the bearer dies leave it Chained with 1 HP instead"],
@@ -262,23 +272,20 @@ describe("relic effects", () => {
     expect(after.players[0].board[0]?.divineShield).toBe(true);
   });
 
-  it("Pandora's Box buffs its bearer and gives the opponent a random deck minion on death", () => {
+  it("Pandora's Box buffs its bearer and kills it at the start of its owner's next turn", () => {
     const state = mainState("pandora-box");
     state.players[0].board[0] = makeMinion("John Wick", 0);
-    state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 99, hp: 99, maxHp: 99, sleeping: false });
-    state.activePlayer = 1;
     const afterEquip = playRelicFor(state, 0, "Pandora's Box", 0);
     expect(afterEquip.players[0].board[0]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
-    afterEquip.activePlayer = 1;
 
-    const afterDeath = applyAction(
-      afterEquip,
-      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
-      library,
-    ).state;
-    expect(afterDeath.players[0].board[0]).toBeNull();
-    expect(afterDeath.players[1].board[1]).toMatchObject({ owner: 1 });
-    expect(afterDeath.players[1].board[1]?.cardId).not.toBe("token:shenron");
+    const afterOpponentTurn = endTurnAndDraw(afterEquip, 0);
+    expect(afterOpponentTurn.players[0].board[0]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
+    expect(afterOpponentTurn.players[1].board.filter(Boolean)).toHaveLength(0);
+
+    const afterOwnerNextTurn = endTurnAndDraw(afterOpponentTurn, 1);
+    expect(afterOwnerNextTurn.players[0].board[0]).toBeNull();
+    expect(afterOwnerNextTurn.players[1].board.filter(Boolean)).toHaveLength(0);
+    expect(afterOwnerNextTurn.discard).toContain(relicByName("Pandora's Box").id);
   });
 
   it("The Monkey's Paw buffs its bearer and kills it on the next turn", () => {

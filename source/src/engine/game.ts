@@ -1,9 +1,7 @@
 import { isMinionCard, isRelicCard } from "./types";
 import { HERO_POWER_COST, heroPowerDefinition } from "./hero-powers";
 import { traceEffect } from "./trace";
-// Tokens are the only cards whose artwork is named here rather than in the CSV,
-// so they are the only ones that have to ask for the published base themselves.
-import { resolvePublicAssetUrl } from "./asset-url";
+import { isTokenCardId, tokenCard, TOKEN_CARDS } from "./tokens";
 import type {
   ApplyResult,
   Alignment,
@@ -30,11 +28,6 @@ import type {
 } from "./types";
 
 export type CardLibrary = Record<string, PlayableCard>;
-
-// Deathrattles resolve below the effect runner, where the original card
-// library is otherwise out of scope. Keep the library attached to the cloned
-// action state without serializing it into saves or replay data.
-const libraryByState = new WeakMap<GameState, CardLibrary>();
 
 const boardSize = 5;
 const handLimit = 10;
@@ -111,7 +104,14 @@ const DEFAULT_MANA_RAMP = 1;
 export function makeCardLibrary(cards: CardDefinition[]): Record<string, CardDefinition>;
 export function makeCardLibrary(cards: CardDefinition[], relics: RelicDefinition[]): CardLibrary;
 export function makeCardLibrary(cards: CardDefinition[], relics: RelicDefinition[] = []): CardLibrary {
-  return Object.fromEntries([...cards, ...relics].map((card) => [card.id, card]));
+  return Object.fromEntries([...cards, ...relics, ...TOKEN_CARDS].map((card) => [card.id, card]));
+}
+
+/** Infinite mana belongs to one developer-controlled seat, never the opponent. */
+export function hasInfiniteMana(state: Pick<GameState, "cheatMode" | "cheatPlayer">, playerId: PlayerId): boolean {
+  // `null`/`undefined` keeps old test states and pre-v25 saves compatible; the
+  // developer UI always writes the exact player who enabled the cheat.
+  return state.cheatMode && (state.cheatPlayer === null || state.cheatPlayer === undefined || state.cheatPlayer === playerId);
 }
 
 /** Knobs the simulator sweeps. The game itself always uses the defaults. */
@@ -143,6 +143,7 @@ export function createInitialGame(
     activePlayer: 0,
     turnNumber: 1,
     cheatMode: false,
+    cheatPlayer: null,
     manaRamp: setup.manaRamp ?? DEFAULT_MANA_RAMP,
     nextInstance: 1,
     nextPlayOrder: 1,
@@ -247,7 +248,6 @@ export function applyAction(
   }
 
   const next = cloneState(state);
-  libraryByState.set(next, library);
   const events: GameEvent[] = [];
 
   if (action.type === "toggle_mulligan") {
@@ -385,7 +385,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
 
   player.hand.forEach((cardId, handIndex) => {
     const card = library[cardId];
-    if (!card || (!state.cheatMode && effectiveCardCost(state, player.id, card) > player.mana)) return;
+    if (!card || (!hasInfiniteMana(state, player.id) && effectiveCardCost(state, player.id, card) > player.mana)) return;
     player.board.forEach((slot, slotIndex) => {
       if (isMinionCard(card) && !slot) {
         actions.push({ type: "play_card", player: player.id, handIndex, slotIndex });
@@ -454,7 +454,7 @@ function heroPowerTargetOptions(state: GameState, playerId: PlayerId, powerId: H
 function heroPowerIsUsable(state: GameState, playerId: PlayerId): boolean {
   const powerId = state.heroPowers[playerId];
   if (!powerId || state.heroPowerUsed[playerId]) return false;
-  if (!state.cheatMode && state.players[playerId].mana < effectiveHeroPowerCost(state, playerId)) return false;
+  if (!hasInfiniteMana(state, playerId) && state.players[playerId].mana < effectiveHeroPowerCost(state, playerId)) return false;
   const definition = heroPowerDefinition(powerId);
   if (!definition) return false;
   return definition.target === "none" || heroPowerTargetOptions(state, playerId, powerId).length > 0;
@@ -535,7 +535,7 @@ function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[])
   if (!powerId || !definition || !heroPowerIsUsable(state, playerId)) return;
   const player = state.players[playerId];
   const manaCost = effectiveHeroPowerCost(state, playerId);
-  if (!state.cheatMode) player.mana -= manaCost;
+  if (!hasInfiniteMana(state, playerId)) player.mana -= manaCost;
   state.heroPowerUsed[playerId] = true;
   events.push({ kind: "effect", text: `${player.name} uses ${definition.name}.`, player: playerId });
 
@@ -565,7 +565,7 @@ function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[])
       cancelHeroPower: {
         player: playerId,
         powerId,
-        manaRefund: state.cheatMode ? 0 : manaCost,
+        manaRefund: hasInfiniteMana(state, playerId) ? 0 : manaCost,
       },
     };
     state.phase = "targeting";
@@ -774,7 +774,7 @@ function playCard(
   if (!isMinionCard(card)) return;
   const previousCostReduction = player.costReductions[cardId];
   const previousPressured = player.pressured?.cardId === cardId ? { ...player.pressured } : null;
-  const manaPaid = state.cheatMode ? 0 : effectiveCardCost(state, playerId, card);
+  const manaPaid = hasInfiniteMana(state, playerId) ? 0 : effectiveCardCost(state, playerId, card);
   player.hand.splice(handIndex, 1);
   player.mana -= manaPaid;
   // A Kuma discount is spent on use, and playing a pressured card satisfies it.
@@ -819,7 +819,7 @@ function playRelic(
   const bearer = player.board[slotIndex];
   if (!isRelicCard(relic) || !bearer || !hasFreeRelicSlot(bearer) || !canEquipRelicToBearer(relic, bearer)) return;
   player.hand.splice(handIndex, 1);
-  if (!state.cheatMode) player.mana -= effectiveCardCost(state, playerId, relic);
+  if (!hasInfiniteMana(state, playerId)) player.mana -= effectiveCardCost(state, playerId, relic);
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
   if (player.pressured?.cardId === cardId) player.pressured = null;
   const instance = createRelicInstance(relic);
@@ -1122,6 +1122,7 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
 function resolveUpkeep(state: GameState, playerId: PlayerId, library: CardLibrary, events: GameEvent[]): void {
   const player = state.players[playerId];
 
+  resolveDuePandoraBoxes(state, playerId, events);
   resolveStasis(state, playerId, events);
   resolvePocketRooms(state, playerId, events);
   resolveMarkedDeaths(state, playerId, events);
@@ -1248,6 +1249,36 @@ function resolveDueMonkeyPaws(state: GameState, events: GameEvent[]): void {
   }
 }
 
+/** Pandora's Box claims its bearer at the start of that owner's next turn. */
+function resolveDuePandoraBoxes(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
+  const due = state.players[playerId].board
+    .map((minion, slot) => ({ minion, slot }))
+    .filter(({ minion }) =>
+      minion &&
+      attachedRelics(minion).some(
+        (relic) => relic.relicId === "pandora_box" && (relic.destroyOnOwnerTurn ?? Infinity) <= state.players[playerId].turnsStarted,
+      ),
+    );
+
+  for (const entry of due) {
+    const minion = state.players[playerId].board[entry.slot];
+    if (!minion) continue;
+    const boxIndex = firstRelicIndex(minion, (relic) => relic.relicId === "pandora_box");
+    const box = boxIndex >= 0 ? relicAt(minion, boxIndex) : null;
+    if (!box || (box.destroyOnOwnerTurn ?? Infinity) > state.players[playerId].turnsStarted) continue;
+    unequipRelic(minion, boxIndex);
+    state.discard.push(box.id);
+    events.push({
+      kind: "effect",
+      text: `${minion.name} dies from Pandora's Box.`,
+      player: playerId,
+      cardId: box.id,
+      instanceId: minion.instanceId,
+    });
+    destroyAtSlot(state, playerId, entry.slot, events, `${minion.name} falls to Pandora's Box`, null);
+  }
+}
+
 // The passive board-ping used to live here: every ready minion clipped the enemy
 // core for 1 at the start of their turn, regardless of anything printed on it.
 // It was removed once minions could swing at the core themselves — two clocks
@@ -1285,20 +1316,6 @@ function putCardInHand(
   returningInstanceId?: string,
 ): boolean {
   const player = state.players[playerId];
-  // Tokens are board-only objects, not cards in the shared library. Letting a
-  // token ID enter a hand leaves an unrenderable blank card in the UI because
-  // there is no CardDefinition for it. This guard covers Poké Ball and every
-  // other effect that can return a minion to hand.
-  if (isTokenCardId(cardId)) {
-    events.push({
-      kind: "effect",
-      text: `${player.name}'s token disappears instead of entering hand.`,
-      player: playerId,
-      cardId,
-      ...(returningInstanceId ? { instanceId: returningInstanceId, motion: "return" as const } : {}),
-    });
-    return false;
-  }
   if (player.hand.length >= handLimit) {
     state.discard.push(cardId);
     events.push({ kind: "draw", text: `${player.name}'s hand is full, so a card burns.`, player: playerId, cardId });
@@ -2121,24 +2138,7 @@ function summonShenron(
   const player = state.players[owner];
   const slot = !player.board[deadSlot] ? deadSlot : player.board.findIndex((minion) => !minion);
   if (slot < 0) return;
-  const shenron: CardDefinition = {
-    kind: "minion",
-    id: "token:shenron",
-    name: "Shenron",
-    cost: 7,
-    atk: 7,
-    hp: 7,
-    rarity: "Black",
-    camp: "Magic",
-    alignment: "Neutral",
-    keywords: ["Taunt"],
-    effectId: "none",
-    effectTiming: "none",
-    effect: "Taunt.",
-    flavor: "The wish dragon answers.",
-    origin: dead.origin,
-    art: resolvePublicAssetUrl("/card-art/raw/token-shenron.webp"),
-  };
+  const shenron = tokenCard("token:shenron", { origin: dead.origin });
   const summoned = createMinion(shenron, owner, state);
   player.board[slot] = summoned;
   events.push({
@@ -3898,7 +3898,7 @@ function transformMinionFromPool(
   const slot = slotOf(state, target);
   if (slot < 0) return false;
   const candidates = Object.values(library).filter(
-    (card): card is CardDefinition => isMinionCard(card) && card.cost === target.cost + costDelta,
+    (card): card is CardDefinition => isMinionCard(card) && !isTokenCardId(card.id) && card.cost === target.cost + costDelta,
   );
   if (candidates.length === 0) return false;
   const replacement = candidates[rollInt(state, candidates.length)];
@@ -3924,24 +3924,7 @@ function transformMinionFromPool(
 }
 
 function summonSkeletons(state: GameState, source: MinionInstance, events: GameEvent[]): void {
-  const skeleton: CardDefinition = {
-    kind: "minion",
-    id: "token:skeleton",
-    name: "Skeleton",
-    cost: 1,
-    atk: 1,
-    hp: 1,
-    rarity: "Black",
-    camp: "Magic",
-    alignment: "Evil",
-    keywords: ["Taunt"],
-    effectId: "none",
-    effectTiming: "none",
-    effect: "Taunt.",
-    flavor: "A servant of the Great Tomb.",
-    origin: "Overlord",
-    art: source.art.replace(/[^/]+$/, "token-skeleton.webp"),
-  };
+  const skeleton = tokenCard("token:skeleton");
   let summoned = 0;
   for (let slot = 0; slot < boardSize; slot += 1) {
     if (state.players[source.owner].board[slot]) continue;
@@ -3955,48 +3938,14 @@ function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: Ga
   const player = state.players[playerId];
   const slot = player.board.findIndex((entry) => !entry);
   if (slot < 0) return;
-  const recruit: CardDefinition = {
-    kind: "minion",
-    id: "token:knight",
-    name: "Knight",
-    cost: 0,
-    atk: 1,
-    hp: 1,
-    rarity: "Black",
-    camp: "Magic",
-    alignment: "Good",
-    keywords: [],
-    effectId: "none",
-    effectTiming: "none",
-    effect: "-",
-    flavor: "A small spark can turn the tide.",
-    origin: "Hero Power",
-    art: resolvePublicAssetUrl("/card-art/raw/token-knight.webp"),
-  };
+  const recruit = tokenCard("token:knight");
   const summoned = createMinion(recruit, playerId, state);
   player.board[slot] = summoned;
   events.push({ kind: "effect", text: `${player.name} summons a 1/1 Knight.`, player: playerId, instanceId: summoned.instanceId });
 }
 
 function summonShadowClones(state: GameState, source: MinionInstance, events: GameEvent[]): void {
-  const shadowClone: CardDefinition = {
-    kind: "minion",
-    id: "token:shadow-clone",
-    name: "Shadow Clone",
-    cost: 0,
-    atk: 2,
-    hp: 2,
-    rarity: "Black",
-    camp: "Magic",
-    alignment: "Good",
-    keywords: [],
-    effectId: "none",
-    effectTiming: "none",
-    effect: "-",
-    flavor: "One body becomes many.",
-    origin: "Naruto",
-    art: resolvePublicAssetUrl("/card-art/raw/token-shadow-clone.webp"),
-  };
+  const shadowClone = tokenCard("token:shadow-clone");
   const player = state.players[source.owner];
   let summoned = 0;
   for (let slot = 0; slot < boardSize; slot += 1) {
@@ -4011,24 +3960,7 @@ function summonLarva(state: GameState, source: MinionInstance, dead: MinionInsta
   const player = state.players[source.owner];
   const slot = player.board.findIndex((entry) => !entry);
   if (slot < 0) return;
-  const larva: CardDefinition = {
-    kind: "minion",
-    id: "token:larva",
-    name: "Larva",
-    cost: 0,
-    atk: 1,
-    hp: 1,
-    rarity: "Black",
-    camp: "Nature",
-    alignment: "Evil",
-    keywords: [],
-    effectId: "none",
-    effectTiming: "none",
-    effect: "-",
-    flavor: "One more for the hive.",
-    origin: "Alien",
-    art: resolvePublicAssetUrl("/card-art/raw/token-larva.webp"),
-  };
+  const larva = tokenCard("token:larva");
   const summoned = createMinion(larva, source.owner, state);
   player.board[slot] = summoned;
   events.push(effectEvent(`${source.name} hatches a 1/1 Larva after ${dead.name} dies.`, source));
@@ -4040,24 +3972,7 @@ function summonSins(state: GameState, source: MinionInstance, events: GameEvent[
     const swapIndex = rollInt(state, index + 1);
     [keywordOrder[index], keywordOrder[swapIndex]] = [keywordOrder[swapIndex], keywordOrder[index]];
   }
-  const sin: CardDefinition = {
-    kind: "minion",
-    id: "token:sin",
-    name: "Sin",
-    cost: 1,
-    atk: 1,
-    hp: 1,
-    rarity: "Black",
-    camp: "Magic",
-    alignment: "Evil",
-    keywords: [],
-    effectId: "none",
-    effectTiming: "none",
-    effect: "-",
-    flavor: "A fragment of sin.",
-    origin: source.origin,
-    art: source.art.replace(/[^/]+$/, "token-sin.webp"),
-  };
+  const sin = tokenCard("token:sin", { origin: source.origin });
   const player = state.players[source.owner];
   const emptySlots = player.board.map((minion, slot) => (minion ? -1 : slot)).filter((slot) => slot >= 0);
   const summonedKeywords = keywordOrder.slice(0, emptySlots.length);
@@ -4072,24 +3987,7 @@ function summonSins(state: GameState, source: MinionInstance, events: GameEvent[
 }
 
 function summonTieFighters(state: GameState, source: MinionInstance, events: GameEvent[]): void {
-  const tieFighter: CardDefinition = {
-    kind: "minion",
-    id: "token:tie-fighter",
-    name: "TIE Fighter",
-    cost: 1,
-    atk: 1,
-    hp: 1,
-    rarity: "Black",
-    camp: "Tech",
-    alignment: "Evil",
-    keywords: ["Charge"],
-    effectId: "none",
-    effectTiming: "none",
-    effect: "Charge.",
-    flavor: "Twin ion engines scream through the void.",
-    origin: "Star Wars",
-    art: source.art.replace(/[^/]+$/, "token-tie-fighter.webp"),
-  };
+  const tieFighter = tokenCard("token:tie-fighter");
   const player = state.players[source.owner];
   let summoned = 0;
   for (let slot = 0; slot < boardSize && summoned < 2; slot += 1) {
@@ -4424,10 +4322,10 @@ function refreshPassiveAuras(state: GameState): void {
       if (hasEffect(source, "guts_missing_core_growth")) {
         const missingCore = Math.floor(Math.max(0, STARTING_CORE - state.players[source.owner].health) / 20);
         if (missingCore > 0) {
-          source.atk += missingCore;
+          source.atk += missingCore * 2;
           source.maxHp += missingCore;
           source.hp += missingCore;
-          source.auraBonuses!.push({ sourceId: source.instanceId, atk: missingCore, hp: missingCore, keywords: [] });
+          source.auraBonuses!.push({ sourceId: source.instanceId, atk: missingCore * 2, hp: missingCore, keywords: [] });
         }
       }
       if (!hasEffect(source, "glados_adjacent_tech")) continue;
@@ -4708,6 +4606,7 @@ function equipRelic(
     bearer.atk *= 2;
   } else if (relic.relicId === "pandora_box") {
     buffMinion(bearer, 4, 4);
+    relic.destroyOnOwnerTurn = state.players[bearer.owner].turnsStarted + 1;
   } else if (relic.relicId === "monkeys_paw") {
     buffMinion(bearer, 5, 5);
     relic.destroyOnTurn = state.turnNumber + 1;
@@ -4730,14 +4629,8 @@ function equipRelic(
       events.push(effectEvent(`${bearer.name} is Silenced by the Stand Arrow.`, bearer));
     }
   } else if (relic.relicId === "poke_ball") {
-    const wasToken = isTokenCardId(bearer.cardId);
     returnMinionsToHand(state, bearer.owner, [bearer], events);
-    events.push(
-      effectEvent(
-        wasToken ? `${bearer.name} disappears in the Poké Ball.` : `${bearer.name} returns to hand in the Poké Ball.`,
-        bearer,
-      ),
-    );
+    events.push(effectEvent(`${bearer.name} returns to hand in the Poké Ball.`, bearer));
   } else if (relic.relicId === "neuralyzer") {
     const removed = cleanseNegativeStatuses(bearer, events);
     const curseText = removed.length > 0 ? removed.join(", ") : "no negative effects";
@@ -4766,11 +4659,6 @@ function blockedByDominionAuthority(state: GameState, source: MinionInstance, ta
 /** All published relic card IDs use the r### namespace; minions use c###. */
 function isRelicCardId(cardId: string): boolean {
   return /^r\d+$/i.test(cardId);
-}
-
-/** Tokens are temporary board objects and must never become hand cards. */
-function isTokenCardId(cardId: string): boolean {
-  return cardId.startsWith("token:");
 }
 
 /** Mind control: move a minion to the other board if there is room for it. */
@@ -5991,11 +5879,8 @@ function resolveDeathrattle(
   events: GameEvent[],
   deadRelics: RelicInstance[] = [],
 ): void {
-  const library = libraryByState.get(state);
   for (const relic of deadRelics) {
-    if (relic.relicId === "pandora_box" && library) {
-      summonRandomMinionFromDeck(state, dead, library, events, undefined, opponent(dead.owner));
-    } else if (relic.relicId === "dragon_balls") {
+    if (relic.relicId === "dragon_balls") {
       summonShenron(state, dead, deadSlot, events);
     }
   }
@@ -6059,24 +5944,7 @@ function resolveCardDeathrattleOnce(
   } else if (dead.effectId === "deathrattle_summon_morgott") {
     const slot = state.players[dead.owner].board[deadSlot] ? state.players[dead.owner].board.findIndex((minion) => !minion) : deadSlot;
     if (slot >= 0) {
-      const morgott: CardDefinition = {
-        kind: "minion",
-        id: "token:morgott",
-        name: "Morgott, the Omen King",
-        cost: 3,
-        atk: 3,
-        hp: 3,
-        rarity: "Black",
-        camp: "Nature",
-        alignment: "Evil",
-        keywords: [],
-        effectId: "none",
-        effectTiming: "none",
-        effect: "-",
-        flavor: "The omen king returns.",
-        origin: dead.origin,
-        art: resolvePublicAssetUrl("/card-art/raw/token-morgott.webp"),
-      };
+      const morgott = tokenCard("token:morgott", { origin: dead.origin });
       const summoned = createMinion(morgott, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Morgott, the Omen King.`, dead));
@@ -6086,24 +5954,7 @@ function resolveCardDeathrattleOnce(
       ? state.players[dead.owner].board.findIndex((minion) => !minion)
       : deadSlot;
     if (slot >= 0) {
-      const drakath: CardDefinition = {
-        kind: "minion",
-        id: "token:drakath",
-        name: "Drakath",
-        cost: 5,
-        atk: 5,
-        hp: 3,
-        rarity: "Black",
-        camp: "Magic",
-        alignment: "Evil",
-        keywords: [],
-        effectId: "none",
-        effectTiming: "none",
-        effect: "-",
-        flavor: "Chaos answers chaos.",
-        origin: dead.origin,
-        art: resolvePublicAssetUrl("/card-art/raw/token-drakath.webp"),
-      };
+      const drakath = tokenCard("token:drakath", { origin: dead.origin });
       const summoned = createMinion(drakath, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Drakath.`, dead));
@@ -6133,24 +5984,7 @@ function resolveCardDeathrattleOnce(
       ? state.players[dead.owner].board.findIndex((minion) => !minion)
       : deadSlot;
     if (slot >= 0) {
-      const vision: CardDefinition = {
-        kind: "minion",
-        id: "token:vision",
-        name: "Vision",
-        cost: 7,
-        atk: 5,
-        hp: 3,
-        rarity: "Purple",
-        camp: "Tech",
-        alignment: "Good",
-        keywords: ["Taunt"],
-        effectId: "none",
-        effectTiming: "none",
-        effect: "Taunt.",
-        flavor: "Built to end him. Chose otherwise.",
-        origin: "MCU",
-        art: resolvePublicAssetUrl("/card-art/raw/token-vision.webp"),
-      };
+      const vision = tokenCard("token:vision");
       const summoned = createMinion(vision, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Vision.`, dead));
@@ -6160,24 +5994,7 @@ function resolveCardDeathrattleOnce(
       ? state.players[dead.owner].board.findIndex((minion) => !minion)
       : deadSlot;
     if (slot >= 0) {
-      const galactus: CardDefinition = {
-        kind: "minion",
-        id: "token:galactus",
-        name: "Galactus",
-        cost: 5,
-        atk: 8,
-        hp: 8,
-        rarity: "Black",
-        camp: "Magic",
-        alignment: "Neutral",
-        keywords: ["Taunt", "Cannot Attack"],
-        effectId: "none",
-        effectTiming: "none",
-        effect: "Taunt. Cannot attack.",
-        flavor: "The devourer of worlds arrives.",
-        origin: "Marvel",
-        art: resolvePublicAssetUrl("/card-art/raw/galactus.webp"),
-      };
+      const galactus = tokenCard("token:galactus");
       const summoned = createMinion(galactus, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Galactus.`, dead));
@@ -6187,24 +6004,7 @@ function resolveCardDeathrattleOnce(
       ? state.players[dead.owner].board.findIndex((minion) => !minion)
       : deadSlot;
     if (slot >= 0) {
-      const awakened: CardDefinition = {
-        kind: "minion",
-        id: "token:awakened",
-        name: "Awakened",
-        cost: 6,
-        atk: 6,
-        hp: 3,
-        rarity: "Red",
-        camp: "Magic",
-        alignment: "Good",
-        keywords: [],
-        effectId: "none",
-        effectTiming: "none",
-        effect: "-",
-        flavor: "The Avatar's spirit wakes.",
-        origin: dead.origin,
-        art: resolvePublicAssetUrl("/card-art/raw/token-awakened.webp"),
-      };
+      const awakened = tokenCard("token:awakened", { origin: dead.origin });
       const summoned = createMinion(awakened, dead.owner, state);
       state.players[dead.owner].board[slot] = summoned;
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Awakened.`, dead));
@@ -6536,7 +6336,7 @@ function reactToDeath(
             minion,
           ),
         );
-      } else if (minion.effectId === "xenomorph_queen_brood" && playerId === deadOwner) {
+      } else if (minion.effectId === "xenomorph_queen_brood" && playerId === deadOwner && dead.cardId !== "token:larva") {
         summonLarva(state, minion, dead, events);
       } else if (minion.effectId === "nito_any_death_1_1") {
         // +1/+1, down from +2/+1 (pass 3): 62.3% vs a 48.2% bracket off the

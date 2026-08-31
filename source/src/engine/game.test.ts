@@ -148,6 +148,25 @@ describe("Convergence engine", () => {
     expect(result.state.players[0].mana).toBe(0);
   });
 
+  it("scopes developer infinite mana to the player who enabled it", () => {
+    const state = mainState();
+    state.cheatMode = true;
+    state.cheatPlayer = 0;
+    state.players[0].hand = [cardId("Batman")];
+    state.players[0].mana = 0;
+    expect(getLegalActions(state, library)).toContainEqual({ type: "play_card", player: 0, handIndex: 0, slotIndex: 0 });
+
+    const enemyTurn: GameState = {
+      ...state,
+      activePlayer: 1,
+      players: [
+        state.players[0],
+        { ...state.players[1], hand: [cardId("Batman")], mana: 0 },
+      ],
+    };
+    expect(getLegalActions(enemyTurn, library)).not.toContainEqual({ type: "play_card", player: 1, handIndex: 0, slotIndex: 0 });
+  });
+
   it("blocks playing cards when the board is full", () => {
     const state = mainState();
     state.players[0].mana = 10;

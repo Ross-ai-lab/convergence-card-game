@@ -92,6 +92,7 @@ describe("2026 card replacements", () => {
       rarity: "Black",
       effectId: "guts_missing_core_growth",
       effectTiming: "passive",
+      effect: "Passive: Gains +2/+1 for each 20 HP your Core is missing",
     });
   });
 
@@ -115,6 +116,25 @@ describe("2026 card replacements", () => {
       hp: 1,
     });
     expect(after.players[0].board[1]?.art).toContain("token-larva.webp");
+  });
+
+  it("Xenomorph Queen does not hatch a Larva when a Larva dies", () => {
+    const state = mainState("xenomorph-queen-no-larva-chain");
+    const larva = library["token:larva"];
+    if (!larva || larva.kind !== "minion") throw new Error("Missing Larva token definition");
+    state.players[0].board[0] = minion("Xenomorph Queen", 0);
+    state.players[0].board[1] = spawnTestMinion(larva, 0, { sleeping: false });
+    state.players[1].board[0] = minion("Gordon Freeman", 1, { atk: 5, hp: 5, maxHp: 5, sleeping: false });
+    state.activePlayer = 1;
+
+    const after = applyAction(
+      state,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 },
+      library,
+    ).state;
+
+    expect(after.players[0].board[1]).toBeNull();
+    expect(after.players[0].board.filter(Boolean)).toHaveLength(1);
   });
 
   it("Naruto fills every empty friendly slot with 2/2 Shadow Clones", () => {
@@ -190,11 +210,11 @@ describe("2026 card replacements", () => {
     expect(nextAfter.players[0].hand).toHaveLength(2);
   });
 
-  it("Guts gains and loses a live +1/+1 aura as the Core crosses 20 HP thresholds", () => {
+  it("Guts gains and loses a live +2/+1 aura as the Core crosses 20 HP thresholds", () => {
     const state = mainState("guts-missing-core-growth");
     state.players[0].health = 54;
     const grown = play(state, 0, "Guts", 0);
-    expect(grown.players[0].board[0]).toMatchObject({ atk: 2, hp: 2, maxHp: 2 });
+    expect(grown.players[0].board[0]).toMatchObject({ atk: 3, hp: 2, maxHp: 2 });
 
     const healed: GameState = { ...grown, players: [...grown.players] as GameState["players"] };
     healed.players[0] = { ...grown.players[0], health: 75 };
