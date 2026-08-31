@@ -226,6 +226,27 @@ check(
   "selected card is crossed out and has no Keep/Replace label",
 );
 await page.locator(".mulligan-panel button.primary").click();
+await page.locator(".mulligan-panel").waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
+
+const enemyPortrait = page.locator(".enemy-hero-wrap .hero-plate.enemy");
+await enemyPortrait.hover({ timeout: 5000 });
+await page.waitForTimeout(500);
+const enemyPowerEarly = await page.locator(".enemy-power-card").evaluate((element) => {
+  const style = getComputedStyle(element);
+  return { opacity: style.opacity, visibility: style.visibility };
+});
+await page.waitForTimeout(1700);
+const enemyPowerLate = await page.locator(".enemy-power-card").evaluate((element) => {
+  const style = getComputedStyle(element);
+  return { opacity: style.opacity, visibility: style.visibility };
+});
+check(
+  "enemy Hero Power popup waits for a deliberate hover",
+  enemyPowerEarly.visibility === "hidden" && enemyPowerEarly.opacity === "0" &&
+    enemyPowerLate.visibility === "visible" && enemyPowerLate.opacity === "1",
+  `early ${enemyPowerEarly.visibility}/${enemyPowerEarly.opacity}, late ${enemyPowerLate.visibility}/${enemyPowerLate.opacity}`,
+);
+await page.mouse.move(0, 0);
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.locator(".title-links").getByRole("button", { name: "Sound", exact: true }).click();
@@ -748,6 +769,7 @@ async function targetingCheck(label, cardName, choiceSelector, screenPromptExpec
   const choice = page.locator(choiceSelector);
   await choice.first().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
   const offered = await choice.count();
+  const arrowCount = await page.locator(".target-arrow").count();
   const choiceDescriptions = choiceSelector.includes("prompt-value")
     ? await page.locator(".prompt-card-choice .cf-desc p").evaluateAll((nodes) => nodes.map((node) => node.textContent?.trim() ?? ""))
     : [];
@@ -764,6 +786,13 @@ async function targetingCheck(label, cardName, choiceSelector, screenPromptExpec
       "card choices show their full effect text",
       choiceDescriptions.length === offered && choiceDescriptions.every((text) => text.length > 0),
       `${choiceDescriptions.length}/${offered} choice cards include rules text`,
+    );
+  }
+  if (choiceSelector === ".board-slot.choosable") {
+    check(
+      "board target effects show a targeting arrow",
+      arrowCount === 1,
+      `${arrowCount} live targeting arrow(s)`,
     );
   }
 }

@@ -351,7 +351,9 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
       player: pending.player,
       choiceIndex,
     }));
-    if (pending.cancelPlay) choices.push({ type: "cancel_target" as const, player: pending.player });
+    if (pending.cancelPlay || pending.cancelHeroPower) {
+      choices.push({ type: "cancel_target" as const, player: pending.player });
+    }
     return choices;
   }
   if (state.phase === "drawChoice") {
@@ -532,7 +534,8 @@ function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[])
   const definition = heroPowerDefinition(powerId);
   if (!powerId || !definition || !heroPowerIsUsable(state, playerId)) return;
   const player = state.players[playerId];
-  if (!state.cheatMode) player.mana -= effectiveHeroPowerCost(state, playerId);
+  const manaCost = effectiveHeroPowerCost(state, playerId);
+  if (!state.cheatMode) player.mana -= manaCost;
   state.heroPowerUsed[playerId] = true;
   events.push({ kind: "effect", text: `${player.name} uses ${definition.name}.`, player: playerId });
 
@@ -559,6 +562,11 @@ function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[])
       priorOptions: [],
       priorHandOptions: [],
       priorLabelOptions: [],
+      cancelHeroPower: {
+        player: playerId,
+        powerId,
+        manaRefund: state.cheatMode ? 0 : manaCost,
+      },
     };
     state.phase = "targeting";
     return;
@@ -4994,11 +5002,30 @@ function destroyPicked(
   destroyAtSlot(state, picked.owner, slot, events, `${source.name} ${message}: ${picked.name}`, source);
 }
 
-/** Return a just-played target-card before its Battlecry resolves. */
+/** Cancel a just-played target-card or targetable Hero Power before it resolves. */
 function cancelPendingTarget(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
   const pending = state.pendingTarget;
-  const cancel = pending?.cancelPlay;
-  if (!pending || !cancel || pending.player !== playerId || cancel.player !== playerId) return;
+  if (!pending || pending.player !== playerId) return;
+
+  const heroPowerCancel = pending.cancelHeroPower;
+  if (heroPowerCancel && heroPowerCancel.player === playerId) {
+    const player = state.players[playerId];
+    player.mana += heroPowerCancel.manaRefund;
+    state.heroPowerUsed[playerId] = false;
+    state.pendingTarget = null;
+    state.pendingPlayCancel = null;
+    state.phase = "main";
+    const definition = heroPowerDefinition(heroPowerCancel.powerId);
+    events.push({
+      kind: "info",
+      text: `${definition?.name ?? "Hero Power"} cancelled.`,
+      player: playerId,
+    });
+    return;
+  }
+
+  const cancel = pending.cancelPlay;
+  if (!cancel || cancel.player !== playerId) return;
 
   const player = state.players[playerId];
   const minion = player.board[cancel.slotIndex];

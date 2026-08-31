@@ -267,6 +267,8 @@ type DragState =
   | { kind: "attacker"; slotIndex: number; ox: number; oy: number; x: number; y: number; active: boolean }
   | null;
 
+type ScreenPoint = { x: number; y: number };
+
 const DRAG_THRESHOLD = 8;
 
 /** Hand card width, matching `.hand-card`'s flex-basis in App.css. */
@@ -548,6 +550,8 @@ export default function App() {
   /** Non-zero for the moment the killing blow lands, keyed so it replays. */
   const [lethal, setLethal] = useState(0);
   const [drag, setDrag] = useState<DragState>(null);
+  const [targetArrowOrigin, setTargetArrowOrigin] = useState<ScreenPoint | null>(null);
+  const [targetArrowPointer, setTargetArrowPointer] = useState<ScreenPoint | null>(null);
   const [playerCount, setPlayerCount] = useState<number | null>(null);
   const fxId = useRef(1);
   /** Herald lines already spoken this duel. A ref, so a re-render cannot re-fire one. */
@@ -937,6 +941,8 @@ export default function App() {
     setFlights([]);
     setManaFx(null);
     setBanner(null);
+    setTargetArrowOrigin(null);
+    setTargetArrowPointer(null);
   }
 
   /** Sends the already-dealt opening hand out of the deck in a single deal. */
@@ -1489,10 +1495,10 @@ export default function App() {
     return true;
   }
 
-  /** Cancels a fresh target-card play and returns its card/mana through the engine. */
+  /** Cancels a fresh target-card play or Hero Power through the engine. */
   function cancelTarget(): boolean {
     const pending = game.pendingTarget;
-    if (!pending?.cancelPlay || pending.player !== viewerId) return false;
+    if (!pending || pending.player !== viewerId || (!pending.cancelPlay && !pending.cancelHeroPower)) return false;
     const action = uiActions.find((candidate) => candidate.type === "cancel_target" && candidate.player === viewerId);
     if (!action) return false;
     sfx.play("button");
@@ -1694,9 +1700,25 @@ export default function App() {
     setHover(null);
   }
 
+  function trackTargetPointer(event: React.PointerEvent<HTMLElement>) {
+    if (
+      game.phase !== "targeting" ||
+      !pendingTarget ||
+      pendingTarget.player !== viewerId ||
+      (pendingTarget.kind !== "board" && pendingTarget.kind !== "slot" && pendingTarget.kind !== "boardOrCore")
+    ) {
+      return;
+    }
+    setTargetArrowPointer({ x: event.clientX, y: event.clientY });
+  }
+
   function onHandCard(handIndex: number) {
     if (duelIntro) return;
-    if (game.phase === "targeting" && game.pendingTarget?.cancelPlay?.player === viewerId) {
+    if (
+      game.phase === "targeting" &&
+      game.pendingTarget?.player === viewerId &&
+      (game.pendingTarget.cancelPlay || game.pendingTarget.cancelHeroPower)
+    ) {
       cancelTarget();
       return;
     }
@@ -1743,7 +1765,7 @@ export default function App() {
 
     if (game.phase === "targeting") {
       const chosen = chooseTargetAt(owner, slotIndex);
-      if (!chosen && game.pendingTarget?.cancelPlay?.player === viewerId) cancelTarget();
+      if (!chosen) cancelTarget();
       return;
     }
     if (game.phase !== "main") return;
@@ -1953,6 +1975,50 @@ export default function App() {
   // engine prompt alive for the bot, but do not render its choices to the human.
   const pendingTarget =
     game.phase === "targeting" && game.pendingTarget?.player === viewerId ? game.pendingTarget : null;
+  const targetSourceKey = pendingTarget
+    ? pendingTarget.heroPowerId
+      ? `hero-power:${pendingTarget.heroPowerId}`
+      : `board:${pendingTarget.sourceOwner}:${pendingTarget.sourceInstanceId}`
+    : null;
+
+  // Target arrows are view-only, but their origin belongs to the real source:
+  // the Hero Power button for a power, or the minion that opened a card effect.
+  // Resolve it after the pending target renders so the arrow follows responsive
+  // layout instead of guessing from the board grid.
+  useEffect(() => {
+    if (
+      game.phase !== "targeting" ||
+      !pendingTarget ||
+      pendingTarget.player !== viewerId ||
+      (pendingTarget.kind !== "board" && pendingTarget.kind !== "slot" && pendingTarget.kind !== "boardOrCore")
+    ) {
+      setTargetArrowOrigin(null);
+      setTargetArrowPointer(null);
+      return;
+    }
+
+    let sourceElement: HTMLElement | null = null;
+    if (pendingTarget.heroPowerId) {
+      sourceElement = document.querySelector<HTMLElement>(".hero-power-button");
+    } else {
+      const sourceSlot = game.players[pendingTarget.sourceOwner].board.findIndex(
+        (minion) => minion?.instanceId === pendingTarget.sourceInstanceId,
+      );
+      if (sourceSlot >= 0) {
+        sourceElement = document.querySelector<HTMLElement>(`[data-slot="${pendingTarget.sourceOwner}-${sourceSlot}"]`);
+      }
+    }
+
+    const bounds = sourceElement?.getBoundingClientRect();
+    if (!bounds) {
+      setTargetArrowOrigin(null);
+      setTargetArrowPointer(null);
+      return;
+    }
+    const origin = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
+    setTargetArrowOrigin(origin);
+    setTargetArrowPointer(origin);
+  }, [game.phase, pendingTarget?.kind, targetSourceKey, viewerId]);
   // Read off the state rather than asking the bot — chooseBotAction simulates
   // every legal move, which is far too much work to redo on every render.
   const botThinking =
@@ -2017,6 +2083,7 @@ export default function App() {
       ]
         .filter(Boolean)
         .join(" ")}
+      onPointerMove={trackTargetPointer}
     >
       <div className="table-glow" aria-hidden="true" />
 
@@ -2123,7 +2190,7 @@ export default function App() {
         <section
           className="battlefield"
           onClick={(event) => {
-            if (event.target === event.currentTarget && game.pendingTarget?.cancelPlay?.player === viewerId) {
+            if (event.target === event.currentTarget && game.pendingTarget?.player === viewerId) {
               cancelTarget();
             }
           }}
@@ -2415,6 +2482,15 @@ export default function App() {
 
       {drag?.active && drag.kind === "attacker" ? (
         <TargetingArrow x1={drag.ox} y1={drag.oy} x2={drag.x} y2={drag.y} />
+      ) : null}
+
+      {targetArrowOrigin && targetArrowPointer && pendingTarget ? (
+        <TargetingArrow
+          x1={targetArrowOrigin.x}
+          y1={targetArrowOrigin.y}
+          x2={targetArrowPointer.x}
+          y2={targetArrowPointer.y}
+        />
       ) : null}
 
       {/* Board/slot prompts are now entirely in-board: the highlighted legal
@@ -4377,12 +4453,15 @@ function TargetPrompt({
   onCancel: () => void;
 }) {
   const card = library[pending.sourceCardId];
-  const canCancel = Boolean(pending.cancelPlay && !botControlled);
+  const canCancel = Boolean((pending.cancelPlay || pending.cancelHeroPower) && !botControlled);
+  const cancelLabel = pending.cancelHeroPower ? "Cancel Hero Power" : "Return to hand";
   const hint = botControlled
     ? "The practice bot is choosing…"
     : pending.kind === "board" || pending.kind === "slot" || pending.kind === "boardOrCore"
       ? canCancel
-        ? `Click a highlighted minion — or click the board/hand to return this minion.`
+        ? pending.cancelHeroPower
+          ? "Click a highlighted minion — or click the board/hand to cancel this Hero Power."
+          : "Click a highlighted minion — or click the board/hand to return this minion."
         : `Click a highlighted minion — ${pending.options.length} legal targets.`
       : pending.kind === "hand"
         ? "Their hand, face up. Pick one."
@@ -4409,7 +4488,7 @@ function TargetPrompt({
 
       {canCancel ? (
         <button type="button" className="prompt-cancel" onClick={onCancel}>
-          Return to hand
+          {cancelLabel}
         </button>
       ) : null}
 

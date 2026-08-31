@@ -606,6 +606,8 @@ export interface PendingTarget {
   priorLabelOptions: LabelOption[];
   /** Allows a freshly played target-card to be returned before it resolves. */
   cancelPlay?: PendingPlayReturn;
+  /** Allows a targetable Hero Power to be cancelled before it resolves. */
+  cancelHeroPower?: PendingHeroPowerReturn;
   /** Frieren passive triggers waiting behind the relic discover prompt. */
   queuedRelicSources?: string[];
 }
@@ -620,6 +622,13 @@ export interface PendingPlayReturn {
   manaRefund: number;
   previousCostReduction?: number;
   previousPressured: { cardId: string; dueTurn: number } | null;
+}
+
+/** The reversible payment and once-per-turn mark for an open Hero Power target. */
+export interface PendingHeroPowerReturn {
+  player: PlayerId;
+  powerId: HeroPowerId;
+  manaRefund: number;
 }
 
 /** The answer to a pending choice, handed back into the effect that asked. */

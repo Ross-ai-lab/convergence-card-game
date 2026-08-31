@@ -108,6 +108,26 @@ describe("menu Hero Powers", () => {
     expect(usePower(enemyAtk).players[1].board[0]?.atk).toBe(1);
   });
 
+  it("refunds a targetable Hero Power when it is cancelled before choosing", () => {
+    const state = mainState("minion_atk");
+    state.players[0].board[0] = minion("John Wick", 0);
+    state.players[0].board[1] = minion("John Wick", 0);
+
+    const used = applyAction(state, { type: "use_hero_power", player: 0 }, library).state;
+    expect(used.phase).toBe("targeting");
+    expect(used.players[0].mana).toBe(8);
+    expect(used.heroPowerUsed[0]).toBe(true);
+    expect(used.pendingTarget?.cancelHeroPower).toMatchObject({ player: 0, powerId: "minion_atk", manaRefund: 2 });
+    expect(getLegalActions(used, library)).toContainEqual({ type: "cancel_target", player: 0 });
+
+    const cancelled = applyAction(used, { type: "cancel_target", player: 0 }, library).state;
+    expect(cancelled.phase).toBe("main");
+    expect(cancelled.pendingTarget).toBeNull();
+    expect(cancelled.players[0].mana).toBe(10);
+    expect(cancelled.heroPowerUsed[0]).toBe(false);
+    expect(getLegalActions(cancelled, library)).toContainEqual({ type: "use_hero_power", player: 0 });
+  });
+
   it("resolves core trade, core damage, healing, summoning, and Taunt", () => {
     expect(cards.find((entry) => entry.id === "c169")).toMatchObject({ name: "An Order of Heavy Knights" });
 
