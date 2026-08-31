@@ -1285,6 +1285,20 @@ function putCardInHand(
   returningInstanceId?: string,
 ): boolean {
   const player = state.players[playerId];
+  // Tokens are board-only objects, not cards in the shared library. Letting a
+  // token ID enter a hand leaves an unrenderable blank card in the UI because
+  // there is no CardDefinition for it. This guard covers Poké Ball and every
+  // other effect that can return a minion to hand.
+  if (isTokenCardId(cardId)) {
+    events.push({
+      kind: "effect",
+      text: `${player.name}'s token disappears instead of entering hand.`,
+      player: playerId,
+      cardId,
+      ...(returningInstanceId ? { instanceId: returningInstanceId, motion: "return" as const } : {}),
+    });
+    return false;
+  }
   if (player.hand.length >= handLimit) {
     state.discard.push(cardId);
     events.push({ kind: "draw", text: `${player.name}'s hand is full, so a card burns.`, player: playerId, cardId });
@@ -4716,8 +4730,14 @@ function equipRelic(
       events.push(effectEvent(`${bearer.name} is Silenced by the Stand Arrow.`, bearer));
     }
   } else if (relic.relicId === "poke_ball") {
+    const wasToken = isTokenCardId(bearer.cardId);
     returnMinionsToHand(state, bearer.owner, [bearer], events);
-    events.push(effectEvent(`${bearer.name} returns to hand in the Poké Ball.`, bearer));
+    events.push(
+      effectEvent(
+        wasToken ? `${bearer.name} disappears in the Poké Ball.` : `${bearer.name} returns to hand in the Poké Ball.`,
+        bearer,
+      ),
+    );
   } else if (relic.relicId === "neuralyzer") {
     const removed = cleanseNegativeStatuses(bearer, events);
     const curseText = removed.length > 0 ? removed.join(", ") : "no negative effects";
@@ -4746,6 +4766,11 @@ function blockedByDominionAuthority(state: GameState, source: MinionInstance, ta
 /** All published relic card IDs use the r### namespace; minions use c###. */
 function isRelicCardId(cardId: string): boolean {
   return /^r\d+$/i.test(cardId);
+}
+
+/** Tokens are temporary board objects and must never become hand cards. */
+function isTokenCardId(cardId: string): boolean {
+  return cardId.startsWith("token:");
 }
 
 /** Mind control: move a minion to the other board if there is room for it. */

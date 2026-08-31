@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
 import { spawnTestMinion } from "./test-utils";
-import type { Camp, GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
+import type { Camp, CardDefinition, GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
 
 const minionLibrary = makeCardLibrary(cards);
 const library = makeCardLibrary(cards, relics);
@@ -15,6 +15,28 @@ function cardId(name: string): string {
 
 function makeMinion(name: string, owner: PlayerId, overrides: Partial<MinionInstance> = {}): MinionInstance {
   return spawnTestMinion(minionLibrary[cardId(name)], owner, overrides);
+}
+
+function makeToken(tokenId: string): MinionInstance {
+  const token: CardDefinition = {
+    kind: "minion",
+    id: tokenId,
+    name: tokenId.replace("token:", "").replace(/-/g, " "),
+    cost: 0,
+    atk: 1,
+    hp: 1,
+    rarity: "Black",
+    camp: "Magic",
+    alignment: "Neutral",
+    keywords: [],
+    effectId: "none",
+    effectTiming: "none",
+    effect: "-",
+    flavor: "A temporary token.",
+    origin: "Token",
+    art: "/card-art/raw/token-shadow-clone.webp",
+  };
+  return spawnTestMinion(token, 0);
 }
 
 function relicByName(name: string): RelicInstance {
@@ -123,6 +145,35 @@ describe("relic effects", () => {
     // Attached relics are equipment, not cards the bearer can choose to return.
     second.players[0].hand = [];
     expect(getLegalActions(second, library).some((action) => "relicIndex" in action)).toBe(false);
+  });
+
+  it("makes every token disappear instead of putting an invisible card in hand", () => {
+    const tokenIds = [
+      "token:shenron",
+      "token:skeleton",
+      "token:knight",
+      "token:shadow-clone",
+      "token:larva",
+      "token:sin",
+      "token:tie-fighter",
+      "token:morgott",
+      "token:drakath",
+      "token:vision",
+      "token:galactus",
+      "token:awakened",
+    ];
+
+    for (const tokenId of tokenIds) {
+      const state = mainState(`poke-ball-${tokenId}`);
+      state.players[0].board[0] = makeToken(tokenId);
+
+      const after = playRelicFor(state, 0, "Poké Ball", 0);
+
+      expect(after.players[0].board[0], tokenId).toBeNull();
+      expect(after.players[0].hand, tokenId).not.toContain(tokenId);
+      expect(after.players[0].hand.filter((cardId) => cardId.startsWith("token:")), tokenId).toEqual([]);
+      expect(after.discard, tokenId).not.toContain(tokenId);
+    }
   });
 
   it("ships the requested relic costs and replacement effects", () => {
