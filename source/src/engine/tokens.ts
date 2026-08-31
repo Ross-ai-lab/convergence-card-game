@@ -2,6 +2,25 @@ import { resolvePublicAssetUrl } from "./asset-url";
 import type { CardDefinition } from "./types";
 
 /**
+ * Tokens whose arrival is the result of a Deathrattle or a passive death
+ * trigger. These are the only temporary minions with their own YouTube theme;
+ * Battlecry and Hero-Power tokens deliberately stay on the generic summon FX.
+ */
+export const TOKEN_THEME_IDS = [
+  "token:shenron",
+  "token:morgott",
+  "token:drakath",
+  "token:vision",
+  "token:galactus",
+  "token:awakened",
+  "token:larva",
+] as const;
+
+export function isThemedTokenId(cardId: string): boolean {
+  return (TOKEN_THEME_IDS as readonly string[]).includes(cardId);
+}
+
+/**
  * Board-created minions are not part of the collectible roster, but they are
  * still real playable cards when an effect returns one to hand. Keeping their
  * definitions here gives the engine and UI one source of truth without adding

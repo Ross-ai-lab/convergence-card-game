@@ -23,7 +23,7 @@ import {
   randomHeroPower,
 } from "./engine/hero-powers";
 import { isMinionCard, isRelicCard } from "./engine/types";
-import { isTokenCardId } from "./engine/tokens";
+import { isThemedTokenId, isTokenCardId } from "./engine/tokens";
 import {
   actionKey,
   applyAction,
@@ -240,6 +240,7 @@ type Flight = {
 };
 type DuelIntroState = { id: number; phase: DuelIntroPhase };
 type BoardToast = { id: number; text: string; durationMs: number; tone: "normal" | "bargain" };
+type TauntFlash = { id: number; instanceIds: string[] } | null;
 
 // Keep this schedule aligned with the opening animation table in the project
 // README. The intro ends after the mana reveal; opening card flights continue
@@ -272,6 +273,7 @@ type DragState =
 type ScreenPoint = { x: number; y: number };
 
 const DRAG_THRESHOLD = 8;
+const HOVER_PREVIEW_DELAY_MS = 1000;
 
 /** Hand card width, matching `.hand-card`'s flex-basis in App.css. */
 const HAND_CARD_W = 118;
@@ -549,6 +551,7 @@ export default function App() {
   /** Crystals just spent, or just refilled. */
   const [manaFx, setManaFx] = useState<ManaFx>(null);
   const [banner, setBanner] = useState<{ id: number; text: string; mine: boolean } | null>(null);
+  const [tauntFlash, setTauntFlash] = useState<TauntFlash>(null);
   /** Non-zero for the moment the killing blow lands, keyed so it replays. */
   const [lethal, setLethal] = useState(0);
   const [drag, setDrag] = useState<DragState>(null);
@@ -560,6 +563,8 @@ export default function App() {
   const heraldSaid = useRef(new Set<string>());
   const dragOrigin = useRef({ x: 0, y: 0 });
   const suppressClick = useRef(false);
+  const hoverTimer = useRef<number | null>(null);
+  const hoverRequest = useRef(0);
   const legalActions = useMemo(() => getLegalActions(game, library), [game, library]);
 
   // Browsers only allow audio to start from a genuine gesture, so the context
@@ -940,13 +945,14 @@ export default function App() {
     setLunge(null);
     setSplash(null);
     setToast(null);
-    setHover(null);
     setDrag(null);
     setFlights([]);
     setManaFx(null);
     setBanner(null);
     setTargetArrowOrigin(null);
     setTargetArrowPointer(null);
+    clearHoverPreview();
+    setTauntFlash(null);
   }
 
   /** Sends the already-dealt opening hand out of the deck in a single deal. */
@@ -1111,7 +1117,11 @@ export default function App() {
       }
     });
 
-    const thematicArrivals = arrivals.filter((minion) => !minion.suppressArrivalTheme);
+    const thematicArrivals = arrivals.filter(
+      (minion) =>
+        !minion.suppressArrivalTheme &&
+        (!minion.cardId.startsWith("token:") || isThemedTokenId(minion.cardId)),
+    );
     if (thematicArrivals.length > 0) {
       const speaker = thematicArrivals.reduce((best, minion) =>
         RARITY_WEIGHT[minion.rarity] > RARITY_WEIGHT[best.rarity] ||
@@ -1277,9 +1287,10 @@ export default function App() {
       setHistory((items) => [game, ...items].slice(0, 10));
       setGame(result.state);
       setSelection(null);
-      setHover(null);
+      clearHoverPreview();
       setTargetArrowOrigin(null);
       setTargetArrowPointer(null);
+      setTauntFlash(null);
       if (bargainChoice) showToast(`Doctor Strange's bargain chosen: ${bargainChoice}`, 3000, "bargain");
 
       // Tutorial lessons advance from the action that just happened, not from
@@ -1644,45 +1655,73 @@ export default function App() {
     );
   }
 
+  function clearHoverTimer() {
+    hoverRequest.current += 1;
+    if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+  }
+
+  function clearHoverPreview() {
+    clearHoverTimer();
+    setHover(null);
+  }
+
+  function scheduleHoverPreview(preview: () => void) {
+    clearHoverTimer();
+    setHover(null);
+    const request = hoverRequest.current;
+    hoverTimer.current = window.setTimeout(() => {
+      hoverTimer.current = null;
+      if (request === hoverRequest.current) preview();
+    }, HOVER_PREVIEW_DELAY_MS);
+  }
+
   function previewCard(card: PlayableCard, el: HTMLElement, owner?: PlayerId) {
     if (drag?.active) return;
-    sfx.hoverTick();
-    const r = el.getBoundingClientRect();
-    setHover({
-      face: playableFace(card, owner === undefined ? undefined : effectiveCardCost(game, owner, card)),
-      effect: card.effect,
-      flavor: card.flavor,
-      atkClass: "",
-      hpClass: "",
-      states: [],
-      onBoard: false,
-      extraEffects: [],
-      rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
+    const face = playableFace(card, owner === undefined ? undefined : effectiveCardCost(game, owner, card));
+    scheduleHoverPreview(() => {
+      if (!el.isConnected) return;
+      sfx.hoverTick();
+      const r = el.getBoundingClientRect();
+      setHover({
+        face,
+        effect: card.effect,
+        flavor: card.flavor,
+        atkClass: "",
+        hpClass: "",
+        states: [],
+        onBoard: false,
+        extraEffects: [],
+        rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
+      });
     });
   }
 
   function previewMinion(minion: MinionInstance, el: HTMLElement) {
     if (drag?.active) return;
-    sfx.hoverTick();
     const def = library[minion.cardId];
-    const r = el.getBoundingClientRect();
     const grantedEffects = minion.gainedEffects.map((effect) => effect.text).filter(Boolean);
     const copiedPassive = minion.stolenPassiveText?.replace(/^Passive:\s*/i, "");
-    setHover({
-      face: minion,
-      effect: minion.silenced ? "" : minion.effect,
-      flavor: def ? def.flavor : "",
-      atkClass: statClass(minion.atk, minion.baseAtk),
-      hpClass: minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp),
-      states: minionStates(minion, game.players[minion.owner].board),
-      onBoard: true,
-      extraEffects: minion.silenced
-        ? []
-        : [
-            ...(grantedEffects.length ? [`Granted effect: ${grantedEffects.join(" • ")}`] : []),
-            ...(copiedPassive ? [`Copied passive: ${copiedPassive}`] : []),
-          ],
-      rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
+    scheduleHoverPreview(() => {
+      if (!el.isConnected) return;
+      sfx.hoverTick();
+      const r = el.getBoundingClientRect();
+      setHover({
+        face: minion,
+        effect: minion.silenced ? "" : minion.effect,
+        flavor: def ? def.flavor : "",
+        atkClass: statClass(minion.atk, minion.baseAtk),
+        hpClass: minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp),
+        states: minionStates(minion, game.players[minion.owner].board),
+        onBoard: true,
+        extraEffects: minion.silenced
+          ? []
+          : [
+              ...(grantedEffects.length ? [`Granted effect: ${grantedEffects.join(" • ")}`] : []),
+              ...(copiedPassive ? [`Copied passive: ${copiedPassive}`] : []),
+            ],
+        rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
+      });
     });
   }
 
@@ -1691,8 +1730,9 @@ export default function App() {
   // to point at a different card.
   function previewRelic(relic: RelicInstance, el: HTMLElement) {
     if (drag?.active) return;
-    sfx.hoverTick();
     const face = relicFace(relic);
+    clearHoverTimer();
+    sfx.hoverTick();
     const r = el.getBoundingClientRect();
     setHover({
       face,
@@ -1708,7 +1748,7 @@ export default function App() {
   }
 
   function endPreview() {
-    setHover(null);
+    clearHoverPreview();
   }
 
   function trackTargetPointer(event: React.PointerEvent<HTMLElement>) {
@@ -1729,6 +1769,10 @@ export default function App() {
 
   function onHandCard(handIndex: number) {
     if (duelIntro) return;
+    if (game.phase === "main" && selection?.kind === "attacker") {
+      cancelAttackerSelection();
+      return;
+    }
     if (
       game.phase === "targeting" &&
       game.pendingTarget?.player === viewerId &&
@@ -1774,11 +1818,54 @@ export default function App() {
     if (minion && attacksRandomly(game, minion)) showToast("Swinging blind — the target is rolled");
   }
 
+  /** Drop an armed attack without spending the minion's attack. */
+  function cancelAttackerSelection(): boolean {
+    if (selection?.kind !== "attacker") return false;
+    sfx.play("button");
+    setSelection(null);
+    clearHoverPreview();
+    setTargetArrowOrigin(null);
+    setTargetArrowPointer(null);
+    return true;
+  }
+
   /** One short line in the middle of the board, then gone. */
   function showToast(text: string, durationMs = 1500, tone: BoardToast["tone"] = "normal") {
     const next = { id: fxId.current++, text, durationMs, tone };
     setToast(next);
     window.setTimeout(() => setToast((cur) => (cur && cur.id === next.id ? null : cur)), durationMs);
+  }
+
+  /** Flash the live Taunt blockers when an aimed attack tries to pass them. */
+  function flashTauntBlockers(targetSlot?: number): boolean {
+    if (game.phase !== "main" || selection?.kind !== "attacker") return false;
+    const attackerSlot = selection.slotIndex;
+    const legalAttackTargets = new Set(
+      uiActions
+        .filter(
+          (action): action is Extract<GameAction, { type: "attack_minion" }> =>
+            action.type === "attack_minion" && action.attackerSlot === attackerSlot,
+        )
+        .map((action) => action.targetSlot),
+    );
+    if (targetSlot !== undefined && legalAttackTargets.has(targetSlot)) return false;
+
+    const blockerIds = game.players[opponentId].board
+      .map((minion, slot) => ({ minion, slot }))
+      .filter(
+        ({ minion, slot }) =>
+          Boolean(minion) &&
+          !minion!.silenced &&
+          minion!.keywords.includes("Taunt") &&
+          legalAttackTargets.has(slot),
+      )
+      .map(({ minion }) => minion!.instanceId);
+    if (blockerIds.length === 0) return false;
+
+    const marker = { id: fxId.current++, instanceIds: blockerIds };
+    setTauntFlash(marker);
+    window.setTimeout(() => setTauntFlash((current) => (current?.id === marker.id ? null : current)), 1000);
+    return true;
   }
 
   function onBoardSlot(owner: PlayerId, slotIndex: number) {
@@ -1810,7 +1897,11 @@ export default function App() {
       // you had to place the card before you could swing with anything.
     }
 
-    if (selection?.kind === "attacker" && owner === opponentId) {
+    if (selection?.kind === "attacker") {
+      if (owner !== opponentId) {
+        cancelAttackerSelection();
+        return;
+      }
       const action = uiActions.find(
         (candidate) =>
           candidate.type === "attack_minion" &&
@@ -1818,6 +1909,7 @@ export default function App() {
           candidate.targetSlot === slotIndex,
       );
       if (action) perform(action);
+      else if (!minion || !flashTauntBlockers(slotIndex)) cancelAttackerSelection();
       return;
     }
 
@@ -1884,7 +1976,7 @@ export default function App() {
       !drag.active &&
       Math.hypot(e.clientX - dragOrigin.current.x, e.clientY - dragOrigin.current.y) > DRAG_THRESHOLD;
     if (becameActive) {
-      setHover(null);
+      clearHoverPreview();
       sfx.play("pickup");
       if (drag.kind === "hand") setSelection({ kind: "hand", handIndex: drag.handIndex });
       else {
@@ -1898,7 +1990,7 @@ export default function App() {
 
   function endDrag(e: React.PointerEvent) {
     // Close the press-and-hold preview a finger opened (see startHandDrag).
-    if (e.pointerType === "touch") setHover(null);
+    if (e.pointerType === "touch") clearHoverPreview();
     if (!drag) return;
     if (!drag.active) {
       // Never moved past the threshold — this is a plain click; let onClick handle it.
@@ -1956,9 +2048,9 @@ export default function App() {
     }
     if (!performed) {
       sfx.play("invalid");
-      setSelection(null);
+      if (!cancelAttackerSelection()) setSelection(null);
     }
-    setHover(null);
+    clearHoverPreview();
     setDrag(null);
   }
 
@@ -1966,11 +2058,11 @@ export default function App() {
     // `pointercancel` is the NORMAL path on a phone: the row scrollers take
     // horizontal swipes via `touch-action: pan-x`, and the browser cancels the
     // pointer the moment it claims one. The preview has to close with it.
-    setHover(null);
+    clearHoverPreview();
     if (!drag) return;
     if (drag.active) {
       sfx.play("invalid");
-      setSelection(null);
+      if (!cancelAttackerSelection()) setSelection(null);
     }
     setDrag(null);
   }
@@ -1991,6 +2083,7 @@ export default function App() {
       (candidate) => candidate.type === "attack_core" && candidate.attackerSlot === selection.slotIndex,
     );
     if (action) perform(action);
+    else if (!flashTauntBlockers()) cancelAttackerSelection();
   }
 
   const endTurnAction = uiActions.find((action) => action.type === "end_turn");
@@ -2144,6 +2237,7 @@ export default function App() {
             onCardPreview={previewCard}
             onCardPreviewEnd={endPreview}
             onStrike={attackCore}
+            onBlockedStrike={selection?.kind === "attacker" ? attackCore : undefined}
           />
           <HeroPowerCard definition={heroPowerDefinition(game.heroPowers[opponentId])} />
         </div>
@@ -2216,9 +2310,14 @@ export default function App() {
         <section
           className="battlefield"
           onClick={(event) => {
-            if (event.target === event.currentTarget && game.pendingTarget?.player === viewerId) {
-              cancelTarget();
+            if (game.pendingTarget?.player === viewerId) {
+              if (event.target === event.currentTarget) cancelTarget();
+              return;
             }
+            if (selection?.kind !== "attacker") return;
+            const target = event.target;
+            if (target instanceof Element && target.closest(".board-slot, .end-turn, .deck-pile")) return;
+            cancelAttackerSelection();
           }}
         >
           <BoardRow
@@ -2229,6 +2328,7 @@ export default function App() {
             viewerId={viewerId}
             pendingTarget={pendingTarget}
             selection={selection}
+            tauntFlash={tauntFlash}
             onSlot={guardedSlotClick}
             ghosts={ghosts}
             floats={floats}
@@ -2260,6 +2360,7 @@ export default function App() {
             viewerId={viewerId}
             pendingTarget={pendingTarget}
             selection={selection}
+            tauntFlash={tauntFlash}
             onSlot={guardedSlotClick}
             ghosts={ghosts}
             floats={floats}
@@ -2670,6 +2771,7 @@ function BoardRow({
   viewerId,
   pendingTarget,
   selection,
+  tauntFlash,
   onSlot,
   ghosts,
   floats,
@@ -2691,6 +2793,7 @@ function BoardRow({
   viewerId: PlayerId;
   pendingTarget: PendingTarget | null;
   selection: Selection;
+  tauntFlash: TauntFlash;
   onSlot: (owner: PlayerId, slotIndex: number) => void;
   ghosts: Ghost[];
   floats: FloatNum[];
@@ -2726,6 +2829,7 @@ function BoardRow({
               (action.type === "attack_minion" || action.type === "attack_core") && action.attackerSlot === slotIndex,
           );
         const armed = selection?.kind === "attacker" && owner === viewerId && selection.slotIndex === slotIndex;
+        const tauntFlashing = Boolean(minion && tauntFlash?.instanceIds.includes(minion.instanceId));
         const isLunging = lunge !== null && lunge.owner === owner && lunge.slot === slotIndex;
         // A targeted effect is waiting: only its legal victims light up, and the
         // highlight reads differently from an attack target on purpose.
@@ -2756,6 +2860,7 @@ function BoardRow({
           canTarget ? "targetable" : "",
           canAttack ? "ready" : "",
           armed ? "armed" : "",
+          tauntFlashing ? "taunt-flashing" : "",
           isLunging ? "striking" : "",
           canBeChosen ? "choosable" : "",
           boardPrompt !== null && !canBeChosen ? "dimmed" : "",
@@ -2791,7 +2896,7 @@ function BoardRow({
             onMouseLeave={minion ? onPreviewEnd : undefined}
           >
             {minion ? (
-              <div className="minion-wrap" key={minion.instanceId}>
+              <div className="minion-wrap" key={tauntFlashing ? `${minion.instanceId}-taunt-${tauntFlash?.id}` : minion.instanceId}>
                 <div
                   className={isLunging ? "lunge-wrap lunging" : "lunge-wrap"}
                   key={isLunging && lunge ? `lunge-${lunge.id}` : "idle"}
@@ -2971,7 +3076,6 @@ function TargetingArrow({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number
   return (
     <svg className="target-arrow" aria-hidden="true">
       <path className="arrow-path" d={`M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`} />
-      <circle className="arrow-root" cx={x1} cy={y1} r="9" />
       <g transform={`translate(${x2} ${y2}) rotate(${angle})`}>
         <polygon className="arrow-head" points="-6,-13 22,0 -6,13" />
       </g>
@@ -4300,6 +4404,7 @@ function HeroPlate({
   onCardPreview,
   onCardPreviewEnd,
   onStrike,
+  onBlockedStrike,
 }: {
   player: GameState["players"][number];
   heroPower?: HeroPowerId | null;
@@ -4317,6 +4422,7 @@ function HeroPlate({
   onCardPreview?: (card: PlayableCard, el: HTMLElement) => void;
   onCardPreviewEnd?: () => void;
   onStrike?: () => void;
+  onBlockedStrike?: () => void;
 }) {
   const wasHit = floats.some((f) => f.delta < 0);
   const classes = [
@@ -4335,12 +4441,13 @@ function HeroPlate({
   const backs = Math.min(player.hand.length, 10);
   const power = heroPowerDefinition(heroPower);
   const canStrike = enemy && targetable && Boolean(onStrike);
+  const strikeHandler = canStrike ? onStrike : onBlockedStrike;
   return (
     <button
       type="button"
       className={classes}
       data-hero={player.id}
-      onClick={canStrike ? onStrike : undefined}
+      onClick={strikeHandler}
       aria-disabled={canStrike ? undefined : true}
       aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : undefined}
     >
@@ -5111,8 +5218,8 @@ function DeveloperTools({
         <div className="developer-controls">
           {screen === "playing" ? (
             <>
-              <button type="button" className={game.cheatMode ? "developer-action active" : "developer-action"} onClick={onToggleCheat}>
-                {game.cheatMode ? "Infinite mana: ON" : "Infinite mana: OFF"}
+              <button type="button" className={hasInfiniteMana(game, viewerId) ? "developer-action active" : "developer-action"} onClick={onToggleCheat}>
+                {hasInfiniteMana(game, viewerId) ? "Infinite mana: ON" : "Infinite mana: OFF"}
               </button>
               <button type="button" className="developer-action" onClick={onSetMana}>Fill my mana</button>
               <button type="button" className="developer-action" onClick={() => onSetCore(viewerId, 1)}>My Core → 1</button>

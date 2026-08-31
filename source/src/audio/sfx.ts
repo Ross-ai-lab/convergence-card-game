@@ -1,3 +1,5 @@
+import { isThemedTokenId } from "../engine/tokens";
+
 /* ============================================================================
    CONVERGENCE — anime battle sound engine
 
@@ -806,11 +808,12 @@ export function stopMusic(): void {
 const CARD_THEME_ID = /^(?:c|r)\d+$/;
 
 function isCardThemeId(cardId: string): boolean {
-  return CARD_THEME_ID.test(cardId);
+  return CARD_THEME_ID.test(cardId) || isThemedTokenId(cardId);
 }
 
 function themeUrl(cardId: string): string {
-  return `${import.meta.env.BASE_URL}audio/stings/${cardId}.ogg`;
+  const assetId = cardId.startsWith("token:") ? cardId.replace(/^token:/, "token-") : cardId;
+  return `${import.meta.env.BASE_URL}audio/stings/${assetId}.ogg`;
 }
 
 async function loadTheme(cardId: string): Promise<AudioBuffer | null> {

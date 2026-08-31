@@ -541,10 +541,6 @@ function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[])
 
   if (definition.target !== "none") {
     const options = heroPowerTargetOptions(state, playerId, powerId);
-    if (options.length === 1) {
-      resolveHeroPower(state, playerId, powerId, { kind: "board", target: options[0] }, events);
-      return;
-    }
     state.pendingTarget = {
       kind: "board",
       player: playerId,
@@ -3928,7 +3924,9 @@ function summonSkeletons(state: GameState, source: MinionInstance, events: GameE
   let summoned = 0;
   for (let slot = 0; slot < boardSize; slot += 1) {
     if (state.players[source.owner].board[slot]) continue;
-    state.players[source.owner].board[slot] = createMinion(skeleton, source.owner, state);
+    const tokenMinion = createMinion(skeleton, source.owner, state);
+    tokenMinion.suppressArrivalTheme = true;
+    state.players[source.owner].board[slot] = tokenMinion;
     summoned += 1;
   }
   if (summoned > 0) events.push(effectEvent(`${source.name} fills the board with ${summoned} Taunt Skeletons.`, source));
@@ -3940,6 +3938,7 @@ function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: Ga
   if (slot < 0) return;
   const recruit = tokenCard("token:knight");
   const summoned = createMinion(recruit, playerId, state);
+  summoned.suppressArrivalTheme = true;
   player.board[slot] = summoned;
   events.push({ kind: "effect", text: `${player.name} summons a 1/1 Knight.`, player: playerId, instanceId: summoned.instanceId });
 }
@@ -3950,7 +3949,9 @@ function summonShadowClones(state: GameState, source: MinionInstance, events: Ga
   let summoned = 0;
   for (let slot = 0; slot < boardSize; slot += 1) {
     if (player.board[slot]) continue;
-    player.board[slot] = createMinion(shadowClone, source.owner, state);
+    const tokenMinion = createMinion(shadowClone, source.owner, state);
+    tokenMinion.suppressArrivalTheme = true;
+    player.board[slot] = tokenMinion;
     summoned += 1;
   }
   if (summoned > 0) events.push(effectEvent(`${source.name} fills the board with ${summoned} Shadow Clones.`, source));
@@ -3978,8 +3979,9 @@ function summonSins(state: GameState, source: MinionInstance, events: GameEvent[
   const summonedKeywords = keywordOrder.slice(0, emptySlots.length);
   summonedKeywords.forEach((keyword, index) => {
     const slot = emptySlots[index];
-    const token = createMinion({ ...sin, keywords: [keyword], effect: `${keyword}.` }, source.owner, state);
-    player.board[slot] = token;
+    const tokenMinion = createMinion({ ...sin, keywords: [keyword], effect: `${keyword}.` }, source.owner, state);
+    tokenMinion.suppressArrivalTheme = true;
+    player.board[slot] = tokenMinion;
   });
   if (summonedKeywords.length > 0) {
     events.push(effectEvent(`${source.name} summons ${summonedKeywords.length} Sin minions with different keywords.`, source));
@@ -3992,7 +3994,9 @@ function summonTieFighters(state: GameState, source: MinionInstance, events: Gam
   let summoned = 0;
   for (let slot = 0; slot < boardSize && summoned < 2; slot += 1) {
     if (player.board[slot]) continue;
-    player.board[slot] = createMinion(tieFighter, source.owner, state);
+    const tokenMinion = createMinion(tieFighter, source.owner, state);
+    tokenMinion.suppressArrivalTheme = true;
+    player.board[slot] = tokenMinion;
     summoned += 1;
   }
   if (summoned > 0) {

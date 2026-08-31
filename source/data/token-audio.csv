@@ -1,0 +1,8 @@
+id,name,origin,trigger
+token:shenron,Shenron,Dragon Ball,deathrattle
+token:morgott,"Morgott, the Omen King",Elden Ring,deathrattle
+token:drakath,Drakath,AdventureQuest Worlds,deathrattle
+token:vision,Vision,MCU,deathrattle
+token:galactus,Galactus,Marvel,deathrattle
+token:awakened,Awakened,Avatar,deathrattle
+token:larva,Larva,Alien,passive

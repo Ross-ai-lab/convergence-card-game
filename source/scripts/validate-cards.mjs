@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { countBy, projectRoot, readCards, readRelics } from "./card-tools.mjs";
+import { countBy, parseCsv, projectRoot, readCards, readRelics } from "./card-tools.mjs";
 
 const required = [
   "id",
@@ -27,6 +27,15 @@ const allowed = {
   effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "onPlayAndDeathrattle", "passive", "deathrattle"]),
   keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Invulnerable", "Charge", "Deathrattle", "Cannot Attack"]),
 };
+
+const tokenAudioPath = path.join(projectRoot, "data", "token-audio.csv");
+const battlecryTokenIds = new Set([
+  "token:skeleton",
+  "token:knight",
+  "token:shadow-clone",
+  "token:sin",
+  "token:tie-fighter",
+]);
 
 // --- printed-text rules ------------------------------------------------------
 // Two whole sessions were spent hand-correcting 86 cards whose printed text
@@ -208,6 +217,45 @@ const relics = readRelics();
 const errors = [];
 const ids = new Set();
 const names = new Set();
+const tokenAudio = fs.existsSync(tokenAudioPath) ? parseCsv(fs.readFileSync(tokenAudioPath, "utf8")) : [];
+const tokenAudioIds = new Set();
+
+for (const [index, token] of tokenAudio.entries()) {
+  const line = index + 2;
+  const tokenId = (token.id ?? "").trim();
+  for (const field of ["id", "name", "origin", "trigger"]) {
+    if (!(field in token) || !token[field].trim()) errors.push(`Token audio line ${line}: missing field ${field}`);
+  }
+  if (tokenAudioIds.has(tokenId)) errors.push(`Token audio line ${line}: duplicate id ${tokenId}`);
+  tokenAudioIds.add(tokenId);
+  if (!tokenId.startsWith("token:")) errors.push(`Token audio line ${line}: id must start with token: (${tokenId})`);
+  if (battlecryTokenIds.has(tokenId)) {
+    errors.push(`Token audio line ${line}: ${tokenId} is a Battlecry/Hero-Power token and must stay generic`);
+  }
+  if (!["deathrattle", "passive"].includes(token.trigger)) {
+    errors.push(`Token audio line ${line}: trigger must be deathrattle or passive (${token.trigger})`);
+  }
+  const audioFile = tokenId.replace(/^token:/, "token-");
+  const audioPath = path.join(projectRoot, "public", "audio", "stings", `${audioFile}.ogg`);
+  if (!fs.existsSync(audioPath)) {
+    errors.push(`Token audio line ${line}: ${token.name} has no theme — expected public/audio/stings/${audioFile}.ogg`);
+  } else if (fs.statSync(audioPath).size < 200_000) {
+    errors.push(`Token audio line ${line}: ${token.name}'s theme is suspiciously small (${audioPath})`);
+  }
+}
+
+const requiredTokenAudioIds = new Set([
+  "token:shenron",
+  "token:morgott",
+  "token:drakath",
+  "token:vision",
+  "token:galactus",
+  "token:awakened",
+  "token:larva",
+]);
+for (const tokenId of requiredTokenAudioIds) {
+  if (!tokenAudioIds.has(tokenId)) errors.push(`Token audio catalog is missing ${tokenId}`);
+}
 
 for (const [index, card] of cards.entries()) {
   const line = index + 2;
@@ -355,4 +403,5 @@ console.log("Cards:", cards.length);
 console.log("Costs:", JSON.stringify(countBy(cards, "cost")));
 console.log("Rarities:", JSON.stringify(countBy(cards, "rarity")));
 console.log("Camps:", JSON.stringify(countBy(cards, "camp")));
+console.log("Token audio:", tokenAudio.length, "Deathrattle/passive themes");
 reportSharedEffects(cards);

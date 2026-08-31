@@ -108,6 +108,20 @@ describe("menu Hero Powers", () => {
     expect(usePower(enemyAtk).players[1].board[0]?.atk).toBe(1);
   });
 
+  it("keeps a single legal Hero Power target open for deliberate aiming", () => {
+    const state = mainState("minion_hp_down");
+    state.players[1].board[0] = minion("Modern Tank", 1);
+
+    const used = applyAction(state, { type: "use_hero_power", player: 0 }, library).state;
+    expect(used.phase).toBe("targeting");
+    expect(used.pendingTarget?.options).toEqual([{ owner: 1, slot: 0 }]);
+    expect(used.players[1].board[0]?.hp).toBe(3);
+
+    const aimed = applyAction(used, { type: "choose_target", player: 0, choiceIndex: 0 }, library).state;
+    expect(aimed.phase).toBe("main");
+    expect(aimed.players[1].board[0]).toMatchObject({ hp: 2, maxHp: 2 });
+  });
+
   it("refunds a targetable Hero Power when it is cancelled before choosing", () => {
     const state = mainState("minion_atk");
     state.players[0].board[0] = minion("John Wick", 0);
@@ -161,6 +175,7 @@ describe("menu Hero Powers", () => {
       atk: 1,
       hp: 1,
       maxHp: 1,
+      suppressArrivalTheme: true,
       art: "/card-art/raw/token-knight.webp",
     });
 

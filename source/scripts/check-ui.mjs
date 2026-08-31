@@ -230,18 +230,18 @@ await page.locator(".mulligan-panel").waitFor({ state: "detached", timeout: 5000
 
 const enemyPortrait = page.locator(".enemy-hero-wrap .hero-plate.enemy");
 await enemyPortrait.hover({ timeout: 5000 });
-await page.waitForTimeout(500);
+await page.waitForTimeout(400);
 const enemyPowerEarly = await page.locator(".enemy-power-card").evaluate((element) => {
   const style = getComputedStyle(element);
   return { opacity: style.opacity, visibility: style.visibility };
 });
-await page.waitForTimeout(2000);
+await page.waitForTimeout(900);
 const enemyPowerLate = await page.locator(".enemy-power-card").evaluate((element) => {
   const style = getComputedStyle(element);
   return { opacity: style.opacity, visibility: style.visibility };
 });
 check(
-  "enemy Hero Power popup waits for a deliberate hover",
+  "enemy Hero Power popup waits 1 second",
   enemyPowerEarly.visibility === "hidden" && enemyPowerEarly.opacity === "0" &&
     enemyPowerLate.visibility === "visible" && enemyPowerLate.opacity === "1",
   `early ${enemyPowerEarly.visibility}/${enemyPowerEarly.opacity}, late ${enemyPowerLate.visibility}/${enemyPowerLate.opacity}`,
@@ -483,8 +483,27 @@ check(
   "no ready glow on the turn it lands",
 );
 
+const boardPreviewTarget = page.locator(".board-slot.occupied .card-face").first();
+if ((await boardPreviewTarget.count()) > 0) {
+  await boardPreviewTarget.hover();
+  await page.waitForTimeout(400);
+  const boardPreviewEarly = await page.locator(".hover-preview").count();
+  await page.waitForTimeout(850);
+  const boardPreviewLate = await page.locator(".hover-preview").count();
+  check(
+    "board card preview waits 1 second",
+    boardPreviewEarly === 0 && boardPreviewLate === 1,
+    `early ${boardPreviewEarly}, late ${boardPreviewLate}`,
+  );
+  await page.mouse.move(0, 0);
+} else {
+  skip("board card preview waits 1 second", "no board minion to hover");
+}
+
 // ------------------------------------------------------------- 3. attacking
 await newBoard();
+await page.evaluate(() => window.__debug?.place("John Wick", "me", 1));
+await page.waitForTimeout(250);
 const readyCount = await page.locator(".board-slot.occupied.ready").count();
 check("a rested minion offers an attack", readyCount > 0, `${readyCount} ready`);
 
@@ -494,6 +513,7 @@ if (readyCount > 0) {
   await page.locator(".board-slot.occupied.ready").first().click();
   await page.waitForTimeout(300);
   const clickArrowCount = await page.locator(".target-arrow").count();
+  const clickArrowRootCount = await page.locator(".target-arrow .arrow-root").count();
   check(
     "clicking a ready minion arms it",
     (await page.locator(".board-slot.armed").count()) === 1,
@@ -501,12 +521,92 @@ if (readyCount > 0) {
   );
   check(
     "clicking a ready minion shows a targeting arrow",
-    clickArrowCount === 1,
-    `${clickArrowCount} live targeting arrow(s)`,
+    clickArrowCount === 1 && clickArrowRootCount === 0,
+    `${clickArrowCount} live targeting arrow(s), ${clickArrowRootCount} white root circle(s)`,
+  );
+
+  await page.locator(".board-slot.empty").first().click();
+  await page.waitForTimeout(150);
+  check(
+    "clicking an empty board slot cancels an armed attack",
+    (await page.locator(".board-slot.armed").count()) === 0 && (await page.locator(".target-arrow").count()) === 0,
+    "attacker and targeting arrow cleared",
+  );
+
+  await page.locator(".board-slot.occupied.ready").first().click();
+  const friendlySlots = page.locator(".board-row").last().locator(".board-slot");
+  const friendlyEmpty = page.locator(".board-row").last().locator(".board-slot.empty").first();
+  if ((await friendlyEmpty.count()) > 0) {
+    await friendlyEmpty.click();
+    await page.waitForTimeout(150);
+    check(
+      "clicking the friendly board cancels an armed attack",
+      (await page.locator(".board-slot.armed").count()) === 0 && (await page.locator(".target-arrow").count()) === 0,
+      "friendly-side click cleared the attacker and arrow",
+    );
+  } else {
+    skip("clicking the friendly board cancels an armed attack", "no friendly empty slot to click");
+  }
+
+  await page.locator(".board-slot.occupied.ready").first().click();
+  const firstFriendlyBox = await friendlySlots.nth(0).boundingBox();
+  const secondFriendlyBox = await friendlySlots.nth(1).boundingBox();
+  if (firstFriendlyBox && secondFriendlyBox && secondFriendlyBox.x > firstFriendlyBox.x + firstFriendlyBox.width) {
+    const gapX = firstFriendlyBox.x + firstFriendlyBox.width + (secondFriendlyBox.x - firstFriendlyBox.x - firstFriendlyBox.width) / 2;
+    await page.mouse.click(gapX, firstFriendlyBox.y + firstFriendlyBox.height / 2);
+    await page.waitForTimeout(150);
+    check(
+      "clicking between board cards cancels an armed attack",
+      (await page.locator(".board-slot.armed").count()) === 0 && (await page.locator(".target-arrow").count()) === 0,
+      "between-card click cleared the attacker and arrow",
+    );
+  } else {
+    skip("clicking between board cards cancels an armed attack", "no measurable gap between friendly slots");
+  }
+
+  await page.locator(".board-slot.occupied.ready").first().click();
+  await page.locator(".hand-card").first().click();
+  await page.waitForTimeout(150);
+  check(
+    "clicking a hand card cancels an armed attack",
+    (await page.locator(".board-slot.armed").count()) === 0 && (await page.locator(".target-arrow").count()) === 0,
+    "attacker and targeting arrow cleared",
   );
 } else {
   skip("clicking a ready minion arms it", "no rested minion to click");
   skip("clicking a ready minion shows a targeting arrow", "no rested minion to click");
+  skip("clicking an empty board slot cancels an armed attack", "no rested minion to click");
+  skip("clicking the friendly board cancels an armed attack", "no rested minion to click");
+  skip("clicking between board cards cancels an armed attack", "no rested minion to click");
+  skip("clicking a hand card cancels an armed attack", "no rested minion to click");
+}
+
+// A Taunt blocker is the reason an aimed strike did not land. The barrier gets
+// one red flash, then returns to its normal metal colour.
+await newBoard();
+{
+  const ready = await page.evaluate(() => Boolean(window.__debug));
+  if (!ready) {
+    skip("a Taunt blocker flashes red on a blocked attack", "no __debug hook (production build?)");
+  } else {
+    await page.evaluate(() => {
+      window.__debug.place("Fort", "them", 0);
+      window.__debug.place("John Wick", "them", 1);
+    });
+    await page.waitForTimeout(250);
+    const attacker = page.locator('.board-slot[data-slot^="0-"] .card-face').first();
+    await attacker.click();
+    await page.locator('[data-slot="1-1"]').click();
+    await page.waitForTimeout(180);
+    const flashing = await page.locator('[data-slot="1-0"].taunt-flashing .card-face.kw-taunt').count();
+    await page.waitForTimeout(900);
+    const settled = await page.locator('[data-slot="1-0"].taunt-flashing').count();
+    check(
+      "a Taunt blocker flashes red on a blocked attack",
+      flashing === 1 && settled === 0,
+      `flash ${flashing}, after 1s ${settled}`,
+    );
+  }
 }
 
 // --------------------------------- 4. THE REGRESSION: attack with a card held
@@ -777,6 +877,7 @@ async function targetingCheck(label, cardName, choiceSelector, screenPromptExpec
   await choice.first().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
   const offered = await choice.count();
   const arrowCount = await page.locator(".target-arrow").count();
+  const arrowRootCount = await page.locator(".target-arrow .arrow-root").count();
   const choiceDescriptions = choiceSelector.includes("prompt-value")
     ? await page.locator(".prompt-card-choice .cf-desc p").evaluateAll((nodes) => nodes.map((node) => node.textContent?.trim() ?? ""))
     : [];
@@ -798,8 +899,8 @@ async function targetingCheck(label, cardName, choiceSelector, screenPromptExpec
   if (choiceSelector === ".board-slot.choosable") {
     check(
       "board target effects show a targeting arrow",
-      arrowCount === 1,
-      `${arrowCount} live targeting arrow(s)`,
+      arrowCount === 1 && arrowRootCount === 0,
+      `${arrowCount} live targeting arrow(s), ${arrowRootCount} white root circle(s)`,
     );
   }
 }
@@ -891,6 +992,20 @@ await newBoard({ place: false });
       "a relic survives an incomplete badge press",
       afterPress === after,
       `badges ${after} -> ${afterPress}`,
+    );
+    await page.locator(".relic-badge").first().dispatchEvent("pointerup", {
+      bubbles: true,
+      pointerId: 1,
+      pointerType: "mouse",
+      isPrimary: true,
+    });
+
+    await page.locator(".relic-badge").first().hover();
+    await page.waitForTimeout(120);
+    check(
+      "an equipped relic previews instantly",
+      (await page.locator(".hover-preview").count()) === 1,
+      "relic preview visible without the card hover delay",
     );
 
     // A completed click is only a preview now; it cannot return the relic.

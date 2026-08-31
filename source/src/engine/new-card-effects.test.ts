@@ -114,6 +114,7 @@ describe("2026 card replacements", () => {
       name: "Larva",
       atk: 1,
       hp: 1,
+      suppressArrivalTheme: false,
     });
     expect(after.players[0].board[1]?.art).toContain("token-larva.webp");
   });
@@ -147,6 +148,7 @@ describe("2026 card replacements", () => {
     expect(clones).toHaveLength(3);
     expect(clones.every((entry) => entry?.name === "Shadow Clone" && entry.atk === 2 && entry.hp === 2)).toBe(true);
     expect(clones.every((entry) => entry?.art.includes("token-shadow-clone.webp"))).toBe(true);
+    expect(clones.every((entry) => entry?.suppressArrivalTheme === true)).toBe(true);
   });
 
   it("Frieren discovers once per turn for each Frieren, then resets next turn", () => {
@@ -1092,7 +1094,10 @@ describe("2026 card replacements", () => {
       library,
     ).state;
     expect(afterDeath.players[0].board[0]).toMatchObject({ name: "Awakened", atk: 6, hp: 3, cost: 6 });
-    expect(afterDeath.players[0].board[0]?.art).toBe("/card-art/raw/token-awakened.webp");
+    expect(afterDeath.players[0].board[0]).toMatchObject({
+      art: "/card-art/raw/token-awakened.webp",
+      suppressArrivalTheme: false,
+    });
   });
 
   it("Chaos summons a random deck minion on play, and nothing more when it dies", () => {
@@ -1284,6 +1289,7 @@ describe("2026 card replacements", () => {
     );
     expect(sins.every((entry) => entry?.atk === 1 && entry?.hp === 1 && entry.art.endsWith("/token-sin.webp"))).toBe(true);
     expect(sins.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
+    expect(sins.every((entry) => entry?.suppressArrivalTheme === true)).toBe(true);
   });
 
   it("Black Ops ignores Taunt, Battleship buffs friendly Tech, and Star Destroyer deploys two Charge TIE Fighters", () => {
@@ -1317,6 +1323,7 @@ describe("2026 card replacements", () => {
     expect(fighters.every((fighter) => fighter.name === "TIE Fighter" && fighter.atk === 1 && fighter.hp === 1)).toBe(true);
     expect(fighters.every((fighter) => fighter.keywords.includes("Charge") && fighter.sleeping === false)).toBe(true);
     expect(fighters.every((fighter) => fighter.art.endsWith("/token-tie-fighter.webp"))).toBe(true);
+    expect(fighters.every((fighter) => fighter.suppressArrivalTheme === true)).toBe(true);
   });
 
   it("Planetary Defense Grid buffs every Taunt minion and loses the aura when silenced", () => {
@@ -1940,7 +1947,10 @@ describe("2026 card replacements", () => {
       library,
     ).state;
     expect(afterDeath.players[0].board[0]).toMatchObject({ name: "Drakath", atk: 5, hp: 3, maxHp: 3 });
-    expect(afterDeath.players[0].board[0]?.art).toBe("/card-art/raw/token-drakath.webp");
+    expect(afterDeath.players[0].board[0]).toMatchObject({
+      art: "/card-art/raw/token-drakath.webp",
+      suppressArrivalTheme: false,
+    });
   });
 
   it("Big Mom gains exactly the devoured friendly minion's ATK and HP", () => {

@@ -1532,12 +1532,6 @@ button:disabled {
   animation: arrow-flow 0.5s linear infinite;
 }
 
-.arrow-root {
-  fill: rgba(255, 120, 90, 0.55);
-  stroke: #ffcaba;
-  stroke-width: 2;
-}
-
 .arrow-head {
   fill: #ff6d4d;
   filter: drop-shadow(0 0 6px rgba(255, 90, 60, 0.9));
@@ -2069,11 +2063,11 @@ button:disabled {
 }
 
 /* The portrait is the hover target, but the card should require a deliberate
-   two-second hover so a passing cursor does not flash the opponent's power. */
+   one-second hover so a passing cursor does not flash the opponent's power. */
 .enemy-hero-wrap:hover .enemy-power-card,
 .enemy-hero-wrap:focus-within .enemy-power-card {
   opacity: 1;
-  transition-delay: 2s, 2s;
+  transition-delay: 1s, 1s;
   visibility: visible;
 }
 
@@ -3494,6 +3488,39 @@ button:disabled {
     inset 0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(230, 240, 255, 0.5),
     inset 0 calc(-14 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.8),
     0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
+}
+
+/* A blocked attack briefly makes the guard unmistakable. The alert is on the
+   existing Taunt barrier, so the card's artwork and rules stay readable. */
+.board-slot.taunt-flashing .card-face.kw-taunt::before {
+  animation: taunt-blocker-flash 1s ease-in-out both;
+}
+
+@keyframes taunt-blocker-flash {
+  0%,
+  100% {
+    background:
+      repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.06) 0 calc(9 * var(--u)), rgba(0, 0, 0, 0.16) calc(9 * var(--u)) calc(19 * var(--u))),
+      linear-gradient(157deg, #8e9aa6 0%, #59626d 18%, #333a43 48%, #1b2027 76%, #6f7a86 100%);
+    box-shadow:
+      inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(0, 0, 0, 0.95),
+      inset 0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(230, 240, 255, 0.5),
+      inset 0 calc(-14 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.8),
+      0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
+  }
+
+  38%,
+  62% {
+    background:
+      repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.12) 0 calc(9 * var(--u)), rgba(91, 0, 10, 0.28) calc(9 * var(--u)) calc(19 * var(--u))),
+      linear-gradient(157deg, #ff9d8f 0%, #f32c39 18%, #a0101a 48%, #5b070d 76%, #ed4b51 100%);
+    box-shadow:
+      inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(255, 48, 48, 1),
+      inset 0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(255, 148, 148, 0.72),
+      inset 0 calc(-14 * var(--u)) calc(22 * var(--u)) rgba(72, 0, 0, 0.9),
+      0 0 calc(26 * var(--u)) rgba(255, 30, 40, 0.98),
+      0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
+  }
 }
 
 /* --- DIVINE SHIELD: a bright golden bubble around the whole card -----------

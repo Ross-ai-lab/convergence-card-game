@@ -26,6 +26,7 @@ mid-phrase. What works, and what this does:
 
 Usage:
     python build-card-stings.py                 # build all missing cards and relics
+    python build-card-stings.py --tokens        # build themed Deathrattle/passive token stings
     python build-card-stings.py --force         # rebuild everything
     python build-card-stings.py --only c014     # one card (repeatable)
     python build-card-stings.py --only r001     # one relic (repeatable)
@@ -56,6 +57,7 @@ GAME = ROOT / "source"
 AUDIO_SRC = ROOT / "materials" / "local-production" / "audio-tracks"
 CARDS_CSV = GAME / "data" / "cards.csv"
 RELICS_CSV = GAME / "data" / "relics.csv"
+TOKENS_CSV = GAME / "data" / "token-audio.csv"
 OFFSETS_CSV = GAME / "data" / "sting-offsets.csv"
 OUT_DIR = GAME / "public" / "audio" / "stings"
 
@@ -237,10 +239,15 @@ def track_index() -> dict[str, Path]:
     for path in AUDIO_SRC.iterdir():
         if path.suffix.lower() not in {".mp3", ".mp4"}:
             continue
-        m = re.match(r"^(?:\d{3}|r\d{3}) - (.+) \(([^()]*)\)\.(?:mp3|mp4)$", path.name, re.IGNORECASE)
+        m = re.match(r"^(?:\d{3}|r\d{3}|token-[a-z0-9-]+) - (.+) \(([^()]*)\)\.(?:mp3|mp4)$", path.name, re.IGNORECASE)
         if m:
             index[norm(m.group(1))] = path
     return index
+
+
+def output_id(card_id: str) -> str:
+    """Map a runtime token ID to a Windows-safe published filename."""
+    return card_id.replace(":", "-") if card_id.startswith("token:") else card_id
 
 
 def main() -> None:
@@ -253,6 +260,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Cut a short music sting per card or relic (6 s by default).")
     ap.add_argument("--force", action="store_true", help="rebuild stings that already exist")
     ap.add_argument("--only", action="append", default=[], help="card id or name fragment (repeatable)")
+    ap.add_argument("--tokens", action="store_true", help="cut themed Deathrattle/passive token stings")
     ap.add_argument("--offset", action="append", default=[], metavar="ID=SECONDS",
                     help="hand-pick a start time for one card, e.g. c014=41.5")
     ap.add_argument("--seconds", type=float, default=CLIP_SECONDS,
@@ -279,8 +287,12 @@ def main() -> None:
             sys.exit(f"--offset wants ID=SECONDS, got {spec!r}")
 
     tracks = track_index()
-    cards = list(csv.DictReader(CARDS_CSV.open(encoding="utf-8")))
-    if RELICS_CSV.exists():
+    cards = [] if args.tokens else list(csv.DictReader(CARDS_CSV.open(encoding="utf-8")))
+    if args.tokens:
+        if not TOKENS_CSV.exists():
+            raise SystemExit(f"Token audio catalog not found: {TOKENS_CSV}")
+        cards.extend(csv.DictReader(TOKENS_CSV.open(encoding="utf-8")))
+    elif RELICS_CSV.exists():
         cards.extend(csv.DictReader(RELICS_CSV.open(encoding="utf-8")))
     if args.only:
         wanted = [w.lower() for w in args.only]
@@ -303,7 +315,7 @@ def main() -> None:
         src = resolve(card)
         if src is None:
             return cid, name, "NO SOURCE TRACK"
-        dst = OUT_DIR / f"{cid}.ogg"
+        dst = OUT_DIR / f"{output_id(cid)}.ogg"
         # --report must answer for every card, built or not: it is the review
         # surface, and "skipped (exists)" tells the reader nothing.
         if dst.exists() and not args.force and cid not in pinned and not args.report:
