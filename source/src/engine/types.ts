@@ -505,7 +505,7 @@ export interface PlayerState {
   pressured: { cardId: string; dueTurn: number } | null;
   /** Permanent marks on this player's board positions. */
   slotAuras: SlotAura[];
-  /** Sans: every minion this player controls swings at random until this turn. */
+  /** Confusion: every minion this player controls swings at random until this turn. */
   confusedUntilTurn: number | null;
   /** Kurogiri: the one full turn in which every swing is random. */
   randomAttacksFromTurn?: number | null;
@@ -681,7 +681,8 @@ export type RelicId =
   | "untargetable"
   | "evade_50"
   | "double_attack"
-  /** Tesseract: the bearer strikes from outside space, so nothing strikes back. */
+  /** The bearer strikes from outside space, so nothing strikes back. Unused by
+   * the current relic file; kept as a hook for the next relic pass. */
   | "no_retaliation"
   | "pandora_box"
   | "monkeys_paw"
@@ -707,8 +708,8 @@ export interface RelicDefinition {
   flavor: string;
   origin: string;
   art: string;
-  /** Printed mana cost paid when this relic is played. Infinity Castle has none,
-   * hence optional for the legacy data format. */
+  /** Printed mana cost paid when this relic is played. Optional because the
+   * legacy data format had no cost column; every shipped relic prints one. */
   cost?: number;
 }
 

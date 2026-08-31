@@ -475,9 +475,12 @@ describe("All for One aims a copied effect legally", () => {
   });
 
   it("carries a copied effect across its own prompts instead of dropping it", () => {
-    // Ten Commandments freezes TWO enemies, so a copy of it has to survive the
+    // `freeze_two` asks for TWO enemies, so a copy of it has to survive the
     // question between them. The borrowed effect used to be handed back the
     // instant the first prompt opened, which silently cancelled the whole copy.
+    // The effect is fitted to a stand-in body here rather than named on a card:
+    // no card in the roster prints it any more, and the mechanic it pins — a
+    // multi-step copy — is the point rather than the card that once carried it.
     const state = mainState("afo-multistep");
     state.players[1].board[0] = dummy("Zoro", 1, { effectId: "freeze_two", effectTiming: "onPlay" });
     state.players[1].board[1] = dummy("John Wick", 1);

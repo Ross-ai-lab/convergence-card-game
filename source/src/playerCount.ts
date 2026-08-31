@@ -7,7 +7,22 @@ type StorageLike = Pick<Storage, "getItem" | "setItem">;
 type PlayerCountOptions = {
   request?: typeof fetch;
   storage?: StorageLike | null;
+  /** The page's own origin. Defaults to the live one; tests pass their own. */
+  origin?: string | null;
 };
+
+/**
+ * A dev server may READ the count and may never WRITE it — `counter/worker.js`
+ * enforces that deliberately, so the public figure cannot be inflated by every
+ * debugging session and screenshot run.
+ *
+ * The client has to know it too. Asking to register from localhost is a request
+ * that can only ever come back 403, and it did: two console errors on every
+ * local boot of the game, which is exactly the noise the worker's read-allowance
+ * was written to remove. Skipping the write locally leaves the read, so the
+ * count still shows while developing.
+ */
+const LOCAL_ORIGIN = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/;
 
 /**
  * Register this browser once, then return the shared public player count.
@@ -16,6 +31,7 @@ type PlayerCountOptions = {
  */
 export async function loadPlayerCount(options: PlayerCountOptions = {}): Promise<number | null> {
   const request = options.request ?? globalThis.fetch;
+  const origin = options.origin === undefined ? globalThis.location?.origin ?? null : options.origin;
   let storage = options.storage;
 
   if (storage === undefined) {
@@ -27,7 +43,7 @@ export async function loadPlayerCount(options: PlayerCountOptions = {}): Promise
   }
 
   let shouldRegister = false;
-  if (storage) {
+  if (storage && !LOCAL_ORIGIN.test(origin ?? "")) {
     try {
       shouldRegister = storage.getItem(COUNTED_BROWSER_KEY) !== "yes";
     } catch {

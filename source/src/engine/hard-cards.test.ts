@@ -240,6 +240,22 @@ describe("control and theft cards", () => {
     expect(after.players[0].board[0]?.chained).toBe(2);
   });
 
+  it("Ten Commandments chains the attacker without shielding it from the retaliation", () => {
+    const state = mainState();
+    state.players[1].board[1] = makeMinion("Ten Commandments", 1);
+    state.players[1].board[0] = dummy("Death Star", 1, { atk: 5, hp: 20, maxHp: 20 });
+    state.players[0].board[0] = dummy("Zoro", 0, { atk: 2, hp: 10, maxHp: 10 });
+
+    const after = attack(state, 0, 0);
+
+    // The chain used to be applied BEFORE the swing resolved, and a Chained
+    // minion cannot be damaged — so attacking into Ten Commandments cost the
+    // attacker nothing at all. It takes the full 5 now, and is still chained.
+    expect(after.players[0].board[0]?.hp).toBe(5);
+    expect(after.players[0].board[0]?.chained).toBe(2);
+    expect(after.players[1].board[0]?.hp).toBe(18);
+  });
+
   it("Doctor Octopus destroys a relic outright", () => {
     const state = mainState();
     const relic = relics.find((entry) => state.deck.includes(entry.id));

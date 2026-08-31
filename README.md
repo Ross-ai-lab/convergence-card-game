@@ -266,7 +266,7 @@ One is fixed; the other two are below. In the order they matter:
   against `copy_and_trigger`. The minion's own effect is now parked in `MinionInstance.copyRestoreEffectId`
   (save v20) and put back by `restoreCopiedEffect` once the copy has no question left. That is what
   makes the prompt possible, and it fixed a second bug for free: **multi-step copies now work**. A
-  copied Ten Commandments freezes both minions and a copied pocket room takes one minion from each
+  copied Batman picks a victim and then a gadget, and a copied pocket room takes one minion from each
   side, where before the first prompt silently cancelled the whole effect.
 
   Anything reading an effect OFF a minion must call `printedEffectId`, not `effectId`, or it copies a

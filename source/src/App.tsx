@@ -766,7 +766,7 @@ export default function App() {
       return;
     }
     // NO "FIRST BLOOD" LINE (owner ruling). It fired the moment either core took
-    // any damage at all, which in a 76-core duel is turn two or three and means
+    // any damage at all, which in a 75-core duel is turn two or three and means
     // nothing — a narrator announcing an event that happens in every single game
     // before anything is at stake. Removed from the sheet and the clip deleted,
     // not just muted. The herald keeps only the moments that are actually rare:
@@ -1539,15 +1539,16 @@ export default function App() {
   function toggleCheatMode() {
     sfx.play("button");
     setDeveloperDuelActive(true);
-    // Read the switch from the live state inside the updater. The settings
-    // overlay can stay mounted across game changes, so closing over `game`
-    // could toggle from an older render and show ON without changing the
-    // current duel's affordability rules.
+    // ONE reading of the switch drives both the write and the log line. The
+    // updater used to make its own decision from `current` while the log read
+    // the render's `game`, so the two could describe opposite outcomes; and an
+    // updater cannot hand its answer back out, because React runs it during the
+    // next render, long after this function has returned.
     const enabled = !hasInfiniteMana(game, viewerId);
     setGame((current) =>
-      hasInfiniteMana(current, viewerId)
-        ? { ...current, cheatMode: false, cheatPlayer: null }
-        : { ...current, cheatMode: true, cheatPlayer: viewerId },
+      enabled
+        ? { ...current, cheatMode: true, cheatPlayer: viewerId }
+        : { ...current, cheatMode: false, cheatPlayer: null },
     );
     setSelection(null);
     setEvents((items) =>
@@ -1802,7 +1803,7 @@ export default function App() {
 
   /**
    * Selects a minion to attack with, and warns when its swing will be rolled
-   * rather than aimed — Sans, Kurogiri or a Bill Cipher slot. Said at the moment
+   * rather than aimed — Kurogiri, or a Bill Cipher slot. Said at the moment
    * of decision, because the redirect happens after the target is chosen.
    */
   function armAttacker(slotIndex: number) {

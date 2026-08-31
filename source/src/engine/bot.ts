@@ -1,4 +1,4 @@
-import { applyAction, getLegalActions, actionKey, type CardLibrary } from "./game";
+import { applyAction, getLegalActions, actionKey, readySwings, STARTING_CORE, type CardLibrary } from "./game";
 import { isMinionCard, type GameAction, type GameState, type MinionInstance, type PlayerId } from "./types";
 
 /**
@@ -356,13 +356,22 @@ function boardValue(state: GameState, playerId: PlayerId): number {
   );
 }
 
-/** Damage this player could put on the enemy core right now, if nothing blocked. */
+/**
+ * Damage this player could put on the enemy core right now, if nothing blocked.
+ *
+ * Counted through the engine's own `readySwings` rather than a local rule of
+ * thumb. The local one said "one swing per body that has not swung yet", which
+ * missed the second attack Flash, Vergil and a Tesseract bearer get, missed the
+ * swing a half-spent multi-attacker still has, and counted the ATK of bodies
+ * that can never attack at all — Galactus, Yoda, GLaDOS, The Watcher. Every one
+ * of those errors lands on the lethal check, which is the term this evaluation
+ * lets dominate everything else.
+ */
 function reach(state: GameState, playerId: PlayerId): number {
-  return state.players[playerId].board.reduce((total, minion) => {
-    if (!minion) return total;
-    if (minion.sleeping || minion.frozen || minion.attackLocked || minion.attacksUsed > 0) return total;
-    return total + minion.atk;
-  }, 0);
+  return state.players[playerId].board.reduce(
+    (total, minion) => total + (minion ? minion.atk * readySwings(minion) : 0),
+    0,
+  );
 }
 
 function hasTaunt(state: GameState, playerId: PlayerId): boolean {
@@ -388,7 +397,11 @@ function scoreState(state: GameState, botId: PlayerId): number {
   // the game actually ends. This term is what stops the bot trading happily
   // while it is being raced down.
   score += (me.health - enemy.health) * 2.2;
-  score += (30 - enemy.health) * 1.4; // progress toward winning
+  // Progress toward winning. Measured from the real starting core rather than
+  // the 30 this used to hard-code — that number was three pacing passes stale,
+  // and while a constant offset cancels out of every comparison, a stale one
+  // reads as a live dial to the next person tuning this.
+  score += (STARTING_CORE - enemy.health) * 1.4;
   score -= Math.max(0, 12 - me.health) * 3.5; // panic when low
 
   // Lethal, and being open to it, dominate everything else short of the win.
@@ -581,17 +594,17 @@ export function rolloutTurn(
   trueDice = true,
 ): GameState {
   let current = state;
-  for (let step = 0; step < ROLLOUT_CAP; step += 1) {
+  for (let depth = 0; depth < ROLLOUT_CAP; depth += 1) {
     if (current.phase === "gameOver") return current;
     const actor = whoActs(current);
     if (actor === null || actor !== playerId) return current;
-    const step = bestGreedy(current, library, playerId, trueDice);
-    if (!step) return current;
-    const before = actionKey(step.action);
-    const next = step.state;
-    // A move that changes nothing would spin here forever.
-    if (actionKey(step.action) === before && next === current) return current;
-    current = next;
+    const move = bestGreedy(current, library, playerId, trueDice);
+    if (!move) return current;
+    // A move that changes nothing would spin here forever. (The old guard also
+    // compared the chosen action's key against itself, which is always true and
+    // decided nothing; the state check is what was doing the work.)
+    if (move.state === current) return current;
+    current = move.state;
   }
   return current;
 }

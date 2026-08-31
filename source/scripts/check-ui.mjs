@@ -235,7 +235,13 @@ const enemyPowerEarly = await page.locator(".enemy-power-card").evaluate((elemen
   const style = getComputedStyle(element);
   return { opacity: style.opacity, visibility: style.visibility };
 });
-await page.waitForTimeout(900);
+// 1400, not 900. The popup waits 1s and then fades over 160ms, so sampling at
+// 400 + 900 left 140ms of margin — and `hover()` resolves a beat before the
+// browser applies `:hover`, so the sample kept landing mid-fade and the check
+// failed on a build that was working (measured 0.71, 0.90, 0.95 on three
+// consecutive runs). The claim is unchanged: hidden shortly after the pointer
+// arrives, fully shown once the deliberate one-second wait is over.
+await page.waitForTimeout(1400);
 const enemyPowerLate = await page.locator(".enemy-power-card").evaluate((element) => {
   const style = getComputedStyle(element);
   return { opacity: style.opacity, visibility: style.visibility };

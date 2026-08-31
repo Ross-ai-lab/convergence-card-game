@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
-import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
+import { applyAction, createInitialGame, getLegalActions, makeCardLibrary, readySwings } from "./game";
 import type { GameState, MinionInstance, PlayerId } from "./types";
 import { spawnTestMinion } from "./test-utils";
 
@@ -382,5 +382,27 @@ describe("attacking the enemy core", () => {
     const legal = getLegalActions(state, library);
     expect(legal.some((action) => action.type === "attack_core")).toBe(true);
     expect(legal.some((action) => action.type === "attack_minion")).toBe(true);
+  });
+
+  /**
+   * The number the bot's lethal check reads. Its own copy of this rule counted
+   * one swing per body and stopped, so every claim below was wrong inside the
+   * evaluation that decides whether a duel is already over.
+   */
+  it("counts the swings a minion has left, not one per body", () => {
+    expect(readySwings(makeMinion("Zoro", 0, { sleeping: false }))).toBe(1);
+    // Flash and Vergil swing twice; a spent first swing leaves the second.
+    expect(readySwings(makeMinion("Flash", 0, { sleeping: false }))).toBe(2);
+    expect(readySwings(makeMinion("Flash", 0, { sleeping: false, attacksUsed: 1 }))).toBe(1);
+    expect(readySwings(makeMinion("Vergil & Dante & Nero", 0, { sleeping: false }))).toBe(2);
+    // Bodies that can never attack are worth no reach at all.
+    expect(readySwings(makeMinion("Grand Master Yoda", 0, { sleeping: false }))).toBe(0);
+    expect(readySwings(makeMinion("The Watcher", 0, { sleeping: false }))).toBe(0);
+    expect(readySwings(makeMinion("Ragnaros", 0, { sleeping: false }))).toBe(0);
+    // And neither is a body that simply cannot act this turn.
+    expect(readySwings(makeMinion("Zoro", 0, { sleeping: true }))).toBe(0);
+    expect(readySwings(makeMinion("Zoro", 0, { sleeping: false, frozen: true }))).toBe(0);
+    expect(readySwings(makeMinion("Zoro", 0, { sleeping: false, chained: 2 }))).toBe(0);
+    expect(readySwings(makeMinion("Zoro", 0, { sleeping: false, attackLocked: true }))).toBe(0);
   });
 });

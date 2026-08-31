@@ -37,4 +37,15 @@ describe("player count", () => {
     await expect(loadPlayerCount({ request, storage })).resolves.toBeNull();
     expect(storage.setItem).not.toHaveBeenCalled();
   });
+
+  it("reads but never registers from a dev server", async () => {
+    const storage = memoryStorage();
+    const request = vi.fn(async () => new Response(JSON.stringify({ count: 12 }), { status: 200 }));
+
+    // The worker answers a POST from localhost with 403 on purpose, so asking
+    // to register there only ever produced console noise and no count.
+    await expect(loadPlayerCount({ request, storage, origin: "http://localhost:5177" })).resolves.toBe(12);
+    expect(request).toHaveBeenCalledWith(PLAYER_COUNT_API, expect.objectContaining({ method: "GET" }));
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
 });

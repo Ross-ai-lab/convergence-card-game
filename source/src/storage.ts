@@ -256,9 +256,19 @@ function migrateLegacyMechanics(game: GameState): void {
   if (!Array.isArray(game.heroPowerUsed)) game.heroPowerUsed = [false, false];
 }
 
+/**
+ * Throws the in-progress duel away — both the current key and the one version
+ * back that `loadGame` is still willing to read.
+ *
+ * Clearing only the current key was a resurrection bug: a finished duel wiped
+ * v25, the next load found nothing there, fell through to the v24 key that was
+ * never removed, and restored a duel from a previous session as though the
+ * player had left it running.
+ */
 export function clearSave(): void {
   try {
     window.localStorage.removeItem(SAVE_KEY);
+    window.localStorage.removeItem(LEGACY_SAVE_KEY);
   } catch {
     // ignore — see saveGame
   }

@@ -672,6 +672,31 @@ describe("2026 card replacements", () => {
     );
   });
 
+  it("Angstrom Levy buries the displaced minion and never summons it straight back", () => {
+    const state = mainState("angstrom-bottom");
+    state.players[0].board[1] = minion("John Wick", 0);
+    state.players[1].board[0] = minion("Zoro", 1);
+    const sentinel = state.deck[state.deck.length - 1];
+    state.deck = state.deck.slice(0, -1);
+    state.bottomDeck = [sentinel];
+    const asking = play(state, 0, "Angstrom Levy", 0);
+    const targetIndex = asking.pendingTarget!.options.findIndex((option) => option.owner === 0 && option.slot === 1);
+    const after = choose(asking, targetIndex);
+
+    const buried = cardId("John Wick");
+    // The replacement is drawn from the pile as it stood BEFORE the burial, so
+    // the one copy of the card just removed cannot come back into its own slot.
+    expect(after.players[0].board[1]?.cardId).not.toBe(buried);
+    // And "the bottom of the deck" has to BE the bottom. `drawFromDeck` refills
+    // with a reversed `bottomDeck`, so index 0 is dealt last and the end of the
+    // array is dealt first — appending put the buried card back on top. The
+    // sentinel below is what makes this assertion able to fail: with an empty
+    // pile both ends of a one-item array are the same place.
+    expect(after.bottomDeck.length).toBeGreaterThan(1);
+    expect(after.bottomDeck[0]).toBe(buried);
+    expect(after.bottomDeck[after.bottomDeck.length - 1]).toBe(sentinel);
+  });
+
   it("lets Charge attack immediately and lets 0 ATK declare an attack", () => {
     const charge = play(mainState(), 0, "Sonic", 0);
     expect(charge.players[0].board[0]?.sleeping).toBe(false);
@@ -904,6 +929,21 @@ describe("2026 card replacements", () => {
     expect(resolved.players[0].board[3]?.silenced).toBe(true);
   });
 
+  it("Meleoron's hidden ally also ignores Taunt, which is the other half of the card", () => {
+    const state = mainState("meleoron-taunt");
+    state.players[0].board[2] = minion("Zoro", 0, { sleeping: false });
+    state.players[1].board[0] = minion("Goblins", 1);
+    const asking = play(state, 0, "Meleoron", 0);
+    const hidden = asking.pendingTarget
+      ? choose(asking, asking.pendingTarget.options.findIndex((option) => option.slot === 2))
+      : asking;
+
+    expect(hidden.players[1].board[0]?.keywords).toContain("Taunt");
+    // Only the untargetable half was wired, so the hidden ally was still herded
+    // into the enemy Taunt like anyone else and could never reach the core.
+    expect(getLegalActions(hidden, library)).toContainEqual({ type: "attack_core", player: 0, attackerSlot: 2 });
+  });
+
   it("Knov keeps two minions in the pocket room and returns the higher ATK one", () => {
     const state = mainState();
     state.players[0].board[1] = minion("John Wick", 0, { atk: 5, hp: 5, maxHp: 5 });
@@ -1056,6 +1096,22 @@ describe("2026 card replacements", () => {
     const after = play(state, 0, "The 7 Heroic Spirits", 1);
     expect(after.players[0].board[0]?.relic).not.toBeNull();
     expect(after.players[0].board[1]?.relic).not.toBeNull();
+  });
+
+  it("The 7 Heroic Spirits keeps handing out relics past a bearer that can hold none", () => {
+    const state = mainState("heroic-skip");
+    // Mjolnir and Excalibur refuse a non-Good bearer, so a board can contain a
+    // minion with nothing left it may equip. That used to `break` the grant and
+    // rob every ally standing behind it.
+    state.deck = [relicId("Mjolnir"), relicId("Excalibur"), ...state.deck.filter((id) => !id.startsWith("r"))];
+    state.bottomDeck = [];
+    state.players[0].board[0] = minion("John Wick", 0); // Evil
+    state.players[0].board[2] = minion("Gandalf the White", 0); // Good
+
+    const after = play(state, 0, "The 7 Heroic Spirits", 1);
+
+    expect(after.players[0].board[0]?.relic).toBeNull();
+    expect(after.players[0].board[2]?.relic).not.toBeNull();
   });
 
   it("Shigaraki marks a damaged minion and kills it at the next Shigaraki turn", () => {
@@ -1458,6 +1514,30 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[1]?.attacksUsed).toBe(1);
   });
 
+  it("Nine Hashira reaches minions standing behind an empty slot", () => {
+    const state = mainState("hashira-gap");
+    // Slot 0 empty on purpose: the loop used to `break` on it and the card did
+    // nothing at all, however many minions were standing further along.
+    state.players[0].board[2] = minion("Zoro", 0, { sleeping: false, atk: 3, hp: 10, maxHp: 10 });
+    state.players[0].board[3] = minion("Kizaru", 0, { sleeping: false, atk: 4, hp: 10, maxHp: 10 });
+    state.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 0, hp: 30, maxHp: 30 });
+    const after = play(state, 0, "Nine Hashira", 1);
+    // 3 (Zoro) + 4 (Kizaru) + 3 (Nine Hashira itself) off a 30 HP body.
+    expect(after.players[1].board[0]?.hp).toBe(20);
+    expect(after.players[0].board[2]?.attacksUsed).toBe(1);
+    expect(after.players[0].board[3]?.attacksUsed).toBe(1);
+  });
+
+  it("Nine Hashira never orders a minion that can never attack", () => {
+    const state = mainState("hashira-locked");
+    state.players[0].board[0] = minion("Grand Master Yoda", 0, { sleeping: false });
+    state.players[0].board[2] = minion("Zoro", 0, { sleeping: false, atk: 3, hp: 10, maxHp: 10 });
+    state.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 0, hp: 30, maxHp: 30 });
+    const after = play(state, 0, "Nine Hashira", 1);
+    expect(after.players[0].board[0]?.attacksUsed).toBe(0);
+    expect(after.players[1].board[0]?.hp).toBe(30 - 3 - 3);
+  });
+
   it("Voldemort sacrifices the lowest-HP ally instead of dying", () => {
     const state = mainState();
     state.players[0].board[0] = minion("Zoro", 0, { atk: 6, hp: 10, maxHp: 10 });
@@ -1499,6 +1579,17 @@ describe("2026 card replacements", () => {
     expect(elderHit.players[1].board[1]?.atk).toBe(3);
     expect(elderHit.players[1].board[2]?.atk).toBe(3);
     expect(elderHit.players[0].board[0]?.atk).toBe(1);
+  });
+
+  it("Elden Beast buffs an ALL-camp ally, which is the umbrella camp for every camp buff", () => {
+    const state = mainState("elden-all-camp");
+    state.players[0].board[0] = minion("Elden Beast", 0);
+    // Avengers is camp ALL and alignment Good, so ONLY the umbrella rule can
+    // reach it. The aura tested a bare camp match and quietly skipped it.
+    state.players[0].board[1] = minion("Avengers", 0);
+    const after = endTurn(state, 0);
+    const avengers = after.players[0].board[1];
+    expect(avengers?.atk).toBe((avengers?.baseAtk ?? 0) + 2);
   });
 
   it("Cthulhu keeps Tech immunity, while T-1000 heals on its ongoing turn", () => {

@@ -401,8 +401,12 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
     });
   });
 
-  // Kojiro Sasaki soaks every attack aimed at his side; Taunt does the same job
-  // one rank below him. Shinigami Eyes ignores both.
+  // A bodyguard soaks every attack aimed at its side; Taunt does the same job
+  // one rank below it. Shinigami Eyes and Meleoron's hidden ally walk past both.
+  // No card in the current roster prints `redirect_attacks` — Kojiro Sasaki, who
+  // used to, now grants an evade chance instead — so this rank is dormant rather
+  // than dead: the hook stays because a copied or granted effect can still hand
+  // it to a minion.
   const bodyguard = enemy.board
     .map((minion, targetSlot) => ({ minion, targetSlot }))
     .find(({ minion }) => minion && attackTargetable(state, minion) && hasEffect(minion, "redirect_attacks") && !minion.silenced);
@@ -413,7 +417,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
   player.board.forEach((minion, attackerSlot) => {
     if (!minion || !canAttack(minion)) return;
     const ignoresGuards = hasRelic(minion, "ignore_defences");
-    const ignoresTaunt = tauntBypassActive(minion);
+    const ignoresTaunt = tauntBypassActive(state, minion);
     const forced = ignoresGuards ? [] : bodyguard ? [bodyguard] : ignoresTaunt ? [] : tauntTargets;
     const possibleTargets = forced.length
       ? forced
@@ -428,7 +432,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
     });
 
     // Hearthstone's rule: the enemy core is a legal target for ANY ready minion.
-    // Only a guard stops it — a Taunt, or Kojiro soaking his side — and the same
+    // Only a guard stops it — a Taunt, or a bodyguard soaking its side — and the same
     // things that would force a minion target force it here. Shinigami Eyes walks
     // past both. (Before this, the core could only be hit with the enemy board
     // completely empty, which made ATK almost meaningless.)
@@ -1361,7 +1365,6 @@ function attackMinion(
   const defender = state.players[defenderId].board[targetSlot];
   if (!attacker || !defender) return;
   const attackerId = attacker.instanceId;
-  triggerTenCommandments(state, attacker, events);
   events.push({ kind: "combat", text: `${attacker.name} attacks ${defender.name}.`, player: playerId, instanceId: attacker.instanceId });
   defender.attackedBy.push(attackerId);
   // RoboCop-style: triple the blow when striking an Evil defender. Ea doubles
@@ -1409,9 +1412,11 @@ function attackMinion(
       }
     }
   }
-  // Tesseract: the bearer strikes from outside space, so nothing reaches back.
-  // It is the one thing in the game that suspends simultaneous combat, and only
-  // on the bearer's own swing — it is still hit normally on the enemy's turn.
+  // `no_retaliation`: the bearer strikes from outside space, so nothing reaches
+  // back. It is the one thing in the game that suspends simultaneous combat, and
+  // only on the bearer's own swing — the bearer is still hit normally on the
+  // enemy's turn. No relic in the current file grants it (Tesseract, which once
+  // did, now grants a second attack); the hook stays for the next relic pass.
   if (!hasRelic(attacker, "no_retaliation")) {
     // Retaliation is combat damage, but it is not an attack declared by the
     // relic bearer. Defensive attack-immunity relics must not absorb this
@@ -1430,8 +1435,16 @@ function attackMinion(
   if (attackerAlive && survivingAttacker) {
     survivingAttacker.attacksUsed += 1;
     if (!survivingAttacker.silenced) {
-      if (hasEffect(survivingAttacker, "on_survive_buff_1")) buffMinion(survivingAttacker, 1, 1);
-      if (!defenderAlive && hasEffect(survivingAttacker, "on_kill_buff_1")) buffMinion(survivingAttacker, 1, 1);
+      if (hasEffect(survivingAttacker, "on_survive_buff_1")) {
+        buffMinion(survivingAttacker, 1, 1);
+        // Said out loud, like the defender's copy of this two blocks down. It
+        // was the one stat change in combat that happened in silence.
+        events.push(effectEvent(`${survivingAttacker.name} survives combat and gains +1/+1.`, survivingAttacker));
+      }
+      if (!defenderAlive && hasEffect(survivingAttacker, "on_kill_buff_1")) {
+        buffMinion(survivingAttacker, 1, 1);
+        events.push(effectEvent(`${survivingAttacker.name} takes the kill and gains +1/+1.`, survivingAttacker));
+      }
       if (!defenderAlive && hasEffect(survivingAttacker, "godrick_relic_on_kill")) {
         grantRelic(state, playerId, survivingAttacker, events);
       }
@@ -1444,6 +1457,26 @@ function attackMinion(
     if (!defenderAlive && hasRelic(survivingAttacker, "capture_kill")) {
       putCardInHand(state, playerId, defender.cardId, events, defender.instanceId);
       events.push(effectEvent(`${survivingAttacker.name} captures ${defender.name}.`, survivingAttacker));
+    }
+  }
+  // The defender's own kill reactions. A minion that kills its attacker on the
+  // retaliation has killed a minion, and every OTHER kill hook in the engine
+  // already treats it that way — Grievous, Meruem, Darkwing and Aizen all read
+  // the killer out of `destroyAtSlot`, which the retaliation path fills in.
+  // Zoro's "+1/+1 after killing a minion" was the odd one out and only ever
+  // paid on his own swing.
+  if (defenderAlive && !attackerAlive) {
+    if (hasEffect(defender, "on_kill_buff_1")) {
+      buffMinion(defender, 1, 1);
+      events.push(effectEvent(`${defender.name} kills its attacker and gains +1/+1.`, defender));
+    }
+    if (hasEffect(defender, "doom_evil_slayer") && attacker.alignment === "Evil") {
+      defender.hp = Math.min(defender.maxHp, defender.hp + 3);
+      events.push(effectEvent(`${defender.name} heals 3 after slaying Evil.`, defender));
+    }
+    if (hasRelic(defender, "capture_kill")) {
+      putCardInHand(state, defenderId, attacker.cardId, events, attacker.instanceId);
+      events.push(effectEvent(`${defender.name} captures ${attacker.name}.`, defender));
     }
   }
   // Defender reactions to being attacked (the strike landed even if it died).
@@ -1487,6 +1520,8 @@ function attackMinion(
   }
   // Yoriichi Type Zero: any friendly that walks out of combat is sharpened.
   awardSurvivors(state, events, [attackerId, defender.instanceId]);
+  // Last, so the chain lands on an attacker that has already taken its blow.
+  triggerTenCommandments(state, attacker, events, attackerAlive);
 }
 
 /** Yoriichi's payoff — every friendly participant that survives gains +1/+1. */
@@ -1506,7 +1541,6 @@ function awardSurvivors(state: GameState, events: GameEvent[], fought: string[])
 function attackCore(state: GameState, playerId: PlayerId, attackerSlot: number, events: GameEvent[]): void {
   const attacker = state.players[playerId].board[attackerSlot];
   if (!attacker) return;
-  triggerTenCommandments(state, attacker, events);
   const defenderId = opponent(playerId);
   // Exactly its ATK — no floor, no retaliation. Ea doubles a swing wherever it
   // lands; the One Ring adds its reach only against the core.
@@ -1517,9 +1551,27 @@ function attackCore(state: GameState, playerId: PlayerId, attackerSlot: number, 
   if (landed) {
     events.push({ kind: "damage", text: `${attacker.name} strikes the core for ${damage}.`, player: playerId, instanceId: attacker.instanceId });
   }
+  triggerTenCommandments(state, attacker, events, true);
 }
 
-function triggerTenCommandments(state: GameState, attacker: MinionInstance, events: GameEvent[]): void {
+/**
+ * Chains the first enemy minion to attack this turn.
+ *
+ * Called AFTER the swing has resolved, exactly like Hypnos's `chain_attacker`.
+ * Running it first looked equivalent and was not: a Chained minion is protected
+ * from combat damage (`canDamage`), so chaining the attacker before the blow
+ * landed made the punishment cancel the defender's own retaliation — attacking
+ * into Ten Commandments cost the attacker nothing at all.
+ *
+ * The trigger is spent whether or not the attacker is still standing: it fired,
+ * and the next attacker this turn is no longer the first one.
+ */
+function triggerTenCommandments(
+  state: GameState,
+  attacker: MinionInstance,
+  events: GameEvent[],
+  attackerAlive: boolean,
+): void {
   const source = state.players[opponent(attacker.owner)].board.find(
     (minion) =>
       minion &&
@@ -1529,6 +1581,7 @@ function triggerTenCommandments(state: GameState, attacker: MinionInstance, even
   );
   if (!source) return;
   source.commandmentsTriggeredAtTurn = state.turnNumber;
+  if (!attackerAlive) return;
   if (isSlotProtected(state, attacker) || !canDisable(state, source.owner, attacker, "chain")) return;
   attacker.chained = Math.max(attacker.chained, 2);
   events.push(effectEvent(`${source.name} chains the first attacker, ${attacker.name}, for one turn.`, source));
@@ -1839,16 +1892,19 @@ function attackTargetable(state: GameState, minion: MinionInstance): boolean {
   return !isUntargetable(state, minion);
 }
 
+/** Whether a live Meleoron is currently hiding this minion. */
+function hiddenByMeleoron(state: GameState, minion: MinionInstance): boolean {
+  if (!minion.protectedByMeleoron) return false;
+  return state.players[minion.owner].board.some(
+    (ally) => ally !== null && ally.instanceId === minion.protectedByMeleoron && hasEffect(ally, "meleoron_protect_ally") && !ally.silenced,
+  );
+}
+
 function isUntargetable(state: GameState, minion: MinionInstance): boolean {
   if (minion.chained > 0) return true;
   if (hasRelic(minion, "untargetable")) return true;
   if (minion.untargetableUntilTurn !== null && minion.untargetableUntilTurn !== undefined && minion.untargetableUntilTurn > state.turnNumber) return true;
-  if (minion.protectedByMeleoron) {
-    return state.players[minion.owner].board.some(
-      (ally) => ally !== null && ally.instanceId === minion.protectedByMeleoron && hasEffect(ally, "meleoron_protect_ally") && !ally.silenced,
-    );
-  }
-  return false;
+  return hiddenByMeleoron(state, minion);
 }
 
 /** Every position on the chosen side — a slot aura does not need an occupant. */
@@ -2171,11 +2227,17 @@ function replaceWithRandomSameCost(state: GameState, target: MinionInstance, lib
   const owner = target.owner;
   state.players[owner].board[slot] = null;
   discardAttachedRelics(state, target);
-  state.bottomDeck.push(target.cardId);
+  // Pick the replacement from the draw pile BEFORE the displaced minion joins
+  // it, or Angstrom Levy can "replace" a minion with the very card he just
+  // buried — there is one copy of everything in this deck.
   const candidates = [...state.deck, ...state.bottomDeck].filter((cardId) => {
     const card = library[cardId];
     return isMinionCard(card) && card.cost === target.cost;
   });
+  // `unshift`, not `push`. `drawFromDeck` refills with `bottomDeck.reverse()`,
+  // so the LAST entry here is drawn FIRST — pushing put the card on top of the
+  // deck, which is the opposite of what the card promises.
+  state.bottomDeck.unshift(target.cardId);
   if (candidates.length === 0) {
     events.push({ kind: "effect", text: `${target.name} is put on the bottom of the deck, but no same-cost minion replaces it.`, player: owner, cardId: target.cardId });
     return;
@@ -3477,14 +3539,19 @@ function runEffect(
     }
     events.push(effectEvent(`${label} purifies the board: all minions are Good and lose their negative statuses.`, source));
   } else if (source.effectId === "hashira_focus_attack") {
-    if (picked) {
+    if (picked && pickedSlot) {
+      const victimSlot = pickedSlot.slot;
       for (let slot = 0; slot < boardSize; slot += 1) {
+        // The VICTIM leaving the board ends the order; an empty friendly slot
+        // only skips that slot. These were one `break` before, so a gap
+        // anywhere on the board silenced every minion standing behind it —
+        // with slot 0 empty the card did nothing at all.
+        if (!state.players[picked.owner].board[victimSlot]) break;
         const attacker = state.players[source.owner].board[slot];
-        const target = state.players[picked.owner].board[pickedSlot?.slot ?? -1];
-        if (!attacker || !target) break;
-        if (attacker.frozen || attacker.chained > 0 || attacker.attackLocked) continue;
-        if (!attacker.silenced && hasKeyword(attacker, "Cannot Attack")) continue;
-        attackMinion(state, source.owner, slot, pickedSlot!.slot, events);
+        if (!attacker) continue;
+        if (attacker.frozen || attacker.chained > 0) continue;
+        if (attackForbidden(attacker)) continue;
+        attackMinion(state, source.owner, slot, victimSlot, events);
       }
       events.push(effectEvent(`${label} orders every able friendly minion to attack ${picked.name}.`, source));
     }
@@ -3680,7 +3747,8 @@ function runEffect(
               : "slot_grow_2";
     if (pickedSlot) layAura(state, pickedSlot, auraId, source, events);
   } else if (source.effectId === "confuse_enemies") {
-    // Sans. Their whole board swings blind through their next turn.
+    // Their whole board swings blind through their next turn. No card prints
+    // `confuse_enemies` today — Sans, who used to, now evades instead.
     enemy.confusedUntilTurn = state.turnNumber + 2;
     events.push(effectEvent(`${label} scrambles the enemy's aim.`, source));
   } else if (source.effectId === "reveal_and_shuffle_chosen") {
@@ -4015,7 +4083,10 @@ function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, libr
       const relic = library[cardId];
       return isRelicCard(relic) && canEquipRelicToBearer(relic, bearer);
     });
-    if (eligible.length === 0) break;
+    // `continue`, not `break`: eligibility is per BEARER. Mjolnir and Excalibur
+    // only fit a Good minion, so one Evil bearer with nothing left it could hold
+    // used to end the whole grant and rob every ally standing behind it.
+    if (eligible.length === 0) continue;
     const cardId = eligible[rollInt(state, eligible.length)];
     const availableIndex = available.indexOf(cardId);
     if (availableIndex < 0) continue;
@@ -4387,7 +4458,11 @@ function refreshPassiveAuras(state: GameState): void {
   );
   for (const source of eldenBeasts) {
     for (const target of state.players[source.owner].board) {
-      if (!target || (target.alignment !== "Neutral" && target.camp !== "Magic")) continue;
+      // `receivesCampBuff`, not a bare camp match: ALL is the umbrella camp and
+      // takes every positive camp buff (see types.ts and the How To Play rules
+      // screen). Battleship and the Giant Tree already read it this way; this
+      // aura was the one that did not, so an ALL minion silently missed it.
+      if (!target || (target.alignment !== "Neutral" && !receivesCampBuff(target, "Magic"))) continue;
       target.atk += 2;
       target.auraBonuses = target.auraBonuses ?? [];
       target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 0, keywords: [] });
@@ -4871,13 +4946,13 @@ export function attacksRandomly(state: GameState, attacker: MinionInstance): boo
 }
 
 /**
- * Picks where a blind swing actually lands. Guards still hold — Taunt and Kojiro
- * narrow the pool before the roll, rather than being bypassed by it.
+ * Picks where a blind swing actually lands. Guards still hold — Taunt and a
+ * bodyguard narrow the pool before the roll, rather than being bypassed by it.
  */
 function randomAttackTarget(state: GameState, attacker: MinionInstance): number | "core" | null {
   const enemy = state.players[opponent(attacker.owner)];
   const ignoresGuards = hasRelic(attacker, "ignore_defences");
-  const ignoresTaunt = tauntBypassActive(attacker);
+  const ignoresTaunt = tauntBypassActive(state, attacker);
   const bodyguard = enemy.board.findIndex(
     (minion) => minion && attackTargetable(state, minion) && hasEffect(minion, "redirect_attacks") && !minion.silenced,
   );
@@ -5385,19 +5460,47 @@ function highestEnemyAttack(state: GameState, owner: PlayerId): number {
   return attacks.length > 0 ? Math.max(...attacks) : -1;
 }
 
-function canAttack(minion: MinionInstance): boolean {
-  if (!minion.silenced && (hasEffect(minion, "watcher_reveal_hand") || hasEffect(minion, "ragnaros_end_turn"))) return false;
-  if (!minion.silenced && hasKeyword(minion, "Cannot Attack")) return false;
-  if (hasEffect(minion, "evasive") && !minion.silenced) return false;
-  if (minion.attackLocked) return false; // APR has taken this swing until its lock expires
-  // A 0-ATK minion may still declare an attack; it simply deals no damage.
-  return !minion.sleeping && !minion.frozen && minion.chained === 0 && minion.attacksUsed < maxAttacks(minion);
+/**
+ * Everything that forbids a swing outright, ignoring the turn's own bookkeeping.
+ *
+ * Split out from `canAttack` because Nine Hashira orders a mass attack that
+ * deliberately overrides sleep and the once-a-turn limit but must still respect
+ * the cards that simply never attack. Two copies of this list drifted apart:
+ * the Hashira loop knew about the Cannot Attack keyword and not about Ragnaros,
+ * The Watcher or an Evade body.
+ *
+ * `hasEffect` already answers false for a silenced or chained minion, so no
+ * caller needs its own silence guard around one.
+ */
+function attackForbidden(minion: MinionInstance): boolean {
+  if (hasEffect(minion, "watcher_reveal_hand") || hasEffect(minion, "ragnaros_end_turn")) return true;
+  if (!minion.silenced && hasKeyword(minion, "Cannot Attack")) return true;
+  if (hasEffect(minion, "evasive")) return true;
+  return minion.attackLocked; // APR has taken this swing until its lock expires
 }
 
-/** Exported so the bot reads the SAME rule rather than keeping its own copy —
- *  it used to count every minion's swing once, which silently hid Flash's and
- *  Vergil's extra attacks from its lethal check. */
-export function maxAttacks(minion: MinionInstance): number {
+function canAttack(minion: MinionInstance): boolean {
+  // A 0-ATK minion may still declare an attack; it simply deals no damage.
+  return readySwings(minion) > 0;
+}
+
+/**
+ * How many attacks this minion could still declare this turn.
+ *
+ * Exported so the bot's lethal check reads the SAME rule the legality check
+ * does. `maxAttacks` used to be exported for that and the bot never called it:
+ * its `reach` counted one swing per body and stopped, so Flash's and Vergil's
+ * second attack were invisible to it, a minion that had already swung once had
+ * its remaining swing ignored, and a Cannot Attack body like Galactus was
+ * counted as eight points of reach it could never deliver.
+ */
+export function readySwings(minion: MinionInstance): number {
+  if (attackForbidden(minion)) return 0;
+  if (minion.sleeping || minion.frozen || minion.chained > 0) return 0;
+  return Math.max(0, maxAttacks(minion) - minion.attacksUsed);
+}
+
+function maxAttacks(minion: MinionInstance): number {
   // Flash keeps the original multi-attack passive and Divine Shield, but his
   // current card pass caps the speed at two swings.
   if (!minion.silenced && hasEffect(minion, "flash_speed")) return 2;
@@ -5430,7 +5533,17 @@ function hasEffect(minion: MinionInstance, effectId: EffectId): boolean {
   return held && active;
 }
 
-function tauntBypassActive(minion: MinionInstance): boolean {
+/**
+ * Whether this minion walks past Taunt and a bodyguard's soak.
+ *
+ * Meleoron's ally belongs here, not only in `isUntargetable`: the card grants
+ * "ignores Taunt AND cannot be targeted", and only the second half was wired,
+ * so the hidden ally was still herded into the enemy's Taunt like anyone else.
+ * The hiding is Meleoron's, not the ally's, so the ally's own Silence does not
+ * cancel it — which is why this sits outside the silence guard.
+ */
+function tauntBypassActive(state: GameState, minion: MinionInstance): boolean {
+  if (hiddenByMeleoron(state, minion)) return true;
   return !minion.silenced && (hasEffect(minion, "charge_ignore_taunt") || hasEffect(minion, "black_ops_ignore_taunt"));
 }
 
