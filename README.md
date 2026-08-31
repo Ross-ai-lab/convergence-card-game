@@ -1304,7 +1304,7 @@ instead of trading the layout away.
 `Screens.tsx` checks for a raster extension first; rewriting an SVG pointed at a file the generator
 never produces, and the card rendered blank.
 
-Card-theme stings are the `c###.ogg` files in `source/public/audio/stings/` for the voiced entries in `source/data/cards.csv`. Relics use `r###` IDs and are intentionally not part of that theme set, even though relics share the deck and can appear in hand; audio prefetch must filter relic IDs rather than request `audio/stings/r###.ogg`.
+Card stings are the `c###.ogg` files and relic stings are the `r###.ogg` files in `source/public/audio/stings/`. Every playable minion and relic resolves to its own direct file. Relics use `r###` IDs and are intentionally not part of the title-screen theme set, even though relics share the deck and can appear in hand; audio prefetch must filter relic IDs rather than request `audio/stings/r###.ogg`.
 
 **Hard rule for new content: never reuse an existing audio mapping.** Every new card or relic must get its own suitable source from the YouTube pipeline. Never point a new `c###` or `r###` entry at an existing mapping, copy another item's sting, or fill the slot with a generic theme. Run `materials/local-production/audio-tracks/download_convergence_audio.py` to find and download the source through YouTube, then cut the card-specific sting with `materials/local-production/asset-tools/build-card-stings.py`. If the pipeline cannot find a suitable source for that specific item, stop and ask; do not ship a reused track. The relic prefetch exclusion above concerns loading only and does not waive this provenance rule.
 

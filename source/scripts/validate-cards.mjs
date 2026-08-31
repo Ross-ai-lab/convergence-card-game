@@ -252,12 +252,12 @@ for (const [index, card] of cards.entries()) {
     }
   }
 
-  // EVERY card has a theme. A card whose sting is missing is silent when it
+  // EVERY minion card has a theme. A card whose sting is missing is silent when it
   // lands, which is not a small blemish: the sound IS the arrival, and the
   // silence reads as a broken build rather than as a card without music. Three
   // cards shipped that way (Mothership, Planetary Defense Grid, Black Hole)
-  // simply because nothing counted, so this counts. Relics are deliberately NOT
-  // included — they use r### ids and are not part of the theme set at all.
+  // simply because nothing counted, so this counts. Relics have their own
+  // direct r### check below.
   const stingPath = path.join(projectRoot, "public", "audio", "stings", `${card.id}.ogg`);
   if (!fs.existsSync(stingPath)) {
     errors.push(`Line ${line}: ${card.name} has no theme — expected public/audio/stings/${card.id}.ogg`);
@@ -268,6 +268,10 @@ if (cards.length !== 182) errors.push(`Expected 182 cards, found ${cards.length}
 if (relics.length !== 34) errors.push(`Expected 34 relics, found ${relics.length}`);
 for (const [index, relic] of relics.entries()) {
   checkEffectPunctuation(relic.name, index + 2, relic.effect, errors);
+  const stingPath = path.join(projectRoot, "public", "audio", "stings", `${relic.id}.ogg`);
+  if (!fs.existsSync(stingPath)) {
+    errors.push(`Line ${index + 2}: ${relic.name} has no theme — expected public/audio/stings/${relic.id}.ogg`);
+  }
 }
 
 if (errors.length) {

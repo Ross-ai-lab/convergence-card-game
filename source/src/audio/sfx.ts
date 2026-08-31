@@ -805,44 +805,12 @@ export function stopMusic(): void {
  */
 const CARD_THEME_ID = /^(?:c|r)\d+$/;
 
-// Older relics keep their established shared-universe themes. New cards and
-// relics are intentionally absent here and therefore load their own r### file.
-const RELIC_THEME_SOURCE: Record<string, string> = {
-  r001: "c102",
-  r002: "c064",
-  r003: "c080",
-  r005: "c015",
-  r006: "r006",
-  r007: "c030",
-  r008: "c102",
-  r009: "c019",
-  r010: "c030",
-  r011: "c025",
-  r012: "c030",
-  r013: "c106",
-  r014: "c049",
-  r015: "c017",
-  r016: "c049",
-  r017: "c069",
-  r018: "c021",
-  r019: "c116",
-  r020: "c015",
-  r021: "c109",
-  r022: "c061",
-  r023: "c004",
-  r024: "c159",
-  r025: "c154",
-  r026: "c044",
-  r027: "c015",
-  r028: "c080",
-};
-
 function isCardThemeId(cardId: string): boolean {
   return CARD_THEME_ID.test(cardId);
 }
 
 function themeUrl(cardId: string): string {
-  return `${import.meta.env.BASE_URL}audio/stings/${RELIC_THEME_SOURCE[cardId] ?? cardId}.ogg`;
+  return `${import.meta.env.BASE_URL}audio/stings/${cardId}.ogg`;
 }
 
 async function loadTheme(cardId: string): Promise<AudioBuffer | null> {

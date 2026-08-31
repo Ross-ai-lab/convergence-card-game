@@ -114,10 +114,9 @@ for (const [id, label] of themes) {
   check(`card theme: ${label}`, result.peak > 0.02 && result.activeMs > 200, `peak ${result.peak}, ${result.activeMs}ms audible`);
 }
 
-// Relics use the same theme path as minions, but their IDs are distinct so an
+// Relics use the same theme bus as minions, but their IDs are distinct so an
 // equip can never be proven by the minion-only sample above. Probe every relic
-// ID, including the locally cut Made in Abyss sting, to catch a missing mapping
-// or a missing file before the player reaches an equip action.
+// ID and its own direct file to catch a missing source before an equip action.
 for (const { id: relicId } of readRelics()) {
   const result = await page.evaluate((cardId) => window.__sfx.probeCardTheme(cardId, 900), relicId);
   check(`relic theme: ${relicId}`, result.peak > 0.02 && result.activeMs > 200, `peak ${result.peak}, ${result.activeMs}ms audible`);
