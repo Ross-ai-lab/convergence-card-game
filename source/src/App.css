@@ -269,6 +269,18 @@ button:disabled {
   font-size: 0.78rem;
 }
 
+.fullscreen-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.fullscreen-trigger svg {
+  flex: 0 0 auto;
+}
+
 .sound-toggle.muted {
   color: var(--muted);
   border-color: rgba(255, 241, 207, 0.18);
@@ -4229,6 +4241,15 @@ button:disabled {
     min-height: 26px;
     padding: 0 8px;
     font-size: 0.68rem;
+  }
+
+  .system-buttons .fullscreen-label {
+    display: none;
+  }
+
+  .system-buttons .fullscreen-trigger {
+    width: 30px;
+    padding-inline: 0;
   }
 
   .table-frame {

@@ -74,6 +74,7 @@ import { createDuelSeed } from "./duelSeed";
 import { spawnTestMinion } from "./engine/test-utils";
 import {
   DuelIntro,
+  FullscreenButton,
   HowToPlay,
   PassScreen,
   SettingsPanel,
@@ -97,6 +98,32 @@ function heroPowersForDuel(
   seed: string,
 ): [HeroPowerId | null, HeroPowerId | null] {
   return mode.kind === "hotseat" ? [playerPower, playerPower] : [playerPower, randomHeroPower(seed)];
+}
+
+function useFullscreen() {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const syncFullscreenState = () => setIsFullscreen(document.fullscreenElement !== null);
+    syncFullscreenState();
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreenState);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch((error: unknown) => {
+        console.warn("Could not exit full screen.", error);
+      });
+      return;
+    }
+
+    void document.documentElement.requestFullscreen().catch((error: unknown) => {
+      console.warn("Could not enter full screen.", error);
+    });
+  }, []);
+
+  return { isFullscreen, toggleFullscreen };
 }
 
 // Everything the card face needs to DRAW itself. It used to be six fields,
@@ -390,6 +417,7 @@ function makeParticles(kind: ImpactKind | "death" | "stasis", camp?: Camp): Part
 }
 
 export default function App() {
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
   // The FULL roster, always. A restricted pool decides what a new duel is dealt
   // from; it must never decide what the engine can resolve. A saved duel, a
   // minion already on the board, or a card copied out of the enemy's hand can
@@ -2043,6 +2071,7 @@ export default function App() {
           >
             ⚙ Settings
           </button>
+          <FullscreenButton active={isFullscreen} onToggle={toggleFullscreen} />
           {developerCheatRevealed ? (
             <button
               type="button"
@@ -2455,6 +2484,8 @@ export default function App() {
           }}
           onStart={beginDuel}
           onSettings={() => setOverlay("settings")}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
           onGallery={() => setOverlay("gallery")}
           onRecord={() => setOverlay("record")}
           onHeroPowers={() => setOverlay("heroPowers")}

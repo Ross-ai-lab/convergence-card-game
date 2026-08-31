@@ -75,6 +75,12 @@ check(
     (await page.locator(".hero-power-trigger").getByText("Call a Recruit", { exact: true }).count()) === 0,
   "the equipped power name is not printed on the title menu",
 );
+check(
+  "title menu exposes the fullscreen control",
+  (await page.locator(".title-fullscreen-trigger").count()) === 1 &&
+    (await page.locator(".title-fullscreen-trigger").getAttribute("aria-label")) === "Full screen",
+  "upper-right fullscreen button is present",
+);
 
 check(
   "developer cheat stays hidden until its code is typed",
@@ -179,6 +185,18 @@ check(
   "the title Duel button starts a match",
   (await page.locator(".hs-shell").count()) === 1,
   (await page.locator(".hs-shell").count()) === 1 ? "board opened" : "BLOCKED",
+);
+const toolbarButtonOrder = await page.locator(".system-buttons").evaluate((element) => {
+  const buttons = [...element.querySelectorAll(":scope > button")];
+  return {
+    settings: buttons.findIndex((button) => button.getAttribute("title") === "Sound and settings"),
+    fullscreen: buttons.findIndex((button) => button.classList.contains("fullscreen-trigger")),
+  };
+});
+check(
+  "duel toolbar places fullscreen beside Settings",
+  toolbarButtonOrder.fullscreen === toolbarButtonOrder.settings + 1,
+  `settings index ${toolbarButtonOrder.settings}, fullscreen index ${toolbarButtonOrder.fullscreen}`,
 );
 await page.locator(".duel-intro").waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
 check(

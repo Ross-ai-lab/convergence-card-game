@@ -19,6 +19,8 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import {
   ArrowLeft,
   Cards,
+  CornersIn,
+  CornersOut,
   Crown,
   Scroll,
   GearSix,
@@ -52,6 +54,33 @@ import type { BotSkill } from "../engine/bot";
 
 export type GameMode = { kind: "hotseat" } | { kind: "bot"; skill: BotSkill };
 export type DuelIntroPhase = "prelude" | "reveal" | "draw" | "mana" | "exit";
+
+export function FullscreenButton({
+  active,
+  onToggle,
+  className,
+}: {
+  active: boolean;
+  onToggle: () => void;
+  className?: string;
+}) {
+  const Icon = active ? CornersIn : CornersOut;
+  const label = active ? "Exit full screen" : "Full screen";
+
+  return (
+    <button
+      type="button"
+      className={["fullscreen-trigger", className].filter(Boolean).join(" ")}
+      onClick={onToggle}
+      aria-label={label}
+      aria-pressed={active}
+      title={label}
+    >
+      <Icon size={22} weight="fill" aria-hidden="true" />
+      <span className="fullscreen-label">{label}</span>
+    </button>
+  );
+}
 
 const MINION_COUNT = cards.length;
 const RELIC_COUNT = relics.length;
@@ -203,6 +232,8 @@ export function TitleScreen({
   onContinue,
   onStart,
   onSettings,
+  isFullscreen,
+  onToggleFullscreen,
   onGallery,
   onRecord,
   onHeroPowers,
@@ -223,6 +254,8 @@ export function TitleScreen({
   onContinue: () => void;
   onStart: (mode: GameMode) => void;
   onSettings: () => void;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
   onGallery: () => void;
   onRecord: () => void;
   onHeroPowers: () => void;
@@ -252,6 +285,7 @@ export function TitleScreen({
         />
       </div>
       <FloatingCardField />
+      <FullscreenButton active={isFullscreen} onToggle={onToggleFullscreen} className="title-fullscreen-trigger" />
 
       <div className="duel-orbit" aria-label="Choose an opponent">
         {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option) => {
