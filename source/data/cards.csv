@@ -29,7 +29,7 @@ c027,Thanos,10,9,10,Yellow,Magic,Evil,,snap_balance,onPlay,Battlecry: Each playe
 c028,Flash,10,5,5,Yellow,Magic,Good,Divine Shield;Passive;Charge,flash_speed,passive,Charge. Divine Shield. Passive: Can attack 2 times each turn,Speed of light. And beyond.,DCU,/card-art/raw/c028.webp
 c029,Darth Vader,5,3,2,Purple,Magic,Evil,,vader_chain_or_destroy,onPlay,"Battlecry: Choose an enemy minion. Set its ATK to 1 and Chain it",Reborn.,Star Wars,/card-art/raw/c029.webp
 c030,Dumbledore,5,2,4,Black,Magic,Good,Passive,dumbledore_cleanse,passive,"Passive: Friendly minions cannot be Silenced, Frozen, or Chained. Undo any such curses",He always asks calmly.,Harry Potter,/card-art/raw/c030.webp
-c031,Ragnaros,6,6,6,Black,Magic,Evil,Passive,ragnaros_end_turn,passive,"Passive: Cannot attack. At the end of your turn, deal 3 damage to a random enemy minion or the enemy core",Summoned. Once again.,Hearthstone,/card-art/raw/c031.webp
+c031,Ragnaros,6,6,6,Black,Magic,Evil,Cannot Attack;Ongoing,ragnaros_ongoing_burn,ongoing,"Cannot attack. Ongoing: Deal 3 damage to a random enemy minion or the enemy core",Summoned. Once again.,Hearthstone,/card-art/raw/c031.webp
 c032,Silver Surfer,7,1,1,Purple,Magic,Neutral,Deathrattle,deathrattle_summon_galactus,deathrattle,Deathrattle: Summon Galactus (8/8) with Taunt that cannot attack,The tide brings worlds.,MCU,/card-art/raw/c032.webp
 c033,Yujiro,4,4,4,Red,Nature,Evil,Passive,immune_nature_minions,passive,Passive: Immune to Nature minions,The strongest man alive.,Baki,/card-art/raw/c033.webp
 c034,Yubaba,4,2,2,Red,Magic,Evil,,devolve_enemy_minions,onPlay,"Battlecry: Devolve your enemy minions into random ones that cost 1 less mana",Are you looking for employment?,Spirited Away,/card-art/raw/c034.webp
@@ -118,7 +118,7 @@ c118,Battleship,4,3,3,Black,Tech,Neutral,Passive,battleship_tech_aura,passive,Pa
 c119,Carnage Kabuto,4,3,2,Black,Nature,Evil,,self_atk_3,ongoing,Ongoing: Gain +3 ATK,Maximum evolution,OPM,/card-art/raw/c119.webp
 c120,Fantastic Four,4,1,2,Black,Nature,Good,Passive,fantastic_four_aura,passive,"Passive: Your first 4 board slots from left to right gain 4 different effects: Taunt; Divine Shield; +2 ATK; +2 HP",4,MCU,/card-art/raw/c120.webp
 c121,Furious Five,4,3,3,Black,Nature,Good,Passive,shifu_shield,passive,"Passive: Whenever you play a Good friendly minion, it gains Divine Shield",Resilience,Kung-Fu Panda,/card-art/raw/c121.webp
-c122,Wall of Flesh,4,2,5,Black,Nature,Evil,Taunt;Passive,wall_of_flesh_end_turn,passive,"Taunt. Passive: At the end of your turn, deal 1 damage to all other minions",A living barricade,Terraria,/card-art/raw/c122.webp
+c122,Wall of Flesh,4,2,5,Black,Nature,Evil,Taunt;Ongoing,wall_of_flesh_grind,ongoing,"Taunt. Ongoing: Deal 1 damage to all other minions",A living barricade,Terraria,/card-art/raw/c122.webp
 c123,Darkwing,3,2,2,Red,Tech,Good,Deathrattle,kill_back,deathrattle,Deathrattle: The minion which kills this minion also dies right after,He knew the cost,Invincible,/card-art/raw/c123.webp
 c124,Knov,3,1,1,Red,Magic,Good,,knov_pocket_room,onPlay,"Battlecry: Choose a friendly and an enemy minion to place in the pocket room, removing them from the board. After 2 turns, return the minion with the higher ATK",The Room,HxH,/card-art/raw/c124.webp
 c125,Aizawa,3,2,2,Yellow,Magic,Good,,silence_enemy,onPlay,Battlecry: Silence an enemy minion of your choice,All it takes is one look,MHA,/card-art/raw/c125.webp
@@ -153,7 +153,7 @@ c153,Black Ops,2,2,2,Black,Tech,Neutral,Passive,black_ops_ignore_taunt,passive,P
 c154,Gravelord Nito,4,2,3,Black,Magic,Neutral,Passive,nito_any_death_1_1,passive,Passive: Gain +1/+1 when a minion dies,The first of the dead keeps the count.,Dark Souls,/card-art/raw/c154.webp
 c155,Margit the Fell Omen,3,1,1,Black,Magic,Neutral,Deathrattle,deathrattle_summon_morgott,deathrattle,"Deathrattle: Summon Morgott, the Omen King (3/3)",The immovable,Elden Ring,/card-art/raw/c155.webp
 c156,Ouken,2,2,1,Black,Magic,Evil,Deathrattle,ouken_reborn,deathrattle,"Deathrattle: Reborn, become Chained",Immortality cost him everything,Ranking of Kings,/card-art/raw/c156.webp
-c157,Pillar Men,4,4,4,Black,Nature,Evil,Chained;Passive,pillar_men_kill_heal,passive,"Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health",They outwaited the sun.,JoJo,/card-art/raw/c157.webp
+c157,Pillar Men,4,4,3,Black,Nature,Evil,Chained;Passive,pillar_men_kill_heal,passive,"Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health",They outwaited the sun.,JoJo,/card-art/raw/c157.webp
 c159,Indiana Jones,1,1,1,Red,Nature,Good,,discover_relic_self,onPlay,Battlecry: Discover 1 of 3 Ascension Relics. Add it to your hand,Mine,Indiana Jones,/card-art/raw/c159.webp
 c160,Domovoy,1,1,1,Yellow,Magic,Good,,draw_relic,onPlay,Battlecry: Draw an Ascension Relic,The house spirit,Myth,/card-art/raw/c160.webp
 c161,Flowey,1,0,1,Yellow,Magic,Evil,Deathrattle,flowey_save_load,deathrattle,"Battlecry: Save your core's current HP. Deathrattle: Set your core to the saved HP",Friendliness is a face you put on.,Undertale,/card-art/raw/c161.webp

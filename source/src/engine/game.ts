@@ -715,7 +715,6 @@ function makePlayer(id: PlayerId, name: string, health: number = DEFAULT_STARTIN
     manaPenaltyNextTurn: 0,
     pressured: null,
     slotAuras: [],
-    confusedUntilTurn: null,
     randomAttacksFromTurn: null,
     randomAttacksUntilTurn: null,
     fatigue: 0,
@@ -888,13 +887,9 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     silenced: false,
     passiveSilenceSources: [],
     divineShield: hasKeyword(card, "Divine Shield"),
-    invulnerableUntilTurn: null,
-    protectedSlot: false,
-    delayedDestroySource: null,
     relic: null,
     relic2: null,
     suppressArrivalTheme: false,
-    temporaryTransform: null,
     temporaryControl: null,
     attackedBy: [],
     attackLocked: false,
@@ -1041,10 +1036,6 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
       minion.attackLocked = false;
       minion.attackLockedUntilTurn = null;
       events.push(effectEvent(`${minion.name} can attack again.`, minion));
-    }
-    if (minion.invulnerableUntilTurn !== null && minion.invulnerableUntilTurn <= state.turnNumber) {
-      minion.invulnerableUntilTurn = null;
-      events.push({ kind: "effect", text: `${minion.name} is no longer Invulnerable.`, player: playerId, instanceId: minion.instanceId });
     }
     if (minion.frozen) {
       // Stays frozen for the whole of this turn -- that IS the cost of Freeze.
@@ -1476,10 +1467,39 @@ function attackMinion(
       events.push(effectEvent(`${defender.name} survives combat and gains +1/+1.`, defender));
     }
   }
+  // Pillar Men mends himself only once the whole exchange is over. Healing
+  // inside the kill, the way every other death reaction fires, put him back to
+  // full a beat BEFORE the counter-blow landed, so the counter-blow simply took
+  // it off again — owner ruling: he takes the hit, and heals if he survives.
+  healPillarMen(state, playerId, attackerSlot, defenderAlive, events);
+  healPillarMen(state, defenderId, targetSlot, attackerAlive, events);
+
   // Yoriichi Type Zero: any friendly that walks out of combat is sharpened.
   awardSurvivors(state, events, [attackerId, defender.instanceId]);
   // Last, so the chain lands on an attacker that has already taken its blow.
   triggerTenCommandments(state, attacker, events, attackerAlive);
+}
+
+/**
+ * Restores a surviving Pillar Men that just killed the minion it fought.
+ *
+ * Takes the slot rather than the instance because the minion may have been
+ * replaced or removed by the exchange, and reads `victimSurvived` from the caller so
+ * one function serves both sides of a simultaneous fight.
+ */
+function healPillarMen(
+  state: GameState,
+  owner: PlayerId,
+  slot: number,
+  victimSurvived: boolean,
+  events: GameEvent[],
+): void {
+  if (victimSurvived) return;
+  const survivor = state.players[owner].board[slot];
+  if (!survivor || !hasEffect(survivor, "pillar_men_kill_heal")) return;
+  if (survivor.hp >= survivor.maxHp) return;
+  survivor.hp = survivor.maxHp;
+  events.push(effectEvent(`${survivor.name} is made whole by the kill.`, survivor));
 }
 
 /** Yoriichi's payoff — every friendly participant that survives gains +1/+1. */
@@ -1761,9 +1781,6 @@ function isProtectedDisableTarget(state: GameState, source: MinionInstance, targ
 
 /** Whether an enemy effect may point at this minion at all. */
 function enemyTargetable(state: GameState, minion: MinionInstance): boolean {
-  // Neo's protected slot is a disable ward, not blanket untargetability: a
-  // removal effect may still point at the minion, and combat may still hit it.
-  if (minion.protectedSlot) return false;
   return !isUntargetable(state, minion);
 }
 
@@ -2649,6 +2666,17 @@ function runEffect(
     } else {
       events.push(effectEvent(`${label} finds no relic left.`, source));
     }
+  } else if (source.effectId === "wall_of_flesh_grind") {
+    damageAllOther(state, source, 1, events);
+    events.push(effectEvent(`${label} grinds every other minion for 1.`, source));
+  } else if (source.effectId === "ragnaros_ongoing_burn") {
+    const target = randomEnemyMinion(state, source);
+    const targetSlot = target ? slotOf(state, target) : -1;
+    if (target && targetSlot >= 0) {
+      dealMinionDamage(state, target.owner, targetSlot, 3, source, events, true);
+    } else if (dealCoreDamage(state, enemyId, 3, events)) {
+      events.push(effectEvent(`${label} burns the enemy core for 3 damage.`, source));
+    }
   } else if (source.effectId === "damage_enemy_1") {
     const targetSlot = slotOf(state, picked);
     if (picked && targetSlot >= 0) dealMinionDamage(state, picked.owner, targetSlot, 1, source, events, true);
@@ -2963,7 +2991,6 @@ function runEffect(
         minion.silenced = false;
         minion.markedBy = null;
         minion.markedForDeathAtTurn = null;
-        minion.delayedDestroySource = null;
       }
     }
     events.push(effectEvent(`${label} purifies the board: all minions are Good and lose their negative statuses.`, source));
@@ -3532,27 +3559,6 @@ function resolveEndOfTurn(state: GameState, playerId: PlayerId, _library: CardLi
     }
   }
 
-  for (const wall of [...state.players[playerId].board]) {
-    if (!wall || !hasEffect(wall, "wall_of_flesh_end_turn")) continue;
-    damageAllOther(state, wall, 1, events);
-    events.push(effectEvent(`${wall.name} grinds every other minion for 1.`, wall));
-  }
-
-  const source = state.players[playerId].board.find(
-    (minion) => minion && hasEffect(minion, "ragnaros_end_turn") && !minion.silenced,
-  );
-  if (source) {
-    const target = randomEnemyMinion(state, source);
-    if (target) {
-      const slot = slotOf(state, target);
-      if (slot >= 0) dealMinionDamage(state, target.owner, slot, 3, source, events, true);
-    } else {
-      const enemyId = opponent(playerId);
-      if (dealCoreDamage(state, enemyId, 3, events)) {
-        events.push(effectEvent(`${source.name} burns the enemy core for 3 damage.`, source));
-      }
-    }
-  }
   resolveTemporaryControls(state, playerId, events);
 }
 
@@ -3911,10 +3917,6 @@ function cleanseNegativeStatuses(minion: MinionInstance, events: GameEvent[]): s
     minion.markedForDeathAtTurn = null;
     removed.push("Death Mark");
   }
-  if (minion.delayedDestroySource !== null) {
-    minion.delayedDestroySource = null;
-    removed.push("Delayed Destruction");
-  }
   return removed;
 }
 
@@ -4195,8 +4197,6 @@ function enforceSlotAuras(state: GameState, events: GameEvent[]): void {
 export function attacksRandomly(state: GameState, attacker: MinionInstance): boolean {
   const slot = slotOf(state, attacker);
   if (slot >= 0 && hasSlotAura(state, attacker.owner, slot, "random_attacks")) return true;
-  const confusedUntil = state.players[attacker.owner].confusedUntilTurn;
-  if (confusedUntil !== null && confusedUntil > state.turnNumber) return true;
   const randomFrom = state.players[attacker.owner].randomAttacksFromTurn;
   const randomUntil = state.players[attacker.owner].randomAttacksUntilTurn;
   if (randomFrom !== null && randomFrom !== undefined && randomUntil !== null && randomUntil !== undefined) {
@@ -4528,10 +4528,6 @@ function canDamage(
   }
   // Neo's slot protection blocks Silence, Freeze, and Chained effects. Damage —
   // including normal combat damage — still reaches the minion in that slot.
-  if (target.invulnerableUntilTurn !== null && target.invulnerableUntilTurn > state.turnNumber) {
-    events.push(effectEvent(`${target.name} is Invulnerable.`, target));
-    return false;
-  }
   if (combatDamage && attackTarget && hasRelic(target, "immune_nature_attacks") && source.camp === "Nature") {
     events.push(effectEvent(`${target.name} is invulnerable to Nature attacks.`, target));
     return false;
@@ -4694,7 +4690,7 @@ function highestEnemyAttack(state: GameState, owner: PlayerId): number {
  * caller needs its own silence guard around one.
  */
 function attackForbidden(minion: MinionInstance): boolean {
-  if (hasEffect(minion, "watcher_reveal_hand") || hasEffect(minion, "ragnaros_end_turn")) return true;
+  if (hasEffect(minion, "watcher_reveal_hand")) return true;
   if (!minion.silenced && hasKeyword(minion, "Cannot Attack")) return true;
   return minion.attackLocked; // APR has taken this swing until its lock expires
 }
@@ -4976,7 +4972,6 @@ function canDisable(
   target: MinionInstance,
   kind: DisableKind = "other",
 ): boolean {
-  if (target.protectedSlot) return false;
   if (isUntargetable(state, target)) return false;
   if (hasRelic(target, "immune_disable")) return false; // Anti-magic Mask
   if (kind === "silence" && hasRelic(target, "immune_silence")) return false;
@@ -5540,9 +5535,6 @@ function reactToDeath(
             minion,
           ),
         );
-      } else if (killer && killer.instanceId === minion.instanceId && hasEffect(minion, "pillar_men_kill_heal")) {
-        minion.hp = minion.maxHp;
-        events.push(effectEvent(`${minion.name} is made whole by the kill.`, minion));
       } else if (minion.effectId === "xenomorph_queen_brood" && playerId === deadOwner && dead.cardId !== "token:larva") {
         summonLarva(state, minion, dead, events);
       } else if (minion.effectId === "nito_any_death_1_1") {

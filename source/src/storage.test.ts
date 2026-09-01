@@ -21,8 +21,8 @@ function memoryLocalStorage() {
   };
 }
 
-const SAVE_KEY = "convergence.save.v25";
-const LEGACY_SAVE_KEY = "convergence.save.v24";
+const SAVE_KEY = "convergence.save.v26";
+const LEGACY_SAVE_KEY = "convergence.save.v25";
 
 function liveDuel(): GameState {
   const state = createInitialGame(cards, "storage-test", relics);
@@ -53,7 +53,7 @@ describe("the save slot", () => {
     // key, so leaving it in place after a clear used to resurrect an old duel on
     // the next visit — the title screen offered Continue on a game nobody had
     // been playing.
-    storage.values.set(LEGACY_SAVE_KEY, JSON.stringify({ version: 24, game: liveDuel(), events: [], mode: { kind: "hotseat" }, savedAt: 1 }));
+    storage.values.set(LEGACY_SAVE_KEY, JSON.stringify({ version: 25, game: liveDuel(), events: [], mode: { kind: "hotseat" }, savedAt: 1 }));
     saveGame(liveDuel(), [], { kind: "hotseat" }, 2);
 
     clearSave();

@@ -312,7 +312,7 @@ function isLiveEngine(minion: MinionInstance): boolean {
  * merely existing. (The old version carried a flat +2 for a ping that had
  * already been removed from the rules, which quietly inflated every wide board.)
  */
-function minionValue(minion: MinionInstance, state: GameState): number {
+function minionValue(minion: MinionInstance): number {
   // A minion's job is to threaten the core and to survive being answered, so ATK
   // and HP are both real value and ATK leads slightly — the core clock counts
   // power, not bodies.
@@ -326,7 +326,6 @@ function minionValue(minion: MinionInstance, state: GameState): number {
   // A shield eats one instance of damage whatever its size, so it is worth more
   // on a big body than a small one, but never unbounded.
   if (minion.divineShield) value += Math.min(4, 1.5 + minion.atk * 0.4);
-  if (minion.invulnerableUntilTurn !== null && minion.invulnerableUntilTurn >= state.turnNumber) value += 3;
 
   // An engine that fires every turn compounds; a battlecry has already paid out
   // by the time it is sitting here. See ENGINE_PREMIUM for why the number is
@@ -351,7 +350,7 @@ function minionValue(minion: MinionInstance, state: GameState): number {
 
 function boardValue(state: GameState, playerId: PlayerId): number {
   return state.players[playerId].board.reduce(
-    (total, minion) => total + (minion ? minionValue(minion, state) : 0),
+    (total, minion) => total + (minion ? minionValue(minion) : 0),
     0,
   );
 }

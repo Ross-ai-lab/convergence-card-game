@@ -4376,10 +4376,9 @@ function minionStates(
     minion.frozen ? "is-frozen" : "",
     minion.silenced ? "is-silenced" : "",
     minion.divineShield && !minion.silenced ? "is-shielded" : "",
-    typeof minion.invulnerableUntilTurn === "number" || activeInvulnerable ? "is-invulnerable" : "",
-    minion.protectedSlot ? "is-protected" : "",
+    activeInvulnerable ? "is-invulnerable" : "",
     minion.attackLocked ||
-    (effectsActive && (effectIds.has("watcher_reveal_hand") || effectIds.has("ragnaros_end_turn")))
+    (effectsActive && effectIds.has("watcher_reveal_hand"))
       ? "is-locked"
       : "",
     minion.markedBy || minion.markedForDeathAtTurn !== null && minion.markedForDeathAtTurn !== undefined ? "is-marked" : "",

@@ -25,7 +25,7 @@ const allowed = {
   camp: new Set(["Magic", "Tech", "Nature", "ALL"]),
   alignment: new Set(["Good", "Evil", "Neutral"]),
   effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "onPlayAndDeathrattle", "passive", "deathrattle"]),
-  keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Invulnerable", "Charge", "Deathrattle", "Cannot Attack"]),
+  keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Charge", "Deathrattle", "Cannot Attack"]),
 };
 
 const tokenAudioPath = path.join(projectRoot, "data", "token-audio.csv");

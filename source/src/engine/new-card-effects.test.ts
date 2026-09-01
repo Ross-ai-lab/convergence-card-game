@@ -329,7 +329,7 @@ describe("2026 card replacements", () => {
         keywords: ["Deathrattle"],
         effect: "Deathrattle: Summon Galactus (8/8) with Taunt that cannot attack",
       },
-      "Pillar Men": { cost: 4, atk: 4, hp: 4, effectId: "pillar_men_kill_heal", effectTiming: "passive", keywords: ["Chained", "Passive"], effect: "Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health" },
+      "Pillar Men": { cost: 4, atk: 4, hp: 3, effectId: "pillar_men_kill_heal", effectTiming: "passive", keywords: ["Chained", "Passive"], effect: "Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health" },
       Cthulhu: {
         cost: 8,
         atk: 8,
@@ -474,7 +474,7 @@ describe("2026 card replacements", () => {
       },
       Sans: { cost: 4, atk: 1, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks" },
       "Doom Slayer": { cost: 8, atk: 3, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
-      Ragnaros: { cost: 6, atk: 6, hp: 6, effectId: "ragnaros_end_turn", effectTiming: "passive", keywords: ["Passive"] },
+      Ragnaros: { cost: 6, atk: 6, hp: 6, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
       Musashi: { atk: 2, hp: 1 },
       Illumi: { atk: 1, hp: 1 },
       "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
@@ -1068,11 +1068,14 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[3]?.maxHp).toBe(1);
   });
 
-  it("Ragnaros fires at the end of its controller's turn", () => {
+  it("Ragnaros burns at the start of its controller's turn and never attacks", () => {
     const state = mainState();
     state.players[0].board[0] = minion("Ragnaros", 0, { sleeping: false });
     state.players[1].board[0] = minion("John Wick", 1, { hp: 5, maxHp: 5 });
-    const after = endTurn(state, 0);
+    expect(getLegalActions(state, library).some((action) => action.type === "attack_core")).toBe(false);
+
+    // Round trip to the same seat: an Ongoing fires when its owner's turn opens.
+    const after = endTurn(endTurn(state, 0), 1);
     expect(after.players[1].board[0]?.hp).toBe(2);
   });
 
@@ -1304,7 +1307,6 @@ describe("2026 card replacements", () => {
       expect(entry.silenced).toBe(false);
       expect(entry.markedBy).toBeNull();
       expect(entry.markedForDeathAtTurn).toBeNull();
-      expect(entry.delayedDestroySource).toBeNull();
     }
   });
 
@@ -1393,7 +1395,10 @@ describe("2026 card replacements", () => {
   it("Planetary Defense Grid buffs every Taunt minion and loses the aura when silenced", () => {
     const state = mainState("planetary-defense-grid-aura");
     state.players[0].board[1] = minion("Dragon", 0);
-    state.players[1].board[0] = minion("Wall of Flesh", 1);
+    // A plain Taunt body on the far side. Wall of Flesh used to stand here and
+    // now grinds the board every turn, which would measure its Ongoing rather
+    // than the Grid aura this test is about.
+    state.players[1].board[0] = minion("Fort", 1);
     state.players[1].board[1] = minion("John Wick", 1);
     const buffed = play(state, 0, "Planetary Defense Grid", 0);
 
@@ -1401,14 +1406,14 @@ describe("2026 card replacements", () => {
     // feeding its own aura, and the buff is +2/+2.
     expect(buffed.players[0].board[0]).toMatchObject({ atk: 4, hp: 8, maxHp: 8 });
     expect(buffed.players[0].board[1]).toMatchObject({ atk: 5, hp: 7, maxHp: 7 });
-    expect(buffed.players[1].board[0]).toMatchObject({ atk: 4, hp: 7, maxHp: 7 });
+    expect(buffed.players[1].board[0]).toMatchObject({ atk: 6, hp: 7, maxHp: 7 });
     expect(buffed.players[1].board[1]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
 
     buffed.players[0].board[0]!.silenced = true;
     const auraGone = endTurn(buffed, 0);
     expect(auraGone.players[0].board[0]).toMatchObject({ atk: 4, hp: 8, maxHp: 8 });
     expect(auraGone.players[0].board[1]).toMatchObject({ atk: 3, hp: 5, maxHp: 5 });
-    expect(auraGone.players[1].board[0]).toMatchObject({ atk: 2, hp: 5, maxHp: 5 });
+    expect(auraGone.players[1].board[0]).toMatchObject({ atk: 4, hp: 5, maxHp: 5 });
   });
 
   it("Black Hole silences before destroying every minion, preventing their Deathrattles", () => {
@@ -1585,13 +1590,14 @@ describe("2026 card replacements", () => {
     expect(unpaid.players[0].board[0]).toMatchObject({ atk: printed.atk, maxHp: printed.maxHp });
   });
 
-  it("Wall of Flesh grinds every other minion at the end of its owner's turn", () => {
+  it("Wall of Flesh grinds every other minion at the start of its owner's turn", () => {
     const state = mainState("wall-of-flesh");
     state.players[0].board[0] = minion("Wall of Flesh", 0);
     state.players[0].board[1] = minion("John Wick", 0, { hp: 4, maxHp: 4 });
     state.players[1].board[0] = minion("Albion", 1, { hp: 4, maxHp: 4 });
 
-    const after = endTurn(state, 0);
+    // Round trip to the same seat, because an Ongoing fires on its owner's turn.
+    const after = endTurn(endTurn(state, 0), 1);
     expect(after.players[0].board[0]?.hp).toBe(5); // itself, untouched
     expect(after.players[0].board[1]?.hp).toBe(3);
     expect(after.players[1].board[0]?.hp).toBe(3);
@@ -1611,18 +1617,29 @@ describe("2026 card replacements", () => {
     expect(lung?.keywords.filter((keyword) => keyword === "Chained")).toHaveLength(1);
   });
 
-  it("Pillar Men is made whole by a kill", () => {
+  it("Pillar Men takes the counter-blow first, then heals if it survived", () => {
     const state = mainState("pillar-men-kill");
-    state.players[0].board[0] = minion("Pillar Men", 0, { sleeping: false, chained: 0, atk: 9, hp: 2 });
-    // A harmless victim, so the heal is the only thing moving Pillar Men's HP.
-    // Combat is simultaneous here: the kill heals first and the counter-blow
-    // still lands after it.
-    state.players[1].board[0] = minion("John Wick", 1, { atk: 0, hp: 1, maxHp: 1 });
+    // Wounded to 1, and the victim hits back for 2. Healing inside the kill —
+    // the way every other death reaction fires — put Pillar Men back to full a
+    // beat BEFORE the counter-blow, so the counter-blow just took it off again
+    // and he ended on 1. Owner ruling: he takes the hit, then mends.
+    state.players[0].board[0] = minion("Pillar Men", 0, { sleeping: false, chained: 0, atk: 9, hp: 1 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 2, hp: 1, maxHp: 1 });
 
     const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
     const pillar = after.players[0].board[0];
     expect(after.players[1].board[0]).toBeNull();
     expect(pillar?.hp).toBe(pillar?.maxHp);
+  });
+
+  it("Pillar Men heals nothing when the counter-blow kills it", () => {
+    const state = mainState("pillar-men-trade");
+    state.players[0].board[0] = minion("Pillar Men", 0, { sleeping: false, chained: 0, atk: 9, hp: 1 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 9, hp: 1, maxHp: 1 });
+
+    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[1].board[0]).toBeNull();
   });
 
   it("Modern Tank deals exactly 1 damage to the enemy minion it picks", () => {

@@ -682,7 +682,6 @@ describe("relic effects", () => {
       attackLockedUntilTurn: 20,
       markedBy: "enemy-source",
       markedForDeathAtTurn: 5,
-      delayedDestroySource: "enemy-delay",
     });
     const after = playRelicFor(state, 0, "Neuralyzer", 0);
     const bearer = after.players[0].board[0]!;
@@ -696,7 +695,6 @@ describe("relic effects", () => {
       attackLockedUntilTurn: null,
       markedBy: null,
       markedForDeathAtTurn: null,
-      delayedDestroySource: null,
     });
     expect(bearer.relic?.name).toBe("Neuralyzer");
   });

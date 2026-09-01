@@ -30,7 +30,6 @@ export type Keyword =
   | "Freeze"
   | "Silence"
   | "Chained"
-  | "Invulnerable"
   | "Charge"
   | "Deathrattle"
   | "Cannot Attack";
@@ -145,7 +144,7 @@ export type EffectId =
   | "glados_adjacent_tech"
   | "deathrattle_aoe_3"
   | "doom_evil_slayer"
-  | "ragnaros_end_turn"
+  | "ragnaros_ongoing_burn"
   | "knov_pocket_room"
   | "meleoron_protect_ally"
   | "yoda_global_silence"
@@ -216,7 +215,7 @@ export type EffectId =
   | "guts_missing_core_growth"
   // --- 2026-09 card pass ---------------------------------------------------
   | "chain_watch_growth"
-  | "wall_of_flesh_end_turn"
+  | "wall_of_flesh_grind"
   | "tai_lung_kill_keywords"
   | "damage_enemy_1"
   | "pillar_men_kill_heal"
@@ -240,40 +239,6 @@ export interface CardDefinition {
   flavor: string;
   origin: string;
   art: string;
-}
-
-export interface MinionTransformSnapshot {
-  name: string;
-  cost: number;
-  atk: number;
-  hp: number;
-  maxHp: number;
-  baseAtk: number;
-  baseHp: number;
-  rarity: Rarity;
-  camp: Camp;
-  alignment: Alignment;
-  keywords: Keyword[];
-  effectId: EffectId;
-  effectTiming: EffectTiming;
-  effect: string;
-  origin: string;
-  art: string;
-  silenced: boolean;
-  passiveSilenceSources: string[];
-  divineShield: boolean;
-  stolenPassiveFrom: string | null;
-  stolenPassiveText: string | null;
-  gainedEffects: Array<{ effectId: EffectId; timing: "passive" | "ongoing"; text: string }>;
-  /** Frieren: the turn on which this minion already discovered a relic. */
-  relicDiscoveryTurn: number | null;
-}
-
-export interface TemporaryMinionTransform {
-  kind: "lunar_slime";
-  expiresAtTurn: number;
-  restoreOnPlayer: PlayerId;
-  original: MinionTransformSnapshot;
 }
 
 export interface TemporaryMinionControl {
@@ -320,17 +285,12 @@ export interface MinionInstance {
   /** Gojo's live aura sources; removed when those passive sources leave play. */
   passiveSilenceSources: string[];
   divineShield: boolean;
-  invulnerableUntilTurn: number | null;
-  protectedSlot: boolean;
-  delayedDestroySource: string | null;
   /** The first Ascension Relic strapped to this minion, if any. Dies with it. */
   relic: RelicInstance | null;
   /** The optional second Ascension Relic slot. Older saves may omit it. */
   relic2?: RelicInstance | null;
   /** Reborn minions arrive without replaying their card's arrival music. */
   suppressArrivalTheme?: boolean;
-  /** A temporary transformation that restores at the named player's next turn. */
-  temporaryTransform: TemporaryMinionTransform | null;
   /** Motoko Kusanagi: temporary control returns after the controller's next turn. */
   temporaryControl: TemporaryMinionControl | null;
   /** Mahoraga: every attacker that has already swung at this minion. */
@@ -409,8 +369,6 @@ export interface PlayerState {
   pressured: { cardId: string; dueTurn: number } | null;
   /** Permanent marks on this player's board positions. */
   slotAuras: SlotAura[];
-  /** Confusion: every minion this player controls swings at random until this turn. */
-  confusedUntilTurn: number | null;
   /** Kurogiri: the one full turn in which every swing is random. */
   randomAttacksFromTurn?: number | null;
   randomAttacksUntilTurn?: number | null;

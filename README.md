@@ -487,6 +487,35 @@ Measured 2026-08-22, before and after that pass: **452 seconds down to 123.8**, 
 
 Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
 
+### Which checks a change actually needs
+
+**`npm test` is not optional, however small the change looks.** It costs about
+seventy seconds, and "small" is exactly the change it catches: a two-line card
+edit broke seven tests in one pass, and a one-word retiming broke six in
+another. Every one of those edits looked too small to be worth a run. The suite
+is the cheapest thing in this project that can tell you that you were wrong, and
+skipping it moves the discovery to the published site.
+
+**The BROWSER checks are the ones to skip, and skipping them is a judgement
+about reach, not about size.** `check:ui`, `check:audio`, `check:cardface`,
+`shoot` and the shoot scripts each need a dev server and take minutes. Match
+them to what the change can reach:
+
+| What changed | What to run |
+|---|---|
+| Engine rules, the bot, the save, scripts | `npm test` and `npm run validate:data` |
+| A card's stats, text or keywords | those, plus `npm run check:cardface` — text length drives the auto-fit |
+| Anything drawn on screen: layout, CSS, a component, a new prompt | those, plus `npm run check:ui` |
+| Sound, a card theme, a herald line | plus `npm run check:audio` |
+| Anything at all, before publishing | `npm run publish:pages`, which validates and rebuilds |
+
+**The balance harness is a separate decision.** `npm run sim` and
+`npm run check:balance` measure win rates, not correctness, so they answer a
+question about the roster rather than about the code. Run the fuzz sweep
+(`npx tsx scripts/simulate.ts --mode fuzz --games 300`) after any change to
+combat, targeting or the effect queue: it drives about twenty thousand random
+legal moves with every invariant armed and takes half a minute.
+
 After changing the **How to play** guide, run `node scripts/shoot-rules.mjs http://127.0.0.1:5177` against a running dev server. It starts a duel, answers the Hero Power offer, opens the guide, and walks the panel down in overlapping screen-height steps into `.preview/rules/`, plus one full-height capture. That step exists because the guide is roughly 2,500 pixels of content inside a 600-pixel window: a single screenshot photographs the first quarter of it and proves nothing about the rest, and no other harness opens the panel at all.
 
 To look at the card pack or the gallery's locked state, run `node scripts/shoot-pack.mjs http://127.0.0.1:5177 hard` with the dev server up. It clears the browser's stored progress so the pool really is the starting 50, photographs the gallery locked, the "?" panel and both Collection filters, then ends a duel on purpose through the dev `setCore` hook and walks the pack open one strike at a time. The last argument picks the opponent and therefore the pack size: `easy` for three cards, `normal` for six, `hard` for ten — shoot `hard` after any layout change, because ten is the only size that has to wrap. `setCore` does not end the duel by itself; the engine's own win check does, so the record, the reward and the pack all run the path a real duel takes.

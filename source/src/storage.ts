@@ -74,9 +74,15 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // v24: RelicInstance gained Time Turner's previous-turn HP snapshot.
 // v25: GameState gained the developer-cheat owner, so infinite mana no longer
 // leaks to the opponent when a saved duel is resumed.
-const SAVE_VERSION = 25;
+// v26: five state fields were REMOVED, which is the first time this version has
+// counted down rather than up. Rennala's transform slot, Neo's old protected
+// flag, the confusion timer, the delayed-destroy mark and the timed
+// invulnerability all belonged to cards the roster no longer carries, so nothing
+// could set them. A v25 save still holds the keys; the shape check below stopped
+// requiring them, and a save that keeps them is simply carrying dead weight.
+const SAVE_VERSION = 26;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v24";
+const LEGACY_SAVE_KEY = "convergence.save.v25";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -128,7 +134,6 @@ export function loadGame(): SavedGame | null {
     if (!Array.isArray(game.deck) || !Array.isArray(game.effectQueue)) return null;
     if (parsed.version === SAVE_VERSION - 1) {
       migrateLegacyRelics(game as LegacyGameState);
-      migrateLegacyTransforms(game);
       migrateLegacyMechanics(game);
     }
     if (
@@ -148,11 +153,10 @@ export function loadGame(): SavedGame | null {
       player.board.every(
         (minion) =>
           minion === null ||
-          (Array.isArray(minion.gainedEffects) && "temporaryTransform" in minion && "temporaryControl" in minion),
+          (Array.isArray(minion.gainedEffects) && "temporaryControl" in minion),
       ) &&
       Array.isArray(player.slotAuras) &&
-      player.costReductions !== undefined &&
-      "confusedUntilTurn" in player;
+      player.costReductions !== undefined;
     if (!game.players.every(playerShapeOk)) return null;
     if (!Array.isArray(game.stasis)) return null;
     if (!Array.isArray(game.darkDimension)) return null;
@@ -186,14 +190,6 @@ function migrateLegacyRelics(game: LegacyGameState): void {
   }
   game.deck.push(...(game.relicPool ?? []).map((relic) => relic.id));
   delete game.relicPool;
-}
-
-function migrateLegacyTransforms(game: GameState): void {
-  for (const player of game.players) {
-    for (const minion of player.board) {
-      if (minion && minion.temporaryTransform === undefined) minion.temporaryTransform = null;
-    }
-  }
 }
 
 function migrateLegacyMechanics(game: GameState): void {
@@ -241,10 +237,6 @@ function migrateLegacyMechanics(game: GameState): void {
         if (relic?.relicId === "time_turner" && relic.previousTurnStartHp === undefined) {
           relic.previousTurnStartHp = minion.hp;
         }
-      }
-      const transform = minion.temporaryTransform;
-      if (transform && transform.original.relicDiscoveryTurn === undefined) {
-        transform.original.relicDiscoveryTurn = minion.relicDiscoveryTurn;
       }
     }
   }
