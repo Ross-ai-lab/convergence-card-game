@@ -12,7 +12,7 @@
  * PNG per step into `.preview/rules/`, plus one full-height capture of the panel
  * on its own. Run it against a dev server that is already up:
  *
- *     node scripts/shoot-rules.mjs [http://127.0.0.1:5177]
+ *     node scripts/shoot-rules.mjs [http://localhost:5177]
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -21,7 +21,7 @@ import { chromium } from "playwright";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.join(here, "..", ".preview", "rules");
-const url = process.argv[2] ?? "http://127.0.0.1:5177";
+const url = process.argv[2] ?? "http://localhost:5177";
 
 fs.rmSync(outDir, { recursive: true, force: true });
 fs.mkdirSync(outDir, { recursive: true });
