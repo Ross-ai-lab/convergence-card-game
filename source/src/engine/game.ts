@@ -2598,7 +2598,9 @@ function runEffect(
       events.push(effectEvent(`${label} removes 5 mana from ${opponentPlayer.name}'s next turn.`, source));
     }
   } else if (source.effectId === "death_star_mark") {
-    source.attacksUsed = maxAttacks(source);
+    // It swings like anything else. The Battlecry used to spend its attack, so a
+    // Death Star handed Charge was silently held back — a rule the card stopped
+    // printing, and one nothing else in the roster has.
     if (pickedCoreOwner !== null) {
       source.deathStarTarget = { kind: "core", owner: pickedCoreOwner, resolveAtTurn: state.turnNumber + 2 };
       events.push(effectEvent(`${label} marks the enemy core.`, source));

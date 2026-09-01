@@ -1696,6 +1696,21 @@ describe("2026 card replacements", () => {
     expect(after.players[1].board[0]?.hp).toBe(6);
   });
 
+  it("Death Star keeps its swing, so Charge lets it mark and attack in one turn", () => {
+    const state = mainState("death-star-charge");
+    state.players[0].board[1] = minion("Gordon Freeman", 0); // grants Charge to the board
+    state.players[1].board[0] = minion("John Wick", 1);
+
+    const asking = play(state, 0, "Death Star", 0);
+    const index = asking.pendingTarget!.options.findIndex((option) => option.owner === 1 && option.slot === 0);
+    const marked = choose(asking, index);
+
+    // The Battlecry used to spend the attack, which held a Charge-granted Death
+    // Star back for a rule its card no longer prints.
+    expect(marked.players[0].board[0]?.attacksUsed).toBe(0);
+    expect(getLegalActions(marked, library)).toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
+  });
+
   it("Voldemort sacrifices the lowest-HP ally instead of dying", () => {
     const state = mainState();
     state.players[0].board[0] = minion("Zoro", 0, { atk: 6, hp: 10, maxHp: 10 });
