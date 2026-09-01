@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
-import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
+import { applyAction, createInitialGame, getLegalActions, makeCardLibrary, opponentHandRevealed } from "./game";
 import { HERO_POWER_UNLOCK_ORDER } from "./hero-powers";
 import { spawnTestMinion } from "./test-utils";
 import type { GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
@@ -1605,7 +1605,7 @@ describe("2026 card replacements", () => {
 
   it("Tai Lung takes the keywords of what he kills, but never Chained", () => {
     const state = mainState("tai-lung-kill");
-    state.players[0].board[0] = minion("Tai Lung", 0, { sleeping: false, chained: 0, atk: 9 });
+    state.players[0].board[0] = minion("Tai Lung", 0, { sleeping: false, chained: 0, atk: 9, hp: 6, maxHp: 6 });
     state.players[1].board[0] = minion("Dragon", 1, { hp: 1, maxHp: 1 }); // Taunt
     const before = state.players[0].board[0]!;
 
@@ -1615,6 +1615,19 @@ describe("2026 card replacements", () => {
     expect(lung).toMatchObject({ atk: before.atk + 1, maxHp: before.maxHp + 1 });
     expect(lung?.keywords).toContain("Taunt");
     expect(lung?.keywords.filter((keyword) => keyword === "Chained")).toHaveLength(1);
+  });
+
+  it("Tai Lung is paid after the counter-blow, so the reward cannot save him", () => {
+    // Owner ruling. He used to grow BEFORE the retaliation landed, which handed
+    // him the extra point of HP that let him survive it — a reward paying for
+    // the fight it had not finished.
+    const state = mainState("tai-lung-trade");
+    state.players[0].board[0] = minion("Tai Lung", 0, { sleeping: false, chained: 0, atk: 9, hp: 3, maxHp: 3 });
+    state.players[1].board[0] = minion("Dragon", 1, { atk: 3, hp: 1, maxHp: 1 });
+
+    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[1].board[0]).toBeNull();
+    expect(after.players[0].board[0]).toBeNull();
   });
 
   it("Pillar Men takes the counter-blow first, then heals if it survived", () => {
@@ -2555,6 +2568,12 @@ describe("direct effect reachability", () => {
       (action) => action.type === "attack_core" || action.type === "attack_minion",
     );
     expect(attacks).toEqual([]);
+    // The other half of the card. The reveal is a rule, so the engine owns it
+    // and the UI asks; a silenced Watcher shows nothing.
+    expect(opponentHandRevealed(state, 0)).toBe(true);
+    expect(opponentHandRevealed(state, 1)).toBe(false);
+    state.players[0].board[0]!.silenced = true;
+    expect(opponentHandRevealed(state, 0)).toBe(false);
   });
 
   it("Aizen has the printed 50% Reborn chance and always silences and chains the killer", () => {

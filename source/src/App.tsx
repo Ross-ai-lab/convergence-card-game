@@ -33,6 +33,7 @@ import {
   getLegalActions,
   hasInfiniteMana,
   makeCardLibrary,
+  opponentHandRevealed,
   STARTING_CORE,
   TARGETED_EFFECTS,
   type CardLibrary,
@@ -928,10 +929,7 @@ export default function App() {
   const viewerHasInfiniteMana = hasInfiniteMana(game, viewerId);
   const opponentHasInfiniteMana = hasInfiniteMana(game, opponentId);
   const opponent = game.players[opponentId];
-  const opponentHandRevealed = viewer.board.some(
-    (minion) => minion && minion.effectId === "watcher_reveal_hand" && !minion.silenced && minion.chained === 0,
-  );
-  const revealedOpponentHand = opponentHandRevealed ? opponent.hand : undefined;
+  const revealedOpponentHand = opponentHandRevealed(game, viewerId) ? opponent.hand : undefined;
   const myTurn = game.activePlayer === viewerId;
   const viewerCanAct = (game.phase === "mulligan" && game.mulligan?.player === viewerId) || myTurn;
   // Every affordance and click reads this. Empty while the opponent is thinking,
@@ -4377,8 +4375,7 @@ function minionStates(
     minion.silenced ? "is-silenced" : "",
     minion.divineShield && !minion.silenced ? "is-shielded" : "",
     activeInvulnerable ? "is-invulnerable" : "",
-    minion.attackLocked ||
-    (effectsActive && effectIds.has("watcher_reveal_hand"))
+    minion.attackLocked || (!minion.silenced && minion.keywords.includes("Cannot Attack"))
       ? "is-locked"
       : "",
     minion.markedBy || minion.markedForDeathAtTurn !== null && minion.markedForDeathAtTurn !== undefined ? "is-marked" : "",

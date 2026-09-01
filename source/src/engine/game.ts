@@ -1467,12 +1467,10 @@ function attackMinion(
       events.push(effectEvent(`${defender.name} survives combat and gains +1/+1.`, defender));
     }
   }
-  // Pillar Men mends himself only once the whole exchange is over. Healing
-  // inside the kill, the way every other death reaction fires, put him back to
-  // full a beat BEFORE the counter-blow landed, so the counter-blow simply took
-  // it off again — owner ruling: he takes the hit, and heals if he survives.
-  healPillarMen(state, playerId, attackerSlot, defenderAlive, events);
-  healPillarMen(state, defenderId, targetSlot, attackerAlive, events);
+  // Kill rewards are paid only once the whole exchange is over — see
+  // `resolveKillRewards` for why, and for which reactions are NOT rewards.
+  resolveKillRewards(state, playerId, attackerSlot, defender, defenderAlive, events);
+  resolveKillRewards(state, defenderId, targetSlot, attacker, attackerAlive, events);
 
   // Yoriichi Type Zero: any friendly that walks out of combat is sharpened.
   awardSurvivors(state, events, [attackerId, defender.instanceId]);
@@ -1481,25 +1479,73 @@ function attackMinion(
 }
 
 /**
- * Restores a surviving Pillar Men that just killed the minion it fought.
+ * Everything a minion is PAID for making a kill, resolved once the whole
+ * exchange is over.
  *
- * Takes the slot rather than the instance because the minion may have been
- * replaced or removed by the exchange, and reads `victimSurvived` from the caller so
- * one function serves both sides of a simultaneous fight.
+ * Owner ruling: a kill reward lands after the counter-blow, never before it.
+ * These used to fire from inside the victim's death, which happens midway
+ * through a simultaneous fight — so a killer was healed, enlarged or handed a
+ * keyword a beat before the blow that was already coming at it. Pillar Men made
+ * it obvious (mended to full, then knocked straight back down), but Tai Lung,
+ * Meruem and Grievous all bought survival with a reward they had not finished
+ * earning.
+ *
+ * Death REACTIONS that are not rewards stay where they are: Nito and John Wick
+ * pay out on any minion dying anywhere, and are usually nowhere near the fight.
+ *
+ * Takes a slot rather than an instance because the exchange may have removed or
+ * replaced the minion, and takes `victimSurvived` from the caller so one
+ * function serves both sides of a simultaneous fight.
  */
-function healPillarMen(
+function resolveKillRewards(
   state: GameState,
   owner: PlayerId,
   slot: number,
+  victim: MinionInstance,
   victimSurvived: boolean,
   events: GameEvent[],
 ): void {
   if (victimSurvived) return;
-  const survivor = state.players[owner].board[slot];
-  if (!survivor || !hasEffect(survivor, "pillar_men_kill_heal")) return;
-  if (survivor.hp >= survivor.maxHp) return;
-  survivor.hp = survivor.maxHp;
-  events.push(effectEvent(`${survivor.name} is made whole by the kill.`, survivor));
+  const killer = state.players[owner].board[slot];
+  if (!killer) return;
+
+  if (hasEffect(killer, "pillar_men_kill_heal") && killer.hp < killer.maxHp) {
+    killer.hp = killer.maxHp;
+    events.push(effectEvent(`${killer.name} is made whole by the kill.`, killer));
+  }
+
+  if (hasEffect(killer, "tai_lung_kill_keywords")) {
+    buffMinion(killer, 1, 1);
+    // Chained is the one keyword never inherited: it is the price printed on
+    // Tai Lung's own card, not a prize for winning a fight.
+    const taken = victim.keywords.filter(
+      (keyword) => keyword !== "Chained" && !killer.keywords.includes(keyword),
+    );
+    killer.keywords.push(...taken);
+    if (taken.includes("Divine Shield")) killer.divineShield = true;
+    events.push(
+      effectEvent(
+        `${killer.name} takes ${victim.name}'s measure (+1/+1${taken.length ? ` and ${taken.join(", ")}` : ""}).`,
+        killer,
+      ),
+    );
+  }
+
+  if (hasEffect(killer, "meruem_kill_copy")) {
+    buffMinion(killer, 1, 1);
+    const copied = copyPersistentMinionTraits(killer, victim);
+    events.push(
+      effectEvent(
+        `${killer.name} adapts after killing ${victim.name} (+1/+1${copied ? " and its effects" : ""}).`,
+        killer,
+      ),
+    );
+  }
+
+  if (hasEffect(killer, "grievous_on_kill_atk") && victim.atk > 0) {
+    killer.atk += victim.atk;
+    events.push(effectEvent(`${killer.name} permanently gains ${victim.atk} ATK from killing ${victim.name}.`, killer));
+  }
 }
 
 /** Yoriichi's payoff — every friendly participant that survives gains +1/+1. */
@@ -4234,6 +4280,17 @@ function randomAttackTarget(state: GameState, attacker: MinionInstance): number 
   return hasHighestAttackRestriction(state, attacker) || (!ignoresGuards && !ignoresTaunt && taunts.length > 0) ? null : "core";
 }
 
+/**
+ * Whether this player can read the enemy's hand — The Watcher's printed half.
+ *
+ * Lives here rather than in the component because it is a rule, not a view: the
+ * UI used to spell out its own silenced-and-not-chained test beside the effect
+ * id, which is `hasEffect`'s job and drifts the moment that rule changes.
+ */
+export function opponentHandRevealed(state: GameState, playerId: PlayerId): boolean {
+  return state.players[playerId].board.some((minion) => minion && hasEffect(minion, "watcher_reveal_hand"));
+}
+
 /** Where a minion currently sits, or -1 if it has left the board. */
 function slotOf(state: GameState, minion: MinionInstance | null): number {
   if (!minion) return -1;
@@ -4690,7 +4747,10 @@ function highestEnemyAttack(state: GameState, owner: PlayerId): number {
  * caller needs its own silence guard around one.
  */
 function attackForbidden(minion: MinionInstance): boolean {
-  if (hasEffect(minion, "watcher_reveal_hand")) return true;
+  // ONE rule, read off the keyword. Two cards used to state "Cannot attack" in
+  // their prose only and be stopped by an effect-id check here instead, which
+  // meant the card face, the keyword column and the engine each had their own
+  // answer. Both now carry the keyword.
   if (!minion.silenced && hasKeyword(minion, "Cannot Attack")) return true;
   return minion.attackLocked; // APR has taken this swing until its lock expires
 }
@@ -5066,10 +5126,6 @@ function destroyAtSlot(
     }
   }
   const rescued = allowReplacement && hasRelic(minion, "return_on_death"); // The Green Mask
-  if (killer && !killer.silenced && hasEffect(killer, "grievous_on_kill_atk")) {
-    killer.atk += minion.atk;
-    events.push(effectEvent(`${killer.name} permanently gains ${minion.atk} ATK from killing ${minion.name}.`, killer));
-  }
   state.players[playerId].board[slotIndex] = null;
   releaseDarkDimensionForSource(state, minion.instanceId, events);
   if (rescued) {
@@ -5086,7 +5142,7 @@ function destroyAtSlot(
   discardAttachedRelics(state, minion);
   resolveDeathrattle(state, minion, killer, slotIndex, events, deathRelics);
   releaseStolenPassive(state, minion, events);
-  reactToDeath(state, minion, playerId, events, killer);
+  reactToDeath(state, minion, playerId, events);
 }
 
 function rescueWithOogway(state: GameState, playerId: PlayerId, slotIndex: number, events: GameEvent[]): boolean {
@@ -5489,13 +5545,7 @@ function stealCard(
   events.push(effectEvent(`${source.name} steals a card.`, source));
 }
 
-function reactToDeath(
-  state: GameState,
-  dead: MinionInstance,
-  deadOwner: PlayerId,
-  events: GameEvent[],
-  killer: MinionInstance | null = null,
-): void {
+function reactToDeath(state: GameState, dead: MinionInstance, deadOwner: PlayerId, events: GameEvent[]): void {
   for (const playerId of [0, 1] as PlayerId[]) {
     for (const minion of state.players[playerId].board) {
       if (!minion || minion.silenced || minion.instanceId === dead.instanceId) continue;
@@ -5506,36 +5556,7 @@ function reactToDeath(
       // its branch is genuinely reachable.
       traceEffect(minion.effectId);
       if (minion.chained > 0) continue;
-      if (
-        killer &&
-        killer.instanceId === minion.instanceId &&
-        hasEffect(minion, "meruem_kill_copy") &&
-        !minion.silenced
-      ) {
-        buffMinion(minion, 1, 1);
-        const copied = copyPersistentMinionTraits(minion, dead);
-        events.push(
-          effectEvent(
-            `${minion.name} adapts after killing ${dead.name} (+1/+1${copied ? " and its effects" : ""}).`,
-            minion,
-          ),
-        );
-      } else if (killer && killer.instanceId === minion.instanceId && hasEffect(minion, "tai_lung_kill_keywords")) {
-        buffMinion(minion, 1, 1);
-        const taken = dead.keywords.filter(
-          (keyword) => keyword !== "Chained" && !minion.keywords.includes(keyword),
-        );
-        // Chained is the one keyword never inherited: it is the price printed on
-        // Tai Lung's own card, not a prize for winning a fight.
-        minion.keywords.push(...taken);
-        if (taken.includes("Divine Shield")) minion.divineShield = true;
-        events.push(
-          effectEvent(
-            `${minion.name} takes ${dead.name}'s measure (+1/+1${taken.length ? ` and ${taken.join(", ")}` : ""}).`,
-            minion,
-          ),
-        );
-      } else if (minion.effectId === "xenomorph_queen_brood" && playerId === deadOwner && dead.cardId !== "token:larva") {
+      if (minion.effectId === "xenomorph_queen_brood" && playerId === deadOwner && dead.cardId !== "token:larva") {
         summonLarva(state, minion, dead, events);
       } else if (minion.effectId === "nito_any_death_1_1") {
         // +1/+1, down from +2/+1 (pass 3): 62.3% vs a 48.2% bracket off the
