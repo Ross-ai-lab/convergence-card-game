@@ -115,11 +115,11 @@ describe("menu Hero Powers", () => {
     const used = applyAction(state, { type: "use_hero_power", player: 0 }, library).state;
     expect(used.phase).toBe("targeting");
     expect(used.pendingTarget?.options).toEqual([{ owner: 1, slot: 0 }]);
-    expect(used.players[1].board[0]?.hp).toBe(3);
+    expect(used.players[1].board[0]?.hp).toBe(2);
 
     const aimed = applyAction(used, { type: "choose_target", player: 0, choiceIndex: 0 }, library).state;
     expect(aimed.phase).toBe("main");
-    expect(aimed.players[1].board[0]).toMatchObject({ hp: 2, maxHp: 2 });
+    expect(aimed.players[1].board[0]).toMatchObject({ hp: 1, maxHp: 1 });
   });
 
   it("refunds a targetable Hero Power when it is cancelled before choosing", () => {

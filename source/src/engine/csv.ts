@@ -205,6 +205,13 @@ const effectIds = new Set<EffectId>([
   "naruto_shadow_clones",
   "frieren_relic_discover",
   "guts_missing_core_growth",
+  "chain_watch_growth",
+  "wall_of_flesh_end_turn",
+  "tai_lung_kill_keywords",
+  "damage_enemy_1",
+  "pillar_men_kill_heal",
+  "taunt_ally_self_buff",
+  "deathrattle_damage_random_enemy",
 ]);
 
 const relicIds = new Set<RelicId>([

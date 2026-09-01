@@ -286,7 +286,7 @@ describe("2026 card replacements", () => {
         hp: 2,
         effectId: "survivor_buff",
         effectTiming: "passive",
-        keywords: [],
+        keywords: ["Passive"],
         effect: "Passive: Whenever a friendly minion survives a combat, it gains +1/+1",
       },
       "Gordon Freeman": {
@@ -307,9 +307,9 @@ describe("2026 card replacements", () => {
         keywords: ["Taunt", "Passive"],
         effect: "Taunt. Passive: Enemy minions that attack this become Chained for 1 turn",
       },
-      Zoro: { cost: 5, atk: 4, hp: 4, effectId: "on_kill_buff_1", effectTiming: "passive", keywords: [], effect: "Passive: Gain +1/+1 after killing a minion" },
-      "One-Eyed Owl": { cost: 5, atk: 6, hp: 6, effectId: "none", effectTiming: "none", keywords: ["Chained"], effect: "Chained" },
-      "Gravelord Nito": { cost: 4, atk: 2, hp: 3, effectId: "nito_any_death_1_1", effectTiming: "passive", keywords: [], effect: "Passive: Gain +1/+1 when a minion dies" },
+      Zoro: { cost: 5, atk: 4, hp: 4, effectId: "on_kill_buff_1", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Gain +1/+1 after killing a minion" },
+      "One-Eyed Owl": { cost: 5, atk: 4, hp: 4, effectId: "chain_watch_growth", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Whenever a minion becomes Chained, gain +1/+1" },
+      "Gravelord Nito": { cost: 4, atk: 2, hp: 3, effectId: "nito_any_death_1_1", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Gain +1/+1 when a minion dies" },
       "Margit the Fell Omen": {
         cost: 3,
         atk: 1,
@@ -329,7 +329,7 @@ describe("2026 card replacements", () => {
         keywords: ["Deathrattle"],
         effect: "Deathrattle: Summon Galactus (8/8) with Taunt that cannot attack",
       },
-      "Pillar Men": { cost: 4, atk: 5, hp: 5, effectId: "none", effectTiming: "none", keywords: ["Chained"], effect: "Chained" },
+      "Pillar Men": { cost: 4, atk: 4, hp: 4, effectId: "pillar_men_kill_heal", effectTiming: "passive", keywords: ["Chained", "Passive"], effect: "Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health" },
       Cthulhu: {
         cost: 8,
         atk: 8,
@@ -404,7 +404,7 @@ describe("2026 card replacements", () => {
         hp: 6,
         effectId: "camp_immunity_on_hit",
         effectTiming: "passive",
-        keywords: [],
+        keywords: ["Passive"],
         effect: "Passive: After it is attacked, gain immunity to that enemies Camp type of attack for the next 3 enemy turns",
       },
       "Giant Tree": { effectTiming: "passive", keywords: ["Passive"], effectId: "buff_all_nature_2_1", effect: "Passive: All other friendly Nature minions have +2/+1" },
@@ -771,7 +771,9 @@ describe("2026 card replacements", () => {
     const deathrattle = mainState("light-yagami-deathrattle");
     deathrattle.players[0].board[0] = minion("Light Yagami", 0, { hp: 1, maxHp: 1, sleeping: false });
     deathrattle.players[1].board[0] = minion("John Wick", 1);
-    deathrattle.players[1].board[1] = minion("Modern Tank", 1, { atk: 9, sleeping: false });
+    // Modern Tank is a 2/2, so the fixture gives it the bulk to survive the
+    // retaliation. The claim is about the Deathrattle's victim, not about combat.
+    deathrattle.players[1].board[1] = minion("Modern Tank", 1, { atk: 9, hp: 9, maxHp: 9, sleeping: false });
     deathrattle.activePlayer = 1;
     const afterDeath = applyAction(
       deathrattle,
@@ -932,7 +934,7 @@ describe("2026 card replacements", () => {
   it("Meleoron's hidden ally also ignores Taunt, which is the other half of the card", () => {
     const state = mainState("meleoron-taunt");
     state.players[0].board[2] = minion("Zoro", 0, { sleeping: false });
-    state.players[1].board[0] = minion("Goblins", 1);
+    state.players[1].board[0] = minion("Dragon", 1);
     const asking = play(state, 0, "Meleoron", 0);
     const hidden = asking.pendingTarget
       ? choose(asking, asking.pendingTarget.options.findIndex((option) => option.slot === 2))
@@ -1399,14 +1401,14 @@ describe("2026 card replacements", () => {
     // feeding its own aura, and the buff is +2/+2.
     expect(buffed.players[0].board[0]).toMatchObject({ atk: 4, hp: 8, maxHp: 8 });
     expect(buffed.players[0].board[1]).toMatchObject({ atk: 5, hp: 7, maxHp: 7 });
-    expect(buffed.players[1].board[0]).toMatchObject({ atk: 5, hp: 7, maxHp: 7 });
+    expect(buffed.players[1].board[0]).toMatchObject({ atk: 4, hp: 7, maxHp: 7 });
     expect(buffed.players[1].board[1]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
 
     buffed.players[0].board[0]!.silenced = true;
     const auraGone = endTurn(buffed, 0);
     expect(auraGone.players[0].board[0]).toMatchObject({ atk: 4, hp: 8, maxHp: 8 });
     expect(auraGone.players[0].board[1]).toMatchObject({ atk: 3, hp: 5, maxHp: 5 });
-    expect(auraGone.players[1].board[0]).toMatchObject({ atk: 3, hp: 5, maxHp: 5 });
+    expect(auraGone.players[1].board[0]).toMatchObject({ atk: 2, hp: 5, maxHp: 5 });
   });
 
   it("Black Hole silences before destroying every minion, preventing their Deathrattles", () => {
@@ -1544,6 +1546,126 @@ describe("2026 card replacements", () => {
     expect(after.players[1].board[0]?.hp).toBe(30 - 3 - 3);
   });
 
+  it("One-Eyed Owl grows every time a minion becomes Chained, on either board", () => {
+    const state = mainState("owl-chains");
+    state.players[0].board[0] = minion("One-Eyed Owl", 0, { sleeping: false });
+    const before = state.players[0].board[0]!;
+    state.players[1].board[0] = minion("John Wick", 1);
+
+    // Darth Vader chains the enemy minion, and the Owl is watching.
+    const chained = play(state, 0, "Darth Vader", 1);
+    expect(chained.players[1].board[0]?.chained).toBe(2);
+    expect(chained.players[0].board[0]).toMatchObject({ atk: before.atk + 1, maxHp: before.maxHp + 1 });
+  });
+
+  it("One-Eyed Owl pays for the transition, not for a chain that was already on", () => {
+    // Giorno's mark chains whoever stands in the cursed slot. Laying it on a
+    // free minion is a transition and pays; laying it on one that is already
+    // Chained changes nothing and pays nothing.
+    const build = () => {
+      const state = mainState("owl-transition");
+      state.players[0].board[0] = minion("One-Eyed Owl", 0, { sleeping: false });
+      state.players[1].board[0] = minion("Albion", 1, { chained: 2 });
+      state.players[1].board[1] = minion("John Wick", 1);
+      return state;
+    };
+    const printed = build().players[0].board[0]!;
+
+    const onAFreeMinion = build();
+    const asking = play(onAFreeMinion, 0, "Giorno - Gold Experience Requiem", 1);
+    const freeSlot = asking.pendingTarget!.options.findIndex((option) => option.owner === 1 && option.slot === 1);
+    const paid = choose(asking, freeSlot);
+    expect(paid.players[1].board[1]?.chained).toBe(2);
+    expect(paid.players[0].board[0]).toMatchObject({ atk: printed.atk + 1, maxHp: printed.maxHp + 1 });
+
+    const onAChainedMinion = build();
+    const askingAgain = play(onAChainedMinion, 0, "Giorno - Gold Experience Requiem", 1);
+    const takenSlot = askingAgain.pendingTarget!.options.findIndex((option) => option.owner === 1 && option.slot === 0);
+    const unpaid = choose(askingAgain, takenSlot);
+    expect(unpaid.players[0].board[0]).toMatchObject({ atk: printed.atk, maxHp: printed.maxHp });
+  });
+
+  it("Wall of Flesh grinds every other minion at the end of its owner's turn", () => {
+    const state = mainState("wall-of-flesh");
+    state.players[0].board[0] = minion("Wall of Flesh", 0);
+    state.players[0].board[1] = minion("John Wick", 0, { hp: 4, maxHp: 4 });
+    state.players[1].board[0] = minion("Albion", 1, { hp: 4, maxHp: 4 });
+
+    const after = endTurn(state, 0);
+    expect(after.players[0].board[0]?.hp).toBe(5); // itself, untouched
+    expect(after.players[0].board[1]?.hp).toBe(3);
+    expect(after.players[1].board[0]?.hp).toBe(3);
+  });
+
+  it("Tai Lung takes the keywords of what he kills, but never Chained", () => {
+    const state = mainState("tai-lung-kill");
+    state.players[0].board[0] = minion("Tai Lung", 0, { sleeping: false, chained: 0, atk: 9 });
+    state.players[1].board[0] = minion("Dragon", 1, { hp: 1, maxHp: 1 }); // Taunt
+    const before = state.players[0].board[0]!;
+
+    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    const lung = after.players[0].board[0];
+    expect(after.players[1].board[0]).toBeNull();
+    expect(lung).toMatchObject({ atk: before.atk + 1, maxHp: before.maxHp + 1 });
+    expect(lung?.keywords).toContain("Taunt");
+    expect(lung?.keywords.filter((keyword) => keyword === "Chained")).toHaveLength(1);
+  });
+
+  it("Pillar Men is made whole by a kill", () => {
+    const state = mainState("pillar-men-kill");
+    state.players[0].board[0] = minion("Pillar Men", 0, { sleeping: false, chained: 0, atk: 9, hp: 2 });
+    // A harmless victim, so the heal is the only thing moving Pillar Men's HP.
+    // Combat is simultaneous here: the kill heals first and the counter-blow
+    // still lands after it.
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 0, hp: 1, maxHp: 1 });
+
+    const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    const pillar = after.players[0].board[0];
+    expect(after.players[1].board[0]).toBeNull();
+    expect(pillar?.hp).toBe(pillar?.maxHp);
+  });
+
+  it("Modern Tank deals exactly 1 damage to the enemy minion it picks", () => {
+    const state = mainState("modern-tank");
+    state.players[1].board[0] = minion("John Wick", 1, { hp: 4, maxHp: 4 });
+    state.players[1].board[1] = minion("Albion", 1, { hp: 4, maxHp: 4 });
+
+    const asking = play(state, 0, "Modern Tank", 0);
+    expect(asking.phase).toBe("targeting");
+    const index = asking.pendingTarget!.options.findIndex((option) => option.owner === 1 && option.slot === 0);
+    const after = choose(asking, index);
+    expect(after.players[1].board[0]?.hp).toBe(3);
+    expect(after.players[1].board[1]?.hp).toBe(4);
+  });
+
+  it("An Order of Heavy Knights stands taller behind a Taunt, and shrinks without one", () => {
+    const state = mainState("heavy-knights");
+    state.players[0].board[0] = minion("An Order of Heavy Knights", 0);
+    const printed = state.players[0].board[0]!;
+    expect(state.players[0].board[0]).toMatchObject({ atk: printed.atk, maxHp: printed.maxHp });
+
+    const behindAWall = play(state, 0, "Dragon", 1);
+    expect(behindAWall.players[0].board[0]).toMatchObject({ atk: printed.atk + 1, maxHp: printed.maxHp + 1 });
+
+    // It is an aura, so silencing the wall takes the buff straight back.
+    behindAWall.players[0].board[1]!.silenced = true;
+    const gone = applyAction(behindAWall, { type: "end_turn", player: 0 }, library).state;
+    expect(gone.players[0].board[0]).toMatchObject({ atk: printed.atk, maxHp: printed.maxHp });
+  });
+
+  it("Goblins clip a random enemy for 1 on the way out", () => {
+    const state = mainState("goblins-deathrattle");
+    state.players[0].board[0] = minion("Goblins", 0, { hp: 1, maxHp: 1 });
+    state.players[1].board[0] = minion("Albion", 1, { atk: 9, hp: 9, maxHp: 9, sleeping: false });
+    state.activePlayer = 1;
+
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toBeNull();
+    // 9, minus the Goblins' own 2 ATK on the simultaneous counter-blow, minus
+    // the 1 the Deathrattle clips off on the way out.
+    expect(after.players[1].board[0]?.hp).toBe(6);
+  });
+
   it("Voldemort sacrifices the lowest-HP ally instead of dying", () => {
     const state = mainState();
     state.players[0].board[0] = minion("Zoro", 0, { atk: 6, hp: 10, maxHp: 10 });
@@ -1616,15 +1738,15 @@ describe("2026 card replacements", () => {
 
   it("Godrick kills a friendly minion and keeps its stats and persistent effects", () => {
     const state = mainState();
-    // A deliberately stat-only victim: Modern Tank is a Basic reference card and
-    // is supposed to stay a plain 3/3, so this measures the stats graft alone.
+    // Modern Tank's own effect is a Battlecry, and a graft copies only the
+    // persistent half, so this measures the stats transfer alone.
     state.players[0].board[1] = minion("Modern Tank", 0);
     const asking = play(state, 0, "Godrick the Grafted", 0);
     const targetIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 0 && option.slot === 1) ?? -1;
     const after = targetIndex >= 0 ? choose(asking, targetIndex) : asking;
     const godrick = after.players[0].board[0];
     expect(after.players[0].board[1]).toBeNull();
-    expect(godrick).toMatchObject({ atk: 5, hp: 5, maxHp: 5, effectId: "none", effectTiming: "none" });
+    expect(godrick).toMatchObject({ atk: 4, hp: 4, maxHp: 4, effectId: "none", effectTiming: "none" });
     expect(godrick?.gainedEffects).toEqual([]);
   });
 

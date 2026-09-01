@@ -613,7 +613,7 @@ function resolveHeroPower(
     if (isSlotProtected(state, target) || !canDisable(state, playerId, target, "chain")) {
       events.push(effectEvent(`${target.name} resists Chain.`, target));
     } else {
-      target.chained = Math.max(target.chained, 2);
+      applyChain(state, target, events);
       target.chainGrowthPending = true;
       events.push({ kind: "effect", text: `${definition.name} chains ${target.name} for 1 turn.`, player: playerId, instanceId: target.instanceId });
     }
@@ -1452,7 +1452,7 @@ function attackMinion(
     ) {
       // Chained = 2 is one skipped owner turn in this engine: the counter is
       // decremented at turn start before attacks are offered.
-      survivingAttacker.chained = Math.max(survivingAttacker.chained, 2);
+      applyChain(state, survivingAttacker, events);
       events.push(effectEvent(`${defender.name} chains ${survivingAttacker.name} for 1 turn.`, defender));
     }
     // APR: whoever swung at it never swings again.
@@ -1541,7 +1541,7 @@ function triggerTenCommandments(
   source.commandmentsTriggeredAtTurn = state.turnNumber;
   if (!attackerAlive) return;
   if (isSlotProtected(state, attacker) || !canDisable(state, source.owner, attacker, "chain")) return;
-  attacker.chained = Math.max(attacker.chained, 2);
+  applyChain(state, attacker, events);
   events.push(effectEvent(`${source.name} chains the first attacker, ${attacker.name}, for one turn.`, source));
 }
 
@@ -1621,6 +1621,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
     filter: (m) => !m.cardId.startsWith("token:"),
   },
   freeze_and_weaken: { side: "enemy", prompt: "Freeze an enemy and halve its ATK" },
+  damage_enemy_1: { side: "enemy", prompt: "Deal 1 damage to an enemy minion" },
   silence_enemy: { side: "enemy", prompt: "Silence an enemy minion", filter: (m) => !m.silenced },
   batman_gadget_choice: { side: "enemy", prompt: "Choose an enemy minion for Batman" },
   freeze_and_silence_enemy: { side: "enemy", prompt: "Freeze and silence an enemy minion" },
@@ -1969,25 +1970,21 @@ function discoverTechCards(state: GameState, library: CardLibrary): CardDefiniti
 
 /**
  * Kagaya's offers: one random Taunt, one Divine Shield and one Passive minion,
- * never the same card twice. His card names three KINDS rather than three
- * cards, so the offer is built kind by kind instead of drawn from one pool.
+ * never the same card twice. His card names three KEYWORDS rather than three
+ * cards, so the offer is built keyword by keyword instead of drawn from one
+ * mixed pool.
  *
- * Passive is matched on the EFFECT TIMING, not on the keyword. Fourteen of the
- * sixty-five passive cards never had the keyword typed into the CSV — John
- * Wick, Zoro, RoboCop and Mahoraga among them — so reading the keyword would
- * quietly hide a fifth of the tier behind a data gap.
+ * All three are read off the keyword list, which only became safe once every
+ * passive card actually declared Passive — fourteen of the sixty-five never had
+ * it typed into the CSV, and `validate-cards.mjs` now fails the build if that
+ * gap comes back.
  */
 function discoverKeywordMinions(state: GameState, library: CardLibrary): CardDefinition[] {
   const pile = minionsInDrawPile(state, library);
-  const matchers: Array<(card: CardDefinition) => boolean> = [
-    (card) => hasKeyword(card, "Taunt"),
-    (card) => hasKeyword(card, "Divine Shield"),
-    (card) => card.effectTiming === "passive",
-  ];
   const taken = new Set<string>();
   const offers: CardDefinition[] = [];
-  for (const matches of matchers) {
-    const pool = pile.filter((card) => !taken.has(card.id) && matches(card));
+  for (const keyword of ["Taunt", "Divine Shield", "Passive"] as const) {
+    const pool = pile.filter((card) => !taken.has(card.id) && hasKeyword(card, keyword));
     if (pool.length === 0) continue;
     const pick = pool[rollInt(state, pool.length)];
     taken.add(pick.id);
@@ -2377,7 +2374,7 @@ function runEffect(
           !isSlotProtected(state, minion) &&
           canDisable(state, source.owner, minion, "chain")
         ) {
-          minion.chained = Math.max(minion.chained, 2);
+          applyChain(state, minion, events);
         }
       }
     }
@@ -2485,7 +2482,7 @@ function runEffect(
         events.push(effectEvent(`${picked.name} resists Darth Vader's chain.`, picked));
       } else if (!isSlotProtected(state, picked) && canDisable(state, source.owner, picked, "chain")) {
         picked.atk = 1;
-        picked.chained = Math.max(picked.chained, 2);
+        applyChain(state, picked, events);
         events.push(effectEvent(`${label} sets ${picked.name}'s ATK to 1 and chains it.`, source));
       } else {
         events.push(effectEvent(`${picked.name} resists Darth Vader's chain.`, picked));
@@ -2652,6 +2649,9 @@ function runEffect(
     } else {
       events.push(effectEvent(`${label} finds no relic left.`, source));
     }
+  } else if (source.effectId === "damage_enemy_1") {
+    const targetSlot = slotOf(state, picked);
+    if (picked && targetSlot >= 0) dealMinionDamage(state, picked.owner, targetSlot, 1, source, events, true);
   } else if (source.effectId === "aoe_damage_3") {
     damageAllEnemies(state, source, 3, events);
   } else if (source.effectId === "time_bomb_destroy_all") {
@@ -3532,6 +3532,12 @@ function resolveEndOfTurn(state: GameState, playerId: PlayerId, _library: CardLi
     }
   }
 
+  for (const wall of [...state.players[playerId].board]) {
+    if (!wall || !hasEffect(wall, "wall_of_flesh_end_turn")) continue;
+    damageAllOther(state, wall, 1, events);
+    events.push(effectEvent(`${wall.name} grinds every other minion for 1.`, wall));
+  }
+
   const source = state.players[playerId].board.find(
     (minion) => minion && hasEffect(minion, "ragnaros_end_turn") && !minion.silenced,
   );
@@ -3660,6 +3666,19 @@ function refreshPassiveAuras(state: GameState): void {
           target.maxHp += 1;
           target.hp += 1;
           target.auraBonuses!.push({ sourceId: source.instanceId, atk: 2, hp: 1, keywords: [] });
+        }
+      }
+      if (hasEffect(source, "taunt_ally_self_buff")) {
+        // An aura on itself, so it is taken back the moment the last friendly
+        // Taunt leaves the board rather than banking a permanent +1/+1.
+        const behindAWall = board.some(
+          (ally) => ally && ally.instanceId !== source.instanceId && !ally.silenced && hasKeyword(ally, "Taunt"),
+        );
+        if (behindAWall) {
+          source.atk += 1;
+          source.maxHp += 1;
+          source.hp += 1;
+          source.auraBonuses!.push({ sourceId: source.instanceId, atk: 1, hp: 1, keywords: [] });
         }
       }
       if (hasEffect(source, "guts_missing_core_growth")) {
@@ -3946,7 +3965,7 @@ function equipRelic(
     buffMinion(bearer, 2, 2);
     if (!hasKeyword(bearer, "Taunt")) bearer.keywords.push("Taunt");
   } else if (relic.relicId === "cocoon") {
-    bearer.chained = Math.max(bearer.chained, 1);
+    applyChain(state, bearer, events, 1);
     relic.readyOnTurn = state.turnNumber + 2;
   } else if (relic.relicId === "excalibur") {
     if (!hasKeyword(bearer, "Charge")) bearer.keywords.push("Charge");
@@ -4142,7 +4161,7 @@ function enforceSlotAuras(state: GameState, events: GameEvent[]): void {
           !isSlotProtected(state, minion) &&
           canDisable(state, playerId, minion, "chain")
         ) {
-          minion.chained = 2;
+          applyChain(state, minion, events);
           events.push({
             kind: "effect",
             text: `${minion.name} is permanently Chained by the mark on slot ${aura.slot + 1}.`,
@@ -4765,6 +4784,27 @@ function buffMinion(minion: MinionInstance, atk: number, hp: number): void {
   minion.hp += hp;
 }
 
+/**
+ * The one place a minion becomes Chained.
+ *
+ * Fifteen separate lines used to write `chained = Math.max(chained, 2)`, which
+ * was fine while nothing watched the transition. The One-Eyed Owl watches it, so
+ * "becomes Chained" needs a single definition: the counter rising from zero.
+ * Raising an existing chain is not a new one and pays nothing.
+ */
+function applyChain(state: GameState, target: MinionInstance, events: GameEvent[], turns = 2): void {
+  const wasFree = target.chained === 0;
+  target.chained = Math.max(target.chained, turns);
+  if (!wasFree || target.chained === 0) return;
+  for (const owner of [0, 1] as PlayerId[]) {
+    for (const watcher of state.players[owner].board) {
+      if (!watcher || !hasEffect(watcher, "chain_watch_growth")) continue;
+      buffMinion(watcher, 1, 1);
+      events.push(effectEvent(`${watcher.name} feeds on ${target.name}'s chains (+1/+1).`, watcher));
+    }
+  }
+}
+
 function resolveChainGrowth(minion: MinionInstance, events: GameEvent[]): void {
   if (!minion.chainGrowthPending || minion.chained > 0) return;
   minion.chainGrowthPending = false;
@@ -5025,7 +5065,7 @@ function destroyAtSlot(
       unequipRelic(minion, symbioteIndex);
       state.discard.push(symbiote.id);
       minion.hp = 1;
-      minion.chained = Math.max(minion.chained, 2);
+      applyChain(state, minion, events);
       events.push(effectEvent(`${minion.name} survives at 1 HP and is Chained by the Symbiote.`, minion));
       return;
     }
@@ -5071,7 +5111,7 @@ function rescueWithOogway(state: GameState, playerId: PlayerId, slotIndex: numbe
   discardAttachedRelics(state, target);
   events.push({ kind: "death", text: `${target.name} would die, but Grand Master Oogway returns it to hand.`, player: playerId, instanceId: target.instanceId, cardId: target.cardId });
   putCardInHand(state, playerId, target.cardId, events, target.instanceId);
-  oogway.chained = Math.max(oogway.chained, 2);
+  applyChain(state, oogway, events);
   events.push(effectEvent(`${oogway.name} is Chained for 1 turn after saving ${target.name}.`, oogway));
   return true;
 }
@@ -5118,6 +5158,13 @@ function resolveCardDeathrattleOnce(
       "destroys a random Nature enemy minion",
       events,
     );
+  } else if (dead.effectId === "deathrattle_damage_random_enemy") {
+    const target = randomEnemyMinion(state, dead);
+    const slot = target ? slotOf(state, target) : -1;
+    if (target && slot >= 0) {
+      dealMinionDamage(state, target.owner, slot, 1, dead, events, true);
+      events.push(effectEvent(`${dead.name}'s Deathrattle clips ${target.name} for 1.`, dead));
+    }
   } else if (dead.effectId === "deathrattle_aoe_3") {
     damageAllEnemies(state, dead, 3, events);
     events.push(effectEvent(`${dead.name}'s Deathrattle deals 3 damage to all enemy minions.`, dead));
@@ -5239,7 +5286,7 @@ function resolveCardDeathrattleOnce(
       reborn.suppressArrivalTheme = true;
       reborn.hp = 1;
       reborn.maxHp = Math.max(1, reborn.maxHp);
-      reborn.chained = Math.max(reborn.chained, 2);
+      applyChain(state, reborn, events);
       state.players[dead.owner].board[slot] = reborn;
       events.push(effectEvent(`${dead.name} is Reborn and Chained.`, dead));
     }
@@ -5299,7 +5346,7 @@ function resolveCardDeathrattleOnce(
       const canSilence = canDisable(state, dead.owner, killer, "silence");
       const canChain = canDisable(state, dead.owner, killer, "chain");
       if (canSilence) applySilence(killer);
-      if (canChain) killer.chained = Math.max(killer.chained, 2);
+      if (canChain) applyChain(state, killer, events);
       const statuses = [canSilence ? "silences" : "", canChain ? "chains" : ""]
         .filter(Boolean)
         .join(" and ");
@@ -5478,6 +5525,24 @@ function reactToDeath(
             minion,
           ),
         );
+      } else if (killer && killer.instanceId === minion.instanceId && hasEffect(minion, "tai_lung_kill_keywords")) {
+        buffMinion(minion, 1, 1);
+        const taken = dead.keywords.filter(
+          (keyword) => keyword !== "Chained" && !minion.keywords.includes(keyword),
+        );
+        // Chained is the one keyword never inherited: it is the price printed on
+        // Tai Lung's own card, not a prize for winning a fight.
+        minion.keywords.push(...taken);
+        if (taken.includes("Divine Shield")) minion.divineShield = true;
+        events.push(
+          effectEvent(
+            `${minion.name} takes ${dead.name}'s measure (+1/+1${taken.length ? ` and ${taken.join(", ")}` : ""}).`,
+            minion,
+          ),
+        );
+      } else if (killer && killer.instanceId === minion.instanceId && hasEffect(minion, "pillar_men_kill_heal")) {
+        minion.hp = minion.maxHp;
+        events.push(effectEvent(`${minion.name} is made whole by the kill.`, minion));
       } else if (minion.effectId === "xenomorph_queen_brood" && playerId === deadOwner && dead.cardId !== "token:larva") {
         summonLarva(state, minion, dead, events);
       } else if (minion.effectId === "nito_any_death_1_1") {

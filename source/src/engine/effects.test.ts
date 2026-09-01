@@ -247,7 +247,7 @@ describe("full-roster effects", () => {
 
   it("Chained minions wait through two owner turns before acting", () => {
     const state = mainState();
-    const afterPlay = playCardFor(state, 0, "One-Eyed Owl", 0);
+    const afterPlay = playCardFor(state, 0, "Albion", 0);
     expect(afterPlay.players[0].board[0]?.chained).toBe(2);
 
     const afterFirstTurn = toMyNextTurn(afterPlay);

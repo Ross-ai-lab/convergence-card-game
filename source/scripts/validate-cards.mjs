@@ -111,6 +111,21 @@ function checkPrintedText(card, line, errors) {
       );
     }
   }
+  // A passive card MUST carry the Passive keyword.
+  //
+  // Fourteen of the sixty-five did not, because the keyword column is typed by
+  // hand and the timing column is what the engine reads, so the two drifted
+  // apart with nothing to notice. Kagaya Ubuyashiki offers "a Passive minion"
+  // off the keyword list, so the gap silently shrank his pool by a fifth.
+  // Passive is not in MECHANICAL — the engine acts on the timing, not on this
+  // word — which is exactly why it needs its own check.
+  if (card.effectTiming === "passive" && !(card.keywords ?? "").split(";").map((k) => k.trim()).includes("Passive")) {
+    errors.push(
+      `Line ${line}: ${card.name} is effectTiming=passive but does not carry the Passive keyword. ` +
+        `Add it to the keywords column so the card and the engine agree.`,
+    );
+  }
+
   for (const keyword of declared) {
     if (!carried.has(keyword)) {
       errors.push(
