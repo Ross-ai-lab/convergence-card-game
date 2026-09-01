@@ -327,7 +327,7 @@ describe("2026 card replacements", () => {
         effectId: "deathrattle_summon_galactus",
         effectTiming: "deathrattle",
         keywords: ["Deathrattle"],
-        effect: "Deathrattle: Summon Galactus (8/8) with Taunt that cannot attack",
+        effect: "Deathrattle: Summon Galactus (8/8)",
       },
       "Pillar Men": { cost: 4, atk: 4, hp: 3, effectId: "pillar_men_kill_heal", effectTiming: "passive", keywords: ["Chained", "Passive"], effect: "Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health" },
       Cthulhu: {
