@@ -6595,6 +6595,13 @@ button:disabled {
   gap: 22px;
   width: min(1180px, 96vw);
   max-height: 94vh;
+  /* `min-height: 0` and `overflow: hidden` are what make the max-height above
+     mean anything. Without them the reveal grid simply grew past it: a 15-card
+     pack ran three rows deep, pushed the Collect button off the bottom of the
+     screen, and left the reward with no way to close it. The cards scroll now
+     and the button stays put. */
+  min-height: 0;
+  overflow: hidden;
   text-align: center;
 }
 
@@ -6790,10 +6797,29 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-content: center;
   align-items: center;
   gap: 14px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* The one element in the pack that is allowed to grow, and therefore the one
+   that has to be allowed to scroll. Everything else on the stage — the kicker,
+   the running total, Collect — keeps its place however many cards arrive.
+
+   The scroll lives on this WRAPPER rather than on the row itself, so the
+   scrollbar eats from the wrapper's width instead of from the row's. Put it on
+   the row and a scrollbar appearing costs the row exactly enough width to drop
+   its last card onto a line of its own. */
+.pack-scroll {
+  display: flex;
+  justify-content: center;
   width: min(1130px, 96vw);
   min-height: 300px;
+  flex: 0 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .pack-card {
@@ -6845,8 +6871,11 @@ button:disabled {
    narrow screen is not a reason to hand over cards you cannot read. */
 @media (max-width: 620px) {
   .pack-reveal {
-    min-height: 240px;
     gap: 10px;
+  }
+
+  .pack-scroll {
+    min-height: 240px;
   }
 
   .pack-stage {

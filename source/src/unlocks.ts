@@ -1,4 +1,11 @@
 import { createDuelSeed } from "./duelSeed";
+import {
+  BASELINE_RARITY,
+  RARITY_TIERS,
+  rarityRank,
+  RELIC_RARITY,
+  TOP_RARITY,
+} from "./engine/types";
 import type { PlayableCard } from "./engine/types";
 import type { DuelResult, LadderKey, Progress } from "./progress";
 
@@ -152,9 +159,13 @@ export function reconcileOrder(order: string[], cards: PlayableCard[], seed: str
  */
 const OPENING_ORIGIN = "BASIC";
 
-/** Rarity codes. Mythic is the tier the opening pool must not hold; Rare is what it trades for. */
-const MYTHIC_RARITY = "Red";
-const RARE_RARITY = "Black";
+/**
+ * The top tier is the one the opening pool must not hold; the baseline tier is
+ * what it trades for. Both are read off the engine's own table, so renaming or
+ * adding a tier cannot leave this rule pointing at a colour that moved.
+ */
+const EVICTED_RARITY = TOP_RARITY;
+const REPLACEMENT_RARITY = BASELINE_RARITY;
 
 /**
  * Two rules laid over the balanced order, applied to the opening slice only.
@@ -188,10 +199,10 @@ function applyOpeningRules(order: string[], cards: PlayableCard[]): string[] {
   // Relics carry no character tier, so they are neither Mythic nor Rare here.
   const rarityOf = (id: string) => {
     const card = byId.get(id);
-    return !card || card.kind === "relic" ? "Relic" : card.rarity;
+    return !card || card.kind === "relic" ? RELIC_RARITY : card.rarity;
   };
-  const isMythic = (id: string) => rarityOf(id) === MYTHIC_RARITY;
-  const isRare = (id: string) => rarityOf(id) === RARE_RARITY;
+  const isMythic = (id: string) => rarityOf(id) === EVICTED_RARITY;
+  const isRare = (id: string) => rarityOf(id) === REPLACEMENT_RARITY;
   const size = Math.min(STARTING_POOL, order.length);
   const chosen = new Set<string>();
 
@@ -280,14 +291,16 @@ export function newlyUnlocked(order: string[], before: number, after: number): s
  * scarcity backs it: 34 relics against 19 Mythics. A relic is also the only card
  * class that changes what another card does rather than adding a body, so it is
  * the one worth waiting for.
+ *
+ * Derived from the engine's tier table so the ranking cannot fall out of step
+ * with the one the gallery filter and the arrival fanfare use: every character
+ * tier in its own order, then relics on top.
  */
-const REVEAL_RANK: Record<string, number> = {
-  Black: 0,
-  Purple: 1,
-  Yellow: 2,
-  Red: 3,
-  Relic: 4,
-};
+function revealRank(rarity: string): number {
+  if (rarity === RELIC_RARITY) return RARITY_TIERS.length;
+  const rank = rarityRank(rarity);
+  return rank < 0 ? 0 : rank;
+}
 
 /**
  * Orders one pack's cards so the best of them is the LAST to arrive.
@@ -298,8 +311,8 @@ const REVEAL_RANK: Record<string, number> = {
  */
 export function revealOrder(cards: PlayableCard[]): PlayableCard[] {
   const score = (card: PlayableCard) => {
-    const rarity = card.kind === "relic" ? "Relic" : card.rarity;
-    return (REVEAL_RANK[rarity] ?? 0) * 100 + Math.max(0, Math.min(10, Math.round(card.cost ?? 0)));
+    const rarity = card.kind === "relic" ? RELIC_RARITY : card.rarity;
+    return revealRank(rarity) * 100 + Math.max(0, Math.min(10, Math.round(card.cost ?? 0)));
   };
   // Stable by index, so two cards of equal score keep the order the unlock gave
   // them rather than depending on the sort implementation.

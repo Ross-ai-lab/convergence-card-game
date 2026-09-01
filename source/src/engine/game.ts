@@ -4055,6 +4055,35 @@ function unequipRelic(bearer: MinionInstance, relicIndex = 0): void {
 }
 
 /**
+ * Straps a relic onto a minion already on the board, from outside a turn.
+ *
+ * Exists for the Ross-mode workbench and the `__debug` test hook, which both
+ * used to build a `RelicInstance` by hand and drop it into the bearer's relic
+ * slot. That skipped `equipRelic` and therefore skipped every one-shot a relic
+ * fires the moment it lands: The Holy Grail did not double the stats, the Ark
+ * granted no shield, the Poké Ball did not bounce, and testing a relic that way
+ * showed a card that does not exist in a real duel.
+ *
+ * Returns a NEW state, or null when nothing could be equipped — no bearer, both
+ * relic slots full, or a Good-only relic on an Evil minion.
+ */
+export function equipRelicFromOutside(
+  state: GameState,
+  owner: PlayerId,
+  slotIndex: number,
+  relic: RelicDefinition,
+  library: CardLibrary,
+): { state: GameState; events: GameEvent[] } | null {
+  const next = cloneState(state);
+  const bearer = next.players[owner].board[slotIndex];
+  if (!bearer || !hasFreeRelicSlot(bearer) || !canEquipRelicToBearer(relic, bearer)) return null;
+  const events: GameEvent[] = [];
+  equipRelic(next, bearer, createRelicInstance(relic), library, events);
+  sweepDeaths(next, events);
+  return { state: next, events };
+}
+
+/**
  * Whether this minion is wearing a particular relic.
  *
  * `RelicId`, never `string`. It took a plain string for a long time, and six
@@ -4966,7 +4995,8 @@ function hasAnyRelic(minion: MinionInstance | null | undefined): boolean {
   return Boolean(minion && (minion.relic || minion.relic2));
 }
 
-function hasFreeRelicSlot(minion: MinionInstance): boolean {
+/** Whether a minion still has room for another Ascension Relic. */
+export function hasFreeRelicSlot(minion: MinionInstance): boolean {
   return minion.relic === null || minion.relic2 === null || minion.relic2 === undefined;
 }
 

@@ -23,7 +23,7 @@ import {
   type CardLibrary,
 } from "../src/engine/game";
 import { chooseBotAction, BOT_CHEATS, type BotSkill } from "../src/engine/bot";
-import type { CardDefinition, GameAction, GameState, PlayerId, RelicDefinition } from "../src/engine/types";
+import type { CardDefinition, GameAction, GameState, MinionInstance, PlayerId, RelicDefinition } from "../src/engine/types";
 
 /** How many of each player's OWN opening turns are sampled for playability. */
 export const OPENING_TURNS = 4;
@@ -102,6 +102,29 @@ export function checkState(state: GameState, where: string): string[] {
       if (minion.atk < 0) bad(`${minion.name} has negative atk ${minion.atk}`);
       if (minion.relic && !minion.relic.relicId) bad(`${minion.name} carries a relic with no relicId`);
     });
+  }
+
+  // The three holding zones a minion can sit in while off the board: G-Man's
+  // stasis, Knov's pocket room, and Dormammu's Dark Dimension. Every one of them
+  // stores a whole MinionInstance and puts it back later, so each is a way for
+  // one instance to exist twice — the exact breach a pocket room produced in
+  // August 2026. The check only ever looked at the two boards, which means it
+  // would have caught that one and missed a stasis or a banish doing the same
+  // thing. One set now spans all five places a minion can be.
+  const zone = (where: string, entries: ReadonlyArray<{ minion: MinionInstance | null | undefined }>) => {
+    for (const entry of entries) {
+      const minion = entry.minion;
+      if (!minion) continue;
+      if (seenInstances.has(minion.instanceId)) {
+        bad(`instance ${minion.instanceId} (${minion.name}) is in ${where} and on the board or another zone`);
+      }
+      seenInstances.add(minion.instanceId);
+    }
+  };
+  zone("stasis", state.stasis ?? []);
+  zone("the Dark Dimension", state.darkDimension ?? []);
+  for (const room of state.pocketRooms ?? []) {
+    zone("a pocket room", [{ minion: room.friendly }, { minion: room.enemy }]);
   }
 
   // A winner with the duel still running would leave the result screen hidden

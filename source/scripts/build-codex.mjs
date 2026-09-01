@@ -22,13 +22,15 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { countBy, projectRoot, readCards, readRelics } from "./card-tools.mjs";
+import { countBy, engineVocabulary, projectRoot, readCards, readRelics } from "./card-tools.mjs";
 
 const codexPath = path.join(projectRoot, "..", "docs", "Convergence Browser Game Roadmap.html");
 const enginePath = path.join(projectRoot, "src", "engine", "game.ts");
 
-/** The page filters and colours by tier; the CSV stores the same thing as a rarity colour. */
-const TIER = { Black: "Rare", Red: "Mythic", Yellow: "Legendary", Purple: "Epic" };
+/** The page filters and colours by tier; the CSV stores the same thing as a rarity
+ *  colour. Read from the engine table so the codex and the in-game gallery can
+ *  never print different names for the same tier. */
+const TIER = engineVocabulary().rarityName;
 
 /**
  * Choice effects that pause outside `TARGETED_EFFECTS`.

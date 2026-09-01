@@ -753,31 +753,53 @@ function HowToPlayContent() {
           <dt>Charge</dt>
           <dd>May attack the same turn it is summoned, or the turn it changes controller.</dd>
           <dt>Chained</dt>
-          <dd>Two owner turns of nothing: no attack, no passive or Ongoing effect, and untargetable by either side.</dd>
+          <dd>Nothing at all until the chains break: no attack, no Passive or Ongoing effect, and untargetable by either side. A card that arrives Chained loses its first two owner turns; a chain laid by an enemy effect costs one.</dd>
           <dt>Divine Shield</dt>
           <dd>Blocks the next instance of damage, whatever its size, then the gold rim goes out. <b>Silence</b> switches it off for as long as it lasts.</dd>
           <dt>Freeze</dt>
           <dd>The minion loses its next turn, then thaws once it has sat that turn out.</dd>
           <dt>Silence</dt>
           <dd>Strips the printed effect and keywords, Divine Shield included, and takes back every stat <b>buff</b> the minion is carrying, down to its printed stats. Nerfs it has taken are kept. A Silence that its own card calls temporary only suspends the buffs.</dd>
+          <dt>Cannot attack</dt>
+          <dd>This minion never attacks, whatever its ATK. It still blocks, still takes damage, and still strikes back when attacked. Its ATK gem is grey.</dd>
+          <dt>Reborn</dt>
+          <dd>The minion comes back where it died, at <b>1 HP</b>, with its printed ATK and nothing else: no keywords, no effect, no relic. A card that returns it differently says so on its face.</dd>
+          <dt>Asleep</dt>
+          <dd>The one-turn wait after a minion is played or summoned. Separate from Chained, and skipped by Charge. Drifting z&rsquo;s show it.</dd>
           <dt>Evade</dt>
           <dd>A printed percentage chance to dodge an incoming attack outright.</dd>
           <dt>Invulnerable</dt>
           <dd>Takes no damage while the condition lasts; a blue-and-white rim shows it.</dd>
           <dt>Immune</dt>
           <dd>Takes no damage from one named source — a camp, an alignment, a damage type.</dd>
+          <dt>Adapted</dt>
+          <dd>The minion has learned the camp that last hit it and shrugs that camp off for a few turns. A purple glow rises from the card, and it fades when the immunity does.</dd>
           <dt>Untargetable</dt>
           <dd>Attacks and effects cannot choose it while the condition lasts.</dd>
           <dt>Attack Locked</dt>
           <dd>Cannot attack until the printed lock ends; the attack gem greys out.</dd>
           <dt>Marked</dt>
-          <dd>A delayed effect is waiting on the minion. The card that marked it says when it lands.</dd>
+          <dd>A delayed effect is waiting on the minion, and a red pulse runs round the card. The card that marked it says when it lands.</dd>
+          <dt>Stasis</dt>
+          <dd>The minion is lifted off the board for two turns and comes back exactly as it left, in its own slot if that slot is still free.</dd>
+          <dt>Banished</dt>
+          <dd>The minion is put away until the card that banished it dies. Then it returns.</dd>
+          <dt>Pocket room</dt>
+          <dd>One friendly and one enemy minion are shut away together for two turns. The higher ATK walks out; the other is gone. Equal ATK and both walk out.</dd>
           <dt>Protected slot</dt>
           <dd>A board position that shields whoever stands in it from Silence, Freeze and Chained — but not from damage, targeting or removal.</dd>
           <dt>Destroy</dt>
           <dd>Removes a minion outright, dealing no damage. Divine Shield does not stop it.</dd>
           <dt>Summon</dt>
           <dd>Puts a new minion into an open slot. No open slot, no summon.</dd>
+          <dt>Discover</dt>
+          <dd>Offers you three cards from the shared deck and you keep one. The other two stay in the deck. Your opponent is not shown what you were offered.</dd>
+          <dt>Transform</dt>
+          <dd>Replaces a minion with a different one from the roster, usually one mana step up or down. Its relics are lost with it. <b>Devolve</b> is the same word pointing downward.</dd>
+          <dt>Seize</dt>
+          <dd>Moves an enemy minion onto your board. It arrives asleep unless it has Charge, and it needs a free slot.</dd>
+          <dt>Return to hand</dt>
+          <dd>Takes a minion off the board and puts its card back in its owner&rsquo;s hand, at full printed stats. Attached relics are discarded.</dd>
           <dt>Gain stats</dt>
           <dd>Adds ATK and both maximum and current HP.</dd>
           <dt>Target</dt>
@@ -827,12 +849,22 @@ function HowToPlayContent() {
             <dd>Chained</dd>
             <dt>Red cross</dt>
             <dd>Silenced</dd>
+            <dt>Red pulse</dt>
+            <dd>Marked</dd>
+            <dt>Purple glow</dt>
+            <dd>Adapted to a camp</dd>
             <dt>Grey gem</dt>
             <dd>Cannot attack</dd>
             <dt>Drifting z</dt>
             <dd>Asleep this turn</dd>
           </dl>
         </div>
+        <p className="rules-aside">
+          A board <b>slot</b> can be marked too, and a mark is <b>permanent</b>: it outlives whoever laid it and whoever
+          stands in it. The slot wears a coloured ring and a small label — <b>RANDOM</b> (a minion here only attacks at
+          random), <b>CHAINED</b> (a minion here is always Chained), <b>SAFE</b> (protected slot), <b>1/1</b> (a minion
+          here is held at 1/1), and <b>+1/+1</b> (a minion here grows every one of your turns).
+        </p>
       </section>
 
       <section className="rules-chapter">

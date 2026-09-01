@@ -11,25 +11,74 @@ export const CAMPS = ["Magic", "Tech", "Nature", "ALL"] as const;
 
 export type Camp = (typeof CAMPS)[number];
 /**
- * The three alignments.
+ * The three alignments, in the order the interface lists them.
  *
  * The array is the single source of truth: the type is derived from it, and
  * `csv.ts` validates incoming data against the same array. A value can
  * therefore never exist in one of those two places and not the other.
  */
-export const ALIGNMENTS = ["Good", "Evil", "Neutral"] as const;
+export const ALIGNMENTS = ["Good", "Neutral", "Evil"] as const;
 
 export type Alignment = (typeof ALIGNMENTS)[number];
 /**
- * The four frame colours, commonest to rarest.
+ * The four card tiers, COMMONEST FIRST, each with the name the game shows.
  *
- * The array is the single source of truth: the type is derived from it, and
- * `csv.ts` validates incoming data against the same array. A value can
- * therefore never exist in one of those two places and not the other.
+ * One table, because the alternative was seven. The colour is the internal
+ * label — it names the gem on the card, not the tier — and the ranking, the
+ * display names and "which tiers are above Rare" were separately typed out in
+ * `App.tsx` (four times), `unlocks.ts` (twice) and `scripts/build-codex.mjs`,
+ * each list carrying its own idea of the order. Everything downstream now reads
+ * this one, and the order of the array IS the ranking: index 0 is the baseline
+ * tier every other one escalates from.
+ *
+ * `csv.ts` validates incoming data against the same table, so a tier cannot
+ * exist in the type and not in the validator.
  */
-export const RARITIES = ["Red", "Yellow", "Purple", "Black"] as const;
+export const RARITY_TIERS = [
+  { code: "Black", name: "Rare" },
+  { code: "Purple", name: "Epic" },
+  { code: "Yellow", name: "Legendary" },
+  { code: "Red", name: "Mythic" },
+] as const;
 
-export type Rarity = (typeof RARITIES)[number];
+export type Rarity = (typeof RARITY_TIERS)[number]["code"];
+
+export const RARITIES: readonly Rarity[] = RARITY_TIERS.map((tier) => tier.code);
+
+/** The tier a card has to reach before it carries an animated shine. */
+export const BASELINE_RARITY: Rarity = RARITY_TIERS[0].code;
+
+/** The top tier. Its arrival takes the whole screen. */
+export const TOP_RARITY: Rarity = RARITY_TIERS[RARITY_TIERS.length - 1].code;
+
+/** Commonest to rarest, as a rank starting at 0. */
+export function rarityRank(rarity: string): number {
+  return RARITY_TIERS.findIndex((tier) => tier.code === rarity);
+}
+
+/** The name a player sees for a tier. Unknown values are shown as they are. */
+export function rarityName(rarity: string): string {
+  return RARITY_TIERS.find((tier) => tier.code === rarity)?.name ?? rarity;
+}
+
+/**
+ * What a relic prints where a character prints its tier.
+ *
+ * A relic has no character tier. It carries this word so the card face, the
+ * gallery filter and the pack's reveal order all have something to sort on, and
+ * it deliberately sits OUTSIDE `RARITY_TIERS`: no card data may use it, and
+ * `csv.ts` will reject it in a rarity column.
+ */
+export const RELIC_RARITY = "Relic";
+
+/**
+ * What a relic prints where a character prints its camp.
+ *
+ * Same story as `RELIC_RARITY`: a placeholder for a property relics do not have,
+ * kept out of `CAMPS` so no card can carry it, and named here because the card
+ * face, the gallery's hidden-option list and the codex all had it typed out.
+ */
+export const RELIC_CAMP_LABEL = "Ascension";
 /**
  * When a card's printed text happens.
  *
@@ -454,12 +503,20 @@ export type ChoiceKind = "board" | "slot" | "hand" | "option" | "boardOrCore";
 // there next inherits it. (Owner ruling — this is what makes them worth a
 // 10-mana card.)
 // --------------------------------------------------------------------------
+/**
+ * Five of these can be laid by a card in play. `slot_silence` and `slot_grow_2`
+ * cannot: the cards that laid them were rewritten, and no effect reaches them
+ * any more. They stay in the type, and the engine and the interface keep
+ * handling them, for one reason — a save written before September 2026 may
+ * still hold one, and `SAVE_VERSION` was not bumped when they stopped being
+ * reachable. Delete them only alongside a save bump.
+ */
 export type SlotAuraId =
   | "random_attacks" // Bill Cipher — a minion here can only attack at random
-  | "slot_silence" // Legacy slot-silence mark — a minion here is silenced
+  | "slot_silence" // Retired — a minion here is silenced. Nothing lays this now.
   | "slot_chain" // Giorno GER — a minion here is permanently Chained
   | "slot_grow_1" // Floor Guardians — a minion here gains +1/+1 each of your turns
-  | "slot_grow_2" // Ultra Instinct Goku — a minion here gains +2/+2 each of your turns
+  | "slot_grow_2" // Retired — +2/+2 each of your turns. Nothing lays this now.
   | "slot_protected" // Neo — minions here resist Silence, Freeze, and Chain; removal and attacks still reach them
   | "slot_stats_one"; // Doctor Manhattan — minions here are permanently 1/1
 

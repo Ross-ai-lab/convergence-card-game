@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
 import { spawnTestMinion } from "./test-utils";
+import { TOKEN_CARDS } from "./tokens";
 import type { Camp, CardDefinition, GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
 
 const minionLibrary = makeCardLibrary(cards);
@@ -148,20 +149,11 @@ describe("relic effects", () => {
   });
 
   it("returns every token as a playable hand card without adding it to the gallery", () => {
-    const tokenIds = [
-      "token:shenron",
-      "token:skeleton",
-      "token:knight",
-      "token:shadow-clone",
-      "token:larva",
-      "token:sin",
-      "token:tie-fighter",
-      "token:morgott",
-      "token:drakath",
-      "token:vision",
-      "token:galactus",
-      "token:awakened",
-    ];
+    // Every token the engine can build, read off `TOKEN_CARDS` rather than
+    // listed again here. A hand-written list covers the tokens that existed the
+    // day it was typed and silently skips the next one.
+    const tokenIds = TOKEN_CARDS.map((token) => token.id);
+    expect(tokenIds.length).toBeGreaterThan(0);
 
     for (const tokenId of tokenIds) {
       const state = mainState(`poke-ball-${tokenId}`);

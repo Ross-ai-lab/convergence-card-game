@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { countBy, parseCsv, projectRoot, readCards, readRelics } from "./card-tools.mjs";
+import { countBy, engineVocabulary, parseCsv, projectRoot, readCards, readRelics } from "./card-tools.mjs";
+
+const vocabulary = engineVocabulary();
 
 const required = [
   "id",
@@ -20,30 +22,37 @@ const required = [
   "art",
 ];
 
+// Read from the engine, never typed out again here. A hand-kept copy of a closed
+// set is a copy the compiler does not check, and it fails by rejecting a card
+// the engine is perfectly happy with.
 const allowed = {
-  rarity: new Set(["Red", "Yellow", "Purple", "Black"]),
-  camp: new Set(["Magic", "Tech", "Nature", "ALL"]),
-  alignment: new Set(["Good", "Evil", "Neutral"]),
-  effectTiming: new Set(["none", "onPlay", "ongoing", "onPlayAndOngoing", "onPlayAndDeathrattle", "passive", "deathrattle"]),
-  keyword: new Set(["Passive", "Ongoing", "Taunt", "Divine Shield", "Freeze", "Silence", "Chained", "Charge", "Deathrattle", "Cannot Attack"]),
+  rarity: new Set(vocabulary.rarities),
+  camp: new Set(vocabulary.camps),
+  alignment: new Set(vocabulary.alignments),
+  effectTiming: new Set(vocabulary.effectTimings),
+  keyword: new Set(vocabulary.keywords),
 };
 
 const tokenAudioPath = path.join(projectRoot, "data", "token-audio.csv");
-const battlecryTokenIds = new Set([
-  "token:skeleton",
-  "token:knight",
-  "token:shadow-clone",
-  "token:sin",
-  "token:tie-fighter",
-]);
+/** Battlecry and Hero-Power tokens: everything `tokens.ts` does not list as themed. */
+const battlecryTokenIds = new Set(vocabulary.genericTokenIds);
 
 // --- printed-text rules ------------------------------------------------------
 // Two whole sessions were spent hand-correcting 86 cards whose printed text
 // disagreed with the engine. These two rules make that impossible to reintroduce:
 // the build fails instead of the card quietly lying to the player.
 
-/** Keywords the engine actually acts on, and which the card face draws. */
-const MECHANICAL = ["Taunt", "Divine Shield", "Chained", "Charge", "Deathrattle", "Cannot Attack"];
+/**
+ * Keywords the engine acts on, and which the card face draws.
+ *
+ * A deliberate SUBSET of the engine's keyword list rather than a copy of it:
+ * Passive, Ongoing, Freeze and Silence name a timing or a status rather than a
+ * standing rule the card must declare in its own first sentence. Built by
+ * subtraction so a new keyword lands here by default and has to be excluded on
+ * purpose.
+ */
+const NOT_DECLARED_IN_TEXT = ["Passive", "Ongoing", "Freeze", "Silence"];
+const MECHANICAL = engineVocabulary().keywords.filter((keyword) => !NOT_DECLARED_IN_TEXT.includes(keyword));
 
 /**
  * The word a card must print for each timing.
@@ -171,9 +180,10 @@ function checkEffectPunctuation(name, line, text, errors) {
  * into lowercase before this check existed.
  *
  * Only the exact standalone words count. "goods", "high-tech" and a name that
- * happens to contain one are left alone, and ALL is the camp's own spelling.
+ * happens to contain one are left alone, and ALL is skipped because it is
+ * already the camp's own spelling and has no lowercase form to catch.
  */
-const FACTION_WORDS = ["Good", "Evil", "Neutral", "Magic", "Tech", "Nature"];
+const FACTION_WORDS = [...vocabulary.alignments, ...vocabulary.camps].filter((word) => word !== "ALL");
 
 function checkFactionCase(name, line, text, errors) {
   if (!text || text === "-") return;
@@ -261,15 +271,7 @@ for (const [index, token] of tokenAudio.entries()) {
   }
 }
 
-const requiredTokenAudioIds = new Set([
-  "token:shenron",
-  "token:morgott",
-  "token:drakath",
-  "token:vision",
-  "token:galactus",
-  "token:awakened",
-  "token:larva",
-]);
+const requiredTokenAudioIds = new Set(vocabulary.themedTokenIds);
 for (const tokenId of requiredTokenAudioIds) {
   if (!tokenAudioIds.has(tokenId)) errors.push(`Token audio catalog is missing ${tokenId}`);
 }

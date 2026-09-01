@@ -476,7 +476,12 @@ function runLadder(gamesFor: (key: string) => number) {
   console.log("");
   console.log("  matchup              stronger wins   median turns");
   console.log("  -------------------  -------------   ------------");
-  const out: Array<LadderMetric & { medianTurns: number }> = [];
+  // `results` is part of what a matchup carries: `writeLadderFile` accepts it and
+  // the paired comparison in `ladder-compare.ts` reads it duel by duel. It was
+  // missing from this declaration and pushed anyway, which JavaScript allowed
+  // and nothing caught, because `scripts/` was outside the typechecker until
+  // 1 September 2026.
+  const out: Array<LadderMetric & { medianTurns: number; results: LadderGame[] }> = [];
   // Ladder duels are real bot-vs-bot duels, so what they see about the ENGINE
   // counts too. Throwing it away meant a hard bot that stalled its own duels
   // simply shrank the sample until its check downgraded to a SKIP, while the

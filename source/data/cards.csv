@@ -48,7 +48,7 @@ c046,The Watcher,10,10,7,Purple,Magic,Neutral,Cannot Attack;Passive,watcher_reve
 c047,"Escanor ""The One""",8,8,4,Red,Magic,Good,,double_other_friendly_attack,onPlay,"Battlecry: Double your other friendly minions attack","The Sun, incarnated",Seven Deadly Sins,/card-art/raw/c047.webp
 c048,Lelouch Lamperouge,8,1,1,Yellow,Magic,Neutral,,mind_control_enemy,onPlay,Battlecry: Gain control of an enemy minion,Obey,Code Geass,/card-art/raw/c048.webp
 c049,Rimuru Tempest,9,1,1,Yellow,Magic,Good,,rimuru_tempest,onPlay,Battlecry: Destroy a minion. Gain its stats. Ongoing: Gain +1/+1,Infinite growth,Tensura,/card-art/raw/c049.webp
-c050,Aizen,9,4,4,Purple,Magic,Evil,Deathrattle,aizen_deathrattle,deathrattle,Deathrattle: Reborn-50% chance. Silence and chain your killer,All part of the plan,Bleach,/card-art/raw/c050.webp
+c050,Aizen,9,4,4,Purple,Magic,Evil,Deathrattle,aizen_deathrattle,deathrattle,Deathrattle: Reborn at full HP-50% chance. Silence and chain your killer,All part of the plan,Bleach,/card-art/raw/c050.webp
 c051,Boros,9,6,8,Purple,Nature,Evil,,heal_5,ongoing,Ongoing: Heal 5 HP,Strongest of his Universe,OPM,/card-art/raw/c051.webp
 c052,Dormammu,9,8,5,Purple,Magic,Evil,,dark_dimension_banish,onPlay,Battlecry: Choose an enemy minion. Banish it to the Dark Dimension until Dormammu dies,I've come to bargain,MCU,/card-art/raw/c052.webp
 c053,Mob Psycho,9,5,5,Purple,Magic,Good,,mob_ascend,onPlay,"Battlecry: If 3 or more friendly minions are on the board, return them to your hand and set Mob's stats to 12/12",A quiet storm,Mob Psycho,/card-art/raw/c053.webp

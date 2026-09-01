@@ -15,7 +15,7 @@
  */
 
 import { launch } from "./browser.mjs";
-import { readRelics } from "./card-tools.mjs";
+import { engineVocabulary, readRelics } from "./card-tools.mjs";
 
 const BASE = process.argv[2] || "http://localhost:5177";
 
@@ -125,20 +125,15 @@ for (const { id: relicId } of readRelics()) {
 // Only tokens born from a Deathrattle or passive death trigger get their own
 // YouTube sting. Battlecry/Hero-Power tokens intentionally do not enter this
 // list, so Naruto's Shadow Clones and the other generic summons stay untouched.
-for (const tokenId of [
-  "token:shenron",
-  "token:morgott",
-  "token:drakath",
-  "token:vision",
-  "token:galactus",
-  "token:awakened",
-  "token:larva",
-]) {
+// Both lists come from `tokens.ts` rather than being typed out here: this file
+// held one copy of each, and the validator held two more.
+const { themedTokenIds, genericTokenIds } = engineVocabulary();
+for (const tokenId of themedTokenIds) {
   const result = await page.evaluate((cardId) => window.__sfx.probeCardTheme(cardId, 1400), tokenId);
   check(`token theme: ${tokenId}`, result.peak > 0.02 && result.activeMs > 200, `peak ${result.peak}, ${result.activeMs}ms audible`);
 }
 
-for (const tokenId of ["token:shadow-clone", "token:skeleton", "token:sin", "token:tie-fighter", "token:knight"]) {
+for (const tokenId of genericTokenIds) {
   const result = await page.evaluate((cardId) => {
     window.__sfx.stopCardTheme();
     return window.__sfx.probeCardTheme(cardId, 400);

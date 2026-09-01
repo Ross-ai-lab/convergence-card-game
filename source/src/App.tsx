@@ -22,7 +22,19 @@ import {
   isHeroPowerUnlocked,
   randomHeroPower,
 } from "./engine/hero-powers";
-import { isMinionCard, isRelicCard } from "./engine/types";
+import {
+  ALIGNMENTS,
+  BASELINE_RARITY,
+  CAMPS,
+  isMinionCard,
+  isRelicCard,
+  RARITIES,
+  rarityName,
+  rarityRank,
+  RELIC_CAMP_LABEL,
+  RELIC_RARITY,
+  TOP_RARITY,
+} from "./engine/types";
 import { isThemedTokenId, isTokenCardId } from "./engine/tokens";
 import {
   actionKey,
@@ -31,7 +43,9 @@ import {
   CONCEALED_CHOICE_EFFECTS,
   createInitialGame,
   effectiveCardCost,
+  equipRelicFromOutside,
   getLegalActions,
+  hasFreeRelicSlot,
   hasInfiniteMana,
   makeCardLibrary,
   opponentHandRevealed,
@@ -171,9 +185,9 @@ function relicFace(relic: RelicInstance | RelicDefinition): CardFaceModel {
     origin: def?.origin ?? "",
     flavor: def?.flavor ?? "",
     cost: def?.cost,
-    rarity: "Relic",
-    camp: "Ascension",
-    alignment: "Relic",
+    rarity: RELIC_RARITY,
+    camp: RELIC_CAMP_LABEL,
+    alignment: RELIC_RARITY,
   };
 }
 
@@ -258,10 +272,7 @@ const DUEL_INTRO_TIMINGS = {
 type ManaFx = { id: number; kind: "spend" | "refill"; from: number; to: number } | null;
 // A Mythic landing is the loudest moment in a duel, so it takes the whole screen.
 type Splash = { id: number; minion: MinionInstance } | null;
-const MYTHIC_RARITY = "Red";
 const SPLASH_MS = 1900;
-/** Rulebook frame colours, ranked. Decides which arrival gets to speak. */
-const RARITY_WEIGHT: Record<string, number> = { Red: 4, Yellow: 3, Purple: 2, Black: 1 };
 /** Core at or under this swaps the music to the tense bed. Roughly a quarter. */
 const TENSION_CORE = 12;
 
@@ -892,25 +903,12 @@ export default function App() {
         const wanted = relicName.trim().toLowerCase();
         const relicDef = relics.find((r) => r.name.toLowerCase() === wanted) ?? relics[0];
         if (!relicDef) return "relic catalog is empty";
-        const relic: RelicInstance = {
-          id: relicDef.id,
-          relicId: relicDef.relicId,
-          name: relicDef.name,
-          effect: relicDef.effect,
-          art: relicDef.art,
-        };
+        // Through the engine, so the relic fires whatever it fires on landing.
         setGame((current) => {
-          const players = [...current.players] as GameState["players"];
-          const board = [...players[owner].board];
-          const bearer = board[slotIndex];
-          if (!bearer) return current;
-          board[slotIndex] = bearer.relic
-            ? { ...bearer, relic2: bearer.relic2 ?? relic }
-            : { ...bearer, relic };
-          players[owner] = { ...players[owner], board };
-          return { ...current, players };
+          const equipped = equipRelicFromOutside(current, owner, slotIndex, relicDef, library);
+          return equipped ? equipped.state : current;
         });
-        return relic.name;
+        return relicDef.name;
       },
 
       /** A small readable summary, for assertions that need numbers. */
@@ -1110,7 +1108,7 @@ export default function App() {
       if (!before.has(id)) {
         addImpact(entry.owner, entry.slot, "summon", 0.1, sfx.summonSoundFor(entry.minion.rarity), entry.minion.camp);
         arrivals.push(entry.minion);
-        if (entry.minion.rarity === MYTHIC_RARITY) {
+        if (entry.minion.rarity === TOP_RARITY) {
           const marker: Splash = { id: fxId.current++, minion: entry.minion };
           setSplash(marker);
           window.setTimeout(() => setSplash((cur) => (cur && cur.id === marker.id ? null : cur)), SPLASH_MS);
@@ -1125,12 +1123,12 @@ export default function App() {
     );
     if (thematicArrivals.length > 0) {
       const speaker = thematicArrivals.reduce((best, minion) =>
-        RARITY_WEIGHT[minion.rarity] > RARITY_WEIGHT[best.rarity] ||
-        (RARITY_WEIGHT[minion.rarity] === RARITY_WEIGHT[best.rarity] && minion.cost > best.cost)
+        rarityRank(minion.rarity) > rarityRank(best.rarity) ||
+        (rarityRank(minion.rarity) === rarityRank(best.rarity) && minion.cost > best.cost)
           ? minion
           : best,
       );
-      sfx.playCardTheme(speaker.cardId, speaker.rarity === MYTHIC_RARITY ? 0.5 : 0.28);
+      sfx.playCardTheme(speaker.cardId, speaker.rarity === TOP_RARITY ? 0.5 : 0.28);
       // NO HERALD ON A SUMMON (owner ruling). A Mythic landing used to also get a
       // narrator line stacked behind its theme; between the rarity fanfare, the
       // card's own theme and the music bed, an arrival already has three layers
@@ -1620,30 +1618,26 @@ export default function App() {
     );
   }
 
+  /**
+   * Straps a relic onto the first minion with a free slot, THROUGH THE ENGINE.
+   *
+   * It used to write the relic straight into the bearer's slot, which skipped
+   * every one-shot a relic fires on landing — so a workbench Holy Grail did not
+   * double the stats and a workbench Ark granted no shield. Testing a relic
+   * showed a card that cannot exist in a real duel.
+   */
   function developerEquipRelic(cardId: string, owner: PlayerId) {
     const relicDef = library[cardId];
     if (!relicDef || !isRelicCard(relicDef)) return;
     setDeveloperDuelActive(true);
-    const relic: RelicInstance = {
-      id: relicDef.id,
-      relicId: relicDef.relicId,
-      name: relicDef.name,
-      effect: relicDef.effect,
-      art: relicDef.art,
-    };
     setGame((current) => {
-      const players = [...current.players] as GameState["players"];
-      const board = [...players[owner].board];
-      const slotIndex = board.findIndex((slot) => slot && (!slot.relic || !slot.relic2));
+      const slotIndex = current.players[owner].board.findIndex((slot) => slot && hasFreeRelicSlot(slot));
       if (slotIndex < 0) return current;
-      const bearer = board[slotIndex];
-      if (!bearer) return current;
-      board[slotIndex] = bearer.relic ? { ...bearer, relic2: relic } : { ...bearer, relic };
-      players[owner] = { ...players[owner], board };
-      return { ...current, players };
+      const equipped = equipRelicFromOutside(current, owner, slotIndex, relicDef, library);
+      return equipped ? equipped.state : current;
     });
     setEvents((items) =>
-      [...items, { kind: "info" as const, text: `Developer mode equipped ${relic.name} on the first available minion.` }].slice(-80),
+      [...items, { kind: "info" as const, text: `Developer mode equipped ${relicDef.name} on the first available minion.` }].slice(-80),
     );
   }
 
@@ -3221,14 +3215,20 @@ const FILTER_ANY: Record<FilterKey, string> = {
   alignment: "Any alignment",
 };
 
-/** Rarity runs commonest to rarest, which is not alphabetical. */
+/**
+ * The order each filter's options are listed in.
+ *
+ * Rarity runs commonest to rarest, which is not alphabetical, and it is read off
+ * the engine's own tier table rather than typed out again — the colours carry no
+ * order of their own, which is how Legendary once ended up listed above Epic.
+ * Relics are appended because they are a card class rather than a character
+ * tier.
+ */
 const VALUE_ORDER: Record<FilterKey, string[]> = {
   cost: [],
-  // Commonest to rarest: Rare, Epic, Legendary, Mythic. The colours carry no
-  // order of their own, which is how Legendary ended up listed above Epic.
-  rarity: ["Black", "Purple", "Yellow", "Red", "Relic"],
-  camp: ["Magic", "Tech", "Nature", "ALL"],
-  alignment: ["Good", "Neutral", "Evil"],
+  rarity: [...RARITIES, RELIC_RARITY],
+  camp: [...CAMPS],
+  alignment: [...ALIGNMENTS],
 };
 
 /**
@@ -3241,28 +3241,20 @@ const VALUE_ORDER: Record<FilterKey, string[]> = {
  * keeps "Relic" because there it IS the answer: it is what those cards are.
  */
 const HIDDEN_FILTER_VALUES: Partial<Record<FilterKey, string[]>> = {
-  camp: ["Ascension"],
-  alignment: ["Relic"],
+  camp: [RELIC_CAMP_LABEL],
+  alignment: [RELIC_RARITY],
 };
 
 /**
- * The rarity tiers under the names the game actually uses for them.
+ * A tier's option label is its PLAYER-FACING name.
  *
- * The colours are the internal labels — they name the gem on the card, not the
- * tier — so a filter offering "Yellow" and "Red" asks the player to know an
- * implementation detail. `build-codex.mjs` has carried this same mapping for the
- * public page since long before the gallery had filters; keep the two in step.
+ * The colours are internal labels — they name the gem on the card, not the tier
+ * — so a filter offering "Yellow" and "Red" would ask the player to know an
+ * implementation detail. `rarityName` is the engine's own table, shared with the
+ * public codex page, so the two can no longer drift.
  */
-const RARITY_NAME: Record<string, string> = {
-  Black: "Rare",
-  Purple: "Epic",
-  Yellow: "Legendary",
-  Red: "Mythic",
-  Relic: "Relic",
-};
-
 function filterOptionLabel(key: FilterKey, value: string): string {
-  return key === "rarity" ? (RARITY_NAME[value] ?? value) : value;
+  return key === "rarity" ? rarityName(value) : value;
 }
 
 function faceValue(face: CardFaceModel, key: FilterKey): string {
@@ -4017,13 +4009,19 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
 }
 
 /**
- * Which tiers carry an animated shine, and Rare is deliberately absent.
+ * Which tiers carry an animated shine, and the baseline tier is deliberately
+ * absent.
  *
  * The escalation only reads as an escalation if the bottom of it is still. Give
  * every card a shine and the tiers stop meaning anything; 60 Rare cards then
  * also stop costing anything, which is what keeps a full gallery affordable.
+ *
+ * Derived, so adding a tier to the engine's table cannot leave this list behind:
+ * everything above the baseline, plus relics.
  */
-const SHINE_RARITIES = new Set(["purple", "yellow", "red", "relic"]);
+const SHINE_RARITIES = new Set(
+  [...RARITIES.filter((rarity) => rarity !== BASELINE_RARITY), RELIC_RARITY].map((rarity) => rarity.toLowerCase()),
+);
 
 /**
  * Rail values with a lit palette built for them.
@@ -4927,11 +4925,37 @@ const PACK_HITS = 3;
 /** Card width and gap from `.pack-card` / `.pack-reveal`; keep the three in step. */
 const PACK_CARD_WIDTH = 206;
 const PACK_CARD_GAP = 14;
+/** The widest a row is allowed to read as one row rather than as a wall. */
+const PACK_MAX_PER_ROW = 5;
 
-/** How wide the reveal must be to hold a balanced row of `count` cards. */
-function packRowWidth(count: number): number {
-  const perRow = count <= 5 ? Math.max(1, count) : Math.ceil(count / 2);
-  return perRow * PACK_CARD_WIDTH + (perRow - 1) * PACK_CARD_GAP;
+/**
+ * How many cards sit in one row of the reveal.
+ *
+ * Two rules pull against each other. Rows must be BALANCED — six cards left to
+ * wrap on their own gave a row of five with one stranded underneath, which reads
+ * as a mistake, while three and three reads as a hand. And a card may never be
+ * narrower than 206px, which is the floor where its rules text is still
+ * readable, so the cards cannot shrink to make a wide row fit.
+ *
+ * The row COUNT therefore grows instead. The layout used to assume two rows was
+ * always enough, and beating the Ascendant pays FIFTEEN cards: eight to a row,
+ * 1,746px, wider than any laptop. The grid overflowed the veil, carried the
+ * Collect button off the bottom of the screen, and left the reward impossible to
+ * dismiss. Three rows of five fit, and the reveal scrolls when even that is
+ * taller than the window.
+ */
+function packColumns(count: number, viewportWidth: number): number {
+  const rows = Math.max(1, Math.ceil(count / PACK_MAX_PER_ROW));
+  const preferred = Math.ceil(Math.max(1, count) / rows);
+  const step = PACK_CARD_WIDTH + PACK_CARD_GAP;
+  // `96vw` is the reveal's own width cap in App.css; keep the two in step.
+  const affordable = Math.max(1, Math.floor((viewportWidth * 0.96 + PACK_CARD_GAP) / step));
+  return Math.max(1, Math.min(preferred, affordable));
+}
+
+/** How wide the reveal must be to hold one row of `columns` cards. */
+function packRowWidth(columns: number): number {
+  return columns * PACK_CARD_WIDTH + (columns - 1) * PACK_CARD_GAP;
 }
 
 function CardPack({
@@ -4948,6 +4972,15 @@ function CardPack({
   const [hits, setHits] = useState(0);
   const [dealt, setDealt] = useState(0);
   const opened = hits >= PACK_HITS;
+  // How many cards a row can hold depends on the window, so it is read from the
+  // window and re-read when that changes. A pack is on screen for a few seconds,
+  // which makes one listener cheap and a stale layout expensive.
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
   // Sorted so the rarest and dearest card is the last one to land. What the pack
   // CONTAINS is already settled by the unlock order; this only decides the order
   // they arrive in, so it cannot bias the reward.
@@ -5058,16 +5091,21 @@ function CardPack({
                 which reads as a mistake; three and three reads as a hand. The
                 width is what does it, because flex-wrap has no notion of an
                 even split. */}
-            <div className="pack-reveal" style={{ maxWidth: `min(${packRowWidth(faces.length)}px, 96vw)` }}>
-              {faces.slice(0, dealt).map((face, index) => (
-                <div className="pack-card" key={`${face.name}-${index}`}>
-                  {/* NOT lazy, unlike the gallery. At most ten images, and each
-                      one is the thing the player is here to look at — a card
-                      that deals itself onto the table with an empty black frame
-                      is the reward arriving broken. */}
-                  <CardFace card={face} />
-                </div>
-              ))}
+            <div className="pack-scroll">
+              <div
+                className="pack-reveal"
+                style={{ maxWidth: `min(${packRowWidth(packColumns(faces.length, viewportWidth))}px, 96vw)` }}
+              >
+                {faces.slice(0, dealt).map((face, index) => (
+                  <div className="pack-card" key={`${face.name}-${index}`}>
+                    {/* NOT lazy, unlike the gallery. Fifteen images at the most,
+                        and each one is the thing the player is here to look at —
+                        a card that deals itself onto the table with an empty
+                        black frame is the reward arriving broken. */}
+                    <CardFace card={face} />
+                  </div>
+                ))}
+              </div>
             </div>
             <p className={allDealt ? "pack-total is-in" : "pack-total"}>
               {total} of {cards.length + relics.length} cards unlocked
