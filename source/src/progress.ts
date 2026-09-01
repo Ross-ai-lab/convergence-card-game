@@ -282,7 +282,7 @@ export function totals(progress: Progress): LadderRecord {
 
 /** Wins against the bot only; hotseat victories do not advance the unlock track. */
 export function botWins(progress: Progress): number {
-  return (['easy', 'normal', 'hard'] as const).reduce(
+  return (["easy", "normal", "hard"] as const).reduce(
     (wins, key) => wins + progress.ladders[key].won,
     0,
   );

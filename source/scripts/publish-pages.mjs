@@ -109,6 +109,32 @@ async function assertPublishedCopyMatchesBuild() {
   return generatedFiles.length;
 }
 
+/**
+ * The developer surfaces must not reach the public site.
+ *
+ * `App.tsx` says in as many words that the build is checked for `__debug`, and
+ * until 1 September 2026 nothing checked it — the guarantee was a comment. It
+ * matters beyond tidiness: the Debug State panel it guards prints the whole
+ * game state, both hands included, which is exactly what the hotseat curtain
+ * exists to hide. `import.meta.env.DEV` is replaced with a literal `false` and
+ * the branches are eliminated, so a hit here means that elimination stopped
+ * working, not that a name happened to collide.
+ */
+async function assertNoDevHookInBundle(publishedTarget) {
+  const scripts = (await collectFiles(publishedTarget)).filter((file) => file.endsWith(".js"));
+  const leaked = [];
+  for (const file of scripts) {
+    const contents = await readFile(join(publishedTarget, file), "utf8");
+    if (contents.includes("__debug")) leaked.push(file);
+  }
+  if (leaked.length) {
+    throw new Error(
+      `The developer hook reached the published bundle (${leaked.join(", ")}). ` +
+        `\`import.meta.env.DEV\` should have removed it.`,
+    );
+  }
+}
+
 async function main() {
   await runNpm(["run", "validate:data"]);
   // The codex page embeds a copy of the roster. Rebuilding it here means a
@@ -135,6 +161,8 @@ async function main() {
 
   const scriptPath = assertInside(publishedTarget, join(publishedTarget, scriptSrc), "Published JavaScript bundle");
   await assertFile(scriptPath, "Published JavaScript bundle");
+
+  await assertNoDevHookInBundle(publishedTarget);
 
   const fileCount = await assertPublishedCopyMatchesBuild();
   if (fileCount === 0) throw new Error("Published copy is empty");

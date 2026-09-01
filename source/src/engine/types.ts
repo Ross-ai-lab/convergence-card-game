@@ -3,11 +3,43 @@ export type PlayerId = 0 | 1;
  * The three source camps plus the umbrella camp. ALL is deliberately not an
  * alias for any one source camp: it receives their positive camp buffs, while
  * camp-specific hostile effects still require the exact named camp.
+ *
+ * The array is the single source of truth: the type is derived from it, and
+ * `csv.ts` validates incoming data against the same array.
  */
-export type Camp = "Magic" | "Tech" | "Nature" | "ALL";
-export type Alignment = "Good" | "Evil" | "Neutral";
-export type Rarity = "Red" | "Yellow" | "Purple" | "Black";
-export type EffectTiming = "none" | "onPlay" | "ongoing" | "onPlayAndOngoing" | "onPlayAndDeathrattle" | "passive" | "deathrattle";
+export const CAMPS = ["Magic", "Tech", "Nature", "ALL"] as const;
+
+export type Camp = (typeof CAMPS)[number];
+/**
+ * The three alignments.
+ *
+ * The array is the single source of truth: the type is derived from it, and
+ * `csv.ts` validates incoming data against the same array. A value can
+ * therefore never exist in one of those two places and not the other.
+ */
+export const ALIGNMENTS = ["Good", "Evil", "Neutral"] as const;
+
+export type Alignment = (typeof ALIGNMENTS)[number];
+/**
+ * The four frame colours, commonest to rarest.
+ *
+ * The array is the single source of truth: the type is derived from it, and
+ * `csv.ts` validates incoming data against the same array. A value can
+ * therefore never exist in one of those two places and not the other.
+ */
+export const RARITIES = ["Red", "Yellow", "Purple", "Black"] as const;
+
+export type Rarity = (typeof RARITIES)[number];
+/**
+ * When a card's printed text happens.
+ *
+ * The array is the single source of truth: the type is derived from it, and
+ * `csv.ts` validates incoming data against the same array. A value can
+ * therefore never exist in one of those two places and not the other.
+ */
+export const EFFECT_TIMINGS = ["none", "onPlay", "ongoing", "onPlayAndOngoing", "onPlayAndDeathrattle", "passive", "deathrattle"] as const;
+
+export type EffectTiming = (typeof EFFECT_TIMINGS)[number];
 
 /** The ten Hero Powers; the player unlocks them while the bot can receive any. */
 export type HeroPowerId =
@@ -22,205 +54,225 @@ export type HeroPowerId =
   | "summon_recruit"
   | "give_taunt";
 
-export type Keyword =
-  | "Passive"
-  | "Ongoing"
-  | "Taunt"
-  | "Divine Shield"
-  | "Freeze"
-  | "Silence"
-  | "Chained"
-  | "Charge"
-  | "Deathrattle"
-  | "Cannot Attack";
+/**
+ * Every keyword a card may print.
+ *
+ * The array is the single source of truth: the type is derived from it, and
+ * `csv.ts` validates incoming data against the same array. A value can
+ * therefore never exist in one of those two places and not the other.
+ */
+export const KEYWORDS = [
+  "Passive",
+  "Ongoing",
+  "Taunt",
+  "Divine Shield",
+  "Freeze",
+  "Silence",
+  "Chained",
+  "Charge",
+  "Deathrattle",
+  "Cannot Attack",
+] as const;
 
-export type EffectId =
-  | "none"
-  | "draw_card"
-  | "draw_relic"
-  | "small_attack_ward"
-  | "aoe_damage_3"
-  | "time_bomb_destroy_all"
-  | "godzilla_damage_burst"
-  | "gain_divine_shield"
-  | "equip_random_relic"
-  | "copy_passive"
-  | "light_yagami_nature_kill"
-  | "destroy_enemy_taunt"
-  | "godrick_graft"
-  | "anti_good_grow"
-  | "small_cannot_attack"
-  | "protect_slot"
-  | "snap_balance"
-  | "flash_speed"
-  | "deathrattle_summon_galactus"
-  | "deathrattle_summon_vision"
-  | "freeman_charge_aura"
-  | "chain_all_minions"
-  | "freeze_and_weaken"
-  | "set_hp_1"
-  | "set_all_enemy_hp_1"
+export type Keyword = (typeof KEYWORDS)[number];
+
+/**
+ * Every effect hook the engine knows how to resolve.
+ *
+ * The array is the single source of truth: the type is derived from it, and
+ * `csv.ts` validates incoming data against the same array. A value can
+ * therefore never exist in one of those two places and not the other.
+ */
+export const EFFECT_IDS = [
+  "none",
+  "draw_card",
+  "draw_relic",
+  "small_attack_ward",
+  "aoe_damage_3",
+  "time_bomb_destroy_all",
+  "godzilla_damage_burst",
+  "gain_divine_shield",
+  "equip_random_relic",
+  "copy_passive",
+  "light_yagami_nature_kill",
+  "destroy_enemy_taunt",
+  "godrick_graft",
+  "anti_good_grow",
+  "small_cannot_attack",
+  "protect_slot",
+  "snap_balance",
+  "flash_speed",
+  "deathrattle_summon_galactus",
+  "deathrattle_summon_vision",
+  "freeman_charge_aura",
+  "chain_all_minions",
+  "freeze_and_weaken",
+  "set_hp_1",
+  "set_all_enemy_hp_1",
   // --- added 2026-07-12: effects for the full roster (onPlay/ongoing actives) ---
-  | "self_buff_2"
-  | "self_atk_3"
-  | "heal_5"
-  | "bounce_friendly"
-  | "rebirth_friendly_dead"
-  | "aoe_all_1"
-  | "aoe_all_2"
-  | "aoe_all_4"
-  | "destroy_damaged_enemy"
-  | "destroy_all_damaged_enemies"
-  | "devour_friendly"
-  | "all_enemy_atk_down_1"
-  | "freeze_all_enemies"
-  | "chain_attacker"
-  | "silence_enemy"
-  | "buff_all_good_2"
-  | "buff_evil_ally_2"
-  | "buff_all_magic_2_1"
-  | "buff_all_nature_2_1"
-  | "buff_all_tech_2_1"
-  | "shield_all_friendly"
-  | "consume_tech_4_hp"
-  | "consume_nature_4_hp"
-  | "consume_all_friendly_tech"
-  | "dice_buff"
-  | "doof_coinflip"
-  | "ally_atk_1"
-  | "taunt_aura"
-  | "rimuru_tempest"
-  | "rimuru_tempest_growth"
+  "self_buff_2",
+  "self_atk_3",
+  "heal_5",
+  "bounce_friendly",
+  "rebirth_friendly_dead",
+  "aoe_all_1",
+  "aoe_all_2",
+  "aoe_all_4",
+  "destroy_damaged_enemy",
+  "destroy_all_damaged_enemies",
+  "devour_friendly",
+  "all_enemy_atk_down_1",
+  "freeze_all_enemies",
+  "chain_attacker",
+  "silence_enemy",
+  "buff_all_good_2",
+  "buff_evil_ally_2",
+  "buff_all_magic_2_1",
+  "buff_all_nature_2_1",
+  "buff_all_tech_2_1",
+  "shield_all_friendly",
+  "consume_tech_4_hp",
+  "consume_nature_4_hp",
+  "consume_all_friendly_tech",
+  "dice_buff",
+  "doof_coinflip",
+  "ally_atk_1",
+  "taunt_aura",
+  "rimuru_tempest",
+  "rimuru_tempest_growth",
   // --- passive / reactive (checked inline, not run in runEffect) ---
-  | "attack_2x"
-  | "oliva_ward"
-  | "invuln_with_good_ally"
-  | "invuln_if_alone"
-  | "dodge_50"
-  | "immune_magic_minions"
-  | "immune_tech_minions"
-  | "immune_nature_minions"
-  | "enemy_cards_cost_1_more"
-  | "dodge_80"
-  | "on_kill_buff_1"
-  | "on_survive_buff_1"
-  | "friendly_death_buff_1_1"
-  | "nito_any_death_1_1"
-  | "robocop_evil_bonus"
-  | "shifu_shield"
-  | "kaku_evade_counter"
-  | "superman_damage_cap_3"
-  | "charge_ignore_taunt"
-  | "batman_gadget_choice"
-  | "steal_and_equip_relic"
-  | "flowey_save_load"
-  | "ouken_reborn"
-  | "steal_hand_relic"
-  | "choose_relic"
-  | "destroy_relic"
-  | "kill_back"
-  | "attack_lock"
-  | "attack_once_ever"
-  | "survivor_buff"
-  | "mind_control_2"
-  | "copy_and_trigger"
-  | "steal_passive"
-  | "bounce_friendly_discount"
-  | "camp_immunity_on_hit"
-  | "set_stats_choice"
-  | "discover_relic_self"
+  "attack_2x",
+  "oliva_ward",
+  "invuln_with_good_ally",
+  "invuln_if_alone",
+  "dodge_50",
+  "immune_magic_minions",
+  "immune_tech_minions",
+  "immune_nature_minions",
+  "enemy_cards_cost_1_more",
+  "dodge_80",
+  "on_kill_buff_1",
+  "on_survive_buff_1",
+  "friendly_death_buff_1_1",
+  "nito_any_death_1_1",
+  "robocop_evil_bonus",
+  "shifu_shield",
+  "kaku_evade_counter",
+  "superman_damage_cap_3",
+  "charge_ignore_taunt",
+  "batman_gadget_choice",
+  "steal_and_equip_relic",
+  "flowey_save_load",
+  "ouken_reborn",
+  "steal_hand_relic",
+  "choose_relic",
+  "destroy_relic",
+  "kill_back",
+  "attack_lock",
+  "attack_once_ever",
+  "survivor_buff",
+  "mind_control_2",
+  "copy_and_trigger",
+  "steal_passive",
+  "bounce_friendly_discount",
+  "camp_immunity_on_hit",
+  "set_stats_choice",
+  "discover_relic_self",
   // --- the last five: slot auras and forced-random attacks ---
-  | "slot_random_attacks"
-  | "slot_growth_1"
-  | "foresight_draw"
+  "slot_random_attacks",
+  "slot_growth_1",
+  "foresight_draw",
   // --- 2026-08 card pass ---------------------------------------------------
-  | "watcher_reveal_hand"
-  | "charge"
-  | "copy_minion_effects"
-  | "neutral_double_atk_hp_1"
-  | "random_attacks_next_turn"
-  | "mob_ascend"
-  | "death_star_mark"
-  | "glados_adjacent_tech"
-  | "deathrattle_aoe_3"
-  | "doom_evil_slayer"
-  | "ragnaros_ongoing_burn"
-  | "knov_pocket_room"
-  | "meleoron_protect_ally"
-  | "yoda_global_silence"
-  | "voldemort_phylactery"
-  | "rick_return_all"
-  | "shigaraki_decay"
-  | "heroic_relics"
+  "watcher_reveal_hand",
+  "charge",
+  "copy_minion_effects",
+  "neutral_double_atk_hp_1",
+  "random_attacks_next_turn",
+  "mob_ascend",
+  "death_star_mark",
+  "glados_adjacent_tech",
+  "deathrattle_aoe_3",
+  "doom_evil_slayer",
+  "ragnaros_ongoing_burn",
+  "knov_pocket_room",
+  "meleoron_protect_ally",
+  "yoda_global_silence",
+  "voldemort_phylactery",
+  "rick_return_all",
+  "shigaraki_decay",
+  "heroic_relics",
   // --- requested card updates ---------------------------------------------
-  | "morpheus_choice"
-  | "aladdin_wish"
-  | "fantastic_four_aura"
-  | "evade_first_attack"
-  | "heal_self_full"
-  | "deathrattle_summon_morgott"
-  | "replace_same_cost_random"
-  | "deathrattle_random_evil"
-  | "highest_atk_only"
-  | "aizen_deathrattle"
-  | "reborn_75"
-  | "elden_beast_neutral_magic_atk"
-  | "oogway_rescue"
-  | "evade_allies_33"
-  | "korosensei_defense"
+  "morpheus_choice",
+  "aladdin_wish",
+  "fantastic_four_aura",
+  "evade_first_attack",
+  "heal_self_full",
+  "deathrattle_summon_morgott",
+  "replace_same_cost_random",
+  "deathrattle_random_evil",
+  "highest_atk_only",
+  "aizen_deathrattle",
+  "reborn_75",
+  "elden_beast_neutral_magic_atk",
+  "oogway_rescue",
+  "evade_allies_33",
+  "korosensei_defense",
   // --- 2026-08 requested card replacements --------------------------------
-  | "stasis_enemy"
-  | "vader_chain_or_destroy"
-  | "grievous_on_kill_atk"
-  | "buddha_purify"
-  | "invulnerable_if_frozen"
-  | "summon_sins"
-  | "yoda_lowest_atk_buff"
-  | "king_attack_lock_random"
-  | "dominion_authority"
-  | "kratos_lockdown"
-  | "ten_commandments_first_attack"
-  | "hashira_focus_attack"
-  | "freeze_and_silence_enemy"
-  | "dumbledore_cleanse"
-  | "dark_dimension_banish"
-  | "strange_bargain"
-  | "reveal_top_deck"
-  | "free_chained_shield"
-  | "meruem_kill_copy"
-  | "deathrattle_summon_drakath"
-  | "avatar_aang_awakened"
-  | "chaos_random_summon"
-  | "copy_minion_to_hand"
-  | "discover_random_keyword_minion"
-  | "double_other_friendly_attack"
-  | "mind_control_enemy"
-  | "discover_tech_card"
-  | "transform_random_allies_up"
-  | "devolve_enemy_minions"
-  | "slot_permanent_chain"
+  "stasis_enemy",
+  "vader_chain_or_destroy",
+  "grievous_on_kill_atk",
+  "buddha_purify",
+  "invulnerable_if_frozen",
+  "summon_sins",
+  "yoda_lowest_atk_buff",
+  "king_attack_lock_random",
+  "dominion_authority",
+  "kratos_lockdown",
+  "ten_commandments_first_attack",
+  "hashira_focus_attack",
+  "freeze_and_silence_enemy",
+  "dumbledore_cleanse",
+  "dark_dimension_banish",
+  "strange_bargain",
+  "reveal_top_deck",
+  "free_chained_shield",
+  "meruem_kill_copy",
+  "deathrattle_summon_drakath",
+  "avatar_aang_awakened",
+  "chaos_random_summon",
+  "copy_minion_to_hand",
+  "discover_random_keyword_minion",
+  "double_other_friendly_attack",
+  "mind_control_enemy",
+  "discover_tech_card",
+  "transform_random_allies_up",
+  "devolve_enemy_minions",
+  "slot_permanent_chain",
   // --- Star Wars / Tech card replacements ---------------------------------
-  | "black_ops_ignore_taunt"
-  | "battleship_tech_aura"
-  | "star_destroyer_tie_fighters"
-  | "planetary_defense_grid_taunt_buff"
-  | "black_hole_deathrattle"
-  | "rudeus_hero_power_free"
-  | "prince_lloyd_damage_ward"
-  | "motoko_kusanagi"
-  | "shibukawa_defense_damage_2x"
-  | "xenomorph_queen_brood"
-  | "naruto_shadow_clones"
-  | "frieren_relic_discover"
-  | "guts_missing_core_growth"
+  "black_ops_ignore_taunt",
+  "battleship_tech_aura",
+  "star_destroyer_tie_fighters",
+  "planetary_defense_grid_taunt_buff",
+  "black_hole_deathrattle",
+  "rudeus_hero_power_free",
+  "prince_lloyd_damage_ward",
+  "motoko_kusanagi",
+  "shibukawa_defense_damage_2x",
+  "xenomorph_queen_brood",
+  "naruto_shadow_clones",
+  "frieren_relic_discover",
+  "guts_missing_core_growth",
   // --- 2026-09 card pass ---------------------------------------------------
-  | "chain_watch_growth"
-  | "wall_of_flesh_grind"
-  | "tai_lung_kill_keywords"
-  | "damage_enemy_1"
-  | "pillar_men_kill_heal"
-  | "taunt_ally_self_buff"
-  | "deathrattle_damage_random_enemy";
+  "chain_watch_growth",
+  "wall_of_flesh_grind",
+  "tai_lung_kill_keywords",
+  "damage_enemy_1",
+  "pillar_men_kill_heal",
+  "taunt_ally_self_buff",
+  "deathrattle_damage_random_enemy",
+] as const;
+
+export type EffectId = (typeof EFFECT_IDS)[number];
 
 export interface CardDefinition {
   kind: "minion";
@@ -512,42 +564,52 @@ export type ResolvedChoiceWithProgress = ResolvedChoice & {
 // are minion equipment, not hero trinkets. The card stays in deck/hand until
 // the player explicitly pays its cost and straps it to a chosen friendly minion.
 // --------------------------------------------------------------------------
-export type RelicId =
-  | "none"
-  | "double_stats"
-  | "immune_magic"
-  | "rescue_full"
-  | "cleave_adjacent"
-  | "battlecry_to_ongoing"
-  | "immune_nature_attacks"
-  | "immune_tech_attacks"
-  | "double_bearer_attack"
-  | "immune_silence"
-  | "monster_cell"
-  | "philosophers_stone"
-  | "capture_kill"
-  | "immune_freeze_chain"
-  | "ongoing_grow_2"
-  | "heal_full_now"
-  | "cocoon"
-  | "ignore_defences"
-  | "return_on_death"
-  | "evade_50"
-  | "double_attack"
-  | "pandora_box"
-  | "monkeys_paw"
-  | "ark_divine_shield"
-  | "necronomicon"
-  | "dragon_balls"
-  | "mjolnir"
-  | "excalibur"
-  | "omnitrix"
-  | "stand_arrow"
-  | "poke_ball"
-  | "time_turner"
-  | "symbiote"
-  | "neuralyzer"
-  | "green_lantern_ring";
+/**
+ * Every Ascension Relic hook the engine knows how to resolve.
+ *
+ * The array is the single source of truth: the type is derived from it, and
+ * `csv.ts` validates incoming data against the same array. A value can
+ * therefore never exist in one of those two places and not the other.
+ */
+export const RELIC_IDS = [
+  "none",
+  "double_stats",
+  "immune_magic",
+  "rescue_full",
+  "cleave_adjacent",
+  "battlecry_to_ongoing",
+  "immune_nature_attacks",
+  "immune_tech_attacks",
+  "double_bearer_attack",
+  "immune_silence",
+  "monster_cell",
+  "philosophers_stone",
+  "capture_kill",
+  "immune_freeze_chain",
+  "ongoing_grow_2",
+  "heal_full_now",
+  "cocoon",
+  "ignore_defences",
+  "return_on_death",
+  "evade_50",
+  "double_attack",
+  "pandora_box",
+  "monkeys_paw",
+  "ark_divine_shield",
+  "necronomicon",
+  "dragon_balls",
+  "mjolnir",
+  "excalibur",
+  "omnitrix",
+  "stand_arrow",
+  "poke_ball",
+  "time_turner",
+  "symbiote",
+  "neuralyzer",
+  "green_lantern_ring",
+] as const;
+
+export type RelicId = (typeof RELIC_IDS)[number];
 
 export interface RelicDefinition {
   kind: "relic";

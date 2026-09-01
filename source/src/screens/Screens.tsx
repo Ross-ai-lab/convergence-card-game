@@ -51,6 +51,7 @@ import {
   type Progress,
 } from "../progress";
 import type { BotSkill } from "../engine/bot";
+import { STARTING_POOL } from "../unlocks";
 
 export type GameMode = { kind: "hotseat" } | { kind: "bot"; skill: BotSkill };
 export type DuelIntroPhase = "prelude" | "reveal" | "draw" | "mana" | "exit";
@@ -679,7 +680,7 @@ function HowToPlayContent() {
       <section className="rules-chapter">
         <h4><span className="rules-step-no">2</span> The shared deck</h4>
         <ul className="rules-list">
-          <li>Both players draw from the <b>same shuffled deck</b> — {MINION_COUNT} minions and {RELIC_COUNT} relics, one copy of each.</li>
+          <li>Both players draw from the <b>same shuffled deck</b>, one copy of each card. It holds the cards you have <b>unlocked</b>: {STARTING_POOL} to begin with, growing with every duel you finish against the bot, up to the full {MINION_COUNT} minions and {RELIC_COUNT} relics.</li>
           <li>You open with <b>3 cards</b>. Player One may replace any number of them once before the duel begins. Going second also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
           <li>Your hand holds <b>10 cards</b>. A card drawn into a full hand burns and is gone.</li>
           <li>When the deck runs dry, every further draw costs you core health: <b>1, then 2, then 3</b>, and up from there.</li>
@@ -754,11 +755,11 @@ function HowToPlayContent() {
           <dt>Chained</dt>
           <dd>Two owner turns of nothing: no attack, no passive or Ongoing effect, and untargetable by either side.</dd>
           <dt>Divine Shield</dt>
-          <dd>Blocks the next instance of damage, whatever its size, then the gold rim goes out.</dd>
+          <dd>Blocks the next instance of damage, whatever its size, then the gold rim goes out. <b>Silence</b> switches it off for as long as it lasts.</dd>
           <dt>Freeze</dt>
           <dd>The minion loses its next turn, then thaws once it has sat that turn out.</dd>
           <dt>Silence</dt>
-          <dd>Strips the printed effect and keywords, and takes back every stat <b>buff</b> the minion is carrying, down to its printed stats. Nerfs it has taken are kept. A Silence that its own card calls temporary only suspends the buffs.</dd>
+          <dd>Strips the printed effect and keywords, Divine Shield included, and takes back every stat <b>buff</b> the minion is carrying, down to its printed stats. Nerfs it has taken are kept. A Silence that its own card calls temporary only suspends the buffs.</dd>
           <dt>Evade</dt>
           <dd>A printed percentage chance to dodge an incoming attack outright.</dd>
           <dt>Invulnerable</dt>

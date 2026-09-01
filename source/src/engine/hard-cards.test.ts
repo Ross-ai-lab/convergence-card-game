@@ -168,6 +168,10 @@ describe("combat-reaction cards", () => {
     expect(thirdBlocked.players[1].board[0]?.hp).toBe(hpAfterFirst);
 
     const immunityExpired = endTurnAndDraw(endTurnAndDraw(thirdBlocked, 0), 1);
+    // Cleared, not merely ignored. `campImmunity` is what draws the adapted ring
+    // on the card, so an expired one left the board claiming an immunity that
+    // had stopped applying several turns earlier.
+    expect(immunityExpired.players[1].board[0]?.campImmunity).toBeNull();
     const landed = attack(immunityExpired, 0, 0);
     expect(landed.players[1].board[0]?.hp).toBe(hpAfterFirst - 1);
   });

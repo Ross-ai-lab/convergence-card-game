@@ -20,6 +20,7 @@ import type {
   PlayableCard,
   RelicDefinition,
   RelicInstance,
+  RelicId,
   ResolvedChoiceWithProgress as ResolvedChoice,
   TargetOption,
   TemporaryMinionControl,
@@ -298,6 +299,7 @@ export function applyAction(
   // Slot marks are permanent and position-based, so they are re-applied after
   // every action — whichever route a minion took into a marked slot.
   enforceSlotAuras(next, events);
+  expireTimedStates(next);
   refreshPassiveAuras(next);
   enforceGlobalSilence(next, events);
   // After the silences are settled, because a minion silenced by Gojo or by a
@@ -1046,7 +1048,14 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
     }
     if (minion.chained > 0) {
       minion.chained -= 1;
-      skipOngoing.add(minion.instanceId);
+      // NOT added to `skipOngoing`. The turn a chain reaches zero is a free
+      // turn by every other rule in the engine: the minion may attack
+      // (`readySwings` reads the decremented counter) and it is targetable
+      // again (`isUntargetable` reads the same one). Adding it here charged the
+      // Ongoing half one extra turn that the attack half never paid, so a
+      // Chained engine sat out two payments for a one-turn chain. The
+      // `chained === 0` filter below is what actually holds a still-chained
+      // minion back.
       events.push({ kind: "effect", text: `${minion.name}'s chain weakens.`, player: playerId, instanceId: minion.instanceId });
       if (minion.chained === 0) resolveChainGrowth(minion, events);
     }
@@ -1067,11 +1076,10 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
         battlecryRunsAsOngoing(minion),
     )
     .sort((left, right) => left.playOrder - right.playOrder);
-  state.effectQueue = ready.flatMap((minion) =>
-    hasRelic(minion, "double_ongoing")
-      ? [{ instanceId: minion.instanceId, owner: playerId }, { instanceId: minion.instanceId, owner: playerId }]
-      : [{ instanceId: minion.instanceId, owner: playerId }],
-  );
+  // One entry per ready minion. There used to be a second entry for a
+  // `double_ongoing` relic, and no relic in the file has ever granted that, so
+  // the branch was a permanent false.
+  state.effectQueue = ready.map((minion) => ({ instanceId: minion.instanceId, owner: playerId }));
 
   processEffectQueue(state, library, events);
 }
@@ -1350,9 +1358,10 @@ function attackMinion(
   const attackerId = attacker.instanceId;
   events.push({ kind: "combat", text: `${attacker.name} attacks ${defender.name}.`, player: playerId, instanceId: attacker.instanceId });
   defender.attackedBy.push(attackerId);
-  // Ea doubles whatever the attacker was going to land.
-  let outgoing = strikeDamage(attacker, defender);
-  if (hasRelic(attacker, "double_atk_damage")) outgoing *= 2;
+  // Ea is already in `attacker.atk`: it doubles the printed ATK once, when it is
+  // equipped. A second doubling used to be applied here against a relic id
+  // (`double_atk_damage`) that no relic has ever carried, so it never fired.
+  const outgoing = strikeDamage(attacker, defender);
   const alreadyAdapted =
     defender.campImmunity !== null &&
     defender.campImmunity.camp === attacker.camp &&
@@ -1368,23 +1377,20 @@ function attackMinion(
       }
     }
   }
-  // `no_retaliation`: the bearer strikes from outside space, so nothing reaches
-  // back. It is the one thing in the game that suspends simultaneous combat, and
-  // only on the bearer's own swing — the bearer is still hit normally on the
-  // enemy's turn. No relic in the current file grants it (Tesseract, which once
-  // did, now grants a second attack); the hook stays for the next relic pass.
-  if (!hasRelic(attacker, "no_retaliation")) {
-    // Retaliation is combat damage, but it is not an attack declared by the
-    // relic bearer. Defensive attack-immunity relics must not absorb this
-    // return blow when their bearer started the fight.
-    let retaliation = strikeDamage(defender, attacker);
-    // Shibukawa's doubling is the one multiplier that IS about defending, so it
-    // belongs here rather than in the shared calculation.
-    if (hasEffect(defender, "shibukawa_defense_damage_2x")) retaliation *= 2;
-    dealMinionDamage(state, playerId, attackerSlot, retaliation, defender, events, false, new Set(), true, false);
-  } else {
-    events.push(effectEvent(`${attacker.name} strikes from outside space — no retaliation.`, attacker));
-  }
+  // Simultaneous combat has NO exception in the current roster. A
+  // `no_retaliation` relic hook used to sit here, guarding a branch that also
+  // printed "strikes from outside space" into the log; no relic has ever
+  // granted it, so neither the skip nor the line could happen. Re-adding it is
+  // a two-line change on the day a relic actually prints it.
+  //
+  // Retaliation is combat damage, but it is not an attack declared by the
+  // attacker, so defensive attack-immunity relics must not absorb this return
+  // blow when their bearer started the fight.
+  let retaliation = strikeDamage(defender, attacker);
+  // Shibukawa's doubling is the one multiplier that IS about defending, so it
+  // belongs here rather than in the shared calculation.
+  if (hasEffect(defender, "shibukawa_defense_damage_2x")) retaliation *= 2;
+  dealMinionDamage(state, playerId, attackerSlot, retaliation, defender, events, false, new Set(), true, false);
   const survivingAttacker = state.players[playerId].board[attackerSlot];
   const attackerAlive = Boolean(survivingAttacker && survivingAttacker.instanceId === attackerId);
   const defenderAlive = state.players[defenderId].board.some((minion) => minion?.instanceId === defender.instanceId);
@@ -1566,10 +1572,11 @@ function attackCore(state: GameState, playerId: PlayerId, attackerSlot: number, 
   const attacker = state.players[playerId].board[attackerSlot];
   if (!attacker) return;
   const defenderId = opponent(playerId);
-  // Exactly its ATK — no floor, no retaliation. Ea doubles a swing wherever it
-  // lands; the One Ring adds its reach only against the core.
-  let damage = hasRelic(attacker, "double_atk_damage") ? attacker.atk * 2 : attacker.atk;
-  if (hasRelic(attacker, "core_strike_3")) damage += 3;
+  // Exactly its ATK — no floor, no retaliation, and no relic bonus. Two used to
+  // be applied here, `double_atk_damage` and `core_strike_3`, and neither id
+  // belongs to a relic: Ea doubles the printed ATK on equip instead, and the One
+  // Ring is a rescue, not a core-damage bonus.
+  const damage = attacker.atk;
   const landed = dealCoreDamage(state, defenderId, damage, events);
   attacker.attacksUsed += 1;
   if (landed) {
@@ -1794,6 +1801,31 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   slot_growth_1: { kind: "slot", side: "friendly", prompt: "Bless one of your slots — minions there gain +1/+1 every turn" },
 };
 
+/**
+ * The prompts whose ANSWER is private when the other seat is the one answering.
+ *
+ * All six reach into the shared deck and offer three cards nobody else may see,
+ * so the log line naming the winner would hand the reader a card they were never
+ * shown being offered — and in a shared deck that is a card they might have been
+ * about to draw.
+ *
+ * A NAMED LIST, not a prefix test. The interface used to mask any effect id
+ * beginning with `discover_`, which caught three of these six and quietly leaked
+ * the other three: Gol D. Roger and Indiana Jones share `choose_relic`, Frieren
+ * has her own id, and Morpheus's second prompt is a discover under a name that
+ * says nothing about it. Prompts with a visible board consequence — Aladdin's
+ * wish, Batman's gadget, Doctor Strange's bargain — are deliberately absent:
+ * hiding those would hide something the other player has to be able to read.
+ */
+export const CONCEALED_CHOICE_EFFECTS: ReadonlySet<EffectId> = new Set<EffectId>([
+  "discover_relic_self",
+  "discover_tech_card",
+  "discover_random_keyword_minion",
+  "choose_relic",
+  "frieren_relic_discover",
+  "morpheus_choice",
+]);
+
 function targetOptions(state: GameState, source: MinionInstance, spec: TargetSpec): TargetOption[] {
   if (spec.enabled && !spec.enabled(state, source)) return [];
   const sides: PlayerId[] =
@@ -1846,7 +1878,6 @@ function hiddenByMeleoron(state: GameState, minion: MinionInstance): boolean {
 
 function isUntargetable(state: GameState, minion: MinionInstance): boolean {
   if (minion.chained > 0) return true;
-  if (hasRelic(minion, "untargetable")) return true;
   if (minion.untargetableUntilTurn !== null && minion.untargetableUntilTurn !== undefined && minion.untargetableUntilTurn > state.turnNumber) return true;
   return hiddenByMeleoron(state, minion);
 }
@@ -2589,8 +2620,13 @@ function runEffect(
   } else if (source.effectId === "strange_bargain") {
     const opponentPlayer = state.players[opponent(source.owner)];
     if (pickedValue === "core_hp") {
-      opponentPlayer.health -= 10;
-      events.push(effectEvent(`${label} costs ${opponentPlayer.name} 10 Core HP.`, source));
+      // Through `dealCoreDamage`, like every other core hit in the game. It used
+      // to subtract from `health` directly, which was the one path in the engine
+      // that walked past Aladdin's core Divine Shield — a shield the player had
+      // paid a card for and could watch fail to do anything.
+      if (dealCoreDamage(state, opponentPlayer.id, 10, events)) {
+        events.push(effectEvent(`${label} costs ${opponentPlayer.name} 10 Core HP.`, source));
+      }
     } else if (pickedValue === "random_minion") {
       destroyRandomMinion(state, opponentPlayer.id, events, `${source.name}'s bargain claims a random minion`);
     } else if (pickedValue === "mana") {
@@ -2708,7 +2744,7 @@ function runEffect(
     // Math.random, so a duel replays identically from its seed.
     const available = relicsInDeck(state, library);
     if (available.length) {
-      const choice = available[Math.floor(nextRandom(state) * available.length) % available.length];
+      const choice = available[rollInt(state, available.length)];
       const relic = takeRelicFromDeckToHand(state, source.owner, choice.id, library, events);
       if (relic) events.push(effectEvent(`${label} turns up ${relic.name}.`, source));
     } else {
@@ -3809,27 +3845,6 @@ function refreshPassiveAuras(state: GameState): void {
       target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 0, keywords: [] });
     }
   }
-  const chaosSources: MinionInstance[] = [];
-  for (const source of chaosSources) {
-    for (const targetBoard of state.players.map((player) => player.board)) {
-      for (const target of targetBoard) {
-        if (!target || target.instanceId === source.instanceId) continue;
-        // Chaos is global, but the -2 HP side of the aura is never allowed to
-        // reduce a minion below 1 maximum/current HP.
-        const hpDelta = Math.max(1 - target.maxHp, -2);
-        const wasAlive = target.hp > 0;
-        target.atk += 3;
-        target.maxHp += hpDelta;
-        // Chaos may not be the thing that kills a living minion, but it must
-        // never resurrect one that was already at 0 HP and is waiting for the
-        // action's death sweep.
-        target.hp += hpDelta;
-        if (wasAlive) target.hp = Math.max(1, target.hp);
-        target.auraBonuses = target.auraBonuses ?? [];
-        target.auraBonuses.push({ sourceId: source.instanceId, atk: 3, hp: hpDelta, keywords: [] });
-      }
-    }
-  }
   const allMightSources = ([0, 1] as PlayerId[]).flatMap((owner) =>
     state.players[owner].board.filter(
       (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "all_enemy_atk_down_1")),
@@ -4039,7 +4054,19 @@ function unequipRelic(bearer: MinionInstance, relicIndex = 0): void {
   setRelicAt(bearer, relicIndex, null);
 }
 
-function hasRelic(minion: MinionInstance | null | undefined, relicId: string): boolean {
+/**
+ * Whether this minion is wearing a particular relic.
+ *
+ * `RelicId`, never `string`. It took a plain string for a long time, and six
+ * dead checks accumulated behind it: `double_atk_damage`, `double_ongoing`,
+ * `core_strike_3`, `untargetable`, `immune_disable` and `no_retaliation` all
+ * named relics that do not exist, so they answered false for ever while their
+ * comments described behaviour the game never had. One of them even claimed to
+ * be the Anti-magic Mask, which is `immune_freeze_chain` and is checked on the
+ * next line. Typing the parameter turns that whole class of mistake into a
+ * compile error.
+ */
+function hasRelic(minion: MinionInstance | null | undefined, relicId: RelicId): boolean {
   return Boolean(minion && attachedRelics(minion).some((relic) => relic.relicId === relicId));
 }
 
@@ -4183,6 +4210,34 @@ function layAura(
   board.slotAuras.push({ slot: target.slot, auraId, sourceName: source.name });
   events.push(effectEvent(`${source.name} marks ${board.name}'s slot ${target.slot + 1} — permanently.`, source));
   enforceSlotAuras(state, events);
+}
+
+/**
+ * Clears the timed states that have run out.
+ *
+ * Every rule that reads these already compares against `turnNumber`, so an
+ * expired one changes nothing about how a duel plays. What it changes is what
+ * the BOARD says: `campImmunity` drives the adapted ring on Doomsday's card, and
+ * nothing ever set it back to null, so a minion that adapted to Magic on turn 4
+ * wore the ring for the rest of the duel while taking Magic damage normally. A
+ * status the player can see has to stop being shown when it stops being true.
+ */
+function expireTimedStates(state: GameState): void {
+  for (const player of state.players) {
+    for (const minion of player.board) {
+      if (!minion) continue;
+      if (minion.campImmunity && minion.campImmunity.untilTurn <= state.turnNumber) {
+        minion.campImmunity = null;
+      }
+      if (
+        minion.untargetableUntilTurn !== null &&
+        minion.untargetableUntilTurn !== undefined &&
+        minion.untargetableUntilTurn <= state.turnNumber
+      ) {
+        minion.untargetableUntilTurn = null;
+      }
+    }
+  }
 }
 
 function hasSlotAura(state: GameState, owner: PlayerId, slot: number, auraId: SlotAuraId): boolean {
@@ -4517,8 +4572,17 @@ function dealMinionDamage(
     amount = Math.min(amount, 3);
   }
   if (amount <= 0) return;
-  // Shinigami Eyes reads straight past a Divine Shield.
-  if (target.divineShield && !hasRelic(source, "ignore_defences")) {
+  // Shinigami Eyes reads straight past a Divine Shield, and so does Silence.
+  //
+  // Silence "strips the printed effect and keywords" — that is the printed rule
+  // on the How To Play screen and in the README — and Divine Shield is a
+  // keyword. Every other keyword already answered to it (Taunt through
+  // `!silenced` at the legality check, Cannot Attack through `attackForbidden`),
+  // and the card face has always hidden the gold rim on a silenced minion. The
+  // shield alone kept absorbing a hit, so a silenced minion showed no shield and
+  // still ate a blow with one. Suppressed rather than deleted: Gojo's Silence is
+  // an aura his own card calls temporary, so the shield comes back with the text.
+  if (target.divineShield && !target.silenced && !hasRelic(source, "ignore_defences")) {
     target.divineShield = false;
     events.push({ kind: "combat", text: `${target.name}'s Divine Shield breaks.`, player: owner, instanceId: target.instanceId });
     return;
@@ -4582,7 +4646,10 @@ function canDamage(
     return false;
   }
   if (target.untargetableUntilTurn !== null && target.untargetableUntilTurn !== undefined && target.untargetableUntilTurn > state.turnNumber) {
-    events.push(effectEvent(`${target.name} is Chained beyond harm.`, target));
+    // Doctor Strange's window, not a chain. The line said "Chained beyond harm",
+    // which names the wrong keyword and sends a reader hunting for chains that
+    // are not on the card.
+    events.push(effectEvent(`${target.name} is beyond reach.`, target));
     return false;
   }
   // Neo's slot protection blocks Silence, Freeze, and Chained effects. Damage —
@@ -5003,10 +5070,9 @@ function applySilence(minion: MinionInstance, permanent = true): void {
  * Cancels the positive half of every aura landing on a silenced minion.
  *
  * Run as one sweep after the auras have been rebuilt rather than as a guard at
- * each of the eleven places that hand a bonus out: the negative half of an aura
- * (All Might's -1 ATK to the enemy board, Chaos's -2 HP to everyone) is a curse
- * and has to keep landing, so the test is the sign of the bonus, not the
- * identity of the source.
+ * each of the places that hand a bonus out: the negative half of an aura (All
+ * Might's -1 ATK to the enemy board) is a curse and has to keep landing, so the
+ * test is the sign of the bonus, not the identity of the source.
  */
 function suppressAuraBuffsOnSilenced(state: GameState): void {
   for (const owner of [0, 1] as PlayerId[]) {
@@ -5035,7 +5101,9 @@ function canDisable(
   kind: DisableKind = "other",
 ): boolean {
   if (isUntargetable(state, target)) return false;
-  if (hasRelic(target, "immune_disable")) return false; // Anti-magic Mask
+  // A blanket `immune_disable` check used to sit here labelled "Anti-magic
+  // Mask". The Mask is `immune_freeze_chain` and is answered two lines down;
+  // no relic has ever carried `immune_disable`, so the check was never true.
   if (kind === "silence" && hasRelic(target, "immune_silence")) return false;
   if ((kind === "freeze" || kind === "chain") && hasRelic(target, "immune_freeze_chain")) return false;
   if (hasDumbledoreProtection(state, target)) return false;
@@ -5359,35 +5427,13 @@ function resolveCardDeathrattleOnce(
       events.push(effectEvent(`${dead.name} deals 4 damage to its own Core.`, dead));
     }
   } else if (dead.effectId === "aizen_deathrattle") {
-    if (nextRandom(state) < 0.5) {
+    if (coinFlip(state)) {
       const slot = state.players[dead.owner].board[deadSlot] ? state.players[dead.owner].board.findIndex((minion) => !minion) : deadSlot;
       if (slot >= 0) {
-        const rebornCard: CardDefinition = {
-          kind: "minion",
-          id: dead.cardId,
-          name: dead.name,
-          cost: dead.cost,
-          atk: dead.baseAtk,
-          hp: dead.baseHp,
-          rarity: dead.rarity,
-          camp: dead.camp,
-          alignment: dead.alignment,
-          keywords: dead.keywords.filter((keyword) => keyword !== "Deathrattle"),
-          effectId: dead.effectId,
-          effectTiming: dead.effectTiming,
-          effect: dead.effect,
-          flavor: "",
-          origin: dead.origin,
-          art: dead.art,
-        };
-        const reborn = createMinion(rebornCard, dead.owner, state);
-        reborn.suppressArrivalTheme = true;
+        // Aizen alone comes back at FULL health; Ouken and Mr. Poopybutthole
+        // return on 1. That is a per-card difference, not an oversight.
+        const reborn = createVanillaReborn(state, dead);
         reborn.hp = reborn.maxHp;
-        reborn.divineShield = false;
-        reborn.keywords = [];
-        reborn.effectId = "none";
-        reborn.effectTiming = "none";
-        reborn.effect = "-";
         state.players[dead.owner].board[slot] = reborn;
         events.push(effectEvent(`${dead.name} is Reborn.`, dead));
       }
@@ -5413,37 +5459,50 @@ function resolveCardDeathrattleOnce(
     if (nextRandom(state) < 0.75) {
       const slot = state.players[dead.owner].board[deadSlot] ? state.players[dead.owner].board.findIndex((minion) => !minion) : deadSlot;
       if (slot >= 0) {
-        const rebornCard: CardDefinition = {
-          kind: "minion",
-          id: dead.cardId,
-          name: dead.name,
-          cost: dead.cost,
-          atk: dead.baseAtk,
-          hp: dead.baseHp,
-          rarity: dead.rarity,
-          camp: dead.camp,
-          alignment: dead.alignment,
-          keywords: dead.keywords.filter((keyword) => keyword !== "Deathrattle"),
-          effectId: dead.effectId,
-          effectTiming: dead.effectTiming,
-          effect: dead.effect,
-          flavor: "",
-          origin: dead.origin,
-          art: dead.art,
-        };
-        const reborn = createMinion(rebornCard, dead.owner, state);
-        reborn.suppressArrivalTheme = true;
+        const reborn = createVanillaReborn(state, dead);
         reborn.hp = 1;
-        reborn.divineShield = false;
-        reborn.keywords = [];
-        reborn.effectId = "none";
-        reborn.effectTiming = "none";
-        reborn.effect = "-";
         state.players[dead.owner].board[slot] = reborn;
         events.push(effectEvent(`${dead.name} is Reborn.`, dead));
       }
     }
   }
+}
+
+/**
+ * The blank body a Reborn deathrattle puts back on the board.
+ *
+ * Reborn returns the CARD, not the engine that was on it: no keywords, no
+ * effect, no shield, printed stats. Aizen and Mr. Poopybutthole each built this
+ * by hand, and both did it the long way round — filling in the dead minion's
+ * keywords, effect id, timing and text, then overwriting all four on the next
+ * five lines. The caller sets the starting HP, which is the one thing the two
+ * cards genuinely disagree about.
+ */
+function createVanillaReborn(state: GameState, dead: MinionInstance): MinionInstance {
+  const reborn = createMinion(
+    {
+      kind: "minion",
+      id: dead.cardId,
+      name: dead.name,
+      cost: dead.cost,
+      atk: dead.baseAtk,
+      hp: dead.baseHp,
+      rarity: dead.rarity,
+      camp: dead.camp,
+      alignment: dead.alignment,
+      keywords: [],
+      effectId: "none",
+      effectTiming: "none",
+      effect: "-",
+      flavor: "",
+      origin: dead.origin,
+      art: dead.art,
+    },
+    dead.owner,
+    state,
+  );
+  reborn.suppressArrivalTheme = true;
+  return reborn;
 }
 
 /** When Chrollo falls, whatever he was wearing returns to its owner. */

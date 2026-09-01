@@ -254,6 +254,55 @@ describe("Convergence engine", () => {
     expect(defender?.hp).toBe(shielded.hp); // the shield ate the whole blow
   });
 
+  it("does not let a Silenced minion's Divine Shield block anything", () => {
+    // Silence strips printed keywords, and Divine Shield is a keyword. Every
+    // other keyword already answered to it, and the card face already hid the
+    // gold rim on a silenced minion, while the shield itself went on eating a
+    // whole blow. Assert the exact HP so a shield that silently returns fails.
+    const shielded = cards.find((card) => card.keywords.includes("Divine Shield"))!;
+    const state = mainState();
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    const attackerAtk = state.players[0].board[0]!.atk;
+    state.players[1].board[0] = makeMinion(shielded.name, 1, { silenced: true, hp: 20, maxHp: 20 });
+    const result = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
+    const defender = result.state.players[1].board[0];
+    expect(defender?.hp).toBe(20 - attackerAtk);
+    // Suppressed, not consumed: Gojo's Silence lifts, and the shield comes back
+    // with the rest of the card's text.
+    expect(defender?.divineShield).toBe(true);
+  });
+
+  it("runs a Chained minion's Ongoing effect on the turn its chain breaks", () => {
+    // The chain counter is decremented at turn start, so the turn it reaches
+    // zero the minion may attack and may be targeted. Its Ongoing used to be
+    // held back for that turn as well, which charged a one-turn chain two
+    // payments.
+    const state = mainState();
+    state.activePlayer = 0;
+    state.players[1].turnsStarted = 1;
+    const kabuto = makeMinion("Carnage Kabuto", 1, { chained: 1 });
+    const startingAtk = kabuto.atk;
+    state.players[1].board[0] = kabuto;
+
+    const chainBreaks = applyAction(state, { type: "end_turn", player: 0 }, library).state;
+    expect(chainBreaks.players[1].board[0]?.chained).toBe(0);
+    // "Ongoing: Gain +3 ATK", paid on the turn the chains come off.
+    expect(chainBreaks.players[1].board[0]?.atk).toBe(startingAtk + 3);
+  });
+
+  it("holds a still-Chained minion's Ongoing effect back", () => {
+    const state = mainState();
+    state.activePlayer = 0;
+    state.players[1].turnsStarted = 1;
+    const kabuto = makeMinion("Carnage Kabuto", 1, { chained: 2 });
+    const startingAtk = kabuto.atk;
+    state.players[1].board[0] = kabuto;
+
+    const stillChained = applyAction(state, { type: "end_turn", player: 0 }, library).state;
+    expect(stillChained.players[1].board[0]?.chained).toBe(1);
+    expect(stillChained.players[1].board[0]?.atk).toBe(startingAtk);
+  });
+
   it("deals no core damage just for having a board", () => {
     // The passive ping was removed: a board only hurts a core by swinging at it.
     const state = mainState();

@@ -316,7 +316,7 @@ Multiple threads usually work on Convergence at the same time. Files, generated 
 - A minion can attack once per turn. A minion with **0 ATK** can still attack, but deals no damage.
 - Combat is simultaneous: attacker and defender deal damage to each other, even when the attack kills the defender.
 - **Taunt** must be dealt with before attacks can reach the opposing core, unless an effect or relic explicitly bypasses that defence.
-- **Silence** strips printed text, keywords, and stat buffs at once. A minion pumped above its printed stats falls back to them; a minion pushed below them stays there.
+- **Silence** strips printed text, keywords, and stat buffs at once. A minion pumped above its printed stats falls back to them; a minion pushed below them stays there. A silenced minion's **Divine Shield** blocks nothing while the silence holds.
 - When the shared deck and its bottom-deck cards are empty, drawing causes escalating fatigue damage: 1, then 2, then 3, and so on.
 
 Nothing damages a core automatically just because a turn starts; core damage comes from a minion attacking it or from an effect that explicitly says it damages a core.
@@ -326,7 +326,7 @@ Nothing damages a core automatically just because a turn starts; core damage com
 **The last sentence of a printed effect carries NO full stop.** Owner's ruling, 26 August 2026. The
 rules panel is a box of its own on the card face and its edge already ends the sentence, so a closing
 period is a glyph that says nothing and costs a character of the auto-fit budget on the longest cards.
-Internal sentences keep their periods — only the last one goes, across all 182 cards and all 33
+Internal sentences keep their periods — only the last one goes, across all 182 cards and all 34
 relics.
 
 It is a build failure, not a style note. `scripts/validate-cards.mjs` rejects any effect ending in
@@ -364,7 +364,7 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 - **Chained** — unavailable for the first two owner turns; it cannot attack, run Ongoing effects, or be targeted by attacks or effects until the chains break.
 - **Charge** — may attack on the same turn it is summoned or brought under a new player's control.
 - **Taunt** — the enemy must deal with this minion before attacking your core.
-- **Divine Shield** — blocks the next damage instance, then the gold shield disappears.
+- **Divine Shield** — blocks the next damage instance, then the gold shield disappears. It is a keyword, so **Silence** switches it off: a silenced bearer takes the blow in full. The shield is suspended rather than destroyed, so it returns if the silence does — Gojo's aura being the one silence that lifts. Fixed 1 September 2026; before that the card face hid the gold rim on a silenced minion while the engine went on spending the shield, so the board and the rules disagreed about the same card.
 - **Freeze** — the minion loses its next turn, then thaws after sitting out that turn.
 - **Silence** — removes the minion's printed effect and active keywords, and takes back every stat **buff** it is carrying, down to its printed ATK and HP. It moves in one direction only: a stat **nerf** is kept, because Silence is an answer, not a cleanse. Current HP is capped at the restored maximum rather than refilled, so silencing a damaged minion never heals it. A live aura stops paying a silenced minion its positive half while the silence lasts, and keeps applying its negative half. **Gojo is the one exception to the permanent half of the rule**: his Silence is an aura that lifts when he dies, his card says so, and a temporary silence must not take a minion's growth for good — so his aura cancels stat auras while it holds and leaves permanent buffs alone. Stats handed over by a **relic** count as a buff and are taken back too, while the relic itself stays equipped — which is what makes **Elder wand**, the Silence-immunity relic, worth its slot.
 - **Invulnerable** — the minion cannot take damage while the condition is active; the blue-and-white aura shows it.
@@ -456,6 +456,8 @@ The board communicates conditions visually: a wall means Taunt, a gold rim means
 - `source/data/cards.csv` is the live card roster: names, stats, costs, effect text, timing, keywords, art paths, and flavour.
 - `source/data/relics.csv` is the relic authority.
 - `source/src/engine/` is the authority for game behaviour. React and CSS files under `source/src/` are the interface authority.
+- `source/src/engine/types.ts` holds every card vocabulary ONCE, as a `const` array — `EFFECT_IDS`, `RELIC_IDS`, `KEYWORDS`, `RARITIES`, `CAMPS`, `ALIGNMENTS`, `EFFECT_TIMINGS` — and derives the TypeScript type from it. `csv.ts` builds its validation sets from the same arrays instead of listing them again. Add a value in one place only. The two lists were kept by hand for a long time, and only one of them was checked by the compiler, so an effect added to the type and forgotten in the validator would pass every test and then reject the first real card that used it.
+- **`strict` is on in `tsconfig.json`.** It was off until 1 September 2026 while the code was already written as though it were on, so every `| null`, every `??` and every non-null assertion in the engine was unchecked decoration. Turning it on produced zero errors, which is the measure of how carefully the null-handling had been done by hand; it is now the compiler's job to keep it that way.
 - `source/src/textfit.ts` controls measured card-text fitting. The current effect-text upper cap is 64 design units; flavour text is capped at 32, but the real rendered size is chosen by measurement.
 - `play/` is the generated static game copied into the repository for GitHub Pages. Build it from `source/`; do not hand-edit it. The owner plays only through the public `/play/` URL above, never from this local folder.
 - `docs/Convergence Browser Game Roadmap.html` is useful for design direction and browsing, but its embedded roster can lag behind the live CSV.
@@ -654,6 +656,27 @@ Printed timing must match play. For every target or choice, specify whether it s
   bearer, and never manually returned by the bearer. Returning a minion to hand
   discards its attached relics; only a relic's own printed text can override that.
 - The bot evaluates legal actions on a throwaway state. A new effect usually needs no separate bot branch, but bot valuation changes affect balance measurements and need a fresh balance run.
+- **One counter, one window.** A timed state has to open and close the same door
+  for every rule that reads it. The chain counter is decremented at the start of
+  its owner's turn, so the turn it reaches zero the minion may attack and may be
+  targeted — and its Ongoing effect now fires on that turn too. It used to be
+  held back for one turn more than the attack was, which quietly charged a
+  one-turn chain two payments.
+- **A timed state is CLEARED when it expires, not merely ignored.** Every rule
+  that reads one already compares against `turnNumber`, so leaving an expired
+  value in place changes nothing about how a duel plays — and everything about
+  what the board says, because the card face reads the same field. Doomsday's
+  `campImmunity` was never cleared, so a minion that adapted on turn 4 wore the
+  adapted ring for the rest of the duel while taking that Camp's damage
+  normally. `expireTimedStates` runs after every action.
+- **All core damage goes through `dealCoreDamage`.** It is the only thing that
+  knows about Aladdin's core Divine Shield. Doctor Strange's bargain used to
+  subtract from `health` directly and was the one path in the game that walked
+  past a shield the player had paid a card for.
+- **`hasRelic` takes a `RelicId`, never a string.** Six checks against relic ids
+  that no relic carries had accumulated behind the loose signature, each with a
+  comment describing behaviour the game did not have; one of them named the
+  wrong relic entirely. Typing the parameter makes that a compile error.
 
 The engine’s central contract is `applyAction(state, action, library) -> { state, events, legalActions }`. An action outside the legal-action list is rejected without changing the state. Targeting pauses the game in a target-selection state so human and bot choices follow the same route and survive saving, cloning, and undo.
 

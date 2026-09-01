@@ -104,9 +104,10 @@ export function checkState(state: GameState, where: string): string[] {
     });
   }
 
-  // A live game that offers nobody a move is a soft-lock: the UI would sit there
-  // with nothing clickable and no way out. This is the single most valuable
-  // assertion in the file.
+  // A winner with the duel still running would leave the result screen hidden
+  // behind a live board. (The soft-lock check — a live game that offers nobody a
+  // move — is not here: it needs the legal-action list, so `playOneGame` owns
+  // it. This comment used to claim the line below was that check.)
   if (state.phase !== "gameOver" && state.winner !== null) bad("winner is set but the phase is not gameOver");
 
   return problems;

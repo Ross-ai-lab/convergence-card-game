@@ -103,7 +103,7 @@ function orderByCost(cards: PlayableCard[], seed: string): string[] {
  * Every card id, in an order whose EVERY prefix looks like the whole roster.
  *
  * The naive version of this feature shuffles the roster and takes the first 50.
- * That is not the same thing: a plain shuffle of 196 cards leaves a 50-card
+ * That is not the same thing: a plain shuffle of 216 cards leaves a 50-card
  * prefix whose cost curve wanders by several cards in each bucket, and a pool
  * that happens to hold four 10-cost cards and one 1-cost card is a pool you
  * cannot open a turn with. The duel's measured pacing rests on the printed

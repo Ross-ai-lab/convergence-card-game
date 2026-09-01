@@ -7,7 +7,7 @@
  * the source as `"/card-art/raw/galactus.webp"` ships exactly as typed, and the
  * leading slash sends the browser to the DOMAIN root instead — a 404 for a file
  * that is sitting on the server, correctly uploaded, one folder away. Six summoned
- * tokens shipped broken that way while all 196 real cards worked, because the cards
+ * tokens shipped broken that way while every real card worked, because the cards
  * came through here and the tokens did not.
  *
  * So: every runtime asset address goes through this function, engine code included.

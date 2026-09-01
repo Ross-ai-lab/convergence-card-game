@@ -301,15 +301,13 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   await mulliganConfirm.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
   if (await mulliganConfirm.isVisible().catch(() => false)) await mulliganConfirm.click();
   await page.waitForTimeout(300);
-  // Wait for the test hook, not for a guessed 1100ms. It registers from inside a
-  // DYNAMIC import, so the first load after a rebuild has to fetch and transform
-  // that module first — and a fixed wait that is usually long enough is exactly
-  // the kind of thing that fails one run in ten and looks like a real bug.
-  // Production builds deliberately remove both the Cheat button and the
-  // __debug hook. The Cheat button is the environment boundary: it is rendered
-  // synchronously, while __debug arrives through a dynamic import. The title
-  // checks above remain valid in production, but the board scenarios below need
-  // both dev tools and must be skipped as a group there.
+  // Wait for the test hook, not for a guessed 1100ms. It registers from an
+  // effect after the board has mounted, and the first load after a rebuild has
+  // Vite's transform in front of it — a fixed wait that is usually long enough
+  // is exactly the kind of thing that fails one run in ten and looks like a real
+  // bug. Production builds deliberately remove both the Cheat button and the
+  // __debug hook, so the title checks above remain valid there while the board
+  // scenarios below need both dev tools and are skipped as a group.
   const cheatButtonAvailable = (await page.getByRole("button", { name: /Cheat Off|Cheat On/ }).count()) > 0;
   if (!cheatButtonAvailable) return false;
   const debugReady = await page

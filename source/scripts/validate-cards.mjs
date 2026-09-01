@@ -146,7 +146,7 @@ function checkPrintedText(card, line, errors) {
  * their periods - only the last one goes.
  *
  * This inverts the rule that stood here before, which REQUIRED the period. Both
- * versions exist for the same reason: 197 cards cannot be kept consistent by
+ * versions exist for the same reason: 216 cards cannot be kept consistent by
  * hand, so the build decides it.
  */
 function checkEffectPunctuation(name, line, text, errors) {
@@ -201,12 +201,14 @@ function checkFactionCase(name, line, text, errors) {
  * text. `buff_all_nature_2_1` must print a 2 and a 1 somewhere. Nothing here
  * cares about word order, sign, or what the numbers mean.
  *
- * WHAT IT DOES NOT COVER: labels that spell a magnitude as a word. Those were
- * converted to digits so this rule reaches them, and the four that remain
- * (`heal_self_full`, `heal_all_friendly_full`, `heal_good_ally_full`,
- * `fantastic_four_aura`) carry no magnitude that can drift — "full" is always
- * 100% and the "four" in Fantastic Four is the team's name. If a new label
- * spells a number as a word, this rule will not see it. Write digits.
+ * WHAT IT DOES NOT COVER: labels that spell a magnitude as a word. Every label
+ * carrying a number that can drift was converted to digits so this rule reaches
+ * it. What is left spells a word that is not a magnitude at all — "full" is
+ * always 100% in `heal_self_full`, "four" is the team's name in
+ * `fantastic_four_aura`, "ten" is the artefact's name in
+ * `ten_commandments_first_attack` — so there is nothing for the label and the
+ * text to disagree about. If a new label spells a real number as a word, this
+ * rule will not see it. Write digits.
  */
 function checkLabelNumbers(card, line, errors) {
   const effectId = (card.effectId ?? "").trim();
@@ -303,7 +305,7 @@ for (const [index, card] of cards.entries()) {
     const artPath = path.join(projectRoot, "public", card.art.replace(/^\//, ""));
     if (!fs.existsSync(artPath)) errors.push(`Line ${line}: art file does not exist: ${card.art}`);
     // EVERY minion wears a real photograph, saved as WebP. Owner ruling: a card
-    // carrying hand-drawn vector art next to 174 photographs looks like a
+    // carrying hand-drawn vector art next to 181 photographs looks like a
     // mistake, because it is one. WebP is the format because this is
     // photographic art displayed at roughly 730x490 — see the README, which
     // scopes the rule rather than claiming WebP beats PNG everywhere.

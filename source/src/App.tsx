@@ -28,6 +28,7 @@ import {
   actionKey,
   applyAction,
   attacksRandomly,
+  CONCEALED_CHOICE_EFFECTS,
   createInitialGame,
   effectiveCardCost,
   getLegalActions,
@@ -296,8 +297,6 @@ function handStep(count: number): number {
 }
 // Combat FX land when the lunge connects, not when the button is released.
 const STRIKE_DELAY = 0.18;
-// The practice bot is Player Two, and it thinks fast enough to be invisible —
-// these pauses exist so a human can watch what it did, not because it is slow.
 // Slot auras are permanent, so the board wears both their label and colour.
 const AURA_LABEL: Record<SlotAuraId, string> = {
   random_attacks: "RANDOM",
@@ -338,6 +337,8 @@ const BOT_ID: PlayerId = 1;
 function foresightSeat(mode: GameMode): PlayerId | null {
   return mode.kind === "bot" && BOT_CHEATS[mode.skill].foresight ? BOT_ID : null;
 }
+// The practice bot thinks fast enough to be invisible — these pauses exist so a
+// human can watch what it did, not because it is slow.
 const BOT_DELAY_MS = 620;
 const BOT_FIRST_DELAY_MS = 900;
 
@@ -792,136 +793,138 @@ export default function App() {
    * that minion" directly, so those checks run every time.
    *
    * It cannot reach the built game. `import.meta.env.DEV` is replaced by the
-   * bundler with a literal `false`, the whole body is dead-code-eliminated, and
-   * the dynamic import below is never emitted — the same treatment the analyser
-   * probes in `audio/sfx.ts` get. `npm run build` is checked for the string
-   * `__debug` as part of this; if it ever appears there, this has broken.
+   * bundler with a literal `false` and the whole body is dead-code-eliminated —
+   * the same treatment the analyser probes in `audio/sfx.ts` get. `npm run
+   * build` is checked for the string `__debug` as part of this; if it ever
+   * appears there, this has broken.
+   *
+   * `spawnTestMinion` is imported at the top of the file rather than pulled in
+   * here through a dynamic `import()`. The dynamic form was there to keep
+   * test-utils out of the production bundle, and it stopped doing that the day
+   * the Ross-mode workbench — which SHIPS — started calling the same function:
+   * the module was already in the graph, so all the lazy import bought was an
+   * extra async hop and a comment that was no longer true.
    */
   useEffect(() => {
     if (!import.meta.env.DEV || screen !== "playing") return;
     const w = window as unknown as { __debug?: Record<string, unknown> };
-    let cancelled = false;
 
-    void import("./engine/test-utils").then(({ spawnTestMinion }) => {
-      if (cancelled) return;
-      const findCard = (nameOrId: string) => {
-        const key = nameOrId.trim().toLowerCase();
-        return (
-          Object.values(library).find((c) => c.id.toLowerCase() === key) ??
-          Object.values(library).find((c) => c.name.toLowerCase() === key) ??
-          Object.values(library).find((c) => c.name.toLowerCase().includes(key))
-        );
-      };
-      // `opponent()` is internal to the engine; the flip is trivial enough not
-      // to widen that module's surface just for a dev hook.
-      const other: PlayerId = viewerId === 0 ? 1 : 0;
-      const sideOf = (side: string): PlayerId => (side === "them" ? other : viewerId);
+    const findCard = (nameOrId: string) => {
+      const key = nameOrId.trim().toLowerCase();
+      return (
+        Object.values(library).find((c) => c.id.toLowerCase() === key) ??
+        Object.values(library).find((c) => c.name.toLowerCase() === key) ??
+        Object.values(library).find((c) => c.name.toLowerCase().includes(key))
+      );
+    };
+    // `opponent()` is internal to the engine; the flip is trivial enough not
+    // to widen that module's surface just for a dev hook.
+    const other: PlayerId = viewerId === 0 ? 1 : 0;
+    const sideOf = (side: string): PlayerId => (side === "them" ? other : viewerId);
 
-      w.__debug = {
-        /** Names of every card whose battlecry opens a prompt. */
-          targetingCards: () =>
-            Object.values(library)
-            .filter(
-              (c) =>
-                isMinionCard(c) &&
-                (c.effectTiming === "onPlay" || c.effectTiming === "onPlayAndOngoing") &&
-                c.effectId in TARGETED_EFFECTS,
-            )
-            .map((c) => c.name),
+    w.__debug = {
+      /** Names of every card whose battlecry opens a prompt. */
+      targetingCards: () =>
+        Object.values(library)
+          .filter(
+            (c) =>
+              isMinionCard(c) &&
+              (c.effectTiming === "onPlay" || c.effectTiming === "onPlayAndOngoing") &&
+              c.effectId in TARGETED_EFFECTS,
+          )
+          .map((c) => c.name),
 
-        /** Put a card straight into a hand. */
-        giveCard(nameOrId: string, side = "me") {
-          const card = findCard(nameOrId);
-          if (!card) return `no card matching "${nameOrId}"`;
-          const owner = sideOf(side);
-          setGame((current) => {
-            const players = [...current.players] as GameState["players"];
-            players[owner] = { ...players[owner], hand: [...players[owner].hand, card.id] };
-            return { ...current, players };
-          });
-          return card.name;
-        },
+      /** Put a card straight into a hand. */
+      giveCard(nameOrId: string, side = "me") {
+        const card = findCard(nameOrId);
+        if (!card) return `no card matching "${nameOrId}"`;
+        const owner = sideOf(side);
+        setGame((current) => {
+          const players = [...current.players] as GameState["players"];
+          players[owner] = { ...players[owner], hand: [...players[owner].hand, card.id] };
+          return { ...current, players };
+        });
+        return card.name;
+      },
 
-        /** Drop a minion onto a board slot, already awake. */
-        place(nameOrId: string, side = "them", slotIndex = 0) {
-          const card = findCard(nameOrId);
-          if (!card || !isMinionCard(card)) return `"${nameOrId}" is not a minion`;
-          const owner = sideOf(side);
-          setGame((current) => {
-            const players = [...current.players] as GameState["players"];
-            const board = [...players[owner].board];
-            board[slotIndex] = spawnTestMinion(card, owner, { sleeping: false });
-            players[owner] = { ...players[owner], board };
-            return { ...current, players };
-          });
-          return card.name;
-        },
+      /** Drop a minion onto a board slot, already awake. */
+      place(nameOrId: string, side = "them", slotIndex = 0) {
+        const card = findCard(nameOrId);
+        if (!card || !isMinionCard(card)) return `"${nameOrId}" is not a minion`;
+        const owner = sideOf(side);
+        setGame((current) => {
+          const players = [...current.players] as GameState["players"];
+          const board = [...players[owner].board];
+          board[slotIndex] = spawnTestMinion(card, owner, { sleeping: false });
+          players[owner] = { ...players[owner], board };
+          return { ...current, players };
+        });
+        return card.name;
+      },
 
-        /**
-         * Set a core to any value, so a duel can be brought to the brink.
-         *
-         * Added for the card-pack screen, which only exists after a duel ends
-         * and was otherwise reachable only by playing twenty real turns. It does
-         * NOT end the duel by itself, on purpose: the phase flip belongs to the
-         * engine's own win check, so a duel finished this way finishes through
-         * exactly the path a real one takes. Drop a core to 1, swing at it, and
-         * everything downstream — the record, the reward, the pack — runs for
-         * real.
-         */
-        setCore(side = "them", value = 1) {
-          const owner = sideOf(side);
-          setGame((current) => {
-            const players = [...current.players] as GameState["players"];
-            players[owner] = { ...players[owner], health: value };
-            return { ...current, players };
-          });
-          return `${side} core = ${value}`;
-        },
+      /**
+       * Set a core to any value, so a duel can be brought to the brink.
+       *
+       * Added for the card-pack screen, which only exists after a duel ends
+       * and was otherwise reachable only by playing twenty real turns. It does
+       * NOT end the duel by itself, on purpose: the phase flip belongs to the
+       * engine's own win check, so a duel finished this way finishes through
+       * exactly the path a real one takes. Drop a core to 1, swing at it, and
+       * everything downstream — the record, the reward, the pack — runs for
+       * real.
+       */
+      setCore(side = "them", value = 1) {
+        const owner = sideOf(side);
+        setGame((current) => {
+          const players = [...current.players] as GameState["players"];
+          players[owner] = { ...players[owner], health: value };
+          return { ...current, players };
+        });
+        return `${side} core = ${value}`;
+      },
 
-        /** Hang a relic on a minion already on the board. */
-        equipRelic(relicName: string, side = "me", slotIndex = 0) {
-          const owner = sideOf(side);
-          // Resolve the relic BEFORE setGame. Reading it inside the updater and
-          // assigning to an outer variable returns the stale default, because
-          // the updater runs after this function has already returned.
-          const wanted = relicName.trim().toLowerCase();
-          const relicDef = relics.find((r) => r.name.toLowerCase() === wanted) ?? relics[0];
-          if (!relicDef) return "relic catalog is empty";
-          const relic: RelicInstance = {
-            id: relicDef.id,
-            relicId: relicDef.relicId,
-            name: relicDef.name,
-            effect: relicDef.effect,
-            art: relicDef.art,
-          };
-          setGame((current) => {
-            const players = [...current.players] as GameState["players"];
-            const board = [...players[owner].board];
-            const bearer = board[slotIndex];
-            if (!bearer) return current;
-            board[slotIndex] = bearer.relic
-              ? { ...bearer, relic2: bearer.relic2 ?? relic }
-              : { ...bearer, relic };
-            players[owner] = { ...players[owner], board };
-            return { ...current, players };
-          });
-          return relic.name;
-        },
+      /** Hang a relic on a minion already on the board. */
+      equipRelic(relicName: string, side = "me", slotIndex = 0) {
+        const owner = sideOf(side);
+        // Resolve the relic BEFORE setGame. Reading it inside the updater and
+        // assigning to an outer variable returns the stale default, because
+        // the updater runs after this function has already returned.
+        const wanted = relicName.trim().toLowerCase();
+        const relicDef = relics.find((r) => r.name.toLowerCase() === wanted) ?? relics[0];
+        if (!relicDef) return "relic catalog is empty";
+        const relic: RelicInstance = {
+          id: relicDef.id,
+          relicId: relicDef.relicId,
+          name: relicDef.name,
+          effect: relicDef.effect,
+          art: relicDef.art,
+        };
+        setGame((current) => {
+          const players = [...current.players] as GameState["players"];
+          const board = [...players[owner].board];
+          const bearer = board[slotIndex];
+          if (!bearer) return current;
+          board[slotIndex] = bearer.relic
+            ? { ...bearer, relic2: bearer.relic2 ?? relic }
+            : { ...bearer, relic };
+          players[owner] = { ...players[owner], board };
+          return { ...current, players };
+        });
+        return relic.name;
+      },
 
-        /** A small readable summary, for assertions that need numbers. */
-        state: () => ({
-          phase: game.phase,
-          activePlayer: game.activePlayer,
-          viewer: viewerId,
-          hand: game.players[viewerId].hand.length,
-          mine: game.players[viewerId].board.filter(Boolean).length,
-          theirs: game.players[viewerId === 0 ? 1 : 0].board.filter(Boolean).length,
-        }),
-      };
-    });
+      /** A small readable summary, for assertions that need numbers. */
+      state: () => ({
+        phase: game.phase,
+        activePlayer: game.activePlayer,
+        viewer: viewerId,
+        hand: game.players[viewerId].hand.length,
+        mine: game.players[viewerId].board.filter(Boolean).length,
+        theirs: game.players[viewerId === 0 ? 1 : 0].board.filter(Boolean).length,
+      }),
+    };
 
     return () => {
-      cancelled = true;
       delete w.__debug;
     };
   }, [game, library, screen, viewerId]);
@@ -1248,8 +1251,9 @@ export default function App() {
   function perform(action: GameAction) {
     const hiddenEnemyDiscover =
       action.type === "choose_target" &&
-      game.pendingTarget?.player !== viewerId &&
-      Boolean(game.pendingTarget?.effectId.startsWith("discover_"));
+      game.pendingTarget !== null &&
+      game.pendingTarget.player !== viewerId &&
+      CONCEALED_CHOICE_EFFECTS.has(game.pendingTarget.effectId);
     const bargainChoice =
       action.type === "choose_target" && game.pendingTarget?.effectId === "strange_bargain"
         ? game.pendingTarget.labelOptions[action.choiceIndex]?.label
@@ -1434,6 +1438,7 @@ export default function App() {
     setSelection(null);
     clearFx();
     setSeatedPlayer(0);
+    setLethal(0);
     heraldSaid.current = new Set();
     sfx.playOpeningCue(0.35);
     setEvents([
@@ -2646,7 +2651,6 @@ export default function App() {
       {game.phase === "gameOver" ? (
         <GameOver
           game={game}
-          library={library}
           vsBot={vsBot}
           tutorial={tutorialActive}
           onRestart={tutorialActive ? beginTutorial : restart}
@@ -3276,9 +3280,9 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
  *
  * It is also the only filter with NO "any" option, and the only one that starts
  * switched on. Owner's ruling: the gallery is your collection first and the
- * locked wall second, so mixing 50 readable cards into 146 sealed ones is a
- * list that answers neither question. There is therefore no view showing all
- * all at once, which is the deliberate cost of that.
+ * locked wall second, so mixing 50 readable cards into 166 sealed ones is a
+ * list that answers neither question. There is therefore no view that shows the
+ * whole roster at once, which is the deliberate cost of that.
  */
 type UnlockFilter = "unlocked" | "locked";
 type GalleryEntry = { key: string; card: PlayableCard; face: CardFaceModel };
@@ -4016,7 +4020,7 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
  * Which tiers carry an animated shine, and Rare is deliberately absent.
  *
  * The escalation only reads as an escalation if the bottom of it is still. Give
- * every card a shine and the tiers stop meaning anything; 58 Rare cards then
+ * every card a shine and the tiers stop meaning anything; 60 Rare cards then
  * also stop costing anything, which is what keeps a full gallery affordable.
  */
 const SHINE_RARITIES = new Set(["purple", "yellow", "red", "relic"]);
@@ -4051,10 +4055,10 @@ const COLLECTION_TITLE: Record<CollectionMark, string> = {
  *
  * The seal already covers the middle of the face, so a locked card was building
  * a full 23-element card face — rules panel, flavour, origin, both rails, the
- * stat gems, the shine — and then hiding almost all of it behind a padlock. In
- * the opening gallery's locked cards are not all laid out, and laying all of them
- * out measured 219 ms against 4.5 ms when they are skipped: about 1.4 ms each,
- * which is three rows per frame at a normal scroll speed.
+ * stat gems, the shine — and then hiding almost all of it behind a padlock.
+ * Laying those hidden faces out measured 219 ms against 4.5 ms when they are
+ * skipped: about 1.4 ms each, which is three rows per frame at a normal scroll
+ * speed.
  *
  * This draws the four things a sealed card is SUPPOSED to show and nothing else
  * — frame colour, name, mana cost, and a shape behind the glass. That is the
@@ -4094,7 +4098,6 @@ function SealedFace({ card, lazyArt = false }: { card: CardFaceModel; lazyArt?: 
 function CardFace({
   card,
   lazyArt = false,
-  extras,
   states = [],
   onBoard = false,
   atkClass = "",
@@ -4105,7 +4108,6 @@ function CardFace({
   card: CardFaceModel;
   /** Gallery only — see the loading note in `CardArtwork`. */
   lazyArt?: boolean;
-  extras?: ReactNode;
   /** Live condition classes for a minion in play (`is-frozen`, `is-shielded`…). */
   states?: readonly string[];
   /** True once the minion is on the table, where live state replaces the
@@ -4248,7 +4250,6 @@ function CardFace({
         {states.includes("is-sleeping") ? (
           <span className="cf-sleep" aria-hidden="true"><i>z</i><i>z</i></span>
         ) : null}
-        {extras}
       </div>
     </article>
   );
@@ -5294,14 +5295,12 @@ function DeveloperTools({
 
 function GameOver({
   game,
-  library,
   vsBot,
   tutorial = false,
   onRestart,
   onMenu,
 }: {
   game: GameState;
-  library: CardLibrary;
   vsBot: boolean;
   tutorial?: boolean;
   onRestart: () => void;
@@ -5317,7 +5316,10 @@ function GameOver({
   // duel is decided by which board survives, so the board IS the trophy.
   const survivors = winner ? winner.board.filter((minion): minion is MinionInstance => Boolean(minion)) : [];
   const banner = winner ? biggestSurvivor(winner) : null;
-  const bannerArt = banner?.art ?? library[game.players[0].hand[0]]?.art;
+  // The winner's own survivor, or no picture at all. It used to fall back to the
+  // first card in PLAYER ONE'S HAND, which on a win by player two hung the
+  // loser's unplayed card over the victory screen as the trophy.
+  const bannerArt = banner?.art;
   const botLine = tutorial
     ? "The tutorial is complete."
     : vsBot
