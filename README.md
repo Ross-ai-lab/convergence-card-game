@@ -2,9 +2,103 @@
 
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
-<!-- KB-JUMP-START -->
-**Jump:** Play · What the game still needs · Gradual card unlocking · Rules · The rarity shine · Card language · Relics · Controls and modes · Project structure · Parallel work · Run and verify · Cards and effects · Engine rules · Interface · Balance · Assets and audio · Contributing · Development lessons
-<!-- KB-JUMP-END -->
+<!-- README-NAV-START -->
+> **BIG PAGE — do NOT read this file whole.** It is 161,458 bytes, roughly 40k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~62% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+>
+> 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
+> 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
+>
+> Chasing a symptom rather than a section: `rg -n -C3 "<3-4 distinctive words>" README.md`.
+
+**Sections, in reading order.** Sub-entries are the `###` headings inside each one.
+
+**What this is**
+
+- [Version 1.0 — complete, 21 August 2026](#version-10-complete-21-august-2026)
+- [What Convergence is](#what-convergence-is)
+- [What the game still needs](#what-the-game-still-needs)
+
+**How the game plays**
+
+- [Rules at a glance](#rules-at-a-glance)
+- [Controls and modes](#controls-and-modes)
+  - [Starting and resuming](#starting-and-resuming)
+  - [Opening duel animation timeline](#opening-duel-animation-timeline)
+  - [During a duel](#during-a-duel)
+- [Cards and card language](#cards-and-card-language)
+  - [Mana is lore power](#mana-is-lore-power)
+  - [Timing words](#timing-words)
+  - [Conditions and keywords](#conditions-and-keywords)
+- [Ascension Relics](#ascension-relics)
+- [Gradual card unlocking](#gradual-card-unlocking)
+
+**The code, and how to run it**
+
+- [Project structure and source of truth](#project-structure-and-source-of-truth)
+- [Run and verify](#run-and-verify)
+  - [Which checks a change actually needs](#which-checks-a-change-actually-needs)
+  - [README-only documentation policy](#readme-only-documentation-policy)
+  - [What “publish” means](#what-publish-means)
+- [Parallel work](#parallel-work)
+
+**Changing the game**
+
+- [Changing cards and effects](#changing-cards-and-effects)
+  - [Every save that changes a card must name the cards it changed](#every-save-that-changes-a-card-must-name-the-cards-it-changed)
+  - [Ask what happened to a card instead of reconstructing it](#ask-what-happened-to-a-card-instead-of-reconstructing-it)
+  - [Reference requests must be globally safe and future-proof](#reference-requests-must-be-globally-safe-and-future-proof)
+  - [Card wording is uniform, and that is a mechanical requirement](#card-wording-is-uniform-and-that-is-a-mechanical-requirement)
+  - [Every game change must be published to the public site in the same session](#every-game-change-must-be-published-to-the-public-site-in-the-same-session)
+  - [Effect-selection doctrine](#effect-selection-doctrine)
+- [Engine rules that must stay coherent](#engine-rules-that-must-stay-coherent)
+
+**Look, sound and feel**
+
+- [Interface and card faces](#interface-and-card-faces)
+  - [The game-over screen names ONE card](#the-game-over-screen-names-one-card)
+  - [Clicking a keyword on a card face explains it](#clicking-a-keyword-on-a-card-face-explains-it)
+  - [Hovering a minion shows what it is reaching](#hovering-a-minion-shows-what-it-is-reaching)
+  - [The duel log](#the-duel-log)
+  - [Visual design changes require close-up and full-screen QA](#visual-design-changes-require-close-up-and-full-screen-qa)
+  - [Title-menu design QA record](#title-menu-design-qa-record)
+- [The rarity shine](#the-rarity-shine)
+  - [The technique, which is the transferable part](#the-technique-which-is-the-transferable-part)
+  - [Making fire, specifically](#making-fire-specifically)
+  - [Living rails, and tier-coloured names](#living-rails-and-tier-coloured-names)
+  - [Proving it, because a screenshot cannot](#proving-it-because-a-screenshot-cannot)
+- [Assets and audio](#assets-and-audio)
+  - [A heavy minion lands with a thud](#a-heavy-minion-lands-with-a-thud)
+  - [Card art is WebP. Every file, no exceptions](#card-art-is-webp-every-file-no-exceptions)
+  - [What the title screen is allowed to download](#what-the-title-screen-is-allowed-to-download)
+
+**Balance and the bot**
+
+- [Balance, pacing, and bot](#balance-pacing-and-bot)
+  - [The measured baseline, and what it still says](#the-measured-baseline-and-what-it-still-says)
+  - [Duel length is CORRECT. Do not shorten it](#duel-length-is-correct-do-not-shorten-it)
+  - [Choosing a pacing lever](#choosing-a-pacing-lever)
+  - [Reading the measured numbers](#reading-the-measured-numbers)
+  - [Gating on the game, not on the harness](#gating-on-the-game-not-on-the-harness)
+  - [Fixing a bot-valuation blind spot](#fixing-a-bot-valuation-blind-spot)
+  - [Why the bot trades into Passive and Ongoing minions](#why-the-bot-trades-into-passive-and-ongoing-minions)
+  - [The cheat ladder](#the-cheat-ladder)
+  - [How long an enemy turn may take](#how-long-an-enemy-turn-may-take)
+  - [Bot and balance work is PARKED, not finished](#bot-and-balance-work-is-parked-not-finished)
+  - [Beware the shared ladder file](#beware-the-shared-ladder-file)
+  - [Measuring anything timed, on this machine](#measuring-anything-timed-on-this-machine)
+  - [Comparing two ladder runs](#comparing-two-ladder-runs)
+  - [The skill ladder needs explicit permission, every single time](#the-skill-ladder-needs-explicit-permission-every-single-time)
+  - [Replaying a failure the harness found](#replaying-a-failure-the-harness-found)
+
+**Project reference**
+
+- [Contributing](#contributing)
+- [Development lessons](#development-lessons)
+- [Included materials and links](#included-materials-and-links)
+- [Fan-project notice](#fan-project-notice)
+- [Sources](#sources)
+
+<!-- README-NAV-END -->
 
 ## Version 1.0 — complete, 21 August 2026
 
@@ -37,6 +131,8 @@ not list one as outstanding work.
 Changes after this point are maintenance or things the owner asks for, not a
 march toward a finish line that has already been crossed.
 
+
+
 ## What Convergence is
 
 Convergence is a non-commercial browser card duel where 167 named characters and forces from fiction collide alongside ten Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
@@ -52,6 +148,8 @@ Convergence is a non-commercial browser card duel where 167 named characters and
 No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **172 character cards, 10 Basic reference cards, and 34 Ascension Relics**, 216 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
 The live game and `source/data/cards.csv` now contain 172 named character cards plus 10 Basic reference cards, 182 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
+
+
 
 ## What the game still needs
 
@@ -88,6 +186,179 @@ re-proposes them as gaps:
 
 Gradual unlocking is neither of those two and does not reopen them. It locks no opponent and starts no
 run: it narrows the ONE shared deck and widens it again, which is a change to a single argument.
+
+
+
+## Rules at a glance
+
+- Both cores begin at **75 health**. Reduce the opposing core to zero to win.
+- Both players draw from the same shuffled deck and open with **3 cards**. Player One may replace any number of those cards once during the mulligan; Player Two keeps the opening hand. The second player also receives **The Coin**.
+- Hero Powers are selected from the title-screen **Hero Powers** menu. Each bot win unlocks the next player power permanently, in the order shown in that menu. In a bot duel, the opponent receives one random power from all ten and needs no unlocks. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
+- At the start of a turn, draw one card. Mana starts at **1**, refills each turn, and increases by one each turn up to **10**.
+- Your hand holds at most **10 cards**. A card drawn into a full hand burns and is discarded.
+- Play a hand card into one of **five board slots** by paying its cost. Effects that summon minions also need an open slot.
+- A minion is asleep for the turn it enters play and normally waits until its owner's next turn before attacking. A **Chained** minion is unavailable for its first two owner turns and cannot be targeted by attacks or effects while chained.
+- A minion can attack once per turn. A minion with **0 ATK** can still attack, but deals no damage.
+- Combat is simultaneous: attacker and defender deal damage to each other, even when the attack kills the defender.
+- **Taunt** must be dealt with before attacks can reach the opposing core, unless an effect or relic explicitly bypasses that defence.
+- **Silence** strips printed text, keywords, and stat buffs at once. A minion pumped above its printed stats falls back to them; a minion pushed below them stays there. A silenced minion's **Divine Shield** blocks nothing while the silence holds.
+- When the shared deck and its bottom-deck cards are empty, drawing causes escalating fatigue damage: 1, then 2, then 3, and so on.
+
+Nothing damages a core automatically just because a turn starts; core damage comes from a minion attacking it or from an effect that explicitly says it damages a core.
+
+
+
+## Controls and modes
+
+### Starting and resuming
+
+The title screen offers **Continue your duel** when a live duel was saved in that browser, solo play at one of the three bot levels, and a two-player hotseat duel. A duel is saved locally after state changes; completed duels are not offered for resuming. Hotseat uses a privacy curtain while the screen is passed so the next player cannot see the previous player's hand.
+
+### Opening duel animation timeline
+
+The opening is driven by one React phase clock plus several CSS animations. The circle's 3.43-second draw window and the `drawMs: 3_430` value in `source/src/App.tsx` must stay aligned. The intro ends after the mana reveal, while pointer-free opening card flights may finish behind the playable board.
+
+| Relative time | Phase or animation | Length and delay | What it controls |
+|---:|---|---|---|
+| 0 ms | `prelude` | 1,860 ms | Dims and blurs the board before the reveal. |
+| 0 ms | `duel-intro-in` | 1,380 ms | Fades in the full-screen intro veil. |
+| 0 ms | `duel-rift-arrive` | 4,050 ms | Expands and settles the large centered circle. It changes scale and rotation, not horizontal position. |
+| 1,860 ms | `reveal` | 1,680 ms | Sharpens the board and plays the short reveal beat. |
+| 3,540 ms | `draw` | 3,430 ms | Starts the opening card deal and the circle's 3.43-second visual window. |
+| 3,540 ms | `duel-rift-spin` | 3,430 ms, one iteration | Rotates the outer circle and both masked rings through a 288° arc. This is 20% less arc and 30% slower angular motion than the previous 360° / 3-second pass. |
+| 3,540 ms | `duel-rift-draw-window` | 3,430 ms | Holds the circle, then fades it out by the mana handoff. |
+| 3,540 ms | `opening-draw-fly` | 3,870 ms per card | Flies each opening card from the deck. Player delays are 0, 630, 1,260 ms; opponent delays are 330, 960, 1,590 ms. The last flight ends 5,460 ms after draw starts. |
+| 3,540 ms | `opening-hand-arrive` | 3,240 ms per hand card | Settles the cards into the fan. The first delay is 360 ms, then each hand index adds 630 ms. |
+| 3,540 ms | `deck-kick` | 1,890 ms in the opening draw | Gives the third deck card its opening-deal response. |
+| 6,970 ms | `mana` | 570 ms phase | Starts immediately after the circle window. Each full mana pip fills for 465 ms with a 67.5 ms stagger. |
+| 7,540 ms | `exit` | 315 ms | Fades out the remaining intro veil. Controls unlock at about 7,855 ms; opening card flights continue without blocking input. |
+
+The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spoken `duel_begin` line. It is a 4.9-second CC0 cut—about three times the previous 1.62-second cue—from SubspaceAudio (Juhani Junkala)'s [JRPG Trailer / Theme](https://opengameart.org/content/jrpg-trailer-theme), converted to Ogg for the browser and played at 0.35 gain. Ambient effects are separate from the phase clock. The intro breathes for 10.2 seconds and its diagonal light sweep loops every 3 seconds. The permanent battlefield seam has a right-running sweep of 3 seconds and a left-running sweep of 13 seconds. Those seam sweeps are not the large intro circle. The circle rules live in `source/src/screens/Screens.css`; card flights and mana rules live in `source/src/App.css`; phase timers and the opening cue trigger live in `source/src/App.tsx` and `source/src/audio/sfx.ts`.
+
+### During a duel
+
+- Each player starts with three cards. Player One may select any number to replace once; the second player also receives **The Coin**, which spends for +1 mana that turn.
+- Choose an unlocked Hero Power from the title-screen menu before starting. Bot wins unlock the ten player powers in order; the selected power appears beside the Core and costs 2 mana once per turn. The bot receives one random power from all ten each duel.
+- Click or drag a hand card onto an empty slot to play it.
+- Click or drag a ready minion onto an enemy minion or the enemy core to attack.
+- Press **Space** or **Enter** to end the turn.
+- Press **Z** to undo the last local action.
+- Press **Escape** to clear a selection.
+- **The Coin** appears for the player who goes second and spends for +1 mana that turn.
+- **Restart** begins a fresh duel.
+- **How to play** opens the in-duel rules guide.
+- **Settings** contains sound mute/volume controls and returns to the title screen. Choose the bot level on the title screen before starting a duel.
+- **Cards** opens the card gallery from the title screen.
+- **Cheat Off/On** is a separate toolbar sandbox switch. When enabled, mana is infinite; it is intended for testing and experimentation, not normal balance.
+- **Log** is the drawer on the left edge. It prints every event of the duel, newest first.
+
+**A developer test duel COUNTS.** Owner's ruling, 2 September 2026, reversing the build before it. A
+duel started from the developer tools used to be recorded nowhere and therefore paid nothing, which
+made the one route into the game that starts with a chosen card also the only route that ended in
+silence: no record line, and no pack. It now folds into the record and pays its cards like any other
+duel. The tutorial is still exempt, because it is a scripted board rather than a duel and every
+player would win it once for free.
+
+The board communicates conditions visually: a wall means Taunt, a gold rim means Divine Shield, a blue-and-white rim means Invulnerable, ice means Frozen, chains across the artwork mean Chained, a grey attack gem means the minion cannot attack, and a sleeping minion shows drifting `z` glyphs.
+
+
+
+## Cards and card language
+
+**The last sentence of a printed effect carries NO full stop.** Owner's ruling, 26 August 2026. The
+rules panel is a box of its own on the card face and its edge already ends the sentence, so a closing
+period is a glyph that says nothing and costs a character of the auto-fit budget on the longest cards.
+Internal sentences keep their periods — only the last one goes, across all 182 cards and all 34
+relics.
+
+It is a build failure, not a style note. `scripts/validate-cards.mjs` rejects any effect ending in
+`.`, `,`, `;` or `:`, and `npm run publish:pages` runs that validator before it builds, so a card with
+a trailing period cannot reach the public site. The rule it replaced REQUIRED that period; both exist
+for the same reason, which is that 216 cards cannot be kept consistent by hand. A keyword-only card
+now prints `Taunt` rather than `Taunt.`, and the validator's leading-keyword patterns were widened to
+match.
+
+
+Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an **alignment**. The four camps are **Magic**, **Nature**, **Tech**, and **ALL**. An **ALL** card receives positive buffs aimed at any of the three source camps, but never camp-specific debuffs. The three alignments are **Good**, **Evil**, and **Neutral**. Many effects target a camp or alignment, so read both labels before playing a card.
+
+### Mana is lore power
+
+Mana is the roster's in-fiction power grade for each card subject. A 2-mana subject is intended to be more powerful in lore than a 1-mana subject, and subjects sharing a mana value should be roughly equal in lore power. Determine mana from the subject's lore first; stats, effects, timing, and keywords are the later card translation and are not evidence for the mana tier.
+
+#### Lore-only audit safeguard
+
+Mana comparisons must use canon lore and narrative role only. Do not use printed ATK, HP, effects, keywords, synergies, board outcomes, engine behaviour, or gameplay impact as evidence that a subject belongs in a higher or lower mana tier. Those fields are the game's representation of the subject, not evidence of the subject's in-fiction power. First place the subject on the Basic lore ladder from its source material; only afterward should stats and effects be designed to express that placement. If a subject has multiple versions, state which canon version is being judged instead of mixing versions or inferring lore from its card mechanics.
+
+An earlier audit violated this rule by treating card effects and gameplay impact as lore evidence. Do not repeat that mistake: every future mana review must show the subject's current card text separately, but the tier judgment must be justified only by the subject's canon capabilities, scale, achievements, and narrative role.
+
+Each mana tier also has a **Basic** reference card that represents the peak power of that tier. A card at mana **N** may equal, but must not exceed, the Basic card at N; it must also be strong enough to defeat the Basic card at N-1. The 7-mana reference card is **Mothership (6/6)**, placed above the 6-mana UFO and below the 8-mana Star Destroyer. The 9-mana reference is **Planetary Defense Grid (4/8)**, and the 10-mana reference is **Black Hole (10/5)**.
+
+### Timing words
+
+- **Battlecry** — happens once when the minion enters play.
+- **Ongoing** — happens at the start of its owner's turn while the minion is active. An enemy's Ongoing effect therefore waits for that enemy's next turn; it does not fire on the opponent's intervening turn.
+- **Passive** — continuously applies while the minion is active; it does not trigger a second time. A Passive aura is transient: if its source leaves the board or is Silenced, its granted stats/keywords disappear with it.
+- **Battlecry/Ongoing** — the same effect happens on arrival and again at the start of its owner's turns.
+- **Deathrattle** — triggers after the minion dies, unless it was Silenced.
+
+### Conditions and keywords
+
+- **Chained** — the minion loses **two** of its own turns. **Always two, and no card may print a different number beside the word** (owner ruling, 2 September 2026, and the same rule Reborn follows). Across both turns it cannot attack, its Passive and Ongoing effects do not fire, and it is untargetable by **both** players, including by a buff of its owner's. An effect that wants a one-turn lockout is a **Freeze**, not a chain — that is the line between the two keywords, and `CHAIN_TURNS` in `game.ts` is the only place the number lives.
+  - **The counter is not the turn count.** `chained` is spent at the *start* of a turn, before attacks are offered, so a counter of 1 ticks to 0 and the minion swings that same turn. `applyChain` takes real turns and adds the +1 itself; do not write the counter by hand. This off-by-one is why Chained measured identical to Freeze for months, why four cards printed "Chained for 1 turn" and delivered Freeze, and why Queen's Cocoon's printed drawback cost its bearer **nothing at all**.
+  - A card that **arrives** Chained is asleep on the turn it lands, and that turn is already one of the two, so `createMinion` sets a counter one lower than `applyChain` does. Both routes cost the player the same thing: two turns in which the minion does nothing.
+- **Charge** — may attack on the same turn it is summoned or brought under a new player's control.
+- **Taunt** — the enemy must deal with this minion before attacking your core.
+- **Divine Shield** — blocks the next damage instance, then the gold shield disappears. It is a keyword, so **Silence** switches it off: a silenced bearer takes the blow in full. The shield is suspended rather than destroyed, so it returns if the silence does — Gojo's aura being the one silence that lifts. Fixed 1 September 2026; before that the card face hid the gold rim on a silenced minion while the engine went on spending the shield, so the board and the rules disagreed about the same card.
+- **Freeze** — the minion loses **one** turn, then thaws after sitting out that turn. It keeps its Passive and stays targetable throughout; that, and the second turn, is everything **Chained** has over it.
+- **Cannot Attack** — the minion never attacks, whatever its ATK. It still blocks, still takes damage, and still retaliates when attacked; its ATK gem is grey.
+- **Reborn** — a **keyword**, not a Deathrattle. The minion returns to the slot it died in at **1 HP** with its printed ATK and nothing else it was carrying: no buffs, no relic, no shield. Silence stops it, a full board leaves it nowhere to go, and the Necronomicon does **not** double it. How many lives a card has is printed on it — plain `Reborn` is one, `Reborn twice` is two, `Reborn infinitely` never runs out — and a rebirth is SPENT, so the returning body prints what it has left and prints nothing once the last life is gone. The staged text lives in `REBORN_STAGE` in `game.ts`; a card with more lives is one more row.
+- **Adapted** — Doomsday's answer to being hit: it shrugs off the attacker's Camp for three of its owner's turns. A purple glow rises from the card, and it goes out when the immunity does.
+- **Stasis** — the minion is lifted off the board for two full turns and returns exactly as it left, in its own slot when that slot is free.
+- **Banished** — the minion is held away until the card that banished it dies, then returns.
+- **Pocket room** — one friendly and one enemy minion are shut away together for two turns; the higher ATK walks out and the other is discarded. Equal ATK releases both.
+- **Silence** — removes the minion's printed effect and active keywords, and takes back every stat **buff** it is carrying, down to its printed ATK and HP. It moves in one direction only: a stat **nerf** is kept, because Silence is an answer, not a cleanse. Current HP is capped at the restored maximum rather than refilled, so silencing a damaged minion never heals it. A live aura stops paying a silenced minion its positive half while the silence lasts, and keeps applying its negative half. **Gojo is the one exception to the permanent half of the rule**: his Silence is an aura that lifts when he dies, his card says so, and a temporary silence must not take a minion's growth for good — so his aura cancels stat auras while it holds and leaves permanent buffs alone. Stats handed over by a **relic** count as a buff and are taken back too, while the relic itself stays equipped — which is what makes **Elder wand**, the Silence-immunity relic, worth its slot.
+- **Invulnerable** — the minion cannot take damage while the condition is active; the blue-and-white aura shows it.
+- **Evade** — gives the minion a chance to avoid an incoming attack. The percentage is printed on the card.
+- **Sleep** — the normal one-turn delay after play. It is separate from Chained.
+- **Attack Locked** — the minion cannot attack until the printed lock duration ends; its attack gem is greyed out.
+- **Protected slot** — a board position protects its minions from Silence, Freeze, and Chained effects. It does not stop ordinary targeting, removal, or combat damage. The protection belongs to the slot, not permanently to the minion occupying it.
+- **Immune** — the named damage type cannot hurt the minion while the immunity is active.
+- **Marked** — a delayed effect is waiting on the minion; the card text explains when it resolves.
+- **Untargetable** — attacks and effects cannot choose the minion while the condition lasts. A minion that is also damage-immune cannot lose HP during that window.
+
+“Destroy” kills a minion directly rather than dealing damage. “Gain stats” adds ATK and maximum/current HP to the recipient. “Summon” creates or brings a minion onto an open slot. “Lose ATK” permanently reduces ATK, never below zero. Copy effects that say **copy a passive** copy Passive or Ongoing text, not Battlecry.
+
+**Evade** is the player-facing term throughout the game. Older internal identifiers may still contain `dodge` for save or code compatibility, but new card text and documentation should say Evade.
+
+
+
+## Ascension Relics
+
+The current relic pool contains **34 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
+
+**The relic roster target is about 15% of the full roster.** Count relics against
+all minion cards and relics together. With the current 182 minion cards, the
+first whole-number total that reaches or exceeds 15% is 33 relics in a 215-card
+roster. The current pool has 34 relics in 216 cards, so it exceeds the target.
+Thirty-two relics would be
+14.95%, which rounds to 15.0% but remains just below the threshold.
+
+**A relic card face prints NO side rails**, unlike every character card. It has no camp and no alignment: it carried the placeholders "Ascension" and "Relic" purely so the two rails had something to say, and two rails naming a thing that is not a property of the card is worse than no rails. The teal frame and the diamond gem already say relic.
+
+**Every relic card prints bare `RELIC` in the flavour-text slot, without quotation marks.** Relics do not carry individual flavour text; `RELIC` is the fixed label for that exact card-face position.
+
+**A relic card carries the teal shine** — a drifting aurora, rising motes, a breathing rim, and the one crossing light bar in the game, every 15 seconds. It is one of four tiers built on the same technique; see [The rarity shine](#the-rarity-shine).
+
+- A minion can carry up to two relics. The first and second slots are independent;
+  a full bearer cannot accept a third.
+- A bearer cannot manually return an attached relic to its owner's hand. A relic
+  dies with its bearer unless the relic's own text says otherwise.
+- Effects that return a minion to hand discard its attached relics before the
+  minion arrives. Relics never ride back as an accidental second card.
+- During a duel, attached relic badges show who is carrying each relic. They are
+  previews only; there is no separate relic-shelf screen.
+
+
 
 ## Gradual card unlocking
 
@@ -228,236 +499,42 @@ disappears once the roster is complete rather than reading 216 of 216 forever. I
 button first and had to be nearly invisible there, because between two gold pills it read as a third
 one; inside a button it cannot be mistaken for a control, so it can afford to be legible.
 
+**A free pack every day, worth 5 cards.** Built 2 September 2026. `lastDailyPack` on the record
+holds the last local calendar day whose pack was taken; `dailyPackAvailable` and `claimDailyPack` in
+`progress.ts` are pure and tested, and the title screen shows a gold **Today's pack** button while one
+is owed.
+
+- **A DAY STRING, never a timestamp.** A timestamp would make "a new day" mean "24 hours since last
+  time", which punishes a player for opening the game an hour earlier than yesterday and slides the
+  reward later every day until it lands in the night. `todayKey` builds it from local date fields
+  rather than `toISOString`, which converts to UTC first and rolls the day over at the wrong moment
+  for everyone not on it — an evening in Baku is already tomorrow in that string.
+- **Five cards, which is deliberately the Recruit win and no more.** The pack is paid for by opening
+  the game, not by playing it, so it must never be the fastest route to the roster: beating the
+  Ascendant is still worth three of them.
+- **The button DISAPPEARS once taken, rather than greying out.** A dead control saying "come back
+  tomorrow" would be permanent furniture advertising something the player cannot have, for 23 hours
+  out of every 24. Its absence is the reward already collected.
+- **It opens the ordinary pack screen.** A second reward ceremony would be a second thing to keep in
+  step with `revealOrder`, and it would make the daily cards feel like a different currency from the
+  ones a duel pays. They are the same cards off the same order.
+- **The guard is the identity check, not the button.** `claimDailyPack` returns the record unchanged
+  when nothing is owed, and the caller does nothing when it gets the same object back — so a double
+  click, a stale render, or a tab left open past midnight cannot pay twice.
+
+**The gallery's Unlocked view puts newly earned cards FIRST, newest first.** A pack deals five cards
+and then hands the player a list of two hundred sorted by mana, which is the one order that
+guarantees those five are scattered and none of them is on the first screen. The unlock order already
+records when each card arrived, so recency costs one lookup. **The opening 50 are exempt and keep
+mana order**: they were never earned, so ranking them by their position in a shuffled order would be
+sorting by nothing, and it would leave a brand-new player looking at a list with no shape. The
+gallery therefore reads normally until the first pack lands.
+
 **`progress` is at v2 and v1 is deleted on load, not migrated.** v1 described a roster that was
 entirely unlocked, so carrying it forward would hand a returning player all 205 cards and delete the
 feature on the machine that most needed it. The version bump is also what resets the record.
 
-**The balance gate was red on the fresh baseline measured 18 August 2026** — three of eleven checks.
-One is fixed; the other two are below. In the order they matter:
 
-- ~~**An invariant breach: `instance <id> is on the board twice`.**~~ **Fixed 18 August 2026.** It was
-  Knov's pocket room. A room could be stored holding the *same* minion as both its friendly and its
-  enemy side, and since a minion trivially ties its own ATK, the tie branch released it into two slots
-  at once. Two guards now exist: the room refuses to open around a single minion, and the release
-  refuses to place an instance twice or to place one already on a board. The second guard is the
-  load-bearing one, because it closes the whole bug class rather than this one cause. The fuzz phase
-  now reports **0 invariant breaches** over 20,996 actions, where it reported 1. Pinned by
-  `src/engine/pocket-room.test.ts`, live-fired by removing the dedupe and watching it go red.
-
-  **The upstream cause is now known, and it was never the two-step plumbing.** It is All for One
-  (`copy_and_trigger`), and it was doing visible damage in ordinary play, not only in the fuzzer.
-  `runEffect` reads `chosen ?? requestChoice(...)`, so handing it a ready-made choice skips
-  `requestChoice` and every rule the borrowed effect's own `TargetSpec` carries — side, filter,
-  `includeSelf`, untargetability. All for One is the only caller that builds a choice by hand, and the
-  one it builds always names the **enemy** minion it copied. Feeding that to a `side: "friendly"`
-  effect made the card fully heal, buff, shield or Taunt the *opponent's* minion, and made a `slot`
-  effect bless the opponent's slot. Reaching the pocket-room resolver with an enemy-owned "friendly"
-  pick was the same fault wearing its worst outcome. `priorOptions` was never lost: the synthetic
-  choice simply never had any, so `firstChoice` fell through to the enemy pick by design.
-
-  **Fixed 18 August 2026, and completed 20 August**, by `copiedVictimIsLegalTarget` in
-  `source/src/engine/game.ts`. The copied victim is now *offered* to the borrowed effect and accepted
-  only when that effect would legally target it. When it would not, the effect **asks for its own
-  target** instead, which resolves the copy exactly as though All for One's controller had cast it: a
-  copied friendly power lands on THEIR board.
-
-  The first version simply lost the copy, because a borrowed effect could not survive an open prompt —
-  `effectId` was restored the instant the branch returned, so a deferred answer would have resolved
-  against `copy_and_trigger`. The minion's own effect is now parked in `MinionInstance.copyRestoreEffectId`
-  (save v20) and put back by `restoreCopiedEffect` once the copy has no question left. That is what
-  makes the prompt possible, and it fixed a second bug for free: **multi-step copies now work**. A
-  copied Batman picks a victim and then a gadget, and a copied pocket room takes one minion from each
-  side, where before the first prompt silently cancelled the whole effect.
-
-  Anything reading an effect OFF a minion must call `printedEffectId`, not `effectId`, or it copies a
-  power that is about to be handed back. `copy_and_trigger`, `copy_minion_effects` and `steal_passive`
-  all do.
-
-  Pinned by four tests in `src/engine/targeting.test.ts`, live-fired by restoring the old
-  unconditional handoff and watching them go red; one asserts an enemy-targeting copy still fires
-  normally, so it passes either way on purpose. Fuzz after the fix: **0 invariant breaches over 21,005
-  actions.**
-
-  Worth knowing for whoever changes this next: a board assertion cannot test this fix. The pocket
-  room's own two guards already stop the duplicate instance, so a "no minion appears twice" test
-  passes with or without the cause being fixed. The discriminating assertion is that the room
-  resolver is never entered at all.
-- ~~**One duel in 1,000 never finished.**~~ **Closed 20 August 2026.** It was 121 turns against a
-  120-turn cap, cores at 27 and 15, no invariant broken: two bots grinding, not a lock. The cap is now
-  150 (`--turncap` in `scripts/simulate.ts`). A real duel ends around turn 22, so this was never
-  reachable by a player and was only ever a self-play artefact.
-- **First player wins 57%** against a 44 to 56% band. The gate flags that its own 95% range still
-  touches the band, so do not act on this from one run.
-
-The per-tier outliers ARE usable, because each card is compared with its own cost bracket inside one
-run: above their tier, Escanor "The One" +23.6, Elden Beast +19.5, Darth Vader +17.9, Planetary
-Defense Grid +16.9, Flash +14.7; below it, Cecil -23.1 (the worst card in the game, a 2-mana 1/1),
-Ten Tails -15.2, Shigaraki -14.2, The Watcher -13.8. Cost 7 is clean.
-
-**Do not tune from the run-to-run diff.** That block spans both a roster change and the bot rewrite
-that landed in the same window, so it measures two things and separates neither, and several of its
-entries do not clear their own stated noise floor. For the same reason, hold off on tuning anything
-except the three largest gaps until the bot stops moving: a ±23 gap is too big to be bot noise, and a
-±10 one is not.
-
-## Parallel work
-
-Multiple threads usually work on Convergence at the same time. Files, generated artifacts, tests, and documentation may shift while you are working; that is expected. Preserve changes you did not create, do not revert them, and do not stop the other threads. Re-read the current file before making an overlapping edit. A small compile or test repair is fine when necessary, but keep it behavior-neutral unless the thread that owns the change explicitly asks for a behavior change.
-
-## Rules at a glance
-
-- Both cores begin at **75 health**. Reduce the opposing core to zero to win.
-- Both players draw from the same shuffled deck and open with **3 cards**. Player One may replace any number of those cards once during the mulligan; Player Two keeps the opening hand. The second player also receives **The Coin**.
-- Hero Powers are selected from the title-screen **Hero Powers** menu. Each bot win unlocks the next player power permanently, in the order shown in that menu. In a bot duel, the opponent receives one random power from all ten and needs no unlocks. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
-- At the start of a turn, draw one card. Mana starts at **1**, refills each turn, and increases by one each turn up to **10**.
-- Your hand holds at most **10 cards**. A card drawn into a full hand burns and is discarded.
-- Play a hand card into one of **five board slots** by paying its cost. Effects that summon minions also need an open slot.
-- A minion is asleep for the turn it enters play and normally waits until its owner's next turn before attacking. A **Chained** minion is unavailable for its first two owner turns and cannot be targeted by attacks or effects while chained.
-- A minion can attack once per turn. A minion with **0 ATK** can still attack, but deals no damage.
-- Combat is simultaneous: attacker and defender deal damage to each other, even when the attack kills the defender.
-- **Taunt** must be dealt with before attacks can reach the opposing core, unless an effect or relic explicitly bypasses that defence.
-- **Silence** strips printed text, keywords, and stat buffs at once. A minion pumped above its printed stats falls back to them; a minion pushed below them stays there. A silenced minion's **Divine Shield** blocks nothing while the silence holds.
-- When the shared deck and its bottom-deck cards are empty, drawing causes escalating fatigue damage: 1, then 2, then 3, and so on.
-
-Nothing damages a core automatically just because a turn starts; core damage comes from a minion attacking it or from an effect that explicitly says it damages a core.
-
-## Cards and card language
-
-**The last sentence of a printed effect carries NO full stop.** Owner's ruling, 26 August 2026. The
-rules panel is a box of its own on the card face and its edge already ends the sentence, so a closing
-period is a glyph that says nothing and costs a character of the auto-fit budget on the longest cards.
-Internal sentences keep their periods — only the last one goes, across all 182 cards and all 34
-relics.
-
-It is a build failure, not a style note. `scripts/validate-cards.mjs` rejects any effect ending in
-`.`, `,`, `;` or `:`, and `npm run publish:pages` runs that validator before it builds, so a card with
-a trailing period cannot reach the public site. The rule it replaced REQUIRED that period; both exist
-for the same reason, which is that 216 cards cannot be kept consistent by hand. A keyword-only card
-now prints `Taunt` rather than `Taunt.`, and the validator's leading-keyword patterns were widened to
-match.
-
-
-Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an **alignment**. The four camps are **Magic**, **Nature**, **Tech**, and **ALL**. An **ALL** card receives positive buffs aimed at any of the three source camps, but never camp-specific debuffs. The three alignments are **Good**, **Evil**, and **Neutral**. Many effects target a camp or alignment, so read both labels before playing a card.
-
-### Mana is lore power
-
-Mana is the roster's in-fiction power grade for each card subject. A 2-mana subject is intended to be more powerful in lore than a 1-mana subject, and subjects sharing a mana value should be roughly equal in lore power. Determine mana from the subject's lore first; stats, effects, timing, and keywords are the later card translation and are not evidence for the mana tier.
-
-#### Lore-only audit safeguard
-
-Mana comparisons must use canon lore and narrative role only. Do not use printed ATK, HP, effects, keywords, synergies, board outcomes, engine behaviour, or gameplay impact as evidence that a subject belongs in a higher or lower mana tier. Those fields are the game's representation of the subject, not evidence of the subject's in-fiction power. First place the subject on the Basic lore ladder from its source material; only afterward should stats and effects be designed to express that placement. If a subject has multiple versions, state which canon version is being judged instead of mixing versions or inferring lore from its card mechanics.
-
-An earlier audit violated this rule by treating card effects and gameplay impact as lore evidence. Do not repeat that mistake: every future mana review must show the subject's current card text separately, but the tier judgment must be justified only by the subject's canon capabilities, scale, achievements, and narrative role.
-
-Each mana tier also has a **Basic** reference card that represents the peak power of that tier. A card at mana **N** may equal, but must not exceed, the Basic card at N; it must also be strong enough to defeat the Basic card at N-1. The 7-mana reference card is **Mothership (6/6)**, placed above the 6-mana UFO and below the 8-mana Star Destroyer. The 9-mana reference is **Planetary Defense Grid (4/8)**, and the 10-mana reference is **Black Hole (10/5)**.
-
-### Timing words
-
-- **Battlecry** — happens once when the minion enters play.
-- **Ongoing** — happens at the start of its owner's turn while the minion is active. An enemy's Ongoing effect therefore waits for that enemy's next turn; it does not fire on the opponent's intervening turn.
-- **Passive** — continuously applies while the minion is active; it does not trigger a second time. A Passive aura is transient: if its source leaves the board or is Silenced, its granted stats/keywords disappear with it.
-- **Battlecry/Ongoing** — the same effect happens on arrival and again at the start of its owner's turns.
-- **Deathrattle** — triggers after the minion dies, unless it was Silenced.
-
-### Conditions and keywords
-
-- **Chained** — the minion loses **two** of its own turns. **Always two, and no card may print a different number beside the word** (owner ruling, 2 September 2026, and the same rule Reborn follows). Across both turns it cannot attack, its Passive and Ongoing effects do not fire, and it is untargetable by **both** players, including by a buff of its owner's. An effect that wants a one-turn lockout is a **Freeze**, not a chain — that is the line between the two keywords, and `CHAIN_TURNS` in `game.ts` is the only place the number lives.
-  - **The counter is not the turn count.** `chained` is spent at the *start* of a turn, before attacks are offered, so a counter of 1 ticks to 0 and the minion swings that same turn. `applyChain` takes real turns and adds the +1 itself; do not write the counter by hand. This off-by-one is why Chained measured identical to Freeze for months, why four cards printed "Chained for 1 turn" and delivered Freeze, and why Queen's Cocoon's printed drawback cost its bearer **nothing at all**.
-  - A card that **arrives** Chained is asleep on the turn it lands, and that turn is already one of the two, so `createMinion` sets a counter one lower than `applyChain` does. Both routes cost the player the same thing: two turns in which the minion does nothing.
-- **Charge** — may attack on the same turn it is summoned or brought under a new player's control.
-- **Taunt** — the enemy must deal with this minion before attacking your core.
-- **Divine Shield** — blocks the next damage instance, then the gold shield disappears. It is a keyword, so **Silence** switches it off: a silenced bearer takes the blow in full. The shield is suspended rather than destroyed, so it returns if the silence does — Gojo's aura being the one silence that lifts. Fixed 1 September 2026; before that the card face hid the gold rim on a silenced minion while the engine went on spending the shield, so the board and the rules disagreed about the same card.
-- **Freeze** — the minion loses **one** turn, then thaws after sitting out that turn. It keeps its Passive and stays targetable throughout; that, and the second turn, is everything **Chained** has over it.
-- **Cannot Attack** — the minion never attacks, whatever its ATK. It still blocks, still takes damage, and still retaliates when attacked; its ATK gem is grey.
-- **Reborn** — a **keyword**, not a Deathrattle. The minion returns to the slot it died in at **1 HP** with its printed ATK and nothing else it was carrying: no buffs, no relic, no shield. Silence stops it, a full board leaves it nowhere to go, and the Necronomicon does **not** double it. How many lives a card has is printed on it — plain `Reborn` is one, `Reborn twice` is two, `Reborn infinitely` never runs out — and a rebirth is SPENT, so the returning body prints what it has left and prints nothing once the last life is gone. The staged text lives in `REBORN_STAGE` in `game.ts`; a card with more lives is one more row.
-- **Adapted** — Doomsday's answer to being hit: it shrugs off the attacker's Camp for three of its owner's turns. A purple glow rises from the card, and it goes out when the immunity does.
-- **Stasis** — the minion is lifted off the board for two full turns and returns exactly as it left, in its own slot when that slot is free.
-- **Banished** — the minion is held away until the card that banished it dies, then returns.
-- **Pocket room** — one friendly and one enemy minion are shut away together for two turns; the higher ATK walks out and the other is discarded. Equal ATK releases both.
-- **Silence** — removes the minion's printed effect and active keywords, and takes back every stat **buff** it is carrying, down to its printed ATK and HP. It moves in one direction only: a stat **nerf** is kept, because Silence is an answer, not a cleanse. Current HP is capped at the restored maximum rather than refilled, so silencing a damaged minion never heals it. A live aura stops paying a silenced minion its positive half while the silence lasts, and keeps applying its negative half. **Gojo is the one exception to the permanent half of the rule**: his Silence is an aura that lifts when he dies, his card says so, and a temporary silence must not take a minion's growth for good — so his aura cancels stat auras while it holds and leaves permanent buffs alone. Stats handed over by a **relic** count as a buff and are taken back too, while the relic itself stays equipped — which is what makes **Elder wand**, the Silence-immunity relic, worth its slot.
-- **Invulnerable** — the minion cannot take damage while the condition is active; the blue-and-white aura shows it.
-- **Evade** — gives the minion a chance to avoid an incoming attack. The percentage is printed on the card.
-- **Sleep** — the normal one-turn delay after play. It is separate from Chained.
-- **Attack Locked** — the minion cannot attack until the printed lock duration ends; its attack gem is greyed out.
-- **Protected slot** — a board position protects its minions from Silence, Freeze, and Chained effects. It does not stop ordinary targeting, removal, or combat damage. The protection belongs to the slot, not permanently to the minion occupying it.
-- **Immune** — the named damage type cannot hurt the minion while the immunity is active.
-- **Marked** — a delayed effect is waiting on the minion; the card text explains when it resolves.
-- **Untargetable** — attacks and effects cannot choose the minion while the condition lasts. A minion that is also damage-immune cannot lose HP during that window.
-
-“Destroy” kills a minion directly rather than dealing damage. “Gain stats” adds ATK and maximum/current HP to the recipient. “Summon” creates or brings a minion onto an open slot. “Lose ATK” permanently reduces ATK, never below zero. Copy effects that say **copy a passive** copy Passive or Ongoing text, not Battlecry.
-
-**Evade** is the player-facing term throughout the game. Older internal identifiers may still contain `dodge` for save or code compatibility, but new card text and documentation should say Evade.
-
-## Ascension Relics
-
-The current relic pool contains **34 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
-
-**The relic roster target is about 15% of the full roster.** Count relics against
-all minion cards and relics together. With the current 182 minion cards, the
-first whole-number total that reaches or exceeds 15% is 33 relics in a 215-card
-roster. The current pool has 34 relics in 216 cards, so it exceeds the target.
-Thirty-two relics would be
-14.95%, which rounds to 15.0% but remains just below the threshold.
-
-**A relic card face prints NO side rails**, unlike every character card. It has no camp and no alignment: it carried the placeholders "Ascension" and "Relic" purely so the two rails had something to say, and two rails naming a thing that is not a property of the card is worse than no rails. The teal frame and the diamond gem already say relic.
-
-**Every relic card prints bare `RELIC` in the flavour-text slot, without quotation marks.** Relics do not carry individual flavour text; `RELIC` is the fixed label for that exact card-face position.
-
-**A relic card carries the teal shine** — a drifting aurora, rising motes, a breathing rim, and the one crossing light bar in the game, every 15 seconds. It is one of four tiers built on the same technique; see [The rarity shine](#the-rarity-shine).
-
-- A minion can carry up to two relics. The first and second slots are independent;
-  a full bearer cannot accept a third.
-- A bearer cannot manually return an attached relic to its owner's hand. A relic
-  dies with its bearer unless the relic's own text says otherwise.
-- Effects that return a minion to hand discard its attached relics before the
-  minion arrives. Relics never ride back as an accidental second card.
-- During a duel, attached relic badges show who is carrying each relic. They are
-  previews only; there is no separate relic-shelf screen.
-
-## Controls and modes
-
-### Starting and resuming
-
-The title screen offers **Continue your duel** when a live duel was saved in that browser, solo play at one of the three bot levels, and a two-player hotseat duel. A duel is saved locally after state changes; completed duels are not offered for resuming. Hotseat uses a privacy curtain while the screen is passed so the next player cannot see the previous player's hand.
-
-### Opening duel animation timeline
-
-The opening is driven by one React phase clock plus several CSS animations. The circle's 3.43-second draw window and the `drawMs: 3_430` value in `source/src/App.tsx` must stay aligned. The intro ends after the mana reveal, while pointer-free opening card flights may finish behind the playable board.
-
-| Relative time | Phase or animation | Length and delay | What it controls |
-|---:|---|---|---|
-| 0 ms | `prelude` | 1,860 ms | Dims and blurs the board before the reveal. |
-| 0 ms | `duel-intro-in` | 1,380 ms | Fades in the full-screen intro veil. |
-| 0 ms | `duel-rift-arrive` | 4,050 ms | Expands and settles the large centered circle. It changes scale and rotation, not horizontal position. |
-| 1,860 ms | `reveal` | 1,680 ms | Sharpens the board and plays the short reveal beat. |
-| 3,540 ms | `draw` | 3,430 ms | Starts the opening card deal and the circle's 3.43-second visual window. |
-| 3,540 ms | `duel-rift-spin` | 3,430 ms, one iteration | Rotates the outer circle and both masked rings through a 288° arc. This is 20% less arc and 30% slower angular motion than the previous 360° / 3-second pass. |
-| 3,540 ms | `duel-rift-draw-window` | 3,430 ms | Holds the circle, then fades it out by the mana handoff. |
-| 3,540 ms | `opening-draw-fly` | 3,870 ms per card | Flies each opening card from the deck. Player delays are 0, 630, 1,260 ms; opponent delays are 330, 960, 1,590 ms. The last flight ends 5,460 ms after draw starts. |
-| 3,540 ms | `opening-hand-arrive` | 3,240 ms per hand card | Settles the cards into the fan. The first delay is 360 ms, then each hand index adds 630 ms. |
-| 3,540 ms | `deck-kick` | 1,890 ms in the opening draw | Gives the third deck card its opening-deal response. |
-| 6,970 ms | `mana` | 570 ms phase | Starts immediately after the circle window. Each full mana pip fills for 465 ms with a 67.5 ms stagger. |
-| 7,540 ms | `exit` | 315 ms | Fades out the remaining intro veil. Controls unlock at about 7,855 ms; opening card flights continue without blocking input. |
-
-The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spoken `duel_begin` line. It is a 4.9-second CC0 cut—about three times the previous 1.62-second cue—from SubspaceAudio (Juhani Junkala)'s [JRPG Trailer / Theme](https://opengameart.org/content/jrpg-trailer-theme), converted to Ogg for the browser and played at 0.35 gain. Ambient effects are separate from the phase clock. The intro breathes for 10.2 seconds and its diagonal light sweep loops every 3 seconds. The permanent battlefield seam has a right-running sweep of 3 seconds and a left-running sweep of 13 seconds. Those seam sweeps are not the large intro circle. The circle rules live in `source/src/screens/Screens.css`; card flights and mana rules live in `source/src/App.css`; phase timers and the opening cue trigger live in `source/src/App.tsx` and `source/src/audio/sfx.ts`.
-
-### During a duel
-
-- Each player starts with three cards. Player One may select any number to replace once; the second player also receives **The Coin**, which spends for +1 mana that turn.
-- Choose an unlocked Hero Power from the title-screen menu before starting. Bot wins unlock the ten player powers in order; the selected power appears beside the Core and costs 2 mana once per turn. The bot receives one random power from all ten each duel.
-- Click or drag a hand card onto an empty slot to play it.
-- Click or drag a ready minion onto an enemy minion or the enemy core to attack.
-- Press **Space** or **Enter** to end the turn.
-- Press **Z** to undo the last local action.
-- Press **Escape** to clear a selection.
-- **The Coin** appears for the player who goes second and spends for +1 mana that turn.
-- **Restart** begins a fresh duel.
-- **How to play** opens the in-duel rules guide.
-- **Settings** contains sound mute/volume controls and returns to the title screen. Choose the bot level on the title screen before starting a duel.
-- **Cards** opens the card gallery from the title screen.
-- **Cheat Off/On** is a separate toolbar sandbox switch. When enabled, mana is infinite; it is intended for testing and experimentation, not normal balance.
-
-The board communicates conditions visually: a wall means Taunt, a gold rim means Divine Shield, a blue-and-white rim means Invulnerable, ice means Frozen, chains across the artwork mean Chained, a grey attack gem means the minion cannot attack, and a sleeping minion shows drifting `z` glyphs.
 
 ## Project structure and source of truth
 
@@ -474,10 +551,16 @@ The board communicates conditions visually: a wall means Taunt, a gold rim means
 - `materials/local-production/` contains optional rebuild tools and source libraries. It is not required to play the included build.
 - `counter/` is the small aggregate player-count service used by the public landing page.
 - `source/src/progress.ts` is everything that outlives a duel: the record, the collection marks, and the unlock index. `source/src/unlocks.ts` decides WHICH cards the unlock index points at — see [Gradual card unlocking](#gradual-card-unlocking). Both are pure and both are tested; neither reads a CSV.
-- `source/src/screens/Screens.tsx` holds the **How to play** guide as `HowToPlayContent`. It is the player-facing twin of [Rules at a glance](#rules-at-a-glance) and [Conditions and keywords](#conditions-and-keywords) above: a rules change has to land in both, and the guide is the copy a player will actually read.
+- `source/src/screens/Screens.tsx` holds the **How to play** guide as `HowToPlayContent`. It is the player-facing twin of [Rules at a glance](#rules-at-a-glance) and [Conditions and keywords](#conditions-and-keywords) above: a rules change has to land in both, and the guide is the copy a player will actually read. Its glossary is NOT written there — it is rendered from `source/src/keywords.ts`, which is also what the card face's keyword tooltips read.
+- `source/src/keywords.ts` is the single copy of every keyword definition, plus the longest-first match table the card face scans rules text with. Two surfaces render it; neither owns it.
+- `source/scripts/readme-index.mjs` owns this page's section ORDER and regenerates its navigation block. The order lives in that file and nowhere else, and a `##` section missing from it is an error rather than a silent append. `node scripts/readme-index.mjs --check` fails when the page is stale.
+- `source/scripts/dump-log.ts` plays one self-play duel and prints every line the duel log would show. See [The duel log](#the-duel-log).
+- `.claude/launch.json` is the agent-facing dev-server entry, so a session opens the game with one call instead of inventing a shell command for it.
 - `source/scripts/` holds the tooling. `simulate.ts` is the balance harness: self-play, fuzzing, the dial sweep, and the difficulty ladder. `balance-gate.ts` and `balance-gate.test.ts` hold the pure pass, fail, and skip logic, with one planted failure per check. `ladder-compare.ts` is the paired ladder comparison. `source/balance.config.json` carries every threshold with the reasoning for it written alongside. The `apply-balance-pass*.mjs` files record each past pass with the measured number behind every change.
 
 The maintained game is React and TypeScript with a deterministic rules engine, DOM-rendered full card faces, Ascension Relics, persistent local saves, and a practice bot.
+
+
 
 ## Run and verify
 
@@ -498,6 +581,11 @@ Use the development or preview server URL, not a `file://` URL. A white page can
 **Keep the suite fast, and treat any test over about ten seconds as a defect to be explained.** `npm test` is the thing a session runs after every change, so its cost is paid dozens of times a day, and it has twice grown a two-minute test that was really a balance measurement in disguise. The rule that catches both: a test may play a whole duel only when the thing it asserts is a property OF a whole duel — that the game terminates, that no illegal action is ever produced, that the bot never stalls on its own prompt. Anything else — who wins, how often, whether a flag is wired — is either a balance question, which belongs in the harness, or a state question, which should read the state.
 
 Measured 2026-08-22, before and after that pass: **452 seconds down to 123.8**, same 391 tests. What remains is dominated by two Ascendant probes that genuinely do have to run a duel to the end — the legality check at 25.5s and the targeting-prompt check at 42s. Everything else in the project, all 386 other tests, is about 55 seconds together.
+
+**After editing this README, run `node scripts/readme-index.mjs`.** It re-sorts the page into its
+fixed section order and regenerates the navigation block at the top, whose byte count and heading list
+both go stale on every edit — and a banner quoting a stale size is worse than no banner, because it
+tells a session the truncation will not happen to them.
 
 Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
 
@@ -545,6 +633,14 @@ This file is the single maintained project guide and knowledge-base page. Do not
 In this project, **publish** always means make the current game change live at the public play URL: <https://ross-ai-lab.github.io/convergence-card-game/play/>. A source edit, local build, generated `play/` folder, or `just vault-publish` workspace checkpoint does **not** count as published. The change is published only after the public Pages deployment finishes and the live URL is verified to serve the new build.
 
 For a deployable update, run `npm run publish:pages` from `source/`. That command validates the data, builds with `--base=./`, replaces the generated `source/dist/` contents in `play/`, and fails unless every published file exactly matches the generated build. After it succeeds, publish the generated copy to the public GitHub repository. GitHub Pages serves `play/` from the repository's published static site.
+
+
+
+## Parallel work
+
+Multiple threads usually work on Convergence at the same time. Files, generated artifacts, tests, and documentation may shift while you are working; that is expected. Preserve changes you did not create, do not revert them, and do not stop the other threads. Re-read the current file before making an overlapping edit. A small compile or test repair is fine when necessary, but keep it behavior-neutral unless the thread that owns the change explicitly asks for a behavior change.
+
+
 
 ## Changing cards and effects
 
@@ -653,6 +749,8 @@ Whenever a user asks to recommend effects for a minion or recommend minions for 
 
 Printed timing must match play. For every target or choice, specify whether it selects a minion, board slot, hand card, or random legal object. Test no-valid-target, cancellation, opponent-turn, and resolution behaviour where relevant.
 
+
+
 ## Engine rules that must stay coherent
 
 - Keep the engine deterministic. Randomness comes from game state and its seeded RNG, never `Math.random()` in the engine.
@@ -691,6 +789,206 @@ Printed timing must match play. For every target or choice, specify whether it s
   wrong relic entirely. Typing the parameter makes that a compile error.
 
 The engine’s central contract is `applyAction(state, action, library) -> { state, events, legalActions }`. An action outside the legal-action list is rejected without changing the state. Targeting pauses the game in a target-selection state so human and bot choices follow the same route and survive saving, cloning, and undo.
+
+
+
+## Interface and card faces
+
+**What keeps a gallery of 216 card faces scrollable, and the measurements behind each part.** Every
+cell is a full card face: about 23 elements, its own size container, gradients, rails, gems and six
+text measurements. Measured on the locked gallery at 148 cells, laying all of them out costs
+**219 ms** against **4.5 ms** when they are skipped — roughly **1.4 ms per cell**, which is why three
+rows arriving inside one frame is felt as a stutter. Four things hold it together and they are not
+interchangeable.
+
+1. **`content-visibility: auto` on `.gallery-cell`** skips layout and paint for off-screen cells. The
+   cell keeps its box because `aspect-ratio` sits on the CELL and is not contained away with its
+   contents, so nothing jumps and the scrollbar is honest from the first frame.
+2. **`contain-intrinsic-size: auto 264px auto 370px`** on the same rule. The `auto` keywords are the
+   point, not the lengths: without an intrinsic size a cell that leaves the viewport throws its layout
+   away and rebuilds it from nothing on the way back, and with `auto` the browser reuses the size it
+   last measured. The lengths themselves never apply, because `aspect-ratio` wins — measured before
+   and after, neither the scroll height nor the row height moves by a pixel.
+3. **The card shine pauses while the body is scrolling.** A card face carries up to six blended,
+   infinitely animating layers; measured in the unlocked gallery that is **112 animating spans**, all
+   of them compositing on every frame the browser draws. `.gallery-body` gets an `is-scrolling` class
+   from a passive scroll listener that writes to `classList` rather than to state — re-rendering the full roster
+   memoised cells to say "we are moving" would cost more than the animations it is quietening — and
+   the CSS sets `animation-play-state: paused`. Paused, not hidden: every layer freezes where it was,
+   so a still gallery is pixel-identical to what it was before this rule existed.
+4. **Card art warms on idle once the screen has finished appearing.** The cells load their art lazily,
+   which is right for the first paint and wrong for the twentieth: the browser's lazy heuristics look
+   only a short way ahead and a fast flick outruns them, which is what leaves a screenful of cards
+   showing a frame and no picture. After the last cell mounts, the gallery pulls the whole set six at
+   a time on idle callbacks, so it never competes with a scroll and costs
+   the opening nothing.
+
+5. **A locked card draws a SEALED FACE, not a full one.** `SealedFace` in `App.tsx` renders the four
+   things a sealed card is supposed to show — frame colour, name, mana cost, and a shape behind the
+   glass — and nothing else. No rules panel, no flavour, no origin, no rails, no stat gems, no shine.
+   That is the printed doctrine for a locked card rather than a saving invented to fit one, and the
+   saving arrives with it. Measured in one browser, in one sitting, against the full face beside it:
+   **8 elements against 18**, and **0.97 ms of layout per cell against 2.23 ms** — a locked card now
+   costs **56% less** to lay out than an unlocked one. At 148 locked cards that is the difference
+   between about 330 ms and about 144 ms for the whole grid.
+
+   Its artwork runs the full height of the face, because the 490 units below the printed art window
+   belong to the plaque, the flavour line and the gems, and a sealed card draws none of them. Left as
+   it was, a locked card was a picture in the top half and a flat dark slab in the bottom half, which
+   reads as a card that failed to load rather than a card that is sealed.
+
+Only the first two are about layout. Items three and four are about paint and decode, and neither was
+measured against a frame budget: the browser tab available to this project's agents stays backgrounded,
+where `requestAnimationFrame` never fires. The element counts, the byte totals and the layout timings
+above are all measured; the frame-rate improvement is reasoned from them.
+
+
+Cards are DOM-rendered by `CardFace` and CSS, using a 750 × 1050 design coordinate system. Keep full card faces readable in hand and on the board. Text fitting must use `source/src/textfit.ts`, which measures the real fonts and finds the largest size that fits the box; the 64/32 caps are upper bounds, not a substitute for measurement.
+
+Choice prompts that offer cards or Ascension Relics must show the complete readable card face, including its rules text, cost, and stats where applicable. Names and artwork alone are never enough to make a choice.
+
+**`CardFace` DROPS ITS RULES TEXT below roughly 200px wide, so 200px is a hard floor on any screen that shows cards to be read.** `.card-face` is `container-type: size` and switches to the compact board-minion layout under that width — correct for a minion on a crowded board, and wrong everywhere else. It is a floor rather than a preference, and it holds at every screen size: a narrow viewport is a reason to show fewer cards or wrap them onto more rows, never a reason to shrink them past the point where the card stops saying what it does. It has now caught two builds, the gallery's grid and the card pack's reveal, and in both the failure looked like a layout choice rather than missing content. `just wall` and a wide screenshot both hide it, because the cards look fine — they are simply no longer telling you anything.
+
+Conditions have distinct, composable visual channels:
+
+- Divine Shield uses a gold rim.
+- Invulnerable uses a blue-and-white rim.
+- Frozen uses ice treatment.
+- Chained draws chains only across artwork.
+- Sleeping shows drifting `z` glyphs.
+- Silenced greys and blanks the rules text (without placeholder words), with a
+  red cross over the effect box.
+- Protected and Adapted use teal or camp glow.
+- Attack Locked greys the ATK gem.
+- Marked uses a red pulse and remains visible until its delayed resolution.
+
+Keep status indicators large enough to survive real board-card size. Verify condition work on a populated board; the opening screen cannot prove board conditions, targeting, hand interaction, or settings behaviour. Load card art eagerly and resolve public asset paths through `resolvePublicAssetUrl` so the game works both at a domain root and under a project page path.
+
+### The game-over screen names ONE card
+
+**The winner's highest-damage minion, printed as a real card face.** Built 2 September 2026. It
+replaced a parade of the winner's surviving minions, and the reason is that surviving is the wrong
+measure: a board is whatever happens to be left standing, so the parade was routinely five bodies
+that had done nothing and none of the ones that won the duel — a Mythic that traded for three minions
+and died doing it never appeared on its own victory screen. Damage is what a duel is decided by, and
+it is the only figure on that screen that names a card rather than a number.
+
+- **`state.damageTally` is the source**, keyed by instance id, written by `creditDamage` in `game.ts`
+  wherever a blow has already been allowed and applied. A shield that ate the hit, an immunity that
+  refused it, or a target that was not there all credit nothing. `duelMvp` reads it.
+- **It outlives the minion.** The tally cannot live on `MinionInstance`, because the body the screen
+  most wants to name is frequently the one that died winning. Optional on `GameState` so every save
+  written before it existed still loads, and an absent tally simply names nobody.
+- **Only damage with a MINION behind it counts.** Fatigue and hero powers have no card to put on a
+  screen, so crediting them would invent an MVP out of something the player never played. A duel
+  decided that way shows no card at all, which is the honest answer.
+- **Ties break on the lower instance id** — arbitrary, but stable, so one finished duel always names
+  the same card however many times the screen re-renders. Pinned in `src/engine/mvp.test.ts`.
+- The card is **232px wide**, above the 200px floor below, because a trophy the player cannot read is
+  a picture of a trophy. Three things were REMOVED with the parade: the "Core Collapsed" kicker, the
+  two final-core numbers, and the survivor row. Owner's ruling.
+
+### Clicking a keyword on a card face explains it
+
+**Every glossary word in a card's rules text is a button, and the definitions live in exactly one
+file.** Built 2 September 2026. `src/keywords.ts` is the single copy: the How to play guide renders
+its glossary from it, and the card face's tooltips read the same entries, so a wording fix lands in
+both places or in neither. Definitions carry `*emphasis*` markers rather than markup, because one has
+to survive being read as a plain string by the tooltip and as rich text by the guide.
+
+- **`KEYWORD_LOOKUP` is sorted longest-match-first**, and that ordering is the whole correctness of
+  the matcher: `Divine Shield` has to be offered before `Shield` would be, and `Attack Locked` before
+  `Attack`. Matches only count on word boundaries, so "Charged" is not Charge.
+- **It is OPT-IN, and it is on in the gallery only.** A card in hand is clicked to PLAY it and a
+  minion on the board is clicked to ATTACK with it; a second meaning on part of those faces would
+  turn "I clicked Taunt" into a misplay. The gallery is the one place a card is only ever read.
+- **The popover is `position: fixed`, off the word's own rect.** `.cf-desc` is `overflow: hidden`
+  because the rules panel is a box with an edge, so a popover rendered inside the paragraph is
+  clipped to a sliver. Viewport coordinates escape that without the panel giving up its clipping.
+
+### Hovering a minion shows what it is reaching
+
+**A dashed magenta ring appears on every minion the hovered one is currently affecting.** Built
+2 September 2026. `reachOf` in `App.tsx` is a REVERSE LOOKUP over live state, not a reading of card
+text: the engine already records who is paying whom — an aura bonus names its source, a granted
+shield names its holder, a mark names who set it — because it has to take those things back when the
+source dies. Nothing is re-derived, so a minion whose text has not actually landed on anybody lights
+up nothing, which is the honest answer.
+
+**Dashed, and magenta, for a reason.** The board already spends solid green on "ready to attack",
+solid red on "legal target" and blue on "you can afford this"; a fourth solid ring in a nearby hue is
+a ring nobody can read. It is drawn with `outline`, never `box-shadow`, because ready, targetable,
+armed and the slot auras all write `box-shadow` on that same element and a later rule of equal weight
+would silently delete whichever was showing. A live target prompt suppresses it entirely: while the
+player is being asked to choose, one ring system owns the board.
+
+**No hand-card tooltip.** The native "Drag onto the board (or click) to play" title was removed on
+2 September 2026 (owner's ruling): it covered the neighbouring card a second after the pointer
+landed, which is exactly when the hover preview was trying to show that card, and it explained a
+control the player had already used by the time they could read it.
+
+### The duel log
+
+The drawer on the left edge of the board, newest first, fed by `GameEvent`s the engine emits. Four
+rules it now obeys, each of which it broke until 2 September 2026:
+
+- **It prints everything it is handed.** It used to print the last 30 of the 80 events being kept, so
+  one busy turn — a board wipe, a chain of Deathrattles — could push the move that caused it off the
+  top of the list a player was scrolling precisely to find it in. A log that drops the middle of a
+  story is worse than a short one, because nothing marks the gap. The buffer is now
+  `EVENT_LOG_LIMIT` = 300; a measured 23-turn self-play duel produces 169 events, so the old 80 was
+  deleting the first half of a normal duel while it was still being played.
+- **An action is logged BEFORE its consequences.** Playing a relic used to log the equip, the relic's
+  own effect, and any card it drew, and only then "Player Two plays Poké Ball on Knight" — because
+  `equipRelic` was called before the play event was pushed. Every other play in the game already had
+  this right.
+- **Effect damage names its source; combat damage does not.** A combat blow always sits under its own
+  "A attacks B" line, so repeating the attacker is an echo. Effect damage has no such line, and a bare
+  "Cecil takes 1 damage." under "Player Two plays Modern Tank" left the reader to guess the two were
+  connected — and to guess wrong whenever anything resolved in between.
+- **Every line ends in a full stop**, deaths included. The death text is assembled from a bare clause
+  at sixteen call sites, so the stop is added where the event is pushed.
+
+**A card added to hand is deliberately anonymous** — "Player One adds a card to hand", never the card
+name. The log is readable straight through the hotseat curtain, which exists so the incoming player
+cannot see the outgoing player's hand.
+
+**`npx tsx scripts/dump-log.ts [seed]` prints a whole self-played duel's log.** It is how the four
+faults above were found: ordering and omission are invisible to every test in the suite, and reading
+one duel end to end is the only thing that shows them.
+
+### Visual design changes require close-up and full-screen QA
+
+Any visual design change — including a card frame, keyword treatment, animation,
+badge, status tint, spacing, or board layout — must be inspected in the running
+game at both scales before it is considered done:
+
+1. **Close-up:** inspect the whole card face and its edges at readable zoom. Check
+   clipping, legibility, layering, and whether the treatment actually looks good.
+2. **Full screen:** inspect the populated board at the normal play viewport. Check
+   recognition at board-card size, neighbour collisions, status stacking, and
+   attack/target affordances.
+
+If the result is even slightly unsatisfying at either scale, redesign or improve
+it and repeat both inspections. A passing build or a technically present CSS
+class is not visual approval; the agent must look at the result itself before
+publishing it.
+
+### Title-menu design QA record
+
+The accepted title-menu direction uses the game’s real card art in a moving edge-to-edge field, an orbital difficulty selector, a violet rift, ivory-and-gold typography, and a cyan selected state. It replaced an earlier implementation whose floating cards left large gaps and whose entrance animation could freeze midway when a browser capture backgrounded the page.
+
+The final pass established these decisions:
+
+- Keep cards drifting inside distributed lanes; the accepted 1331 × 848 capture showed 63 of 84 cards visible with all 12 vertical lanes populated.
+- Keep the menu fully visible on first paint. The unstable screen and letter entrance animations were removed, while the ambient rift and card motion remain.
+- Place all three difficulty labels in the rift artwork’s normalized coordinate system so they stay on their intended slider segments across aspect ratios.
+- Preserve the exact Veteran and Duel hover bounds; hover changes only colour and glow.
+- Keep the controls smaller and less text-heavy than the previous menu, and make background cards visible without competing with them.
+
+Interaction verification covered Recruit, Veteran, and Ascendant selection; the selected Duel label; playable Veteran and two-player launches; Settings open/close/return; no overflow at 390 × 844 or 1005 × 397; and a clean browser console. The implementation passed production build, automated tests, and live-site verification. The original local evidence captures were `.preview/github-pages-final-1331x848.png` and `.preview/github-pages-settings-verified.png`; `.preview/` is disposable evidence and is not published.
+
+
 
 ## The rarity shine
 
@@ -818,110 +1116,233 @@ An unmet card in the gallery does NOT shine, and that is correct rather than a b
 
 **A LOCKED card carries no shine and no camp mark at all**, and that is an explicit rule rather than a side effect. A blend-mode layer is not a colour a grayscale filter can drain, so sealed relics went on flickering with teal light while sealed characters sat dead, and the locked wall stopped reading as one wall. A locked card shows its seal and nothing else.
 
-## Interface and card faces
-
-**What keeps a gallery of 216 card faces scrollable, and the measurements behind each part.** Every
-cell is a full card face: about 23 elements, its own size container, gradients, rails, gems and six
-text measurements. Measured on the locked gallery at 148 cells, laying all of them out costs
-**219 ms** against **4.5 ms** when they are skipped — roughly **1.4 ms per cell**, which is why three
-rows arriving inside one frame is felt as a stutter. Four things hold it together and they are not
-interchangeable.
-
-1. **`content-visibility: auto` on `.gallery-cell`** skips layout and paint for off-screen cells. The
-   cell keeps its box because `aspect-ratio` sits on the CELL and is not contained away with its
-   contents, so nothing jumps and the scrollbar is honest from the first frame.
-2. **`contain-intrinsic-size: auto 264px auto 370px`** on the same rule. The `auto` keywords are the
-   point, not the lengths: without an intrinsic size a cell that leaves the viewport throws its layout
-   away and rebuilds it from nothing on the way back, and with `auto` the browser reuses the size it
-   last measured. The lengths themselves never apply, because `aspect-ratio` wins — measured before
-   and after, neither the scroll height nor the row height moves by a pixel.
-3. **The card shine pauses while the body is scrolling.** A card face carries up to six blended,
-   infinitely animating layers; measured in the unlocked gallery that is **112 animating spans**, all
-   of them compositing on every frame the browser draws. `.gallery-body` gets an `is-scrolling` class
-   from a passive scroll listener that writes to `classList` rather than to state — re-rendering the full roster
-   memoised cells to say "we are moving" would cost more than the animations it is quietening — and
-   the CSS sets `animation-play-state: paused`. Paused, not hidden: every layer freezes where it was,
-   so a still gallery is pixel-identical to what it was before this rule existed.
-4. **Card art warms on idle once the screen has finished appearing.** The cells load their art lazily,
-   which is right for the first paint and wrong for the twentieth: the browser's lazy heuristics look
-   only a short way ahead and a fast flick outruns them, which is what leaves a screenful of cards
-   showing a frame and no picture. After the last cell mounts, the gallery pulls the whole set six at
-   a time on idle callbacks, so it never competes with a scroll and costs
-   the opening nothing.
-
-5. **A locked card draws a SEALED FACE, not a full one.** `SealedFace` in `App.tsx` renders the four
-   things a sealed card is supposed to show — frame colour, name, mana cost, and a shape behind the
-   glass — and nothing else. No rules panel, no flavour, no origin, no rails, no stat gems, no shine.
-   That is the printed doctrine for a locked card rather than a saving invented to fit one, and the
-   saving arrives with it. Measured in one browser, in one sitting, against the full face beside it:
-   **8 elements against 18**, and **0.97 ms of layout per cell against 2.23 ms** — a locked card now
-   costs **56% less** to lay out than an unlocked one. At 148 locked cards that is the difference
-   between about 330 ms and about 144 ms for the whole grid.
-
-   Its artwork runs the full height of the face, because the 490 units below the printed art window
-   belong to the plaque, the flavour line and the gems, and a sealed card draws none of them. Left as
-   it was, a locked card was a picture in the top half and a flat dark slab in the bottom half, which
-   reads as a card that failed to load rather than a card that is sealed.
-
-Only the first two are about layout. Items three and four are about paint and decode, and neither was
-measured against a frame budget: the browser tab available to this project's agents stays backgrounded,
-where `requestAnimationFrame` never fires. The element counts, the byte totals and the layout timings
-above are all measured; the frame-rate improvement is reasoned from them.
 
 
-Cards are DOM-rendered by `CardFace` and CSS, using a 750 × 1050 design coordinate system. Keep full card faces readable in hand and on the board. Text fitting must use `source/src/textfit.ts`, which measures the real fonts and finds the largest size that fits the box; the 64/32 caps are upper bounds, not a substitute for measurement.
+## Assets and audio
 
-Choice prompts that offer cards or Ascension Relics must show the complete readable card face, including its rules text, cost, and stats where applicable. Names and artwork alone are never enough to make a choice.
+`source/public/` is the runtime asset location. `materials/local-production/` contains optional rebuild tools for art, music, voice previews, and cast sheets; it is not required to play the included build. Large audio and card-production libraries are release downloads rather than normal clone requirements.
 
-**`CardFace` DROPS ITS RULES TEXT below roughly 200px wide, so 200px is a hard floor on any screen that shows cards to be read.** `.card-face` is `container-type: size` and switches to the compact board-minion layout under that width — correct for a minion on a crowded board, and wrong everywhere else. It is a floor rather than a preference, and it holds at every screen size: a narrow viewport is a reason to show fewer cards or wrap them onto more rows, never a reason to shrink them past the point where the card stops saying what it does. It has now caught two builds, the gallery's grid and the card pack's reveal, and in both the failure looked like a layout choice rather than missing content. `just wall` and a wide screenshot both hide it, because the cards look fine — they are simply no longer telling you anything.
+### A heavy minion lands with a thud
 
-Conditions have distinct, composable visual channels:
+**A minion costing 6 or more plays a `heavyLand` cue and drops the table by a few pixels.** Built
+2 September 2026. `HEAVY_LANDING_COST` in `App.tsx` is the threshold and it is keyed to COST, not to
+rarity or to stats: rarity already has the summon fanfare, cost is what the player is paying, a
+6-mana Rare should land as hard as a 6-mana Mythic, and a small minion that got big from buffs did
+not arrive big.
 
-- Divine Shield uses a gold rim.
-- Invulnerable uses a blue-and-white rim.
-- Frozen uses ice treatment.
-- Chained draws chains only across artwork.
-- Sleeping shows drifting `z` glyphs.
-- Silenced greys and blanks the rules text (without placeholder words), with a
-  red cross over the effect box.
-- Protected and Adapted use teal or camp glow.
-- Attack Locked greys the ATK gem.
-- Marked uses a red pulse and remains visible until its delayed resolution.
+- **The cue is all bottom end and no top** — a taiko, a sub drop from 58 Hz to 22, a low noise floor
+  and a second smaller taiko a beat behind. It fires under a rarity fanfare, so a second bright layer
+  would fight it while the sub sits in the one part of the spectrum the fanfares leave empty.
+- **It waits 0.16s**, so the two read as one arrival rather than smearing together. The CSS animation
+  carries the same delay; keep the two in step.
+- **The screen movement is its own animation, not the hero-hit shake.** A hit is a fast horizontal
+  rattle that dies out; weight arriving is a single vertical drop with one rebound. Reusing
+  `screen-shake` would have made a big minion landing feel like taking a punch.
 
-Keep status indicators large enough to survive real board-card size. Verify condition work on a populated board; the opening screen cannot prove board conditions, targeting, hand interaction, or settings behaviour. Load card art eagerly and resolve public asset paths through `resolvePublicAssetUrl` so the game works both at a domain root and under a project page path.
+### Card art is WebP. Every file, no exceptions
 
-### Visual design changes require close-up and full-screen QA
+**Producing a card image, start to finish.** Every step here is Convergence's
+own; the general image technique lives in
+[Knowledge/image.md](../../../Knowledge/image.md) and is not repeated.
 
-Any visual design change — including a card frame, keyword treatment, animation,
-badge, status tint, spacing, or board layout — must be inspected in the running
-game at both scales before it is considered done:
+1. **Source a real photograph.** Never generate one — see the ruling below.
+2. **Upscale if it is small.** `py -3.14 Pipelines/image/image.py upscale <file> --scale 2`
+   uses the vendored waifu2x. Processing, not generation.
+3. **Crop to the art window, which is `732 x 492` design units** (aspect 1.488).
+   The window is LANDSCAPE — a portrait source will be cropped hard, and that
+   surprises people who assume a card frame wants a portrait picture.
+4. **Save as WebP at quality 88.** That is where a side-by-side stops being
+   distinguishable at card size.
+5. **Rebuild the menu thumbnails** with
+   `materials/local-production/asset-tools/build-menu-art.py`.
 
-1. **Close-up:** inspect the whole card face and its edges at readable zoom. Check
-   clipping, legibility, layering, and whether the treatment actually looks good.
-2. **Full screen:** inspect the populated board at the normal play viewport. Check
-   recognition at board-card size, neighbour collisions, status stacking, and
-   attack/target affordances.
+**Bulk-shrinking oversized source art**, if a batch ever arrives at print size.
+Target roughly **2 to 3 times the on-screen size** and leave the print masters
+untouched. One run took **358 MB down to 12 MB** (~60 kB a face) across 196 card
+faces with the baked-in card text still crisp:
 
-If the result is even slightly unsatisfying at either scale, redesign or improve
-it and repeat both inspections. A passing build or a technically present CSS
-class is not visual approval; the agent must look at the result itself before
-publishing it.
+```
+image_convert.ps1 -Path <folder> -From png -To webp -MaxWidth 600 -Quality 86
+```
 
-### Title-menu design QA record
+Per file:
 
-The accepted title-menu direction uses the game’s real card art in a moving edge-to-edge field, an orbital difficulty selector, a violet rift, ivory-and-gold typography, and a cyan selected state. It replaced an earlier implementation whose floating cards left large gaps and whose entrance animation could freeze midway when a browser capture backgrounded the page.
+```
+ffmpeg -i in.png -vf "scale=600:-1:flags=lanczos" -c:v libwebp -quality 86 out.webp
+```
 
-The final pass established these decisions:
 
-- Keep cards drifting inside distributed lanes; the accepted 1331 × 848 capture showed 63 of 84 cards visible with all 12 vertical lanes populated.
-- Keep the menu fully visible on first paint. The unstable screen and letter entrance animations were removed, while the ambient rift and card motion remain.
-- Place all three difficulty labels in the rift artwork’s normalized coordinate system so they stay on their intended slider segments across aspect ratios.
-- Preserve the exact Veteran and Duel hover bounds; hover changes only colour and glow.
-- Keep the controls smaller and less text-heavy than the previous menu, and make background cards visible without competing with them.
+**A new card image is saved as `.webp`.** As of 2026-08-21 every one of the 203
+files in `source/public/card-art/raw/` is WebP except one deliberate SVG, and the
+last eight PNGs converted at **3.85 MB -> 0.48 MB, 88% smaller**, with no visible
+difference at card size. One of them, `token-sin.png`, was 2.1 MB by itself: the
+largest file in the entire game, for a 1/1 token.
 
-Interaction verification covered Recruit, Veteran, and Ascendant selection; the selected Duel label; playable Veteran and two-player launches; Settings open/close/return; no overflow at 390 × 844 or 1005 × 397; and a clean browser console. The implementation passed production build, automated tests, and live-site verification. The original local evidence captures were `.preview/github-pages-final-1331x848.png` and `.preview/github-pages-settings-verified.png`; `.preview/` is disposable evidence and is not published.
+**WebP is not universally better than PNG, so the rule is scoped to what this
+folder actually holds.** PNG wins on small flat-colour graphics, on anything
+needing pixel-exact reproduction, and SVG beats both for vector art — which is
+why `basic-mothership.svg` stays an SVG. What lives here is photographic
+character art displayed at roughly 730x490, and for that WebP is decisively
+better at the same visual quality. Judge a genuinely different kind of image on
+its own terms rather than converting it because of this line.
+
+**Every minion wears a real photograph, and hand-drawn art is banned.** One card,
+Mothership, shipped with a hand-authored SVG of gradients and polygons sitting
+among 174 photographs, and it reads as a broken asset rather than as a style.
+`npm run validate:data` now fails on any card whose art is not `.webp`, with a
+single dated exemption for that card because it is being replaced outright.
+
+**Do not generate a replacement image.** Owner ruling, 2026-08-21: image
+generation is banned. Source a real photograph, or say plainly that you cannot
+and ask. The full rule and its reasoning are in
+[Knowledge/image.md](../../../Knowledge/image.md) as R-img-56.
+
+### What the title screen is allowed to download
+
+**Every card must have a theme, and `npm run validate:data` now fails when one does not.** Three cards
+shipped silent purely because nothing counted. Relics are deliberately excluded: they use `r###` ids
+and are not part of the theme set.
+
+**Themes are FOUND, never generated.** Owner ruling, 2026-08-21: generation is banned for audio as
+well as images, unless he permits a specific job by name. Three themes were generated before that
+ruling and have been replaced with real recordings, sourced with `yt-dlp` per
+[Knowledge/audio.md](../../../Knowledge/audio.md):
+
+| Card | Source | Why |
+|---|---|---|
+| Meteor | [Meteor Whoosh and Explosion](https://www.youtube.com/watch?v=WFN9tUtrq-s) | Free sound effect; the whoosh-then-impact arc is the card |
+| Planetary Defense Grid | [Sci-Fi Energy Shield Activate](https://www.youtube.com/watch?v=ekErpYY7X8c) | No-copyright SFX, already the right length |
+| Black Hole | [NASA black hole sonification](https://www.youtube.com/watch?v=_tXhBLg3Wng) | NASA'''s own data made audible: a real recording, public domain |
+| Lord Voldemort | [Hedwig's Theme](https://www.youtube.com/watch?v=wtHra9tFISY) | Owner-selected iconic Harry Potter theme |
+
+The eleven newest cards each use a distinct YouTube source from their own universe. The sting cutter
+stores only the six-second excerpt in the game, while these source choices remain documented here:
+
+| Card | Source |
+|---|---|
+| Xenomorph Queen | [The Queen — James Horner, *Aliens*](https://www.youtube.com/watch?v=VLG94f_koQQ) |
+| Naruto | [Strong and Strike — *Naruto* Original Soundtrack](https://www.youtube.com/watch?v=scWSTDsj3IM) |
+| Frieren | [Journey of a Lifetime ~ Frieren Main Theme — Evan Call](https://www.youtube.com/watch?v=sSmK6-O-0gk) |
+| Guts | [Berserk OST — 04 Guts](https://www.youtube.com/watch?v=dIoILN_KrhU) |
+| Omnitrix | [Ben 10: Secret of the Omnitrix Theme](https://www.youtube.com/watch?v=eOU-7O-3hW8) |
+| Stand Arrow | [JoJo's Bizarre Adventure: Golden Wind OST — Stand Arrow](https://www.youtube.com/watch?v=omyS3-a0cwE) |
+| Poké Ball | [Pokémon Movie 01 BGM — Monster Balls / Poké Balls](https://www.youtube.com/watch?v=j-pNFMbi48o) |
+| Time Turner | [The Time Turner — *Harry Potter and the Cursed Child* Soundtrack](https://www.youtube.com/watch?v=Sdvauf-DyKg) |
+| Symbiote | [Symbiote Peter Boss Fight Theme — *Marvel's Spider-Man 2*](https://www.youtube.com/watch?v=Mb1AYDnzAkg) |
+| Neuralyzer | [M.I.B. Main Theme — Danny Elfman](https://www.youtube.com/watch?v=jyb33RgAxis) |
+| Green Lantern Ring | [The Ring Chooses Hal — *Green Lantern* Soundtrack](https://www.youtube.com/watch?v=E7_l6wuHwiw) |
+
+Each is the LOUDEST six-second window of its source, found by stepping `volumedetect` across the file
+rather than guessing an offset, then two-pass `loudnorm` to sit with the other 172. **volumedetect
+reports at ffmpeg'''s info level** — suppressing to `-v error` makes every window score nothing and the
+search silently returns offset 0 while looking like it worked.
+
+**The menu has a size budget, and it is easy to undo by accident.** Measured 2026-08-21, the title
+screen was downloading **7.9 MB** before it settled, and the owner's report was that it "opens a bit
+slow and laggy". It is **1.1 MB** now, with nothing about the design changed. Three rules keep it there:
+
+| What | Rule | Why |
+|---|---|---|
+| Floating cards | Serve `card-art/menu/`, never `card-art/raw/` | 84 cards render at most 134px wide and are blurred; the full art was 4.67 MB for pixels nobody can see. Thumbnails are 568 kB |
+| Backdrop | `menu-rift.webp`, never a PNG | The same picture was 2.0 MB as PNG and is 124 kB as WebP |
+| Fonts | WOFF2, never TTF | 1.21 MB became 382 kB. This matters more than it looks: `font-display: block` holds every piece of text invisible until its font arrives |
+
+`materials/local-production/asset-tools/build-menu-art.py` regenerates the thumbnails; re-run it after
+adding cards. **`font-display: block` stays.** Swapping fonts mid-render would resize card text in
+front of the player, because a card's rules text is measured to fit its plaque. Shrink the file
+instead of trading the layout away.
+
+**A card whose art is an SVG has no thumbnail and must keep the raw path.** `menuArt()` in
+`Screens.tsx` checks for a raster extension first; rewriting an SVG pointed at a file the generator
+never produces, and the card rendered blank.
+
+Card stings are the `c###.ogg` files and relic stings are the `r###.ogg` files in `source/public/audio/stings/`. Every playable minion and relic resolves to its own direct file. Relics use `r###` IDs and are intentionally not part of the title-screen theme set, even though relics share the deck and can appear in hand; audio prefetch must filter relic IDs rather than request `audio/stings/r###.ogg`.
+
+**Hard rule for new content: never reuse an existing audio mapping.** Every new card or relic must get its own suitable source from the YouTube pipeline. Never point a new `c###` or `r###` entry at an existing mapping, copy another item's sting, or fill the slot with a generic theme. Run `materials/local-production/audio-tracks/download_convergence_audio.py` to find and download the source through YouTube, then cut the card-specific sting with `materials/local-production/asset-tools/build-card-stings.py`. If the pipeline cannot find a suitable source for that specific item, stop and ask; do not ship a reused track. The relic prefetch exclusion above concerns loading only and does not waive this provenance rule.
+
+The complete original audio collection is the separate [Convergence-Audio-Tracks.7z release download](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z), because it is larger than a practical GitHub Pages site.
+
+Use the tools under `materials/local-production/asset-tools/` for production rebuilds. For audio changes, run the browser analyser check with `npm run check:audio`; a UI counter or a `musicPlaying` flag can say music is active while the browser’s audio graph is silent. Keep synthetic voices original and do not clone real actors.
+
+Do not casually regenerate approved menu, battle, or tension music. Preserve the existing loudness, loop-seam, and energy checks when replacing them.
+
+
 
 ## Balance, pacing, and bot
+
+### The measured baseline, and what it still says
+
+This block used to live at the bottom of [Gradual card unlocking](#gradual-card-unlocking),
+because that is where it happened to be written. It is a balance measurement and it belongs here.
+
+**The balance gate was red on the fresh baseline measured 18 August 2026** — three of eleven checks.
+One is fixed; the other two are below. In the order they matter:
+
+- ~~**An invariant breach: `instance <id> is on the board twice`.**~~ **Fixed 18 August 2026.** It was
+  Knov's pocket room. A room could be stored holding the *same* minion as both its friendly and its
+  enemy side, and since a minion trivially ties its own ATK, the tie branch released it into two slots
+  at once. Two guards now exist: the room refuses to open around a single minion, and the release
+  refuses to place an instance twice or to place one already on a board. The second guard is the
+  load-bearing one, because it closes the whole bug class rather than this one cause. The fuzz phase
+  now reports **0 invariant breaches** over 20,996 actions, where it reported 1. Pinned by
+  `src/engine/pocket-room.test.ts`, live-fired by removing the dedupe and watching it go red.
+
+  **The upstream cause is now known, and it was never the two-step plumbing.** It is All for One
+  (`copy_and_trigger`), and it was doing visible damage in ordinary play, not only in the fuzzer.
+  `runEffect` reads `chosen ?? requestChoice(...)`, so handing it a ready-made choice skips
+  `requestChoice` and every rule the borrowed effect's own `TargetSpec` carries — side, filter,
+  `includeSelf`, untargetability. All for One is the only caller that builds a choice by hand, and the
+  one it builds always names the **enemy** minion it copied. Feeding that to a `side: "friendly"`
+  effect made the card fully heal, buff, shield or Taunt the *opponent's* minion, and made a `slot`
+  effect bless the opponent's slot. Reaching the pocket-room resolver with an enemy-owned "friendly"
+  pick was the same fault wearing its worst outcome. `priorOptions` was never lost: the synthetic
+  choice simply never had any, so `firstChoice` fell through to the enemy pick by design.
+
+  **Fixed 18 August 2026, and completed 20 August**, by `copiedVictimIsLegalTarget` in
+  `source/src/engine/game.ts`. The copied victim is now *offered* to the borrowed effect and accepted
+  only when that effect would legally target it. When it would not, the effect **asks for its own
+  target** instead, which resolves the copy exactly as though All for One's controller had cast it: a
+  copied friendly power lands on THEIR board.
+
+  The first version simply lost the copy, because a borrowed effect could not survive an open prompt —
+  `effectId` was restored the instant the branch returned, so a deferred answer would have resolved
+  against `copy_and_trigger`. The minion's own effect is now parked in `MinionInstance.copyRestoreEffectId`
+  (save v20) and put back by `restoreCopiedEffect` once the copy has no question left. That is what
+  makes the prompt possible, and it fixed a second bug for free: **multi-step copies now work**. A
+  copied Batman picks a victim and then a gadget, and a copied pocket room takes one minion from each
+  side, where before the first prompt silently cancelled the whole effect.
+
+  Anything reading an effect OFF a minion must call `printedEffectId`, not `effectId`, or it copies a
+  power that is about to be handed back. `copy_and_trigger`, `copy_minion_effects` and `steal_passive`
+  all do.
+
+  Pinned by four tests in `src/engine/targeting.test.ts`, live-fired by restoring the old
+  unconditional handoff and watching them go red; one asserts an enemy-targeting copy still fires
+  normally, so it passes either way on purpose. Fuzz after the fix: **0 invariant breaches over 21,005
+  actions.**
+
+  Worth knowing for whoever changes this next: a board assertion cannot test this fix. The pocket
+  room's own two guards already stop the duplicate instance, so a "no minion appears twice" test
+  passes with or without the cause being fixed. The discriminating assertion is that the room
+  resolver is never entered at all.
+- ~~**One duel in 1,000 never finished.**~~ **Closed 20 August 2026.** It was 121 turns against a
+  120-turn cap, cores at 27 and 15, no invariant broken: two bots grinding, not a lock. The cap is now
+  150 (`--turncap` in `scripts/simulate.ts`). A real duel ends around turn 22, so this was never
+  reachable by a player and was only ever a self-play artefact.
+- **First player wins 57%** against a 44 to 56% band. The gate flags that its own 95% range still
+  touches the band, so do not act on this from one run.
+
+The per-tier outliers ARE usable, because each card is compared with its own cost bracket inside one
+run: above their tier, Escanor "The One" +23.6, Elden Beast +19.5, Darth Vader +17.9, Planetary
+Defense Grid +16.9, Flash +14.7; below it, Cecil -23.1 (the worst card in the game, a 2-mana 1/1),
+Ten Tails -15.2, Shigaraki -14.2, The Watcher -13.8. Cost 7 is clean.
+
+**Do not tune from the run-to-run diff.** That block spans both a roster change and the bot rewrite
+that landed in the same window, so it measures two things and separates neither, and several of its
+entries do not clear their own stated noise floor. For the same reason, hold off on tuning anything
+except the three largest gaps until the bot stops moving: a ±23 gap is too big to be bot noise, and a
+±10 one is not.
+
 
 ### Duel length is CORRECT. Do not shorten it
 
@@ -1247,136 +1668,7 @@ pocket room releases one minion twice" in a single run.
 
 Do not make the simulated rules, bot skill, or turn timing “10× faster” by simplifying them: that would measure a different game. Safe implementation optimisations may reuse already-computed legal actions and candidate results, and independent duels may eventually run across CPU workers if deterministic output and result ordering are preserved. The current harness applies the safe reuse optimisation; the Ascendant ladder remains the unavoidable dominant cost because it searches whole turns.
 
-## Assets and audio
 
-`source/public/` is the runtime asset location. `materials/local-production/` contains optional rebuild tools for art, music, voice previews, and cast sheets; it is not required to play the included build. Large audio and card-production libraries are release downloads rather than normal clone requirements.
-
-### Card art is WebP. Every file, no exceptions
-
-**Producing a card image, start to finish.** Every step here is Convergence's
-own; the general image technique lives in
-[Knowledge/image.md](../../../Knowledge/image.md) and is not repeated.
-
-1. **Source a real photograph.** Never generate one — see the ruling below.
-2. **Upscale if it is small.** `py -3.14 Pipelines/image/image.py upscale <file> --scale 2`
-   uses the vendored waifu2x. Processing, not generation.
-3. **Crop to the art window, which is `732 x 492` design units** (aspect 1.488).
-   The window is LANDSCAPE — a portrait source will be cropped hard, and that
-   surprises people who assume a card frame wants a portrait picture.
-4. **Save as WebP at quality 88.** That is where a side-by-side stops being
-   distinguishable at card size.
-5. **Rebuild the menu thumbnails** with
-   `materials/local-production/asset-tools/build-menu-art.py`.
-
-**Bulk-shrinking oversized source art**, if a batch ever arrives at print size.
-Target roughly **2 to 3 times the on-screen size** and leave the print masters
-untouched. One run took **358 MB down to 12 MB** (~60 kB a face) across 196 card
-faces with the baked-in card text still crisp:
-
-```
-image_convert.ps1 -Path <folder> -From png -To webp -MaxWidth 600 -Quality 86
-```
-
-Per file:
-
-```
-ffmpeg -i in.png -vf "scale=600:-1:flags=lanczos" -c:v libwebp -quality 86 out.webp
-```
-
-
-**A new card image is saved as `.webp`.** As of 2026-08-21 every one of the 203
-files in `source/public/card-art/raw/` is WebP except one deliberate SVG, and the
-last eight PNGs converted at **3.85 MB -> 0.48 MB, 88% smaller**, with no visible
-difference at card size. One of them, `token-sin.png`, was 2.1 MB by itself: the
-largest file in the entire game, for a 1/1 token.
-
-**WebP is not universally better than PNG, so the rule is scoped to what this
-folder actually holds.** PNG wins on small flat-colour graphics, on anything
-needing pixel-exact reproduction, and SVG beats both for vector art — which is
-why `basic-mothership.svg` stays an SVG. What lives here is photographic
-character art displayed at roughly 730x490, and for that WebP is decisively
-better at the same visual quality. Judge a genuinely different kind of image on
-its own terms rather than converting it because of this line.
-
-**Every minion wears a real photograph, and hand-drawn art is banned.** One card,
-Mothership, shipped with a hand-authored SVG of gradients and polygons sitting
-among 174 photographs, and it reads as a broken asset rather than as a style.
-`npm run validate:data` now fails on any card whose art is not `.webp`, with a
-single dated exemption for that card because it is being replaced outright.
-
-**Do not generate a replacement image.** Owner ruling, 2026-08-21: image
-generation is banned. Source a real photograph, or say plainly that you cannot
-and ask. The full rule and its reasoning are in
-[Knowledge/image.md](../../../Knowledge/image.md) as R-img-56.
-
-### What the title screen is allowed to download
-
-**Every card must have a theme, and `npm run validate:data` now fails when one does not.** Three cards
-shipped silent purely because nothing counted. Relics are deliberately excluded: they use `r###` ids
-and are not part of the theme set.
-
-**Themes are FOUND, never generated.** Owner ruling, 2026-08-21: generation is banned for audio as
-well as images, unless he permits a specific job by name. Three themes were generated before that
-ruling and have been replaced with real recordings, sourced with `yt-dlp` per
-[Knowledge/audio.md](../../../Knowledge/audio.md):
-
-| Card | Source | Why |
-|---|---|---|
-| Meteor | [Meteor Whoosh and Explosion](https://www.youtube.com/watch?v=WFN9tUtrq-s) | Free sound effect; the whoosh-then-impact arc is the card |
-| Planetary Defense Grid | [Sci-Fi Energy Shield Activate](https://www.youtube.com/watch?v=ekErpYY7X8c) | No-copyright SFX, already the right length |
-| Black Hole | [NASA black hole sonification](https://www.youtube.com/watch?v=_tXhBLg3Wng) | NASA'''s own data made audible: a real recording, public domain |
-| Lord Voldemort | [Hedwig's Theme](https://www.youtube.com/watch?v=wtHra9tFISY) | Owner-selected iconic Harry Potter theme |
-
-The eleven newest cards each use a distinct YouTube source from their own universe. The sting cutter
-stores only the six-second excerpt in the game, while these source choices remain documented here:
-
-| Card | Source |
-|---|---|
-| Xenomorph Queen | [The Queen — James Horner, *Aliens*](https://www.youtube.com/watch?v=VLG94f_koQQ) |
-| Naruto | [Strong and Strike — *Naruto* Original Soundtrack](https://www.youtube.com/watch?v=scWSTDsj3IM) |
-| Frieren | [Journey of a Lifetime ~ Frieren Main Theme — Evan Call](https://www.youtube.com/watch?v=sSmK6-O-0gk) |
-| Guts | [Berserk OST — 04 Guts](https://www.youtube.com/watch?v=dIoILN_KrhU) |
-| Omnitrix | [Ben 10: Secret of the Omnitrix Theme](https://www.youtube.com/watch?v=eOU-7O-3hW8) |
-| Stand Arrow | [JoJo's Bizarre Adventure: Golden Wind OST — Stand Arrow](https://www.youtube.com/watch?v=omyS3-a0cwE) |
-| Poké Ball | [Pokémon Movie 01 BGM — Monster Balls / Poké Balls](https://www.youtube.com/watch?v=j-pNFMbi48o) |
-| Time Turner | [The Time Turner — *Harry Potter and the Cursed Child* Soundtrack](https://www.youtube.com/watch?v=Sdvauf-DyKg) |
-| Symbiote | [Symbiote Peter Boss Fight Theme — *Marvel's Spider-Man 2*](https://www.youtube.com/watch?v=Mb1AYDnzAkg) |
-| Neuralyzer | [M.I.B. Main Theme — Danny Elfman](https://www.youtube.com/watch?v=jyb33RgAxis) |
-| Green Lantern Ring | [The Ring Chooses Hal — *Green Lantern* Soundtrack](https://www.youtube.com/watch?v=E7_l6wuHwiw) |
-
-Each is the LOUDEST six-second window of its source, found by stepping `volumedetect` across the file
-rather than guessing an offset, then two-pass `loudnorm` to sit with the other 172. **volumedetect
-reports at ffmpeg'''s info level** — suppressing to `-v error` makes every window score nothing and the
-search silently returns offset 0 while looking like it worked.
-
-**The menu has a size budget, and it is easy to undo by accident.** Measured 2026-08-21, the title
-screen was downloading **7.9 MB** before it settled, and the owner's report was that it "opens a bit
-slow and laggy". It is **1.1 MB** now, with nothing about the design changed. Three rules keep it there:
-
-| What | Rule | Why |
-|---|---|---|
-| Floating cards | Serve `card-art/menu/`, never `card-art/raw/` | 84 cards render at most 134px wide and are blurred; the full art was 4.67 MB for pixels nobody can see. Thumbnails are 568 kB |
-| Backdrop | `menu-rift.webp`, never a PNG | The same picture was 2.0 MB as PNG and is 124 kB as WebP |
-| Fonts | WOFF2, never TTF | 1.21 MB became 382 kB. This matters more than it looks: `font-display: block` holds every piece of text invisible until its font arrives |
-
-`materials/local-production/asset-tools/build-menu-art.py` regenerates the thumbnails; re-run it after
-adding cards. **`font-display: block` stays.** Swapping fonts mid-render would resize card text in
-front of the player, because a card's rules text is measured to fit its plaque. Shrink the file
-instead of trading the layout away.
-
-**A card whose art is an SVG has no thumbnail and must keep the raw path.** `menuArt()` in
-`Screens.tsx` checks for a raster extension first; rewriting an SVG pointed at a file the generator
-never produces, and the card rendered blank.
-
-Card stings are the `c###.ogg` files and relic stings are the `r###.ogg` files in `source/public/audio/stings/`. Every playable minion and relic resolves to its own direct file. Relics use `r###` IDs and are intentionally not part of the title-screen theme set, even though relics share the deck and can appear in hand; audio prefetch must filter relic IDs rather than request `audio/stings/r###.ogg`.
-
-**Hard rule for new content: never reuse an existing audio mapping.** Every new card or relic must get its own suitable source from the YouTube pipeline. Never point a new `c###` or `r###` entry at an existing mapping, copy another item's sting, or fill the slot with a generic theme. Run `materials/local-production/audio-tracks/download_convergence_audio.py` to find and download the source through YouTube, then cut the card-specific sting with `materials/local-production/asset-tools/build-card-stings.py`. If the pipeline cannot find a suitable source for that specific item, stop and ask; do not ship a reused track. The relic prefetch exclusion above concerns loading only and does not waive this provenance rule.
-
-The complete original audio collection is the separate [Convergence-Audio-Tracks.7z release download](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z), because it is larger than a practical GitHub Pages site.
-
-Use the tools under `materials/local-production/asset-tools/` for production rebuilds. For audio changes, run the browser analyser check with `npm run check:audio`; a UI counter or a `musicPlaying` flag can say music is active while the browser’s audio graph is silent. Keep synthetic voices original and do not clone real actors.
-
-Do not casually regenerate approved menu, battle, or tension music. Preserve the existing loudness, loop-seam, and energy checks when replacing them.
 
 ## Contributing
 
@@ -1393,6 +1685,8 @@ Contributions are welcome through a fork and pull request. Keep each change focu
 
 When changing a rule, add or update a focused test and make the card text agree with the implementation. Preserve player-selected targeting unless a card explicitly says that the target is random, positional, weakest, costliest, or otherwise automatic. Do not include generated folders, local launchers, secrets, or personal paths in a contribution.
 
+
+
 ## Development lessons
 
 - A card’s text and its resolution can live in different places. Update CSV, engine, and a focused test together so the card does what it says.
@@ -1407,6 +1701,8 @@ When changing a rule, add or update a focused test and make the card text agree 
 - Test asset paths under the deployment base path, and load moving card art eagerly so remounted cards do not render black.
 - Test sound with the browser’s real analyser. A playing flag is not evidence that the listener graph has audio.
 
+
+
 ## Included materials and links
 
 - [Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/)
@@ -1420,9 +1716,13 @@ When changing a rule, add or update a focused test and make the card text agree 
 - [Project roadmap](docs/Convergence%20Browser%20Game%20Roadmap.html)
 - [Voice-cast reference](docs/Convergence%20Voice%20Cast.html)
 
+
+
 ## Fan-project notice
 
 Convergence is a non-commercial fan project made for personal play and educational experimentation. Character names, franchises, imagery, and music belong to their respective rights holders. The project is not endorsed by or affiliated with those rights holders.
+
+
 
 ## Sources
 

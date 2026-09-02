@@ -25,6 +25,7 @@ export type SfxName =
   | "summonEpic"
   | "summonLegendary"
   | "summonMythic"
+  | "heavyLand"
   | "attack"
   | "hit"
   | "heroHit"
@@ -455,6 +456,18 @@ function render(name: SfxName, t: number): void {
       crash(t + 0.34, 1.7, 0.08, 0.72);
       metal({ t: t + 0.38, dur: 1.8, gain: 0.065, carrier: 880, ratio: 1.41, index: 6, pan: 0.2, send: 0.78 });
       metal({ t: t + 0.42, dur: 2.0, gain: 0.05, carrier: 587, ratio: 2.77, index: 5, pan: -0.25, send: 0.7 });
+      break;
+
+    // Weight. Fired UNDER a rarity fanfare when a 6-mana-or-dearer body lands,
+    // so it is deliberately all bottom end and no top: a second bright layer
+    // would fight the fanfare, while a sub drop and a floor rumble sit in the
+    // one part of the spectrum the fanfares leave empty. Two taikos a beat
+    // apart read as something heavy settling rather than as one more hit.
+    case "heavyLand":
+      taiko(t, 0.34, 0, 96, 30, 0.85);
+      osc({ type: "sine", f0: 58, f1: 22, t, dur: 0.62, gain: 0.34, attack: 0.004, send: 0.12 });
+      noise({ t: t + 0.01, dur: 0.3, gain: 0.11, type: "lowpass", f0: 420, f1: 90, send: 0.22 });
+      taiko(t + 0.11, 0.2, 0.12, 78, 28, 0.5);
       break;
 
     // ---- combat ----------------------------------------------------------

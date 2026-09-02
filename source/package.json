@@ -13,6 +13,7 @@
     "build:codex": "node scripts/build-codex.mjs",
     "preview": "vite preview",
     "validate:docs": "node scripts/validate-project-docs.mjs",
+    "readme:index": "node scripts/readme-index.mjs",
     "pretest": "npm run validate:docs",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -26,7 +27,7 @@
     "shoot:card": "node scripts/shoot-card.mjs",
     "shoot:rules": "node scripts/shoot-rules.mjs",
     "validate:data": "npm run validate:docs && node scripts/validate-cards.mjs",
-    "prebuild": "npm run validate:docs && npm run build:lore",
+    "prebuild": "npm run validate:docs && npm run readme:index && npm run build:lore",
     "check:ui": "node scripts/check-ui.mjs",
     "check:cardface": "node scripts/check-cardface.mjs",
     "check:coverage": "node scripts/check-effect-coverage.mjs"

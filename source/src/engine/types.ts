@@ -785,7 +785,30 @@ export interface GameState {
   darkDimension: DarkDimensionEntry[];
   effectQueue: QueuedEffect[];
   winner: PlayerId | "draw" | null;
+  /**
+   * How much damage each minion has dealt this duel, keyed by instance id.
+   *
+   * It survives the minion: a body that carried the duel and then died is
+   * exactly the body the game-over screen wants to name, so the tally cannot
+   * live on `MinionInstance`. Optional because every save written before it
+   * existed has to keep loading, and an absent tally simply names nobody.
+   *
+   * Only damage with a MINION behind it is counted. Fatigue and hero powers
+   * have no card to put on a screen, so crediting them would be inventing an
+   * MVP out of something the player never played.
+   */
+  damageTally?: Record<string, DamageTallyEntry>;
   players: [PlayerState, PlayerState];
+}
+
+/** One minion's damage total, with enough of its face to draw it after it dies. */
+export interface DamageTallyEntry {
+  instanceId: string;
+  cardId: string;
+  name: string;
+  art: string;
+  owner: PlayerId;
+  damage: number;
 }
 
 export interface StasisEntry {

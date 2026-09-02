@@ -50,6 +50,16 @@ export const UNLOCK_REWARD: Record<LadderKey, { won: number; lost: number; drawn
   hotseat: { won: 0, lost: 0, drawn: 0 },
 };
 
+/**
+ * What showing up on a new day is worth, in cards.
+ *
+ * Five, which is deliberately the Recruit win and no more. A day's pack is paid
+ * for by opening the game, not by playing it, so it must never be the fastest
+ * route to the roster — beating the Ascendant is still worth three of them. It
+ * exists to make the first thing you see on a new day a card you have not met.
+ */
+export const DAILY_PACK_CARDS = 5;
+
 /** Cards earned by one finished duel. Never negative, never a surprise. */
 export function unlockReward(result: Pick<DuelResult, "ladder" | "outcome">): number {
   const table = UNLOCK_REWARD[result.ladder];

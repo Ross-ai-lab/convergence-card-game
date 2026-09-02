@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import "./App.css";
 // Board effects (camp signatures, the Mythic entrance, the killing blow). Loaded
 // HERE, immediately after App.css, on purpose: that is the exact cascade slot
@@ -42,6 +42,7 @@ import {
   attacksRandomly,
   CONCEALED_CHOICE_EFFECTS,
   createInitialGame,
+  duelMvp,
   effectiveCardCost,
   equipRelicFromOutside,
   getLegalActions,
@@ -55,6 +56,7 @@ import {
 } from "./engine/game";
 import type {
   Camp,
+  DamageTallyEntry,
   GameAction,
   GameEvent,
   GameState,
@@ -67,19 +69,25 @@ import type {
   RelicInstance,
   SlotAuraId,
 } from "./engine/types";
+import { KEYWORD_LOOKUP, plainKeywordText, type KeywordEntry } from "./keywords";
 import { clearSave, loadGame, saveGame } from "./storage";
 import {
   botWins,
   clearProgress,
   emptyProgress,
+  claimDailyPack,
+  dailyPackAvailable,
   finishDuel,
   loadProgress,
+  todayKey,
   saveProgress,
   totals,
   unlockAllProgress,
   type Progress,
 } from "./progress";
 import {
+  DAILY_PACK_CARDS,
+  STARTING_POOL,
   UNLOCK_REWARD,
   ensureUnlockOrder,
   newlyUnlocked,
@@ -273,8 +281,19 @@ type ManaFx = { id: number; kind: "spend" | "refill"; from: number; to: number }
 // A Mythic landing is the loudest moment in a duel, so it takes the whole screen.
 type Splash = { id: number; minion: MinionInstance } | null;
 const SPLASH_MS = 1900;
+/** How many duel events the log drawer keeps. The drawer then prints all of them. */
+const EVENT_LOG_LIMIT = 300;
 /** Core at or under this swaps the music to the tense bed. Roughly a quarter. */
 const TENSION_CORE = 12;
+/**
+ * The mana cost at which a minion lands with a thud instead of just arriving.
+ *
+ * Six, because that is where the printed curve turns: 1 to 5 is most of what a
+ * duel plays and 6 upward is the half a player is saving mana for. Cost rather
+ * than stats — a 6-mana body is a decision the player made, and a big minion
+ * that got that way from buffs did not arrive big.
+ */
+const HEAVY_LANDING_COST = 6;
 
 // Pointer-driven drag & drop. A press only becomes a drag after DRAG_THRESHOLD px
 // of movement, so plain clicks keep the original select-then-click flow.
@@ -557,6 +576,25 @@ export default function App() {
   const [splash, setSplash] = useState<Splash>(null);
   const [toast, setToast] = useState<BoardToast | null>(null);
   const [shaking, setShaking] = useState(false);
+  /** The board minion under the pointer, for the reach highlight. */
+  const [reachSource, setReachSource] = useState<string | null>(null);
+  /**
+   * Who that minion is currently affecting. Recomputed only when the pointer
+   * moves to a different minion or the board itself changes, so a hover does
+   * not walk both boards on every unrelated render.
+   */
+  const reach = useMemo(() => {
+    if (!reachSource) return new Set<string>();
+    const found = game.players.flatMap((player) => player.board).find((minion) => minion?.instanceId === reachSource);
+    return found ? reachOf(game, found) : new Set<string>();
+  }, [reachSource, game]);
+  /**
+   * A 6-mana-or-dearer body has just landed: the table takes a short, slow drop
+   * rather than the fast rattle a core hit gets. Deliberately its own flag and
+   * not a reuse of `shaking` — a heavy arrival and a punch in the core are
+   * different events and must not animate the same way.
+   */
+  const [landing, setLanding] = useState(false);
   /** Cards in flight from the deck pile. Measured off the real elements. */
   const [flights, setFlights] = useState<Flight[]>([]);
   /** The rift answering an arrival or a death. A counter, so each one remounts. */
@@ -1006,6 +1044,7 @@ export default function App() {
     const newGhosts: Ghost[] = [];
     const newImpacts: Impact[] = [];
     let heroWasHit = false;
+    let heavyLanding = false;
 
     // Stacked sounds get nudged apart so a big turn reads as a volley of hits
     // rather than one smeared blob.
@@ -1107,6 +1146,15 @@ export default function App() {
     after.forEach((entry, id) => {
       if (!before.has(id)) {
         addImpact(entry.owner, entry.slot, "summon", 0.1, sfx.summonSoundFor(entry.minion.rarity), entry.minion.camp);
+        // Weight, and it is keyed to COST rather than to rarity. Rarity already
+        // has the fanfare; cost is the thing the player is paying and the thing
+        // that makes a body feel big, and a 6-mana Rare should land as hard as
+        // a 6-mana Mythic. The thud waits out the fanfare's transient so the two
+        // read as one arrival instead of smearing together.
+        if (entry.minion.cost >= HEAVY_LANDING_COST) {
+          sfx.play("heavyLand", 0.16);
+          heavyLanding = true;
+        }
         arrivals.push(entry.minion);
         if (entry.minion.rarity === TOP_RARITY) {
           const marker: Splash = { id: fxId.current++, minion: entry.minion };
@@ -1167,6 +1215,10 @@ export default function App() {
     if (heroWasHit) {
       setShaking(true);
       window.setTimeout(() => setShaking(false), 450);
+    }
+    if (heavyLanding) {
+      setLanding(true);
+      window.setTimeout(() => setLanding(false), 620);
     }
 
     // The rift answers whatever crossed it. One flare per action however many
@@ -1329,7 +1381,10 @@ export default function App() {
             : event,
         )
       : result.events;
-    setEvents((items) => [...items, ...visibleEvents].slice(-80));
+    // 300, against the 80 this kept before. A median duel is 22 player-turns and
+    // a busy one produces well over 80 lines, so the old ceiling was routinely
+    // deleting the first half of the duel while it was still being played.
+    setEvents((items) => [...items, ...visibleEvents].slice(-EVENT_LOG_LIMIT));
   }
 
   /**
@@ -1339,9 +1394,16 @@ export default function App() {
    * can also end on the BOT's move, on a Deathrattle resolving inside somebody
    * else's action, or on a restored save that was already over. Watching the
    * phase catches every one of those; hooking the handler caught only the first.
+   *
+   * A DEVELOPER DUEL COUNTS, and that is the owner's ruling, reversing the
+   * build before it. A test duel used to be recorded nowhere and therefore paid
+   * nothing, which meant the one route into the game that starts with a chosen
+   * card was also the one route that ended in silence: no record line, and no
+   * pack. The tutorial is still exempt, because it is a scripted board rather
+   * than a duel and every player would win it once for free.
    */
   useEffect(() => {
-    if (game.phase !== "gameOver" || duelRecorded.current || tutorialActive || developerDuelActive) return;
+    if (game.phase !== "gameOver" || duelRecorded.current || tutorialActive) return;
     duelRecorded.current = true;
     const next = finishDuel(
       progress,
@@ -1355,7 +1417,32 @@ export default function App() {
     // just committed. Recomputing here is how the screen and the save drift.
     const earned = newlyUnlocked(next.unlockOrder, progress.unlocked, next.unlocked);
     if (earned.length) setPack(earned);
-  }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress, tutorialActive, developerDuelActive]);
+  }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress, tutorialActive]);
+
+  /**
+   * Takes the day's free cards and opens them in the ordinary pack.
+   *
+   * Deliberately the SAME pack screen a won duel uses. A second reward
+   * ceremony would be a second thing to build, a second thing to keep in step
+   * with the reveal order, and — the part that matters — it would make the
+   * daily cards feel like a different currency from the ones a duel pays. They
+   * are the same cards off the same order.
+   *
+   * `claimDailyPack` returns the record unchanged when nothing is owed, so a
+   * double click, a stale render or a tab left open past midnight cannot pay
+   * twice: the guard is the identity check below, not the button's disabled
+   * state.
+   */
+  function claimDaily() {
+    const next = claimDailyPack(progress, todayKey());
+    if (next === progress) return;
+    sfx.play("button");
+    sfx.unlock();
+    setProgress(next);
+    saveProgress(next);
+    const earned = newlyUnlocked(next.unlockOrder, progress.unlocked, next.unlocked);
+    if (earned.length) setPack(earned);
+  }
 
   function restart() {
     sfx.play("button");
@@ -1697,6 +1784,11 @@ export default function App() {
 
   function previewMinion(minion: MinionInstance, el: HTMLElement) {
     if (drag?.active) return;
+    // Set immediately, unlike the card preview below it. The reach highlight is
+    // an answer to "what is this thing doing", and an answer that arrives after
+    // the same delay as a full card panel arrives after the player has already
+    // moved on.
+    setReachSource(minion.instanceId);
     const def = library[minion.cardId];
     const grantedEffects = minion.gainedEffects.map((effect) => effect.text).filter(Boolean);
     const copiedPassive = minion.stolenPassiveText?.replace(/^Passive:\s*/i, "");
@@ -1746,6 +1838,7 @@ export default function App() {
   }
 
   function endPreview() {
+    setReachSource(null);
     clearHoverPreview();
   }
 
@@ -2208,6 +2301,7 @@ export default function App() {
         className={[
           "table-frame",
           shaking ? "shaking" : "",
+          landing ? "heavy-landing" : "",
           duelIntro ? "duel-opening" : "",
           duelIntro ? `duel-opening-${duelIntro.phase}` : "",
         ]
@@ -2334,6 +2428,8 @@ export default function App() {
             lunge={lunge}
             onPreview={previewMinion}
             onPreviewEnd={endPreview}
+            reach={reach}
+            reachSource={reachSource}
             onRelicPreview={previewRelic}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
@@ -2366,6 +2462,8 @@ export default function App() {
             lunge={lunge}
             onPreview={previewMinion}
             onPreviewEnd={endPreview}
+            reach={reach}
+            reachSource={reachSource}
             onRelicPreview={previewRelic}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
@@ -2478,7 +2576,12 @@ export default function App() {
                   onMouseEnter={(e) => previewCard(card, e.currentTarget, viewerId)}
                   onMouseLeave={endPreview}
                   data-playable={playable}
-                  title={playable ? "Drag onto the board (or click) to play" : undefined}
+                  /* No `title` here. A native tooltip on a card you are holding
+                     covers the neighbouring card a second after the pointer
+                     lands, which is exactly when the hover preview is trying to
+                     show you that card — and it explains a control the player
+                     has already used by the time they can read it. Owner
+                     ruling. */
                 >
                   {card ? <CardFace card={playableFace(card, effectiveCardCost(game, viewerId, card))} /> : null}
                 </button>
@@ -2646,6 +2749,7 @@ export default function App() {
         <GameOver
           game={game}
           vsBot={vsBot}
+          library={library}
           tutorial={tutorialActive}
           onRestart={tutorialActive ? beginTutorial : restart}
           onMenu={toTitle}
@@ -2701,6 +2805,9 @@ export default function App() {
           onDeveloperUnlock={activateDeveloperCheat}
           onDeveloperReset={resetDeveloperProgress}
           duelsPlayed={totalDuels}
+          dailyPackReady={dailyPackAvailable(progress, todayKey())}
+          dailyPackCards={DAILY_PACK_CARDS}
+          onDailyPack={claimDaily}
           unlocked={progress.unlocked}
           rosterSize={progress.unlockOrder.length || cards.length + relics.length}
         />
@@ -2760,6 +2867,39 @@ type HoverState = {
   rect: { left: number; right: number; top: number; bottom: number };
 } | null;
 
+/**
+ * Every minion the hovered one is currently reaching, by instance id.
+ *
+ * A REVERSE LOOKUP over live state, not a reading of card text. The engine
+ * already writes down who is paying whom — an aura bonus records the source
+ * that granted it, a shield records the source holding it up, a mark records
+ * who set it — because it has to take those things back when the source dies.
+ * Nothing here re-derives an effect: it asks the board who is on the hook, and
+ * a minion whose text has not actually landed on anybody lights up nothing,
+ * which is the honest answer.
+ */
+function reachOf(game: GameState, source: MinionInstance): Set<string> {
+  const reached = new Set<string>();
+  const id = source.instanceId;
+  for (const player of game.players) {
+    for (const minion of player.board) {
+      if (!minion || minion.instanceId === id) continue;
+      const touched =
+        (minion.auraBonuses ?? []).some((bonus) => bonus.sourceId === id) ||
+        (minion.divineShieldAuraSources ?? []).includes(id) ||
+        (minion.passiveSilenceSources ?? []).includes(id) ||
+        minion.markedBy === id ||
+        minion.stolenPassiveFrom === id;
+      if (touched) reached.add(minion.instanceId);
+    }
+  }
+  // Two the source itself records, rather than the target: a slot it is holding
+  // safe, and a shot it has already lined up.
+  if (source.protectedByMeleoron) reached.add(source.protectedByMeleoron);
+  if (source.deathStarTarget?.kind === "minion") reached.add(source.deathStarTarget.instanceId);
+  return reached;
+}
+
 function BoardRow({
   owner,
   label,
@@ -2781,6 +2921,8 @@ function BoardRow({
   onDragMove,
   onDragEnd,
   onDragCancel,
+  reach,
+  reachSource,
 }: {
   owner: PlayerId;
   label: string;
@@ -2803,6 +2945,10 @@ function BoardRow({
   onDragMove: (e: React.PointerEvent) => void;
   onDragEnd: (e: React.PointerEvent) => void;
   onDragCancel: () => void;
+  /** Instance ids the hovered minion is currently affecting. */
+  reach: ReadonlySet<string>;
+  /** The hovered minion itself, so the source can be marked differently. */
+  reachSource: string | null;
 }) {
   return (
     <div className="board-row" aria-label={label}>
@@ -2861,6 +3007,8 @@ function BoardRow({
           isLunging ? "striking" : "",
           canBeChosen ? "choosable" : "",
           boardPrompt !== null && !canBeChosen ? "dimmed" : "",
+          minion && reach.has(minion.instanceId) ? "in-reach" : "",
+          minion && reachSource === minion.instanceId && reach.size > 0 ? "reach-source" : "",
         ]
           .filter(Boolean)
           .join(" ");
@@ -3335,6 +3483,16 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
     }),
     [progress],
   );
+  /**
+   * Where each card sits in the unlock order, which is also the order they
+   * arrived in. Built once per record change; the alternative is an `indexOf`
+   * per card per sort, which is the whole roster scanned 216 times.
+   */
+  const unlockRank = useMemo(() => {
+    const rank = new Map<string, number>();
+    progress.unlockOrder.forEach((id, index) => rank.set(id, index));
+    return rank;
+  }, [progress.unlockOrder]);
   const entries = useMemo(() => {
     const all = allEntries;
     if (!needle) return all;
@@ -3385,12 +3543,36 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
       : entries;
     const wantUnlocked = status === "unlocked";
     kept = kept.filter((entry) => collection.unlocked.has(entry.key) === wantUnlocked);
-    // Always mana then name. A filtered list in raw roster order is barely a
-    // list, and this removes the need for a separate ordering control.
-    return [...kept].sort(
-      (a, b) => (a.face.cost ?? 99) - (b.face.cost ?? 99) || a.face.name.localeCompare(b.face.name),
-    );
-  }, [entries, filters, status, collection]);
+    // Mana then name, which is the order the roster reads in and the one a
+    // filtered list needs to stay scannable. It removes the need for a separate
+    // ordering control.
+    const byCard = (a: GalleryEntry, b: GalleryEntry) =>
+      (a.face.cost ?? 99) - (b.face.cost ?? 99) || a.face.name.localeCompare(b.face.name);
+    if (!wantUnlocked) return [...kept].sort(byCard);
+    /**
+     * The unlocked view puts NEWLY EARNED cards at the top, newest first.
+     *
+     * A pack deals five cards and then hands the player a gallery of two
+     * hundred sorted by mana, which is the one order that guarantees those five
+     * are scattered and none of them is on the first screen. The unlock order
+     * already records when each card arrived, so recency costs a lookup.
+     *
+     * The OPENING POOL is exempt and keeps mana order. Those cards were never
+     * "earned" — they were there before the first duel — so ranking them by
+     * their position in a shuffled order would be sorting by nothing, and it
+     * would leave a brand-new player looking at a list with no shape at all.
+     * That is why the gallery reads normally until the first pack lands.
+     */
+    return [...kept].sort((a, b) => {
+      const ra = unlockRank.get(a.key) ?? -1;
+      const rb = unlockRank.get(b.key) ?? -1;
+      const earnedA = ra >= STARTING_POOL;
+      const earnedB = rb >= STARTING_POOL;
+      if (earnedA !== earnedB) return earnedA ? -1 : 1;
+      if (earnedA && earnedB) return rb - ra;
+      return byCard(a, b);
+    });
+  }, [entries, filters, status, collection, unlockRank]);
 
   const selectedEntry = selectedEntryKey ? sorted.find((entry) => entry.key === selectedEntryKey) ?? null : null;
 
@@ -3713,7 +3895,9 @@ function GalleryDetailModal({
 
         <div className="gallery-detail-body">
           <div className={`gallery-detail-primary${locked ? " is-locked" : ""}`}>
-            <div className="gallery-detail-card">{locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} />}</div>
+            <div className="gallery-detail-card">
+              {locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} interactiveKeywords />}
+            </div>
             {locked ? <p className="gallery-detail-sealed-note">Rules remain sealed until this card joins your deck.</p> : null}
           </div>
 
@@ -4093,6 +4277,133 @@ function SealedFace({ card, lazyArt = false }: { card: CardFaceModel; lazyArt?: 
   );
 }
 
+/**
+ * Rules text with every glossary word turned into a button.
+ *
+ * The scan is a single pass over the string against `KEYWORD_LOOKUP`, which is
+ * sorted longest-match-first — that ordering is what stops "Shield" claiming
+ * the position that belongs to "Divine Shield". A match only counts on word
+ * boundaries, so "Charged" is not Charge and "Retarget" is not Target.
+ *
+ * The popover is rendered inline, next to the word, rather than in a portal. It
+ * is small, it belongs to the sentence it interrupts, and every surface that
+ * switches this on is already a modal with room around the card.
+ */
+function KeywordText({ text }: { text: string }) {
+  const [open, setOpen] = useState<{ index: number; left: number; top: number } | null>(null);
+  const pieces = useMemo(() => splitOnKeywords(text), [text]);
+
+  // Anything that moves the word out from under the panel closes it: a scroll,
+  // a resize, Escape, or a click anywhere else. A definition pinned to a
+  // viewport position is wrong the moment its word is somewhere else.
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(null);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        close();
+      }
+    };
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }, [open]);
+
+  return (
+    <>
+      {pieces.map((piece, index) =>
+        piece.entry ? (
+          <button
+            key={index}
+            type="button"
+            className={open?.index === index ? "cf-kw is-open" : "cf-kw"}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              // The card face sits inside clickable furniture in some of its
+              // homes; a definition must never also be a card selection.
+              event.stopPropagation();
+              if (open?.index === index) {
+                setOpen(null);
+                return;
+              }
+              const rect = event.currentTarget.getBoundingClientRect();
+              setOpen({ index, left: (rect.left + rect.right) / 2, top: rect.bottom });
+            }}
+            aria-expanded={open?.index === index}
+          >
+            {piece.text}
+          </button>
+        ) : (
+          <Fragment key={index}>{piece.text}</Fragment>
+        ),
+      )}
+      {open && pieces[open.index]?.entry ? (
+        // FIXED, not inline. `.cf-desc` is `overflow: hidden` because the rules
+        // panel is a box with an edge, so a popover rendered inside the
+        // paragraph is clipped to a sliver. Viewport coordinates off the word's
+        // own rect escape that without the panel having to give up its clipping.
+        <KeywordPopover entry={pieces[open.index].entry!} left={open.left} top={open.top} />
+      ) : null}
+    </>
+  );
+}
+
+/** The definition panel itself, kept on screen and out of the card's clipping. */
+function KeywordPopover({ entry, left, top }: { entry: KeywordEntry; left: number; top: number }) {
+  const width = 264;
+  const clampedLeft = Math.max(10, Math.min(left - width / 2, window.innerWidth - width - 10));
+  // Flip above the word when there is no room beneath it.
+  const flip = top + 190 > window.innerHeight;
+  return (
+    <span
+      className={flip ? "cf-kw-pop is-above" : "cf-kw-pop"}
+      role="note"
+      style={{ left: clampedLeft, top: flip ? undefined : top + 8, bottom: flip ? window.innerHeight - top + 26 : undefined, width }}
+      onPointerDown={(event) => event.stopPropagation()}
+    >
+      <strong>{entry.term}</strong>
+      <span>{plainKeywordText(entry.text)}</span>
+    </span>
+  );
+}
+
+/** One left-to-right pass, longest match wins, word boundaries respected. */
+function splitOnKeywords(text: string): Array<{ text: string; entry?: KeywordEntry }> {
+  const pieces: Array<{ text: string; entry?: KeywordEntry }> = [];
+  const isWord = (ch: string | undefined) => ch !== undefined && /[A-Za-z0-9]/.test(ch);
+  let plain = "";
+  let i = 0;
+  while (i < text.length) {
+    const hit = KEYWORD_LOOKUP.find(
+      ({ match }) =>
+        text.slice(i, i + match.length).toLowerCase() === match.toLowerCase() &&
+        !isWord(text[i - 1]) &&
+        !isWord(text[i + match.length]),
+    );
+    if (hit) {
+      if (plain) {
+        pieces.push({ text: plain });
+        plain = "";
+      }
+      pieces.push({ text: text.slice(i, i + hit.match.length), entry: hit.entry });
+      i += hit.match.length;
+      continue;
+    }
+    plain += text[i];
+    i += 1;
+  }
+  if (plain) pieces.push({ text: plain });
+  return pieces;
+}
+
 function CardFace({
   card,
   lazyArt = false,
@@ -4102,6 +4413,7 @@ function CardFace({
   hpClass = "",
   effect,
   flavor,
+  interactiveKeywords = false,
 }: {
   card: CardFaceModel;
   /** Gallery only — see the loading note in `CardArtwork`. */
@@ -4117,6 +4429,17 @@ function CardFace({
   effect?: string;
   /** MinionInstance carries no flavour, so the board passes it in. */
   flavor?: string;
+  /**
+   * Turns every glossary word in the rules text into a button that explains
+   * itself.
+   *
+   * OPT-IN, and deliberately off everywhere the card is a control rather than a
+   * page. A card in hand is clicked to PLAY it and a minion on the board is
+   * clicked to ATTACK with it; putting a second meaning on part of those faces
+   * would turn "I clicked Taunt" into a misplay. It is on in the gallery, which
+   * is the one place a card is only ever being read.
+   */
+  interactiveKeywords?: boolean;
 }) {
   // The card is DRAWN, not shown. Every number here is live, so a buff recolours
   // the real gem instead of pasting a second number over a picture, and changing
@@ -4187,7 +4510,7 @@ function CardFace({
         <div className="cf-frame" aria-hidden="true" />
         <div className="cf-well" aria-hidden="true" />
         <CardArtwork card={card} lazy={lazyArt} />
-        <div className="cf-desc"><p>{text}</p></div>
+        <div className="cf-desc"><p>{interactiveKeywords ? <KeywordText text={text} /> : text}</p></div>
         {/* A relic has no camp and no alignment. It carried the placeholders
             "Ascension" and "Relic" purely so the rails had something to print,
             and two rails naming a thing that is not a property of the card is
@@ -4735,17 +5058,37 @@ function HeroSigil({ playerId }: { playerId: PlayerId }) {
   );
 }
 
-function EventLog({ events }: { events: GameEvent[] }) {
+/**
+ * The duel log, newest first.
+ *
+ * It prints EVERYTHING it is handed. It used to print the last 30 of the 80
+ * events being kept, which meant one busy turn — a board wipe, a chain of
+ * Deathrattles — could push the move that caused it off the top of a list the
+ * player was scrolling precisely to find that move in. A log that silently
+ * drops the middle of a story is worse than a shorter one, because nothing
+ * marks the gap.
+ *
+ * Memoised, because it is a few hundred list items rendered inside a
+ * `<details>` whose children React builds whether or not the drawer is open,
+ * and the events array only changes when something actually happened.
+ */
+const EventLog = memo(function EventLog({ events }: { events: GameEvent[] }) {
   return (
     <ol className="event-log">
-      {events.slice(-30).reverse().map((event, index) => (
-        <li key={`${event.text}-${index}`} className={`event-${event.kind}`}>
-          {event.text}
-        </li>
-      ))}
+      {events
+        .map((event, index) => ({ event, index }))
+        .reverse()
+        .map(({ event, index }) => (
+          // Keyed on the FORWARD index, so an entry keeps its key as newer
+          // events arrive. Keying on the reversed position renumbered every row
+          // in the list on every single action.
+          <li key={`${index}-${event.text}`} className={`event-${event.kind}`}>
+            {event.text}
+          </li>
+        ))}
     </ol>
   );
-}
+});
 
 function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
   // Bigger than it used to be, and no text panel underneath: the face prints its
@@ -5325,7 +5668,7 @@ function DeveloperTools({
           ) : <p className="developer-empty">No cards match this search.</p>}
         </div>
 
-        <p className="developer-note">Developer actions affect this test duel only and do not enter your record or unlock track.</p>
+        <p className="developer-note">Developer actions affect this test duel only. The duel itself still counts: finishing one enters your record and pays its cards.</p>
       </section>
     </div>
   );
@@ -5334,12 +5677,15 @@ function DeveloperTools({
 function GameOver({
   game,
   vsBot,
+  library,
   tutorial = false,
   onRestart,
   onMenu,
 }: {
   game: GameState;
   vsBot: boolean;
+  /** So the MVP can be drawn as its real card face rather than as a thumbnail. */
+  library: CardLibrary;
   tutorial?: boolean;
   onRestart: () => void;
   onMenu: () => void;
@@ -5347,17 +5693,37 @@ function GameOver({
   const draw = game.winner === "draw";
   const winnerId: PlayerId | null = typeof game.winner === "number" ? game.winner : null;
   const winner = winnerId !== null ? game.players[winnerId] : null;
-  const loser = winnerId !== null ? game.players[otherPlayer(winnerId)] : null;
   const title = draw ? "Mutual Annihilation" : winner ? `${winner.name} Wins` : "Game Over";
-  const resultLabel = draw ? "Both Cores Collapse" : "Core Collapsed";
-  // The winner's parade: whatever they still had standing when it ended. The
-  // duel is decided by which board survives, so the board IS the trophy.
-  const survivors = winner ? winner.board.filter((minion): minion is MinionInstance => Boolean(minion)) : [];
-  const banner = winner ? biggestSurvivor(winner) : null;
-  // The winner's own survivor, or no picture at all. It used to fall back to the
+  /**
+   * The one card this screen is about: whichever of the winner's minions dealt
+   * the most damage over the whole duel.
+   *
+   * It replaced the parade of survivors, and the reason is that surviving is
+   * the wrong measure. A board is what happens to be left standing at the end,
+   * so the parade was routinely five bodies that had done nothing and none of
+   * the ones that won the duel — a Mythic that traded for three minions and
+   * died in the process never appeared on its own victory screen. Damage is
+   * what a duel is actually decided by, and it is the only figure here that
+   * names a card rather than a number.
+   *
+   * A draw has no winner to ask, so it asks the whole table.
+   */
+  const mvp =
+    winnerId !== null
+      ? duelMvp(game, winnerId)
+      : (() => {
+          const both = ([0, 1] as PlayerId[]).map((id) => duelMvp(game, id));
+          return both.reduce<DamageTallyEntry | null>(
+            (best, entry) => (entry && (!best || entry.damage > best.damage) ? entry : best),
+            null,
+          );
+        })();
+  // The MVP's own artwork, or no picture at all. This used to fall back to the
   // first card in PLAYER ONE'S HAND, which on a win by player two hung the
   // loser's unplayed card over the victory screen as the trophy.
-  const bannerArt = banner?.art;
+  const bannerArt = mvp?.art;
+  const mvpCard = mvp ? library[mvp.cardId] : undefined;
+  const mvpOwner = mvp ? game.players[mvp.owner] : null;
   const botLine = tutorial
     ? "The tutorial is complete."
     : vsBot
@@ -5374,32 +5740,32 @@ function GameOver({
             <img src={bannerArt} alt="" draggable={false} />
           </div>
         ) : null}
-        <span className="result-label">{resultLabel}</span>
         <h2 className="result-title">{title}</h2>
         <p className="result-sub">
           The rift stabilizes after {game.turnNumber} turns.
           {botLine ? ` ${botLine}` : ""}
         </p>
-        <div className="result-stats">
-          {game.players.map((player) => (
-            <div key={player.id} className={winner && player.id === winner.id ? "winner" : ""}>
-              <span>{player.name}</span>
-              <strong>{Math.max(0, player.health)}</strong>
-              <small>final core</small>
-            </div>
-          ))}
-        </div>
-        {survivors.length ? (
-          <div className="result-survivors">
-            <span>Still standing{loser ? ` against ${loser.name}` : ""}</span>
-            <div className="survivor-row">
-              {survivors.map((minion) => (
-                <figure key={minion.instanceId}>
-                  <img src={minion.art} alt="" draggable={false} />
-                  <figcaption>{minion.name}</figcaption>
+        {mvp ? (
+          <div className="result-mvp">
+            <span className="result-mvp-kicker">
+              {mvpOwner ? `${mvpOwner.name}'s champion` : "Champion of the duel"}
+            </span>
+            {/* The real card face, never a thumbnail. A card under about 200px
+                wide drops its rules text (see the floor in CardFace), and a
+                trophy the player cannot read is a picture of a trophy. */}
+            <div className="result-mvp-card">
+              {mvpCard ? (
+                <CardFace card={playableFace(mvpCard)} />
+              ) : (
+                <figure className="result-mvp-fallback">
+                  <img src={mvp.art} alt="" draggable={false} />
+                  <figcaption>{mvp.name}</figcaption>
                 </figure>
-              ))}
+              )}
             </div>
+            <p className="result-mvp-line">
+              <strong>{mvp.damage}</strong> damage dealt
+            </p>
           </div>
         ) : null}
         <div className="gameover-buttons">
@@ -5420,18 +5786,6 @@ function canAttackCore(legalActions: GameAction[], selection: Selection): boolea
 
 function otherPlayer(player: PlayerId): PlayerId {
   return player === 0 ? 1 : 0;
-}
-
-/** The winner's proudest survivor, for the victory screen's parade image only. */
-function biggestSurvivor(player: GameState["players"][number]): MinionInstance | null {
-  let best: MinionInstance | null = null;
-  for (const minion of player.board) {
-    if (!minion) continue;
-    if (!best || minion.cost > best.cost || (minion.cost === best.cost && minion.atk + minion.hp > best.atk + best.hp)) {
-      best = minion;
-    }
-  }
-  return best;
 }
 
 function statClass(current: number, base: number): string {

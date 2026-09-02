@@ -7,6 +7,7 @@ import type {
   Camp,
   SlotAuraId,
   CardDefinition,
+  DamageTallyEntry,
   EffectId,
   GameAction,
   GameEvent,
@@ -833,7 +834,13 @@ function playRelic(
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
   if (player.pressured?.cardId === cardId) player.pressured = null;
   const instance = createRelicInstance(relic);
-  equipRelic(state, bearer, instance, library, events);
+  // The PLAY is logged before the relic is strapped on, which is the order it
+  // happened in. It used to be logged after, and equipping is not a quiet
+  // operation — a relic prints its own equip line and several of them fire an
+  // effect immediately — so the log read backwards for the whole relic path:
+  // "Knight equips Poké Ball", "Knight returns to hand in the Poké Ball", and
+  // only then "Player Two plays Poké Ball on Knight". Every other play in the
+  // game already logs the action first and its consequences after.
   events.push({
     kind: "play",
     text: `${player.name} plays ${relic.name} on ${bearer.name}.`,
@@ -841,6 +848,7 @@ function playRelic(
     cardId: relic.id,
     instanceId: bearer.instanceId,
   });
+  equipRelic(state, bearer, instance, library, events);
   triggerRelicDiscoveries(
     state,
     playerId,
@@ -1321,8 +1329,41 @@ function putCardInHand(
   return true;
 }
 
+/**
+ * Credits one minion with damage it actually landed, for the game-over MVP.
+ *
+ * Called only where the blow has already been allowed and applied, so a shield
+ * that ate the hit, an immunity that refused it, or a target that was never
+ * there all credit nothing. The tally is keyed by instance rather than by card:
+ * two copies of the same card are two different bodies with two different
+ * duels behind them.
+ */
+function creditDamage(state: GameState, source: MinionInstance | null | undefined, amount: number): void {
+  if (!source || amount <= 0) return;
+  const tally = (state.damageTally ??= {});
+  const entry = tally[source.instanceId];
+  if (entry) {
+    entry.damage += amount;
+    return;
+  }
+  tally[source.instanceId] = {
+    instanceId: source.instanceId,
+    cardId: source.cardId,
+    name: source.name,
+    art: source.art,
+    owner: source.owner,
+    damage: amount,
+  };
+}
+
 /** A core has one Aladdin-granted Divine Shield, just like a minion does. */
-function dealCoreDamage(state: GameState, playerId: PlayerId, amount: number, events: GameEvent[]): boolean {
+function dealCoreDamage(
+  state: GameState,
+  playerId: PlayerId,
+  amount: number,
+  events: GameEvent[],
+  source?: MinionInstance | null,
+): boolean {
   const player = state.players[playerId];
   if (amount <= 0) return false;
   if (player.heroDivineShield) {
@@ -1331,6 +1372,7 @@ function dealCoreDamage(state: GameState, playerId: PlayerId, amount: number, ev
     return false;
   }
   player.health -= amount;
+  creditDamage(state, source, amount);
   return true;
 }
 
@@ -1596,7 +1638,7 @@ function attackCore(state: GameState, playerId: PlayerId, attackerSlot: number, 
   // belongs to a relic: Ea doubles the printed ATK on equip instead, and the One
   // Ring is a rescue, not a core-damage bonus.
   const damage = attacker.atk;
-  const landed = dealCoreDamage(state, defenderId, damage, events);
+  const landed = dealCoreDamage(state, defenderId, damage, events, attacker);
   attacker.attacksUsed += 1;
   if (landed) {
     events.push({ kind: "damage", text: `${attacker.name} strikes the core for ${damage}.`, player: playerId, instanceId: attacker.instanceId });
@@ -2648,7 +2690,7 @@ function runEffect(
       // to subtract from `health` directly, which was the one path in the engine
       // that walked past Aladdin's core Divine Shield — a shield the player had
       // paid a card for and could watch fail to do anything.
-      if (dealCoreDamage(state, opponentPlayer.id, 10, events)) {
+      if (dealCoreDamage(state, opponentPlayer.id, 10, events, source)) {
         events.push(effectEvent(`${label} costs ${opponentPlayer.name} 10 Core HP.`, source));
       }
     } else if (pickedValue === "random_minion") {
@@ -2782,7 +2824,7 @@ function runEffect(
     const targetSlot = target ? slotOf(state, target) : -1;
     if (target && targetSlot >= 0) {
       dealMinionDamage(state, target.owner, targetSlot, 3, source, events, true);
-    } else if (dealCoreDamage(state, enemyId, 3, events)) {
+    } else if (dealCoreDamage(state, enemyId, 3, events, source)) {
       events.push(effectEvent(`${label} burns the enemy core for 3 damage.`, source));
     }
   } else if (source.effectId === "damage_enemy_1") {
@@ -3054,7 +3096,14 @@ function runEffect(
       consumed += 1;
     }
     if (source.gainedEffects.some((effect) => effect.timing === "ongoing")) source.effectTiming = "ongoing";
-    events.push(effectEvent(`${label} consumes ${consumed} friendly Tech minion${consumed === 1 ? "" : "s"} and gains their stats${gainedEffects ? " and effects" : ""}.`, source));
+    events.push(
+      effectEvent(
+        consumed === 0
+          ? `${label} finds no friendly Tech minion to consume.`
+          : `${label} consumes ${consumed} friendly Tech minion${consumed === 1 ? "" : "s"} and gains their stats${gainedEffects ? " and effects" : ""}.`,
+        source,
+      ),
+    );
     source.effectId = "none";
   } else if (source.effectId === "dice_buff") {
     // Halved (2026 balance pass). A full d6 every turn averaged +3.5/+3.5 and
@@ -3654,7 +3703,7 @@ function resolveDeathStar(state: GameState, playerId: PlayerId, events: GameEven
     const target = source.deathStarTarget;
     source.deathStarTarget = null;
     if (target.kind === "core") {
-      if (dealCoreDamage(state, target.owner, 12, events)) {
+      if (dealCoreDamage(state, target.owner, 12, events, source)) {
         events.push(effectEvent(`${source.name} fires on the marked core for 12 damage.`, source));
       }
     } else {
@@ -4610,7 +4659,7 @@ function damageAllEnemiesAndCore(
 ): void {
   damageAllEnemies(state, source, amount, events, godzillaPath);
   const enemyId = opponent(source.owner);
-  if (dealCoreDamage(state, enemyId, amount, events)) {
+  if (dealCoreDamage(state, enemyId, amount, events, source)) {
     events.push(effectEvent(`${source.name} deals ${amount} damage to all enemies and the enemy core.`, source));
   }
 }
@@ -4651,7 +4700,23 @@ function dealMinionDamage(
     return;
   }
   target.hp -= amount;
-  events.push({ kind: "damage", text: `${target.name} takes ${amount} damage.`, player: owner, instanceId: target.instanceId });
+  creditDamage(state, source, amount);
+  // Effect damage NAMES its source; combat damage does not.
+  //
+  // A combat blow is always preceded by its own "A attacks B" line, so
+  // repeating the attacker reads as an echo. Effect damage has no such line: a
+  // Battlecry that burns a minion used to print a bare "Cecil takes 1 damage."
+  // directly under "Player Two plays Modern Tank", leaving the reader to guess
+  // that the two were connected — and guessing wrong whenever anything else had
+  // resolved in between.
+  events.push({
+    kind: "damage",
+    text: effectDamage
+      ? `${source.name} deals ${amount} damage to ${target.name}.`
+      : `${target.name} takes ${amount} damage.`,
+    player: owner,
+    instanceId: target.instanceId,
+  });
   if (
     target.hp > 0 &&
     hasEffect(target, "godzilla_damage_burst") &&
@@ -5284,7 +5349,7 @@ function destroyAtSlot(
   } else {
     state.discard.push(minion.cardId);
     (state.players[playerId].deadMinions ??= []).push(minion.cardId);
-    events.push({ kind: "death", text: message, player: playerId, instanceId: minion.instanceId, cardId: minion.cardId });
+    events.push({ kind: "death", text: `${message}.`, player: playerId, instanceId: minion.instanceId, cardId: minion.cardId });
   }
   // Relics die with their bearer. They are cards again only in the discard pile;
   // nothing puts them into a satchel or onto another minion automatically.
@@ -5552,7 +5617,7 @@ function resolveCardDeathrattleOnce(
         destroyAtSlot(state, target.owner, target.slot, events, `${dead.name} destroys ${target.minion.name}`, null);
       }
     }
-    if (dealCoreDamage(state, dead.owner, 4, events)) {
+    if (dealCoreDamage(state, dead.owner, 4, events, dead)) {
       events.push(effectEvent(`${dead.name} deals 4 damage to its own Core.`, dead));
     }
   }
@@ -5725,4 +5790,26 @@ function reactToDeath(state: GameState, dead: MinionInstance, deadOwner: PlayerI
       }
     }
   }
+}
+
+/**
+ * The minion that dealt the most damage for one player this duel.
+ *
+ * Ties break on the smaller instance id, which is the body that landed first —
+ * arbitrary, but stable, so the same finished duel always names the same card
+ * however many times the screen re-renders. Returns null when that player never
+ * landed a blow with a minion, which is a real result on a duel decided by hero
+ * powers or fatigue and must not be dressed up as an MVP.
+ */
+export function duelMvp(state: GameState, playerId: PlayerId): DamageTallyEntry | null {
+  const tally = state.damageTally;
+  if (!tally) return null;
+  let best: DamageTallyEntry | null = null;
+  for (const entry of Object.values(tally)) {
+    if (entry.owner !== playerId || entry.damage <= 0) continue;
+    if (!best || entry.damage > best.damage || (entry.damage === best.damage && entry.instanceId < best.instanceId)) {
+      best = entry;
+    }
+  }
+  return best;
 }

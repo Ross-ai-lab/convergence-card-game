@@ -15,13 +15,15 @@
  *                  both players can read each other's hand off the same screen.
  */
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { KEYWORDS, keywordRuns } from "../keywords";
 import {
   ArrowLeft,
   Cards,
   CornersIn,
   CornersOut,
   Crown,
+  Gift,
   Scroll,
   GearSix,
   Lightning,
@@ -226,6 +228,9 @@ export function TitleScreen({
   canContinue,
   playerCount,
   duelsPlayed,
+  dailyPackReady,
+  dailyPackCards,
+  onDailyPack,
   unlocked,
   rosterSize,
   developerCheatRevealed,
@@ -247,6 +252,11 @@ export function TitleScreen({
   playerCount: number | null;
   /** Total duels finished on this device; the Record door is also useful at zero. */
   duelsPlayed: number;
+  /** Whether today's free pack is still waiting to be taken. */
+  dailyPackReady: boolean;
+  /** How many cards it holds, so the button never spells the number itself. */
+  dailyPackCards: number;
+  onDailyPack: () => void;
   /** Cards the shared deck may currently draw from, and the whole roster. */
   unlocked: number;
   rosterSize: number;
@@ -329,6 +339,25 @@ export function TitleScreen({
         {canContinue ? (
           <button type="button" className="continue-duel" onClick={onContinue}>
             Continue duel
+          </button>
+        ) : null}
+
+        {/* The day's free pack.
+
+            It is loud on purpose and it is loud for exactly as long as it is
+            true: once taken, the button is GONE rather than greyed out. A dead
+            control that says "come back tomorrow" is a permanent piece of
+            furniture advertising something the player cannot have, and it would
+            sit there for 23 of every 24 hours. Its absence is the reward
+            already collected. */}
+        {dailyPackReady ? (
+          <button type="button" className="daily-pack-trigger" onClick={onDailyPack}>
+            <span className="daily-pack-shine" aria-hidden="true" />
+            <Gift size={26} weight="fill" aria-hidden="true" />
+            <span className="daily-pack-copy">
+              <strong>Today&rsquo;s pack</strong>
+              <small>{dailyPackCards} free cards</small>
+            </span>
           </button>
         ) : null}
 
@@ -719,75 +748,20 @@ function HowToPlayContent() {
         <p className="rules-aside">
           The first five say <b>when</b> a card&rsquo;s text happens. The rest are the words the text itself uses.
         </p>
+        {/* Rendered from `src/keywords.ts`, which is the single copy of every
+            definition. The card face's own keyword tooltips read the same
+            entries, so a wording fix lands in both places or in neither. */}
         <dl className="rules-glossary">
-          <dt>Battlecry</dt>
-          <dd>Happens once, when the minion enters play.</dd>
-          <dt>Ongoing</dt>
-          <dd>Happens again at the start of its owner&rsquo;s turn. An enemy Ongoing waits for the enemy&rsquo;s turn, not yours.</dd>
-          <dt>Passive</dt>
-          <dd>A standing rule that applies for as long as the minion is active. It never &ldquo;fires&rdquo;.</dd>
-          <dt>Battlecry/Ongoing</dt>
-          <dd>Both: once on arrival, then again every owner turn.</dd>
-          <dt>Deathrattle</dt>
-          <dd>Happens after the minion dies — unless it was Silenced first.</dd>
-          <dt>Taunt</dt>
-          <dd>The enemy must deal with this minion before attacking your core.</dd>
-          <dt>Charge</dt>
-          <dd>May attack the same turn it is summoned, or the turn it changes controller.</dd>
-          <dt>Chained</dt>
-          <dd>The minion loses <b>two</b> of its turns — always two, and no card prints a different number. Across both it cannot attack, its Passive and Ongoing effects do not fire, and it is untargetable by <b>both</b> players: not by an attack, not by removal, not by a buff of your own. It is the price a card pays for being too strong for its cost: a <b>Freeze</b> that lasts a turn longer and bites deeper.</dd>
-          <dt>Divine Shield</dt>
-          <dd>Blocks the next instance of damage, whatever its size, then the gold rim goes out. <b>Silence</b> switches it off for as long as it lasts.</dd>
-          <dt>Freeze</dt>
-          <dd>The minion loses <b>one</b> turn, then thaws once it has sat that turn out. It keeps its Passive and stays targetable throughout — that, and the extra turn, is what separates it from <b>Chained</b>.</dd>
-          <dt>Silence</dt>
-          <dd>Strips the printed effect and keywords, Divine Shield included, and takes back every stat <b>buff</b> the minion is carrying, down to its printed stats. Nerfs it has taken are kept. A Silence that its own card calls temporary only suspends the buffs.</dd>
-          <dt>Cannot attack</dt>
-          <dd>This minion never attacks, whatever its ATK. It still blocks, still takes damage, and still strikes back when attacked. Its ATK gem is grey.</dd>
-          <dt>Reborn</dt>
-          <dd>When the minion dies it comes back where it fell, at <b>1 HP</b>, with its printed ATK and nothing else it was carrying: no buffs, no relic, no shield. A full board leaves it nowhere to return to, and <b>Silence</b> stops it like any other keyword.</dd>
-          <dt>Reborn, how many times</dt>
-          <dd>The card says. Plain <b>Reborn</b> is once; <b>Reborn twice</b> is two lives; <b>Reborn infinitely</b> never runs out. A card that comes back spends a life, so the text you read on the returning body is always what it has left — and when the last one is gone, the text is gone with it.</dd>
-          <dt>Asleep</dt>
-          <dd>The one-turn wait after a minion is played or summoned. Separate from Chained, and skipped by Charge. Drifting z&rsquo;s show it.</dd>
-          <dt>Evade</dt>
-          <dd>A printed percentage chance to dodge an incoming attack outright.</dd>
-          <dt>Invulnerable</dt>
-          <dd>Takes no damage while the condition lasts; a blue-and-white rim shows it.</dd>
-          <dt>Immune</dt>
-          <dd>Takes no damage from one named source — a camp, an alignment, a damage type.</dd>
-          <dt>Adapted</dt>
-          <dd>The minion has learned the camp that last hit it and shrugs that camp off for a few turns. A purple glow rises from the card, and it fades when the immunity does.</dd>
-          <dt>Untargetable</dt>
-          <dd>Attacks and effects cannot choose it while the condition lasts.</dd>
-          <dt>Attack Locked</dt>
-          <dd>Cannot attack until the printed lock ends; the attack gem greys out.</dd>
-          <dt>Marked</dt>
-          <dd>A delayed effect is waiting on the minion, and a red pulse runs round the card. The card that marked it says when it lands.</dd>
-          <dt>Stasis</dt>
-          <dd>The minion is lifted off the board for two turns and comes back exactly as it left, in its own slot if that slot is still free.</dd>
-          <dt>Banished</dt>
-          <dd>The minion is put away until the card that banished it dies. Then it returns.</dd>
-          <dt>Pocket room</dt>
-          <dd>One friendly and one enemy minion are shut away together for two turns. The higher ATK walks out; the other is gone. Equal ATK and both walk out.</dd>
-          <dt>Protected slot</dt>
-          <dd>A board position that shields whoever stands in it from Silence, Freeze and Chained — but not from damage, targeting or removal.</dd>
-          <dt>Destroy</dt>
-          <dd>Removes a minion outright, dealing no damage. Divine Shield does not stop it.</dd>
-          <dt>Summon</dt>
-          <dd>Puts a new minion into an open slot. No open slot, no summon.</dd>
-          <dt>Discover</dt>
-          <dd>Offers you three cards from the shared deck and you keep one. The other two stay in the deck. Your opponent is not shown what you were offered.</dd>
-          <dt>Transform</dt>
-          <dd>Replaces a minion with a different one from the roster, usually one mana step up or down. Its relics are lost with it. <b>Devolve</b> is the same word pointing downward.</dd>
-          <dt>Seize</dt>
-          <dd>Moves an enemy minion onto your board. It arrives asleep unless it has Charge, and it needs a free slot.</dd>
-          <dt>Return to hand</dt>
-          <dd>Takes a minion off the board and puts its card back in its owner&rsquo;s hand, at full printed stats. Attached relics are discarded.</dd>
-          <dt>Gain stats</dt>
-          <dd>Adds ATK and both maximum and current HP.</dd>
-          <dt>Target</dt>
-          <dd>A minion, card or board slot that you choose when the effect resolves.</dd>
+          {KEYWORDS.map((entry) => (
+            <Fragment key={entry.term}>
+              <dt>{entry.term}</dt>
+              <dd>
+                {keywordRuns(entry.text).map((run, index) =>
+                  run.strong ? <b key={index}>{run.text}</b> : <Fragment key={index}>{run.text}</Fragment>,
+                )}
+              </dd>
+            </Fragment>
+          ))}
         </dl>
       </section>
 

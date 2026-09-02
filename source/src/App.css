@@ -327,6 +327,25 @@ button:disabled {
   100% { transform: none; }
 }
 
+/* A heavy body landing: one slow settle, not a rattle.
+
+   Deliberately a different SHAPE from the hero-hit shake above rather than a
+   quieter version of it. A hit is a fast horizontal rattle that dies out; a
+   6-mana minion arriving is weight going downward, so this is a single vertical
+   drop with one small rebound, and it starts 0.16s late to sit under the rarity
+   fanfare's own transient. Same delay as the `heavyLand` cue in App.tsx. */
+.table-frame.heavy-landing {
+  animation: table-thud 0.46s cubic-bezier(0.22, 0.9, 0.3, 1) 0.16s both;
+}
+
+@keyframes table-thud {
+  0% { transform: none; }
+  22% { transform: translateY(7px) scale(0.996); }
+  46% { transform: translateY(-3px) scale(1.001); }
+  70% { transform: translateY(2px); }
+  100% { transform: none; }
+}
+
 /* ---------------------------------------------------------------- opening duel */
 
 .table-frame.duel-opening-prelude .top-strip,
@@ -4183,33 +4202,73 @@ button:disabled {
   color: var(--muted);
 }
 
-.result-stats {
+
+/* The MVP block: the winner's highest-damage card, printed as a real card.
+
+   Sized off the 200px floor in CardFace and then some — under that width the
+   face silently drops its rules text, which would turn the one thing this
+   screen is FOR into a picture. The frame keeps its own 3:4.2 proportion, so
+   only the width is set here. */
+.result-mvp {
   display: grid;
-  grid-template-columns: repeat(2, minmax(160px, 1fr));
-  gap: 12px;
-  margin: 18px 0;
+  justify-items: center;
+  gap: 8px;
+  margin: 16px 0 18px;
 }
 
-.result-stats div {
-  display: grid;
-  gap: 3px;
-  padding: 12px;
-  border: 1px solid rgba(255, 246, 222, 0.16);
-  border-radius: 8px;
-  background: rgba(255, 246, 222, 0.06);
-}
-
-.result-stats span,
-.result-stats small {
-  color: var(--muted);
+.result-mvp-kicker {
+  color: var(--gold-dark);
   font-size: 0.72rem;
   font-weight: 950;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.result-stats strong {
-  font-size: 2rem;
-  line-height: 1;
+.result-mvp-card {
+  width: 232px;
+  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.55));
+}
+
+.result-mvp-card .card-face {
+  width: 100%;
+}
+
+.result-mvp-fallback {
+  margin: 0;
+}
+
+.result-mvp-fallback img {
+  width: 232px;
+  height: 232px;
+  object-fit: cover;
+  object-position: center 18%;
+  border: 1px solid rgba(240, 199, 103, 0.55);
+  border-radius: 12px;
+  display: block;
+}
+
+.result-mvp-fallback figcaption {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  margin-top: 6px;
+  text-align: center;
+}
+
+.result-mvp-line {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.result-mvp-line strong {
+  color: var(--gold);
+  font-size: 1.5rem;
+  letter-spacing: 0;
+  vertical-align: -0.08em;
 }
 
 .result-panel button {
@@ -5165,12 +5224,6 @@ button:disabled {
   background: linear-gradient(180deg, rgba(28, 19, 12, 0.25) 0%, rgba(28, 19, 12, 0.75) 62%, #1c130c 100%);
 }
 
-.result-panel .result-label {
-  display: block;
-  color: var(--gold-dark);
-  letter-spacing: 0.14em;
-}
-
 .result-panel .result-title {
   margin: 6px 0 10px;
   color: var(--gold);
@@ -5183,52 +5236,7 @@ button:disabled {
   margin: 0;
 }
 
-.result-stats div.winner {
-  border-color: rgba(240, 199, 103, 0.7);
-  background: rgba(240, 199, 103, 0.12);
-}
 
-.result-stats div.winner strong {
-  color: var(--gold);
-}
-
-.result-survivors {
-  margin: 0 0 18px;
-}
-
-.survivor-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.survivor-row figure {
-  width: 78px;
-  margin: 0;
-}
-
-.survivor-row img {
-  width: 78px;
-  height: 78px;
-  object-fit: cover;
-  object-position: center 20%;
-  border: 1px solid rgba(240, 199, 103, 0.55);
-  border-radius: 10px;
-  display: block;
-}
-
-.survivor-row figcaption {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.6rem;
-  font-weight: 900;
-  line-height: 1.2;
-  margin-top: 4px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 /* ---------------------------------------------------------------- a11y */
 /* A single line in the middle of the board, ~1.5s. Replaces the permanent
@@ -7660,4 +7668,111 @@ button:disabled {
 
 .card-face.rarity-relic .cf-flavor {
   font-size: calc(58 * var(--u));
+}
+
+/* ============================================================================
+   KEYWORD TOOLTIPS ON A CARD FACE
+
+   Switched on only where a card is being READ (the gallery), never where it is
+   a control. The word keeps the rules paragraph's own size and weight — it is
+   still the sentence, not a link in it — and says it is pressable with a dotted
+   underline and a warmer colour.
+   ========================================================================== */
+
+.cf-kw {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gold);
+  font: inherit;
+  cursor: help;
+  text-decoration: underline dotted currentColor;
+  text-underline-offset: 0.16em;
+}
+
+.cf-kw:hover,
+.cf-kw.is-open {
+  color: #fff5da;
+  text-decoration-style: solid;
+}
+
+.cf-kw-pop {
+  position: fixed;
+  z-index: 90;
+  display: grid;
+  gap: 5px;
+  padding: 11px 13px;
+  border: 1px solid rgba(240, 199, 103, 0.5);
+  border-radius: 10px;
+  background: rgba(22, 15, 10, 0.98);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  color: var(--ivory);
+  font-family: "Nunito", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.42;
+  text-align: left;
+  white-space: normal;
+}
+
+.cf-kw-pop strong {
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   REACH HIGHLIGHT
+
+   Hovering a minion rings every minion it is currently affecting. It reads as
+   a standing relationship, not as an action: a soft steady teal ring on the
+   ones being reached and a brighter one on the source, with no pulse and no
+   motion — the board already uses movement for things that are HAPPENING, and
+   an aura is not happening, it is simply true.
+
+   Nothing is drawn at all when a minion reaches nobody, so an empty board is a
+   real answer rather than a highlight that failed.
+   ========================================================================== */
+
+.board-slot.in-reach,
+.board-slot.reach-source {
+  /* OUTLINE, not box-shadow. Ready, targetable, armed and the slot auras all
+     already write box-shadow on this element, and a later rule of equal weight
+     would silently delete whichever of those was showing — so the reach ring
+     would work by turning off the ring that tells you a minion can attack. An
+     outline is a second channel and stacks with every one of them. */
+  /* DASHED, and magenta. The board already spends solid green on "ready to
+     attack", solid red on "legal target" and blue on "you can afford this",
+     and a fourth solid ring in a nearby hue is a ring nobody can read. A dash
+     is a different kind of mark, not a fourth colour competing with three
+     others, and magenta is the one part of the palette the board never uses. */
+  outline-style: dashed;
+  outline-offset: 4px;
+  border-radius: inherit;
+}
+
+.board-slot.in-reach {
+  /* 3px, measured on a real board rather than chosen: at 2px the dash reads as
+     a rendering artefact at board-card size and disappears entirely on the
+     first screenshot taken of it. */
+  outline-width: 3px;
+  outline-color: rgba(255, 138, 216, 0.9);
+}
+
+.board-slot.reach-source {
+  outline-width: 4px;
+  outline-color: rgba(255, 196, 236, 1);
+}
+
+/* A live prompt owns the board's rings while it is up: the player is being
+   asked to choose, and a second ring system competing with the legal-target
+   one is the moment this becomes noise instead of information. */
+.board-slot.choosable.in-reach,
+.board-slot.dimmed.in-reach,
+.board-slot.choosable.reach-source,
+.board-slot.dimmed.reach-source {
+  outline: none;
 }

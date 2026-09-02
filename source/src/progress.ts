@@ -1,5 +1,5 @@
 import type { BotSkill } from "./engine/bot";
-import { STARTING_POOL, unlockReward } from "./unlocks";
+import { DAILY_PACK_CARDS, STARTING_POOL, unlockReward } from "./unlocks";
 
 /**
  * What survives a duel.
@@ -72,6 +72,16 @@ export interface Progress {
   unlockOrder: string[];
   /** How far down `unlockOrder` the shared deck currently reaches. */
   unlocked: number;
+  /**
+   * The last local calendar day whose free pack was claimed, as `YYYY-MM-DD`,
+   * or `""` when none ever has been.
+   *
+   * A DAY STRING, never a timestamp, and the day is the player's own local one.
+   * A timestamp would make "a new day" mean "24 hours since last time", which
+   * punishes somebody for opening the game an hour earlier than yesterday and
+   * slides the reward later every single day until it lands in the night.
+   */
+  lastDailyPack: string;
 }
 
 const PROGRESS_VERSION = 2;
@@ -115,6 +125,40 @@ export function emptyProgress(): Progress {
     // testable precisely because it has never read a CSV.
     unlockOrder: [],
     unlocked: STARTING_POOL,
+    lastDailyPack: "",
+  };
+}
+
+/**
+ * Today, in the player's own timezone, as `YYYY-MM-DD`.
+ *
+ * Built from the local fields rather than from `toISOString`, which converts to
+ * UTC first and therefore rolls the day over at the wrong moment for everyone
+ * who is not on it — an evening in Baku is already tomorrow in that string.
+ */
+export function todayKey(now: Date = new Date()): string {
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+/** Whether a free pack is waiting. False once the roster is complete. */
+export function dailyPackAvailable(progress: Progress, today: string): boolean {
+  if (!progress.unlockOrder.length) return false;
+  if (progress.unlocked >= progress.unlockOrder.length) return false;
+  return progress.lastDailyPack !== today;
+}
+
+/**
+ * Takes the day's free cards. Pure, and a no-op when none is owed, so a double
+ * click cannot pay twice.
+ */
+export function claimDailyPack(progress: Progress, today: string): Progress {
+  if (!dailyPackAvailable(progress, today)) return progress;
+  return {
+    ...progress,
+    lastDailyPack: today,
+    unlocked: Math.min(progress.unlockOrder.length, progress.unlocked + DAILY_PACK_CARDS),
   };
 }
 
@@ -162,6 +206,7 @@ export function loadProgress(): Progress {
       // Clamped at the floor, never below it. A corrupted or missing count must
       // fail towards a playable duel: a pool of zero is not a game.
       unlocked: Math.max(STARTING_POOL, Math.floor(Number(parsed.unlocked)) || 0),
+      lastDailyPack: typeof parsed.lastDailyPack === "string" ? parsed.lastDailyPack : "",
     };
   } catch {
     return emptyProgress();
@@ -211,6 +256,7 @@ export function recordDuel(
     developerCheat: progress.developerCheat,
     unlockOrder: progress.unlockOrder,
     unlocked,
+    lastDailyPack: progress.lastDailyPack,
     ladders: {
       ...progress.ladders,
       [result.ladder]: {

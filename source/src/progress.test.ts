@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import { DAILY_PACK_CARDS } from "./unlocks";
 import {
+  claimDailyPack,
+  dailyPackAvailable,
   emptyProgress,
   finishDuel,
   recordDuel,
   totals,
   unlockAllProgress,
+  todayKey,
   winPct,
   RECENT_LIMIT,
   type DuelResult,
@@ -137,5 +141,54 @@ describe("reading a finished duel", () => {
     // guessing a winner is worse than recording the duel as undecided.
     const none = finishDuel(emptyProgress(), { ...base, winner: null, mode: { kind: "hotseat" } }, cards);
     expect(none.ladders.hotseat.drawn).toBe(1);
+  });
+});
+
+describe("the daily pack", () => {
+  const roster = (size: number) => Array.from({ length: size }, (_, index) => `c${index}`);
+  const base = () => ({ ...emptyProgress(), unlockOrder: roster(80), unlocked: 50 });
+
+  it("is offered once per local day and never twice", () => {
+    const before = base();
+    expect(dailyPackAvailable(before, "2026-09-02")).toBe(true);
+
+    const after = claimDailyPack(before, "2026-09-02");
+    expect(after.unlocked).toBe(50 + DAILY_PACK_CARDS);
+    expect(after.lastDailyPack).toBe("2026-09-02");
+    expect(dailyPackAvailable(after, "2026-09-02")).toBe(false);
+
+    // The identity check, not just the count: a second claim on the same day
+    // must be a no-op rather than a fresh object the caller then saves.
+    expect(claimDailyPack(after, "2026-09-02")).toBe(after);
+    expect(dailyPackAvailable(after, "2026-09-03")).toBe(true);
+  });
+
+  it("never runs past the end of the roster", () => {
+    const nearlyDone = { ...base(), unlocked: 78 };
+    const after = claimDailyPack(nearlyDone, "2026-09-02");
+    expect(after.unlocked).toBe(80);
+    // Complete means nothing left to give, so the button must stop appearing.
+    expect(dailyPackAvailable(after, "2026-09-03")).toBe(false);
+  });
+
+  it("survives a finished duel", () => {
+    // `recordDuel` builds its result object field by field rather than
+    // spreading, so a new field is exactly the kind that gets silently dropped
+    // on the first duel after it is added.
+    const claimed = claimDailyPack(base(), "2026-09-02");
+    const after = recordDuel(claimed, won, cardsPlayed("c001"));
+    expect(after.lastDailyPack).toBe("2026-09-02");
+  });
+
+  it("offers nothing before the unlock order exists", () => {
+    // First load, roster not yet reconciled. Paying out here would advance an
+    // index into an empty array.
+    expect(dailyPackAvailable(emptyProgress(), "2026-09-02")).toBe(false);
+  });
+
+  it("reads today from local fields, not from UTC", () => {
+    // 23:30 local on the 2nd is still the 2nd, whatever `toISOString` says.
+    expect(todayKey(new Date(2026, 8, 2, 23, 30))).toBe("2026-09-02");
+    expect(todayKey(new Date(2026, 0, 5, 0, 15))).toBe("2026-01-05");
   });
 });
