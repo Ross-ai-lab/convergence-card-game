@@ -2574,3 +2574,23 @@ button.duel-trigger:hover:not(:disabled) {
   0% { transform: translateX(-120%); }
   55%, 100% { transform: translateX(120%); }
 }
+
+/* Narrow screens: the pack button moves to the TOP.
+
+   This block sits AFTER the base rule on purpose. At 680px and under the column
+   of doors goes edge to edge and the player-count pill sits just above it, so
+   the bottom-left corner the button owns on a desktop stops existing — it landed
+   on top of both. Under the kicker is the one part of a narrow title screen that
+   is only backdrop. `bottom: auto` is load-bearing: without it the button keeps
+   the base rule's bottom offset, is anchored top AND bottom, and stretches into
+   a 668px-tall slab. */
+@media (max-width: 680px) {
+  .daily-pack-trigger {
+    top: 104px;
+    right: 12px;
+    bottom: auto;
+    left: 12px;
+    justify-content: center;
+    min-height: 50px;
+  }
+}
