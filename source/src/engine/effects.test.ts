@@ -420,7 +420,7 @@ describe("Silence strips stat buffs", () => {
     const printed = makeMinion("Zoro", 1);
 
     // Giant Tree gives every OTHER friendly Nature minion +2/+1; All Might gives
-    // every ENEMY minion -1 ATK. Zoro stands in both at once, so one board shows
+    // every ENEMY minion -2 ATK. Zoro stands in both at once, so one board shows
     // which half survives a Silence.
     const run = (silenced: boolean) => {
       const state = mainState();
@@ -433,11 +433,11 @@ describe("Silence strips stat buffs", () => {
     };
 
     const open = run(false);
-    expect(open?.atk).toBe(printed.atk + 2 - 1);
+    expect(open?.atk).toBe(printed.atk + 2 - 2);
     expect(open?.maxHp).toBe(printed.maxHp + 1);
 
     const shut = run(true);
-    expect(shut?.atk).toBe(printed.atk - 1);
+    expect(shut?.atk).toBe(printed.atk - 2);
     expect(shut?.maxHp).toBe(printed.maxHp);
   });
 });

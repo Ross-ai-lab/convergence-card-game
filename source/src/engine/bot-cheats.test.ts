@@ -351,7 +351,22 @@ describe("planning a whole turn", () => {
   let cached: GameState[] | null = null;
   function positions(): GameState[] {
     if (cached) return cached;
-    let state = createInitialGame(cards, "beam-positions", relics, { foresightFor: BOT });
+    // SEVERAL duels, not one. The claim below is "the beam beats greedy at
+    // least somewhere", and sampling a single duel made that a claim about one
+    // shuffle: a routine card-stat pass moved the sampled boards and the beam
+    // agreed with greedy on all ten of them, which reads as the beam being
+    // broken rather than as the sample being thin.
+    const collected: GameState[] = [];
+    for (const seed of ["beam-positions", "beam-positions-2", "beam-positions-3"]) {
+      collected.push(...positionsFrom(seed));
+    }
+    expect(collected.length).toBeGreaterThan(3);
+    cached = collected;
+    return collected;
+  }
+
+  function positionsFrom(seed: string): GameState[] {
+    let state = createInitialGame(cards, seed, relics, { foresightFor: BOT });
     const collected: GameState[] = [];
     for (let step = 0; step < 400 && collected.length < 10; step += 1) {
       if (state.phase === "gameOver") break;
@@ -375,8 +390,6 @@ describe("planning a whole turn", () => {
       if (!action) break;
       state = applyAction(state, action, library).state;
     }
-    expect(collected.length).toBeGreaterThan(3);
-    cached = collected;
     return collected;
   }
 

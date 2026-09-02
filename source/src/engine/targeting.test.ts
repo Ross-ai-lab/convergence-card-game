@@ -423,6 +423,28 @@ describe("practice bot", () => {
  * which keeps All for One's own prompt forced and the assertion about one thing.
  */
 describe("All for One aims a copied effect legally", () => {
+  /**
+   * A one-off library in which All for One still prints `copy_and_trigger`.
+   *
+   * The CARD moved to a passive on 2 September 2026 (owner's ruling). The
+   * EFFECT stayed, and it is still the only place in the engine where a target
+   * choice is built by hand rather than offered through a prompt, so its
+   * coverage moves here rather than leaving with the card.
+   */
+  const carrierCards = cards.map((card) =>
+    card.name === "All for One"
+      ? { ...card, effectId: "copy_and_trigger" as const, effectTiming: "onPlay" as const, keywords: [] }
+      : card,
+  );
+  const carrierLibrary = makeCardLibrary(carrierCards);
+
+  function playCarrier(state: GameState, player: PlayerId, slotIndex = 0): GameState {
+    const next: GameState = { ...state, cheatMode: true, activePlayer: player, phase: "main", drawChoice: null };
+    next.players = [...state.players] as GameState["players"];
+    next.players[player] = { ...state.players[player], hand: [cardId("All for One")] };
+    return applyAction(next, { type: "play_card", player, handIndex: 0, slotIndex }, carrierLibrary).state;
+  }
+
   /** Board with exactly one enemy minion, wearing the effect to be copied. */
   function boardWithVictim(seed: string, effectId: MinionInstance["effectId"]): GameState {
     const state = mainState(seed);
@@ -438,7 +460,7 @@ describe("All for One aims a copied effect legally", () => {
     // one forced answer that resolves without a prompt.
     state.players[0].board[4] = dummy("Modern Tank", 0);
 
-    const asking = playCardFor(state, 0, "All for One", 0);
+    const asking = playCarrier(state, 0, 0);
 
     // The victim is an enemy, so it is not a legal target for an effect that
     // hides a FRIENDLY minion, and is never handed over. The copy asks for its
@@ -466,7 +488,7 @@ describe("All for One aims a copied effect legally", () => {
     const mine = state.players[0].board[3]!.instanceId;
     const theirs = state.players[1].board[0]!.instanceId;
 
-    const after = playCardFor(state, 0, "All for One", 0);
+    const after = playCarrier(state, 0, 0);
 
     // Both picks are forced here, so the room opens with no prompt. WHICH two
     // minions it took is the whole point: before this was fixed the enemy victim
@@ -488,7 +510,7 @@ describe("All for One aims a copied effect legally", () => {
     state.players[1].board[0] = dummy("Zoro", 1, { effectId: "batman_gadget_choice", effectTiming: "onPlay" });
     state.players[1].board[1] = dummy("John Wick", 1);
 
-    const asking = playCardFor(state, 0, "All for One", 0);
+    const asking = playCarrier(state, 0, 0);
     expect(asking.phase).toBe("targeting");
     expect(asking.pendingTarget?.kind).toBe("option");
     const after = choose(asking, 0); // the first gadget: Freeze it
@@ -501,7 +523,7 @@ describe("All for One aims a copied effect legally", () => {
     const state = boardWithVictim("afo-legal", "set_hp_1");
     state.players[1].board[0]!.hp = 5;
 
-    const after = playCardFor(state, 0, "All for One", 0);
+    const after = playCarrier(state, 0, 0);
 
     // The guard must not cost the card its normal use: an enemy victim IS a
     // legal target for an enemy-targeting effect, so the copy resolves as before.

@@ -265,6 +265,7 @@ export function applyAction(
 
   const next = cloneState(state);
   const events: GameEvent[] = [];
+  const afflictedBefore = afflictionSnapshot(state);
 
   if (action.type === "toggle_mulligan") {
     toggleMulligan(next, action.player, action.handIndex);
@@ -323,6 +324,7 @@ export function applyAction(
   // slot mark on THIS action must not still be wearing the aura it was paid a
   // moment ago.
   suppressAuraBuffsOnSilenced(next);
+  feedAfflictionWatchers(next, afflictedBefore, events);
   enforceDumbledoreCleansing(next, events);
   sweepDeaths(next, events);
   announceTopDeck(next, library, events);
@@ -514,6 +516,17 @@ function opponentHasKratosLock(state: GameState, playerId: PlayerId): boolean {
   );
 }
 
+/**
+ * The enemy minion currently forbidding this player's relics and Hero Power, if
+ * any. Exported so the board can name it instead of blaming a full board.
+ */
+export function relicLockSource(state: GameState, playerId: PlayerId): string | null {
+  const blocker = state.players[opponent(playerId)].board.find(
+    (minion) => Boolean(minion) && opponentHasKratosLock(state, playerId) && hasEffect(minion!, "kratos_lockdown"),
+  );
+  return blocker ? blocker.name : null;
+}
+
 function confirmMulligan(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
   const mulligan = state.mulligan;
   if (!mulligan || mulligan.player !== playerId) return;
@@ -654,7 +667,22 @@ export function effectiveCardCost(state: GameState, playerId: PlayerId, card: Pl
   const enemyCardTax = enemy.board.filter(
     (minion) => minion && !minion.silenced && hasEffect(minion, "enemy_cards_cost_1_more"),
   ).length;
-  return Math.max(0, (card.cost ?? 0) - (player.costReductions[card.id] ?? 0) + enemyCardTax);
+  // Deep Sea King is cheap while the sea is frozen. It reads EITHER board,
+  // because the card says "any minion" and because a discount that only your own
+  // Freeze could unlock would make the card a two-card combo rather than an
+  // opportunist.
+  const chill =
+    isMinionCard(card) && card.effectId === "deep_sea_discount" && boardHasFrozenOrChained(state)
+      ? DEEP_SEA_DISCOUNT
+      : 0;
+  return Math.max(0, (card.cost ?? 0) - (player.costReductions[card.id] ?? 0) - chill + enemyCardTax);
+}
+
+/** Whether anything on either board is currently Frozen or Chained. */
+function boardHasFrozenOrChained(state: GameState): boolean {
+  return state.players.some((player) =>
+    player.board.some((minion) => Boolean(minion) && (minion!.frozen || minion!.chained > 0)),
+  );
 }
 
 export function actionKey(action: GameAction): string {
@@ -1235,13 +1263,10 @@ function resolveDueMonkeyPaws(state: GameState, events: GameEvent[]): void {
     if (!paw || (paw.destroyOnTurn ?? Infinity) > state.turnNumber) continue;
     unequipRelic(minion, pawIndex);
     state.discard.push(paw.id);
-    events.push({
-      kind: "effect",
-      text: `${minion.name} dies from The Monkey's Paw.`,
-      player: entry.owner,
-      cardId: paw.id,
-      instanceId: minion.instanceId,
-    });
+    // ONE line, not two. This used to push "X dies from The Monkey's Paw" and
+    // then let `destroyAtSlot` push "X falls to The Monkey's Paw" underneath it,
+    // so every paw death was reported twice and read like two minions dying.
+    // The death event already names the cause.
     destroyAtSlot(state, entry.owner, entry.slot, events, `${minion.name} falls to The Monkey's Paw`, null);
   }
 }
@@ -1721,13 +1746,33 @@ interface TargetSpec {
 
 type SourceCamp = Exclude<Camp, "ALL">;
 
+/** All Might's aura, in ATK. Raised from 1 on 2 September 2026 (owner's ruling). */
+const ALL_MIGHT_ATK_DEBUFF = 2;
+/** Deep Sea King's discount, in mana, while anything is Frozen or Chained. */
+const DEEP_SEA_DISCOUNT = 3;
+
 /**
- * ALL is an umbrella recipient for positive camp buffs. It must not be used by
- * hostile camp filters: an ALL minion is not secretly Magic, Nature, or Tech,
- * so camp-specific damage, immunity, consumption, and other debuffs continue
- * to require an exact camp match.
+ * ALL is an umbrella recipient for positive camp buffs.
  */
 function receivesCampBuff(minion: MinionInstance, camp: SourceCamp): boolean {
+  return minion.camp === camp || minion.camp === "ALL";
+}
+
+/**
+ * Whether a hostile camp-specific effect may CHOOSE this minion.
+ *
+ * ALL counts, and that is the owner's ruling of 2 September 2026, reversing the
+ * rule before it. ALL used to take every camp buff and duck every camp answer,
+ * which made it the only camp with no counterplay at all: Light Yagami hunts
+ * Nature, Motoko hunts Tech, and an ALL minion sat outside every one of those
+ * hunts while collecting all three camps' buffs.
+ *
+ * It is deliberately SELECTION only. Camp IMMUNITY still asks the attacker's
+ * exact camp (`source.camp === "Nature"` and friends), because making ALL count
+ * as every camp there would have an ALL attacker bounce off all three immunity
+ * relics at once — a nerf nobody asked for and the opposite of this change.
+ */
+function campTargetedBy(minion: MinionInstance, camp: SourceCamp): boolean {
   return minion.camp === camp || minion.camp === "ALL";
 }
 
@@ -1744,6 +1789,14 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
     ],
   },
   dark_dimension_banish: { side: "enemy", prompt: "Choose an enemy minion to banish to the Dark Dimension" },
+  // Chosen, not random, and no longer a Deathrattle as well (owner's ruling,
+  // 2 September 2026). `campTargetedBy` rather than an exact match, so an ALL
+  // minion is a legal victim.
+  light_yagami_nature_kill: {
+    side: "enemy",
+    prompt: "Destroy an enemy Nature minion",
+    filter: (m) => campTargetedBy(m, "Nature"),
+  },
   death_star_mark: { kind: "boardOrCore", side: "enemy", prompt: "Mark an enemy minion or the enemy core", coreOption: true },
   stasis_enemy: { side: "enemy", prompt: "Choose an enemy minion to put into stasis" },
   vader_chain_or_destroy: { side: "enemy", prompt: "Choose an enemy minion for Darth Vader" },
@@ -1770,12 +1823,12 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   consume_tech_4_hp: {
     side: "enemy",
     prompt: "Consume an enemy Tech minion with 4 HP or lower",
-    filter: (m) => m.camp === "Tech" && m.hp <= 4,
+    filter: (m) => campTargetedBy(m, "Tech") && m.hp <= 4,
   },
   consume_nature_4_hp: {
     side: "enemy",
     prompt: "Consume an enemy Nature minion with 4 HP or lower",
-    filter: (m) => m.camp === "Nature" && m.hp <= 4,
+    filter: (m) => campTargetedBy(m, "Nature") && m.hp <= 4,
   },
   // --- friendly side ---
   neutral_double_atk_hp_1: {
@@ -1843,7 +1896,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   motoko_kusanagi: {
     side: "enemy",
     prompt: "Take control of an enemy Tech minion with 4 HP or less",
-    filter: (m) => m.camp === "Tech" && m.hp <= 4 && !m.temporaryControl,
+    filter: (m) => campTargetedBy(m, "Tech") && m.hp <= 4 && !m.temporaryControl,
   },
   copy_and_trigger: {
     side: "enemy",
@@ -2558,6 +2611,17 @@ function runEffect(
     events.push(effectEvent(`${label} saves the core at ${player.health} HP.`, source));
     return false;
   } else if (source.effectId === "aladdin_wish") {
+    // The wish itself is logged, not just its consequence. Watching the
+    // opponent's lamp resolve used to show only the outcome, so a summon out of
+    // the deck and a wish for a summon were the same two lines with nothing
+    // saying a wish had been made at all.
+    const wish =
+      pickedValue === "hero_shield"
+        ? "a shield for the core"
+        : pickedValue === "summon_3"
+          ? "a 3-mana ally"
+          : "an Ascension Relic";
+    events.push(effectEvent(`${label} wishes for ${wish}.`, source));
     if (pickedValue === "hero_shield") {
       player.heroDivineShield = true;
       events.push(effectEvent(`${label} gives ${player.name}'s core Divine Shield.`, source));
@@ -2845,13 +2909,10 @@ function runEffect(
     source.divineShield = true;
     events.push(effectEvent(`${label} gains Divine Shield.`, source));
   } else if (source.effectId === "light_yagami_nature_kill") {
-    destroyRandomEnemyByPredicate(
-      state,
-      source,
-      (minion) => minion.camp === "Nature",
-      "destroys a random Nature enemy minion",
-      events,
-    );
+    const slot = picked ? slotOf(state, picked) : -1;
+    if (picked && slot >= 0) {
+      destroyAtSlot(state, picked.owner, slot, events, `${label} writes down ${picked.name}`, source);
+    }
   } else if (source.effectId === "anti_good_grow") {
     const count = enemy.board.filter((minion) => minion?.alignment === "Good").length;
     if (count > 0) {
@@ -2866,7 +2927,10 @@ function runEffect(
   } else if (source.effectId === "protect_slot") {
     if (pickedSlot) layAura(state, pickedSlot, "slot_protected", source, events);
   } else if (source.effectId === "snap_balance") {
-    destroyRandomMinion(state, source.owner, events, `${label} balances your board`);
+    // Never himself. "Thanos: balances your board: Thanos." was a real line, and
+    // a 10-mana body that can delete itself on arrival is not a card anybody
+    // would play twice. Owner's ruling, 2 September 2026.
+    destroyRandomMinion(state, source.owner, events, `${label} balances your board`, source.instanceId);
     destroyRandomMinion(state, enemyId, events, `${label} balances the enemy board`);
     discardRandom(state, source.owner, events);
     discardRandom(state, enemyId, events);
@@ -3254,6 +3318,11 @@ function runEffect(
       events.push(effectEvent(`${label} sends ${picked.name} home; it returns 5 cheaper.`, source));
     }
   } else if (source.effectId === "transform_random_allies_up") {
+    // `player`, which is the CASTER's board, never `state.players[0]`. Worth
+    // stating because the bug reported against this card was that an opponent's
+    // Mask changed everybody's minions — and the way that reads on screen is
+    // every minion on the table turning over at once, which is also what a
+    // correct cast looks like from the wrong seat when both boards are full.
     const targets = player.board.filter((minion): minion is MinionInstance => Boolean(minion));
     const transformed = targets.reduce(
       (count, target) => count + (transformMinionFromPool(state, source, target, 1, library, events) ? 1 : 0),
@@ -3430,6 +3499,7 @@ function transformMinionFromPool(
   library: CardLibrary,
   events: GameEvent[],
   preserveRelicId?: string,
+  sourceLabel?: string,
 ): boolean {
   const slot = slotOf(state, target);
   if (slot < 0) return false;
@@ -3455,7 +3525,12 @@ function transformMinionFromPool(
   if (preservedRelic) transformed.relic = preservedRelic;
   transformed.suppressArrivalTheme = true;
   state.players[target.owner].board[slot] = transformed;
-  events.push(effectEvent(`${source.name} transforms ${target.name} into ${transformed.name}.`, source));
+  // `sourceLabel` exists because a RELIC can be the thing doing this, and a
+  // relic has no minion to name. The Stand Arrow transforms its own bearer, so
+  // the line read "Tech Hub transforms Tech Hub into Zoro" — which looks like a
+  // minion doing something impossible rather than a relic doing exactly what it
+  // prints.
+  events.push(effectEvent(`${sourceLabel ?? source.name} transforms ${target.name} into ${transformed.name}.`, source));
   return true;
 }
 
@@ -3532,8 +3607,12 @@ function summonTieFighters(state: GameState, source: MinionInstance, events: Gam
 }
 
 function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, library: CardLibrary, events: GameEvent[]): void {
+  // Never the caster. "All your other minions" (owner's ruling, 2 September
+  // 2026): a 2/2 body arming itself was the single best line the card had, and
+  // it made a board-wide effect read as a self-buff.
   const bearers = state.players[source.owner].board.filter(
-    (minion): minion is MinionInstance => Boolean(minion && hasFreeRelicSlot(minion)),
+    (minion): minion is MinionInstance =>
+      Boolean(minion && minion.instanceId !== source.instanceId && hasFreeRelicSlot(minion)),
   );
   const available = relicsInDeck(state, library).map((relic) => relic.id);
   let granted = 0;
@@ -3797,33 +3876,19 @@ function refreshPassiveAuras(state: GameState): void {
         }
       }
       if (hasEffect(source, "fantastic_four_aura")) {
+        // FOUR IDENTICAL SLOTS, +1/+1 each (owner's ruling, 2 September 2026).
+        // The four different gifts — Taunt, Divine Shield, +2 ATK, +2 HP — read
+        // as a puzzle the player had to solve by placing minions in the right
+        // order, and the Divine Shield half needed its own bookkeeping
+        // (`divineShieldAuraSources`, `brokenAuraSources`) to survive being
+        // popped. One buff on four slots is the same card with none of that.
         for (const targetSlot of [0, 1, 2, 3]) {
           const target = board[targetSlot];
           if (!target) continue;
-          if (targetSlot === 0) {
-            if (!hasKeyword(target, "Taunt")) {
-              target.keywords.push("Taunt");
-              target.auraBonuses!.push({ sourceId: source.instanceId, atk: 0, hp: 0, keywords: ["Taunt"] });
-            }
-          } else if (targetSlot === 1) {
-            const broken = target.brokenAuraSources?.includes(source.instanceId) ?? false;
-            const hasPersistentShield =
-              target.divineShield ||
-              hasKeyword(target, "Divine Shield") ||
-              target.gainedEffects.some((effect) => effect.text.toLowerCase().includes("divine shield"));
-            if (!broken && !hasPersistentShield) {
-              target.divineShield = true;
-              target.divineShieldAuraSources = [...(target.divineShieldAuraSources ?? []), source.instanceId];
-              target.auraBonuses!.push({ sourceId: source.instanceId, atk: 0, hp: 0, keywords: [], divineShield: true });
-            }
-          } else if (targetSlot === 2) {
-            target.atk += 2;
-            target.auraBonuses!.push({ sourceId: source.instanceId, atk: 2, hp: 0, keywords: [] });
-          } else {
-            target.maxHp += 2;
-            target.hp += 2;
-            target.auraBonuses!.push({ sourceId: source.instanceId, atk: 0, hp: 2, keywords: [] });
-          }
+          target.atk += 1;
+          target.maxHp += 1;
+          target.hp += 1;
+          target.auraBonuses!.push({ sourceId: source.instanceId, atk: 1, hp: 1, keywords: [] });
         }
       }
       if (hasEffect(source, "buff_all_nature_2_1")) {
@@ -3893,6 +3958,7 @@ function refreshPassiveAuras(state: GameState): void {
       }
     }
   }
+  copyEnemyPassives(state);
   const battleships = ([0, 1] as PlayerId[]).flatMap((owner) =>
     state.players[owner].board.filter(
       (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "battleship_tech_aura")),
@@ -3901,11 +3967,11 @@ function refreshPassiveAuras(state: GameState): void {
   for (const source of battleships) {
     for (const target of state.players[source.owner].board) {
       if (!target || !receivesCampBuff(target, "Tech")) continue;
-      target.atk += 1;
+      target.atk += 2;
       target.maxHp += 1;
       target.hp += 1;
       target.auraBonuses = target.auraBonuses ?? [];
-      target.auraBonuses.push({ sourceId: source.instanceId, atk: 1, hp: 1, keywords: [] });
+      target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 1, keywords: [] });
     }
   }
   const eldenBeasts = ([0, 1] as PlayerId[]).flatMap((owner) =>
@@ -3927,7 +3993,7 @@ function refreshPassiveAuras(state: GameState): void {
   }
   const allMightSources = ([0, 1] as PlayerId[]).flatMap((owner) =>
     state.players[owner].board.filter(
-      (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "all_enemy_atk_down_1")),
+      (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "all_enemy_atk_down_2")),
     ),
   );
   for (const source of allMightSources) {
@@ -3936,7 +4002,9 @@ function refreshPassiveAuras(state: GameState): void {
       // ATK is never a negative state, even if an imported/older save already
       // contains one before this aura is refreshed.
       target.atk = Math.max(0, target.atk);
-      const reduction = Math.min(1, target.atk);
+      // Two, from one (owner's ruling, 2 September 2026). Still floored at the
+      // target's own ATK so nothing goes negative.
+      const reduction = Math.min(ALL_MIGHT_ATK_DEBUFF, target.atk);
       target.atk -= reduction;
       target.auraBonuses = target.auraBonuses ?? [];
       target.auraBonuses.push({ sourceId: source.instanceId, atk: -reduction, hp: 0, keywords: [] });
@@ -4119,7 +4187,7 @@ function equipRelic(
     if (!hasKeyword(bearer, "Charge")) bearer.keywords.push("Charge");
     bearer.sleeping = false;
   } else if (relic.relicId === "stand_arrow") {
-    if (!coinFlip(state) || !transformMinionFromPool(state, bearer, bearer, 2, library, events)) {
+    if (!coinFlip(state) || !transformMinionFromPool(state, bearer, bearer, 2, library, events, undefined, "The Stand Arrow")) {
       applySilence(bearer);
       events.push(effectEvent(`${bearer.name} is Silenced by the Stand Arrow.`, bearer));
     }
@@ -4680,7 +4748,10 @@ function dealMinionDamage(
   if (!target || amount <= 0) return;
   if (!canDamage(state, source, target, effectDamage, events, combatDamage, attackTarget)) return;
   amount = modifyIncoming(state, source, target, amount);
-  if (!target.silenced && hasEffect(target, "superman_damage_cap_3")) {
+  // Superman covers every friendly Good minion, not only himself (owner's
+  // ruling, 2 September 2026). Read off the TARGET's own board, so a Superman
+  // on the other side does nothing for the minion being hit.
+  if (!target.silenced && supermanCovers(state, target)) {
     amount = Math.min(amount, 3);
   }
   if (amount <= 0) return;
@@ -4817,13 +4888,6 @@ function canDamage(
   }
   if (!target.silenced) {
     const ownerBoard = state.players[target.owner].board;
-    if (
-      hasEffect(target, "invulnerable_if_frozen") &&
-      state.players.some((player) => player.board.some((minion) => minion?.frozen))
-    ) {
-      events.push(effectEvent(`${target.name} is Invulnerable while a minion is Frozen.`, target));
-      return false;
-    }
     if (hasEffect(target, "invuln_if_alone") && ownerBoard.filter(Boolean).length <= 1) {
       events.push(effectEvent(`${target.name} is untouchable while alone.`, target));
       return false;
@@ -4844,12 +4908,10 @@ function canDamage(
     }
   }
   if (!effectDamage && source.owner !== target.owner && !target.silenced) {
+    // Includes himself now (owner's ruling, 2 September 2026): the card reads
+    // "all friendly minions", and he is one of them.
     const kojiro = state.players[target.owner].board.find(
-      (minion) =>
-        minion &&
-        minion.instanceId !== target.instanceId &&
-        hasEffect(minion, "evade_allies_33") &&
-        !minion.silenced,
+      (minion) => minion && hasEffect(minion, "evade_allies_33") && !minion.silenced,
     );
     if (kojiro && rollInt(state, 100) < 33) {
       events.push(effectEvent(`${kojiro.name} helps ${target.name} evade the attack.`, kojiro));
@@ -4993,6 +5055,22 @@ function hasKeyword(card: Pick<CardDefinition | MinionInstance, "keywords">, key
   return card.keywords.some((entry) => entry === keyword);
 }
 
+/**
+ * Whether Superman's damage cap protects this minion.
+ *
+ * True for Superman himself whatever his alignment is printed as, and for any
+ * Good minion standing on the same board as a live Superman. A silenced or
+ * chained Superman protects nobody, which `hasEffect` already answers.
+ */
+function supermanCovers(state: GameState, target: MinionInstance): boolean {
+  return state.players[target.owner].board.some(
+    (minion) =>
+      Boolean(minion) &&
+      hasEffect(minion!, "superman_damage_cap_3") &&
+      (minion!.instanceId === target.instanceId || target.alignment === "Good"),
+  );
+}
+
 function hasEffect(minion: MinionInstance, effectId: EffectId): boolean {
   const held = minion.effectId === effectId || minion.gainedEffects.some((effect) => effect.effectId === effectId);
   // A Chained minion is temporarily out of the duel in the same way a
@@ -5057,15 +5135,74 @@ function buffMinion(minion: MinionInstance, atk: number, hp: number): void {
  * so that turn is already one of the two it loses. Both routes cost a player the
  * same thing — two turns in which the minion does nothing.
  */
-function applyChain(state: GameState, target: MinionInstance, events: GameEvent[], turns = CHAIN_TURNS): void {
-  const wasFree = target.chained === 0;
+function applyChain(_state: GameState, target: MinionInstance, _events: GameEvent[], turns = CHAIN_TURNS): void {
+  // The One-Eyed Owl payout used to live here. It now runs off the
+  // end-of-action diff in `feedAfflictionWatchers`, because the card watches
+  // Freeze and Silence as well and those arrive by routes this function never
+  // sees.
   target.chained = Math.max(target.chained, turns + 1);
-  if (!wasFree || target.chained === 0) return;
-  for (const owner of [0, 1] as PlayerId[]) {
-    for (const watcher of state.players[owner].board) {
-      if (!watcher || !hasEffect(watcher, "chain_watch_growth")) continue;
-      buffMinion(watcher, 1, 1);
-      events.push(effectEvent(`${watcher.name} feeds on ${target.name}'s chains (+1/+1).`, watcher));
+}
+
+/** Which minions are currently Chained, Frozen or Silenced, by instance. */
+type AfflictionState = Map<string, { chained: boolean; frozen: boolean; silenced: boolean }>;
+
+function afflictionSnapshot(state: GameState): AfflictionState {
+  const snapshot: AfflictionState = new Map();
+  for (const player of state.players) {
+    for (const minion of player.board) {
+      if (!minion) continue;
+      snapshot.set(minion.instanceId, {
+        chained: minion.chained > 0,
+        frozen: minion.frozen,
+        silenced: minion.silenced,
+      });
+    }
+  }
+  return snapshot;
+}
+
+/**
+ * Pays every One-Eyed Owl for each minion that picked up an affliction.
+ *
+ * A DIFF, not a hook. The card reads "whenever a minion becomes Chained, Frozen
+ * or Silenced", and those three arrive from a dozen different places — a
+ * targeted effect, an aura, a slot mark, a relic, a global sweep — several of
+ * which have no events array to report into. Comparing the board before and
+ * after the whole action catches all of them, including the routes that do not
+ * exist yet.
+ *
+ * A minion that arrives ALREADY afflicted pays nothing: it was not there before,
+ * so it never "became" anything. That is why the lookup misses count as no
+ * change rather than as a new affliction, and it is what stops Albion — who is
+ * printed Chained — from feeding an Owl every time a copy of him is summoned.
+ *
+ * One payout per minion per action, not one per affliction: a card that freezes
+ * and silences in the same breath is one event to watch, not two.
+ */
+function feedAfflictionWatchers(state: GameState, before: AfflictionState, events: GameEvent[]): void {
+  const watchers: MinionInstance[] = [];
+  for (const player of state.players) {
+    for (const minion of player.board) {
+      if (minion && hasEffect(minion, "chain_watch_growth")) watchers.push(minion);
+    }
+  }
+  if (watchers.length === 0) return;
+
+  for (const player of state.players) {
+    for (const minion of player.board) {
+      if (!minion) continue;
+      const was = before.get(minion.instanceId);
+      if (!was) continue;
+      const gained =
+        (minion.chained > 0 && !was.chained) ||
+        (minion.frozen && !was.frozen) ||
+        (minion.silenced && !was.silenced);
+      if (!gained) continue;
+      for (const watcher of watchers) {
+        if (watcher.instanceId === minion.instanceId) continue;
+        buffMinion(watcher, 1, 1);
+        events.push(effectEvent(`${watcher.name} feeds on ${minion.name}'s suffering (+1/+1).`, watcher));
+      }
     }
   }
 }
@@ -5219,6 +5356,50 @@ function applySilence(minion: MinionInstance, permanent = true): void {
  * Might's -1 ATK to the enemy board) is a curse and has to keep landing, so the
  * test is the sign of the bonus, not the identity of the source.
  */
+/**
+ * All for One: every enemy minion's printed Passive or Ongoing, worn at once.
+ *
+ * Rebuilt from scratch on every recompute rather than granted once, because it
+ * is an AURA in everything but name — an enemy minion dying has to take its
+ * power back with it. `gainedEffects` is the right home because `hasEffect`
+ * already reads it, so every passive in the game answers for the wearer without
+ * a single one of them needing to know this card exists.
+ *
+ * Two exclusions, and both are the same bug. It never copies its own id, or two
+ * All for Ones facing each other would each try to wear the other's copy of the
+ * other's copy. And it copies the PRINTED effect (`printedEffectId`), never what
+ * a minion is currently wearing, so it cannot pick up a power that is itself on
+ * loan.
+ *
+ * The whole `gainedEffects` array is replaced, so a card that grants All for One
+ * an effect by some other route loses it on the next recompute. Nothing in the
+ * roster does that today; a card that did would need its grant recorded
+ * somewhere this function does not own.
+ */
+function copyEnemyPassives(state: GameState): void {
+  for (const owner of [0, 1] as PlayerId[]) {
+    for (const wearer of state.players[owner].board) {
+      if (!wearer || wearer.effectId !== "copy_all_enemy_passives") continue;
+      if (wearer.silenced || wearer.chained > 0) {
+        wearer.gainedEffects = [];
+        continue;
+      }
+      const copied: MinionInstance["gainedEffects"] = [];
+      const seen = new Set<EffectId>();
+      for (const enemyMinion of state.players[opponent(owner)].board) {
+        if (!enemyMinion || enemyMinion.silenced || enemyMinion.chained > 0) continue;
+        const timing = enemyMinion.effectTiming;
+        if (timing !== "passive" && timing !== "ongoing") continue;
+        const effectId = printedEffectId(enemyMinion);
+        if (effectId === "none" || effectId === "copy_all_enemy_passives" || seen.has(effectId)) continue;
+        seen.add(effectId);
+        copied.push({ effectId, timing, text: enemyMinion.effect });
+      }
+      wearer.gainedEffects = copied;
+    }
+  }
+}
+
 function suppressAuraBuffsOnSilenced(state: GameState): void {
   for (const owner of [0, 1] as PlayerId[]) {
     for (const target of state.players[owner].board) {
@@ -5255,32 +5436,22 @@ function canDisable(
   return true;
 }
 
-function destroyRandomMinion(state: GameState, playerId: PlayerId, events: GameEvent[], prefix: string): void {
+function destroyRandomMinion(
+  state: GameState,
+  playerId: PlayerId,
+  events: GameEvent[],
+  prefix: string,
+  /** An instance the roll must never land on, for a card that excludes itself. */
+  exceptInstanceId?: string,
+): void {
   const occupied = state.players[playerId].board
     .map((minion, slotIndex) => ({ minion, slotIndex }))
-    .filter(({ minion }) => minion && !isUntargetable(state, minion));
+    .filter(({ minion }) => minion && !isUntargetable(state, minion) && minion.instanceId !== exceptInstanceId);
   if (occupied.length === 0) return;
   const target = occupied[rollInt(state, occupied.length)];
   if (target?.minion) destroyAtSlot(state, playerId, target.slotIndex, events, `${prefix}: ${target.minion.name}`);
 }
 
-function destroyRandomEnemyByPredicate(
-  state: GameState,
-  source: MinionInstance,
-  predicate: (minion: MinionInstance) => boolean,
-  message: string,
-  events: GameEvent[],
-): void {
-  const enemyId = opponent(source.owner);
-  const candidates = state.players[enemyId].board
-    .map((minion, slotIndex) => ({ minion, slotIndex }))
-    .filter(({ minion }) => minion && enemyTargetable(state, minion) && predicate(minion));
-  if (candidates.length === 0) return;
-  const target = candidates[rollInt(state, candidates.length)];
-  if (target?.minion) {
-    destroyAtSlot(state, enemyId, target.slotIndex, events, `${source.name} ${message}: ${target.minion.name}`);
-  }
-}
 
 function destroyInstance(
   state: GameState,
@@ -5496,15 +5667,7 @@ function resolveCardDeathrattleOnce(
   // The dead minion is already out of its board slot when this function runs,
   // so reactToDeath cannot discover its own effect. Record it at resolution.
   traceEffect(dead.effectId);
-  if (dead.effectId === "light_yagami_nature_kill") {
-    destroyRandomEnemyByPredicate(
-      state,
-      dead,
-      (minion) => minion.camp === "Nature",
-      "destroys a random Nature enemy minion",
-      events,
-    );
-  } else if (dead.effectId === "deathrattle_damage_random_enemy") {
+  if (dead.effectId === "deathrattle_damage_random_enemy") {
     const target = randomEnemyMinion(state, dead);
     const slot = target ? slotOf(state, target) : -1;
     if (target && slot >= 0) {

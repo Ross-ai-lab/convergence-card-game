@@ -330,12 +330,14 @@ describe("Convergence engine", () => {
       .toBeLessThan(effectTexts.indexOf(effectTexts.find((t) => t.includes("Carnage Kabuto"))!));
   });
 
-  it("keeps Light Yagami on the board with Battlecry and Deathrattle", () => {
+  it("keeps Light Yagami on the board when there is no Nature enemy to name", () => {
     const state = mainState();
+    // Avatar Aang is not Nature, so the Battlecry has nothing legal to point at
+    // and resolves quietly. He lost the Deathrattle half on 2 September 2026.
     state.players[1].board[0] = makeMinion("Avatar Aang", 1, { divineShield: true });
     const resolved = playCardFor(state, 0, "Light Yagami", 0);
     expect(resolved.players[0].board[0]?.name).toBe("Light Yagami");
-    expect(resolved.players[0].board[0]?.effectTiming).toBe("onPlayAndDeathrattle");
+    expect(resolved.players[0].board[0]?.effectTiming).toBe("onPlay");
     expect(resolved.players[1].board[0]?.name).toBe("Avatar Aang");
   });
 });

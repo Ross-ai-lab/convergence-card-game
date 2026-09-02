@@ -20,7 +20,7 @@ r019,The Green Mask,2,Relic,relic,return_on_death,Return the bearer to your hand
 r020,Tesseract,4,Relic,relic,double_attack,The bearer can attack twice each turn,RELIC,MCU,/card-art/raw/r020.webp
 r021,Infinity Castle,4,Relic,relic,evade_50,The bearer's Evade chance is 50%,RELIC,Demon Slayer,/card-art/raw/r021.webp
 r022,Pandora's Box,2,Relic,relic,pandora_box,The bearer gains +4/+4. It dies at the start of your next turn,RELIC,Myth,/card-art/raw/r022.webp
-r023,The Monkey's Paw,3,Relic,relic,monkeys_paw,The bearer gains +5/+5. It dies next turn,RELIC,Myth,/card-art/raw/r023.webp
+r023,The Monkey's Paw,2,Relic,relic,monkeys_paw,The bearer gains +5/+5. It dies next turn,RELIC,Myth,/card-art/raw/r023.webp
 r024,Ark of the Covenant,4,Relic,relic,ark_divine_shield,The bearer gains Divine Shield,RELIC,Indiana Jones,/card-art/raw/r024.webp
 r025,Necronomicon,2,Relic,relic,necronomicon,The bearer's Deathrattle triggers twice,RELIC,Myth,/card-art/raw/r025.webp
 r026,Dragon Balls,7,Relic,relic,dragon_balls,Summon Shenron after the bearer dies,RELIC,Dragon Ball,/card-art/raw/r026.webp

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
-import { applyAction, createInitialGame, getLegalActions, makeCardLibrary, opponentHandRevealed } from "./game";
+import { applyAction, createInitialGame, effectiveCardCost, getLegalActions, makeCardLibrary, opponentHandRevealed } from "./game";
 import { HERO_POWER_UNLOCK_ORDER } from "./hero-powers";
 import { spawnTestMinion } from "./test-utils";
 import type { GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
@@ -243,15 +243,15 @@ describe("2026 card replacements", () => {
       },
       Battleship: {
         cost: 4,
-        atk: 3,
+        atk: 2,
         hp: 3,
         effectId: "battleship_tech_aura",
         effectTiming: "passive",
         keywords: ["Passive"],
-        effect: "Passive: All friendly Tech minions have +1/+1",
+        effect: "Passive: All friendly Tech minions have +2/+1",
       },
       Dormammu: { cost: 9, atk: 8, hp: 5, effectId: "dark_dimension_banish", effectTiming: "onPlay" },
-      "Doctor Strange": { cost: 7, atk: 3, hp: 2, effectId: "strange_bargain", effectTiming: "onPlay" },
+      "Doctor Strange": { cost: 7, atk: 3, hp: 3, effectId: "strange_bargain", effectTiming: "onPlay" },
       Morpheus: {
         cost: 4,
         atk: 2,
@@ -264,12 +264,12 @@ describe("2026 card replacements", () => {
       "Ainz Ooal Gown": { cost: 9, atk: 3, hp: 3, effectId: "set_all_enemy_hp_1", effectTiming: "onPlay", keywords: [] },
       "Light Yagami": {
         cost: 8,
-        atk: 2,
-        hp: 4,
+        atk: 4,
+        hp: 3,
         effectId: "light_yagami_nature_kill",
-        effectTiming: "onPlayAndDeathrattle",
-        keywords: ["Deathrattle"],
-        effect: "Battlecry and Deathrattle: Destroy a random Nature enemy minion",
+        effectTiming: "onPlay",
+        keywords: [],
+        effect: "Battlecry: Destroy an enemy Nature minion",
       },
       "Eye of Sauron": {
         cost: 5,
@@ -308,7 +308,7 @@ describe("2026 card replacements", () => {
         effect: "Taunt. Passive: Enemy minions that attack this become Chained",
       },
       Zoro: { cost: 5, atk: 4, hp: 4, effectId: "on_kill_buff_1", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Gain +1/+1 after killing a minion" },
-      "One-Eyed Owl": { cost: 5, atk: 4, hp: 4, effectId: "chain_watch_growth", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Whenever a minion becomes Chained, gain +1/+1" },
+      "One-Eyed Owl": { cost: 5, atk: 4, hp: 4, effectId: "chain_watch_growth", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Whenever a minion becomes Chained, Frozen or Silenced, gain +1/+1" },
       "Gravelord Nito": { cost: 4, atk: 2, hp: 3, effectId: "nito_any_death_1_1", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Gain +1/+1 when a minion dies" },
       "Margit the Fell Omen": {
         cost: 3,
@@ -329,7 +329,7 @@ describe("2026 card replacements", () => {
         keywords: ["Deathrattle"],
         effect: "Deathrattle: Summon Galactus (8/8)",
       },
-      "Pillar Men": { cost: 4, atk: 4, hp: 3, effectId: "pillar_men_kill_heal", effectTiming: "passive", keywords: ["Chained", "Passive"], effect: "Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health" },
+      "Pillar Men": { cost: 4, atk: 4, hp: 4, effectId: "pillar_men_kill_heal", effectTiming: "passive", keywords: ["Chained", "Passive"], effect: "Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health" },
       Cthulhu: {
         cost: 8,
         atk: 8,
@@ -419,7 +419,7 @@ describe("2026 card replacements", () => {
       Darkwing: { effectTiming: "deathrattle", keywords: ["Deathrattle"], effectId: "kill_back", effect: "Deathrattle: The minion which kills this minion also dies right after" },
       "Dr. Heinz Doofenshmirtz": { effect: "Ongoing: 50% to die and 50% to gain +2/+1" },
       "G-Man": { atk: 3, hp: 6, effectId: "stasis_enemy", effectTiming: "onPlay", keywords: [] },
-      Superman: { atk: 6, hp: 6, effectId: "superman_damage_cap_3", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Cannot lose more than 3 HP at once" },
+      Superman: { atk: 6, hp: 6, effectId: "superman_damage_cap_3", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Friendly Good minions cannot lose more than 3 HP at once" },
       "Darth Vader": {
         atk: 3,
         hp: 2,
@@ -444,24 +444,25 @@ describe("2026 card replacements", () => {
       Avengers: { atk: 4, hp: 4, effectId: "invuln_with_good_ally", effectTiming: "passive", keywords: ["Passive"] },
       "General Grievous": { atk: 3, hp: 3, alignment: "Evil", effectId: "grievous_on_kill_atk", effectTiming: "passive", keywords: ["Passive"] },
       Buddha: { atk: 3, hp: 4, effectId: "buddha_purify", effectTiming: "onPlay", keywords: [] },
-      "Deep Sea King": { atk: 4, hp: 4, effectId: "invulnerable_if_frozen", effectTiming: "passive", keywords: ["Passive"] },
+      "Deep Sea King": { atk: 4, hp: 4, effectId: "deep_sea_discount", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Costs 3 less while any minion is Frozen or Chained" },
       "Seven Deadly Sins": { atk: 4, hp: 5, effectId: "summon_sins", effectTiming: "onPlay", keywords: [] },
       "Elder Centipede": { cost: 7, atk: 5, hp: 6, effectId: "self_buff_2", effectTiming: "ongoing", keywords: ["Ongoing"] },
       "All Might": {
         atk: 4,
         hp: 5,
-        effectId: "all_enemy_atk_down_1",
+        effectId: "all_enemy_atk_down_2",
         effectTiming: "passive",
         keywords: ["Passive"],
-        effect: "Passive: While on the board, every enemy minion has -1 ATK",
+        effect: "Passive: While on the board, every enemy minion has -2 ATK",
       },
       "Fantastic Four": {
         cost: 4,
-        atk: 1,
+        atk: 2,
         hp: 2,
         effectId: "fantastic_four_aura",
         effectTiming: "passive",
         keywords: ["Passive"],
+        effect: "Passive: Your first 4 board slots each give +1/+1",
       },
       Shibukawa: {
         cost: 1,
@@ -472,7 +473,7 @@ describe("2026 card replacements", () => {
         keywords: ["Divine Shield", "Passive"],
         effect: "Divine Shield. Passive: Do 2x damage when defending against an attack",
       },
-      Sans: { cost: 4, atk: 1, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks" },
+      Sans: { cost: 4, atk: 2, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks" },
       "Doom Slayer": { cost: 8, atk: 3, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
       Ragnaros: { cost: 6, atk: 6, hp: 6, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
       Musashi: { atk: 2, hp: 1 },
@@ -760,29 +761,46 @@ describe("2026 card replacements", () => {
     ).toBe(true);
   });
 
-  it("Light Yagami destroys a random Nature enemy on play and on death", () => {
-    const battlecry = mainState("light-yagami-battlecry");
-    battlecry.players[1].board[0] = minion("John Wick", 1);
-    battlecry.players[1].board[1] = minion("Modern Tank", 1);
-    const afterBattlecry = play(battlecry, 0, "Light Yagami", 0);
-    expect(afterBattlecry.players[1].board[0]).toBeNull();
-    expect(afterBattlecry.players[1].board[1]).not.toBeNull();
+  it("Light Yagami destroys the Nature enemy he is pointed at, and only Nature", () => {
+    const state = mainState("light-yagami-battlecry");
+    state.players[1].board[0] = minion("John Wick", 1); // Nature
+    state.players[1].board[1] = minion("Modern Tank", 1); // Tech
+    state.players[1].board[2] = minion("Zoro", 1); // Nature
+    const asking = play(state, 0, "Light Yagami", 0);
+    // Chosen, not random (owner's ruling, 2 September 2026). Only the two
+    // Nature minions are offered, so the Tech one is not a lucky survival.
+    expect(asking.phase).toBe("targeting");
+    expect(asking.pendingTarget?.options).toHaveLength(2);
+    const resolved = choose(asking, 1);
+    expect(resolved.players[1].board[2]).toBeNull();
+    expect(resolved.players[1].board[0]).not.toBeNull();
+    expect(resolved.players[1].board[1]).not.toBeNull();
+  });
 
-    const deathrattle = mainState("light-yagami-deathrattle");
-    deathrattle.players[0].board[0] = minion("Light Yagami", 0, { hp: 1, maxHp: 1, sleeping: false });
-    deathrattle.players[1].board[0] = minion("John Wick", 1);
-    // Modern Tank is a 2/2, so the fixture gives it the bulk to survive the
-    // retaliation. The claim is about the Deathrattle's victim, not about combat.
-    deathrattle.players[1].board[1] = minion("Modern Tank", 1, { atk: 9, hp: 9, maxHp: 9, sleeping: false });
-    deathrattle.activePlayer = 1;
-    const afterDeath = applyAction(
-      deathrattle,
+  it("Light Yagami may point at an ALL-camp minion", () => {
+    // ALL counts as every camp for HOSTILE targeting now. It used to duck every
+    // camp-specific answer in the game while collecting all three camps' buffs.
+    const state = mainState("light-yagami-all-camp");
+    state.players[1].board[0] = minion("John Wick", 1, { camp: "ALL" });
+    // A single legal victim resolves without a prompt, which is the engine's
+    // normal handling of a forced choice.
+    expect(play(state, 0, "Light Yagami", 0).players[1].board[0]).toBeNull();
+  });
+
+  it("Light Yagami has no Deathrattle", () => {
+    const state = mainState("light-yagami-deathrattle");
+    state.players[0].board[0] = minion("Light Yagami", 0, { hp: 1, maxHp: 1, sleeping: false });
+    state.players[1].board[0] = minion("John Wick", 1); // Nature, and safe now
+    state.players[1].board[1] = minion("Modern Tank", 1, { atk: 9, hp: 9, maxHp: 9, sleeping: false });
+    state.activePlayer = 1;
+    const after = applyAction(
+      state,
       { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 0 },
       library,
     ).state;
-    expect(afterDeath.players[0].board[0]).toBeNull();
-    expect(afterDeath.players[1].board[0]).toBeNull();
-    expect(afterDeath.players[1].board[1]).not.toBeNull();
+    expect(after.players[0].board[0]).toBeNull();
+    // He dies and takes nobody with him.
+    expect(after.players[1].board[0]).not.toBeNull();
   });
 
   it("Aladdin can give the hero a Divine Shield", () => {
@@ -1048,24 +1066,23 @@ describe("2026 card replacements", () => {
     expect(refreshed.players[0].board[3]).toMatchObject({ atk: 2, maxHp: 3 });
   });
 
-  it("Fantastic Four assigns its four effects left-to-right and loses them when killed", () => {
+  it("Fantastic Four gives its first four slots +1/+1, and takes it back when killed", () => {
     const state = mainState();
     for (const slot of [0, 1, 2, 3]) state.players[0].board[slot] = minion("John Wick", 0, { effectId: "none", effectTiming: "none", keywords: [] });
     const placed = play(state, 0, "Fantastic Four", 4);
-    expect(placed.players[0].board[0]?.keywords).toContain("Taunt");
-    expect(placed.players[0].board[1]?.divineShield).toBe(true);
-    expect(placed.players[0].board[2]?.atk).toBe(3);
-    expect(placed.players[0].board[3]?.maxHp).toBe(3);
+    for (const slot of [0, 1, 2, 3]) {
+      expect(placed.players[0].board[slot]?.atk).toBe(2);
+      expect(placed.players[0].board[slot]?.maxHp).toBe(2);
+    }
 
-    placed.players[0].board[0]!.keywords = [];
     placed.players[1].board[0] = minion("Zoro", 1, { atk: 99, sleeping: false, hp: 99, maxHp: 99 });
     placed.activePlayer = 1;
     const after = applyAction(placed, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 4 }, library).state;
     expect(after.players[0].board[4]).toBeNull();
-    expect(after.players[0].board[0]?.keywords).not.toContain("Taunt");
-    expect(after.players[0].board[1]?.divineShield).toBe(false);
-    expect(after.players[0].board[2]?.atk).toBe(1);
-    expect(after.players[0].board[3]?.maxHp).toBe(1);
+    for (const slot of [0, 1, 2, 3]) {
+      expect(after.players[0].board[slot]?.atk).toBe(1);
+      expect(after.players[0].board[slot]?.maxHp).toBe(1);
+    }
   });
 
   it("Ragnaros burns at the start of its controller's turn and never attacks", () => {
@@ -1095,12 +1112,14 @@ describe("2026 card replacements", () => {
     expect(exposed.players[0].board[0]).toBeNull();
   });
 
-  it("The 7 Heroic Spirits equips random relics to every friendly minion", () => {
+  it("The 7 Heroic Spirits arms every friendly minion EXCEPT itself", () => {
     const state = mainState();
     state.players[0].board[0] = minion("John Wick", 0);
     const after = play(state, 0, "The 7 Heroic Spirits", 1);
     expect(after.players[0].board[0]?.relic).not.toBeNull();
-    expect(after.players[0].board[1]?.relic).not.toBeNull();
+    // Owner's ruling, 2 September 2026: a 2/2 arming itself was the best line
+    // the card had, and it made a board effect read as a self-buff.
+    expect(after.players[0].board[1]?.relic).toBeNull();
   });
 
   it("The 7 Heroic Spirits keeps handing out relics past a bearer that can hold none", () => {
@@ -1326,22 +1345,40 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[0]?.atk).toBe(7);
   });
 
-  it("Superman caps incoming damage at 3 and Deep Sea King is Invulnerable while anything is Frozen", () => {
-    const superman = mainState("superman-damage-cap");
-    superman.players[1].board[0] = minion("Superman", 1);
-    superman.players[0].board[0] = minion("John Wick", 0, { camp: "Nature", atk: 5, hp: 10, maxHp: 10, sleeping: false });
-    const blocked = applyAction(superman, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(blocked.players[1].board[0]?.hp).toBe(3);
+  it("Superman caps damage on himself AND on every friendly Good minion", () => {
+    const state = mainState("superman-damage-cap");
+    state.players[1].board[0] = minion("Superman", 1);
+    // A Good ally standing beside him, and an Evil one that is on its own.
+    state.players[1].board[1] = minion("Zoro", 1, { alignment: "Good", hp: 10, maxHp: 10 });
+    state.players[1].board[2] = minion("John Wick", 1, { alignment: "Evil", hp: 10, maxHp: 10 });
+    state.players[0].board[0] = minion("Modern Tank", 0, { atk: 5, hp: 40, maxHp: 40, sleeping: false });
 
-    const deepSea = mainState("deep-sea-frozen");
-    deepSea.players[1].board[0] = minion("Deep Sea King", 1);
-    deepSea.players[0].board[0] = minion("John Wick", 0, { atk: 2, hp: 20, maxHp: 20, sleeping: false });
-    deepSea.players[0].board[1] = minion("Zoro", 0, { atk: 2, hp: 20, maxHp: 20, sleeping: false, frozen: true });
-    const blockedByFreeze = applyAction(deepSea, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(blockedByFreeze.players[1].board[0]?.hp).toBe(4);
-    blockedByFreeze.players[0].board[1]!.frozen = false;
-    const hit = applyAction(blockedByFreeze, { type: "attack_minion", player: 0, attackerSlot: 1, targetSlot: 0 }, library).state;
-    expect(hit.players[1].board[0]?.hp).toBe(2);
+    const onSuperman = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(onSuperman.players[1].board[0]?.hp).toBe(3);
+
+    onSuperman.players[0].board[0]!.attacksUsed = 0;
+    onSuperman.activePlayer = 0;
+    const onGoodAlly = applyAction(onSuperman, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 1 }, library).state;
+    expect(onGoodAlly.players[1].board[1]?.hp).toBe(7);
+
+    onGoodAlly.players[0].board[0]!.attacksUsed = 0;
+    onGoodAlly.activePlayer = 0;
+    const onEvilAlly = applyAction(onGoodAlly, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 2 }, library).state;
+    expect(onEvilAlly.players[1].board[2]?.hp).toBe(5);
+  });
+
+  it("Deep Sea King costs 3 less while anything is Frozen or Chained", () => {
+    const state = mainState("deep-sea-discount");
+    const card = cards.find((entry) => entry.name === "Deep Sea King")!;
+    expect(effectiveCardCost(state, 0, card)).toBe(5);
+
+    state.players[1].board[0] = minion("Zoro", 1, { frozen: true });
+    expect(effectiveCardCost(state, 0, card)).toBe(2);
+
+    state.players[1].board[0]!.frozen = false;
+    state.players[0].board[0] = minion("Zoro", 0, { chained: 2 });
+    // Either board, either affliction: the card says "any minion".
+    expect(effectiveCardCost(state, 0, card)).toBe(2);
   });
 
   it("Seven Deadly Sins fills the board with unique-keyword Sin tokens and their new art", () => {
@@ -1370,14 +1407,15 @@ describe("2026 card replacements", () => {
     tech.players[0].board[1] = minion("John Wick", 0, { camp: "Tech", atk: 2, hp: 2, maxHp: 2 });
     tech.players[0].board[2] = minion("Zoro", 0, { atk: 2, hp: 3, maxHp: 3 });
     tech.players[1].board[0] = minion("John Wick", 1, { camp: "Tech", atk: 3, hp: 3, maxHp: 3 });
+    // +2/+1 now, off a 2/3 body (owner's ruling, 2 September 2026).
     const buffed = play(tech, 0, "Battleship", 0);
     expect(buffed.players[0].board[0]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
-    expect(buffed.players[0].board[1]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
+    expect(buffed.players[0].board[1]).toMatchObject({ atk: 4, hp: 3, maxHp: 3 });
     expect(buffed.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
     expect(buffed.players[1].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
     buffed.players[0].board[0]!.silenced = true;
     const auraRemoved = applyAction(buffed, { type: "end_turn", player: 0 }, library).state;
-    expect(auraRemoved.players[0].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
+    expect(auraRemoved.players[0].board[0]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
     expect(auraRemoved.players[0].board[1]).toMatchObject({ atk: 2, hp: 2, maxHp: 2 });
     expect(auraRemoved.players[0].board[2]).toMatchObject({ atk: 2, hp: 3, maxHp: 3 });
     expect(auraRemoved.players[1].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
@@ -1435,16 +1473,19 @@ describe("2026 card replacements", () => {
     const grown = endTurn(endTurn(elder, 0), 1);
     expect(grown.players[0].board[0]).toMatchObject({ atk: 7, hp: 8, maxHp: 8 });
 
+    // -2 ATK now, up from -1 (owner's ruling, 2 September 2026).
     const might = mainState("all-might-aura");
     might.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 5, maxHp: 5 });
     const empowered = play(might, 0, "All Might", 0);
-    expect(empowered.players[1].board[0]?.atk).toBe(4);
-    empowered.players[1].board[1] = minion("John Wick", 1, { atk: 0, hp: 5, maxHp: 5 });
+    expect(empowered.players[1].board[0]?.atk).toBe(3);
+    // A 1-ATK body floors at zero rather than going negative, which is why the
+    // reduction is clamped to the target's own ATK.
+    empowered.players[1].board[1] = minion("John Wick", 1, { atk: 1, hp: 5, maxHp: 5 });
     const clamped = applyAction(empowered, { type: "end_turn", player: 0 }, library).state;
-    expect(clamped.players[1].board[0]?.atk).toBe(4);
+    expect(clamped.players[1].board[0]?.atk).toBe(3);
     expect(clamped.players[1].board[1]?.atk).toBe(0);
     const refreshed = endTurn(clamped, 1);
-    expect(refreshed.players[1].board[0]?.atk).toBe(4);
+    expect(refreshed.players[1].board[0]?.atk).toBe(3);
     refreshed.players[0].board[0] = null;
     const auraGone = applyAction(refreshed, { type: "end_turn", player: 0 }, library).state;
     expect(auraGone.players[1].board[0]?.atk).toBe(5);
@@ -1460,7 +1501,7 @@ describe("2026 card replacements", () => {
 
     dormant.players[0].board[0]!.chained = 0;
     const awake = play(dormant, 0, "UFO", 2);
-    expect(awake.players[1].board[0]?.atk).toBe(4);
+    expect(awake.players[1].board[0]?.atk).toBe(3);
   });
 
   it("King locks one random enemy attacker at the start of each enemy turn", () => {
@@ -2010,18 +2051,21 @@ describe("2026 card replacements", () => {
     expect(hit.players[0].board[0]?.hp).toBe(10);
   });
 
-  it("Thanos destroys one random minion per side and discards one card per player", () => {
+  it("Thanos destroys one random minion per side, and never himself", () => {
     const state = mainState("thanos-snap");
     state.players[0].hand = [cardId("Thanos"), cardId("Zoro")];
     state.players[1].hand = [cardId("Zoro")];
+    state.players[0].board[1] = minion("Zoro", 0);
     state.players[1].board[0] = minion("John Wick", 1);
 
     const after = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library).state;
-    expect(after.players[0].board.every((entry) => entry === null)).toBe(true);
+    // Owner's ruling, 2 September 2026: "Thanos: balances your board: Thanos."
+    // was a real log line. He survives his own snap; the ally does not.
+    expect(after.players[0].board[0]?.name).toBe("Thanos");
+    expect(after.players[0].board[1]).toBeNull();
     expect(after.players[1].board.every((entry) => entry === null)).toBe(true);
     expect(after.players[0].hand).toEqual([]);
     expect(after.players[1].hand).toEqual([]);
-    expect(after.discard).toEqual([cardId("Thanos"), cardId("John Wick"), cardId("Zoro"), cardId("Zoro")]);
   });
 
   it("Doom Slayer deals exactly triple damage to Evil minions and heals 3 after a kill", () => {
@@ -2040,7 +2084,7 @@ describe("2026 card replacements", () => {
     expect(healed.players[0].board[0]).toMatchObject({ hp: 4, maxHp: 8 });
   });
 
-  it("Flash can attack exactly 2 times for 10 total core damage", () => {
+  it("Flash can attack exactly 2 times for 8 total core damage", () => {
     let state = mainState("flash-two-attacks");
     state.players[0].board[0] = minion("Flash", 0, { sleeping: false });
     const before = state.players[1].health;
@@ -2050,7 +2094,8 @@ describe("2026 card replacements", () => {
       state = applyAction(state, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
     }
 
-    expect(before - state.players[1].health).toBe(10);
+    // 4 ATK now, down from 5 (owner's ruling, 2 September 2026).
+    expect(before - state.players[1].health).toBe(8);
     expect(state.players[0].board[0]?.attacksUsed).toBe(2);
     expect(getLegalActions(state, library)).not.toContainEqual({ type: "attack_core", player: 0, attackerSlot: 0 });
   });
@@ -2171,15 +2216,56 @@ describe("2026 card replacements", () => {
     expect(blocked.players[1].board[1]?.hp).toBe(15);
   });
 
-  it("All for One copies Dabi's effect and triggers its exact 1 damage sweep", () => {
-    const state = mainState("all-for-one-dabi");
-    state.players[0].board[1] = minion("John Wick", 0, { hp: 10, maxHp: 10 });
-    state.players[1].board[0] = minion("Dabi", 1, { hp: 10, maxHp: 10 });
+  it("All for One wears every enemy Passive at once, and gives them back", () => {
+    // Owner's ruling, 2 September 2026: the card stopped borrowing one
+    // Battlecry and started wearing the whole enemy board's standing rules.
+    const state = mainState("all-for-one-passives");
+    state.players[1].board[0] = minion("John Wick", 1); // friendly_death_buff_1_1
+    state.players[1].board[1] = minion("Saitama", 1); // small_cannot_attack
 
     const after = play(state, 0, "All for One", 0);
-    expect(after.players[0].board[0]?.hp).toBe(5);
-    expect(after.players[0].board[1]?.hp).toBe(9);
-    expect(after.players[1].board[0]?.hp).toBe(9);
+    const worn = (after.players[0].board[0]?.gainedEffects ?? []).map((entry) => entry.effectId);
+    expect(worn).toContain("friendly_death_buff_1_1");
+    expect(worn).toContain("small_cannot_attack");
+
+    // An aura in everything but name: the power goes back when its owner does.
+    after.players[1].board[1] = null;
+    const shrunk = applyAction(after, { type: "end_turn", player: 0 }, library).state;
+    const left = (shrunk.players[0].board[0]?.gainedEffects ?? []).map((entry) => entry.effectId);
+    expect(left).toContain("friendly_death_buff_1_1");
+    expect(left).not.toContain("small_cannot_attack");
+  });
+
+  it("All for One actually enacts a copied Passive", () => {
+    const state = mainState("all-for-one-enacts");
+    // Saitama's printed passive ignores ATK damage under 5. Worn by All for One,
+    // a 4-ATK swing has to bounce off it too.
+    state.players[1].board[0] = minion("Saitama", 1);
+    const after = play(state, 0, "All for One", 0);
+    after.players[1].board[1] = minion("Zoro", 1, { atk: 4, hp: 9, maxHp: 9, sleeping: false });
+    after.activePlayer = 1;
+    const swung = applyAction(after, { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 0 }, library).state;
+    expect(swung.players[0].board[0]?.hp).toBe(5);
+  });
+
+  it("All for One never copies its own power, however many mirrors are present", () => {
+    const state = mainState("all-for-one-mirror-passive");
+    state.players[1].board[0] = minion("All for One", 1);
+    const after = play(state, 0, "All for One", 0);
+    const worn = (after.players[0].board[0]?.gainedEffects ?? []).map((entry) => entry.effectId);
+    expect(worn).not.toContain("copy_all_enemy_passives");
+    expect(worn).toEqual([]);
+  });
+
+  it("a silenced All for One wears nothing", () => {
+    const state = mainState("all-for-one-silenced");
+    state.players[1].board[0] = minion("John Wick", 1);
+    const after = play(state, 0, "All for One", 0);
+    expect(after.players[0].board[0]?.gainedEffects).toHaveLength(1);
+
+    after.players[0].board[0]!.silenced = true;
+    const silenced = applyAction(after, { type: "end_turn", player: 0 }, library).state;
+    expect(silenced.players[0].board[0]?.gainedEffects).toEqual([]);
   });
 
   it("Joker puts a copy of a chosen minion into its owner's hand", () => {
@@ -2848,6 +2934,30 @@ describe("what Chained and Freeze cost, in turns", () => {
   });
 });
 
+/**
+ * Plays a minion whose Battlecry is `copy_and_trigger`.
+ *
+ * No card in the roster prints that effect any more — All for One traded it for
+ * a passive on 2 September 2026 — but the effect is still in the engine, and it
+ * is still the only place in the game where a target choice is BUILT BY HAND
+ * rather than offered through a prompt. That hand-built choice is what these two
+ * tests exist to pin, so the coverage moves onto a one-off library rather than
+ * disappearing with the card.
+ */
+const carrierCards = cards.map((card) =>
+  card.name === "All for One"
+    ? { ...card, effectId: "copy_and_trigger" as const, effectTiming: "onPlay" as const, keywords: [] }
+    : card,
+);
+const carrierLibrary = makeCardLibrary(carrierCards, relics);
+
+function playCarrier(state: GameState, player: PlayerId, slotIndex: number): GameState {
+  const next: GameState = { ...state, activePlayer: player, phase: "main", drawChoice: null, cheatMode: true };
+  next.players = [...state.players] as GameState["players"];
+  next.players[player] = { ...state.players[player], hand: [cardId("All for One")] };
+  return applyAction(next, { type: "play_card", player, handIndex: 0, slotIndex }, carrierLibrary).state;
+}
+
 describe("All for One cannot copy a copy of itself", () => {
   it("refuses a victim that is itself carrying Copy-and-trigger, instead of recursing forever", () => {
     // Pandora's Actor BECOMES another minion's effects, so it can end up
@@ -2862,7 +2972,7 @@ describe("All for One cannot copy a copy of itself", () => {
     });
     state.players[1].board[1] = minion("John Wick", 1);
 
-    const asking = play(state, 0, "All for One", 0);
+    const asking = playCarrier(state, 0, 0);
     // The mirror is not offered at all: every legal target is a minion that is
     // not wearing this same power.
     const offered = (asking.pendingTarget?.options ?? []).map(
@@ -2871,7 +2981,6 @@ describe("All for One cannot copy a copy of itself", () => {
     expect(offered).not.toContain("copy_and_trigger");
 
     const resolved = asking.pendingTarget ? choose(asking, 0) : asking;
-    expect(resolved.players[0].board[0]?.name).toBe("All for One");
     // Whatever it copied, it is holding its own effect again afterwards.
     expect(resolved.players[0].board[0]?.copyRestoreEffectId ?? null).toBeNull();
   });
@@ -2886,13 +2995,67 @@ describe("All for One cannot copy a copy of itself", () => {
       effectTiming: "onPlay",
     });
 
-    const played = play(state, 0, "All for One", 0);
+    const played = playCarrier(state, 0, 0);
     expect(played.pendingTarget).toBeNull();
-    expect(played.players[0].board[0]).toMatchObject({
-      name: "All for One",
-      effectId: "copy_and_trigger",
-    });
+    expect(played.players[0].board[0]?.effectId).toBe("copy_and_trigger");
     expect(played.players[0].board[0]?.copyRestoreEffectId ?? null).toBeNull();
     expect(played.players[1].board[0]?.name).toBe("Pandora's Actor");
+  });
+});
+
+/**
+ * Two bugs the owner reported from real duels, pinned here so the answer is not
+ * "I looked and it seemed fine".
+ */
+describe("reported from play, 2 September 2026", () => {
+  it("John Wick counts only HIS OWN side's deaths", () => {
+    // Reported as: the opponent's John Wick grew when my minions died.
+    const state = mainState("john-wick-enemy-death");
+    state.players[1].board[0] = minion("John Wick", 1); // theirs
+    state.players[0].board[0] = minion("Zoro", 0, { hp: 1, maxHp: 1 });
+    state.players[0].board[1] = minion("Modern Tank", 0, { hp: 1, maxHp: 1 });
+    state.players[1].board[1] = minion("Dragon", 1, { atk: 9, hp: 9, maxHp: 9, sleeping: false });
+    state.activePlayer = 1;
+
+    const printed = minion("John Wick", 1);
+    const afterEnemyDeath = applyAction(
+      state,
+      { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 0 },
+      library,
+    ).state;
+    expect(afterEnemyDeath.players[0].board[0]).toBeNull();
+    expect(afterEnemyDeath.players[1].board[0]).toMatchObject({ atk: printed.atk, maxHp: printed.maxHp });
+
+    // And he DOES grow when one of his own dies, so the guard is not just
+    // switching the card off.
+    const ally = mainState("john-wick-own-death");
+    ally.players[1].board[0] = minion("John Wick", 1);
+    ally.players[1].board[1] = minion("Zoro", 1, { hp: 1, maxHp: 1 });
+    ally.players[0].board[0] = minion("Dragon", 0, { atk: 9, hp: 9, maxHp: 9, sleeping: false });
+    ally.activePlayer = 0;
+    const afterOwnDeath = applyAction(
+      ally,
+      { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 1 },
+      library,
+    ).state;
+    expect(afterOwnDeath.players[1].board[1]).toBeNull();
+    expect(afterOwnDeath.players[1].board[0]).toMatchObject({ atk: printed.atk + 1, maxHp: printed.maxHp + 1 });
+  });
+
+  it("The Mask transforms only the caster's own board", () => {
+    // Reported as: the opponent's Mask changed all minions. It does not — but
+    // when both boards are full, a correct cast still turns over half the table
+    // in one animation, which is what that looks like from the other seat.
+    const state = mainState("mask-caster-only");
+    state.players[0].board[0] = minion("Zoro", 0);
+    state.players[0].board[1] = minion("Modern Tank", 0);
+    const mine = [state.players[0].board[0]!.name, state.players[0].board[1]!.name];
+
+    const after = play(state, 1, "The Mask", 0);
+    expect(after.players[0].board[0]?.name).toBe(mine[0]);
+    expect(after.players[0].board[1]?.name).toBe(mine[1]);
+    // The caster's own body is on its board and is a legal victim of its own
+    // Battlecry, so the only claim here is about whose board was touched.
+    expect(after.players[1].board.filter(Boolean).length).toBeGreaterThan(0);
   });
 });

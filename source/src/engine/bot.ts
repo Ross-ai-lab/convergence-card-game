@@ -269,11 +269,26 @@ function blindSeed(state: GameState, salt: number): number {
  * numbers, that three points of face beat killing an equal minion. Nothing
  * short of a premium on this scale changes that verdict.
  *
- * What 14 buys, for a 4-ATK attacker: killing a 2/2 engine and surviving scores
- * about 17 against the core's 14.4, so it trades. Killing a vanilla 2/2 scores
- * 3.3, so it does not. An 8-ATK minion still races, because 28.8 of face is
- * genuinely worth more than one small engine. That is the intended shape —
- * trade at engines often, not always, and never blindly.
+ * RAISED FROM 14 TO 22 on 2 September 2026, owner's ruling, off a reported
+ * duel: the bot killed a vanilla Knight and left two Passive minions standing.
+ * That was the arithmetic working as written rather than a bug — at 14 the
+ * premium beat the core only for attackers of about 5 ATK and under, and the
+ * swing in that duel was bigger than that. The instruction was to prioritise
+ * standing engines, so the number moved to where it changes the answer.
+ *
+ * What 22 buys, using the same figures: face is worth about 3.6 per point of
+ * ATK, so a 6-ATK swing at the core scores about 21.6, while killing a small
+ * engine and surviving now scores about 26 — it trades. A 4-ATK attacker
+ * trades even harder. Killing a vanilla 2/2 still scores about 3.3, so nothing
+ * about plain bodies changed. An 8-ATK minion still races at 28.8, and a
+ * 10-ATK one certainly does; that is deliberate, and it is the same shape the
+ * number has always had — trade at engines often, not always, and never
+ * blindly.
+ *
+ * NOT measured against the balance harness. The harness is not run without the
+ * owner asking for it, so this is a stated trade rather than a proven one: the
+ * bot now answers engines through most of the mid-game and still races when the
+ * race is genuinely bigger.
  *
  * It is symmetric on purpose. The same premium is what stops the bot throwing
  * its OWN engine into a pointless attack, and an asymmetric "enemy engines are
@@ -286,7 +301,7 @@ function blindSeed(state: GameState, salt: number): number {
  * which is also how the bot learns that silencing an engine is nearly as good
  * as killing it.
  */
-const ENGINE_PREMIUM = 14;
+const ENGINE_PREMIUM = 22;
 
 /**
  * Is this minion currently collecting value every turn?

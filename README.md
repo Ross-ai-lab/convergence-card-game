@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 161,458 bytes, roughly 40k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~62% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 169,000 bytes, roughly 42k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~59% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -59,6 +59,9 @@
   - [Clicking a keyword on a card face explains it](#clicking-a-keyword-on-a-card-face-explains-it)
   - [Hovering a minion shows what it is reaching](#hovering-a-minion-shows-what-it-is-reaching)
   - [The duel log](#the-duel-log)
+  - [The hand grows as one, and the win screen never scrolls](#the-hand-grows-as-one-and-the-win-screen-never-scrolls)
+  - [Three things the board now says out loud](#three-things-the-board-now-says-out-loud)
+  - [Developer tools can arm the enemy](#developer-tools-can-arm-the-enemy)
   - [Visual design changes require close-up and full-screen QA](#visual-design-changes-require-close-up-and-full-screen-qa)
   - [Title-menu design QA record](#title-menu-design-qa-record)
 - [The rarity shine](#the-rarity-shine)
@@ -74,11 +77,13 @@
 **Balance and the bot**
 
 - [Balance, pacing, and bot](#balance-pacing-and-bot)
+  - [NEVER run a balance patch without being asked. Every single time](#never-run-a-balance-patch-without-being-asked-every-single-time)
   - [The measured baseline, and what it still says](#the-measured-baseline-and-what-it-still-says)
   - [Duel length is CORRECT. Do not shorten it](#duel-length-is-correct-do-not-shorten-it)
   - [Choosing a pacing lever](#choosing-a-pacing-lever)
   - [Reading the measured numbers](#reading-the-measured-numbers)
   - [Gating on the game, not on the harness](#gating-on-the-game-not-on-the-harness)
+  - [The engine premium, and why it is 22](#the-engine-premium-and-why-it-is-22)
   - [Fixing a bot-valuation blind spot](#fixing-a-bot-valuation-blind-spot)
   - [Why the bot trades into Passive and Ongoing minions](#why-the-bot-trades-into-passive-and-ongoing-minions)
   - [The cheat ladder](#the-cheat-ladder)
@@ -131,8 +136,6 @@ not list one as outstanding work.
 Changes after this point are maintenance or things the owner asks for, not a
 march toward a finish line that has already been crossed.
 
-
-
 ## What Convergence is
 
 Convergence is a non-commercial browser card duel where 167 named characters and forces from fiction collide alongside ten Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
@@ -148,8 +151,6 @@ Convergence is a non-commercial browser card duel where 167 named characters and
 No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **172 character cards, 10 Basic reference cards, and 34 Ascension Relics**, 216 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
 
 The live game and `source/data/cards.csv` now contain 172 named character cards plus 10 Basic reference cards, 182 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
-
-
 
 ## What the game still needs
 
@@ -187,8 +188,6 @@ re-proposes them as gaps:
 Gradual unlocking is neither of those two and does not reopen them. It locks no opponent and starts no
 run: it narrows the ONE shared deck and widens it again, which is a change to a single argument.
 
-
-
 ## Rules at a glance
 
 - Both cores begin at **75 health**. Reduce the opposing core to zero to win.
@@ -205,8 +204,6 @@ run: it narrows the ONE shared deck and widens it again, which is a change to a 
 - When the shared deck and its bottom-deck cards are empty, drawing causes escalating fatigue damage: 1, then 2, then 3, and so on.
 
 Nothing damages a core automatically just because a turn starts; core damage comes from a minion attacking it or from an effect that explicitly says it damages a core.
-
-
 
 ## Controls and modes
 
@@ -261,8 +258,6 @@ player would win it once for free.
 
 The board communicates conditions visually: a wall means Taunt, a gold rim means Divine Shield, a blue-and-white rim means Invulnerable, ice means Frozen, chains across the artwork mean Chained, a grey attack gem means the minion cannot attack, and a sleeping minion shows drifting `z` glyphs.
 
-
-
 ## Cards and card language
 
 **The last sentence of a printed effect carries NO full stop.** Owner's ruling, 26 August 2026. The
@@ -279,7 +274,11 @@ now prints `Taunt` rather than `Taunt.`, and the validator's leading-keyword pat
 match.
 
 
-Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an **alignment**. The four camps are **Magic**, **Nature**, **Tech**, and **ALL**. An **ALL** card receives positive buffs aimed at any of the three source camps, but never camp-specific debuffs. The three alignments are **Good**, **Evil**, and **Neutral**. Many effects target a camp or alignment, so read both labels before playing a card.
+Each card has a cost, ATK, HP, rarity, artwork, flavour text, a **camp**, and an **alignment**. The four camps are **Magic**, **Nature**, **Tech**, and **ALL**. An **ALL** card counts as EVERY camp, in both directions: it receives positive buffs aimed at any of the three
+source camps, and it is a legal victim for anything that hunts one of them. Owner's ruling, 2 September 2026,
+reversing the rule before it — ALL used to take every camp's buff while ducking every camp's answer, which made it
+the one camp in the game with no counterplay. `campTargetedBy` in `game.ts` is the SELECTION half; camp IMMUNITY
+still asks the attacker's exact camp, or an ALL attacker would bounce off all three immunity relics at once. The three alignments are **Good**, **Evil**, and **Neutral**. Many effects target a camp or alignment, so read both labels before playing a card.
 
 ### Mana is lore power
 
@@ -330,8 +329,6 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 
 **Evade** is the player-facing term throughout the game. Older internal identifiers may still contain `dodge` for save or code compatibility, but new card text and documentation should say Evade.
 
-
-
 ## Ascension Relics
 
 The current relic pool contains **34 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
@@ -357,8 +354,6 @@ Thirty-two relics would be
   minion arrives. Relics never ride back as an accidental second card.
 - During a duel, attached relic badges show who is carrying each relic. They are
   previews only; there is no separate relic-shelf screen.
-
-
 
 ## Gradual card unlocking
 
@@ -534,8 +529,6 @@ gallery therefore reads normally until the first pack lands.
 entirely unlocked, so carrying it forward would hand a returning player all 205 cards and delete the
 feature on the machine that most needed it. The version bump is also what resets the record.
 
-
-
 ## Project structure and source of truth
 
 - `source/data/cards.csv` is the live card roster: names, stats, costs, effect text, timing, keywords, art paths, and flavour.
@@ -559,8 +552,6 @@ feature on the machine that most needed it. The version bump is also what resets
 - `source/scripts/` holds the tooling. `simulate.ts` is the balance harness: self-play, fuzzing, the dial sweep, and the difficulty ladder. `balance-gate.ts` and `balance-gate.test.ts` hold the pure pass, fail, and skip logic, with one planted failure per check. `ladder-compare.ts` is the paired ladder comparison. `source/balance.config.json` carries every threshold with the reasoning for it written alongside. The `apply-balance-pass*.mjs` files record each past pass with the measured number behind every change.
 
 The maintained game is React and TypeScript with a deterministic rules engine, DOM-rendered full card faces, Ascension Relics, persistent local saves, and a practice bot.
-
-
 
 ## Run and verify
 
@@ -590,6 +581,9 @@ tells a session the truncation will not happen to them.
 Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
 
 ### Which checks a change actually needs
+
+**Never run the balance harness unless the owner asked for it in that message.** See
+[NEVER run a balance patch without being asked](#never-run-a-balance-patch-without-being-asked-every-single-time).
 
 **`npm test` is not optional, however small the change looks.** It costs about
 seventy seconds, and "small" is exactly the change it catches: a two-line card
@@ -634,13 +628,9 @@ In this project, **publish** always means make the current game change live at t
 
 For a deployable update, run `npm run publish:pages` from `source/`. That command validates the data, builds with `--base=./`, replaces the generated `source/dist/` contents in `play/`, and fails unless every published file exactly matches the generated build. After it succeeds, publish the generated copy to the public GitHub repository. GitHub Pages serves `play/` from the repository's published static site.
 
-
-
 ## Parallel work
 
 Multiple threads usually work on Convergence at the same time. Files, generated artifacts, tests, and documentation may shift while you are working; that is expected. Preserve changes you did not create, do not revert them, and do not stop the other threads. Re-read the current file before making an overlapping edit. A small compile or test repair is fine when necessary, but keep it behavior-neutral unless the thread that owns the change explicitly asks for a behavior change.
-
-
 
 ## Changing cards and effects
 
@@ -749,9 +739,46 @@ Whenever a user asks to recommend effects for a minion or recommend minions for 
 
 Printed timing must match play. For every target or choice, specify whether it selects a minion, board slot, hand card, or random legal object. Test no-valid-target, cancellation, opponent-turn, and resolution behaviour where relevant.
 
-
-
 ## Engine rules that must stay coherent
+
+**Five cards changed shape on 2 September 2026 in ways the engine has to keep
+straight.** The CSV is the source of truth for what each one prints; these are
+the mechanics behind them.
+
+- **All for One is a PASSIVE now** — it wears every enemy minion's printed Passive
+  or Ongoing at once, rebuilt from scratch on every aura recompute by
+  `copyEnemyPassives`. It lives in `gainedEffects` because `hasEffect` already
+  reads that, so every passive in the game answers for the wearer without knowing
+  this card exists. It never copies its own id, and it copies the PRINTED effect,
+  so a power already on loan cannot be borrowed twice. The whole array is
+  replaced each recompute, so a card that grants All for One an effect by some
+  other route would lose it — nothing in the roster does that today.
+- **`copy_and_trigger` is still in the engine and no card prints it.** That is
+  deliberate: it is the only place a target choice is BUILT BY HAND rather than
+  offered through a prompt, and its guards (`copiedVictimIsLegalTarget`,
+  `copyRestoreEffectId`) are shared plumbing worth keeping tested. Its tests build
+  a one-off library rather than a card. Putting the effect back on a card is one
+  CSV line.
+- **Deep Sea King is a cost reduction, not a board effect.** `effectiveCardCost`
+  is the only place it applies, and it reads BOTH boards, because a discount only
+  your own Freeze could unlock would make the card a two-card combo rather than
+  an opportunist.
+- **Superman covers the friendly Good board.** `supermanCovers` reads the
+  TARGET's own board, so a Superman on the other side does nothing for the minion
+  being hit.
+- **One-Eyed Owl is fed by a DIFF, not a hook.** It watches Chained, Frozen and
+  Silenced, and those three arrive from a dozen places, several of which have no
+  events array to report into. `afflictionSnapshot` is taken at the top of
+  `applyAction` and `feedAfflictionWatchers` compares it after the auras settle,
+  which catches every route including ones that do not exist yet. A minion that
+  ARRIVES afflicted pays nothing — it was not there before, so it never became
+  anything, which is what stops a printed-Chained card feeding the Owl on every
+  summon.
+- **Thanos, The 7 Heroic Spirits and Kojiro Sasaki all changed who they include.**
+  Thanos and the Spirits now exclude themselves; Kojiro now includes himself. Each
+  is one predicate, and each was reported as reading wrong on the board rather
+  than as a rules question.
+
 
 - Keep the engine deterministic. Randomness comes from game state and its seeded RNG, never `Math.random()` in the engine.
 - Taunt is enforced through legal targets. Divine Shield is a breakable state. Invulnerable prevents damage. These are gameplay rules with visible card states, not text-only decoration.
@@ -789,8 +816,6 @@ Printed timing must match play. For every target or choice, specify whether it s
   wrong relic entirely. Typing the parameter makes that a compile error.
 
 The engine’s central contract is `applyAction(state, action, library) -> { state, events, legalActions }`. An action outside the legal-action list is rejected without changing the state. Targeting pauses the game in a target-selection state so human and bot choices follow the same route and survive saving, cloning, and undo.
-
-
 
 ## Interface and card faces
 
@@ -948,6 +973,16 @@ rules it now obeys, each of which it broke until 2 September 2026:
   connected — and to guess wrong whenever anything resolved in between.
 - **Every line ends in a full stop**, deaths included. The death text is assembled from a bare clause
   at sixteen call sites, so the stop is added where the event is pushed.
+- **One death, one line.** The Monkey's Paw used to push "X dies from The Monkey's Paw" and then let the
+  death event push "X falls to The Monkey's Paw" underneath it, so every paw death was reported twice and
+  read like two minions dying.
+- **A relic that acts names ITSELF, not its bearer.** The Stand Arrow transforms the minion it is strapped
+  to, and the line read "Tech Hub transforms Tech Hub into Zoro" — which looks like a minion doing something
+  the rules forbid rather than a relic doing exactly what it prints. `transformMinionFromPool` takes an
+  optional `sourceLabel` for this; any future relic that transforms should pass one.
+- **A choice is logged, not only its outcome.** Aladdin Lamp printed what the wish DID and never what was
+  wished for, so watching an opponent's lamp resolve showed a summon with nothing saying a wish had been
+  made at all.
 
 **A card added to hand is deliberately anonymous** — "Player One adds a card to hand", never the card
 name. The log is readable straight through the hotseat curtain, which exists so the incoming player
@@ -956,6 +991,50 @@ cannot see the outgoing player's hand.
 **`npx tsx scripts/dump-log.ts [seed]` prints a whole self-played duel's log.** It is how the four
 faults above were found: ordering and omission are invisible to every test in the suite, and reading
 one duel end to end is the only thing that shows them.
+
+### The hand grows as one, and the win screen never scrolls
+
+Two owner rulings from 2 September 2026, both about the same failure: a panel
+appearing over the thing the player was trying to look at.
+
+- **Hovering any card in your hand enlarges the WHOLE fan** (about 38%, inside
+  the 30-50% asked for) and lifts it. The per-card preview panel is gone from the
+  hand: it opened a full-size copy of one card beside the fan, covering the board
+  that card was about to be played onto, and left the fan itself exactly as
+  unreadable as it had been. It is ONE transform on the container, never a scale
+  per card — the fan overlaps its cards with negative margins, so scaling them
+  individually pushes them through each other. Board minions KEEP their preview
+  panel, because there is no room to enlarge a board in place.
+- **The result screen fits on one screen.** `.overlay.result-overlay` does not
+  scroll at all, and under 720px of height the wide hero strip is dropped — it is
+  the same artwork as the MVP card directly beneath it, so on a short screen it is
+  the half already being shown somewhere else. The card itself never goes below
+  208px, which keeps it above the 200px floor where `CardFace` silently drops its
+  rules text.
+
+### Three things the board now says out loud
+
+- **A blocked relic names the minion blocking it.** Kratos forbids the opponent's
+  relics and Hero Power, and the board used to report that as "No room on the
+  board" — a different problem with a different fix, which sends the player
+  rearranging a board that was never the issue. `relicLockSource` in `game.ts` is
+  the selector.
+- **The enemy Hero Power card opens on a CLICK, never a hover.** It used to appear
+  after a one-second hover, which meant it opened whenever the pointer crossed the
+  top strip on its way somewhere else, and covered the enemy board while it was
+  there. Any action closes it again.
+- **A hand revealed by The Watcher reads instantly and says nothing twice.** Those
+  cards are 25px wide and unreadable without the preview panel, so the hover delay
+  is skipped for them (`previewCard(..., instant)`); the native tooltips on the
+  card and on the row are gone, and the cursor is a pointer rather than the
+  question mark that promised a tooltip.
+
+### Developer tools can arm the enemy
+
+`Equip on enemy first minion` sits beside `Equip on my first minion` in the
+developer panel. Testing a relic used to mean testing only what it does FOR you,
+and a good half of the relic pool is interesting precisely because of what it does
+TO you. `developerEquipRelic` already took an owner; only the button was missing.
 
 ### Visual design changes require close-up and full-screen QA
 
@@ -987,8 +1066,6 @@ The final pass established these decisions:
 - Keep the controls smaller and less text-heavy than the previous menu, and make background cards visible without competing with them.
 
 Interaction verification covered Recruit, Veteran, and Ascendant selection; the selected Duel label; playable Veteran and two-player launches; Settings open/close/return; no overflow at 390 × 844 or 1005 × 397; and a clean browser console. The implementation passed production build, automated tests, and live-site verification. The original local evidence captures were `.preview/github-pages-final-1331x848.png` and `.preview/github-pages-settings-verified.png`; `.preview/` is disposable evidence and is not published.
-
-
 
 ## The rarity shine
 
@@ -1115,8 +1192,6 @@ An earlier attempt named its layer `.cf-camp`, which was already the left rail's
 An unmet card in the gallery does NOT shine, and that is correct rather than a bug: the collection's own grayscale dimming sits on the whole card face and wins. The shine is for cards you have met, and for the pack, the hand and the preview, where nothing dims them.
 
 **A LOCKED card carries no shine and no camp mark at all**, and that is an explicit rule rather than a side effect. A blend-mode layer is not a colour a grayscale filter can drain, so sealed relics went on flickering with teal light while sealed characters sat dead, and the locked wall stopped reading as one wall. A locked card shows its seal and nothing else.
-
-
 
 ## Assets and audio
 
@@ -1266,9 +1341,33 @@ Use the tools under `materials/local-production/asset-tools/` for production reb
 
 Do not casually regenerate approved menu, battle, or tension music. Preserve the existing loudness, loop-seam, and energy checks when replacing them.
 
-
-
 ## Balance, pacing, and bot
+
+### NEVER run a balance patch without being asked. Every single time
+
+**Do not run the balance harness, a balance pass, a dial sweep or a difficulty
+ladder unless the owner has asked for that run in the message you are answering.**
+Owner's ruling, 2 September 2026. It is a hard ban, and it covers
+`npm run sim`, `npm run check:balance`, `scripts/simulate.ts` in any mode, the
+`apply-balance-pass*.mjs` scripts, and any new script that measures or retunes
+the game.
+
+Three things make it a rule rather than a preference:
+
+- **It is expensive and it is silent.** A full run is thousands of self-play
+  duels. Nothing about the request that triggered it says it is happening, so it
+  arrives as a long unexplained wait at the end of an unrelated piece of work.
+- **It produces numbers that invite changes nobody asked for.** A gate that comes
+  back red at the end of a card edit reads as "now fix balance", and the balance
+  of this game is the owner's call, not a checker's.
+- **Balance work is PARKED** — see [Bot and balance work is PARKED, not
+  finished](#bot-and-balance-work-is-parked-not-finished). Running the harness is
+  starting parked work without being asked.
+
+A card change, a stat change, an effect change and a bot-dial change are all
+finished without a harness run. Say what you changed and what you traded; do not
+go and measure it. The narrower rule for the difficulty ladder still stands
+below and is not weakened by this one.
 
 ### The measured baseline, and what it still says
 
@@ -1395,6 +1494,26 @@ The card-level numbers quoted in the four subsections below were measured on 202
 - **Split every metric by driver.** A fuzzer driving both seats with random legal moves will miss a turn cap honestly; that is the random driver's property, not a defect in the game. The gate went red on its first real run for exactly this: bot play stalled 0 times in 1500 duels while the fuzzer stalled once. Gate the bot-play number and print the fuzzer's beside it, ungated. Soft-locks are the opposite case and stay summed, because a legal-action dead end found under random play is a real dead end.
 - **Size each comparison's sample by its own margin, not uniformly.** Cost and need are usually inverted. The two ladder matchups involving the Ascendant cost roughly eight times as much per duel and had 20-point margins needing about 80 duels; the cheap matchup had a 9-point margin and needed 200. A flat 200 across all three took 16 minutes and bought nothing over the 7 that per-matchup sizing takes. Work out the false-red probability per comparison, `z = (floor - measured) / se`, and spend duels where that number is uncomfortable.
 - **A per-card before-and-after diff is mostly noise unless the noise floor is printed beside every number.** A card played in about 130 duels carries roughly 4.4 points of shuffle noise on its win rate, and the difference between two runs carries about 6, so "this card is down 8 since the nerf" is barely a signal and a table of 112 such rows is a machine for chasing ghosts. Compute each delta's own standard error, list only what exceeds it, and count the rest as noise rather than showing it. Replay the same seed list before and after, and refuse to compare runs whose size, seeds, skill, or dials differ at all. Buffing one card from 1/1 to 9/9 proved the method: the diff named that card at +36.8 against a 13.1 floor and correctly dismissed 111 other cards that had moved by less. The same pairing argument in its stronger form is in [Comparing two ladder runs](#comparing-two-ladder-runs).
+
+### The engine premium, and why it is 22
+
+**`ENGINE_PREMIUM` in `bot.ts` was raised from 14 to 22 on 2 September 2026**, on
+the owner's instruction, after a reported duel in which the bot killed a vanilla
+Knight and left two Passive minions standing.
+
+That was the arithmetic working exactly as written rather than a bug. Face damage
+is worth about 3.6 points per point of ATK in this evaluation, so at 14 the
+premium only beat a swing at the core for attackers of roughly 5 ATK and under —
+and the swing in that duel was bigger. At 22, a 6-ATK attacker scores about 26
+for killing a small engine against 21.6 for the core, so it trades; an 8-ATK one
+still races at 28.8, which is deliberate and is the same shape the number has
+always had.
+
+**Not measured against the harness**, because the harness is not run without being
+asked. This is a stated trade, not a proven one. `src/engine/bot-engine-priority.test.ts`
+pins the behaviour instead: four hand-built boards, each with one attacker and a
+clear choice, including the counterweight that the bot must NOT walk into an
+engine it cannot kill.
 
 ### Fixing a bot-valuation blind spot
 
@@ -1668,8 +1787,6 @@ pocket room releases one minion twice" in a single run.
 
 Do not make the simulated rules, bot skill, or turn timing “10× faster” by simplifying them: that would measure a different game. Safe implementation optimisations may reuse already-computed legal actions and candidate results, and independent duels may eventually run across CPU workers if deterministic output and result ordering are preserved. The current harness applies the safe reuse optimisation; the Ascendant ladder remains the unavoidable dominant cost because it searches whole turns.
 
-
-
 ## Contributing
 
 Contributions are welcome through a fork and pull request. Keep each change focused, explain the player-visible result, and run the relevant checks before proposing it.
@@ -1685,8 +1802,6 @@ Contributions are welcome through a fork and pull request. Keep each change focu
 
 When changing a rule, add or update a focused test and make the card text agree with the implementation. Preserve player-selected targeting unless a card explicitly says that the target is random, positional, weakest, costliest, or otherwise automatic. Do not include generated folders, local launchers, secrets, or personal paths in a contribution.
 
-
-
 ## Development lessons
 
 - A card’s text and its resolution can live in different places. Update CSV, engine, and a focused test together so the card does what it says.
@@ -1701,8 +1816,6 @@ When changing a rule, add or update a focused test and make the card text agree 
 - Test asset paths under the deployment base path, and load moving card art eagerly so remounted cards do not render black.
 - Test sound with the browser’s real analyser. A playing flag is not evidence that the listener graph has audio.
 
-
-
 ## Included materials and links
 
 - [Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/)
@@ -1716,13 +1829,9 @@ When changing a rule, add or update a focused test and make the card text agree 
 - [Project roadmap](docs/Convergence%20Browser%20Game%20Roadmap.html)
 - [Voice-cast reference](docs/Convergence%20Voice%20Cast.html)
 
-
-
 ## Fan-project notice
 
 Convergence is a non-commercial fan project made for personal play and educational experimentation. Character names, franchises, imagery, and music belong to their respective rights holders. The project is not endorsed by or affiliated with those rights holders.
-
-
 
 ## Sources
 

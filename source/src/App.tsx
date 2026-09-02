@@ -49,6 +49,7 @@ import {
   hasFreeRelicSlot,
   hasInfiniteMana,
   makeCardLibrary,
+  relicLockSource,
   opponentHandRevealed,
   STARTING_CORE,
   TARGETED_EFFECTS,
@@ -576,6 +577,10 @@ export default function App() {
   const [splash, setSplash] = useState<Splash>(null);
   const [toast, setToast] = useState<BoardToast | null>(null);
   const [shaking, setShaking] = useState(false);
+  /** Whether the enemy Hero Power card is showing. Opened by a click, not a hover. */
+  const [enemyPowerOpen, setEnemyPowerOpen] = useState(false);
+  /** The pointer is somewhere over the hand, so the whole fan is enlarged. */
+  const [handHovered, setHandHovered] = useState(false);
   /** The board minion under the pointer, for the reach highlight. */
   const [reachSource, setReachSource] = useState<string | null>(null);
   /**
@@ -1299,6 +1304,7 @@ export default function App() {
   }
 
   function perform(action: GameAction) {
+    setEnemyPowerOpen(false);
     const hiddenEnemyDiscover =
       action.type === "choose_target" &&
       game.pendingTarget !== null &&
@@ -1724,7 +1730,13 @@ export default function App() {
       return equipped ? equipped.state : current;
     });
     setEvents((items) =>
-      [...items, { kind: "info" as const, text: `Developer mode equipped ${relicDef.name} on the first available minion.` }].slice(-80),
+      [
+        ...items,
+        {
+          kind: "info" as const,
+          text: `Developer mode equipped ${relicDef.name} on ${owner === viewerId ? "your" : "the enemy's"} first available minion.`,
+        },
+      ].slice(-EVENT_LOG_LIMIT),
     );
   }
 
@@ -1761,10 +1773,19 @@ export default function App() {
     }, HOVER_PREVIEW_DELAY_MS);
   }
 
-  function previewCard(card: PlayableCard, el: HTMLElement, owner?: PlayerId) {
+  /**
+   * @param instant Skip the hover delay.
+   *
+   * The delay exists so that sweeping the pointer across your own hand does not
+   * flash five card panels. A hand revealed by The Watcher is the opposite
+   * situation: the whole point of the reveal is to read those cards, they are
+   * 25px wide and unreadable without the panel, and a one-second wait per card
+   * turns reading five of them into five seconds of hovering.
+   */
+  function previewCard(card: PlayableCard, el: HTMLElement, owner?: PlayerId, instant = false) {
     if (drag?.active) return;
     const face = playableFace(card, owner === undefined ? undefined : effectiveCardCost(game, owner, card));
-    scheduleHoverPreview(() => {
+    const show = () => {
       if (!el.isConnected) return;
       sfx.hoverTick();
       const r = el.getBoundingClientRect();
@@ -1779,7 +1800,13 @@ export default function App() {
         extraEffects: [],
         rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
       });
-    });
+    };
+    if (instant) {
+      clearHoverTimer();
+      show();
+      return;
+    }
+    scheduleHoverPreview(show);
   }
 
   function previewMinion(minion: MinionInstance, el: HTMLElement) {
@@ -1883,8 +1910,19 @@ export default function App() {
       // Every card in hand looks equally playable now, so the reason is said
       // once, briefly, in the middle of the board — not branded on the card.
       setSelection(null);
+      // NAME THE REASON. A relic refused by Kratos used to be reported as "No
+      // room on the board", which is a different problem with a different fix
+      // and sends the player rearranging a board that was never the issue.
+      const card = library[viewer.hand[handIndex]];
+      const relicLock = card && isRelicCard(card) ? relicLockSource(game, viewerId) : null;
       const boardFull = !viewer.board.some((slot) => !slot);
-      showToast(boardFull ? "No room on the board" : "Not enough mana");
+      showToast(
+        relicLock
+          ? `${relicLock} is blocking your relics`
+          : boardFull
+            ? "No room on the board"
+            : "Not enough mana",
+      );
       sfx.play("invalid");
       return;
     }
@@ -2313,7 +2351,20 @@ export default function App() {
           <span className="brand-mark" />
           <strong>Convergence</strong>
         </div>
-        <div className="enemy-hero-wrap">
+        {/* Click, never hover (owner's ruling, 2 September 2026). It used to
+            open after a one-second hover, which meant it appeared whenever the
+            pointer crossed the top strip on its way somewhere else, and covered
+            the enemy board while it was there. */}
+        <div
+          className={enemyPowerOpen ? "enemy-hero-wrap is-open" : "enemy-hero-wrap"}
+          onPointerDown={(event) => {
+            // The plate is ALSO the button that attacks the enemy core, so the
+            // toggle stands aside for exactly the click that would be a swing —
+            // and takes every other click on it, which is the whole strip.
+            if ((event.target as HTMLElement).closest(".hero-plate.targetable")) return;
+            setEnemyPowerOpen((open) => !open);
+          }}
+        >
           <HeroPlate
             enemy
             player={opponent}
@@ -2515,7 +2566,18 @@ export default function App() {
             ) : null}
           </div>
 
-          <div className="hand-fan" aria-label={`${viewer.name}'s hand`}>
+          {/* Hovering ANY card lifts and enlarges the WHOLE hand (owner's
+              ruling, 2 September 2026). The old behaviour opened a separate
+              full-size copy of one card beside the fan, which covered the board
+              you were about to play it onto and left the fan itself the same
+              unreadable size it had always been. Board minions keep their
+              preview panel: there is no room to enlarge a board in place. */}
+          <div
+            className={handHovered ? "hand-fan is-open" : "hand-fan"}
+            aria-label={`${viewer.name}'s hand`}
+            onMouseEnter={() => setHandHovered(true)}
+            onMouseLeave={() => setHandHovered(false)}
+          >
             {viewer.hand.map((cardId, handIndex) => {
               const card = library[cardId];
               const playable = uiActions.some(
@@ -2573,8 +2635,8 @@ export default function App() {
                   onPointerMove={moveDrag}
                   onPointerUp={endDrag}
                   onPointerCancel={cancelDrag}
-                  onMouseEnter={(e) => previewCard(card, e.currentTarget, viewerId)}
-                  onMouseLeave={endPreview}
+                  /* No per-card preview panel here any more; the fan itself
+                     is what grows. See the note on `.hand-fan` above. */
                   data-playable={playable}
                   /* No `title` here. A native tooltip on a card you are holding
                      covers the neighbouring card a second after the pointer
@@ -4735,7 +4797,7 @@ function HeroPlate({
   thinking?: boolean;
   revealedHand?: string[];
   library?: CardLibrary;
-  onCardPreview?: (card: PlayableCard, el: HTMLElement) => void;
+  onCardPreview?: (card: PlayableCard, el: HTMLElement, owner?: PlayerId, instant?: boolean) => void;
   onCardPreviewEnd?: () => void;
   onStrike?: () => void;
   onBlockedStrike?: () => void;
@@ -4782,15 +4844,17 @@ function HeroPlate({
         {power ? <small className="hero-power-label">⚡ {power.name}</small> : null}
       </span>
       {enemy && revealedHand && library ? (
-        <span className="revealed-hand" title="The Watcher reveals this hand">
+        <span className="revealed-hand" aria-label="The Watcher reveals this hand">
           {revealedHand.map((cardId, index) => {
             const card = library[cardId];
             return card ? (
               <span
                 key={`${cardId}-${index}`}
                 className="revealed-hand-card"
-                title={card.name}
-                onMouseEnter={onCardPreview ? (e) => onCardPreview(card, e.currentTarget) : undefined}
+                /* No `title`. A native tooltip on a card whose full face is
+                   already being shown is a second, worse copy of the same
+                   answer, and it arrives on top of the artwork. */
+                onMouseEnter={onCardPreview ? (e) => onCardPreview(card, e.currentTarget, undefined, true) : undefined}
                 onMouseLeave={onCardPreviewEnd}
               >
                 <CardFace card={playableFace(card)} />
@@ -5659,7 +5723,14 @@ function DeveloperTools({
                         <button type="button" className="developer-secondary" onClick={() => onPlaceCard(selected.id, otherId)}>Place on enemy board</button>
                       </>
                     ) : (
-                      <button type="button" className="developer-secondary" onClick={() => onEquipRelic(selected.id, viewerId)}>Equip on my first minion</button>
+                      <>
+                        <button type="button" className="developer-secondary" onClick={() => onEquipRelic(selected.id, viewerId)}>Equip on my first minion</button>
+                        {/* The enemy side, added 2 September 2026. Testing a
+                            relic used to mean testing only what it does FOR
+                            you, and half the roster's relics are interesting
+                            precisely because of what they do to you. */}
+                        <button type="button" className="developer-secondary" onClick={() => onEquipRelic(selected.id, otherId)}>Equip on enemy first minion</button>
+                      </>
                     )}
                   </div>
                 )}

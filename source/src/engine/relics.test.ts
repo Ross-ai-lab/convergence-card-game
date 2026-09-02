@@ -289,15 +289,20 @@ describe("relic effects", () => {
     const result = applyAction(afterEquip, { type: "end_turn", player: 0 }, library);
     expect(result.state.players[0].board[0]).toBeNull();
     expect(result.state.discard).toContain(relicByName("The Monkey's Paw").id);
-    expect(result.events).toContainEqual(expect.objectContaining({ text: expect.stringContaining("dies from The Monkey's Paw") }));
+    // ONE line for the death, not two. The relic used to push its own "dies
+    // from" line and then let the death event push "falls to" underneath it.
+    const pawLines = result.events.filter((event) => event.text.includes("The Monkey's Paw"));
+    expect(pawLines).toHaveLength(1);
+    expect(pawLines[0].text).toContain("falls to The Monkey's Paw");
   });
 
   it("Necronomicon repeats the bearer's Deathrattle", () => {
+    // Goblins, not Light Yagami: he lost his Deathrattle on 2 September 2026.
+    // A 1-damage Deathrattle counts cleanly, because doubling it is 2 HP off one
+    // body rather than a second minion chosen at random.
     const state = mainState("necronomicon");
-    state.players[0].board[0] = makeMinion("Light Yagami", 0, { relic: relicByName("Necronomicon") });
+    state.players[0].board[0] = makeMinion("Goblins", 0, { relic: relicByName("Necronomicon"), hp: 1, maxHp: 1 });
     state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
-    state.players[1].board[1] = makeMinion("Dragon", 1, { hp: 20, maxHp: 20, sleeping: false });
-    state.players[1].board[2] = makeMinion("Modern Tank", 1, { hp: 20, maxHp: 20, sleeping: false });
     state.activePlayer = 1;
 
     const after = applyAction(
@@ -306,7 +311,8 @@ describe("relic effects", () => {
       library,
     ).state;
     expect(after.players[0].board[0]).toBeNull();
-    expect(after.players[1].board.filter(Boolean)).toHaveLength(1);
+    // 20 HP, minus 2 for the swing it took back, minus two Deathrattle pings.
+    expect(after.players[1].board[0]?.hp).toBe(16);
   });
 
   it("Dragon Balls summon a 7/7 Taunt Shenron after the bearer dies", () => {

@@ -770,7 +770,8 @@ function HowToPlayContent() {
         <p>
           Every minion carries a <b>camp</b> — Magic, Nature or Tech — and an <b>alignment</b> — Good, Evil or
           Neutral. A great many effects hunt by one or the other, so read both labels before you commit a card.
-          A rare <b>ALL</b> camp minion accepts a buff aimed at any camp and takes no camp-specific debuff at all.
+          A rare <b>ALL</b> camp minion counts as <b>every</b> camp: it accepts a buff aimed at any of the three, and
+          it is a legal victim for anything that hunts one of them.
         </p>
       </section>
 
