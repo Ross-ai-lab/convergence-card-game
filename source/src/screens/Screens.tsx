@@ -9,7 +9,7 @@
  * Four screens, all overlays over the live board so nothing here can break a duel
  * in progress:
  *   TitleScreen  — the front door: continue, solo at three difficulties, hotseat.
- *   HowToPlay     — the complete rules, as ten chapters plus two glossaries.
+ *   HowToPlay     — the complete rules, as nine chapters plus two glossaries.
  *   SettingsPanel— sound controls and a route back to the title screen.
  *   PassScreen   — the hotseat privacy curtain. Without it, hotseat is not a game:
  *                  both players can read each other's hand off the same screen.
@@ -651,7 +651,7 @@ export function DuelIntro({ phase }: { phase: DuelIntroPhase }) {
 // ---------------------------------------------------------------------------
 
 /**
- * The rules guide, written as ten short chapters in the order a new player
+ * The rules guide, written as nine short chapters in the order a new player
  * meets them: win condition, deck, turn, combat, then the vocabulary printed on
  * the cards, then the board's own symbols.
  *
@@ -715,7 +715,10 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">5</span> When a card&rsquo;s text happens</h4>
+        <h4><span className="rules-step-no">5</span> Keywords</h4>
+        <p className="rules-aside">
+          The first five say <b>when</b> a card&rsquo;s text happens. The rest are the words the text itself uses.
+        </p>
         <dl className="rules-glossary">
           <dt>Battlecry</dt>
           <dd>Happens once, when the minion enters play.</dd>
@@ -727,12 +730,6 @@ function HowToPlayContent() {
           <dd>Both: once on arrival, then again every owner turn.</dd>
           <dt>Deathrattle</dt>
           <dd>Happens after the minion dies — unless it was Silenced first.</dd>
-        </dl>
-      </section>
-
-      <section className="rules-chapter">
-        <h4><span className="rules-step-no">6</span> Words on the cards</h4>
-        <dl className="rules-glossary">
           <dt>Taunt</dt>
           <dd>The enemy must deal with this minion before attacking your core.</dd>
           <dt>Charge</dt>
@@ -795,7 +792,7 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">7</span> Camp and alignment</h4>
+        <h4><span className="rules-step-no">6</span> Camp and alignment</h4>
         <p>
           Every minion carries a <b>camp</b> — Magic, Nature or Tech — and an <b>alignment</b> — Good, Evil or
           Neutral. A great many effects hunt by one or the other, so read both labels before you commit a card.
@@ -804,7 +801,7 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">8</span> Ascension Relics</h4>
+        <h4><span className="rules-step-no">7</span> Ascension Relics</h4>
         <ul className="rules-list">
           <li>The <b>{RELIC_COUNT} relics</b> ride in the same shared deck and arrive in hand like any other card.</li>
           <li>Play one onto a friendly minion to equip it. A minion carries up to <b>two</b>, in independent slots.</li>
@@ -815,7 +812,7 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">9</span> Reading the board</h4>
+        <h4><span className="rules-step-no">8</span> Reading the board</h4>
         <div className="rules-split">
           <ul className="legend">
             <li><span className="swatch ring-green" /> ready to attack</li>
@@ -848,14 +845,24 @@ function HowToPlayContent() {
         </div>
         <p className="rules-aside">
           A board <b>slot</b> can be marked too, and a mark is <b>permanent</b>: it outlives whoever laid it and whoever
-          stands in it. The slot wears a coloured ring and a small label — <b>RANDOM</b> (a minion here only attacks at
-          random), <b>CHAINED</b> (a minion here is always Chained), <b>SAFE</b> (protected slot), <b>1/1</b> (a minion
-          here is held at 1/1), and <b>+1/+1</b> (a minion here grows every one of your turns).
+          stands in it. The slot wears a coloured ring and one of these labels.
         </p>
+        <dl className="rules-glossary rules-glossary-tight">
+          <dt>RANDOM</dt>
+          <dd>A minion standing here can only attack at random.</dd>
+          <dt>CHAINED</dt>
+          <dd>A minion standing here is always Chained.</dd>
+          <dt>SAFE</dt>
+          <dd>A minion standing here resists Silence, Freeze and Chained.</dd>
+          <dt>1/1</dt>
+          <dd>A minion standing here is held at 1/1.</dd>
+          <dt>+1/+1</dt>
+          <dd>A minion standing here grows every one of your turns.</dd>
+        </dl>
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">10</span> Shortcuts</h4>
+        <h4><span className="rules-step-no">9</span> Shortcuts</h4>
         <p><b>Space</b> or <b>Enter</b> end turn · <b>Z</b> undo your last action · <b>Esc</b> clear your selection.</p>
       </section>
     </div>
