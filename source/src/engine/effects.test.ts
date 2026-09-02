@@ -55,22 +55,27 @@ describe("full-roster effects", () => {
     expect(afterPlay.discard).not.toContain(reborn?.cardId);
   });
 
-  it("Hypnos (chain_attacker): makes an attacker skip its next turn", () => {
+  it("Hypnos (chain_attacker): makes an attacker skip its next TWO turns", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
     state.players[1].board[0] = makeMinion("Hypnos", 1);
 
     const afterAttack = attack(state, 0, 0);
-    expect(afterAttack.players[0].board[0]?.chained).toBe(2);
+    expect(afterAttack.players[0].board[0]?.chained).toBe(3);
 
-    const nextOwnerTurn = toMyNextTurn(afterAttack);
-    expect(nextOwnerTurn.players[0].board[0]?.chained).toBe(1);
-    expect(getLegalActions(nextOwnerTurn, library)).not.toContainEqual({
-      type: "attack_minion",
-      player: 0,
-      attackerSlot: 0,
-      targetSlot: 0,
-    });
+    const swing = { type: "attack_minion" as const, player: 0 as const, attackerSlot: 0, targetSlot: 0 };
+    const firstTurn = toMyNextTurn(afterAttack);
+    expect(firstTurn.players[0].board[0]?.chained).toBe(2);
+    expect(getLegalActions(firstTurn, library)).not.toContainEqual(swing);
+
+    // The second turn is the one a Freeze would have given back.
+    const secondTurn = toMyNextTurn(firstTurn);
+    expect(secondTurn.players[0].board[0]?.chained).toBe(1);
+    expect(getLegalActions(secondTurn, library)).not.toContainEqual(swing);
+
+    const thirdTurn = toMyNextTurn(secondTurn);
+    expect(thirdTurn.players[0].board[0]?.chained).toBe(0);
+    expect(getLegalActions(thirdTurn, library)).toContainEqual(swing);
   });
 
   it("Dio Brando (freeze_all_enemies): freezes every enemy but not friendly minions", () => {

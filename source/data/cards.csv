@@ -65,7 +65,7 @@ c063,Sans,4,1,1,Purple,Magic,Neutral,Passive,dodge_80,passive,Passive: Evade 80%
 c064,Seven Deadly Sins,8,4,5,Purple,Magic,Good,,summon_sins,onPlay,"Battlecry: Fill your empty slots with 1/1 Sin minions. Each enters with a different keyword at random: Taunt, Divine Shield, Charge, Chained",The Magic Number,Seven Deadly Sins,/card-art/raw/c064.webp
 c065,Whitebeard,8,4,3,Purple,Magic,Neutral,,aoe_damage_3,onPlay,Battlecry: Deal 3 damage to all enemy minions,Split the World in two,One Piece,/card-art/raw/c065.webp
 c066,Elder Centipede,7,5,6,Black,Nature,Evil,Ongoing,self_buff_2,ongoing,Ongoing: Gain +2/+2,Billion year old,OPM,/card-art/raw/c066.webp
-c067,Hypnos,4,0,5,Black,Magic,Neutral,Taunt;Passive,chain_attacker,passive,Taunt. Passive: Enemy minions that attack this become Chained for 1 turn,He sleeps in his sleep,Hades,/card-art/raw/c067.webp
+c067,Hypnos,4,0,5,Black,Magic,Neutral,Taunt;Passive,chain_attacker,passive,Taunt. Passive: Enemy minions that attack this become Chained,He sleeps in his sleep,Hades,/card-art/raw/c067.webp
 c068,Star Destroyer,7,5,5,Black,Tech,Neutral,,star_destroyer_tie_fighters,onPlay,Battlecry: Summon two 1/1 TIE Fighters with Charge,-,Basic,/card-art/raw/c068.webp
 c069,Isaac Netero,7,4,4,Red,Magic,Good,Divine Shield;Deathrattle,deathrattle_aoe_3,deathrattle,Divine Shield. Deathrattle: Deal 3 damage to all enemy minions,Each prayer strikes harder than any fist,HxH,/card-art/raw/c069.webp
 c070,Vergil & Dante & Nero,7,3,5,Red,Magic,Neutral,Passive,attack_2x,passive,Passive: This minion can attack 2 times per turn,Infinite potential,Devil May Cry,/card-art/raw/c070.webp
@@ -87,10 +87,10 @@ c087,Founding Titan,6,4,5,Black,Nature,Evil,Taunt;Passive,taunt_aura,passive,Tau
 c088,Homelander,6,4,4,Black,Nature,Evil,Passive,invuln_if_alone,passive,Passive: This minion is Invulnerable if it is your only minion on the board,Central casting,The Boys,/card-art/raw/c088.webp
 c089,Kratos,6,2,6,Black,Magic,Neutral,Passive,kratos_lockdown,passive,Passive: Your opponent cannot play Ascension Relics or use Hero power,He killed the gods of his world,God of War Game,/card-art/raw/c089.webp
 c090,Shigaraki,6,4,4,Black,Magic,Evil,Passive,shigaraki_decay,passive,"Passive: Whenever Shigaraki damages a minion, mark it. At the start of your next turn, it dies",Revenge,MHA,/card-art/raw/c090.webp
-c091,Ten Commandments,6,3,5,Black,Magic,Evil,Passive,ten_commandments_first_attack,passive,Passive: The first enemy minion to attack each turn is Chained for 1 turn,Their reputation preceded them by centuries,Seven Deadly Sins,/card-art/raw/c091.webp
+c091,Ten Commandments,6,3,5,Black,Magic,Evil,Passive,ten_commandments_first_attack,passive,Passive: The first enemy minion to attack each turn is Chained,Their reputation preceded them by centuries,Seven Deadly Sins,/card-art/raw/c091.webp
 c092,UFO,6,3,3,Black,Tech,Neutral,Divine Shield,none,none,Divine Shield,-,Basic,/card-art/raw/c092.webp
 c093,Yoriichi Type Zero,3,2,2,Black,Tech,Neutral,Passive,survivor_buff,passive,"Passive: Whenever a friendly minion survives a combat, it gains +1/+1",Strongest puppet,Demon Slayer,/card-art/raw/c093.webp
-c094,Grand Master Oogway,5,2,2,Red,Magic,Good,Divine Shield;Passive,oogway_rescue,passive,"Divine Shield. Passive: Once per turn, when another friendly minion would die, return it to your hand instead and Chain Oogway for 1 turn",Patience,Kung-Fu Panda,/card-art/raw/c094.webp
+c094,Grand Master Oogway,5,2,2,Red,Magic,Good,Divine Shield;Passive,oogway_rescue,passive,"Divine Shield. Passive: Once per turn, when another friendly minion would die, return it to your hand instead and Chain Oogway",Patience,Kung-Fu Panda,/card-art/raw/c094.webp
 c095,Kojiro Sasaki,5,2,6,Red,Nature,Good,Passive,evade_allies_33,passive,Passive: All other friendly minions have +33% chance to evade an attack (does not apply to himself),Spending infinity in the Astral made him on par with the Gods,RoR,/card-art/raw/c095.webp
 c096,Dio Brando,5,3,2,Yellow,Magic,Evil,,freeze_all_enemies,onPlay,Battlecry: Freeze all enemy minions,THE WORLD,JoJo,/card-art/raw/c096.webp
 c097,Elden Beast,6,4,4,Yellow,Magic,Neutral,Passive,elden_beast_neutral_magic_atk,passive,Passive: All friendly Neutral or Magic minions have +2 ATK,Legends carved into the Lands Between,Elden Ring,/card-art/raw/c097.webp

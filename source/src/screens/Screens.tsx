@@ -710,7 +710,7 @@ function HowToPlayContent() {
           <li>Combat is <b>simultaneous</b>: the defender hits back even as it dies.</li>
           <li>A minion with <b>0 ATK</b> may still attack, but deals no damage.</li>
           <li>An enemy <b>Taunt</b> blocks the road to the core — clear it first, unless something explicitly ignores Taunt.</li>
-          <li>A <b>Chained</b> minion is out of the duel entirely while its chains hold.</li>
+          <li>A <b>Chained</b> minion is out of the duel entirely for <b>two</b> of its turns; a <b>Frozen</b> one for a single turn.</li>
         </ul>
       </section>
 
@@ -738,13 +738,11 @@ function HowToPlayContent() {
           <dt>Charge</dt>
           <dd>May attack the same turn it is summoned, or the turn it changes controller.</dd>
           <dt>Chained</dt>
-          <dd>The price a card pays for being too strong for its cost, and stricter than sleep. Nothing at all until the chains break: no attack, no Passive or Ongoing effect, and untargetable by <b>both</b> players — not by an attack, not by removal, not by a buff of your own.</dd>
-          <dt>Chained, for how long</dt>
-          <dd>A card that arrives Chained by its own text loses its <b>first two owner turns</b>. A chain laid on it later, by an enemy effect or a marked slot, costs <b>one</b>.</dd>
+          <dd>The minion loses <b>two</b> of its turns — always two, and no card prints a different number. Across both it cannot attack, its Passive and Ongoing effects do not fire, and it is untargetable by <b>both</b> players: not by an attack, not by removal, not by a buff of your own. It is the price a card pays for being too strong for its cost: a <b>Freeze</b> that lasts a turn longer and bites deeper.</dd>
           <dt>Divine Shield</dt>
           <dd>Blocks the next instance of damage, whatever its size, then the gold rim goes out. <b>Silence</b> switches it off for as long as it lasts.</dd>
           <dt>Freeze</dt>
-          <dd>The minion loses its next turn, then thaws once it has sat that turn out.</dd>
+          <dd>The minion loses <b>one</b> turn, then thaws once it has sat that turn out. It keeps its Passive and stays targetable throughout — that, and the extra turn, is what separates it from <b>Chained</b>.</dd>
           <dt>Silence</dt>
           <dd>Strips the printed effect and keywords, Divine Shield included, and takes back every stat <b>buff</b> the minion is carrying, down to its printed stats. Nerfs it has taken are kept. A Silence that its own card calls temporary only suspends the buffs.</dd>
           <dt>Cannot attack</dt>

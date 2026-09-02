@@ -14,7 +14,7 @@ r013,Allspark Cube,1,Relic,relic,capture_kill,"When the bearer kills an enemy mi
 r014,Anti-magic Mask,1,Relic,relic,immune_freeze_chain,The bearer is immune to Freeze and Chained,RELIC,That time I got reincarnated as a Slime,/card-art/raw/r014.webp
 r015,Devil Fruit,2,Relic,relic,ongoing_grow_2,The bearer gains an additional Ongoing: gain +2/+1,RELIC,One Piece,/card-art/raw/r015.webp
 r016,Healing Potion,1,Relic,relic,heal_full_now,The bearer is fully healed the moment it is equipped,RELIC,That time I got reincarnated as a Slime,/card-art/raw/r016.webp
-r017,Queen's Cocoon,2,Relic,relic,cocoon,"The bearer is Chained for a turn. When it awakens, it gains +3/+3",RELIC,Hxh,/card-art/raw/r017.webp
+r017,Queen's Cocoon,2,Relic,relic,cocoon,"The bearer is Chained. When it awakens, it gains +3/+3",RELIC,Hxh,/card-art/raw/r017.webp
 r018,Shinigami Eyes,1,Relic,relic,ignore_defences,The bearer ignores Taunt and Divine Shield,RELIC,Death Note,/card-art/raw/r018.webp
 r019,The Green Mask,2,Relic,relic,return_on_death,Return the bearer to your hand after death,RELIC,The Mask,/card-art/raw/r019.webp
 r020,Tesseract,4,Relic,relic,double_attack,The bearer can attack twice each turn,RELIC,MCU,/card-art/raw/r020.webp

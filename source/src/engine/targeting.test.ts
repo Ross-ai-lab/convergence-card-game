@@ -253,7 +253,7 @@ describe("targeted effects", () => {
     ]);
     const chosen = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: 1 }, library).state;
     expect(chosen.players[1].board[2]?.atk).toBe(1);
-    expect(chosen.players[1].board[2]?.chained).toBe(2);
+    expect(chosen.players[1].board[2]?.chained).toBe(3);
     expect(chosen.players[1].board[0]?.chained).toBe(0);
   });
 

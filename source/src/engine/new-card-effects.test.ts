@@ -305,7 +305,7 @@ describe("2026 card replacements", () => {
         effectId: "chain_attacker",
         effectTiming: "passive",
         keywords: ["Taunt", "Passive"],
-        effect: "Taunt. Passive: Enemy minions that attack this become Chained for 1 turn",
+        effect: "Taunt. Passive: Enemy minions that attack this become Chained",
       },
       Zoro: { cost: 5, atk: 4, hp: 4, effectId: "on_kill_buff_1", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Gain +1/+1 after killing a minion" },
       "One-Eyed Owl": { cost: 5, atk: 4, hp: 4, effectId: "chain_watch_growth", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Whenever a minion becomes Chained, gain +1/+1" },
@@ -489,7 +489,7 @@ describe("2026 card replacements", () => {
         keywords: ["Passive"],
         effect: "Passive: Your opponent cannot play Ascension Relics or use Hero power",
       },
-      "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: The first enemy minion to attack each turn is Chained for 1 turn" },
+      "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: The first enemy minion to attack each turn is Chained" },
       "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
       "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
       Meteor: {
@@ -1196,13 +1196,13 @@ describe("2026 card replacements", () => {
       auraId: "slot_chain",
       sourceName: "Giorno - Gold Experience Requiem",
     });
-    expect(marked.players[1].board[1]?.chained).toBe(2);
+    expect(marked.players[1].board[1]?.chained).toBe(3);
 
     const replacement = { ...marked, players: [...marked.players] as GameState["players"] } as GameState;
     replacement.players[1] = { ...marked.players[1], board: [...marked.players[1].board] };
     replacement.players[1].board[1] = minion("John Wick", 1);
     const enforced = endTurn(replacement, 0);
-    expect(enforced.players[1].board[1]?.chained).toBe(2);
+    expect(enforced.players[1].board[1]?.chained).toBe(3);
   });
 
   it("Vegapunk discovers three Tech cards and draws the chosen one", () => {
@@ -1276,7 +1276,7 @@ describe("2026 card replacements", () => {
     const state = mainState("vader-chain");
     state.players[1].board[0] = minion("John Wick", 1);
     const chained = play(state, 0, "Darth Vader", 1);
-    expect(chained.players[1].board[0]).toMatchObject({ atk: 1, chained: 2 });
+    expect(chained.players[1].board[0]).toMatchObject({ atk: 1, chained: 3 });
 
     const alreadyChained = mainState("vader-destroy");
     alreadyChained.players[1].board[0] = minion("John Wick", 1, { chained: 2 });
@@ -1559,7 +1559,7 @@ describe("2026 card replacements", () => {
 
     // Darth Vader chains the enemy minion, and the Owl is watching.
     const chained = play(state, 0, "Darth Vader", 1);
-    expect(chained.players[1].board[0]?.chained).toBe(2);
+    expect(chained.players[1].board[0]?.chained).toBe(3);
     expect(chained.players[0].board[0]).toMatchObject({ atk: before.atk + 1, maxHp: before.maxHp + 1 });
   });
 
@@ -1580,7 +1580,7 @@ describe("2026 card replacements", () => {
     const asking = play(onAFreeMinion, 0, "Giorno - Gold Experience Requiem", 1);
     const freeSlot = asking.pendingTarget!.options.findIndex((option) => option.owner === 1 && option.slot === 1);
     const paid = choose(asking, freeSlot);
-    expect(paid.players[1].board[1]?.chained).toBe(2);
+    expect(paid.players[1].board[1]?.chained).toBe(3);
     expect(paid.players[0].board[0]).toMatchObject({ atk: printed.atk + 1, maxHp: printed.maxHp + 1 });
 
     const onAChainedMinion = build();
@@ -1917,9 +1917,9 @@ describe("2026 card replacements", () => {
     state.players[0].board[0] = minion("John Wick", 0);
     state.players[1].board[0] = minion("Zoro", 1);
     const after = play(state, 0, "Ten Tails", 1);
-    expect(after.players[0].board[0]?.chained).toBe(2);
+    expect(after.players[0].board[0]?.chained).toBe(3);
     expect(after.players[0].board[1]?.chained).toBe(0);
-    expect(after.players[1].board[0]?.chained).toBe(2);
+    expect(after.players[1].board[0]?.chained).toBe(3);
   });
 
   it("Ouken endlessly Reborns as a Chained 2/1", () => {
@@ -1933,7 +1933,7 @@ describe("2026 card replacements", () => {
       atk: 2,
       hp: 1,
       maxHp: 1,
-      chained: 2,
+      chained: 3,
       effectId: "ouken_reborn",
       suppressArrivalTheme: true,
     });
@@ -2226,7 +2226,7 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[0]).toMatchObject({ atk: 5, hp: 9, maxHp: 9 });
   });
 
-  it("Grand Master Oogway rescues one dying ally per turn and Chains for 1 turn", () => {
+  it("Grand Master Oogway rescues one dying ally per turn and is Chained for it", () => {
     const state = mainState("oogway-rescue");
     state.players[0].board[0] = minion("Grand Master Oogway", 0);
     state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 1 });
@@ -2237,7 +2237,7 @@ describe("2026 card replacements", () => {
     state.activePlayer = 1;
 
     const first = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
-    expect(first.players[0].board[0]).toMatchObject({ divineShield: true, chained: 2, rescueUsedAtTurn: first.turnNumber });
+    expect(first.players[0].board[0]).toMatchObject({ divineShield: true, chained: 3, rescueUsedAtTurn: first.turnNumber });
     expect(first.players[0].board[1]).toBeNull();
     expect(first.players[0].hand).toContain(cardId("John Wick"));
 
@@ -2623,7 +2623,7 @@ describe("direct effect reachability", () => {
       effectTiming: "reborn",
       effect: "Reborn. Silence and chain your killer",
     });
-    expect(first.players[1].board[0]).toMatchObject({ silenced: true, chained: 2 });
+    expect(first.players[1].board[0]).toMatchObject({ silenced: true, chained: 3 });
 
     // Second death: the last life is spent, so the body comes back with no
     // text at all — and the killer is still cursed, because Aizen still had
@@ -2638,7 +2638,7 @@ describe("direct effect reachability", () => {
       effectId: "none",
       effectTiming: "none",
     });
-    expect(third.players[1].board[0]).toMatchObject({ silenced: true, chained: 2 });
+    expect(third.players[1].board[0]).toMatchObject({ silenced: true, chained: 3 });
 
     // Third death: nothing left to spend, and no curse either.
     const last = { ...third, activePlayer: 1 as const, phase: "main" as const };
@@ -2767,5 +2767,132 @@ describe("direct effect reachability", () => {
     const withoutWard = play(silenced, 0, "Dabi", 2);
     expect(withoutWard.players[0].board[1]?.hp).toBe(4);
     expect(withoutWard.players[1].board[0]?.hp).toBe(4);
+  });
+});
+
+/**
+ * The one thing nobody had ever measured.
+ *
+ * Chained and Freeze had been the same card for months — both cost exactly one
+ * turn — because the chain counter is spent at the START of a turn, before
+ * attacks are offered, so a counter of 1 blocked nothing and 2 blocked one turn.
+ * Four cards printed "Chained for 1 turn" and delivered a Freeze; Queen's Cocoon
+ * printed a drawback that cost its bearer nothing at all.
+ *
+ * These tests assert the PRICE in turns rather than the counter, because the
+ * counter is the thing that was lying. A card change that makes Chained cost one
+ * turn again fails here.
+ */
+describe("what Chained and Freeze cost, in turns", () => {
+  /** How many of player 0's own turns pass before slot 0 may attack again. */
+  function turnsLost(start: GameState): number {
+    let state = start;
+    for (let ownTurn = 1; ownTurn <= 5; ownTurn += 1) {
+      state = endTurn(endTurn(state, 0), 1);
+      const canSwing = getLegalActions(state, library).some(
+        (action) =>
+          (action.type === "attack_minion" || action.type === "attack_core") && action.attackerSlot === 0,
+      );
+      if (canSwing) return ownTurn - 1;
+    }
+    return 99;
+  }
+
+  function boardWith(seed: string, overrides: Partial<MinionInstance>): GameState {
+    const state = mainState(seed);
+    state.players[0].board[0] = minion("John Wick", 0, { sleeping: false, atk: 3, ...overrides });
+    state.players[1].board[0] = minion("Albion", 1, { sleeping: false, chained: 0 });
+    return state;
+  }
+
+  it("an untouched minion loses nothing", () => {
+    expect(turnsLost(boardWith("chain-baseline", {}))).toBe(0);
+  });
+
+  it("Freeze costs exactly one turn", () => {
+    expect(turnsLost(boardWith("chain-freeze", { frozen: true, attacksUsed: 1 }))).toBe(1);
+  });
+
+  it("a chain laid by an effect costs exactly two turns", () => {
+    // Through Darth Vader, so the number comes from the engine's own
+    // `applyChain` rather than from a counter typed into the test.
+    const state = mainState("chain-vader");
+    state.players[0].board[0] = minion("John Wick", 0, { sleeping: false, atk: 3 });
+    state.players[1].board[0] = minion("Albion", 1, { sleeping: false, chained: 0 });
+    const asking = play(state, 1, "Darth Vader", 1);
+    const chained = asking.pendingTarget ? choose(asking, 0) : asking;
+    expect(chained.players[0].board[0]?.chained).toBeGreaterThan(0);
+    expect(turnsLost({ ...chained, activePlayer: 0, phase: "main" })).toBe(2);
+  });
+
+  it("a card that arrives Chained also costs two turns, its sleep being one of them", () => {
+    const state = mainState("chain-arrives");
+    const arrived = play(state, 0, "Albion", 0);
+    expect(arrived.players[0].board[0]?.chained).toBeGreaterThan(0);
+    // One of the two is the turn it was played, which it would have slept
+    // through anyway, so only one more turn-start is blocked from here.
+    expect(turnsLost(arrived)).toBe(1);
+  });
+
+  it("Queen's Cocoon really chains its bearer", () => {
+    const state = mainState("chain-cocoon");
+    state.players[0].board[0] = minion("John Wick", 0, { sleeping: false, atk: 3 });
+    state.players[0].hand = [relics.find((relic) => relic.name === "Queen's Cocoon")!.id];
+    const equipped = applyAction(
+      state,
+      { type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 },
+      library,
+    ).state;
+    expect(equipped.players[0].board[0]?.chained).toBeGreaterThan(0);
+    expect(turnsLost(equipped)).toBe(2);
+  });
+});
+
+describe("All for One cannot copy a copy of itself", () => {
+  it("refuses a victim that is itself carrying Copy-and-trigger, instead of recursing forever", () => {
+    // Pandora's Actor BECOMES another minion's effects, so it can end up
+    // carrying All for One's own Battlecry. All for One then copied that, wore
+    // "copy an effect" as its effect, ran it against the same victim, and copied
+    // it again — a hard `Maximum call stack size exceeded` crash, not a bad
+    // board. The balance harness hit it once in 800 self-play duels.
+    const state = mainState("all-for-one-mirror");
+    state.players[1].board[0] = minion("Pandora's Actor", 1, {
+      effectId: "copy_and_trigger",
+      effectTiming: "onPlay",
+    });
+    state.players[1].board[1] = minion("John Wick", 1);
+
+    const asking = play(state, 0, "All for One", 0);
+    // The mirror is not offered at all: every legal target is a minion that is
+    // not wearing this same power.
+    const offered = (asking.pendingTarget?.options ?? []).map(
+      (option) => asking.players[option.owner].board[option.slot]?.effectId,
+    );
+    expect(offered).not.toContain("copy_and_trigger");
+
+    const resolved = asking.pendingTarget ? choose(asking, 0) : asking;
+    expect(resolved.players[0].board[0]?.name).toBe("All for One");
+    // Whatever it copied, it is holding its own effect again afterwards.
+    expect(resolved.players[0].board[0]?.copyRestoreEffectId ?? null).toBeNull();
+  });
+
+  it("fizzles quietly when the mirror is the only enemy on the board", () => {
+    // With nothing else to copy, the Battlecry finds no legal target and does
+    // nothing. That is the correct outcome and, more to the point, it is a
+    // finite one — this is the board that used to crash the duel outright.
+    const state = mainState("all-for-one-only-mirror");
+    state.players[1].board[0] = minion("Pandora's Actor", 1, {
+      effectId: "copy_and_trigger",
+      effectTiming: "onPlay",
+    });
+
+    const played = play(state, 0, "All for One", 0);
+    expect(played.pendingTarget).toBeNull();
+    expect(played.players[0].board[0]).toMatchObject({
+      name: "All for One",
+      effectId: "copy_and_trigger",
+    });
+    expect(played.players[0].board[0]?.copyRestoreEffectId ?? null).toBeNull();
+    expect(played.players[1].board[0]?.name).toBe("Pandora's Actor");
   });
 });

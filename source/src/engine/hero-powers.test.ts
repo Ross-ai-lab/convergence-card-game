@@ -190,14 +190,21 @@ describe("menu Hero Powers", () => {
     const chained = usePower(state);
     expect(chained.players[0].mana).toBe(8);
     expect(chained.heroPowerUsed[0]).toBe(true);
-    expect(chained.players[0].board[0]).toMatchObject({ chained: 2, chainGrowthPending: true, atk: 2, hp: 2 });
+    expect(chained.players[0].board[0]).toMatchObject({ chained: 3, chainGrowthPending: true, atk: 2, hp: 2 });
     expect(getLegalActions(chained, library)).not.toContainEqual({ type: "use_hero_power", player: 0 });
 
-    let released = chained;
-    released = applyAction(released, { type: "end_turn", player: 0 }, library).state;
-    released = applyAction(released, { type: "end_turn", player: 1 }, library).state;
-    released = applyAction(released, { type: "end_turn", player: 0 }, library).state;
-    released = applyAction(released, { type: "end_turn", player: 1 }, library).state;
-    expect(released.players[0].board[0]).toMatchObject({ chained: 0, chainGrowthPending: false, atk: 3, hp: 3, maxHp: 3 });
+    // Two of the player's own turns pass with the minion still chained — that is
+    // what the keyword costs — and the reward lands as it breaks free on the
+    // third. The pair moved together: +1/+1 was too little for two lost turns.
+    const ownTurn = (from: GameState): GameState => {
+      const enemyTurn = applyAction(from, { type: "end_turn", player: 0 }, library).state;
+      return applyAction(enemyTurn, { type: "end_turn", player: 1 }, library).state;
+    };
+    const first = ownTurn(chained);
+    expect(first.players[0].board[0]).toMatchObject({ chained: 2, chainGrowthPending: true, atk: 2, hp: 2 });
+    const second = ownTurn(first);
+    expect(second.players[0].board[0]).toMatchObject({ chained: 1, chainGrowthPending: true, atk: 2, hp: 2 });
+    const released = ownTurn(second);
+    expect(released.players[0].board[0]).toMatchObject({ chained: 0, chainGrowthPending: false, atk: 4, hp: 4, maxHp: 4 });
   });
 });

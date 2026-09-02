@@ -31,6 +31,22 @@ export type CardLibrary = Record<string, PlayableCard>;
 const boardSize = 5;
 const handLimit = 10;
 /**
+ * How many of its own turns a Chained minion loses. TWO, everywhere, always.
+ *
+ * This is the keyword's whole definition and no card is allowed to print a
+ * different number beside it — the same rule Reborn follows. An effect that
+ * wants a ONE-turn lockout is a Freeze, not a chain, and that is the line
+ * between the two keywords: Freeze costs a turn, Chained costs two and also
+ * switches off Passives and puts the minion out of reach of both players.
+ *
+ * Owner ruling, 2 September 2026. Before it, four separate cards printed
+ * "Chained for 1 turn" and measured identical to Freeze, which made the harsher
+ * keyword the weaker one.
+ */
+const CHAIN_TURNS = 2;
+/** What Reforged Chains pays for those two turns. Printed in `hero-powers.ts`. */
+const CHAIN_GROWTH_REWARD = 2;
+/**
  * How much core a duel starts with.
  *
  * This is the ONE global pacing dial in the game, because mana cost is frozen —
@@ -617,7 +633,7 @@ function resolveHeroPower(
     } else {
       applyChain(state, target, events);
       target.chainGrowthPending = true;
-      events.push({ kind: "effect", text: `${definition.name} chains ${target.name} for 1 turn.`, player: playerId, instanceId: target.instanceId });
+      events.push({ kind: "effect", text: `${definition.name} chains ${target.name}.`, player: playerId, instanceId: target.instanceId });
     }
   } else if (powerId === "summon_recruit") {
     summonHeroPowerRecruit(state, playerId, events);
@@ -883,7 +899,10 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     // Ordinary minions sleep through the turn they are played. Charge is the
     // explicit exception: it also applies when a minion is summoned or changes
     // controller through an effect.
-    chained: hasKeyword(card, "Chained") ? 2 : 0,
+    // A card that PRINTS Chained arrives asleep as well, and that arrival turn
+    // is already one of the two the keyword costs — so its counter is one lower
+    // than `applyChain` sets, and the player still loses exactly two turns.
+    chained: hasKeyword(card, "Chained") ? CHAIN_TURNS : 0,
     frozen: false,
     thawPending: false,
     silenced: false,
@@ -1450,7 +1469,7 @@ function attackMinion(
       // Chained = 2 is one skipped owner turn in this engine: the counter is
       // decremented at turn start before attacks are offered.
       applyChain(state, survivingAttacker, events);
-      events.push(effectEvent(`${defender.name} chains ${survivingAttacker.name} for 1 turn.`, defender));
+      events.push(effectEvent(`${defender.name} chains ${survivingAttacker.name}.`, defender));
     }
     // APR: whoever swung at it never swings again.
     if (hasEffect(defender, "attack_lock") && attackerAlive && survivingAttacker) {
@@ -1615,7 +1634,7 @@ function triggerTenCommandments(
   if (!attackerAlive) return;
   if (isSlotProtected(state, attacker) || !canDisable(state, source.owner, attacker, "chain")) return;
   applyChain(state, attacker, events);
-  events.push(effectEvent(`${source.name} chains the first attacker, ${attacker.name}, for one turn.`, source));
+  events.push(effectEvent(`${source.name} chains the first attacker, ${attacker.name}.`, source));
 }
 
 function spendCoin(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
@@ -1787,7 +1806,12 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   copy_and_trigger: {
     side: "enemy",
     prompt: "Copy and fire an enemy minion's effect",
-    filter: (m) => m.effectId !== "none" && m.effectTiming !== "passive",
+    // Never a minion wearing this same power. Pandora's Actor BECOMES another
+    // minion's effects and can therefore end up carrying All for One's, and
+    // copying "copy an effect" made the copy run against the same victim and
+    // copy it again — unbounded recursion and a hard crash, not a bad board.
+    // The balance harness hit it once in 800 self-play duels.
+    filter: (m) => m.effectId !== "none" && m.effectTiming !== "passive" && m.effectId !== "copy_and_trigger",
   },
   steal_passive: {
     side: "enemy",
@@ -3145,6 +3169,13 @@ function runEffect(
       // or from `chooseTarget` when the last prompt is answered. Multi-step
       // copies (Knov's room, Ten Commandments' double Freeze) work for the same
       // reason: the minion keeps wearing the effect between questions.
+      // Belt and braces with the spec's filter above: the prompt is one way in,
+      // and a borrowed effect arriving by any other route must not be able to
+      // start the same recursion. Copying "copy an effect" is not a power.
+      if (borrowed === "copy_and_trigger") {
+        events.push(effectEvent(`${label} finds nothing to copy in ${picked.name}'s power.`, source));
+        return false;
+      }
       source.copyRestoreEffectId = source.effectId;
       source.effectId = borrowed;
       const offerVictim = copiedVictimIsLegalTarget(state, source, victim);
@@ -4030,7 +4061,10 @@ function equipRelic(
     buffMinion(bearer, 2, 2);
     if (!hasKeyword(bearer, "Taunt")) bearer.keywords.push("Taunt");
   } else if (relic.relicId === "cocoon") {
-    applyChain(state, bearer, events, 1);
+    // The default, like every other chain in the game. It used to ask for one
+    // turn, which the old counter resolved as none at all, so the drawback this
+    // relic prints was decoration and its +3/+3 was free.
+    applyChain(state, bearer, events);
     relic.readyOnTurn = state.turnNumber + 2;
   } else if (relic.relicId === "excalibur") {
     if (!hasKeyword(bearer, "Charge")) bearer.keywords.push("Charge");
@@ -4945,10 +4979,22 @@ function buffMinion(minion: MinionInstance, atk: number, hp: number): void {
  * was fine while nothing watched the transition. The One-Eyed Owl watches it, so
  * "becomes Chained" needs a single definition: the counter rising from zero.
  * Raising an existing chain is not a new one and pays nothing.
+ *
+ * `turns` MEANS TURNS. It did not until 2 September 2026, and that is the whole
+ * story of why Chained and Freeze were the same card: the counter is spent at
+ * the START of a turn, before attacks are offered, so a counter of 1 ticked to 0
+ * and the minion swung that same turn. One meant zero, two meant one, and
+ * Queen's Cocoon — which asked for one — cost its bearer nothing whatsoever.
+ * The +1 is that off-by-one, paid once, here.
+ *
+ * A minion that ARRIVES Chained does not come through this function: it is born
+ * with the counter set in `createMinion`, and it is asleep on the turn it lands,
+ * so that turn is already one of the two it loses. Both routes cost a player the
+ * same thing — two turns in which the minion does nothing.
  */
-function applyChain(state: GameState, target: MinionInstance, events: GameEvent[], turns = 2): void {
+function applyChain(state: GameState, target: MinionInstance, events: GameEvent[], turns = CHAIN_TURNS): void {
   const wasFree = target.chained === 0;
-  target.chained = Math.max(target.chained, turns);
+  target.chained = Math.max(target.chained, turns + 1);
   if (!wasFree || target.chained === 0) return;
   for (const owner of [0, 1] as PlayerId[]) {
     for (const watcher of state.players[owner].board) {
@@ -4962,8 +5008,12 @@ function applyChain(state: GameState, target: MinionInstance, events: GameEvent[
 function resolveChainGrowth(minion: MinionInstance, events: GameEvent[]): void {
   if (!minion.chainGrowthPending || minion.chained > 0) return;
   minion.chainGrowthPending = false;
-  buffMinion(minion, 1, 1);
-  events.push(effectEvent(`${minion.name} breaks free and gains +1/+1.`, minion));
+  // Matches the printed reward on Reforged Chains, the one power that sets this
+  // flag. Raised with the chain's length: two lost turns had to buy more.
+  buffMinion(minion, CHAIN_GROWTH_REWARD, CHAIN_GROWTH_REWARD);
+  events.push(
+    effectEvent(`${minion.name} breaks free and gains +${CHAIN_GROWTH_REWARD}/+${CHAIN_GROWTH_REWARD}.`, minion),
+  );
 }
 
 /**
@@ -5263,7 +5313,7 @@ function rescueWithOogway(state: GameState, playerId: PlayerId, slotIndex: numbe
   events.push({ kind: "death", text: `${target.name} would die, but Grand Master Oogway returns it to hand.`, player: playerId, instanceId: target.instanceId, cardId: target.cardId });
   putCardInHand(state, playerId, target.cardId, events, target.instanceId);
   applyChain(state, oogway, events);
-  events.push(effectEvent(`${oogway.name} is Chained for 1 turn after saving ${target.name}.`, oogway));
+  events.push(effectEvent(`${oogway.name} is Chained after saving ${target.name}.`, oogway));
   return true;
 }
 

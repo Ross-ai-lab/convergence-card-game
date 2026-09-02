@@ -264,7 +264,7 @@ describe("control and theft cards", () => {
     state.players[1].board[0] = dummy("Death Star", 1, { hp: 20, maxHp: 20 });
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 2, hp: 10, maxHp: 10 });
     const after = attack(state, 0, 0);
-    expect(after.players[0].board[0]?.chained).toBe(2);
+    expect(after.players[0].board[0]?.chained).toBe(3);
   });
 
   it("Ten Commandments chains the attacker without shielding it from the retaliation", () => {
@@ -279,7 +279,7 @@ describe("control and theft cards", () => {
     // minion cannot be damaged — so attacking into Ten Commandments cost the
     // attacker nothing at all. It takes the full 5 now, and is still chained.
     expect(after.players[0].board[0]?.hp).toBe(5);
-    expect(after.players[0].board[0]?.chained).toBe(2);
+    expect(after.players[0].board[0]?.chained).toBe(3);
     expect(after.players[1].board[0]?.hp).toBe(18);
   });
 

@@ -27,7 +27,11 @@ export const HERO_POWER_DEFINITIONS: readonly HeroPowerDefinition[] = [
   {
     id: "chain_growth",
     name: "Reforged Chains",
-    text: "Chain a friendly minion for 1 turn. It gains +1/+1 when unchained.",
+    // No duration printed: Chained means two turns and says so itself. The
+    // reward went from +1/+1 to +2/+2 with that change — two turns of silence is
+    // a real price, and the power is now as much about putting a minion out of
+    // reach of removal for those turns as it is about the stats.
+    text: "Chain a friendly minion. It gains +2/+2 when unchained.",
     target: "friendly",
   },
   { id: "summon_recruit", name: "Call a Recruit", text: "Summon a 1/1 Knight.", target: "none" },
