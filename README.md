@@ -361,13 +361,13 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 
 ### Conditions and keywords
 
-- **Chained** — unavailable for the first two owner turns; it cannot attack, run Ongoing effects, or be targeted by attacks or effects until the chains break.
+- **Chained** — nothing at all until the chains break: no attack, no Passive or Ongoing effect, and untargetable by **both** players, including by a buff of its owner's. A card that arrives Chained by its own printed text loses its first **two** owner turns; a chain laid on it later, by an enemy effect or a marked slot, costs **one**.
 - **Charge** — may attack on the same turn it is summoned or brought under a new player's control.
 - **Taunt** — the enemy must deal with this minion before attacking your core.
 - **Divine Shield** — blocks the next damage instance, then the gold shield disappears. It is a keyword, so **Silence** switches it off: a silenced bearer takes the blow in full. The shield is suspended rather than destroyed, so it returns if the silence does — Gojo's aura being the one silence that lifts. Fixed 1 September 2026; before that the card face hid the gold rim on a silenced minion while the engine went on spending the shield, so the board and the rules disagreed about the same card.
 - **Freeze** — the minion loses its next turn, then thaws after sitting out that turn.
 - **Cannot Attack** — the minion never attacks, whatever its ATK. It still blocks, still takes damage, and still retaliates when attacked; its ATK gem is grey.
-- **Reborn** — the minion returns to the slot it died in at **1 HP**, carrying its printed ATK and nothing else: no keywords, no effect, no relic. Aizen is the one card that prints an exception, and it prints it on his face ("Reborn at full HP"); Ouken and Mr. Poopybutthole both follow the plain rule.
+- **Reborn** — a **keyword**, not a Deathrattle. The minion returns to the slot it died in at **1 HP** with its printed ATK and nothing else it was carrying: no buffs, no relic, no shield. Silence stops it, a full board leaves it nowhere to go, and the Necronomicon does **not** double it. How many lives a card has is printed on it — plain `Reborn` is one, `Reborn twice` is two, `Reborn infinitely` never runs out — and a rebirth is SPENT, so the returning body prints what it has left and prints nothing once the last life is gone. The staged text lives in `REBORN_STAGE` in `game.ts`; a card with more lives is one more row.
 - **Adapted** — Doomsday's answer to being hit: it shrugs off the attacker's Camp for three of its owner's turns. A purple glow rises from the card, and it goes out when the immunity does.
 - **Stasis** — the minion is lifted off the board for two full turns and returns exactly as it left, in its own slot when that slot is free.
 - **Banished** — the minion is held away until the card that banished it dies, then returns.

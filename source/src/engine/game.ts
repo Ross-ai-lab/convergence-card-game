@@ -5285,6 +5285,86 @@ function resolveDeathrattle(
   for (let trigger = 0; trigger < triggerCount; trigger += 1) {
     resolveCardDeathrattleOnce(state, dead, killer, deadSlot, events);
   }
+
+  // Reborn is NOT a Deathrattle and so it sits outside that loop: the
+  // Necronomicon doubles a Deathrattle, and doubling a rebirth would put two
+  // copies of one minion on the board.
+  resolveReborn(state, dead, killer, deadSlot, events);
+}
+
+/**
+ * What a Reborn card comes back AS.
+ *
+ * Reborn spends itself. A minion returns carrying one life fewer, which means
+ * the returning body prints different text from the one that died — and after
+ * the last life the text is gone altogether, because a card that promises a
+ * rebirth it can no longer pay is lying to whoever reads it.
+ *
+ * `null` is that last body: printed stats, no keyword, no effect, no text. The
+ * table is the whole rule, so a card with more lives is one more row.
+ */
+const REBORN_STAGE: Partial<Record<EffectId, { effectId: EffectId; effect: string } | null>> = {
+  // Mr. Poopybutthole. One life, then an ordinary minion.
+  "reborn_once": null,
+  // Aizen. Two lives; the count drops out of the text as he spends them, and the
+  // curse on his killer goes with the last one.
+  "aizen_reborn_twice": { effectId: "aizen_reborn_once", effect: "Reborn. Silence and chain your killer" },
+  "aizen_reborn_once": null,
+  // Ouken. Endless, so he comes back as exactly himself, for ever.
+  "ouken_reborn": { effectId: "ouken_reborn", effect: "Reborn infinitely. Become Chained after each Reborn" },
+};
+
+/**
+ * Brings a Reborn minion back.
+ *
+ * Silence stops it, like every other keyword: the rebirth is printed on the card
+ * and Silence takes the card's text away. A full board stops the body but not
+ * Aizen's curse, which is a separate promise on the same line.
+ */
+function resolveReborn(
+  state: GameState,
+  dead: MinionInstance,
+  killer: MinionInstance | null,
+  deadSlot: number,
+  events: GameEvent[],
+): void {
+  if (dead.silenced || dead.effectTiming !== "reborn") return;
+  traceEffect(dead.effectId);
+
+  if (dead.effectId === "aizen_reborn_twice" || dead.effectId === "aizen_reborn_once") {
+    curseTheKiller(state, dead, killer, events);
+  }
+
+  const board = state.players[dead.owner].board;
+  const slot = board[deadSlot] ? board.findIndex((minion) => !minion) : deadSlot;
+  if (slot < 0) return;
+
+  const next = REBORN_STAGE[dead.effectId] ?? null;
+  const reborn = createRebornBody(state, dead, next);
+  board[slot] = reborn;
+  // Ouken pays for his endlessness every single time.
+  if (reborn.effectId === "ouken_reborn") applyChain(state, reborn, events);
+  events.push(effectEvent(`${dead.name} is Reborn.`, dead));
+}
+
+/** Aizen's half of the bargain: whoever put him down goes down with him. */
+function curseTheKiller(
+  state: GameState,
+  dead: MinionInstance,
+  killer: MinionInstance | null,
+  events: GameEvent[],
+): void {
+  const killerAlive = Boolean(
+    killer && state.players[killer.owner].board.some((minion) => minion?.instanceId === killer.instanceId),
+  );
+  if (!killer || !killerAlive) return;
+  const canSilence = canDisable(state, dead.owner, killer, "silence");
+  const canChain = canDisable(state, dead.owner, killer, "chain");
+  if (canSilence) applySilence(killer);
+  if (canChain) applyChain(state, killer, events);
+  const statuses = [canSilence ? "silences" : "", canChain ? "chains" : ""].filter(Boolean).join(" and ");
+  if (statuses) events.push(effectEvent(`${dead.name} ${statuses} its killer, ${killer.name}.`, dead));
+  else events.push(effectEvent(`${killer.name} resists ${dead.name}'s curses.`, killer));
 }
 
 function resolveCardDeathrattleOnce(
@@ -5410,37 +5490,6 @@ function resolveCardDeathrattleOnce(
       state.players[dead.owner].health = Math.min(STARTING_CORE, dead.savedCoreHealth);
       events.push(effectEvent(`${dead.name}'s Deathrattle restores the core to ${dead.savedCoreHealth} HP.`, dead));
     }
-  } else if (dead.effectId === "ouken_reborn") {
-    const slot = state.players[dead.owner].board[deadSlot]
-      ? state.players[dead.owner].board.findIndex((minion) => !minion)
-      : deadSlot;
-    if (slot >= 0) {
-      const rebornCard: CardDefinition = {
-        kind: "minion",
-        id: dead.cardId,
-        name: dead.name,
-        cost: dead.cost,
-        atk: dead.baseAtk,
-        hp: dead.baseHp,
-        rarity: dead.rarity,
-        camp: dead.camp,
-        alignment: dead.alignment,
-        keywords: ["Deathrattle"],
-        effectId: "ouken_reborn",
-        effectTiming: "deathrattle",
-        effect: dead.effect,
-        flavor: "",
-        origin: dead.origin,
-        art: dead.art,
-      };
-      const reborn = createMinion(rebornCard, dead.owner, state);
-      reborn.suppressArrivalTheme = true;
-      reborn.hp = 1;
-      reborn.maxHp = Math.max(1, reborn.maxHp);
-      applyChain(state, reborn, events);
-      state.players[dead.owner].board[slot] = reborn;
-      events.push(effectEvent(`${dead.name} is Reborn and Chained.`, dead));
-    }
   } else if (dead.effectId === "deathrattle_random_evil") {
     const candidates = ([0, 1] as PlayerId[]).flatMap((owner) =>
       state.players[owner].board
@@ -5456,59 +5505,23 @@ function resolveCardDeathrattleOnce(
     if (dealCoreDamage(state, dead.owner, 4, events)) {
       events.push(effectEvent(`${dead.name} deals 4 damage to its own Core.`, dead));
     }
-  } else if (dead.effectId === "aizen_deathrattle") {
-    if (coinFlip(state)) {
-      const slot = state.players[dead.owner].board[deadSlot] ? state.players[dead.owner].board.findIndex((minion) => !minion) : deadSlot;
-      if (slot >= 0) {
-        // Aizen alone comes back at FULL health; Ouken and Mr. Poopybutthole
-        // return on 1. That is a per-card difference, not an oversight.
-        const reborn = createVanillaReborn(state, dead);
-        reborn.hp = reborn.maxHp;
-        state.players[dead.owner].board[slot] = reborn;
-        events.push(effectEvent(`${dead.name} is Reborn.`, dead));
-      }
-    }
-    const killerAlive = Boolean(
-      killer && state.players[killer.owner].board.some((minion) => minion?.instanceId === killer.instanceId),
-    );
-    if (killer && killerAlive) {
-      const canSilence = canDisable(state, dead.owner, killer, "silence");
-      const canChain = canDisable(state, dead.owner, killer, "chain");
-      if (canSilence) applySilence(killer);
-      if (canChain) applyChain(state, killer, events);
-      const statuses = [canSilence ? "silences" : "", canChain ? "chains" : ""]
-        .filter(Boolean)
-        .join(" and ");
-      if (statuses) {
-        events.push(effectEvent(`${dead.name} ${statuses} its killer, ${killer.name}.`, dead));
-      } else {
-        events.push(effectEvent(`${killer.name} resists ${dead.name}'s curses.`, killer));
-      }
-    }
-  } else if (dead.effectId === "reborn_75") {
-    if (nextRandom(state) < 0.75) {
-      const slot = state.players[dead.owner].board[deadSlot] ? state.players[dead.owner].board.findIndex((minion) => !minion) : deadSlot;
-      if (slot >= 0) {
-        const reborn = createVanillaReborn(state, dead);
-        reborn.hp = 1;
-        state.players[dead.owner].board[slot] = reborn;
-        events.push(effectEvent(`${dead.name} is Reborn.`, dead));
-      }
-    }
   }
 }
 
 /**
- * The blank body a Reborn deathrattle puts back on the board.
+ * The body a Reborn minion comes back in.
  *
- * Reborn returns the CARD, not the engine that was on it: no keywords, no
- * effect, no shield, printed stats. Aizen and Mr. Poopybutthole each built this
- * by hand, and both did it the long way round — filling in the dead minion's
- * keywords, effect id, timing and text, then overwriting all four on the next
- * five lines. The caller sets the starting HP, which is the one thing the two
- * cards genuinely disagree about.
+ * Reborn returns the CARD, not what had been done to it: printed stats, one HP,
+ * and nothing else it was carrying — no buffs, no relic, no borrowed effect, no
+ * shield. `stage` is the only thing that survives, and it is what the card will
+ * PRINT from here on, so the reader can always count the lives that are left.
+ * `null` is the last body of all: an ordinary minion with no text at all.
  */
-function createVanillaReborn(state: GameState, dead: MinionInstance): MinionInstance {
+function createRebornBody(
+  state: GameState,
+  dead: MinionInstance,
+  stage: { effectId: EffectId; effect: string } | null,
+): MinionInstance {
   const reborn = createMinion(
     {
       kind: "minion",
@@ -5520,10 +5533,10 @@ function createVanillaReborn(state: GameState, dead: MinionInstance): MinionInst
       rarity: dead.rarity,
       camp: dead.camp,
       alignment: dead.alignment,
-      keywords: [],
-      effectId: "none",
-      effectTiming: "none",
-      effect: "-",
+      keywords: stage ? ["Reborn"] : [],
+      effectId: stage ? stage.effectId : "none",
+      effectTiming: stage ? "reborn" : "none",
+      effect: stage ? stage.effect : "-",
       flavor: "",
       origin: dead.origin,
       art: dead.art,
@@ -5532,6 +5545,7 @@ function createVanillaReborn(state: GameState, dead: MinionInstance): MinionInst
     state,
   );
   reborn.suppressArrivalTheme = true;
+  reborn.hp = 1;
   return reborn;
 }
 

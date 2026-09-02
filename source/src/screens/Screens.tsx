@@ -9,7 +9,7 @@
  * Four screens, all overlays over the live board so nothing here can break a duel
  * in progress:
  *   TitleScreen  — the front door: continue, solo at three difficulties, hotseat.
- *   HowToPlay     — the complete rules, as eleven chapters plus two glossaries.
+ *   HowToPlay     — the complete rules, as ten chapters plus two glossaries.
  *   SettingsPanel— sound controls and a route back to the title screen.
  *   PassScreen   — the hotseat privacy curtain. Without it, hotseat is not a game:
  *                  both players can read each other's hand off the same screen.
@@ -651,7 +651,7 @@ export function DuelIntro({ phase }: { phase: DuelIntroPhase }) {
 // ---------------------------------------------------------------------------
 
 /**
- * The rules guide, written as eleven short chapters in the order a new player
+ * The rules guide, written as ten short chapters in the order a new player
  * meets them: win condition, deck, turn, combat, then the vocabulary printed on
  * the cards, then the board's own symbols.
  *
@@ -710,27 +710,12 @@ function HowToPlayContent() {
           <li>Combat is <b>simultaneous</b>: the defender hits back even as it dies.</li>
           <li>A minion with <b>0 ATK</b> may still attack, but deals no damage.</li>
           <li>An enemy <b>Taunt</b> blocks the road to the core — clear it first, unless something explicitly ignores Taunt.</li>
-          <li>A <b>Chained</b> minion is out of the duel entirely while its chains hold: see the next chapter.</li>
+          <li>A <b>Chained</b> minion is out of the duel entirely while its chains hold.</li>
         </ul>
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">5</span> Chained, in full</h4>
-        <p>
-          <b>Chained</b> is the game&rsquo;s price tag on something too strong for its cost, and it is stricter
-          than sleep. A Chained minion is unavailable for its <b>first two owner turns</b>. Across that window
-          it cannot attack, its Ongoing effect does not fire, and it <b>cannot be targeted at all</b> — not by
-          an attack, not by removal, not by a buff of your own. It simply sits there, untouchable by both
-          players, until the chains break and it wakes up ready.
-        </p>
-        <p className="rules-aside">
-          Some cards arrive Chained by their own printed text; others are chained by an enemy effect or by a
-          marked board slot. Chains across the artwork are how you spot it.
-        </p>
-      </section>
-
-      <section className="rules-chapter">
-        <h4><span className="rules-step-no">6</span> When a card&rsquo;s text happens</h4>
+        <h4><span className="rules-step-no">5</span> When a card&rsquo;s text happens</h4>
         <dl className="rules-glossary">
           <dt>Battlecry</dt>
           <dd>Happens once, when the minion enters play.</dd>
@@ -746,14 +731,16 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">7</span> Words on the cards</h4>
+        <h4><span className="rules-step-no">6</span> Words on the cards</h4>
         <dl className="rules-glossary">
           <dt>Taunt</dt>
           <dd>The enemy must deal with this minion before attacking your core.</dd>
           <dt>Charge</dt>
           <dd>May attack the same turn it is summoned, or the turn it changes controller.</dd>
           <dt>Chained</dt>
-          <dd>Nothing at all until the chains break: no attack, no Passive or Ongoing effect, and untargetable by either side. A card that arrives Chained loses its first two owner turns; a chain laid by an enemy effect costs one.</dd>
+          <dd>The price a card pays for being too strong for its cost, and stricter than sleep. Nothing at all until the chains break: no attack, no Passive or Ongoing effect, and untargetable by <b>both</b> players — not by an attack, not by removal, not by a buff of your own.</dd>
+          <dt>Chained, for how long</dt>
+          <dd>A card that arrives Chained by its own text loses its <b>first two owner turns</b>. A chain laid on it later, by an enemy effect or a marked slot, costs <b>one</b>.</dd>
           <dt>Divine Shield</dt>
           <dd>Blocks the next instance of damage, whatever its size, then the gold rim goes out. <b>Silence</b> switches it off for as long as it lasts.</dd>
           <dt>Freeze</dt>
@@ -763,7 +750,9 @@ function HowToPlayContent() {
           <dt>Cannot attack</dt>
           <dd>This minion never attacks, whatever its ATK. It still blocks, still takes damage, and still strikes back when attacked. Its ATK gem is grey.</dd>
           <dt>Reborn</dt>
-          <dd>The minion comes back where it died, at <b>1 HP</b>, with its printed ATK and nothing else: no keywords, no effect, no relic. A card that returns it differently says so on its face.</dd>
+          <dd>When the minion dies it comes back where it fell, at <b>1 HP</b>, with its printed ATK and nothing else it was carrying: no buffs, no relic, no shield. A full board leaves it nowhere to return to, and <b>Silence</b> stops it like any other keyword.</dd>
+          <dt>Reborn, how many times</dt>
+          <dd>The card says. Plain <b>Reborn</b> is once; <b>Reborn twice</b> is two lives; <b>Reborn infinitely</b> never runs out. A card that comes back spends a life, so the text you read on the returning body is always what it has left — and when the last one is gone, the text is gone with it.</dd>
           <dt>Asleep</dt>
           <dd>The one-turn wait after a minion is played or summoned. Separate from Chained, and skipped by Charge. Drifting z&rsquo;s show it.</dd>
           <dt>Evade</dt>
@@ -808,7 +797,7 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">8</span> Camp and alignment</h4>
+        <h4><span className="rules-step-no">7</span> Camp and alignment</h4>
         <p>
           Every minion carries a <b>camp</b> — Magic, Nature or Tech — and an <b>alignment</b> — Good, Evil or
           Neutral. A great many effects hunt by one or the other, so read both labels before you commit a card.
@@ -817,7 +806,7 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">9</span> Ascension Relics</h4>
+        <h4><span className="rules-step-no">8</span> Ascension Relics</h4>
         <ul className="rules-list">
           <li>The <b>{RELIC_COUNT} relics</b> ride in the same shared deck and arrive in hand like any other card.</li>
           <li>Play one onto a friendly minion to equip it. A minion carries up to <b>two</b>, in independent slots.</li>
@@ -828,7 +817,7 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">10</span> Reading the board</h4>
+        <h4><span className="rules-step-no">9</span> Reading the board</h4>
         <div className="rules-split">
           <ul className="legend">
             <li><span className="swatch ring-green" /> ready to attack</li>
@@ -868,7 +857,7 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">11</span> Shortcuts</h4>
+        <h4><span className="rules-step-no">10</span> Shortcuts</h4>
         <p><b>Space</b> or <b>Enter</b> end turn · <b>Z</b> undo your last action · <b>Esc</b> clear your selection.</p>
       </section>
     </div>

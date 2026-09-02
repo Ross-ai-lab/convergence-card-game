@@ -86,7 +86,20 @@ export const RELIC_CAMP_LABEL = "Ascension";
  * `csv.ts` validates incoming data against the same array. A value can
  * therefore never exist in one of those two places and not the other.
  */
-export const EFFECT_TIMINGS = ["none", "onPlay", "ongoing", "onPlayAndOngoing", "onPlayAndDeathrattle", "passive", "deathrattle"] as const;
+export const EFFECT_TIMINGS = [
+  "none",
+  "onPlay",
+  "ongoing",
+  "onPlayAndOngoing",
+  "onPlayAndDeathrattle",
+  "passive",
+  "deathrattle",
+  // Reborn fires on death like a Deathrattle and is deliberately NOT one. It is
+  // its own keyword, so the card prints "Reborn" and no timing word at all, the
+  // Necronomicon does not double it, and it needs no "Deathrattle:" prefix in
+  // front of a word that already says when it happens.
+  "reborn",
+] as const;
 
 export type EffectTiming = (typeof EFFECT_TIMINGS)[number];
 
@@ -121,6 +134,7 @@ export const KEYWORDS = [
   "Charge",
   "Deathrattle",
   "Cannot Attack",
+  "Reborn",
 ] as const;
 
 export type Keyword = (typeof KEYWORDS)[number];
@@ -260,8 +274,9 @@ export const EFFECT_IDS = [
   "replace_same_cost_random",
   "deathrattle_random_evil",
   "highest_atk_only",
-  "aizen_deathrattle",
-  "reborn_75",
+  "aizen_reborn_twice",
+  "aizen_reborn_once",
+  "reborn_once",
   "elden_beast_neutral_magic_atk",
   "oogway_rescue",
   "evade_allies_33",

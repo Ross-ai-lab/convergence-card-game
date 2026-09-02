@@ -2394,27 +2394,31 @@ describe("2026 card replacements", () => {
     )).toEqual([{ type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 1 }]);
   });
 
-  it("Mr. Poopybutthole Reborns at the printed 75% branch and can fail the 25% branch", () => {
-    const success = mainState("reborn-0");
-    success.players[0].board[0] = minion("Mr. Poopybutthole", 0, { hp: 1, maxHp: 1 });
-    success.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
-    success.activePlayer = 1;
-    const reborn = applyAction(success, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+  it("Mr. Poopybutthole is Reborn once, at 1 HP, and the second death is final", () => {
+    const state = mainState("reborn-once");
+    state.players[0].board[0] = minion("Mr. Poopybutthole", 0, { hp: 1, maxHp: 1 });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
+    state.activePlayer = 1;
+    const swing = { type: "attack_minion" as const, player: 1 as const, attackerSlot: 0, targetSlot: 0 };
+    const reborn = applyAction(state, swing, library).state;
+    // The rebirth is spent, so the returning card prints nothing at all: no
+    // keyword, no effect, no promise it can no longer keep.
     expect(reborn.players[0].board[0]).toMatchObject({
       name: "Mr. Poopybutthole",
       atk: 1,
       hp: 1,
       maxHp: 1,
+      keywords: [],
+      effectId: "none",
+      effectTiming: "none",
       suppressArrivalTheme: true,
     });
 
-    const failure = mainState("reborn-fail-2");
-    failure.players[0].board[0] = minion("Mr. Poopybutthole", 0, { hp: 1, maxHp: 1 });
-    failure.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 20, maxHp: 20, sleeping: false });
-    failure.activePlayer = 1;
-    const notReborn = applyAction(failure, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(notReborn.players[0].board[0]).toBeNull();
-    expect(notReborn.discard).toContain(cardId("Mr. Poopybutthole"));
+    const second = { ...reborn, activePlayer: 1 as const, phase: "main" as const };
+    second.players[1].board[0]!.attacksUsed = 0;
+    const gone = applyAction(second, swing, library).state;
+    expect(gone.players[0].board[0]).toBeNull();
+    expect(gone.discard).toContain(cardId("Mr. Poopybutthole"));
   });
 
   it("Nezu draws exactly 1 card from its Battlecry", () => {
@@ -2591,40 +2595,75 @@ describe("direct effect reachability", () => {
     expect(opponentHandRevealed(state, 0)).toBe(false);
   });
 
-  it("Aizen has the printed 50% Reborn chance and always silences and chains the killer", () => {
-    const success = mainState("aizen-reborn");
-    success.rngSeed = 1;
-    success.players[0].board[0] = minion("Aizen", 0, { hp: 1, maxHp: 1 });
-    success.players[1].board[0] = minion("John Wick", 1, {
-      atk: 5,
-      hp: 10,
-      maxHp: 10,
-      sleeping: false,
-      effectId: "none",
-      effectTiming: "none",
-      keywords: [],
-    });
-    success.activePlayer = 1;
-    const reborn = applyAction(success, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(reborn.players[0].board[0]).toMatchObject({ name: "Aizen", hp: 4, maxHp: 4, effectId: "none" });
-    expect(reborn.players[1].board[0]).toMatchObject({ silenced: true, chained: 2 });
+  it("Aizen is Reborn twice, dropping a life from his printed text each time", () => {
+    const killer = (atk: number) =>
+      minion("John Wick", 1, {
+        atk,
+        hp: 40,
+        maxHp: 40,
+        sleeping: false,
+        effectId: "none" as const,
+        effectTiming: "none" as const,
+        keywords: [],
+      });
+    const swing = { type: "attack_minion" as const, player: 1 as const, attackerSlot: 0, targetSlot: 0 };
 
-    const failure = mainState("aizen-no-reborn");
-    failure.rngSeed = 12345;
-    failure.players[0].board[0] = minion("Aizen", 0, { hp: 1, maxHp: 1 });
-    failure.players[1].board[0] = minion("John Wick", 1, {
+    const state = mainState("aizen-reborn");
+    state.players[0].board[0] = minion("Aizen", 0, { hp: 1, maxHp: 1 });
+    state.players[1].board[0] = killer(5);
+    state.activePlayer = 1;
+
+    // First death: two lives become one, and the count drops out of the text.
+    const first = applyAction(state, swing, library).state;
+    expect(first.players[0].board[0]).toMatchObject({
+      name: "Aizen",
+      hp: 1,
+      keywords: ["Reborn"],
+      effectId: "aizen_reborn_once",
+      effectTiming: "reborn",
+      effect: "Reborn. Silence and chain your killer",
+    });
+    expect(first.players[1].board[0]).toMatchObject({ silenced: true, chained: 2 });
+
+    // Second death: the last life is spent, so the body comes back with no
+    // text at all — and the killer is still cursed, because Aizen still had
+    // the line printed when he died.
+    const second = { ...first, activePlayer: 1 as const, phase: "main" as const };
+    second.players[1].board[0] = killer(5);
+    const third = applyAction(second, swing, library).state;
+    expect(third.players[0].board[0]).toMatchObject({
+      name: "Aizen",
+      hp: 1,
+      keywords: [],
+      effectId: "none",
+      effectTiming: "none",
+    });
+    expect(third.players[1].board[0]).toMatchObject({ silenced: true, chained: 2 });
+
+    // Third death: nothing left to spend, and no curse either.
+    const last = { ...third, activePlayer: 1 as const, phase: "main" as const };
+    last.players[1].board[0] = killer(5);
+    const gone = applyAction(last, swing, library).state;
+    expect(gone.players[0].board[0]).toBeNull();
+    expect(gone.players[1].board[0]).toMatchObject({ silenced: false, chained: 0 });
+  });
+
+  it("a Silenced Aizen is not Reborn at all", () => {
+    const state = mainState("aizen-silenced");
+    state.players[0].board[0] = minion("Aizen", 0, { hp: 1, maxHp: 1, silenced: true });
+    state.players[1].board[0] = minion("John Wick", 1, {
       atk: 5,
-      hp: 10,
-      maxHp: 10,
+      hp: 20,
+      maxHp: 20,
       sleeping: false,
       effectId: "none",
       effectTiming: "none",
       keywords: [],
     });
-    failure.activePlayer = 1;
-    const gone = applyAction(failure, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(gone.players[0].board[0]).toBeNull();
-    expect(gone.players[1].board[0]).toMatchObject({ silenced: true, chained: 2 });
+    state.activePlayer = 1;
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[1].board[0]).toMatchObject({ silenced: false, chained: 0 });
   });
 
   it("Kaido destroys the enemy Taunt minion and leaves a non-Taunt minion alive", () => {

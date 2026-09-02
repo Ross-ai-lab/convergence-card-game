@@ -72,13 +72,22 @@ const TIMING_WORD = {
   ongoing: "Ongoing",
   passive: "Passive",
   deathrattle: "Deathrattle",
+  // Reborn prints no timing word at all. The keyword IS the timing — "Reborn"
+  // already says when it happens — and "Deathrattle: Reborn" said the same thing
+  // twice in a row.
+  reborn: null,
 };
 
 /** A card declares its own keywords as leading sentences ("Taunt. Divine Shield. "),
  *  then the timing word. Only the LEADING block counts as a declaration — The
- *  Driller's "Give another minion Taunt" is about someone else's Taunt, so a
- *  plain substring search would wave it through. */
-const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained|Charge|Deathrattle|Cannot attack)(?:\.\s*|$))*)/;
+ *  Driller's "Give another minion Taunt" is about someone else's Taunt, and
+ *  Ouken's "Become Chained after each Reborn" is about a chain he has not got
+ *  yet, so a plain substring search would wave both through.
+ *
+ *  Reborn is the one keyword allowed to carry a word of its own — "Reborn
+ *  twice", "Reborn infinitely" — because the count is the card's whole point and
+ *  belongs in the same breath as the keyword. */
+const LEADING_KEYWORDS = /^((?:(?:Divine Shield|Taunt|Chained|Charge|Deathrattle|Cannot attack|Reborn(?: twice| infinitely)?)(?:\.\s*|$))*)/;
 const PRINTED_TIMING = /^(?:(?:Divine Shield|Taunt|Chained|Charge|Cannot attack)\.\s*)*(Battlecry and Deathrattle|Battlecry\/Ongoing|Battlecry|Ongoing|Passive|Deathrattle):\s/;
 
 function checkPrintedText(card, line, errors) {
@@ -100,7 +109,7 @@ function checkPrintedText(card, line, errors) {
   }
 
   const declared = new Set(
-    (LEADING_KEYWORDS.exec(text)[1].match(/Divine Shield|Taunt|Chained|Cannot attack/g) ?? []).map((keyword) =>
+    (LEADING_KEYWORDS.exec(text)[1].match(/Divine Shield|Taunt|Chained|Cannot attack|Reborn/g) ?? []).map((keyword) =>
       keyword === "Cannot attack" ? "Cannot Attack" : keyword,
     ),
   );

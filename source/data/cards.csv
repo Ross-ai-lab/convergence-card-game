@@ -48,7 +48,7 @@ c046,The Watcher,10,10,7,Purple,Magic,Neutral,Cannot Attack;Passive,watcher_reve
 c047,"Escanor ""The One""",8,8,4,Red,Magic,Good,,double_other_friendly_attack,onPlay,"Battlecry: Double your other friendly minions attack","The Sun, incarnated",Seven Deadly Sins,/card-art/raw/c047.webp
 c048,Lelouch Lamperouge,8,1,1,Yellow,Magic,Neutral,,mind_control_enemy,onPlay,Battlecry: Gain control of an enemy minion,Obey,Code Geass,/card-art/raw/c048.webp
 c049,Rimuru Tempest,9,1,1,Yellow,Magic,Good,,rimuru_tempest,onPlay,Battlecry: Destroy a minion. Gain its stats. Ongoing: Gain +1/+1,Infinite growth,Tensura,/card-art/raw/c049.webp
-c050,Aizen,9,4,4,Purple,Magic,Evil,Deathrattle,aizen_deathrattle,deathrattle,Deathrattle: Reborn at full HP-50% chance. Silence and chain your killer,All part of the plan,Bleach,/card-art/raw/c050.webp
+c050,Aizen,9,4,4,Purple,Magic,Evil,Reborn,aizen_reborn_twice,reborn,Reborn twice. Silence and chain your killer,All part of the plan,Bleach,/card-art/raw/c050.webp
 c051,Boros,9,6,8,Purple,Nature,Evil,,heal_5,ongoing,Ongoing: Heal 5 HP,Strongest of his Universe,OPM,/card-art/raw/c051.webp
 c052,Dormammu,9,8,5,Purple,Magic,Evil,,dark_dimension_banish,onPlay,Battlecry: Choose an enemy minion. Banish it to the Dark Dimension until Dormammu dies,I've come to bargain,MCU,/card-art/raw/c052.webp
 c053,Mob Psycho,9,5,5,Purple,Magic,Good,,mob_ascend,onPlay,"Battlecry: If 3 or more friendly minions are on the board, return them to your hand and set Mob's stats to 12/12",A quiet storm,Mob Psycho,/card-art/raw/c053.webp
@@ -152,7 +152,7 @@ c152,Stain,2,1,1,Purple,Magic,Evil,,destroy_damaged_enemy,onPlay,Battlecry: Dest
 c153,Black Ops,2,2,2,Black,Tech,Neutral,Passive,black_ops_ignore_taunt,passive,Passive: Ignore Taunt,Classified,Basic,/card-art/raw/c153.webp
 c154,Gravelord Nito,4,2,3,Black,Magic,Neutral,Passive,nito_any_death_1_1,passive,Passive: Gain +1/+1 when a minion dies,The first of the dead keeps the count.,Dark Souls,/card-art/raw/c154.webp
 c155,Margit the Fell Omen,3,1,1,Black,Magic,Neutral,Deathrattle,deathrattle_summon_morgott,deathrattle,"Deathrattle: Summon Morgott, the Omen King (3/3)",The immovable,Elden Ring,/card-art/raw/c155.webp
-c156,Ouken,2,2,1,Black,Magic,Evil,Deathrattle,ouken_reborn,deathrattle,"Deathrattle: Reborn, become Chained",Immortality cost him everything,Ranking of Kings,/card-art/raw/c156.webp
+c156,Ouken,2,2,1,Black,Magic,Evil,Reborn,ouken_reborn,reborn,Reborn infinitely. Become Chained after each Reborn,Immortality cost him everything,Ranking of Kings,/card-art/raw/c156.webp
 c157,Pillar Men,4,4,3,Black,Nature,Evil,Chained;Passive,pillar_men_kill_heal,passive,"Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health",They outwaited the sun.,JoJo,/card-art/raw/c157.webp
 c159,Indiana Jones,1,1,1,Red,Nature,Good,,discover_relic_self,onPlay,Battlecry: Discover 1 of 3 Ascension Relics. Add it to your hand,Mine,Indiana Jones,/card-art/raw/c159.webp
 c160,Domovoy,1,1,1,Yellow,Magic,Good,,draw_relic,onPlay,Battlecry: Draw an Ascension Relic,The house spirit,Myth,/card-art/raw/c160.webp
@@ -167,7 +167,7 @@ c168,Walter White,1,1,1,Purple,Tech,Neutral,,neutral_double_atk_hp_1,onPlay,"Bat
 c169,An Order of Heavy Knights,1,1,1,Black,Nature,Neutral,Passive,taunt_ally_self_buff,passive,"Passive: While you control a Taunt minion, this has +1/+1",Honor. Duty,Basic,/card-art/raw/c169.webp
 c170,Davy Jones,1,1,1,Black,Magic,Evil,,steal_hand_relic,onPlay,"Battlecry: Steal an Ascension Relic in your opponent's hand",Captain of the drowned,Pirates of the Caribbean,/card-art/raw/c170.webp
 c171,Goblins,1,2,1,Black,Nature,Evil,Deathrattle,deathrattle_damage_random_enemy,deathrattle,Deathrattle: Deal 1 damage to a random enemy minion,"Many, loud, briefly in the way.",Myth,/card-art/raw/c171.webp
-c172,Mr. Poopybutthole,1,1,1,Black,Nature,Neutral,Deathrattle,reborn_75,deathrattle,Deathrattle: Reborn-75% chance,He was there the whole time,Rick and Morty,/card-art/raw/c172.webp
+c172,Mr. Poopybutthole,1,1,1,Black,Nature,Neutral,Reborn,reborn_once,reborn,Reborn,He was there the whole time,Rick and Morty,/card-art/raw/c172.webp
 c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,onPlay,Battlecry: Draw 1 card,The smartest thing here is a mouse.,MHA,/card-art/raw/c173.webp
 c174,Shibukawa,1,1,1,Black,Nature,Neutral,Divine Shield;Passive,shibukawa_defense_damage_2x,passive,Divine Shield. Passive: Do 2x damage when defending against an attack,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
 c175,V,1,1,1,Black,Nature,Neutral,Deathrattle,deathrattle_random_evil,deathrattle,"Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
