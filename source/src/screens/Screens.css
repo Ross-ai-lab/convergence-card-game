@@ -990,7 +990,11 @@
   list-style: none;
   padding: 0;
   display: grid;
-  gap: 7px;
+  /* `start`, so the four swatches stay a short list at the top instead of being
+     spread down the full height of the taller table beside them. A grid child
+     stretches by default, and its rows stretched with it. */
+  align-content: start;
+  gap: 12px;
 }
 
 .rules .legend li {
@@ -1010,20 +1014,50 @@
    two aligned columns, so eighteen keywords can be scanned down the left edge
    instead of read as eighteen sentences. `max-content` on the first column keeps
    every term on one line and every definition starting at the same x. */
+/* A REAL TABLE, with ruled rows and a ruled column.
+
+   It was a bare two-column grid held apart by gaps, and at forty entries that
+   stops being a list and becomes a wall: with nothing but whitespace between a
+   term and its neighbour's sentence, the eye loses which explanation belongs to
+   which word — exactly the complaint. Lines fix that, and so does room, so the
+   rows are also taller and the text a size up. */
 .rules-glossary {
   margin: 0;
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
-  column-gap: 16px;
-  row-gap: 8px;
-  align-items: baseline;
-  font-size: 13.5px;
-  line-height: 1.5;
+  /* STRETCH, not baseline. Baseline sized each cell to its own text, so a term
+     beside a four-line definition drew its shading and its column rule for one
+     line and then stopped, leaving a hole in the middle of the row. A table's
+     cells are as tall as the row. */
+  align-items: stretch;
+  font-size: 14.5px;
+  line-height: 1.6;
+  border: 1px solid rgba(255, 226, 168, 0.22);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(20, 14, 8, 0.34);
+}
+
+.rules-glossary dt,
+.rules-glossary dd {
+  /* The row rule. Every cell draws its own top edge, so a row keeps its line
+     however tall the sentence beside it grows. The first row is spared it
+     because the container's own border is already there. */
+  padding: 11px 16px;
+  border-top: 1px solid rgba(255, 226, 168, 0.16);
+}
+
+.rules-glossary dt:first-of-type,
+.rules-glossary dt:first-of-type + dd {
+  border-top: 0;
 }
 
 .rules-glossary dt {
   color: var(--gold);
   font-weight: 700;
+  /* The column rule. Without it the two columns read as one ragged block. */
+  border-right: 1px solid rgba(255, 226, 168, 0.16);
+  background: rgba(255, 226, 168, 0.045);
 }
 
 .rules-glossary dd {
@@ -1031,21 +1065,44 @@
   color: var(--ink);
 }
 
+/* Banding, so a long sentence cannot visually merge with the row beneath it.
+   dt and dd alternate in pairs, so every other PAIR is a shaded row. */
+.rules-glossary dt:nth-of-type(even),
+.rules-glossary dt:nth-of-type(even) + dd {
+  background: rgba(255, 246, 222, 0.035);
+}
+
+.rules-glossary dt:nth-of-type(even) {
+  background: rgba(255, 226, 168, 0.075);
+}
+
+/* The board legend and the slot marks: short answers, so the rows can be a
+   little shorter. Still ruled, still banded, still not cramped. */
 .rules-glossary-tight {
-  row-gap: 5px;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.rules-glossary-tight dt,
+.rules-glossary-tight dd {
+  padding: 8px 14px;
 }
 
 /* Below this the two columns stop fitting: a term such as "Battlecry/Ongoing"
-   plus a full sentence needs the width back, so the pair stacks. */
+   plus a full sentence needs the width back, so the pair stacks. The column
+   rule goes with it and the term keeps its shading as a header strip. */
 @media (max-width: 460px) {
   .rules-glossary {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 2px;
   }
 
-  .rules-glossary dd {
-    margin-bottom: 6px;
+  .rules-glossary dt {
+    border-right: 0;
+    padding-bottom: 4px;
+  }
+
+  .rules-glossary dt + dd {
+    border-top: 0;
+    padding-top: 0;
   }
 }
 

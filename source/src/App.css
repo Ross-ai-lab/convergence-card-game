@@ -84,9 +84,14 @@ button:disabled {
   -webkit-user-select: none;
 }
 
+/* The places that ARE text somebody reads, and therefore text somebody may want
+   to copy. The rules guide is the main one: it is two thousand words of prose
+   and the only way to quote a rule was to retype it. Selecting inside a panel
+   cannot start a card drag, so nothing is at risk here. */
 .log-drawer,
 .event-log,
-.debug-panel {
+.debug-panel,
+.screen-panel-body {
   user-select: text;
   -webkit-user-select: text;
 }
