@@ -6616,15 +6616,32 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   gap: 22px;
-  width: min(1180px, 96vw);
-  max-height: 94vh;
-  /* `min-height: 0` and `overflow: hidden` are what make the max-height above
-     mean anything. Without them the reveal grid simply grew past it: a 15-card
-     pack ran three rows deep, pushed the Collect button off the bottom of the
-     screen, and left the reward with no way to close it. The cards scroll now
-     and the button stays put. */
+  /* 96vw, with NO fixed cap. It was min(1180px, 96vw), which on a 1920 screen
+     was the real reason a fifteen-card pack sat in a 1,081px column with 420px
+     of empty veil down each side: the grid could not be wider than this box.
+     `packLayout` in App.tsx reads the same 96vw; keep the two in step. */
+  width: 96vw;
+  /* A DEFINITE height, not a maximum, and centred content.
+
+     The reveal wrapper below is the flexible child, and it can only be handed
+     the leftover space if there IS leftover space — with an auto-height stage
+     the wrapper simply took its content's height, the measured "available"
+     height came back equal to the grid's own height, and the scale could
+     therefore never come out above 1 however much room the screen had. That is
+     the whole reason a 1920 screen still drew 206px cards. The centring keeps
+     the sealed pack in the middle of that taller box. */
+  height: 94vh;
+  justify-content: center;
+  /* `min-height: 0` is what makes the height above mean anything: without it
+     the reveal grid simply grew past it, ran three rows deep, pushed the Collect
+     button off the bottom of the screen and left the reward with no way to close
+     it. `overflow: hidden` used to sit here for the same reason and is GONE
+     (owner's ruling, 3 September 2026): the sealed pack glows with a 90px
+     box-shadow, and a clip on this box cut that bloom off flat top and bottom —
+     the pack's light read as a rectangle rather than as light. Nothing needs the
+     clip any more, because the grid is scaled to fit rather than allowed to
+     overflow, and `.pack-scroll` clips what is left. */
   min-height: 0;
-  overflow: hidden;
   text-align: center;
 }
 
@@ -6825,6 +6842,80 @@ button:disabled {
   z-index: 3;
 }
 
+/* THE FLASH. A round core of light that swells out of the pack and dies.
+
+   `min(vw, vh)` sizes it to the screen rather than to a number, so the blast is
+   the same event on a laptop and on a 1440p monitor. Centred with a negative
+   half-size margin because the burst element itself is a zero-size point at the
+   pack's position — every child here is positioned from that point outward. */
+.pack-flash {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: min(112vw, 112vh);
+  height: min(112vw, 112vh);
+  /* calc(), not a min() of two negatives: min(-56vw, -56vh) picks the MORE
+     negative of the two, which is the half of the wrong dimension. */
+  margin-left: calc(min(112vw, 112vh) / -2);
+  margin-top: calc(min(112vw, 112vh) / -2);
+  border-radius: 50%;
+  /* A HARD white core with the colour behind it. An even fade from white to
+     transparent reads as a purple wash rather than as a detonation; what makes
+     it a flash is a small blown-out centre that the colour falls away from. */
+  background: radial-gradient(
+    circle closest-side,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 252, 240, 0.98) 9%,
+    rgba(255, 232, 176, 0.8) 19%,
+    rgba(226, 168, 255, 0.42) 33%,
+    rgba(120, 226, 255, 0.16) 50%,
+    transparent 68%
+  );
+  animation: pack-flash-out 900ms cubic-bezier(0.12, 0.72, 0.2, 1) both;
+  pointer-events: none;
+}
+
+/* Bright fast, then out of the way: the first card deals itself 420ms after the
+   burst, and a flash still at full strength would be washing out the reward the
+   screen exists to show. */
+@keyframes pack-flash-out {
+  0% { transform: scale(0.06); opacity: 0; }
+  7% { transform: scale(0.32); opacity: 1; }
+  42% { transform: scale(0.74); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* THE SHOCKWAVE. A thin ring running outward through the flash, which is what
+   makes the light read as an EXPLOSION rather than as a lamp being switched on:
+   an edge travelling gives the eye something to follow. Two of them, the second
+   starting late and going further, so the blast has a front and a tail. */
+.pack-shock {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: min(120vw, 120vh);
+  height: min(120vw, 120vh);
+  margin-left: calc(min(120vw, 120vh) / -2);
+  margin-top: calc(min(120vw, 120vh) / -2);
+  border: 3px solid rgba(255, 244, 214, 0.55);
+  border-radius: 50%;
+  box-shadow: 0 0 40px 6px rgba(255, 232, 178, 0.35), inset 0 0 40px 6px rgba(255, 232, 178, 0.25);
+  animation: pack-shock-out 820ms cubic-bezier(0.1, 0.68, 0.22, 1) both;
+  pointer-events: none;
+}
+
+.pack-shock.is-late {
+  border-color: rgba(196, 150, 255, 0.42);
+  animation-duration: 1150ms;
+  animation-delay: 140ms;
+}
+
+@keyframes pack-shock-out {
+  0% { transform: scale(0.04); opacity: 0; border-width: 10px; }
+  10% { opacity: 1; }
+  100% { transform: scale(1); opacity: 0; border-width: 1px; }
+}
+
 .pack-spark {
   position: absolute;
   left: 0;
@@ -6893,8 +6984,9 @@ button:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: min(1130px, 96vw);
-  flex: 1 1 auto;
+  width: 100%;
+  /* Basis 0, so this box is the leftover space rather than its own content. */
+  flex: 1 1 0;
   min-height: 0;
   overflow: hidden;
 }

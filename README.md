@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 185,081 bytes, roughly 46k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~54% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 187,531 bytes, roughly 47k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~53% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -490,6 +490,22 @@ cut animation runs once rather than fading up. The shake and the glow read a `--
 instead of having a hand-written state each, and the button is keyed on the count so the shake
 restarts every time.
 
+**The burst is a CIRCLE, and it used to be a rectangle.** Owner's ruling, 3 September 2026. Two
+unrelated faults made the same wrong shape:
+
+- **The sealed pack's light was clipped square.** `.pack-stage` carried `overflow: hidden`, and the
+  charged box glows through a 90px `box-shadow` — so the bloom was cut off dead flat along the
+  stage's top and bottom edges, and the pack about to burst read as a lit rectangle. The clip was
+  there to stop the reveal grid overflowing, which is no longer a thing that can happen: the grid is
+  scaled to fit and `.pack-scroll` clips whatever is left. Removing it is what makes the light round.
+- **The explosion had no light of its own.** It was ninety-two sparks and nothing else, which reads
+  as confetti appearing rather than as something going off — a firework is light first and debris
+  second. `.pack-flash` is a round white core that swells and dies, and two `.pack-shock` rings run
+  outward through it; all three are circles centred on the pack, so the blast has a shape instead of
+  a bounding box. The sparks' vertical throw was also multiplied by 0.8, which squashed the whole
+  thing into a wide oval; that is gone, the count is 128, and the reach now scales with the smaller
+  screen dimension so the same blast is the same event on a laptop and on a 1440p monitor.
+
 **The fifth hit does not open it.** The box holds for `PACK_BURST_DELAY_MS` — one second — fully
 cracked, white-hot and straining, and then goes. That pause is what the count exists for: the player
 lands the last hit and then watches it fail, which is a different event from a box that opens the
@@ -524,15 +540,29 @@ scrolling, and the harder one to notice, because the screen still looks right. A
 what is PAINTED and not what is MEASURED: every card goes on laying itself out at 206px, the
 container query never sees the difference, and only the pixels get smaller.
 
-`packLayout` in `App.tsx` does the sums, and it is the one place the grid is decided. It tries every
-balanced split from `PACK_MAX_PER_ROW` upward and keeps the shape that needs the least shrinking,
-which is why fifteen cards land on three rows of five rather than two rows of eight — the flat shape
-is wider than any laptop and would scale everything down to fit a row nobody asked for. Ties go to
-the fewest rows. The height it measures against is READ off the laid-out wrapper (`.pack-scroll` is
-the stage's one flexible child, so what the kicker, the total and the Collect button leave over is
-exactly its height) rather than estimated from a constant; `PACK_STAGE_RESERVE` is the first-frame
-fallback only. Measured: fifteen cards render at 0.81 scale in a 1440 × 900 window and at 0.53 in
-1024 × 640, with the rules text on every card and the Collect button in place at both.
+`packLayout` in `App.tsx` does the sums, and it is the one place the grid is decided. It tries EVERY
+balanced split and keeps the shape that needs the least shrinking, with the flattest one taking a tie.
+The height it measures against is READ off the laid-out wrapper (`.pack-scroll` is the stage's one
+flexible child, so what the kicker, the total and the Collect button leave over is exactly its height)
+rather than estimated from a constant; `PACK_STAGE_RESERVE` is the first-frame fallback only.
+
+**THE GRID MAY BE DRAWN BIGGER THAN IT IS LAID OUT, up to `PACK_MAX_SCALE` = 1.35.** Owner's ruling,
+3 September 2026 — "why so much wasted space". Three separate things were pinning a fifteen-card pack
+into a 1,081px column on a 1,920px screen, and all three had to go, because fixing any two still left
+the third holding it:
+
+| What held it | Why it looked reasonable | What it actually did |
+|---|---|---|
+| `PACK_MAX_PER_ROW = 5` | A row of eight reads as a wall | Forced three rows, which are tall, so the grid then had to shrink to fit the HEIGHT |
+| `min(1180px, 96vw)` on `.pack-stage` | A sane maximum for a dialog | The grid could not be wider than its parent, whatever the screen was |
+| `max-height: 94vh` on the same box | Obviously right | An auto-height box has no leftover space to hand its flexible child, so the measured height came back equal to the grid's own height and the scale could never exceed 1 |
+
+The stage is `width: 96vw; height: 94vh` now, the wrapper is `flex: 1 1 0`, and there is no cap on
+cards per row. Measured after: fifteen cards go eight-and-seven at **1.06 scale on 1920 × 1080**, using
+1,843px of width with 217px cards; five cards render at **1.27**, at 262px each. A 1440 × 900 window
+still lands at 0.81 and 1024 × 640 at 0.56 — the small screens were never the problem, and nothing
+about the 206px floor moved. The ceiling exists because a transform scaled far past 1 rasterises text
+softly; a third bigger is what this face takes while staying crisp.
 
 **The tally rides inside the Cards button** on the title screen, stacked under its label, and
 disappears once the roster is complete rather than reading 216 of 216 forever. It lived outside the

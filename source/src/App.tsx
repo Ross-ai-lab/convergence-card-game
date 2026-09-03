@@ -5682,8 +5682,17 @@ const PACK_CARD_WIDTH = 206;
 const PACK_CARD_GAP = 14;
 /** The card's own 750 × 1050 shape at the layout width above. */
 const PACK_CARD_HEIGHT = (PACK_CARD_WIDTH * 1050) / 750;
-/** The widest a row is allowed to read as one row rather than as a wall. */
-const PACK_MAX_PER_ROW = 5;
+/**
+ * How far past its layout size the reveal may be DRAWN.
+ *
+ * The cards lay out at 206px and the transform decides what that looks like, so
+ * a wide screen has no reason to stop at 206: at 1920 the fifteen-card grid was
+ * using 1,081px of 1,920 and leaving 420px of empty veil down each side (owner's
+ * ruling, 3 September 2026 — "why so much wasted space"). 1.35 is a ceiling
+ * rather than a target: a transform scaled far past 1 rasterises text softly,
+ * and a third bigger is the most this face takes while staying crisp.
+ */
+const PACK_MAX_SCALE = 1.35;
 /**
  * Everything on the pack stage that is not the reveal — the kicker, the running
  * total, the Collect button and the gaps between them.
@@ -5719,25 +5728,28 @@ interface PackLayout {
  *
  * A CSS transform is what settles all three. The cards keep laying out at 206px,
  * so the face still prints everything it prints, and the whole grid is then
- * drawn smaller — a transform changes what is painted and not what is measured,
- * so the container query never sees it. The grid shape is chosen by trying every
- * balanced split and keeping the one that needs the least shrinking; fifteen
- * cards land on three rows of five, and a short window simply renders that same
- * grid smaller instead of hiding its last row.
+ * drawn at whatever size fits — a transform changes what is painted and not what
+ * is measured, so the container query never sees it.
+ *
+ * EVERY SPLIT IS TRIED and the one needing the least shrinking wins, with the
+ * flattest shape taking a tie. There is no cap on how many cards a row may hold
+ * any more: five was one, and on a 1920-wide screen it forced fifteen cards onto
+ * three rows that then had to shrink to 0.90 to fit the height, while 420px of
+ * veil sat empty down each side. The same fifteen go eight-and-seven across a
+ * wide screen and come out BIGGER than their layout size.
  */
 function packLayout(count: number, viewportWidth: number, availableHeight: number): PackLayout {
   const cards = Math.max(1, count);
-  // `96vw` and the 1130px cap are the wrapper's own width in App.css; keep them
-  // in step.
-  const availableWidth = Math.max(160, Math.min(1130, viewportWidth * 0.96));
+  // `96vw` is the stage's own width in App.css; keep the two in step.
+  const availableWidth = Math.max(160, viewportWidth * 0.96);
   const usableHeight = Math.max(160, availableHeight);
   let best: PackLayout | null = null;
-  for (let split = Math.max(1, Math.ceil(cards / PACK_MAX_PER_ROW)); split <= cards; split += 1) {
+  for (let split = 1; split <= cards; split += 1) {
     const columns = Math.ceil(cards / split);
     const rows = Math.ceil(cards / columns);
     const width = columns * PACK_CARD_WIDTH + (columns - 1) * PACK_CARD_GAP;
     const height = rows * PACK_CARD_HEIGHT + (rows - 1) * PACK_CARD_GAP;
-    const scale = Math.min(1, availableWidth / width, usableHeight / height);
+    const scale = Math.min(PACK_MAX_SCALE, availableWidth / width, usableHeight / height);
     // The epsilon keeps the FEWEST rows on a tie: two rows and three rows often
     // fit identically, and the flatter one reads as a hand.
     if (!best || scale > best.scale + 0.001) best = { columns, rows, width, height, scale };
@@ -5823,25 +5835,33 @@ function CardPack({
   // One roll per mount. `useState` with an initialiser, not `useMemo`: a memo is
   // allowed to be thrown away and recomputed, and a re-rolled firework is a
   // visible glitch rather than a cheap recovery.
-  const [sparks] = useState(() =>
-    Array.from({ length: 92 }, (_, index) => {
+  const [sparks] = useState(() => {
+    // The blast is sized to the SCREEN. A fixed 620px reach is a fair explosion
+    // in a 900px window and a modest puff in the middle of a 1440px-tall one,
+    // which is the shape of the complaint that produced this: it read as a small
+    // rectangle of light rather than as something going off.
+    const reach = Math.max(0.85, Math.min(window.innerWidth, window.innerHeight) / 820);
+    return Array.from({ length: 128 }, (_, index) => {
       // Two shells, not one ring. A single evenly spaced ring reads as a circle
       // of dots however fast it moves; a dense near shell inside a sparser far
       // one is what a firework actually looks like.
       const near = index % 3 !== 0;
-      const angle = (index / 92) * Math.PI * 2 + Math.random() * 0.7;
-      const distance = near ? 120 + Math.random() * 200 : 300 + Math.random() * 320;
+      const angle = (index / 128) * Math.PI * 2 + Math.random() * 0.7;
+      const distance = (near ? 150 + Math.random() * 250 : 380 + Math.random() * 420) * reach;
       return {
         key: index,
         x: Math.cos(angle) * distance,
-        y: Math.sin(angle) * distance * 0.8,
+        // ROUND, not squashed. The vertical throw was multiplied by 0.8, which
+        // is what made a burst read as a wide flat oval instead of a sphere
+        // opening (owner's ruling, 3 September 2026).
+        y: Math.sin(angle) * distance,
         size: near ? 6 + Math.random() * 10 : 3 + Math.random() * 6,
         delay: Math.random() * (near ? 0.2 : 0.4),
         dur: near ? 0.9 + Math.random() * 0.6 : 1.2 + Math.random() * 0.8,
         hue: [46, 190, 276, 12][index % 4],
       };
-    }),
-  );
+    });
+  });
 
   // Cards deal themselves; there is nothing left to click once the pack is open,
   // so making the player click ten more times would only be in the way.
@@ -5878,6 +5898,14 @@ function CardPack({
     <div className={opened ? "pack-veil is-open" : "pack-veil"}>
       {opened ? (
         <div className="pack-burst" aria-hidden="true">
+          {/* The blast itself, and the part that was missing: a round white core
+              that swells and dies, with two shockwave rings running out through
+              it. The sparks alone read as confetti appearing — a firework is
+              light FIRST and debris second. All three are circles centred on the
+              pack, so the explosion has a shape instead of a bounding box. */}
+          <span className="pack-flash" />
+          <span className="pack-shock" />
+          <span className="pack-shock is-late" />
           {sparks.map((spark) => (
             <span
               key={spark.key}
@@ -5961,7 +5989,7 @@ function CardPack({
                 style={{
                   width: `${layout.width}px`,
                   height: `${layout.height}px`,
-                  transform: layout.scale < 1 ? `scale(${layout.scale})` : undefined,
+                  transform: `scale(${layout.scale})`,
                 }}
               >
                 {faces.slice(0, dealt).map((face, index) => (
