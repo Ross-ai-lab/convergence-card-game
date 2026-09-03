@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 184,719 bytes, roughly 46k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~54% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 185,081 bytes, roughly 46k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~54% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -1170,6 +1170,12 @@ invented number on that screen.
 
 The buttons sit outside the panel's title/duel split, because the result screen is
 no more part of a duel than the pack screen is.
+
+**It switches the mode to a BOT duel, and that is not cosmetic.** The ending music
+asks whether the duel was LOST, and only a duel against the bot can be — in
+hotseat somebody always won. Jumping from a hotseat mode therefore played the
+victory piece under `Enemy wins`, which made the defeat music unreachable from the
+one tool built to reach these screens.
 
 ### Visual design changes require close-up and full-screen QA
 

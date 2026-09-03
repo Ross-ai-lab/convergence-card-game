@@ -1952,6 +1952,12 @@ export default function App() {
     setDeveloperToolsOpen(false);
     setScreen("playing");
     setDuelIntro(null);
+    // A BOT duel, whatever was last played. The ending music asks whether the
+    // duel was LOST, and only a duel against the bot can be: in hotseat somebody
+    // always won, so `Enemy wins` from a hotseat mode played the victory piece
+    // and the loss music could not be heard from the developer tools at all.
+    setMode({ kind: "bot", skill: "normal" });
+    heraldSaid.current.delete("ending");
     const mvpOwner: PlayerId = winner === "draw" ? viewerId : winner;
     const tally: Record<string, DamageTallyEntry> = card
       ? {
