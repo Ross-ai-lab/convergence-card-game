@@ -409,6 +409,45 @@ function duck(amount: number, hold: number) {
 }
 
 // ----------------------------------------------------------------- the kit
+/**
+ * A heavy body landing, scaled by how heavy it is.
+ *
+ * `weight` runs 0 to 1 and maps to mana cost 6 through 10 (owner's ruling,
+ * 3 September 2026): a 6-mana body should be felt and a 10-mana body should be
+ * an event, and one fixed thud for both said the wrong thing about the ones in
+ * between.
+ *
+ * Every layer scales, but not by the same amount and not all from zero. Loudness
+ * alone would just be a louder tap; weight is also LOWER and LONGER, so the sub
+ * drops further and rings longer as the number climbs. The second taiko is the
+ * one layer that genuinely arrives late — under about a third of the way up it
+ * is inaudible, which is the intended "minimal at 6".
+ *
+ * It is deliberately all bottom end and no top at every weight. It fires UNDER a
+ * rarity fanfare, so a second bright layer would fight it, while the sub and the
+ * floor rumble sit in the one part of the spectrum the fanfares leave empty.
+ */
+function renderHeavyLand(t: number, weight: number): void {
+  const w = Math.max(0, Math.min(1, weight));
+  taiko(t, 0.16 + 0.2 * w, 0, 104 - 12 * w, 34 - 6 * w, 0.55 + 0.35 * w);
+  osc({
+    type: "sine",
+    f0: 68 - 12 * w,
+    f1: 27 - 6 * w,
+    t,
+    dur: 0.4 + 0.26 * w,
+    gain: 0.14 + 0.22 * w,
+    attack: 0.004,
+    send: 0.12,
+  });
+  noise({ t: t + 0.01, dur: 0.2 + 0.14 * w, gain: 0.05 + 0.07 * w, type: "lowpass", f0: 420, f1: 90, send: 0.22 });
+  // The late second beat. Below a third of the way up it does not sound at all.
+  if (w > 0.34) taiko(t + 0.11, 0.06 + 0.18 * w, 0.12, 82 - 8 * w, 30 - 4 * w, 0.3 + 0.24 * w);
+  // Only the top of the range ducks the music, so a 10-mana arrival owns the
+  // room for a moment and a 6-mana one does not interrupt the bed.
+  if (w > 0.7) duck(0.72, 0.4);
+}
+
 function render(name: SfxName, t: number): void {
   const jitter = (Math.random() - 0.5) * 0.3; // slight stereo spread per event
 
@@ -458,16 +497,10 @@ function render(name: SfxName, t: number): void {
       metal({ t: t + 0.42, dur: 2.0, gain: 0.05, carrier: 587, ratio: 2.77, index: 5, pan: -0.25, send: 0.7 });
       break;
 
-    // Weight. Fired UNDER a rarity fanfare when a 6-mana-or-dearer body lands,
-    // so it is deliberately all bottom end and no top: a second bright layer
-    // would fight the fanfare, while a sub drop and a floor rumble sit in the
-    // one part of the spectrum the fanfares leave empty. Two taikos a beat
-    // apart read as something heavy settling rather than as one more hit.
+    // The full-weight thud, for the dev probe. Real arrivals go through
+    // `playHeavyLand`, which scales it by mana cost.
     case "heavyLand":
-      taiko(t, 0.34, 0, 96, 30, 0.85);
-      osc({ type: "sine", f0: 58, f1: 22, t, dur: 0.62, gain: 0.34, attack: 0.004, send: 0.12 });
-      noise({ t: t + 0.01, dur: 0.3, gain: 0.11, type: "lowpass", f0: 420, f1: 90, send: 0.22 });
-      taiko(t + 0.11, 0.2, 0.12, 78, 28, 0.5);
+      renderHeavyLand(t, 1);
       break;
 
     // ---- combat ----------------------------------------------------------
@@ -640,6 +673,15 @@ export function play(name: SfxName, delay = 0): void {
   stats.last = name;
   stats.byName[name] = (stats.byName[name] ?? 0) + 1;
   render(name, ctx.currentTime + Math.max(0, delay));
+}
+
+/** One heavy landing, at a weight of 0 (6 mana) through 1 (10 mana). */
+export function playHeavyLand(weight: number, delay = 0): void {
+  if (!live() || !ctx) return;
+  stats.played++;
+  stats.last = "heavyLand";
+  stats.byName.heavyLand = (stats.byName.heavyLand ?? 0) + 1;
+  renderHeavyLand(ctx.currentTime + Math.max(0, delay), weight);
 }
 
 let lastHover = 0;
@@ -1079,6 +1121,7 @@ export const sfx = {
   summonSoundFor,
   playCardTheme,
   playAnnouncer,
+  playHeavyLand,
   playOpeningCue,
   stopCardTheme,
   prefetchCardThemes,

@@ -1,4 +1,5 @@
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import "./App.css";
 // Board effects (camp signatures, the Mythic entrance, the killing blow). Loaded
 // HERE, immediately after App.css, on purpose: that is the exact cascade slot
@@ -293,6 +294,46 @@ const TENSION_CORE = 12;
  * that got that way from buffs did not arrive big.
  */
 const HEAVY_LANDING_COST = 6;
+/** The cost at which the thud is at full weight. */
+const HEAVY_LANDING_MAX_COST = 10;
+
+/**
+ * How long the pointer must rest on a card in hand before its keywords appear.
+ *
+ * Two seconds (owner's ruling, 3 September 2026). Long enough that sweeping the
+ * fan to read it never fires a panel, short enough that stopping on a card you
+ * do not understand answers you without a click.
+ */
+const HAND_KEYWORD_DELAY_MS = 2000;
+
+/**
+ * The glossary entries for a card's printed keywords, in the card's own order.
+ *
+ * Matched case-insensitively against every spelling the glossary knows, so
+ * "Cannot Attack" on a card finds the "Cannot attack" entry. A keyword with no
+ * entry is skipped rather than shown blank; duplicates are collapsed.
+ */
+function keywordEntriesFor(keywords: readonly string[]): KeywordEntry[] {
+  const found: KeywordEntry[] = [];
+  for (const keyword of keywords) {
+    const hit = KEYWORD_LOOKUP.find(({ match }) => match.toLowerCase() === keyword.toLowerCase());
+    if (hit && !found.includes(hit.entry)) found.push(hit.entry);
+  }
+  return found;
+}
+
+/**
+ * How hard a minion of this cost lands, from 0 at 6 mana to 1 at 10.
+ *
+ * It starts at 0.28 rather than 0, because "minimal" is not "silent" (owner's
+ * ruling, 3 September 2026): a 6-mana body should still be felt, and only the
+ * top of the curve should be an event. Anything cheaper than 6 never gets here.
+ */
+function heavyLandingWeight(cost: number): number {
+  const span = HEAVY_LANDING_MAX_COST - HEAVY_LANDING_COST;
+  const along = Math.max(0, Math.min(1, (cost - HEAVY_LANDING_COST) / span));
+  return 0.28 + 0.72 * along;
+}
 
 // Pointer-driven drag & drop. A press only becomes a drag after DRAG_THRESHOLD px
 // of movement, so plain clicks keep the original select-then-click flow.
@@ -579,6 +620,16 @@ export default function App() {
   const [enemyPowerOpen, setEnemyPowerOpen] = useState(false);
   /** The pointer is somewhere over the hand, so the whole fan is enlarged. */
   const [handHovered, setHandHovered] = useState(false);
+  /**
+   * The keyword panel for a card being rested on in hand, after two seconds.
+   *
+   * TWO SECONDS, not the ordinary hover delay. Sweeping across your own hand to
+   * read it must not fire five panels, and a card whose keywords you want
+   * explained is one you have stopped on. `left`/`top` are the card's top-right
+   * corner in viewport coordinates, which is where the panel hangs.
+   */
+  const [handKeywords, setHandKeywords] = useState<{ entries: KeywordEntry[]; left: number; top: number } | null>(null);
+  const handKeywordTimer = useRef<number | null>(null);
   /** The board minion under the pointer, for the reach highlight. */
   const [reachSource, setReachSource] = useState<string | null>(null);
   /**
@@ -592,12 +643,15 @@ export default function App() {
     return found ? reachOf(game, found) : new Set<string>();
   }, [reachSource, game]);
   /**
-   * A 6-mana-or-dearer body has just landed: the table takes a short, slow drop
-   * rather than the fast rattle a core hit gets. Deliberately its own flag and
-   * not a reuse of `shaking` — a heavy arrival and a punch in the core are
-   * different events and must not animate the same way.
+   * How hard the table is currently dropping, 0 for not at all.
+   *
+   * A 6-mana-or-dearer body has just landed, and the table takes a short slow
+   * drop rather than the fast rattle a core hit gets. Deliberately its own state
+   * and not a reuse of `shaking` — a heavy arrival and a punch in the core are
+   * different events and must not animate the same way. A NUMBER rather than a
+   * flag, because the drop scales with the cost of what landed.
    */
-  const [landing, setLanding] = useState(false);
+  const [landing, setLanding] = useState(0);
   /** Cards in flight from the deck pile. Measured off the real elements. */
   const [flights, setFlights] = useState<Flight[]>([]);
   /** The rift answering an arrival or a death. A counter, so each one remounts. */
@@ -1047,7 +1101,7 @@ export default function App() {
     const newGhosts: Ghost[] = [];
     const newImpacts: Impact[] = [];
     let heroWasHit = false;
-    let heavyLanding = false;
+    let heavyLanding = 0;
 
     // Stacked sounds get nudged apart so a big turn reads as a volley of hits
     // rather than one smeared blob.
@@ -1154,9 +1208,15 @@ export default function App() {
         // that makes a body feel big, and a 6-mana Rare should land as hard as
         // a 6-mana Mythic. The thud waits out the fanfare's transient so the two
         // read as one arrival instead of smearing together.
+        //
+        // It SCALES from 6 up to 10 rather than being one fixed thud, so the
+        // whole top half of the curve is not flattened into a single sound.
+        // A turn with several arrivals keeps the heaviest one's weight, because
+        // the table has one drop however many bodies landed.
         if (entry.minion.cost >= HEAVY_LANDING_COST) {
-          sfx.play("heavyLand", 0.16);
-          heavyLanding = true;
+          const weight = heavyLandingWeight(entry.minion.cost);
+          sfx.playHeavyLand(weight, 0.16);
+          heavyLanding = Math.max(heavyLanding, weight);
         }
         arrivals.push(entry.minion);
         if (entry.minion.rarity === TOP_RARITY) {
@@ -1219,9 +1279,10 @@ export default function App() {
       setShaking(true);
       window.setTimeout(() => setShaking(false), 450);
     }
-    if (heavyLanding) {
-      setLanding(true);
-      window.setTimeout(() => setLanding(false), 620);
+    if (heavyLanding > 0) {
+      const weight = heavyLanding;
+      setLanding(weight);
+      window.setTimeout(() => setLanding((current) => (current === weight ? 0 : current)), 620);
     }
 
     // The rift answers whatever crossed it. One flare per action however many
@@ -1303,6 +1364,7 @@ export default function App() {
 
   function perform(action: GameAction) {
     setEnemyPowerOpen(false);
+    clearHandKeywords();
     const hiddenEnemyDiscover =
       action.type === "choose_target" &&
       game.pendingTarget !== null &&
@@ -1862,6 +1924,39 @@ export default function App() {
     });
   }
 
+  /** Cancels a pending hand-keyword panel and hides any open one. */
+  const clearHandKeywords = useCallback(() => {
+    if (handKeywordTimer.current !== null) {
+      window.clearTimeout(handKeywordTimer.current);
+      handKeywordTimer.current = null;
+    }
+    setHandKeywords(null);
+  }, []);
+
+  /**
+   * Arms the two-second keyword panel for one card in hand.
+   *
+   * Reads the card's PRINTED keywords, in the order the card prints them, and
+   * looks each one up in the one glossary the How to play screen also renders
+   * from. A card with no keywords arms nothing, so most cards never show a
+   * panel at all — which is what keeps it from becoming wallpaper.
+   */
+  function armHandKeywords(card: PlayableCard | undefined, el: HTMLElement) {
+    clearHandKeywords();
+    if (!card || drag?.active) return;
+    // Relics print no keywords column at all, so they never arm a panel — which
+    // is right: their whole text is the effect, and the effect is already on the
+    // face at readable size.
+    const entries = keywordEntriesFor(isMinionCard(card) ? card.keywords : []);
+    if (entries.length === 0) return;
+    handKeywordTimer.current = window.setTimeout(() => {
+      handKeywordTimer.current = null;
+      if (!el.isConnected) return;
+      const rect = el.getBoundingClientRect();
+      setHandKeywords({ entries, left: rect.right, top: rect.top });
+    }, HAND_KEYWORD_DELAY_MS);
+  }
+
   function endPreview() {
     setReachSource(null);
     clearHoverPreview();
@@ -2337,12 +2432,17 @@ export default function App() {
         className={[
           "table-frame",
           shaking ? "shaking" : "",
-          landing ? "heavy-landing" : "",
+          landing > 0 ? "heavy-landing" : "",
           duelIntro ? "duel-opening" : "",
           duelIntro ? `duel-opening-${duelIntro.phase}` : "",
         ]
           .filter(Boolean)
           .join(" ")}
+        /* The drop scales with what landed. Keyed on the weight as well, so a
+           second heavy arrival restarts the animation instead of being ignored
+           because the class was already on the element. */
+        key={landing > 0 ? `thud-${landing}` : "steady"}
+        style={landing > 0 ? ({ "--thud": landing } as CSSProperties) : undefined}
       >
         <header className="top-strip">
         <div className="brand-mini">
@@ -2478,7 +2578,6 @@ export default function App() {
             onPreview={previewMinion}
             onPreviewEnd={endPreview}
             reach={reach}
-            reachSource={reachSource}
             onRelicPreview={previewRelic}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
@@ -2512,7 +2611,6 @@ export default function App() {
             onPreview={previewMinion}
             onPreviewEnd={endPreview}
             reach={reach}
-            reachSource={reachSource}
             onRelicPreview={previewRelic}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
@@ -2574,7 +2672,10 @@ export default function App() {
             className={handHovered ? "hand-fan is-open" : "hand-fan"}
             aria-label={`${viewer.name}'s hand`}
             onMouseEnter={() => setHandHovered(true)}
-            onMouseLeave={() => setHandHovered(false)}
+            onMouseLeave={() => {
+              setHandHovered(false);
+              clearHandKeywords();
+            }}
           >
             {viewer.hand.map((cardId, handIndex) => {
               const card = library[cardId];
@@ -2634,7 +2735,11 @@ export default function App() {
                   onPointerUp={endDrag}
                   onPointerCancel={cancelDrag}
                   /* No per-card preview panel here any more; the fan itself
-                     is what grows. See the note on `.hand-fan` above. */
+                     is what grows. See the note on `.hand-fan` above. What a
+                     single card still gets, after two seconds, is its keywords
+                     explained in a small panel off its top-right corner. */
+                  onMouseEnter={(e) => armHandKeywords(card, e.currentTarget)}
+                  onMouseLeave={clearHandKeywords}
                   data-playable={playable}
                   /* No `title` here. A native tooltip on a card you are holding
                      covers the neighbouring card a second after the pointer
@@ -2742,6 +2847,9 @@ export default function App() {
       ) : null}
 
       {hover ? <HoverCard hover={hover} /> : null}
+      {handKeywords ? (
+        <KeywordPopover entries={handKeywords.entries} left={handKeywords.left + 132} top={handKeywords.top} />
+      ) : null}
 
       {splash ? <MythicSplash key={splash.id} minion={splash.minion} /> : null}
 
@@ -2982,7 +3090,6 @@ function BoardRow({
   onDragEnd,
   onDragCancel,
   reach,
-  reachSource,
 }: {
   owner: PlayerId;
   label: string;
@@ -3007,8 +3114,6 @@ function BoardRow({
   onDragCancel: () => void;
   /** Instance ids the hovered minion is currently affecting. */
   reach: ReadonlySet<string>;
-  /** The hovered minion itself, so the source can be marked differently. */
-  reachSource: string | null;
 }) {
   return (
     <div className="board-row" aria-label={label}>
@@ -3067,8 +3172,12 @@ function BoardRow({
           isLunging ? "striking" : "",
           canBeChosen ? "choosable" : "",
           boardPrompt !== null && !canBeChosen ? "dimmed" : "",
+          // Only the minions being AFFECTED are ringed. The source used to be
+          // ringed too, more brightly, and that was the wrong read: the source
+          // is the one you are already pointing at, so marking it says nothing
+          // and puts a fifth ring on a board that has four. Owner's ruling,
+          // 3 September 2026.
           minion && reach.has(minion.instanceId) ? "in-reach" : "",
-          minion && reachSource === minion.instanceId && reach.size > 0 ? "reach-source" : "",
         ]
           .filter(Boolean)
           .join(" ");
@@ -4406,32 +4515,44 @@ function KeywordText({ text }: { text: string }) {
         ),
       )}
       {open && pieces[open.index]?.entry ? (
-        // FIXED, not inline. `.cf-desc` is `overflow: hidden` because the rules
-        // panel is a box with an edge, so a popover rendered inside the
-        // paragraph is clipped to a sliver. Viewport coordinates off the word's
-        // own rect escape that without the panel having to give up its clipping.
-        <KeywordPopover entry={pieces[open.index].entry!} left={open.left} top={open.top} />
+        <KeywordPopover entries={[pieces[open.index].entry!]} left={open.left} top={open.top} />
       ) : null}
     </>
   );
 }
 
 /** The definition panel itself, kept on screen and out of the card's clipping. */
-function KeywordPopover({ entry, left, top }: { entry: KeywordEntry; left: number; top: number }) {
+function KeywordPopover({ entries, left, top }: { entries: KeywordEntry[]; left: number; top: number }) {
   const width = 264;
   const clampedLeft = Math.max(10, Math.min(left - width / 2, window.innerWidth - width - 10));
-  // Flip above the word when there is no room beneath it.
-  const flip = top + 190 > window.innerHeight;
-  return (
+  // Flip above the word when there is no room beneath it. The estimate scales
+  // with how many definitions are stacked in one panel.
+  const estimatedHeight = 60 + entries.length * 120;
+  const flip = top + estimatedHeight > window.innerHeight;
+  // A PORTAL, and that is the fix for the clipping.
+  //
+  // The panel is `position: fixed`, which is normally enough — but a fixed
+  // element is still positioned and painted inside the nearest ancestor that
+  // makes a stacking context, and a card face is full of them: transforms on the
+  // frame, blend modes on the shine, its own z-indexed gems and rails. Rendered
+  // in place, the panel was showing the card's flavour text through itself and
+  // being painted over by the ATK gem. Mounted on `document.body` it has no
+  // ancestor left to be trapped by.
+  return createPortal(
     <span
       className={flip ? "cf-kw-pop is-above" : "cf-kw-pop"}
       role="note"
       style={{ left: clampedLeft, top: flip ? undefined : top + 8, bottom: flip ? window.innerHeight - top + 26 : undefined, width }}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <strong>{entry.term}</strong>
-      <span>{plainKeywordText(entry.text)}</span>
-    </span>
+      {entries.map((entry) => (
+        <span key={entry.term} className="cf-kw-pop-entry">
+          <strong>{entry.term}</strong>
+          <span>{plainKeywordText(entry.text)}</span>
+        </span>
+      ))}
+    </span>,
+    document.body,
   );
 }
 

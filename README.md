@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 170,684 bytes, roughly 43k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~59% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 173,422 bytes, roughly 43k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~58% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -507,6 +507,11 @@ is owed.
 - **Five cards, which is deliberately the Recruit win and no more.** The pack is paid for by opening
   the game, not by playing it, so it must never be the fastest route to the roster: beating the
   Ascendant is still worth three of them.
+- **A COMPLETE ROSTER also hides it, and that is the other reason it can be missing.**
+  `dailyPackAvailable` returns false when `unlocked` has reached the end of `unlockOrder`, because a
+  pack with nothing to give is a ceremony around an empty box. The tell is the Cards button on the
+  same screen: its `50 / 216` tally disappears at the same moment and for the same reason. Reset
+  progress from the developer panel to see either of them again.
 - **The button DISAPPEARS once taken, rather than greying out.** A dead control saying "come back
   tomorrow" would be permanent furniture advertising something the player cannot have, for 23 hours
   out of every 24. Its absence is the reward already collected.
@@ -939,9 +944,19 @@ to survive being read as a plain string by the tooltip and as rich text by the g
 - **It is OPT-IN, and it is on in the gallery only.** A card in hand is clicked to PLAY it and a
   minion on the board is clicked to ATTACK with it; a second meaning on part of those faces would
   turn "I clicked Taunt" into a misplay. The gallery is the one place a card is only ever read.
-- **The popover is `position: fixed`, off the word's own rect.** `.cf-desc` is `overflow: hidden`
-  because the rules panel is a box with an edge, so a popover rendered inside the paragraph is
-  clipped to a sliver. Viewport coordinates escape that without the panel giving up its clipping.
+- **The panel is rendered through a PORTAL onto `document.body`,** and that is what stops it
+  clipping. `position: fixed` alone was not enough: a fixed element is still positioned and painted
+  inside the nearest ancestor that makes a stacking context, and a card face is full of them —
+  transforms on the frame, blend modes on the shine, its own z-indexed gems and rails. Rendered in
+  place it showed the card's flavour text through itself and was painted over by the ATK gem. Mounted
+  on the body it has no ancestor left to be trapped by. Its background is a FLAT colour, not 98%
+  alpha: two per cent of transparency is invisible on a flat panel and very visible over artwork.
+- **Resting on a card in hand for two seconds explains its keywords too.** Built 3 September 2026.
+  The panel hangs off the card's top-right corner and lists every printed keyword the glossary knows,
+  in the order the card prints them. `HAND_KEYWORD_DELAY_MS` is 2000, not the ordinary hover delay:
+  sweeping the fan to read it must never fire a panel, and a card whose keywords you want explained is
+  one you have stopped on. A card with no keywords arms nothing, and relics never arm it at all —
+  their whole text is the effect, already on the face at readable size.
 
 ### Hovering a minion shows what it is reaching
 
@@ -951,6 +966,10 @@ text: the engine already records who is paying whom — an aura bonus names its 
 shield names its holder, a mark names who set it — because it has to take those things back when the
 source dies. Nothing is re-derived, so a minion whose text has not actually landed on anybody lights
 up nothing, which is the honest answer.
+
+**Only the minions being AFFECTED are ringed.** The source was ringed too, more brightly, until
+3 September 2026 (owner's ruling). That was the wrong read: the source is the one already under the
+pointer, so marking it says nothing and puts a fifth ring on a board that has four.
 
 **Dashed, and magenta, for a reason.** The board already spends solid green on "ready to attack",
 solid red on "legal target" and blue on "you can afford this"; a fourth solid ring in a nearby hue is
@@ -1218,20 +1237,32 @@ An unmet card in the gallery does NOT shine, and that is correct rather than a b
 
 ### A heavy minion lands with a thud
 
-**A minion costing 6 or more plays a `heavyLand` cue and drops the table by a few pixels.** Built
-2 September 2026. `HEAVY_LANDING_COST` in `App.tsx` is the threshold and it is keyed to COST, not to
-rarity or to stats: rarity already has the summon fanfare, cost is what the player is paying, a
-6-mana Rare should land as hard as a 6-mana Mythic, and a small minion that got big from buffs did
-not arrive big.
+**A minion costing 6 or more lands with a thud, and the thud SCALES with the cost.** Built
+2 September 2026, made proportional on 3 September (owner's ruling). `HEAVY_LANDING_COST` is the
+threshold and `heavyLandingWeight` in `App.tsx` is the curve: 0.28 at 6 mana rising to 1 at 10. It
+starts at 0.28 rather than 0 because "minimal" is not "silent" — a 6-mana body should still be felt,
+and only the top of the range should be an event. One fixed thud for the whole top half of the curve
+said the wrong thing about everything in between.
 
-- **The cue is all bottom end and no top** — a taiko, a sub drop from 58 Hz to 22, a low noise floor
-  and a second smaller taiko a beat behind. It fires under a rarity fanfare, so a second bright layer
-  would fight it while the sub sits in the one part of the spectrum the fanfares leave empty.
-- **It waits 0.16s**, so the two read as one arrival rather than smearing together. The CSS animation
-  carries the same delay; keep the two in step.
+It is keyed to COST, not to rarity or to stats: rarity already has the summon fanfare, cost is what
+the player is paying, a 6-mana Rare should land as hard as a 6-mana Mythic, and a small minion that
+got big from buffs did not arrive big.
+
+- **The cue is all bottom end and no top** at every weight — a taiko, a sub drop, a low noise floor,
+  and a second taiko a beat behind. It fires under a rarity fanfare, so a second bright layer would
+  fight it while the sub sits in the one part of the spectrum the fanfares leave empty.
+- **Loudness is not the only thing that scales.** A louder tap is still a tap: weight is also LOWER
+  and LONGER, so the sub drops further and rings longer as the number climbs. `renderHeavyLand` in
+  `sfx.ts` takes the weight and scales every layer. The second taiko is genuinely absent below about
+  a third of the way up, and only the top of the range ducks the music, so a 10-mana arrival owns the
+  room for a moment and a 6-mana one does not interrupt the bed.
+- **It waits 0.16s**, so the cue and the fanfare read as one arrival rather than smearing together.
+  The CSS animation carries the same delay; keep the two in step.
 - **The screen movement is its own animation, not the hero-hit shake.** A hit is a fast horizontal
   rattle that dies out; weight arriving is a single vertical drop with one rebound. Reusing
-  `screen-shake` would have made a big minion landing feel like taking a punch.
+  `screen-shake` would have made a big minion landing feel like taking a punch. It reads the same
+  weight through a `--thud` custom property, and the DURATION scales with it too — holding the timing
+  fixed made every weight feel the same however far the table moved.
 
 ### Card art is WebP. Every file, no exceptions
 
