@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 173,422 bytes, roughly 43k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~58% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 175,476 bytes, roughly 44k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~57% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -477,8 +477,30 @@ list and closing it lost the place again. Everything it used to print around the
 of preamble, the reason hotseat pays nothing, a paragraph on how batches are balanced — was true and
 unread: the table already answers the only question anyone opens it to ask.
 
-**The pack.** A duel that earns cards ends on a sealed pack that takes three strikes to open, then
-bursts and deals the cards out one at a time. It deals in `revealOrder`, best LAST, so the prize of the
+**The pack.** A duel that earns cards ends on a sealed pack that takes FIVE strikes to open, then
+holds for a second and bursts, dealing the cards out one at a time.
+
+Raised from three on 3 September 2026, owner's ruling, and the change is the SHAPE rather than the
+number. Three hits had a middle; five has a climb, and each hit now cuts its own line into the box, so
+the damage is countable instead of merely louder. `PACK_CRACKS` in `App.tsx` describes the five lines
+in one place — angle and length each — and a crack element mounts on the click that makes it, so its
+cut animation runs once rather than fading up. The shake and the glow read a `--hit` custom property
+instead of having a hand-written state each, and the button is keyed on the count so the shake
+restarts every time.
+
+**The fifth hit does not open it.** The box holds for `PACK_BURST_DELAY_MS` — one second — fully
+cracked, white-hot and straining, and then goes. That pause is what the count exists for: the player
+lands the last hit and then watches it fail, which is a different event from a box that opens the
+moment it has been clicked enough times. `opened` is its own state rather than `hits >= PACK_HITS`
+for exactly this reason, so the fireworks, the deal and the Collect button did not have to learn
+about the pause.
+
+**`Open 5/10/15-card pack` in the developer tools reaches this screen directly.** It draws random
+cards from the whole roster and does NOT touch the record: nothing is unlocked, and the log says so.
+Every part of the screen above — five hits, the held beat, the burst, the stagger, the reveal order,
+the row balancing — was otherwise reachable only by finishing a duel and winning enough to earn that
+many cards, which made the fifteen-card layout close to untestable. The buttons sit outside the
+in-duel block, because the pack screen is not part of a duel. It deals in `revealOrder`, best LAST, so the prize of the
 batch lands on the moment the player is watching rather than in the middle of the row. Rarity decides
 and cost breaks the tie, and **relics outrank every character tier, Mythic included** — owner's call,
 with scarcity behind it (34 relics against 19 Mythics) and the fact that a relic changes what another
@@ -952,8 +974,11 @@ to survive being read as a plain string by the tooltip and as rich text by the g
   on the body it has no ancestor left to be trapped by. Its background is a FLAT colour, not 98%
   alpha: two per cent of transparency is invisible on a flat panel and very visible over artwork.
 - **Resting on a card in hand for two seconds explains its keywords too.** Built 3 September 2026.
-  The panel hangs off the card's top-right corner and lists every printed keyword the glossary knows,
-  in the order the card prints them. `HAND_KEYWORD_DELAY_MS` is 2000, not the ordinary hover delay:
+  The panel sits ABOVE the card, hanging over its right-hand side, and lists every printed keyword the
+  glossary knows in the order the card prints them. Above rather than beside: beside meant sitting on
+  the card it was explaining, or on its neighbour in the fan, and the empty board over the hand is the
+  one place with room. `KeywordPopover` takes an `above` flag for this, which forces the placement
+  instead of only flipping when it runs out of space below. `HAND_KEYWORD_DELAY_MS` is 2000, not the ordinary hover delay:
   sweeping the fan to read it must never fire a panel, and a card whose keywords you want explained is
   one you have stopped on. A card with no keywords arms nothing, and relics never arm it at all —
   their whole text is the effect, already on the face at readable size.

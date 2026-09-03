@@ -6712,7 +6712,12 @@ button:disabled {
   transition: opacity 220ms ease;
 }
 
-/* Cracks are thin bright wedges, revealed one hit at a time. */
+/* Cracks are thin bright wedges. ONE PER HIT, cut on the click that makes it.
+
+   Each element mounts when its hit lands, so `crack-cut` runs once and the line
+   arrives with a flash rather than fading up. `--ca` is its angle and `--cs` its
+   length; both come from PACK_CRACKS in App.tsx, so the five lines are described
+   in one place instead of in five CSS rules. */
 .pack-box-crack {
   position: absolute;
   left: 50%;
@@ -6721,44 +6726,83 @@ button:disabled {
   height: 62%;
   background: linear-gradient(180deg, transparent, rgba(255, 246, 214, 0.95), transparent);
   opacity: 0;
+  transform: translate(-50%, -50%) rotate(var(--ca)) scaleY(var(--cs));
   transform-origin: 50% 50%;
   pointer-events: none;
   box-shadow: 0 0 18px rgba(255, 236, 190, 0.9);
 }
 
-.pack-box-crack.c1 { transform: translate(-50%, -50%) rotate(16deg); }
-.pack-box-crack.c2 { transform: translate(-50%, -50%) rotate(-38deg) scaleY(0.8); }
-.pack-box-crack.c3 { transform: translate(-50%, -50%) rotate(72deg) scaleY(0.66); }
-
-.pack-box.hits-1 .pack-box-crack.c1 { opacity: 0.85; }
-.pack-box.hits-2 .pack-box-crack.c1,
-.pack-box.hits-2 .pack-box-crack.c2,
-.pack-box.hits-2 .pack-box-crack.c3 { opacity: 1; }
-
-.pack-box.hits-1 { animation: pack-shake 340ms ease both; }
-.pack-box.hits-2 {
-  border-color: rgba(255, 246, 214, 0.95);
-  animation: pack-shake-hard 380ms ease both;
+.pack-box-crack.is-cut {
+  opacity: 1;
+  animation: crack-cut 320ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
-.pack-box.hits-1 .pack-box-glow { opacity: 0.6; }
-.pack-box.hits-2 .pack-box-glow { opacity: 1; }
+@keyframes crack-cut {
+  0% { opacity: 0; filter: brightness(2.4); transform: translate(-50%, -50%) rotate(var(--ca)) scaleY(0); }
+  40% { opacity: 1; filter: brightness(2.2); }
+  100% { opacity: 1; filter: brightness(1); transform: translate(-50%, -50%) rotate(var(--ca)) scaleY(var(--cs)); }
+}
+
+/* The shake and the glow CLIMB with the count rather than having a state each.
+   `--hit` is the hit number over five, set in App.tsx. Keying the element on the
+   count is what restarts the shake on every click; without it the animation
+   would only ever play once. */
+.pack-box.hits-1,
+.pack-box.hits-2,
+.pack-box.hits-3,
+.pack-box.hits-4 {
+  animation: pack-shake 360ms ease both;
+}
+
+.pack-box.hits-1 .pack-box-glow { opacity: calc(0.22 + 0.78 * var(--hit, 0)); }
+.pack-box.hits-2 .pack-box-glow { opacity: calc(0.22 + 0.78 * var(--hit, 0)); }
+.pack-box.hits-3 .pack-box-glow { opacity: calc(0.22 + 0.78 * var(--hit, 0)); }
+.pack-box.hits-4 .pack-box-glow { opacity: calc(0.22 + 0.78 * var(--hit, 0)); }
+
+.pack-box.hits-3,
+.pack-box.hits-4 {
+  border-color: rgba(255, 246, 214, 0.95);
+}
 
 @keyframes pack-shake {
-  0% { transform: translate(0, 0) rotate(0); }
-  22% { transform: translate(-9px, 3px) rotate(-3deg) scale(1.04); }
-  46% { transform: translate(8px, -4px) rotate(3deg) scale(0.98); }
-  72% { transform: translate(-4px, 2px) rotate(-1.4deg); }
-  100% { transform: translate(0, 0) rotate(0); }
+  0% { transform: translate(0, 0) rotate(0) scale(1); }
+  16% {
+    transform: translate(calc(-9px - 9px * var(--hit, 0)), calc(3px + 3px * var(--hit, 0)))
+      rotate(calc(-3deg - 3deg * var(--hit, 0))) scale(calc(1 + 0.05 * var(--hit, 0)));
+  }
+  40% {
+    transform: translate(calc(8px + 8px * var(--hit, 0)), calc(-4px - 4px * var(--hit, 0)))
+      rotate(calc(3deg + 3deg * var(--hit, 0))) scale(calc(1 + 0.03 * var(--hit, 0)));
+  }
+  66% {
+    transform: translate(calc(-4px - 6px * var(--hit, 0)), calc(2px + 2px * var(--hit, 0)))
+      rotate(calc(-1.4deg - 2deg * var(--hit, 0)));
+  }
+  100% { transform: translate(0, 0) rotate(0) scale(1); }
 }
 
-@keyframes pack-shake-hard {
-  0% { transform: translate(0, 0) rotate(0) scale(1); }
-  16% { transform: translate(-16px, 6px) rotate(-6deg) scale(1.08); }
-  38% { transform: translate(15px, -8px) rotate(6deg) scale(1.06); }
-  60% { transform: translate(-11px, 4px) rotate(-4deg) scale(1.04); }
-  82% { transform: translate(6px, -2px) rotate(2deg) scale(1.02); }
-  100% { transform: translate(0, 0) rotate(0) scale(1); }
+/* The held beat between the last hit and the burst. All five lines are lit, the
+   box is white-hot and rattling, and it has not opened yet. This is the second
+   the whole count exists for. */
+.pack-box.is-charged {
+  border-color: #fff8e2;
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.78),
+    0 0 90px rgba(255, 236, 190, 0.85),
+    inset 0 0 70px rgba(255, 246, 214, 0.55);
+  animation: pack-strain 1s ease-in both;
+}
+
+.pack-box.is-charged .pack-box-glow { opacity: 1; }
+.pack-box.is-charged .pack-box-sigil { animation: none; opacity: 1; }
+
+@keyframes pack-strain {
+  0% { transform: translate(0, 0) rotate(0) scale(1); filter: brightness(1); }
+  20% { transform: translate(-3px, 1px) rotate(-1deg) scale(1.02); }
+  40% { transform: translate(3px, -1px) rotate(1deg) scale(1.03); }
+  60% { transform: translate(-4px, 2px) rotate(-1.6deg) scale(1.05); filter: brightness(1.5); }
+  80% { transform: translate(5px, -2px) rotate(1.8deg) scale(1.07); filter: brightness(2.1); }
+  100% { transform: translate(0, 0) rotate(0) scale(1.14); filter: brightness(3.4); }
 }
 
 .pack-hint {

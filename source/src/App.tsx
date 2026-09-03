@@ -1800,6 +1800,45 @@ export default function App() {
     );
   }
 
+  /**
+   * Opens a pack of `size` cards, for looking at the pack itself.
+   *
+   * It does NOT touch the record. The pack screen is a piece of theatre with a
+   * lot of moving parts — five hits, a held beat, a burst, a staggered deal, a
+   * reveal order that saves the best card for last — and every one of them used
+   * to be reachable only by finishing a duel and winning enough to earn that
+   * many cards. Fifteen was effectively unreachable.
+   *
+   * The cards are drawn from the whole roster at random rather than from the
+   * unlock order, precisely because nothing is being unlocked. What it shows is
+   * how the screen behaves at that size, which is the only question it exists to
+   * answer.
+   */
+  function developerOpenPack(size: number) {
+    const pool = Object.values(library)
+      .filter((card) => !isTokenCardId(card.id))
+      .map((card) => card.id);
+    if (pool.length === 0) return;
+    const picked: string[] = [];
+    const taken = new Set<string>();
+    // Sampling without replacement: a pack showing the same card twice would
+    // look like a bug in the reveal order rather than a dev shortcut.
+    while (picked.length < Math.min(size, pool.length)) {
+      const id = pool[Math.floor(Math.random() * pool.length)];
+      if (taken.has(id)) continue;
+      taken.add(id);
+      picked.push(id);
+    }
+    setDeveloperToolsOpen(false);
+    setPack(picked);
+    setEvents((items) =>
+      [
+        ...items,
+        { kind: "info" as const, text: `Developer mode opened a ${picked.length}-card pack. Nothing was unlocked.` },
+      ].slice(-EVENT_LOG_LIMIT),
+    );
+  }
+
   function developerClearBoard(owner: PlayerId) {
     setDeveloperDuelActive(true);
     setGame((current) => {
@@ -2848,7 +2887,12 @@ export default function App() {
 
       {hover ? <HoverCard hover={hover} /> : null}
       {handKeywords ? (
-        <KeywordPopover entries={handKeywords.entries} left={handKeywords.left + 132} top={handKeywords.top} />
+        // ABOVE the card, never beside it. Beside meant sitting on the card it
+        // was explaining, or on its neighbour in the fan; the empty board over
+        // the hand is the one place with room. The panel is CENTRED on the left
+        // it is given, so this hangs it over the card's right-hand side.
+        // Owner's ruling, 3 September 2026.
+        <KeywordPopover entries={handKeywords.entries} left={handKeywords.left + 96} top={handKeywords.top} above />
       ) : null}
 
       {splash ? <MythicSplash key={splash.id} minion={splash.minion} /> : null}
@@ -3015,6 +3059,7 @@ export default function App() {
           onPlaceCard={developerPlaceCard}
           onEquipRelic={developerEquipRelic}
           onClearBoard={developerClearBoard}
+          onOpenPack={developerOpenPack}
           onRestart={restart}
           onTestCard={(cardId) => beginDuel({ kind: "bot", skill: "easy" }, { testCardId: cardId })}
         />
@@ -4522,13 +4567,24 @@ function KeywordText({ text }: { text: string }) {
 }
 
 /** The definition panel itself, kept on screen and out of the card's clipping. */
-function KeywordPopover({ entries, left, top }: { entries: KeywordEntry[]; left: number; top: number }) {
+function KeywordPopover({
+  entries,
+  left,
+  top,
+  above = false,
+}: {
+  entries: KeywordEntry[];
+  left: number;
+  top: number;
+  /** Always sit ABOVE `top`, rather than below it unless there is no room. */
+  above?: boolean;
+}) {
   const width = 264;
   const clampedLeft = Math.max(10, Math.min(left - width / 2, window.innerWidth - width - 10));
   // Flip above the word when there is no room beneath it. The estimate scales
   // with how many definitions are stacked in one panel.
   const estimatedHeight = 60 + entries.length * 120;
-  const flip = top + estimatedHeight > window.innerHeight;
+  const flip = above || top + estimatedHeight > window.innerHeight;
   // A PORTAL, and that is the fix for the clipping.
   //
   // The panel is `position: fixed`, which is normally enough — but a fixed
@@ -4542,7 +4598,7 @@ function KeywordPopover({ entries, left, top }: { entries: KeywordEntry[]; left:
     <span
       className={flip ? "cf-kw-pop is-above" : "cf-kw-pop"}
       role="note"
-      style={{ left: clampedLeft, top: flip ? undefined : top + 8, bottom: flip ? window.innerHeight - top + 26 : undefined, width }}
+      style={{ left: clampedLeft, top: flip ? undefined : top + 8, bottom: flip ? window.innerHeight - top + 12 : undefined, width }}
       onPointerDown={(event) => event.stopPropagation()}
     >
       {entries.map((entry) => (
@@ -5433,10 +5489,12 @@ function DrawChoiceOverlay({
  *
  * Three deliberate choices, because the obvious build of this is worse:
  *
- * The pack takes THREE hits, not one. A single click is a dialog with a picture
+ * The pack takes FIVE hits, not one. A single click is a dialog with a picture
  * on it — the reward arrives before the player has done anything, so nothing
- * builds. Three hits with escalating damage on the pack itself is the smallest
- * structure that has a middle, and the middle is where the anticipation lives.
+ * builds. Raised from three on 3 September 2026 (owner's ruling): three had a
+ * middle, five has a CLIMB, and each hit now cuts its own line into the box so
+ * the damage is countable rather than just louder. The last hit does not open
+ * it — the box holds, fully cracked and straining, for a beat, and then goes.
  *
  * The cards deal themselves out one at a time rather than appearing as a grid.
  * A grid of ten is read as "ten"; a stagger is read as ten separate arrivals,
@@ -5446,7 +5504,33 @@ function DrawChoiceOverlay({
  * during render would re-roll every spark on every state change, so the burst
  * would visibly reshuffle itself the moment the first card landed.
  */
-const PACK_HITS = 3;
+const PACK_HITS = 5;
+
+/**
+ * The beat between the last hit and the burst.
+ *
+ * The pack does not open ON the fifth click. It holds, shaking, with all five
+ * cracks lit, and then goes. That pause is the whole payoff of counting to five:
+ * the player lands the last hit and then watches it fail, which is a different
+ * event from a box that simply opens when clicked enough times.
+ */
+const PACK_BURST_DELAY_MS = 1000;
+
+/**
+ * Where each crack sits. One per hit, in the order they are cut.
+ *
+ * Angles rather than a symmetric fan: five evenly spaced lines read as a
+ * snowflake, which is a pattern rather than damage. `scale` shortens the later
+ * ones so the box looks broken from the middle outward instead of sliced into
+ * equal pieces.
+ */
+const PACK_CRACKS = [
+  { angle: 16, scale: 1 },
+  { angle: -38, scale: 0.8 },
+  { angle: 72, scale: 0.66 },
+  { angle: -76, scale: 0.58 },
+  { angle: 44, scale: 0.72 },
+];
 
 /** Card width and gap from `.pack-card` / `.pack-reveal`; keep the three in step. */
 const PACK_CARD_WIDTH = 206;
@@ -5497,7 +5581,25 @@ function CardPack({
 }) {
   const [hits, setHits] = useState(0);
   const [dealt, setDealt] = useState(0);
-  const opened = hits >= PACK_HITS;
+  /**
+   * Fully cracked but not yet open.
+   *
+   * `opened` is its own state rather than `hits >= PACK_HITS`, because the last
+   * hit and the burst are now a second apart. Everything downstream — the
+   * fireworks, the deal, the Collect button — keys off `opened`, so none of it
+   * had to learn about the pause.
+   */
+  const charged = hits >= PACK_HITS;
+  const [opened, setOpened] = useState(false);
+
+  useEffect(() => {
+    if (!charged || opened) return;
+    const handle = window.setTimeout(() => {
+      setOpened(true);
+      sfx.play("summonMythic");
+    }, PACK_BURST_DELAY_MS);
+    return () => window.clearTimeout(handle);
+  }, [charged, opened]);
   // How many cards a row can hold depends on the window, so it is read from the
   // window and re-read when that changes. A pack is on screen for a few seconds,
   // which makes one listener cheap and a stale layout expensive.
@@ -5552,14 +5654,15 @@ function CardPack({
   }, [opened, dealt, faces.length]);
 
   function strike() {
-    if (opened) return;
+    if (charged) return;
     const next = hits + 1;
     setHits(next);
-    if (next >= PACK_HITS) {
-      sfx.play("summonMythic");
-    } else {
-      sfx.play(next === 1 ? "hit" : "shieldBreak");
-    }
+    // The climb is in the SOUND as well as the cracks. The first hit is a dull
+    // knock, the middle three are the shell breaking, and the last one is a
+    // heavy landing rather than the fanfare — the fanfare belongs to the burst
+    // a second later, or the two would collide.
+    if (next >= PACK_HITS) sfx.playHeavyLand(1);
+    else sfx.play(next === 1 ? "hit" : "shieldBreak");
   }
 
   const allDealt = opened && dealt >= faces.length;
@@ -5593,19 +5696,42 @@ function CardPack({
             <p className="pack-kicker">{faces.length === 1 ? "One new card" : `${faces.length} new cards`}</p>
             <button
               type="button"
-              className={`pack-box hits-${hits}`}
+              // Keyed on the count, so the shake RESTARTS on every click. Same
+              // animation name on every hit state means the browser would
+              // otherwise let it run once and ignore the rest.
+              key={`pack-${hits}`}
+              className={`pack-box hits-${hits}${charged ? " is-charged" : ""}`}
               onClick={strike}
-              aria-label={`Strike the pack to open it. ${PACK_HITS - hits} to go.`}
+              // The shake and the glow both read this, so their strength climbs
+              // with the count instead of being three hand-written states.
+              style={{ "--hit": hits / PACK_HITS } as CSSProperties}
+              aria-label={`Strike the pack to open it. ${Math.max(0, PACK_HITS - hits)} to go.`}
             >
               <span className="pack-box-face" aria-hidden="true">
                 <span className="pack-box-sigil">✦</span>
               </span>
-              <span className="pack-box-crack c1" aria-hidden="true" />
-              <span className="pack-box-crack c2" aria-hidden="true" />
-              <span className="pack-box-crack c3" aria-hidden="true" />
+              {PACK_CRACKS.map((crack, index) => (
+                <span
+                  // Keyed by the HIT it belongs to, so a new line mounts on its
+                  // own click and plays its cut animation once. Rendering all
+                  // five and toggling opacity would fade them in instead.
+                  key={index}
+                  className={index < hits ? "pack-box-crack is-cut" : "pack-box-crack"}
+                  style={{ "--ca": `${crack.angle}deg`, "--cs": crack.scale } as CSSProperties}
+                  aria-hidden="true"
+                />
+              ))}
               <span className="pack-box-glow" aria-hidden="true" />
             </button>
-            <p className="pack-hint">{hits === 0 ? "Strike it open" : hits === 1 ? "Again" : "Once more"}</p>
+            <p className="pack-hint">
+              {hits === 0
+                ? "Strike it open"
+                : charged
+                  ? "It is giving way…"
+                  : hits === PACK_HITS - 1
+                    ? "Once more"
+                    : "Again"}
+            </p>
           </>
         )}
 
@@ -5712,6 +5838,7 @@ function DeveloperTools({
   onToggleCheat,
   onSetMana,
   onSetCore,
+  onOpenPack,
   onGiveCard,
   onPlaceCard,
   onEquipRelic,
@@ -5727,6 +5854,7 @@ function DeveloperTools({
   onToggleCheat: () => void;
   onSetMana: () => void;
   onSetCore: (owner: PlayerId, value: number) => void;
+  onOpenPack: (size: number) => void;
   onGiveCard: (cardId: string, owner: PlayerId) => void;
   onPlaceCard: (cardId: string, owner: PlayerId) => void;
   onEquipRelic: (cardId: string, owner: PlayerId) => void;
@@ -5789,6 +5917,21 @@ function DeveloperTools({
               <button type="button" className="developer-action" onClick={onRestart}>Restart test duel</button>
             </>
           ) : null}
+          {/* OUTSIDE the in-duel block, because the pack screen is not part of a
+              duel. Reaching it normally means finishing one and earning that
+              many cards, which made the fifteen-card layout close to
+              untestable. */}
+          {[5, 10, 15].map((size) => (
+            <button
+              key={size}
+              type="button"
+              className="developer-action"
+              onClick={() => onOpenPack(size)}
+              title="Opens the pack screen only. Nothing is unlocked."
+            >
+              Open {size}-card pack
+            </button>
+          ))}
         </div>
 
         <div className="developer-workbench">
