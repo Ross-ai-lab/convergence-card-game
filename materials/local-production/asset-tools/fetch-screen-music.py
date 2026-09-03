@@ -10,7 +10,8 @@ hand from a small list of candidates rather than by a franchise matcher.
 
     python fetch-screen-music.py --dry-run              # search and rank, download nothing
     python fetch-screen-music.py --pick victory=<id>    # force one cue's video id
-    python fetch-screen-music.py                        # download and cut every cue
+    python fetch-screen-music.py                        # download and encode every cue whole
+    python fetch-screen-music.py --cut                  # the old tuned-excerpt cut instead
     python fetch-screen-music.py --only pack            # one cue (repeatable)
 
 Sources land in materials/local-production/audio-tracks/ as `screen-<cue> …`,
@@ -50,6 +51,12 @@ _spec = importlib.util.spec_from_file_location("card_stings", HERE / "build-card
 card_stings = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(card_stings)
 
+
+# Fades on the WHOLE-TRACK encode. Long enough that a piece does not start with
+# a click, short enough that it is not a production choice being made on top of
+# somebody's recording.
+FULL_FADE_IN = 0.35
+FULL_FADE_OUT = 2.5
 
 CUES: dict[str, dict] = {
     "pack": {
@@ -204,9 +211,72 @@ def download(cue: str, vid: str, title: str) -> Path | None:
     return final
 
 
+def probe_seconds(path: Path) -> float:
+    out = run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
+        timeout=60,
+    ).stdout.strip()
+    try:
+        return float(out)
+    except ValueError:
+        return 0.0
+
+
+def build_full(src: Path, dst: Path) -> tuple[bool, str]:
+    """
+    The WHOLE track, levelled, with a fade at each end.
+
+    Owner's ruling, 4 September 2026: these four cues play in full rather than as
+    cuts. `loudnorm` at the same target the card stings use, so a moment piece
+    and a card theme sit at one level; nothing else about the recording is
+    touched.
+    """
+    seconds = probe_seconds(src)
+    if seconds <= 1:
+        return False, "unreadable source duration"
+    fade_out_at = max(0.0, seconds - FULL_FADE_OUT)
+    filters = (
+        f"afade=t=in:st=0:d={FULL_FADE_IN},"
+        f"afade=t=out:st={fade_out_at}:d={FULL_FADE_OUT},"
+        "loudnorm=I=-16:TP=-1.5:LRA=11"
+    )
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dst.with_suffix(".tmp.ogg")
+    proc = run(
+        [
+            "ffmpeg", "-v", "error", "-y", "-i", str(src),
+            # See the same pair in build-card-stings.py: without `-vn` the MP4's
+            # picture is re-encoded into the .ogg, and `loudnorm` hands the
+            # encoder its own 192 kHz analysis rate. Together they made a
+            # seven-minute cue 17 MB.
+            "-vn", "-ar", "48000",
+            "-af", filters, "-c:a", "libvorbis", "-q:a", "4", "-ac", "2",
+            str(tmp),
+        ],
+        timeout=900,
+    )
+    if proc.returncode != 0 or not tmp.exists():
+        tmp.unlink(missing_ok=True)
+        return False, (proc.stderr or "").strip()[-160:]
+    produced = probe_seconds(tmp)
+    # Within a second of the source: an encode that silently stopped early is the
+    # failure this catches, and it looks like success everywhere else.
+    if produced < seconds - 1.0:
+        tmp.unlink(missing_ok=True)
+        return False, f"only {produced:.1f}s of {seconds:.1f}s encoded"
+    dst.unlink(missing_ok=True)
+    tmp.replace(dst)
+    return True, f"{produced:.1f}s, {dst.stat().st_size / 1024 / 1024:.1f} MB"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true", help="search and rank only")
+    ap.add_argument(
+        "--cut",
+        action="store_true",
+        help="cut the tuned excerpt instead of encoding the whole track",
+    )
     ap.add_argument("--only", action="append", default=[], help="cue name (repeatable)")
     ap.add_argument("--pick", action="append", default=[], metavar="CUE=VIDEOID")
     args = ap.parse_args()
@@ -243,14 +313,17 @@ def main() -> None:
             source = download(cue, pick["id"], pick["title"])
         if source is None:
             continue
-        samples = card_stings.decode_mono(source)
-        track_seconds = len(samples) / card_stings.ANALYSIS_RATE
-        start, _ = card_stings.choose_offset(samples, CUES[cue]["min_start"])
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         dst = OUT_DIR / f"{cue}.ogg"
-        ok, detail = card_stings.build_sting(source, dst, start, CUES[cue]["seconds"], track_seconds)
-        status = "cut" if ok else "FAILED"
-        print(f"  {status} {CUES[cue]['seconds']:.0f}s from {start:.1f}s -> {dst.name} ({detail})")
+        if args.cut:
+            samples = card_stings.decode_mono(source)
+            track_seconds = len(samples) / card_stings.ANALYSIS_RATE
+            start, _ = card_stings.choose_offset(samples, CUES[cue]["min_start"])
+            ok, detail = card_stings.build_sting(source, dst, start, CUES[cue]["seconds"], track_seconds)
+            print(f"  {'cut' if ok else 'FAILED'} {CUES[cue]['seconds']:.0f}s from {start:.1f}s -> {dst.name} ({detail})")
+        else:
+            ok, detail = build_full(source, dst)
+            print(f"  {'encoded' if ok else 'FAILED'} whole track -> {dst.name} ({detail})")
 
     if not args.dry_run:
         PICKS_PATH.write_text(json.dumps(picks, indent=2, ensure_ascii=False), "utf-8")

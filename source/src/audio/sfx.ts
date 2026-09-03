@@ -152,7 +152,8 @@ let themeSource: AudioBufferSourceNode | null = null;
 /** Rises on every request so a slow decode can tell it has been superseded. */
 let themeToken = 0;
 /** The one-shot moment piece (see `playCue`), and the token that supersedes it. */
-let cueSource: AudioBufferSourceNode | null = null;
+let cueAudio: HTMLAudioElement | null = null;
+let cueNode: MediaElementAudioSourceNode | null = null;
 let cueGain: GainNode | null = null;
 let cueToken = 0;
 let openingCueBuffer: AudioBuffer | null = null;
@@ -410,6 +411,32 @@ function riser(t: number, dur: number, gain: number) {
 // ------------------------------------------------------- music ducking
 function musicLevel(): number {
   return MUSIC_GAIN * mix.music;
+}
+
+/**
+ * Holds the bed down until something says otherwise.
+ *
+ * The timed `duck` below needs to know how long to hold, which is fine for a
+ * six-second sting and impossible for a cue: the piece may run seven minutes and
+ * its length is not known until its metadata arrives. These two are the pair
+ * that brackets an unknown length instead.
+ */
+function duckHold(amount: number) {
+  if (!musicGain || !ctx) return;
+  const t = ctx.currentTime;
+  const g = musicGain.gain;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(g.value, t);
+  g.linearRampToValueAtTime(musicLevel() * amount, t + 0.35);
+}
+
+function duckRelease() {
+  if (!musicGain || !ctx) return;
+  const t = ctx.currentTime;
+  const g = musicGain.gain;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(g.value, t);
+  g.linearRampToValueAtTime(musicLevel(), t + 0.9);
 }
 
 function duck(amount: number, hold: number) {
@@ -827,74 +854,93 @@ export async function setTrack(track: Track | null): Promise<void> {
 /**
  * A one-shot piece over the bed: the pack ceremony and the three endings.
  *
- * On the MUSIC bus, so a player who turns music down is not sung at anyway, and
- * ducking the bed for the cue's whole length rather than for a fixed few
- * seconds — these are 16 to 22 seconds of real music, and the bed swelling back
- * up underneath one is the fault that took a while to hear the first time it
- * happened to card themes.
+ * STREAMED THROUGH AN `<audio>` ELEMENT, not fetched and decoded. The four cues
+ * play in full from 4 September 2026 (owner's ruling — no more 16 and 22 second
+ * cuts), and full means two to seven minutes: `decodeAudioData` would hold the
+ * whole download before a note sounded and then keep tens of megabytes of PCM in
+ * memory, which is the wrong shape for a piece that starts the moment a screen
+ * appears. A media element starts on the first buffered seconds and throws the
+ * rest away as it goes. Card themes stay decoded — they are six seconds and have
+ * to start on the exact frame a minion lands.
+ *
+ * On the THEME bus, which the music fader also governs, so a player who turns
+ * music down is not sung at anyway. The bed is ducked underneath and HELD there
+ * until the cue ends rather than for a measured number of seconds, because the
+ * length is not known until the metadata arrives and may be minutes.
  *
  * Only one cue sounds at a time, and a second call cuts the first: an ending
  * arriving over a pack that is still playing would be two pieces of music at
  * once, which is the thing this whole layer exists to prevent.
  */
 export function playCue(name: Cue): void {
-  if (muted || mix.music <= 0 || !ctx) return;
+  if (muted || mix.music <= 0) return;
   unlock();
+  if (!ctx || !themeBus) return;
+  stopCue(true);
   const token = (cueToken += 1);
-  void fetchTrack(TRACK_URL[name], false).then((buffer) => {
-    if (!buffer || !ctx || !themeBus || muted) return;
-    // Superseded while decoding.
-    if (token !== cueToken) return;
-    stopCue(true);
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    const gain = ctx.createGain();
-    gain.gain.value = 1;
-    source.connect(gain);
-    // THE THEME BUS, not the bed's own gain node. A cue that hangs off
-    // `musicGain` is ducked by its own duck — the call below pulls that node
-    // down to a tenth for the whole clip, and the clip is on it. Card themes
-    // solved this before cues existed: they play on `themeBus`, which the music
-    // fader also governs, and duck the bed underneath. Measured on the master
-    // bus, moving the cues onto it took them from 0.018 to well clear of it.
-    gain.connect(themeBus);
-    duck(0.12, buffer.duration + 0.3);
-    source.start();
-    cueSource = source;
-    cueGain = gain;
-    source.addEventListener("ended", () => {
-      if (cueSource === source) {
-        cueSource = null;
-        cueGain = null;
-      }
-    });
+  const audio = new Audio(TRACK_URL[name][0]);
+  audio.preload = "auto";
+  const gain = ctx.createGain();
+  gain.gain.value = 1;
+  let node: MediaElementAudioSourceNode;
+  try {
+    node = ctx.createMediaElementSource(audio);
+  } catch {
+    // A browser that refuses to route the element simply plays no cue rather
+    // than throwing out of a click handler.
+    return;
+  }
+  node.connect(gain);
+  gain.connect(themeBus);
+  cueAudio = audio;
+  cueNode = node;
+  cueGain = gain;
+  duckHold(0.12);
+  audio.addEventListener("ended", () => {
+    if (cueToken === token) stopCue();
+  });
+  void audio.play().catch(() => {
+    // Autoplay refused: leave the bed where it was rather than ducked under
+    // silence.
+    if (cueToken === token) stopCue(true);
   });
 }
 
 /**
- * Ends the cue that is playing, fading rather than cutting.
+ * Ends the cue that is playing, fading rather than cutting, and lets the bed up.
  *
  * `immediate` is for the swap inside `playCue` itself, where a half-second tail
  * would overlap the piece replacing it.
  */
 export function stopCue(immediate = false): void {
   cueToken += 1;
-  const source = cueSource;
+  const audio = cueAudio;
+  const node = cueNode;
   const gain = cueGain;
-  cueSource = null;
+  cueAudio = null;
+  cueNode = null;
   cueGain = null;
-  if (!source || !ctx) return;
+  if (!audio) return;
+  duckRelease();
+  const finish = () => {
+    audio.pause();
+    audio.src = "";
+    try {
+      node?.disconnect();
+      gain?.disconnect();
+    } catch {
+      // already torn down
+    }
+  };
+  if (immediate || !ctx || !gain) {
+    finish();
+    return;
+  }
   const now = ctx.currentTime;
-  if (gain && !immediate) {
-    gain.gain.cancelScheduledValues(now);
-    gain.gain.setValueAtTime(gain.gain.value, now);
-    gain.gain.linearRampToValueAtTime(0.0001, now + 0.6);
-  }
-  try {
-    source.stop(immediate ? now : now + 0.65);
-  } catch {
-    // already finished
-  }
+  gain.gain.cancelScheduledValues(now);
+  gain.gain.setValueAtTime(gain.gain.value, now);
+  gain.gain.linearRampToValueAtTime(0.0001, now + 0.6);
+  window.setTimeout(finish, 700);
 }
 
 export async function startMusic(): Promise<void> {

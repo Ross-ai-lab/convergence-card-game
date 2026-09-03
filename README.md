@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 187,531 bytes, roughly 47k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~53% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 192,205 bytes, roughly 48k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~52% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -481,6 +481,38 @@ unread: the table already answers the only question anyone opens it to ask.
 
 **The pack.** A duel that earns cards ends on a sealed pack that takes FIVE strikes to open, then
 holds for a second and bursts, dealing the cards out one at a time.
+
+**THE SEALED SCREEN HAS NO WORDS ON IT.** Owner's ruling, 4 September 2026. The count above the pack
+("10 new cards") and the running instruction below it ("Strike it open", "Again", "Once more", "It is
+giving way…") are gone. A pack that shakes, cracks a new line on every hit and brightens as it goes is
+already saying what to do, and the sentence saying it too was the only part of the ceremony written in
+prose. The button keeps its `aria-label`, which is where an instruction genuinely belongs, and the
+opened screen keeps its kicker and its running total.
+
+**POINTING AT A DEALT CARD ENLARGES IT, with no delay at all.** Owner's ruling, 4 September 2026. The
+two-second rest that guards the hand exists because a card there is also a control — click it and it
+is played — and the pack is the opposite case: the cards are only ever being read, so there is
+nothing for a wait to protect.
+
+- **`--pack-lift` is COMPUTED, not a fixed multiplier.** A pack card is drawn anywhere between about
+  115px and 278px depending on how many arrived and how big the window is, so one hover scale would
+  land somewhere different every time — and on a fifteen-card pack in a small window, still too small
+  to read. `hoverLift` in `App.tsx` works the multiplier back from whatever the grid did, so the
+  enlarged card always lands at `PACK_HOVER_WIDTH` = 420px.
+- **An edge card grows INWARD.** `--lift-origin` is set per card from its column and row, because
+  enlarging from the centre pushed the first card 63px off the left of a 1920 screen — and the grid is
+  deliberately as wide as the window now, so the outer column is exactly where a pointer lands most.
+- **The lift is on an inner element, and that is not a style choice.** `.pack-card` carries the deal
+  animation, an animation with `both` holds its final transform on that element forever, and a filled
+  animation beats a plain `:hover` declaration in the cascade — the hover would simply never apply.
+  `.pack-scroll` also had to stop clipping, or the enlarged card would be cut off along the top row
+  and both sides.
+- **A HEADLESS HARNESS CANNOT SEE THIS WORKING, and the reason generalises.** The pane never paints,
+  so a CSS *transition* never advances: the hovered card measures and photographs at its starting
+  size, `:hover` matches, the rule is in the CSSOM, the custom property resolves, and the computed
+  transform is still the identity matrix. Injecting `transition: none` before measuring is what makes
+  the end state visible. Any hover, fade or slide checked this way needs the same treatment before it
+  is called broken.
 
 Raised from three on 3 September 2026, owner's ruling, and the change is the SHAPE rather than the
 number. Three hits had a middle; five has a climb, and each hit now cuts its own line into the box, so
@@ -1387,14 +1419,24 @@ game talking over its own ending. Music says the same thing and does not wear ou
   [What the title screen is allowed to download](#what-the-title-screen-is-allowed-to-download). The
   previous `victory` and `defeat` stings were generated locally, which is why they were the two files
   this pass replaced rather than kept. `materials/local-production/asset-tools/fetch-screen-music.py`
-  is the front door: `--dry-run` searches and ranks candidates without downloading anything, the
-  chosen video ids live in `screen-music-picks.json` so a re-run fetches the same track, and the cut
-  itself reuses `build-card-stings.py`'s picker rather than owning a second one.
-- **A cue plays on the THEME bus, not on the bed's own gain node.** The bed is ducked underneath for
-  the cue's whole length, and a cue hanging off `musicGain` is ducked by its own duck: measured on the
-  master bus at **0.018** wired that way against **0.29–0.48** wired correctly, which is the difference
-  between "there is something playing" and music. Card themes had already solved this; cues now share
-  the solution.
+  is the front door: `--dry-run` searches and ranks candidates without downloading anything, and the
+  chosen video ids live in `screen-music-picks.json` so a re-run fetches the same track.
+- **EACH ONE PLAYS IN FULL**, 1:59 to 7:19 (owner's ruling, 4 September 2026). They were 16 and 22
+  second excerpts cut by `build-card-stings.py`'s picker; `--cut` still does that, and the default is
+  now the whole track, levelled to the same `loudnorm` target as everything else with a 0.35s fade in
+  and a 2.5s fade out. The cost of a whole track is that it starts where the recording starts: a piece
+  with a quiet opening now opens quietly, where the excerpt began at its loudest bar.
+- **A cue is STREAMED through an `<audio>` element; card themes stay decoded.** `decodeAudioData` on a
+  seven-minute file would hold the entire download before a note sounded and then keep tens of
+  megabytes of PCM alive, which is the wrong shape for music that starts when a screen appears.
+  Measured from `playCue` to the first sound: **51ms to 364ms** across the four. A six-second card
+  theme keeps the decoded path, because it has to land on the exact frame a minion does.
+- **A cue plays on the THEME bus, not on the bed's own gain node.** The bed is ducked underneath and
+  HELD there by `duckHold` until `duckRelease`, rather than for a measured number of seconds: the
+  length is not known until the metadata arrives and may be minutes. A cue hanging off `musicGain`
+  instead is ducked by its own duck — measured on the master bus at **0.018** wired that way against
+  **0.29–0.48** wired correctly, which is the difference between "there is something playing" and
+  music.
 - **One at a time, and it leaves with its screen.** A second cue cuts the first, `stopCue` ends one
   when its screen closes, and the ending waits for the pack to be collected — the pack sits above the
   result screen, so the two would otherwise start together.
@@ -1555,6 +1597,21 @@ instead of trading the layout away.
 **A card whose art is an SVG has no thumbnail and must keep the raw path.** `menuArt()` in
 `Screens.tsx` checks for a raster extension first; rewriting an SVG pointed at a file the generator
 never produces, and the card rendered blank.
+
+**Every .ogg in this project was three times the size it needed to be until 4 September 2026, and
+nothing anywhere reported it.** Two flags were missing from the one ffmpeg call in
+`build-card-stings.py`, and the same pair was missing from `fetch-screen-music.py`:
+
+- **`-vn`.** Half the sources are MP4s, so ffmpeg dutifully re-encoded the PICTURE into every clip as
+  a Theora stream. A `.ogg` carrying video plays fine, measures fine, and passes every check in this
+  project — `ffprobe` is the only thing that ever says so.
+- **`-ar 48000`.** `loudnorm` runs its analysis at 192 kHz and hands that rate straight to the encoder
+  unless told otherwise, so every sting was a 192 kHz file at roughly 180 kbit/s.
+
+Re-cutting with both flags took the stings folder from **34 MB to 22 MB** and the four moment pieces
+from **50 MB to 14.7 MB**, with the audio itself unchanged: same sources, same offsets file, same
+picker, and `check:audio` probes every one of them on the master bus afterwards. Seven cards whose
+source track is not in the local library kept their old files, which still play.
 
 Card stings are the `c###.ogg` files and relic stings are the `r###.ogg` files in `source/public/audio/stings/`. Every playable minion and relic resolves to its own direct file. Relics use `r###` IDs and are intentionally not part of the title-screen theme set, even though relics share the deck and can appear in hand; audio prefetch must filter relic IDs rather than request `audio/stings/r###.ogg`.
 

@@ -6645,17 +6645,17 @@ button:disabled {
   text-align: center;
 }
 
+/* Only the OPENED screen has a kicker now. "10 new cards" above the sealed pack
+   and the running instruction beneath it were removed on 4 September 2026
+   (owner's ruling): a pack that shakes, cracks and brightens is already saying
+   what to do. */
 .pack-kicker {
   margin: 0;
-  color: rgba(246, 236, 216, 0.68);
+  color: #f4d489;
   font-size: 0.8rem;
   font-weight: 950;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-}
-
-.pack-kicker.is-open {
-  color: #f4d489;
   animation: pack-fade-up 460ms ease both;
 }
 
@@ -6822,13 +6822,6 @@ button:disabled {
   100% { transform: translate(0, 0) rotate(0) scale(1.14); filter: brightness(3.4); }
 }
 
-.pack-hint {
-  margin: 0;
-  color: rgba(246, 236, 216, 0.58);
-  font-size: 0.9rem;
-  letter-spacing: 0.06em;
-}
-
 /* Fireworks. One element per spark, thrown outward from the pack's position. */
 .pack-burst {
   position: absolute;
@@ -6988,13 +6981,53 @@ button:disabled {
   /* Basis 0, so this box is the leftover space rather than its own content. */
   flex: 1 1 0;
   min-height: 0;
-  overflow: hidden;
+  /* VISIBLE, deliberately. It clipped while the grid could overflow; the grid is
+     scaled to fit now, and a hovered card has to be allowed to grow past this
+     box's edges or the enlarged card would be cut off along the top row and
+     both sides — exactly where it is most likely to be pointed at. */
+  overflow: visible;
 }
 
 .pack-card {
   width: 206px;
   aspect-ratio: 750 / 1050;
   animation: pack-deal 520ms cubic-bezier(0.2, 1.1, 0.36, 1) both;
+}
+
+/* POINT AT A CARD AND IT COMES FORWARD, with no delay at all (owner's ruling,
+   4 September 2026). The pack is the one screen where a card is only ever being
+   read, so there is nothing for a wait to protect: the two-second rest that
+   guards the hand exists because a card there is also a control.
+
+   The lift lives on this inner element rather than on `.pack-card`, which is
+   carrying the deal animation — an animation with `both` holds its final
+   transform on that element forever, and a filled animation beats a plain
+   `:hover` declaration in the cascade, so the hover would never apply.
+
+   `--pack-lift` is computed in App.tsx from whatever the grid did, so the
+   enlarged card lands at about the same real size whether the pack dealt five
+   cards at 1.27 or fifteen at 0.56. */
+.pack-card-lift {
+  width: 100%;
+  height: 100%;
+  /* The corner it grows FROM, set per card in App.tsx: an edge card grows
+     inward so it cannot leave the screen. */
+  transform-origin: var(--lift-origin, center);
+  transition: transform 140ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  will-change: transform;
+}
+
+.pack-card:hover {
+  /* The stacking context, not the scale: a scaled sibling must be able to sit
+     over the cards beside it, and z-index on the animated element is the only
+     place it works — the lift element's own z-index is inside this one's. */
+  position: relative;
+  z-index: 6;
+}
+
+.pack-card:hover .pack-card-lift {
+  transform: scale(var(--pack-lift, 1.5));
+  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.7));
 }
 
 .pack-card .card-face {

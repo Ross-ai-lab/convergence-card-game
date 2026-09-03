@@ -275,7 +275,14 @@ for (const [index, token] of tokenAudio.entries()) {
   const audioPath = path.join(projectRoot, "public", "audio", "stings", `${audioFile}.ogg`);
   if (!fs.existsSync(audioPath)) {
     errors.push(`Token audio line ${line}: ${token.name} has no theme — expected public/audio/stings/${audioFile}.ogg`);
-  } else if (fs.statSync(audioPath).size < 200_000) {
+    // 30 kB, DOWN FROM 200 kB on 4 September 2026. The old floor was calibrated
+    // against stings that were secretly carrying a copied video stream and
+    // encoding at 192 kHz (see the encoder note in the README): a correct
+    // six-second clip is 60–100 kB, so the check would have failed every one of
+    // them the moment that was fixed. What it is really guarding against is a
+    // truncated or silent stub, and nothing healthy at this length lands under
+    // 30 kB.
+  } else if (fs.statSync(audioPath).size < 30_000) {
     errors.push(`Token audio line ${line}: ${token.name}'s theme is suspiciously small (${audioPath})`);
   }
 }

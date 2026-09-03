@@ -5712,7 +5712,22 @@ interface PackLayout {
   height: number;
   /** What the whole reveal is rendered at, so it fits without scrolling. */
   scale: number;
+  /** What a hovered card multiplies itself by to reach `PACK_HOVER_WIDTH`. */
+  lift: number;
 }
+
+/**
+ * How wide a hovered card should end up on screen, in real pixels.
+ *
+ * A pack card is drawn anywhere between about 115px and 262px depending on how
+ * many arrived and how big the window is, so a fixed hover scale means the
+ * enlarged card is a different size every time — and on a fifteen-card pack in a
+ * small window, still too small to read. This is the size it lands at instead,
+ * and the multiplier is worked back from whatever the grid did.
+ */
+const PACK_HOVER_WIDTH = 420;
+/** Never smaller than the card already is, never a jump that covers the screen. */
+const PACK_HOVER_RANGE = { min: 1.25, max: 3.2 };
 
 /**
  * How the reveal is shaped, and how far down it is rendered.
@@ -5752,9 +5767,24 @@ function packLayout(count: number, viewportWidth: number, availableHeight: numbe
     const scale = Math.min(PACK_MAX_SCALE, availableWidth / width, usableHeight / height);
     // The epsilon keeps the FEWEST rows on a tie: two rows and three rows often
     // fit identically, and the flatter one reads as a hand.
-    if (!best || scale > best.scale + 0.001) best = { columns, rows, width, height, scale };
+    if (!best || scale > best.scale + 0.001) {
+      best = { columns, rows, width, height, scale, lift: hoverLift(scale) };
+    }
   }
-  return best ?? { columns: 1, rows: 1, width: PACK_CARD_WIDTH, height: PACK_CARD_HEIGHT, scale: 1 };
+  return best ?? {
+    columns: 1,
+    rows: 1,
+    width: PACK_CARD_WIDTH,
+    height: PACK_CARD_HEIGHT,
+    scale: 1,
+    lift: hoverLift(1),
+  };
+}
+
+/** The hover multiplier that lands a card of this scale at `PACK_HOVER_WIDTH`. */
+function hoverLift(scale: number): number {
+  const wanted = PACK_HOVER_WIDTH / (PACK_CARD_WIDTH * scale);
+  return Math.max(PACK_HOVER_RANGE.min, Math.min(PACK_HOVER_RANGE.max, wanted));
 }
 
 function CardPack({
@@ -5928,7 +5958,14 @@ function CardPack({
       <section className="pack-stage" role="dialog" aria-label="New cards unlocked">
         {opened ? null : (
           <>
-            <p className="pack-kicker">{faces.length === 1 ? "One new card" : `${faces.length} new cards`}</p>
+            {/* NO WORDS ON THE SEALED SCREEN (owner's ruling, 4 September 2026).
+                The count above the pack and the running instruction below it —
+                "Strike it open", "Again", "Once more", "It is giving way…" —
+                are gone. A pack that shakes, cracks and brightens under the
+                pointer is already saying what to do, and the sentence saying it
+                too was the only part of the ceremony written in prose. The
+                button keeps its `aria-label`, which is where that instruction
+                genuinely belongs. */}
             <button
               type="button"
               // Keyed on the count, so the shake RESTARTS on every click. Same
@@ -5958,21 +5995,12 @@ function CardPack({
               ))}
               <span className="pack-box-glow" aria-hidden="true" />
             </button>
-            <p className="pack-hint">
-              {hits === 0
-                ? "Strike it open"
-                : charged
-                  ? "It is giving way…"
-                  : hits === PACK_HITS - 1
-                    ? "Once more"
-                    : "Again"}
-            </p>
           </>
         )}
 
         {opened ? (
           <>
-            <p className="pack-kicker is-open">Added to the shared deck</p>
+            <p className="pack-kicker">Added to the shared deck</p>
             {/* Rows are balanced rather than left to wrap. Six cards wrapping
                 naturally gave a row of five and one card stranded underneath it,
                 which reads as a mistake; three and three reads as a hand. The
@@ -5986,19 +6014,60 @@ function CardPack({
                   of them fit a window that has room for ten. */}
               <div
                 className="pack-reveal"
-                style={{
-                  width: `${layout.width}px`,
-                  height: `${layout.height}px`,
-                  transform: `scale(${layout.scale})`,
-                }}
+                style={
+                  {
+                    width: `${layout.width}px`,
+                    height: `${layout.height}px`,
+                    transform: `scale(${layout.scale})`,
+                    // How far a hovered card lifts, computed so it always reads
+                    // at about the same size on screen whatever the grid did:
+                    // a fixed 1.5 is a small nudge on a five-card pack drawn at
+                    // 1.27 and not nearly enough on fifteen drawn at 0.56.
+                    "--pack-lift": layout.lift,
+                  } as CSSProperties
+                }
               >
                 {faces.slice(0, dealt).map((face, index) => (
-                  <div className="pack-card" key={`${face.name}-${index}`}>
-                    {/* NOT lazy, unlike the gallery. Fifteen images at the most,
-                        and each one is the thing the player is here to look at —
-                        a card that deals itself onto the table with an empty
-                        black frame is the reward arriving broken. */}
-                    <CardFace card={face} />
+                  <div
+                    className="pack-card"
+                    key={`${face.name}-${index}`}
+                    // A card on the edge of the grid grows INWARD. Enlarging
+                    // from the centre pushed the first card 63px off the left of
+                    // a 1920 screen, and the grid is deliberately as wide as the
+                    // window now, so the outer column is exactly where a pointer
+                    // lands most often.
+                    style={
+                      {
+                        "--lift-origin": `${
+                          index % layout.columns === 0
+                            ? "left"
+                            : index % layout.columns === layout.columns - 1
+                              ? "right"
+                              : "center"
+                        } ${
+                          layout.rows === 1
+                            ? "center"
+                            : index < layout.columns
+                              ? "top"
+                              : Math.floor(index / layout.columns) === layout.rows - 1
+                                ? "bottom"
+                                : "center"
+                        }`,
+                      } as CSSProperties
+                    }
+                  >
+                    {/* The lift lives on an INNER element. `.pack-card` is
+                        carrying the deal animation, whose `both` fill holds a
+                        transform on it forever, and an animation's fill beats a
+                        plain `:hover` rule in the cascade — the hover would
+                        simply never apply. */}
+                    <div className="pack-card-lift">
+                      {/* NOT lazy, unlike the gallery. Fifteen images at the
+                          most, and each one is the thing the player is here to
+                          look at — a card that deals itself onto the table with
+                          an empty black frame is the reward arriving broken. */}
+                      <CardFace card={face} />
+                    </div>
                   </div>
                 ))}
               </div>

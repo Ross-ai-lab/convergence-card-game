@@ -198,6 +198,15 @@ def build_sting(src: Path, dst: Path, start: float, clip: float,
     proc = run([
         "ffmpeg", "-v", "error", "-y",
         "-ss", f"{start:.2f}", "-t", f"{clip}", "-i", str(src),
+        # -vn and -ar are NOT optional here, and both were missing until
+        # 4 September 2026. Half the sources are MP4s, so without -vn ffmpeg
+        # re-encoded the PICTURE into every .ogg as a Theora stream nothing will
+        # ever play; and `loudnorm` runs its analysis at 192 kHz and hands that
+        # rate straight to the encoder unless told otherwise, so every sting was
+        # a 192 kHz file at roughly 180 kbit/s. Neither shows up as a fault:
+        # the clips sound right, the tests pass, and the folder is simply three
+        # times the size it should be.
+        "-vn", "-ar", "48000",
         "-af", filters, "-c:a", "libvorbis", "-q:a", "4", "-ac", "2",
         str(tmp),
     ], timeout=180)
