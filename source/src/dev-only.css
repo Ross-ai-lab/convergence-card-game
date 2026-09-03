@@ -250,6 +250,23 @@
   gap: 7px;
 }
 
+/* The result-screen jump. Its own block under the card actions, because it is
+   not an action ON the selected card the way "Give to my hand" is: the card is
+   only the champion the screen will name. */
+.developer-result {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(240, 199, 103, 0.2);
+}
+
+.developer-result-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
 .developer-primary {
   border-color: rgba(121, 198, 106, 0.82);
   background: linear-gradient(180deg, #b6f3ad, #438f58);

@@ -228,30 +228,36 @@ check(
 await page.locator(".mulligan-panel button.primary").click();
 await page.locator(".mulligan-panel").waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
 
+// CLICK, never hover (owner's ruling, 2 September 2026). This check waited a
+// second on a hover until 3 September 2026, which is the behaviour that ruling
+// removed: it had been failing against a build doing exactly what it was told
+// to do, and a check nobody can pass is a check nobody reads.
 const enemyPortrait = page.locator(".enemy-hero-wrap .hero-plate.enemy");
+const enemyPowerStyle = () =>
+  page.locator(".enemy-power-card").evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { opacity: style.opacity, visibility: style.visibility };
+  });
 await enemyPortrait.hover({ timeout: 5000 });
-await page.waitForTimeout(400);
-const enemyPowerEarly = await page.locator(".enemy-power-card").evaluate((element) => {
-  const style = getComputedStyle(element);
-  return { opacity: style.opacity, visibility: style.visibility };
-});
-// 1400, not 900. The popup waits 1s and then fades over 160ms, so sampling at
-// 400 + 900 left 140ms of margin — and `hover()` resolves a beat before the
-// browser applies `:hover`, so the sample kept landing mid-fade and the check
-// failed on a build that was working (measured 0.71, 0.90, 0.95 on three
-// consecutive runs). The claim is unchanged: hidden shortly after the pointer
-// arrives, fully shown once the deliberate one-second wait is over.
 await page.waitForTimeout(1400);
-const enemyPowerLate = await page.locator(".enemy-power-card").evaluate((element) => {
-  const style = getComputedStyle(element);
-  return { opacity: style.opacity, visibility: style.visibility };
-});
+const enemyPowerHovered = await enemyPowerStyle();
+// `force`, because the plate carries `aria-disabled` while the core cannot be
+// struck and Playwright refuses to click it. The toggle listens on the wrapper,
+// so the event lands where it is meant to either way.
+await enemyPortrait.click({ timeout: 5000, force: true });
+// The card fades in over 160ms; 500 clears it with room to spare.
+await page.waitForTimeout(500);
+const enemyPowerClicked = await enemyPowerStyle();
 check(
-  "enemy Hero Power popup waits 1 second",
-  enemyPowerEarly.visibility === "hidden" && enemyPowerEarly.opacity === "0" &&
-    enemyPowerLate.visibility === "visible" && enemyPowerLate.opacity === "1",
-  `early ${enemyPowerEarly.visibility}/${enemyPowerEarly.opacity}, late ${enemyPowerLate.visibility}/${enemyPowerLate.opacity}`,
+  "enemy Hero Power card opens on a click and ignores a hover",
+  enemyPowerHovered.visibility === "hidden" && enemyPowerHovered.opacity === "0" &&
+    enemyPowerClicked.visibility === "visible" && enemyPowerClicked.opacity === "1",
+  `hovered ${enemyPowerHovered.visibility}/${enemyPowerHovered.opacity}, clicked ${enemyPowerClicked.visibility}/${enemyPowerClicked.opacity}`,
 );
+// `force`, because the plate carries `aria-disabled` while the core cannot be
+// struck and Playwright refuses to click it. The toggle listens on the wrapper,
+// so the event lands where it is meant to either way.
+await enemyPortrait.click({ timeout: 5000, force: true }).catch(() => {});
 await page.mouse.move(0, 0);
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });

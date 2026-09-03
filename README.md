@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 175,476 bytes, roughly 44k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~57% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 179,963 bytes, roughly 45k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~56% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -62,6 +62,7 @@
   - [The hand grows as one, and the win screen never scrolls](#the-hand-grows-as-one-and-the-win-screen-never-scrolls)
   - [Three things the board now says out loud](#three-things-the-board-now-says-out-loud)
   - [Developer tools can arm the enemy](#developer-tools-can-arm-the-enemy)
+  - [Developer tools can jump to the result screen](#developer-tools-can-jump-to-the-result-screen)
   - [Visual design changes require close-up and full-screen QA](#visual-design-changes-require-close-up-and-full-screen-qa)
   - [Title-menu design QA record](#title-menu-design-qa-record)
 - [The rarity shine](#the-rarity-shine)
@@ -511,6 +512,27 @@ note that a card dealing itself onto the table as an empty black frame is the re
 Rows are balanced by an explicit width rather than left to wrap, because six cards wrapping naturally
 strand one under a row of five.
 
+**THE PACK NEVER SCROLLS. Every card in it is on screen at once.** Owner's ruling, 3 September 2026.
+It used to scroll at fifteen, which put a third of the reward below a fold that nothing on the screen
+mentioned — and the one screen a player is certain to look at is the one that just paid them.
+
+The way it fits is a **CSS transform on the whole reveal, never a smaller card**. `.card-face` is
+`container-type: size` and silently drops its rules text below roughly 200px, so shrinking the cards
+to fit would hand over fifteen cards that no longer say what they do — the failure that is worse than
+scrolling, and the harder one to notice, because the screen still looks right. A transform changes
+what is PAINTED and not what is MEASURED: every card goes on laying itself out at 206px, the
+container query never sees the difference, and only the pixels get smaller.
+
+`packLayout` in `App.tsx` does the sums, and it is the one place the grid is decided. It tries every
+balanced split from `PACK_MAX_PER_ROW` upward and keeps the shape that needs the least shrinking,
+which is why fifteen cards land on three rows of five rather than two rows of eight — the flat shape
+is wider than any laptop and would scale everything down to fit a row nobody asked for. Ties go to
+the fewest rows. The height it measures against is READ off the laid-out wrapper (`.pack-scroll` is
+the stage's one flexible child, so what the kicker, the total and the Collect button leave over is
+exactly its height) rather than estimated from a constant; `PACK_STAGE_RESERVE` is the first-frame
+fallback only. Measured: fifteen cards render at 0.81 scale in a 1440 × 900 window and at 0.53 in
+1024 × 640, with the rules text on every card and the Collect button in place at both.
+
 **The tally rides inside the Cards button** on the title screen, stacked under its label, and
 disappears once the roster is complete rather than reading 216 of 216 forever. It lived outside the
 button first and had to be nearly invisible there, because between two gold pills it read as a third
@@ -641,7 +663,7 @@ legal moves with every invariant armed and takes half a minute.
 
 After changing the **How to play** guide, run `node scripts/shoot-rules.mjs http://localhost:5177` against a running dev server. It starts a duel, answers the Hero Power offer, opens the guide, and walks the panel down in overlapping screen-height steps into `.preview/rules/`, plus one full-height capture. That step exists because the guide is roughly 2,500 pixels of content inside a 600-pixel window: a single screenshot photographs the first quarter of it and proves nothing about the rest, and no other harness opens the panel at all.
 
-To look at the card pack or the gallery's locked state, run `node scripts/shoot-pack.mjs http://localhost:5177 hard` with the dev server up. It clears the browser's stored progress so the pool really is the starting 50, photographs the gallery locked, the "?" panel and both Collection filters, then ends a duel on purpose through the dev `setCore` hook and walks the pack open one strike at a time. The last argument picks the opponent and therefore the pack size, straight off `UNLOCK_REWARD`: `easy` for five cards, `normal` for ten, `hard` for fifteen — always shoot `hard` after any layout change, because fifteen is the size that has to wrap onto three rows and scroll. It is also the size that caught this: the reveal was built when the top reward was ten, and at fifteen it overflowed the veil and carried the Collect button off the bottom of the screen, leaving a won duel with no way to dismiss its own reward. If the reward table changes again, re-shoot the largest one. `setCore` does not end the duel by itself; the engine's own win check does, so the record, the reward and the pack all run the path a real duel takes.
+To look at the card pack or the gallery's locked state, run `node scripts/shoot-pack.mjs http://localhost:5177 hard` with the dev server up. It clears the browser's stored progress so the pool really is the starting 50, photographs the gallery locked, the "?" panel and both Collection filters, then ends a duel on purpose through the dev `setCore` hook and walks the pack open one strike at a time. It strikes until the box GIVES WAY rather than a fixed number of times: it clicked three, the pack has needed five since the strike animation was rebuilt, and the script sat photographing a sealed box and then timed out waiting for a Collect button that could not appear. The last argument picks the opponent and therefore the pack size, straight off `UNLOCK_REWARD`: `easy` for five cards, `normal` for ten, `hard` for fifteen — always shoot `hard` after any layout change, because fifteen is the size that has to wrap onto three rows and be scaled down to fit one screen. It is also the size that caught this: the reveal was built when the top reward was ten, and at fifteen it overflowed the veil and carried the Collect button off the bottom of the screen, leaving a won duel with no way to dismiss its own reward. If the reward table changes again, re-shoot the largest one. `setCore` does not end the duel by itself; the engine's own win check does, so the record, the reward and the pack all run the path a real duel takes.
 
 To look at a specific card after changing its text, stats or art, run `node scripts/shoot-card.mjs "Kaku Kaioh"` with any number of card names or ids. **Relics work here too** — they did not until 23 August 2026, because the script read `cards.csv` alone and answered "matches no card" for a fifth of the printed roster. They also cannot be placed, since `__debug.place` refuses a non-minion, so a relic is dealt into the hand and cloned from there instead. It starts and stops its own dev server, deals itself each card through the `window.__debug` hook, and writes a full-frame PNG per card into `.preview/cards/`. Call it with `node` rather than `npm run` whenever a name contains a space, because npm on Windows strips the quotes; the `npm run shoot:card` alias is for the no-argument whole-roster run. The capture proves content — name, cost, rules text, stats, rails, origin, art — and deliberately not layout at play size, since the face is enlarged to fill the frame and `.card-face` is `container-type: size`. It photographs the board variant, which prints no flavour line. Gem and text collisions at real hand and board sizes stay the job of `npm run check:cardface`.
 
@@ -974,14 +996,22 @@ to survive being read as a plain string by the tooltip and as rich text by the g
   on the body it has no ancestor left to be trapped by. Its background is a FLAT colour, not 98%
   alpha: two per cent of transparency is invisible on a flat panel and very visible over artwork.
 - **Resting on a card in hand for two seconds explains its keywords too.** Built 3 September 2026.
-  The panel sits ABOVE the card, hanging over its right-hand side, and lists every printed keyword the
-  glossary knows in the order the card prints them. Above rather than beside: beside meant sitting on
+  The panel sits ABOVE the card, hanging over its right-hand side, and lists every glossary word the
+  card prints, in the order it prints them. Above rather than beside: beside meant sitting on
   the card it was explaining, or on its neighbour in the fan, and the empty board over the hand is the
   one place with room. `KeywordPopover` takes an `above` flag for this, which forces the placement
   instead of only flipping when it runs out of space below. `HAND_KEYWORD_DELAY_MS` is 2000, not the ordinary hover delay:
   sweeping the fan to read it must never fire a panel, and a card whose keywords you want explained is
-  one you have stopped on. A card with no keywords arms nothing, and relics never arm it at all —
-  their whole text is the effect, already on the face at readable size.
+  one you have stopped on. A card printing no glossary word arms nothing.
+- **It reads the RULES TEXT, not only the keywords column, and it runs for relics.** Fixed
+  3 September 2026, and both halves were the same mistake — asking the CSV which words a card prints
+  instead of asking the card. `Battlecry` is written in the effect line and is in no card's keywords
+  column, so the panel that exists to explain a card's timing had never once explained the commonest
+  timing word in the game. Relics carry no keywords column at all and so armed nothing, while a relic
+  is ALL rules text. `handKeywordEntriesFor` in `App.tsx` scans the effect with `splitOnKeywords` —
+  the same longest-match-first pass the gallery's clickable words use, so a definition cannot be
+  offered by one surface and missed by the other — then appends any column keyword the text never
+  mentioned, and dedupes by entry so `Freeze` and `Frozen` on one card are one line.
 
 ### Hovering a minion shows what it is reaching
 
@@ -1085,7 +1115,11 @@ appearing over the thing the player was trying to look at.
 - **The enemy Hero Power card opens on a CLICK, never a hover.** It used to appear
   after a one-second hover, which meant it opened whenever the pointer crossed the
   top strip on its way somewhere else, and covered the enemy board while it was
-  there. Any action closes it again.
+  there. Any action closes it again. `check:ui` went on asserting the one-second
+  hover until 3 September 2026 and failed on every run against a build doing
+  exactly what the ruling asked; it now hovers, checks that nothing opens, clicks,
+  and checks that it does. The click is forced, because the plate carries
+  `aria-disabled` whenever the core cannot be struck.
 - **A hand revealed by The Watcher reads instantly and says nothing twice.** Those
   cards are 25px wide and unreadable without the preview panel, so the hover delay
   is skipped for them (`previewCard(..., instant)`); the native tooltips on the
@@ -1098,6 +1132,29 @@ appearing over the thing the player was trying to look at.
 developer panel. Testing a relic used to mean testing only what it does FOR you,
 and a good half of the relic pool is interesting precisely because of what it does
 TO you. `developerEquipRelic` already took an owner; only the button was missing.
+
+### Developer tools can jump to the result screen
+
+`I win`, `Enemy wins` and `Draw` sit under the selected card in the developer
+panel, and each opens the result screen with that card as the champion. Built
+3 September 2026, for the same reason as the pack buttons: the screen was
+reachable only by playing a duel to its end, and to a SPECIFIC end, since which
+card it names is decided by who dealt the most damage over the whole duel. The
+title, the rays, the hero strip, the full card face and the damage line were
+therefore all judged from memory of the last real duel that happened to produce
+one.
+
+**Nothing is recorded, and the log says so.** `developerShowResult` claims
+`duelRecorded` BEFORE it changes the phase, so the effect that writes the record,
+pays the pack and clears the save sees a duel already dealt with and stands down —
+claiming it afterwards would be too late, because that effect fires on the phase.
+It writes one `damageTally` entry the way the engine writes them, keyed by
+instance id and owned by the winner, rather than teaching `GameOver` a second way
+to be told about a card. The damage figure is invented, and it is the only
+invented number on that screen.
+
+The buttons sit outside the panel's title/duel split, because the result screen is
+no more part of a duel than the pack screen is.
 
 ### Visual design changes require close-up and full-screen QA
 

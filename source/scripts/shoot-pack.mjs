@@ -114,12 +114,20 @@ await page.locator('[data-hero="1"]').first().click();
 await page.locator(".pack-veil").waitFor({ state: "visible", timeout: 12000 });
 await shoot("05-pack-sealed", 900);
 
-await page.locator(".pack-box").click({ force: true });
-await shoot("06-pack-hit-1", 420);
-await page.locator(".pack-box").click({ force: true });
-await shoot("07-pack-hit-2", 420);
-await page.locator(".pack-box").click({ force: true });
-await shoot("08-pack-burst", 500);
+// Struck until it GIVES WAY, rather than a fixed three times. It was three, and
+// the pack has taken five hits since the strike animation was rebuilt: the
+// script went on photographing a sealed box and then timed out waiting for a
+// Collect button that could not appear. A loop cannot go stale that way.
+for (let hit = 1; hit <= 10; hit += 1) {
+  // A charged pack is already on its way open and detaches a beat later, so
+  // clicking it again races the burst rather than adding a hit.
+  const box = page.locator(".pack-box:not(.is-charged)");
+  if (!(await box.isVisible().catch(() => false))) break;
+  await box.click({ force: true, timeout: 4000 }).catch(() => {});
+  if (hit <= 2) await shoot(`0${hit + 5}-pack-hit-${hit}`, 420);
+  else await page.waitForTimeout(420);
+}
+await shoot("08-pack-burst", 900);
 await shoot("09-pack-dealing", 700);
 await page.locator(".pack-collect:not([disabled])").waitFor({ state: "visible", timeout: 12000 });
 await shoot("10-pack-open", 400);

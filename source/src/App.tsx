@@ -307,6 +307,17 @@ const HEAVY_LANDING_MAX_COST = 10;
 const HAND_KEYWORD_DELAY_MS = 2000;
 
 /**
+ * The made-up damage tally behind the developer result screen.
+ *
+ * A tally entry needs an instance id and a number, and neither exists when no
+ * duel was played. The id is spelled out rather than random so a screenshot of
+ * that screen is reproducible, and the damage is a flat figure because there is
+ * nothing to derive it from — see `developerShowResult`.
+ */
+const DEVELOPER_MVP_INSTANCE = "developer-mvp";
+const DEVELOPER_MVP_DAMAGE = 42;
+
+/**
  * The glossary entries for a card's printed keywords, in the card's own order.
  *
  * Matched case-insensitively against every spelling the glossary knows, so
@@ -319,6 +330,35 @@ function keywordEntriesFor(keywords: readonly string[]): KeywordEntry[] {
     const hit = KEYWORD_LOOKUP.find(({ match }) => match.toLowerCase() === keyword.toLowerCase());
     if (hit && !found.includes(hit.entry)) found.push(hit.entry);
   }
+  return found;
+}
+
+/**
+ * Every glossary word a card puts in front of the player, in printed order.
+ *
+ * THE RULES TEXT IS SCANNED, not only the keywords column, and relics are
+ * scanned as well. The column-only version missed the word players ask about
+ * most: `Battlecry` is written in the effect line and is in no card's keywords
+ * column, so the one panel that exists to explain a card's timing never once
+ * explained it. Relics printed no column at all and so armed nothing, while
+ * their whole card is rules text.
+ *
+ * `splitOnKeywords` is the scan — the same pass the gallery's clickable words
+ * use, longest match first and word boundaries respected — so a definition can
+ * never be offered by one surface and missed by the other. The text comes first
+ * because it is the card's own order; a keyword carried only in the column, with
+ * no mention in the text, is appended after it. Deduped by entry, so `Freeze`
+ * and `Frozen` on one card are one line.
+ */
+function handKeywordEntriesFor(card: PlayableCard): KeywordEntry[] {
+  const found: KeywordEntry[] = [];
+  const add = (entry: KeywordEntry) => {
+    if (!found.includes(entry)) found.push(entry);
+  };
+  for (const piece of splitOnKeywords(card.effect ?? "")) {
+    if (piece.entry) add(piece.entry);
+  }
+  for (const entry of keywordEntriesFor(isMinionCard(card) ? card.keywords : [])) add(entry);
   return found;
 }
 
@@ -1839,6 +1879,64 @@ export default function App() {
     );
   }
 
+  /**
+   * Jumps straight to the result screen, with a chosen winner and a chosen MVP.
+   *
+   * The same reasoning as the pack buttons above, for the other screen a duel
+   * has to be finished to see: the result screen is the winner's title, the
+   * rays, the champion's full card face and its damage line, and every one of
+   * them used to need a real duel played to its end — and a SPECIFIC end, since
+   * which card it names is decided by who dealt the most damage.
+   *
+   * NOTHING IS RECORDED. `duelRecorded` is claimed before the phase changes, so
+   * the effect that writes the record, pays the pack and clears the save sees a
+   * duel that has already been dealt with and stands down. The log says so too,
+   * because a result screen that looks exactly like a real one is the one place
+   * a developer shortcut could be mistaken for a win.
+   *
+   * The tally is written the way the engine writes it — one entry, keyed by
+   * instance id, owned by the winner — rather than by teaching `GameOver` a
+   * second way to be told about a card. Its damage figure is invented, and it is
+   * the only invented number on the screen.
+   */
+  function developerShowResult(winner: PlayerId | "draw", cardId: string) {
+    const card = library[cardId];
+    // Claimed BEFORE the state change, because the recording effect fires on the
+    // phase and would otherwise have already run by the time this returns.
+    duelRecorded.current = true;
+    setDeveloperDuelActive(true);
+    setDeveloperToolsOpen(false);
+    setScreen("playing");
+    setDuelIntro(null);
+    const mvpOwner: PlayerId = winner === "draw" ? viewerId : winner;
+    const tally: Record<string, DamageTallyEntry> = card
+      ? {
+          [DEVELOPER_MVP_INSTANCE]: {
+            instanceId: DEVELOPER_MVP_INSTANCE,
+            cardId: card.id,
+            name: card.name,
+            art: card.art,
+            owner: mvpOwner,
+            damage: DEVELOPER_MVP_DAMAGE,
+          },
+        }
+      : {};
+    setGame((current) => ({ ...current, phase: "gameOver", winner, damageTally: tally }));
+    const winnerLabel =
+      winner === "draw" ? "a draw" : winner === viewerId ? "your win" : `${game.players[winner].name}'s win`;
+    setEvents((items) =>
+      [
+        ...items,
+        {
+          kind: "info" as const,
+          text: `Developer mode opened the result screen on ${winnerLabel}${
+            card ? `, with ${card.name} as the champion` : ""
+          }. Nothing was recorded: no duel, no record line, no pack.`,
+        },
+      ].slice(-EVENT_LOG_LIMIT),
+    );
+  }
+
   function developerClearBoard(owner: PlayerId) {
     setDeveloperDuelActive(true);
     setGame((current) => {
@@ -1975,18 +2073,15 @@ export default function App() {
   /**
    * Arms the two-second keyword panel for one card in hand.
    *
-   * Reads the card's PRINTED keywords, in the order the card prints them, and
-   * looks each one up in the one glossary the How to play screen also renders
-   * from. A card with no keywords arms nothing, so most cards never show a
+   * Reads everything the card PRINTS, in the order it prints it, and looks each
+   * word up in the one glossary the How to play screen also renders from. A card
+   * with no glossary word on it arms nothing, so plenty of cards never show a
    * panel at all — which is what keeps it from becoming wallpaper.
    */
   function armHandKeywords(card: PlayableCard | undefined, el: HTMLElement) {
     clearHandKeywords();
     if (!card || drag?.active) return;
-    // Relics print no keywords column at all, so they never arm a panel — which
-    // is right: their whole text is the effect, and the effect is already on the
-    // face at readable size.
-    const entries = keywordEntriesFor(isMinionCard(card) ? card.keywords : []);
+    const entries = handKeywordEntriesFor(card);
     if (entries.length === 0) return;
     handKeywordTimer.current = window.setTimeout(() => {
       handKeywordTimer.current = null;
@@ -3060,6 +3155,7 @@ export default function App() {
           onEquipRelic={developerEquipRelic}
           onClearBoard={developerClearBoard}
           onOpenPack={developerOpenPack}
+          onShowResult={developerShowResult}
           onRestart={restart}
           onTestCard={(cardId) => beginDuel({ kind: "bot", skill: "easy" }, { testCardId: cardId })}
         />
@@ -5535,37 +5631,69 @@ const PACK_CRACKS = [
 /** Card width and gap from `.pack-card` / `.pack-reveal`; keep the three in step. */
 const PACK_CARD_WIDTH = 206;
 const PACK_CARD_GAP = 14;
+/** The card's own 750 × 1050 shape at the layout width above. */
+const PACK_CARD_HEIGHT = (PACK_CARD_WIDTH * 1050) / 750;
 /** The widest a row is allowed to read as one row rather than as a wall. */
 const PACK_MAX_PER_ROW = 5;
-
 /**
- * How many cards sit in one row of the reveal.
+ * Everything on the pack stage that is not the reveal — the kicker, the running
+ * total, the Collect button and the gaps between them.
  *
- * Two rules pull against each other. Rows must be BALANCED — six cards left to
- * wrap on their own gave a row of five with one stranded underneath, which reads
- * as a mistake, while three and three reads as a hand. And a card may never be
- * narrower than 206px, which is the floor where its rules text is still
- * readable, so the cards cannot shrink to make a wide row fit.
- *
- * The row COUNT therefore grows instead. The layout used to assume two rows was
- * always enough, and beating the Ascendant pays FIFTEEN cards: eight to a row,
- * 1,746px, wider than any laptop. The grid overflowed the veil, carried the
- * Collect button off the bottom of the screen, and left the reward impossible to
- * dismiss. Three rows of five fit, and the reveal scrolls when even that is
- * taller than the window.
+ * Only a FALLBACK, used for the first frame before the reveal's own box has been
+ * measured. The real figure is read off the laid-out wrapper, because a constant
+ * here goes quietly stale the moment a font or a gap on that stage changes, and
+ * the way it fails is a pack that scrolls again.
  */
-function packColumns(count: number, viewportWidth: number): number {
-  const rows = Math.max(1, Math.ceil(count / PACK_MAX_PER_ROW));
-  const preferred = Math.ceil(Math.max(1, count) / rows);
-  const step = PACK_CARD_WIDTH + PACK_CARD_GAP;
-  // `96vw` is the reveal's own width cap in App.css; keep the two in step.
-  const affordable = Math.max(1, Math.floor((viewportWidth * 0.96 + PACK_CARD_GAP) / step));
-  return Math.max(1, Math.min(preferred, affordable));
+const PACK_STAGE_RESERVE = 210;
+
+interface PackLayout {
+  columns: number;
+  rows: number;
+  /** The reveal's LAYOUT size, always at full card width. */
+  width: number;
+  height: number;
+  /** What the whole reveal is rendered at, so it fits without scrolling. */
+  scale: number;
 }
 
-/** How wide the reveal must be to hold one row of `columns` cards. */
-function packRowWidth(columns: number): number {
-  return columns * PACK_CARD_WIDTH + (columns - 1) * PACK_CARD_GAP;
+/**
+ * How the reveal is shaped, and how far down it is rendered.
+ *
+ * Three rules pull against each other. Rows must be BALANCED — six cards left to
+ * wrap on their own gave a row of five with one stranded underneath, which reads
+ * as a mistake, while three and three reads as a hand. The whole pack must fit
+ * on one screen, because a reward that scrolls hides half of itself behind a
+ * gesture nobody is told about. And the card may never be LAID OUT narrower than
+ * 206px: `.card-face` is `container-type: size` and drops its rules text below
+ * roughly 200px, so a pack of cards nobody can read is the one failure worse
+ * than scrolling.
+ *
+ * A CSS transform is what settles all three. The cards keep laying out at 206px,
+ * so the face still prints everything it prints, and the whole grid is then
+ * drawn smaller — a transform changes what is painted and not what is measured,
+ * so the container query never sees it. The grid shape is chosen by trying every
+ * balanced split and keeping the one that needs the least shrinking; fifteen
+ * cards land on three rows of five, and a short window simply renders that same
+ * grid smaller instead of hiding its last row.
+ */
+function packLayout(count: number, viewportWidth: number, availableHeight: number): PackLayout {
+  const cards = Math.max(1, count);
+  // `96vw` and the 1130px cap are the wrapper's own width in App.css; keep them
+  // in step.
+  const availableWidth = Math.max(160, Math.min(1130, viewportWidth * 0.96));
+  const usableHeight = Math.max(160, availableHeight);
+  let best: PackLayout | null = null;
+  for (let split = Math.max(1, Math.ceil(cards / PACK_MAX_PER_ROW)); split <= cards; split += 1) {
+    const columns = Math.ceil(cards / split);
+    const rows = Math.ceil(cards / columns);
+    const width = columns * PACK_CARD_WIDTH + (columns - 1) * PACK_CARD_GAP;
+    const height = rows * PACK_CARD_HEIGHT + (rows - 1) * PACK_CARD_GAP;
+    const scale = Math.min(1, availableWidth / width, usableHeight / height);
+    // The epsilon keeps the FEWEST rows on a tie: two rows and three rows often
+    // fit identically, and the flatter one reads as a hand.
+    if (!best || scale > best.scale + 0.001) best = { columns, rows, width, height, scale };
+  }
+  return best ?? { columns: 1, rows: 1, width: PACK_CARD_WIDTH, height: PACK_CARD_HEIGHT, scale: 1 };
 }
 
 function CardPack({
@@ -5604,11 +5732,35 @@ function CardPack({
   // window and re-read when that changes. A pack is on screen for a few seconds,
   // which makes one listener cheap and a stale layout expensive.
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
+  const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
   useEffect(() => {
-    const onResize = () => setViewportWidth(window.innerWidth);
+    const onResize = () => {
+      setViewportWidth(window.innerWidth);
+      setViewportHeight(window.innerHeight);
+    };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+  /**
+   * The height the reveal is actually allowed, MEASURED rather than assumed.
+   *
+   * The wrapper is the one flexible child of the stage, so whatever the kicker,
+   * the total and the Collect button leave over is exactly its height — and
+   * reading it beats guessing it, because the guess is what goes stale. There is
+   * no feedback loop: the reveal is scaled by a transform, which takes no part
+   * in layout, so the box being measured never moves because of what is measured.
+   */
+  const revealBox = useRef<HTMLDivElement | null>(null);
+  const [measuredHeight, setMeasuredHeight] = useState(0);
+  useEffect(() => {
+    const node = revealBox.current;
+    if (!node) return;
+    setMeasuredHeight(node.clientHeight);
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => setMeasuredHeight(node.clientHeight));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [opened]);
   // Sorted so the rarest and dearest card is the last one to land. What the pack
   // CONTAINS is already settled by the unlock order; this only decides the order
   // they arrive in, so it cannot bias the reward.
@@ -5666,6 +5818,12 @@ function CardPack({
   }
 
   const allDealt = opened && dealt >= faces.length;
+  const layout = packLayout(
+    faces.length,
+    viewportWidth,
+    // The fallback is the first frame only, before the wrapper exists to measure.
+    measuredHeight || Math.min(viewportHeight * 0.94, viewportHeight - 40) - PACK_STAGE_RESERVE,
+  );
 
   return (
     <div className={opened ? "pack-veil is-open" : "pack-veil"}>
@@ -5743,10 +5901,19 @@ function CardPack({
                 which reads as a mistake; three and three reads as a hand. The
                 width is what does it, because flex-wrap has no notion of an
                 even split. */}
-            <div className="pack-scroll">
+            <div className="pack-scroll" ref={revealBox}>
+              {/* Laid out at full card width and DRAWN smaller. The width and
+                  height below are the layout the faces measure themselves
+                  against — 206px a card, above the floor where `.card-face`
+                  drops its rules text — and the transform is what makes fifteen
+                  of them fit a window that has room for ten. */}
               <div
                 className="pack-reveal"
-                style={{ maxWidth: `min(${packRowWidth(packColumns(faces.length, viewportWidth))}px, 96vw)` }}
+                style={{
+                  width: `${layout.width}px`,
+                  height: `${layout.height}px`,
+                  transform: layout.scale < 1 ? `scale(${layout.scale})` : undefined,
+                }}
               >
                 {faces.slice(0, dealt).map((face, index) => (
                   <div className="pack-card" key={`${face.name}-${index}`}>
@@ -5839,6 +6006,7 @@ function DeveloperTools({
   onSetMana,
   onSetCore,
   onOpenPack,
+  onShowResult,
   onGiveCard,
   onPlaceCard,
   onEquipRelic,
@@ -5855,6 +6023,7 @@ function DeveloperTools({
   onSetMana: () => void;
   onSetCore: (owner: PlayerId, value: number) => void;
   onOpenPack: (size: number) => void;
+  onShowResult: (winner: PlayerId | "draw", cardId: string) => void;
   onGiveCard: (cardId: string, owner: PlayerId) => void;
   onPlaceCard: (cardId: string, owner: PlayerId) => void;
   onEquipRelic: (cardId: string, owner: PlayerId) => void;
@@ -5996,6 +6165,40 @@ function DeveloperTools({
                     )}
                   </div>
                 )}
+                {/* OUTSIDE the title/duel split, like the pack buttons above:
+                    the result screen is not part of a duel either, and it is
+                    reachable normally only by playing one to a particular end.
+                    The champion is whichever card is selected here, so this
+                    needs no second card picker. */}
+                <div className="developer-result">
+                  <span className="developer-kicker">Result screen, this card as champion</span>
+                  <div className="developer-result-actions">
+                    <button
+                      type="button"
+                      className="developer-secondary"
+                      onClick={() => onShowResult(viewerId, selected.id)}
+                      title="Opens the result screen only. Nothing is recorded."
+                    >
+                      I win
+                    </button>
+                    <button
+                      type="button"
+                      className="developer-secondary"
+                      onClick={() => onShowResult(otherId, selected.id)}
+                      title="Opens the result screen only. Nothing is recorded."
+                    >
+                      Enemy wins
+                    </button>
+                    <button
+                      type="button"
+                      className="developer-secondary"
+                      onClick={() => onShowResult("draw", selected.id)}
+                      title="Opens the result screen only. Nothing is recorded."
+                    >
+                      Draw
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ) : <p className="developer-empty">No cards match this search.</p>}

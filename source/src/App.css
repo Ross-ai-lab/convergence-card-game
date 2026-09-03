@@ -6857,7 +6857,14 @@ button:disabled {
    board-minion layout below roughly 200px and drops the rules text with it, so
    the first build's 150px cards showed six freshly unlocked cards with no way to
    see what any of them did — the one thing this screen exists to tell you. Ten
-   cards therefore wrap to two rows rather than shrinking to fit one. */
+   cards therefore wrap to two rows rather than shrinking to fit one.
+
+   The row is laid out at that full width and then SCALED DOWN by a transform
+   when the window is too small for it (`packLayout` in App.tsx does the sums).
+   A transform paints smaller without measuring smaller, so `.card-face` keeps
+   its 206px container and keeps printing its rules text; shrinking the cards
+   themselves would take the text away, which is the one thing this screen
+   exists to show. */
 .pack-reveal {
   position: relative;
   z-index: 2;
@@ -6867,26 +6874,29 @@ button:disabled {
   align-content: center;
   align-items: center;
   gap: 14px;
-  width: 100%;
+  flex: 0 0 auto;
   margin: 0 auto;
+  /* Scaled about its own centre, so the grid stays centred in the wrapper at
+     every size. */
+  transform-origin: center center;
 }
 
-/* The one element in the pack that is allowed to grow, and therefore the one
-   that has to be allowed to scroll. Everything else on the stage — the kicker,
-   the running total, Collect — keeps its place however many cards arrive.
+/* The one flexible child of the stage, and therefore the box that says how much
+   room the cards have. Everything else — the kicker, the running total, Collect
+   — keeps its place however many cards arrive, so whatever they leave over is
+   this element's height, and App.tsx MEASURES it rather than estimating it.
 
-   The scroll lives on this WRAPPER rather than on the row itself, so the
-   scrollbar eats from the wrapper's width instead of from the row's. Put it on
-   the row and a scrollbar appearing costs the row exactly enough width to drop
-   its last card onto a line of its own. */
+   IT NEVER SCROLLS (owner's ruling, 3 September 2026). It used to, which meant a
+   fifteen-card pack put a third of the reward below the fold behind a gesture
+   nothing on the screen mentioned. The reveal is scaled to fit instead. */
 .pack-scroll {
   display: flex;
   justify-content: center;
+  align-items: center;
   width: min(1130px, 96vw);
-  min-height: 300px;
-  flex: 0 1 auto;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .pack-card {
@@ -6933,18 +6943,10 @@ button:disabled {
   cursor: default;
 }
 
-/* A phone gets one or two cards per row and more of them. The card width does
-   NOT shrink here: 206px is the rules-text floor at every screen size, and a
-   narrow screen is not a reason to hand over cards you cannot read. */
+/* A phone gets one or two cards per row and more of them. The card is still LAID
+   OUT at 206px here — that is the rules-text floor at every screen size — and it
+   is the transform that makes the grid fit the phone. */
 @media (max-width: 620px) {
-  .pack-reveal {
-    gap: 10px;
-  }
-
-  .pack-scroll {
-    min-height: 240px;
-  }
-
   .pack-stage {
     gap: 10px;
   }
