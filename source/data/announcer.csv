@@ -18,6 +18,3 @@ silence,en-US-AndrewMultilingualNeural,-4%,-8Hz,herald,Silenced.
 freeze,en-US-AndrewMultilingualNeural,-6%,-6Hz,herald,Frozen solid.
 shield_break,en-US-AndrewMultilingualNeural,-2%,-4Hz,herald,The shield shatters.
 lethal_warning,en-US-AndrewMultilingualNeural,-10%,-14Hz,herald,One more blow ends this.
-victory,en-US-AndrewMultilingualNeural,-8%,-6Hz,herald,The rift closes. You stand alone.
-defeat,en-US-AndrewMultilingualNeural,-12%,-16Hz,herald,Your core collapses. The rift takes you.
-draw,en-US-AndrewMultilingualNeural,-10%,-12Hz,herald,Both cores fail. Nobody walks away.

@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 179,963 bytes, roughly 45k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~56% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 184,719 bytes, roughly 46k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~54% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -71,6 +71,7 @@
   - [Living rails, and tier-coloured names](#living-rails-and-tier-coloured-names)
   - [Proving it, because a screenshot cannot](#proving-it-because-a-screenshot-cannot)
 - [Assets and audio](#assets-and-audio)
+  - [The four moment pieces, and the endings the herald no longer narrates](#the-four-moment-pieces-and-the-endings-the-herald-no-longer-narrates)
   - [A heavy minion lands with a thud](#a-heavy-minion-lands-with-a-thud)
   - [Card art is WebP. Every file, no exceptions](#card-art-is-webp-every-file-no-exceptions)
   - [What the title screen is allowed to download](#what-the-title-screen-is-allowed-to-download)
@@ -973,6 +974,20 @@ it is the only figure on that screen that names a card rather than a number.
 - The card is **232px wide**, above the 200px floor below, because a trophy the player cannot read is
   a picture of a trophy. Three things were REMOVED with the parade: the "Core Collapsed" kicker, the
   two final-core numbers, and the survivor row. Owner's ruling.
+- **Two more went on 3 September 2026, both for saying a thing twice.** The wide champion strip across
+  the top was the MVP's own artwork at lower resolution with nothing printed on it, directly above the
+  card face carrying the same picture — it was already the first thing dropped on a short screen, and
+  it is gone at every height now. The line under the title — "The rift stabilizes after N turns", plus
+  whichever sentence about the practice bot applied — was the only prose on a screen whose whole job
+  is to name a winner and a card. What is left is the title, the champion, its damage, and the two
+  buttons.
+- **The god-rays turn inside a clipping frame**, and that is what makes the screen's own height
+  honest. A rotating square has to be about 1.8x the viewport or its corners sweep into view, and the
+  rays bought that with `inset: -40%` — leaving the overlay reporting 360px of content past its bottom
+  edge, clipped and unreachable, but enough to make every measurement of that screen say it overflowed.
+  **A transform does not fix this**, which is worth knowing before trying it: a scaled box contributes
+  its SCALED size to scrollable overflow, measured at the same 1302px against a 900px window. Only a
+  clipping ancestor stops it.
 
 ### Clicking a keyword on a card face explains it
 
@@ -1099,9 +1114,9 @@ appearing over the thing the player was trying to look at.
   680px and under that column runs edge to edge, so a pill pinned 62px off the
   bottom-left corner landed on top of whichever button happened to be there.
 - **The result screen fits on one screen.** `.overlay.result-overlay` does not
-  scroll at all, and under 720px of height the wide hero strip is dropped — it is
-  the same artwork as the MVP card directly beneath it, so on a short screen it is
-  the half already being shown somewhere else. The card itself never goes below
+  scroll at all. The wide hero strip used to be dropped under 720px of height to
+  make that fit; it was removed from the screen entirely on 3 September 2026, so
+  what tightens on a short screen now is the title, the spacing and the card. The card itself never goes below
   208px, which keeps it above the 200px floor where `CardFace` silently drops its
   rules text.
 
@@ -1317,6 +1332,48 @@ An unmet card in the gallery does NOT shine, and that is correct rather than a b
 
 `source/public/` is the runtime asset location. `materials/local-production/` contains optional rebuild tools for art, music, voice previews, and cast sheets; it is not required to play the included build. Large audio and card-production libraries are release downloads rather than normal clone requirements.
 
+### The four moment pieces, and the endings the herald no longer narrates
+
+**A pack opening and each of the three endings has its own piece of music.** Built 3 September 2026,
+owner's ruling, and it came with a deletion: the herald's spoken `victory`, `defeat` and `draw` lines
+are gone from `announcer.csv` and their clips are gone from the build. "Your core collapses. The rift
+takes you" is the one line a player hears on every duel they lose, and by the third loss it is the
+game talking over its own ending. Music says the same thing and does not wear out.
+
+| Cue | Source | Where it plays |
+|---|---|---|
+| `pack` | Christopher Tin — *Sogno di Volare* | The whole pack ceremony: five strikes, the burst, the deal |
+| `victory` | *One Piece* OST — Overtaken | The result screen, on a win |
+| `defeat` | *Naruto* OST — Sadness and Sorrow | The result screen, on a loss |
+| `draw` | *Attack on Titan* OST — Vogel im Käfig | Mutual annihilation |
+
+- **FOUND, not generated**, like every other piece of audio here — see the ruling under
+  [What the title screen is allowed to download](#what-the-title-screen-is-allowed-to-download). The
+  previous `victory` and `defeat` stings were generated locally, which is why they were the two files
+  this pass replaced rather than kept. `materials/local-production/asset-tools/fetch-screen-music.py`
+  is the front door: `--dry-run` searches and ranks candidates without downloading anything, the
+  chosen video ids live in `screen-music-picks.json` so a re-run fetches the same track, and the cut
+  itself reuses `build-card-stings.py`'s picker rather than owning a second one.
+- **A cue plays on the THEME bus, not on the bed's own gain node.** The bed is ducked underneath for
+  the cue's whole length, and a cue hanging off `musicGain` is ducked by its own duck: measured on the
+  master bus at **0.018** wired that way against **0.29–0.48** wired correctly, which is the difference
+  between "there is something playing" and music. Card themes had already solved this; cues now share
+  the solution.
+- **One at a time, and it leaves with its screen.** A second cue cuts the first, `stopCue` ends one
+  when its screen closes, and the ending waits for the pack to be collected — the pack sits above the
+  result screen, so the two would otherwise start together.
+- **`probeCue` and `probeBus` in the DEV hook are how any of this is checked.** `check:audio` probes
+  all four cues on the master bus, because a cue comes off disk and can fail its fetch or its decode
+  with every counter still reading healthy. `probeBus` measures whatever is sounding right now and
+  triggers nothing, which is the only way to prove the WIRING — that the pack screen really starts its
+  own music, and that the menu bed really comes back.
+
+**The menu bed comes back when you leave a finished duel, and for a while it did not.** Fixed
+3 September 2026. `toTitle` does not reset the game, so `phase` stays `gameOver` all the way back to
+the title screen; the music effect tested for that phase BEFORE it tested the screen, answered
+"a duel just ended, play nothing", and the title screen stayed silent until the tab was reloaded. The
+screen is asked first now. It was never a developer-tools bug — every route home was silent.
+
 ### A heavy minion lands with a thud
 
 **A minion costing 6 or more lands with a thud, and the thud SCALES with the cost.** Built
@@ -1469,7 +1526,9 @@ Card stings are the `c###.ogg` files and relic stings are the `r###.ogg` files i
 
 The complete original audio collection is the separate [Convergence-Audio-Tracks.7z release download](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z), because it is larger than a practical GitHub Pages site.
 
-Use the tools under `materials/local-production/asset-tools/` for production rebuilds. For audio changes, run the browser analyser check with `npm run check:audio`; a UI counter or a `musicPlaying` flag can say music is active while the browser’s audio graph is silent. Keep synthetic voices original and do not clone real actors.
+Use the tools under `materials/local-production/asset-tools/` for production rebuilds — including
+`fetch-screen-music.py`, which fetches and cuts the four moment pieces (see
+[The four moment pieces](#the-four-moment-pieces-and-the-endings-the-herald-no-longer-narrates)). For audio changes, run the browser analyser check with `npm run check:audio`; a UI counter or a `musicPlaying` flag can say music is active while the browser’s audio graph is silent. Keep synthetic voices original and do not clone real actors.
 
 Do not casually regenerate approved menu, battle, or tension music. Preserve the existing loudness, loop-seam, and energy checks when replacing them.
 

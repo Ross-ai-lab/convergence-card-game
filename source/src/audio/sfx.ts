@@ -80,14 +80,26 @@ const MUSIC_GAIN = 0.34;
  * the one players actually feel.
  */
 export type Track = "menu" | "battle" | "tension";
-type Sting = "victory" | "defeat";
+/**
+ * The four MOMENT pieces: the pack ceremony, and the three ways a duel ends.
+ *
+ * Each is a real piece of music cut from its source by
+ * `materials/local-production/asset-tools/fetch-screen-music.py`, not a
+ * generated sting — owner's ruling, 3 September 2026, in the same breath as
+ * retiring the herald's three spoken end-of-duel lines. A cue is a ONE-SHOT on
+ * the music bus: it never loops, only one plays at a time, and `stopCue` ends
+ * it when the screen it belongs to closes.
+ */
+export type Cue = "victory" | "defeat" | "draw" | "pack";
 
-const TRACK_URL: Record<Track | Sting, string[]> = {
+const TRACK_URL: Record<Track | Cue, string[]> = {
   menu: [`${import.meta.env.BASE_URL}audio/music/menu.ogg`],
   battle: [`${import.meta.env.BASE_URL}audio/music/battle.ogg`],
   tension: [`${import.meta.env.BASE_URL}audio/music/tension.ogg`],
   victory: [`${import.meta.env.BASE_URL}audio/music/victory.ogg`],
   defeat: [`${import.meta.env.BASE_URL}audio/music/defeat.ogg`],
+  draw: [`${import.meta.env.BASE_URL}audio/music/draw.ogg`],
+  pack: [`${import.meta.env.BASE_URL}audio/music/pack.ogg`],
 };
 /**
  * Two faders. The per-card voice lines were retired -- summoning a minion fired
@@ -139,6 +151,10 @@ const themeMisses = new Set<string>();
 let themeSource: AudioBufferSourceNode | null = null;
 /** Rises on every request so a slow decode can tell it has been superseded. */
 let themeToken = 0;
+/** The one-shot moment piece (see `playCue`), and the token that supersedes it. */
+let cueSource: AudioBufferSourceNode | null = null;
+let cueGain: GainNode | null = null;
+let cueToken = 0;
 let openingCueBuffer: AudioBuffer | null = null;
 let openingCueMiss = false;
 
@@ -808,20 +824,77 @@ export async function setTrack(track: Track | null): Promise<void> {
   }
 }
 
-/** A one-shot over the bed: the win and the loss each get their own. */
-export function playSting(name: Sting): void {
-  if (muted || !ctx || !musicGain) return;
+/**
+ * A one-shot piece over the bed: the pack ceremony and the three endings.
+ *
+ * On the MUSIC bus, so a player who turns music down is not sung at anyway, and
+ * ducking the bed for the cue's whole length rather than for a fixed few
+ * seconds — these are 16 to 22 seconds of real music, and the bed swelling back
+ * up underneath one is the fault that took a while to hear the first time it
+ * happened to card themes.
+ *
+ * Only one cue sounds at a time, and a second call cuts the first: an ending
+ * arriving over a pack that is still playing would be two pieces of music at
+ * once, which is the thing this whole layer exists to prevent.
+ */
+export function playCue(name: Cue): void {
+  if (muted || mix.music <= 0 || !ctx) return;
+  unlock();
+  const token = (cueToken += 1);
   void fetchTrack(TRACK_URL[name], false).then((buffer) => {
-    if (!buffer || !ctx || !musicGain || muted) return;
+    if (!buffer || !ctx || !themeBus || muted) return;
+    // Superseded while decoding.
+    if (token !== cueToken) return;
+    stopCue(true);
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     const gain = ctx.createGain();
-    gain.gain.value = 1.5;
+    gain.gain.value = 1;
     source.connect(gain);
-    gain.connect(musicGain);
-    duck(0.18, Math.min(6, buffer.duration));
+    // THE THEME BUS, not the bed's own gain node. A cue that hangs off
+    // `musicGain` is ducked by its own duck — the call below pulls that node
+    // down to a tenth for the whole clip, and the clip is on it. Card themes
+    // solved this before cues existed: they play on `themeBus`, which the music
+    // fader also governs, and duck the bed underneath. Measured on the master
+    // bus, moving the cues onto it took them from 0.018 to well clear of it.
+    gain.connect(themeBus);
+    duck(0.12, buffer.duration + 0.3);
     source.start();
+    cueSource = source;
+    cueGain = gain;
+    source.addEventListener("ended", () => {
+      if (cueSource === source) {
+        cueSource = null;
+        cueGain = null;
+      }
+    });
   });
+}
+
+/**
+ * Ends the cue that is playing, fading rather than cutting.
+ *
+ * `immediate` is for the swap inside `playCue` itself, where a half-second tail
+ * would overlap the piece replacing it.
+ */
+export function stopCue(immediate = false): void {
+  cueToken += 1;
+  const source = cueSource;
+  const gain = cueGain;
+  cueSource = null;
+  cueGain = null;
+  if (!source || !ctx) return;
+  const now = ctx.currentTime;
+  if (gain && !immediate) {
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(0.0001, now + 0.6);
+  }
+  try {
+    source.stop(immediate ? now : now + 0.65);
+  } catch {
+    // already finished
+  }
 }
 
 export async function startMusic(): Promise<void> {
@@ -1076,6 +1149,7 @@ export function setMuted(next: boolean): void {
   saveMuted(next);
   if (next) {
     stopCardTheme();
+    stopCue();
     stopMusic();
   } else {
     unlock();
@@ -1128,7 +1202,8 @@ export const sfx = {
   getMix,
   setBusLevel,
   setTrack,
-  playSting,
+  playCue,
+  stopCue,
 };
 
 if (import.meta.env.DEV) {
@@ -1225,6 +1300,29 @@ if (import.meta.env.DEV) {
       stopMusic();
       return { nominal, ducked, restored };
     },
+    /**
+     * The four moment pieces. Same shape as `probeCardTheme` and for the same
+     * reason: a cue comes off disk, so the fetch or the decode can fail with
+     * every counter still reading healthy, and only the bus can prove it sounded.
+     */
+    probeCue: async (name: Cue, ms = 2600) => {
+      stopMusic();
+      const before = getMix().music;
+      setBusLevel("music", 1);
+      const r = await probe(() => playCue(name), ms);
+      stopCue(true);
+      setBusLevel("music", before);
+      return { cue: name, ...r };
+    },
+    /**
+     * Whatever is sounding RIGHT NOW, triggering nothing.
+     *
+     * Every other probe starts the thing it measures, which proves the clip and
+     * the code path but never the wiring: that the pack screen actually starts
+     * its own music, and that pressing Menu actually brings the bed back. This
+     * one is for those questions, so it must not touch the state it is reading.
+     */
+    probeBus: async (ms = 1500) => probe(null, ms),
     probeTrack: async (track: Track, ms = 2200) => {
       await setTrack(track);
       const r = await probe(null, ms);

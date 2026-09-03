@@ -147,7 +147,11 @@ for (const tokenId of genericTokenIds) {
 // (owner ruling), so "mythic" is gone along with the rest of the summon lines.
 // `first_blood` was here and is gone — the line was deleted from the sheet and
 // its clip removed (owner ruling), so probing it would fail on a missing file.
-for (const clip of ["duel_begin", "core_low_them", "victory"]) {
+// "victory", "defeat" and "draw" are NOT in this list and their clips are gone
+// from the build: the herald no longer narrates the end of a duel (owner's
+// ruling, 3 September 2026) and each ending has a piece of music instead, probed
+// with the cues below.
+for (const clip of ["duel_begin", "core_low_them", "turn_you"]) {
   const result = await page.evaluate(async (name) => {
     const api = window.__sfx;
     api.stopMusic();
@@ -158,6 +162,14 @@ for (const clip of ["duel_begin", "core_low_them", "victory"]) {
     return { fired: stats.themesPlayed > before, last: stats.lastTheme };
   }, clip);
   check(`herald: ${clip}`, result.fired && result.last === `announcer/${clip}`, `last=${result.last}`);
+}
+
+// The four MOMENT pieces: the pack ceremony and the three endings. Each is an
+// independent ffmpeg cut of its own YouTube source, so any one of them could
+// have come out silent while the other three are fine.
+for (const cue of ["pack", "victory", "defeat", "draw"]) {
+  const result = await page.evaluate((name) => window.__sfx.probeCue(name, 2600), cue);
+  check(`cue: ${cue}`, result.peak > 0.02 && result.activeMs > 400, `peak ${result.peak}, ${result.activeMs}ms audible`);
 }
 
 // A COMPARATOR IS NOT ENOUGH, proven by it passing a bad seam.

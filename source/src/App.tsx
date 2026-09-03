@@ -830,12 +830,22 @@ export default function App() {
   const lowestCore = Math.min(game.players[0].health, game.players[1].health);
 
   useEffect(() => {
+    // THE SCREEN IS ASKED FIRST, and that ordering is the whole of a bug fixed
+    // 3 September 2026. A finished duel keeps `phase === "gameOver"` when the
+    // player takes the Menu button back to the title — nothing resets the game
+    // until they start another one — so a game-over test placed above this line
+    // answered for the title screen too, and the menu music never came back.
+    // Every route home was silent from the first duel until the tab was
+    // reloaded.
+    if (screen === "title") {
+      void sfx.setTrack("menu");
+      return;
+    }
     if (game.phase === "gameOver") {
       void sfx.setTrack(null);
       return;
     }
-    if (screen === "title") void sfx.setTrack("menu");
-    else void sfx.setTrack(lowestCore <= TENSION_CORE ? "tension" : "battle");
+    void sfx.setTrack(lowestCore <= TENSION_CORE ? "tension" : "battle");
   }, [screen, game.phase, lowestCore]);
 
   // Hotseat hands the screen to whoever's turn it is. Against the bot the screen
@@ -908,9 +918,20 @@ export default function App() {
       sfx.playAnnouncer(clip, delay);
     };
     if (game.phase === "gameOver") {
-      if (game.winner === "draw") say("draw", 1.1);
-      else if (game.winner === viewerId) say("victory", 1.1);
-      else say("defeat", 1.1);
+      // MUSIC, NOT A VOICE (owner's ruling, 3 September 2026). The herald used
+      // to narrate the ending — "your core collapses, the rift takes you" —
+      // which is the one line a player hears on every single duel they lose,
+      // and the third time is one too many. Each of the three endings now has
+      // its own piece of music instead. Fired HERE rather than at the killing
+      // blow, so the developer jump to the result screen scores itself too.
+      // The pack sits ABOVE the result screen and has music of its own, so the
+      // ending waits its turn: this fires again when the pack is collected,
+      // which is the moment the result screen is actually looked at.
+      if (pack) return;
+      if (said.has("ending")) return;
+      said.add("ending");
+      const lost = vsBot && game.winner === BOT_ID;
+      sfx.playCue(game.winner === "draw" ? "draw" : lost ? "defeat" : "victory");
       return;
     }
     // NO "FIRST BLOOD" LINE (owner ruling). It fired the moment either core took
@@ -923,7 +944,21 @@ export default function App() {
     const theirs = game.players[otherPlayer(viewerId)].health;
     if (theirs <= STARTING_CORE * 0.25) say("core_low_them", 0.6);
     if (mine <= STARTING_CORE * 0.25) say("core_low_you", 0.6);
-  }, [game, screen, viewerId]);
+  }, [game, screen, viewerId, vsBot, pack]);
+
+  /**
+   * The pack ceremony has its own music.
+   *
+   * It starts with the sealed box and ends when the pack is collected, rather
+   * than running to the end of the clip: the player decides how long they read
+   * their new cards for, and a piece still playing over the screen behind it
+   * would follow them out.
+   */
+  useEffect(() => {
+    if (!pack) return;
+    sfx.playCue("pack");
+    return () => sfx.stopCue();
+  }, [pack]);
   const viewer = game.players[viewerId];
 
   /**
@@ -1437,10 +1472,9 @@ export default function App() {
         setShaking(true);
         window.setTimeout(() => setShaking(false), 520);
         sfx.play(result.state.winner === "draw" ? "lose" : "win", 0.45);
-        // The fanfare is the transient; the sting is the music that follows it.
-        // Against the bot a loss really is a loss; in hotseat somebody always won.
-        const lost = vsBot && result.state.winner === BOT_ID;
-        sfx.playSting(lost || result.state.winner === "draw" ? "defeat" : "victory");
+        // The fanfare is the transient. The music that follows it is fired by
+        // the herald effect on the PHASE, not here, so the developer jump to
+        // the result screen gets the same ending piece a played duel does.
       }
       setHistory((items) => [game, ...items].slice(0, 10));
       setGame(result.state);
@@ -1554,6 +1588,9 @@ export default function App() {
     sfx.play("button");
     sfx.unlock();
     sfx.stopCardTheme();
+    // An ending piece is 16 seconds long, and leaving the screen it belongs to
+    // must take it with you rather than play it over the next one.
+    sfx.stopCue();
     clearSave();
     setTutorialActive(false);
     setTutorialCompleted(false);
@@ -1603,6 +1640,9 @@ export default function App() {
     sfx.play("button");
     sfx.unlock();
     sfx.stopCardTheme();
+    // An ending piece is 16 seconds long, and leaving the screen it belongs to
+    // must take it with you rather than play it over the next one.
+    sfx.stopCue();
     clearSave();
     setTutorialActive(false);
     setTutorialCompleted(false);
@@ -1649,6 +1689,9 @@ export default function App() {
     sfx.play("button");
     sfx.unlock();
     sfx.stopCardTheme();
+    // An ending piece is 16 seconds long, and leaving the screen it belongs to
+    // must take it with you rather than play it over the next one.
+    sfx.stopCue();
     clearSave();
     setTutorialActive(true);
     setTutorialCompleted(false);
@@ -1683,6 +1726,7 @@ export default function App() {
   function toTitle() {
     sfx.play("button");
     sfx.stopCardTheme();
+    sfx.stopCue();
     setDuelIntro(null);
     setTutorialActive(false);
     setTutorialCompleted(false);
@@ -3055,7 +3099,6 @@ export default function App() {
       {game.phase === "gameOver" ? (
         <GameOver
           game={game}
-          vsBot={vsBot}
           library={library}
           tutorial={tutorialActive}
           onRestart={tutorialActive ? beginTutorial : restart}
@@ -6212,14 +6255,12 @@ function DeveloperTools({
 
 function GameOver({
   game,
-  vsBot,
   library,
   tutorial = false,
   onRestart,
   onMenu,
 }: {
   game: GameState;
-  vsBot: boolean;
   /** So the MVP can be drawn as its real card face rather than as a thumbnail. */
   library: CardLibrary;
   tutorial?: boolean;
@@ -6254,33 +6295,33 @@ function GameOver({
             null,
           );
         })();
-  // The MVP's own artwork, or no picture at all. This used to fall back to the
-  // first card in PLAYER ONE'S HAND, which on a win by player two hung the
-  // loser's unplayed card over the victory screen as the trophy.
-  const bannerArt = mvp?.art;
   const mvpCard = mvp ? library[mvp.cardId] : undefined;
   const mvpOwner = mvp ? game.players[mvp.owner] : null;
-  const botLine = tutorial
-    ? "The tutorial is complete."
-    : vsBot
-      ? winner?.id === 1
-        ? "The practice bot takes it."
-        : "You beat the practice bot."
-      : null;
+  /*
+   * TWO THINGS WERE REMOVED FROM THIS SCREEN on 3 September 2026, owner's
+   * ruling, and both for the same reason: the screen was saying a thing twice.
+   *
+   * The wide champion strip was the MVP's own artwork, bled across the top —
+   * the same picture as the card face directly beneath it, at lower resolution
+   * and with nothing on it. It was already being dropped under 720px of height
+   * as the first thing to go; it is now gone at every height.
+   *
+   * The line under the title — "The rift stabilizes after N turns", plus
+   * whichever sentence about the practice bot applied — was the only prose on a
+   * screen whose whole job is to name a winner and a card.
+   */
   return (
     <div className={draw ? "overlay result-overlay draw" : "overlay result-overlay"}>
-      <div className="result-rays" aria-hidden="true" />
+      {/* The rays turn inside a CLIPPING FRAME. A rotating square has to be
+          about 1.8x the viewport or its corners sweep into view, and a box that
+          big — by inset or by transform, both count — is scrollable overflow the
+          overlay then reports forever. The frame is exactly viewport-sized and
+          clips, so the overlay measures what it can actually show. */}
+      <div className="result-rays-frame" aria-hidden="true">
+        <div className="result-rays" />
+      </div>
       <section className="result-panel grand">
-        {bannerArt && !draw ? (
-          <div className="result-hero" aria-hidden="true">
-            <img src={bannerArt} alt="" draggable={false} />
-          </div>
-        ) : null}
         <h2 className="result-title">{title}</h2>
-        <p className="result-sub">
-          The rift stabilizes after {game.turnNumber} turns.
-          {botLine ? ` ${botLine}` : ""}
-        </p>
         {mvp ? (
           <div className="result-mvp">
             <span className="result-mvp-kicker">
