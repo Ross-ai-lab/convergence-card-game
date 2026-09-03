@@ -1,4 +1,4 @@
-import type { GameEvent, GameState, RelicInstance } from "./engine/types";
+import type { EffectId, GameEvent, GameState, RelicInstance } from "./engine/types";
 import type { BotSkill } from "./engine/bot";
 
 /** How the duel is being played. Mirrors GameMode in screens/Screens.tsx. */
@@ -80,9 +80,17 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // invulnerability all belonged to cards the roster no longer carries, so nothing
 // could set them. A v25 save still holds the keys; the shape check below stopped
 // requiring them, and a save that keeps them is simply carrying dead weight.
-const SAVE_VERSION = 26;
+// v27: `copyRestoreEffectId` was REMOVED from MinionInstance along with All for
+// One's borrow-a-Battlecry effect, which was the only thing that ever set it.
+// A v26 save can hold a minion mid-copy — wearing a borrowed effect with its own
+// parked in that field — and this build has nothing left that would ever put the
+// real one back, so such a minion would wear the borrowed power for the rest of
+// the duel. The migration below hands it back before the field is dropped. That
+// is the whole reason for the bump: the field going missing is harmless, a
+// minion silently keeping somebody else's power is not.
+const SAVE_VERSION = 27;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v25";
+const LEGACY_SAVE_KEY = "convergence.save.v26";
 
 type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
 type LegacyGameState = Omit<GameState, "players"> & {
@@ -98,12 +106,27 @@ export interface SavedGame {
   savedAt: number;
 }
 
+/**
+ * How many duel events are kept — by the log drawer, and by the save.
+ *
+ * ONE number, and it lives here because the save is the tighter constraint: the
+ * drawer can hold whatever it likes in memory, while every event in this list is
+ * written to localStorage on each state change. It used to be 300 in the drawer
+ * and 60 here, so continuing a saved duel silently truncated its own history to
+ * the last few turns — the one moment a player is most likely to open the log.
+ *
+ * 300 short strings is a few tens of kilobytes against localStorage's megabytes,
+ * and a measured 23-turn self-play duel produces 169 events, so a whole duel
+ * fits.
+ */
+export const EVENT_LOG_LIMIT = 300;
+
 export function saveGame(game: GameState, events: GameEvent[], mode: SavedMode, now: number): void {
   try {
     const payload: SavedGame = {
       version: SAVE_VERSION,
       game,
-      events: events.slice(-60),
+      events: events.slice(-EVENT_LOG_LIMIT),
       mode,
       savedAt: now,
     };
@@ -218,7 +241,12 @@ function migrateLegacyMechanics(game: GameState): void {
         if (gainedId === "time_bomb_ongoing_5") gained.effectId = "time_bomb_destroy_all";
         if (gainedId === "attack_3x") gained.effectId = "flash_speed";
       }
-      if (minion.copyRestoreEffectId === undefined) minion.copyRestoreEffectId = null;
+      // Hand back an effect parked by the retired `copy_and_trigger`. A v26
+      // save is the last shape that could be mid-copy, and nothing in this build
+      // would ever restore it.
+      const parked = (minion as { copyRestoreEffectId?: EffectId | null }).copyRestoreEffectId;
+      if (parked) minion.effectId = parked;
+      delete (minion as { copyRestoreEffectId?: EffectId | null }).copyRestoreEffectId;
       if (minion.markedForDeathAtTurn === undefined) minion.markedForDeathAtTurn = null;
       if (minion.untargetableUntilTurn === undefined) minion.untargetableUntilTurn = null;
       if (minion.protectedByMeleoron === undefined) minion.protectedByMeleoron = null;

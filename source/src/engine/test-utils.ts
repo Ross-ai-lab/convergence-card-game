@@ -65,7 +65,6 @@ export function spawnTestMinion(
     gainedEffects: [],
     relicDiscoveryTurn: null,
     chainGrowthPending: false,
-    copyRestoreEffectId: null,
   };
   return { ...base, ...overrides };
 }

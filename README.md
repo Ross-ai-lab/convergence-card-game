@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 169,000 bytes, roughly 42k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~59% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 170,684 bytes, roughly 43k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~59% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -753,12 +753,24 @@ the mechanics behind them.
   so a power already on loan cannot be borrowed twice. The whole array is
   replaced each recompute, so a card that grants All for One an effect by some
   other route would lose it — nothing in the roster does that today.
-- **`copy_and_trigger` is still in the engine and no card prints it.** That is
-  deliberate: it is the only place a target choice is BUILT BY HAND rather than
-  offered through a prompt, and its guards (`copiedVictimIsLegalTarget`,
-  `copyRestoreEffectId`) are shared plumbing worth keeping tested. Its tests build
-  a one-off library rather than a card. Putting the effect back on a card is one
-  CSV line.
+- **`copy_and_trigger` is GONE**, deleted on 2 September 2026 with the card that
+  printed it. The effect, its targeting spec, `copiedVictimIsLegalTarget`,
+  `restoreCopiedEffect` and `MinionInstance.copyRestoreEffectId` all went with it,
+  along with the six tests that existed only to guard that one handoff. It was
+  the only place in the engine where a target choice was BUILT BY HAND instead of
+  offered through a prompt, and that hand-built choice was the upstream cause of
+  the worst invariant breach this project has had — see the pocket-room entry
+  under [The measured baseline](#the-measured-baseline-and-what-it-still-says),
+  which is history now rather than live machinery.
+  `printedEffectId` survives as a plain read of `effectId`: it is the one name
+  every "read another minion's power" site calls, so if a card ever wears a
+  temporary effect again there is exactly one place to teach about it.
+- **The death reactions read `hasEffect`, not `effectId`.** Xenomorph Queen's
+  brood, Gravelord Nito and John Wick all watch for deaths, and all three are
+  Passives — which in this game can be WORN as well as printed, by Meruem copying
+  a killed minion's persistent effects or by All for One wearing the enemy
+  board's. Comparing `effectId` meant a copied John Wick sat there doing nothing,
+  which is the one outcome a copy effect must never produce.
 - **Deep Sea King is a cost reduction, not a board effect.** `effectiveCardCost`
   is the only place it applies, and it reads BOTH boards, because a discount only
   your own Freeze could unlock would make the card a two-card combo rather than
@@ -962,7 +974,11 @@ rules it now obeys, each of which it broke until 2 September 2026:
   top of the list a player was scrolling precisely to find it in. A log that drops the middle of a
   story is worse than a short one, because nothing marks the gap. The buffer is now
   `EVENT_LOG_LIMIT` = 300; a measured 23-turn self-play duel produces 169 events, so the old 80 was
-  deleting the first half of a normal duel while it was still being played.
+  deleting the first half of a normal duel while it was still being played. **The constant lives in
+  `storage.ts`, not in `App.tsx`,** because the SAVE is the tighter constraint — every event in the
+  list is written to localStorage on each state change. It was two numbers for a while, 300 in the
+  drawer and 60 in the save, so continuing a saved duel silently truncated its own history to the
+  last few turns: the one moment a player is most likely to open the log.
 - **An action is logged BEFORE its consequences.** Playing a relic used to log the equip, the relic's
   own effect, and any card it drew, and only then "Player Two plays Poké Ball on Knight" — because
   `equipRelic` was called before the play event was pushed. Every other play in the game already had
@@ -1005,6 +1021,9 @@ appearing over the thing the player was trying to look at.
   per card — the fan overlaps its cards with negative margins, so scaling them
   individually pushes them through each other. Board minions KEEP their preview
   panel, because there is no room to enlarge a board in place.
+- **The player-count pill sits ABOVE the column of doors on a narrow screen.** At
+  680px and under that column runs edge to edge, so a pill pinned 62px off the
+  bottom-left corner landed on top of whichever button happened to be there.
 - **The result screen fits on one screen.** `.overlay.result-overlay` does not
   scroll at all, and under 720px of height the wide hero strip is dropped — it is
   the same artwork as the MVP card directly beneath it, so on a short screen it is
@@ -1411,14 +1430,12 @@ One is fixed; the other two are below. In the order they matter:
   copied Batman picks a victim and then a gadget, and a copied pocket room takes one minion from each
   side, where before the first prompt silently cancelled the whole effect.
 
-  Anything reading an effect OFF a minion must call `printedEffectId`, not `effectId`, or it copies a
-  power that is about to be handed back. `copy_and_trigger`, `copy_minion_effects` and `steal_passive`
-  all do.
-
-  Pinned by four tests in `src/engine/targeting.test.ts`, live-fired by restoring the old
-  unconditional handoff and watching them go red; one asserts an enemy-targeting copy still fires
-  normally, so it passes either way on purpose. Fuzz after the fix: **0 invariant breaches over 21,005
-  actions.**
+  **All of the above is HISTORY, not live machinery.** All for One became a passive on 2 September 2026
+  and `copy_and_trigger` was deleted with it, taking `copyRestoreEffectId`, `restoreCopiedEffect`,
+  `copiedVictimIsLegalTarget` and the four targeting tests with it. It is kept here because it is the
+  clearest worked example this project has of a whole bug class — an effect handed a target it did not
+  ask for — and because the pocket room's own two guards are still load-bearing. The fuzz figure
+  below was measured with that code in place: **0 invariant breaches over 21,005 actions.**
 
   Worth knowing for whoever changes this next: a board assertion cannot test this fix. The pocket
   room's own two guards already stop the duplicate instance, so a "no minion appears twice" test

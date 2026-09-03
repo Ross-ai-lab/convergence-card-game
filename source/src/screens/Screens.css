@@ -2395,8 +2395,14 @@ button.duel-trigger:hover:not(:disabled) {
     font-size: 9.5px;
   }
 
+  /* ABOVE the column of doors, not over it. At this width `.title-actions`
+     runs edge to edge, so a pill pinned 62px off the bottom-left corner lands
+     on top of whichever button happens to be there — Hero Powers, as it turned
+     out. The column's own height is what it has to clear, and the column has
+     five buttons at 42px with 8px gaps, so this offset is that plus the
+     column's own bottom inset and a gap. */
   .title-player-count {
-    bottom: 62px;
+    bottom: 274px;
     left: 12px;
     padding: 5px 8px;
     font-size: 9px;

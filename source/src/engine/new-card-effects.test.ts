@@ -2935,75 +2935,6 @@ describe("what Chained and Freeze cost, in turns", () => {
 });
 
 /**
- * Plays a minion whose Battlecry is `copy_and_trigger`.
- *
- * No card in the roster prints that effect any more — All for One traded it for
- * a passive on 2 September 2026 — but the effect is still in the engine, and it
- * is still the only place in the game where a target choice is BUILT BY HAND
- * rather than offered through a prompt. That hand-built choice is what these two
- * tests exist to pin, so the coverage moves onto a one-off library rather than
- * disappearing with the card.
- */
-const carrierCards = cards.map((card) =>
-  card.name === "All for One"
-    ? { ...card, effectId: "copy_and_trigger" as const, effectTiming: "onPlay" as const, keywords: [] }
-    : card,
-);
-const carrierLibrary = makeCardLibrary(carrierCards, relics);
-
-function playCarrier(state: GameState, player: PlayerId, slotIndex: number): GameState {
-  const next: GameState = { ...state, activePlayer: player, phase: "main", drawChoice: null, cheatMode: true };
-  next.players = [...state.players] as GameState["players"];
-  next.players[player] = { ...state.players[player], hand: [cardId("All for One")] };
-  return applyAction(next, { type: "play_card", player, handIndex: 0, slotIndex }, carrierLibrary).state;
-}
-
-describe("All for One cannot copy a copy of itself", () => {
-  it("refuses a victim that is itself carrying Copy-and-trigger, instead of recursing forever", () => {
-    // Pandora's Actor BECOMES another minion's effects, so it can end up
-    // carrying All for One's own Battlecry. All for One then copied that, wore
-    // "copy an effect" as its effect, ran it against the same victim, and copied
-    // it again — a hard `Maximum call stack size exceeded` crash, not a bad
-    // board. The balance harness hit it once in 800 self-play duels.
-    const state = mainState("all-for-one-mirror");
-    state.players[1].board[0] = minion("Pandora's Actor", 1, {
-      effectId: "copy_and_trigger",
-      effectTiming: "onPlay",
-    });
-    state.players[1].board[1] = minion("John Wick", 1);
-
-    const asking = playCarrier(state, 0, 0);
-    // The mirror is not offered at all: every legal target is a minion that is
-    // not wearing this same power.
-    const offered = (asking.pendingTarget?.options ?? []).map(
-      (option) => asking.players[option.owner].board[option.slot]?.effectId,
-    );
-    expect(offered).not.toContain("copy_and_trigger");
-
-    const resolved = asking.pendingTarget ? choose(asking, 0) : asking;
-    // Whatever it copied, it is holding its own effect again afterwards.
-    expect(resolved.players[0].board[0]?.copyRestoreEffectId ?? null).toBeNull();
-  });
-
-  it("fizzles quietly when the mirror is the only enemy on the board", () => {
-    // With nothing else to copy, the Battlecry finds no legal target and does
-    // nothing. That is the correct outcome and, more to the point, it is a
-    // finite one — this is the board that used to crash the duel outright.
-    const state = mainState("all-for-one-only-mirror");
-    state.players[1].board[0] = minion("Pandora's Actor", 1, {
-      effectId: "copy_and_trigger",
-      effectTiming: "onPlay",
-    });
-
-    const played = playCarrier(state, 0, 0);
-    expect(played.pendingTarget).toBeNull();
-    expect(played.players[0].board[0]?.effectId).toBe("copy_and_trigger");
-    expect(played.players[0].board[0]?.copyRestoreEffectId ?? null).toBeNull();
-    expect(played.players[1].board[0]?.name).toBe("Pandora's Actor");
-  });
-});
-
-/**
  * Two bugs the owner reported from real duels, pinned here so the answer is not
  * "I looked and it seemed fine".
  */
@@ -3057,5 +2988,63 @@ describe("reported from play, 2 September 2026", () => {
     // The caster's own body is on its board and is a legal victim of its own
     // Battlecry, so the only claim here is about whose board was touched.
     expect(after.players[1].board.filter(Boolean).length).toBeGreaterThan(0);
+  });
+});
+
+describe("a copied engine works like a printed one", () => {
+  it("Meruem grows from friendly deaths after copying John Wick's passive", () => {
+    // The death reactions used to compare `effectId` directly, so a Passive that
+    // had been COPIED into `gainedEffects` sat there doing nothing. That is the
+    // one outcome a copy effect must never produce, and nothing was asserting it.
+    const state = mainState("meruem-copied-engine");
+    state.players[0].board[0] = minion("Meruem", 0, { sleeping: false });
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 0, hp: 1, maxHp: 1 });
+    const copied = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(copied.players[0].board[0]?.gainedEffects).toContainEqual(
+      expect.objectContaining({ effectId: "friendly_death_buff_1_1" }),
+    );
+
+    const grown = copied.players[0].board[0]!;
+    const before = { atk: grown.atk, maxHp: grown.maxHp };
+
+    // Now kill one of Meruem's own. The copied passive has to pay out.
+    copied.players[0].board[1] = minion("Zoro", 0, { hp: 1, maxHp: 1 });
+    copied.players[1].board[0] = minion("Dragon", 1, { atk: 9, hp: 9, maxHp: 9, sleeping: false });
+    copied.activePlayer = 1;
+    const after = applyAction(copied, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
+    expect(after.players[0].board[1]).toBeNull();
+    expect(after.players[0].board[0]).toMatchObject({ atk: before.atk + 1, maxHp: before.maxHp + 1 });
+  });
+
+  it("All for One grows from the enemy's deaths while wearing their John Wick", () => {
+    const state = mainState("afo-copied-engine");
+    state.players[1].board[0] = minion("John Wick", 1);
+    const after = play(state, 0, "All for One", 0);
+    const worn = after.players[0].board[0]!;
+    const before = { atk: worn.atk, maxHp: worn.maxHp };
+
+    // A friendly death, judged from All for One's own side.
+    after.players[0].board[1] = minion("Zoro", 0, { hp: 1, maxHp: 1 });
+    after.players[1].board[1] = minion("Dragon", 1, { atk: 9, hp: 9, maxHp: 9, sleeping: false });
+    after.activePlayer = 1;
+    const grown = applyAction(after, { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 1 }, library).state;
+    expect(grown.players[0].board[1]).toBeNull();
+    expect(grown.players[0].board[0]).toMatchObject({ atk: before.atk + 1, maxHp: before.maxHp + 1 });
+  });
+
+  it("a silenced wearer pays nothing", () => {
+    const state = mainState("copied-engine-silenced");
+    state.players[0].board[0] = minion("Meruem", 0, {
+      sleeping: false,
+      silenced: true,
+      gainedEffects: [{ effectId: "friendly_death_buff_1_1", timing: "passive", text: "" }],
+    });
+    const before = { atk: state.players[0].board[0]!.atk, maxHp: state.players[0].board[0]!.maxHp };
+    state.players[0].board[1] = minion("Zoro", 0, { hp: 1, maxHp: 1 });
+    state.players[1].board[0] = minion("Dragon", 1, { atk: 9, hp: 9, maxHp: 9, sleeping: false });
+    state.activePlayer = 1;
+    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
+    expect(after.players[0].board[1]).toBeNull();
+    expect(after.players[0].board[0]).toMatchObject(before);
   });
 });

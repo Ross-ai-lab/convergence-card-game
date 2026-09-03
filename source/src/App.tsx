@@ -71,7 +71,7 @@ import type {
   SlotAuraId,
 } from "./engine/types";
 import { KEYWORD_LOOKUP, plainKeywordText, type KeywordEntry } from "./keywords";
-import { clearSave, loadGame, saveGame } from "./storage";
+import { clearSave, EVENT_LOG_LIMIT, loadGame, saveGame } from "./storage";
 import {
   botWins,
   clearProgress,
@@ -282,8 +282,6 @@ type ManaFx = { id: number; kind: "spend" | "refill"; from: number; to: number }
 // A Mythic landing is the loudest moment in a duel, so it takes the whole screen.
 type Splash = { id: number; minion: MinionInstance } | null;
 const SPLASH_MS = 1900;
-/** How many duel events the log drawer keeps. The drawer then prints all of them. */
-const EVENT_LOG_LIMIT = 300;
 /** Core at or under this swaps the music to the tense bed. Roughly a quarter. */
 const TENSION_CORE = 12;
 /**
