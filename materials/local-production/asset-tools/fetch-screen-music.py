@@ -70,6 +70,8 @@ CUES: dict[str, dict] = {
             "magic the gathering opening cinematic music",
             "epic treasure chest opening music ost",
         ],
+        # The one cue that does not start at the beginning: see epic_start.
+        "start_mode": "epic",
         "note": "Plays over the whole pack ceremony: five strikes, the burst, the deal.",
     },
     "victory": {
@@ -259,6 +261,52 @@ def lead_in_seconds(src: Path) -> float:
     return 0.0
 
 
+def epic_start(src: Path, window: float = 25.0) -> float:
+    """
+    Where the piece is at its BIGGEST, and where a cue that wants that should
+    start.
+
+    The pack cue is the one that does. It plays under a ceremony that lasts
+    twenty to forty seconds, and Sogno di Volare spends its first minute
+    building: measured in 5-second bins, the track opens at 0.037 RMS and does
+    not pass 0.20 until 40 seconds in, while its finale sits at 0.28–0.37. With
+    the menu bed now switched off underneath it (see the pack rule in the
+    README), that opening minute was a near-silent pack screen. Owner's ruling,
+    4 September 2026: start at the most epic moment and run to the end from
+    there.
+
+    Scored on SUSTAINED energy across `window` seconds, not on a peak — one
+    cymbal crash is not a climax — and the answer is snapped back to the quietest
+    moment in the two seconds before it, so the cue starts on a phrase rather
+    than inside one.
+    """
+    samples = card_stings.decode_mono(src)
+    rate = card_stings.ANALYSIS_RATE
+    step = rate // 10  # 100 ms bins
+    frames = len(samples) // step
+    if frames < 100:
+        return 0.0
+    rms = np.sqrt(np.mean(samples[: frames * step].reshape(frames, step).astype(np.float64) ** 2, axis=1))
+    span = int(window * 10)
+    if frames <= span + 20:
+        return 0.0
+    median = float(np.median(rms))
+    best_index, best_score = 0, -1.0
+    # Never start so late that the cue is shorter than the window it was chosen
+    # for.
+    for index in range(frames - span):
+        block = rms[index : index + span]
+        quiet = float(np.mean(block < median * 0.6))
+        score = float(np.mean(block)) * (1.0 - 0.5 * quiet)
+        if score > best_score:
+            best_index, best_score = index, score
+    # Snap back onto the phrase: the quietest bin in the two seconds before the
+    # winner is where a listener would say the passage begins.
+    look_back = max(0, best_index - 20)
+    snap = look_back + int(np.argmin(rms[look_back : best_index + 1])) if best_index > look_back else best_index
+    return max(0.0, snap / 10)
+
+
 def loudnorm_filter(src: Path, start: float) -> str:
     """
     TWO-PASS loudnorm, measured on the part of the track that will be used.
@@ -300,7 +348,7 @@ def loudnorm_filter(src: Path, start: float) -> str:
         return f"loudnorm={target}"
 
 
-def build_full(src: Path, dst: Path) -> tuple[bool, str]:
+def build_full(src: Path, dst: Path, mode: str = "lead-in") -> tuple[bool, str]:
     """
     The WHOLE track, levelled, with a fade at each end.
 
@@ -312,7 +360,7 @@ def build_full(src: Path, dst: Path) -> tuple[bool, str]:
     seconds = probe_seconds(src)
     if seconds <= 1:
         return False, "unreadable source duration"
-    start = lead_in_seconds(src)
+    start = epic_start(src) if mode == "epic" else lead_in_seconds(src)
     kept = seconds - start
     fade_out_at = max(0.0, kept - FULL_FADE_OUT)
     filters = (
@@ -346,7 +394,11 @@ def build_full(src: Path, dst: Path) -> tuple[bool, str]:
         return False, f"only {produced:.1f}s of {kept:.1f}s encoded"
     dst.unlink(missing_ok=True)
     tmp.replace(dst)
-    lead = f", {start:.1f}s of lead-in trimmed" if start > 0.05 else ""
+    lead = (
+        f", from {start:.1f}s (the strongest passage)"
+        if mode == "epic"
+        else f", {start:.1f}s of lead-in trimmed" if start > 0.05 else ""
+    )
     return True, f"{produced:.1f}s, {dst.stat().st_size / 1024 / 1024:.1f} MB{lead}"
 
 
@@ -403,7 +455,7 @@ def main() -> None:
             ok, detail = card_stings.build_sting(source, dst, start, CUES[cue]["seconds"], track_seconds)
             print(f"  {'cut' if ok else 'FAILED'} {CUES[cue]['seconds']:.0f}s from {start:.1f}s -> {dst.name} ({detail})")
         else:
-            ok, detail = build_full(source, dst)
+            ok, detail = build_full(source, dst, CUES[cue].get("start_mode", "lead-in"))
             print(f"  {'encoded' if ok else 'FAILED'} whole track -> {dst.name} ({detail})")
 
     if not args.dry_run:

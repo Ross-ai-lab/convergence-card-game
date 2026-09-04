@@ -6645,20 +6645,6 @@ button:disabled {
   text-align: center;
 }
 
-/* Only the OPENED screen has a kicker now. "10 new cards" above the sealed pack
-   and the running instruction beneath it were removed on 4 September 2026
-   (owner's ruling): a pack that shakes, cracks and brightens is already saying
-   what to do. */
-.pack-kicker {
-  margin: 0;
-  color: #f4d489;
-  font-size: 0.8rem;
-  font-weight: 950;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  animation: pack-fade-up 460ms ease both;
-}
-
 /* The pack itself: a foil brick that visibly takes damage.
 
    The dark base is listed LAST so it sits at the bottom of the stack and the two

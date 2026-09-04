@@ -6013,7 +6013,11 @@ function CardPack({
 
         {opened ? (
           <>
-            <p className="pack-kicker">Added to the shared deck</p>
+            {/* No kicker here either (owner's ruling, 4 September 2026). "Added
+                to the shared deck" was the last line of prose on this screen,
+                and the cards arriving one at a time already say it. The running
+                total below them stays, because it is a number nothing else
+                reports. */}
             {/* Rows are balanced rather than left to wrap. Six cards wrapping
                 naturally gave a row of five and one card stranded underneath it,
                 which reads as a mistake; three and three reads as a hand. The

@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 194,559 bytes, roughly 49k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~51% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 195,431 bytes, roughly 49k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~51% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -482,12 +482,13 @@ unread: the table already answers the only question anyone opens it to ask.
 **The pack.** A duel that earns cards ends on a sealed pack that takes FIVE strikes to open, then
 holds for a second and bursts, dealing the cards out one at a time.
 
-**THE SEALED SCREEN HAS NO WORDS ON IT.** Owner's ruling, 4 September 2026. The count above the pack
-("10 new cards") and the running instruction below it ("Strike it open", "Again", "Once more", "It is
-giving way…") are gone. A pack that shakes, cracks a new line on every hit and brightens as it goes is
-already saying what to do, and the sentence saying it too was the only part of the ceremony written in
-prose. The button keeps its `aria-label`, which is where an instruction genuinely belongs, and the
-opened screen keeps its kicker and its running total.
+**NEITHER SCREEN CARRIES PROSE.** Owner's ruling, 4 September 2026. The count above the sealed pack
+("10 new cards"), the running instruction below it ("Strike it open", "Again", "Once more", "It is
+giving way…") and the kicker over the dealt cards ("Added to the shared deck") are all gone. A pack
+that shakes, cracks a new line on every hit and brightens as it goes is already saying what to do, and
+cards arriving one at a time already say they have been added. The button keeps its `aria-label`,
+which is where an instruction genuinely belongs, and the running total stays because it is a number
+nothing else reports.
 
 **POINTING AT A DEALT CARD ENLARGES IT, with no delay at all.** Owner's ruling, 4 September 2026. The
 two-second rest that guards the hand exists because a card there is also a control — click it and it
@@ -1432,6 +1433,14 @@ game talking over its own ending. Music says the same thing and does not wear ou
   now the whole track with a 0.35s fade in and a 2.5s fade out. The cost of a whole track is that it
   starts where the recording starts: a piece with a quiet opening now opens quietly, where the
   excerpt began at its loudest bar.
+- **THE PACK CUE STARTS AT THE PIECE'S BIGGEST PASSAGE, not at its beginning.** Owner's ruling,
+  4 September 2026, and it is the one cue that does. Sogno di Volare spends its first minute building:
+  measured in 5-second bins the track opens at 0.037 RMS and does not pass 0.20 until 40 seconds in,
+  while its finale sits at 0.28–0.37 — so with the bed switched off underneath it, a pack ceremony ran
+  over a near-silent screen. `epic_start` scores sustained energy across a 25-second window, never a
+  peak (one cymbal crash is not a climax), then snaps back to the quietest moment in the two seconds
+  before it so the cue begins on a phrase. It chose **197.0s**, leaving 42 seconds that open on the
+  full choir at 0.164 RMS and end on the piece's own final chord — about the length of the ceremony.
 - **THE SILENT LEAD-IN IS TRIMMED, and the level is MEASURED before it is applied.** Both exist
   because of the same complaint — "the win music is glitchy the first 2 seconds" — and neither was a
   glitch in the recording. A YouTube upload commonly opens on two or three seconds of room tone, and
