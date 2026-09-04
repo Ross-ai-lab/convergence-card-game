@@ -183,7 +183,7 @@ function checkEffectPunctuation(name, line, text, errors) {
 
 /**
  * Camps and alignments are proper labels on the card, printed on its rails and
- * used by the filters in the gallery and the codex. "all good minions" reads as
+ * used by the filters in the gallery. "all good minions" reads as
  * ordinary English rather than as the Good alignment, and the player has to
  * guess whether the rule means the label or the adjective. Two cards had drifted
  * into lowercase before this check existed.
@@ -354,6 +354,79 @@ for (const [index, relic] of relics.entries()) {
   const stingPath = path.join(projectRoot, "public", "audio", "stings", `${relic.id}.ogg`);
   if (!fs.existsSync(stingPath)) {
     errors.push(`Line ${index + 2}: ${relic.name} has no theme — expected public/audio/stings/${relic.id}.ogg`);
+  }
+}
+
+/**
+ * Every roster count PRINTED outside the CSVs, and the live number it must equal.
+ *
+ * Both public pages quote the roster in prose that a chat preview and a search
+ * result will show, and both went stale: they still said "27 relics" seven
+ * relics after the pool grew, and the README's opening paragraph counted 167
+ * named characters two paragraphs above its own two statements of 172. Nothing
+ * counted any of it, so nothing complained. The counts below now answer to
+ * `data/`, in the same file that already knows how many cards there are.
+ *
+ * Each claim names its capture groups in `expect`, in order, so a failure says
+ * which number in which sentence is wrong rather than "a regex did not match".
+ */
+const basicCards = cards.filter((card) => card.origin.trim() === "Basic").length;
+const COUNT_CLAIMS = [
+  {
+    file: ["..", "index.html"],
+    what: "landing-page description",
+    pattern: /(\d+) minion cards and (\d+) Ascension Relics/,
+    expect: () => [cards.length, relics.length],
+  },
+  {
+    file: ["..", "index.html"],
+    what: "landing-page hero line",
+    pattern: /(\d+) minions\. (\d+) relics\./,
+    expect: () => [cards.length, relics.length],
+  },
+  {
+    file: ["index.html"],
+    what: "game <head> description",
+    pattern: /(\d+) worlds and (\d+) relics, pulled into one arena/,
+    expect: () => [cards.length, relics.length],
+  },
+  {
+    file: ["index.html"],
+    what: "game og:description",
+    pattern: /(\d+) worlds and (\d+) relics in one arena/,
+    expect: () => [cards.length, relics.length],
+  },
+  {
+    file: ["..", "README.md"],
+    what: "README opening paragraph",
+    pattern: /where (\d+) named characters and forces from fiction collide alongside ten Basic reference cards/,
+    expect: () => [cards.length - basicCards],
+  },
+  {
+    file: ["..", "README.md"],
+    what: "README roster sentence",
+    pattern: /\*\*(\d+) character cards, (\d+) Basic reference cards, and (\d+) Ascension Relics\*\*, (\d+) in all/,
+    expect: () => [cards.length - basicCards, basicCards, relics.length, cards.length + relics.length],
+  },
+  {
+    file: ["..", "README.md"],
+    what: "README card-data sentence",
+    pattern: /contain (\d+) named character cards plus (\d+) Basic reference cards, (\d+) card definitions in total/,
+    expect: () => [cards.length - basicCards, basicCards, cards.length],
+  },
+];
+
+for (const claim of COUNT_CLAIMS) {
+  const where = path.join(projectRoot, ...claim.file);
+  const match = fs.readFileSync(where, "utf8").match(claim.pattern);
+  if (!match) {
+    errors.push(`${claim.what}: the sentence this check reads has been reworded — update ${claim.file.join("/")} or the pattern.`);
+    continue;
+  }
+  const wanted = claim.expect();
+  const found = match.slice(1, wanted.length + 1).map(Number);
+  if (found.join() !== wanted.join()) {
+    errors.push(`${claim.what} says ${found.join("/")} where data/ says ${wanted.join("/")} (${claim.file.join("/")}).`);
   }
 }
 

@@ -137,10 +137,6 @@ async function assertNoDevHookInBundle(publishedTarget) {
 
 async function main() {
   await runNpm(["run", "validate:data"]);
-  // The codex page embeds a copy of the roster. Rebuilding it here means a
-  // published game and its public documentation can never describe different
-  // rosters, which is exactly how that page went stale before.
-  await runNpm(["run", "build:codex"]);
   await runNpm(["run", "build", "--", "--base=./"]);
 
   await assertFile(join(distDir, "index.html"), "Generated build entrypoint");

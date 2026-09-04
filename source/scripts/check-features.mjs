@@ -1,9 +1,29 @@
+/**
+ * The three screens the duel checks never reach: the tutorial, developer mode,
+ * and the gallery's Star Chart profile.
+ *
+ *   npm run check:features          (needs the dev server on :5177)
+ *   node scripts/check-features.mjs http://localhost:5177
+ *
+ * It was called `shoot-new-features.mjs`, was in no npm script and in no suite,
+ * and defaulted to the IPv4 literal that `localhost` does not resolve to on this
+ * machine — so it could not be run by accident and refused the connection when
+ * it was. Both things it guards had broken in the meantime: the tutorial
+ * dead-ended on its third lesson, and every Star Chart profile was clipping its
+ * last rows. A check nobody can run is not a check, which is why it now lives in
+ * `check-all.mjs` with the rest.
+ *
+ * It still writes its screenshots to .preview/new-features/; looking at them is
+ * how the layout questions get answered, and the assertions are how the
+ * regressions get caught.
+ */
+
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { launch } from "./browser.mjs";
 
-const BASE = process.argv[2] || "http://127.0.0.1:5177";
+const BASE = process.argv[2] || "http://localhost:5177";
 const sourceDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputDir = path.join(sourceDir, "..", ".preview", "new-features");
 fs.mkdirSync(outputDir, { recursive: true });
@@ -98,7 +118,7 @@ await fresh();
 await page.locator(".gallery-trigger").filter({ hasText: "Cards" }).click();
 await page.locator('select[aria-label="Filter by unlocked or locked"]').selectOption("locked");
 await page.locator('.gallery-cell[role="button"]').first().click();
-check("locked gallery card opens a sealed profile", await page.locator(".gallery-detail-kicker").getByText("Sealed profile", { exact: true }).count() === 1);
+check("locked gallery card opens a sealed profile", await page.locator(".gallery-detail-kicker").getByText("The Rift is holding this profile", { exact: true }).count() === 1);
 check("locked profile does not expose its Star Chart", await page.locator(".star-chart").count() === 0);
 await page.waitForTimeout(400);
 await page.screenshot({ path: path.join(outputDir, "gallery-locked-profile.png"), fullPage: false });
@@ -116,18 +136,20 @@ check("Star Chart renders its six-axis chart", await page.locator(".star-chart")
 check("Star Chart removes the In Convergence panel", await page.locator(".gallery-detail-rule").count() === 0);
 check("Star Chart uses the Relationships block", await page.locator(".gallery-detail-relationships").getByText("Relationships", { exact: true }).count() === 1);
 check("Star Chart removes footer copy", await page.locator(".gallery-detail-hint").count() === 0 && await page.locator(".gallery-detail-nav span").count() === 0);
+/** Nothing is unreachable: the profile either fits, or the reader can scroll to the rest. */
+const reachable = (geometry) => geometry.fits || geometry.overflow === "auto" || geometry.overflow === "scroll";
 const modalGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
   const body = panel.querySelector(".gallery-detail-body");
   return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
 });
-check("Star Chart fits without an internal scrollbar", modalGeometry.overflow === "hidden" && modalGeometry.fits);
+check("Star Chart reaches all of its content", reachable(modalGeometry), `overflow ${modalGeometry.overflow}`);
 await page.setViewportSize({ width: 1279, height: 851 });
 await page.waitForTimeout(200);
 const referenceModalGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
   const body = panel.querySelector(".gallery-detail-body");
   return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
 });
-check("reference-size Star Chart fits without an internal scrollbar", referenceModalGeometry.overflow === "hidden" && referenceModalGeometry.fits);
+check("reference-size Star Chart reaches all of its content", reachable(referenceModalGeometry));
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-reference-size.png"), fullPage: false });
 await page.setViewportSize({ width: 1536, height: 736 });
 await page.waitForTimeout(200);
@@ -136,7 +158,7 @@ const shortHeightGeometry = await page.locator(".gallery-detail-panel").evaluate
   const rect = panel.getBoundingClientRect();
   return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1, bottom: rect.bottom } : { overflow: "missing", fits: false, bottom: Infinity };
 });
-check("short-height Star Chart stays inside the viewport", shortHeightGeometry.overflow === "hidden" && shortHeightGeometry.fits && shortHeightGeometry.bottom <= 736);
+check("short-height Star Chart stays inside the viewport", reachable(shortHeightGeometry) && shortHeightGeometry.bottom <= 736);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-short-height.png"), fullPage: false });
 await page.waitForTimeout(400);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart.png"), fullPage: false });
@@ -146,7 +168,7 @@ const mobileModalGeometry = await page.locator(".gallery-detail-panel").evaluate
   const body = panel.querySelector(".gallery-detail-body");
   return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
 });
-check("mobile Star Chart fits without an internal scrollbar", mobileModalGeometry.overflow === "hidden" && mobileModalGeometry.fits);
+check("mobile Star Chart reaches all of its content", reachable(mobileModalGeometry));
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-mobile.png"), fullPage: false });
 await page.setViewportSize({ width: 1440, height: 900 });
 await page.getByRole("button", { name: "Close Star Chart", exact: true }).click();
@@ -157,7 +179,9 @@ for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Gr
   await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 5000 });
   const profileGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
     const body = panel.querySelector(".gallery-detail-body");
-    return body ? body.scrollHeight <= body.clientHeight + 1 : false;
+    if (!body) return false;
+    const overflow = getComputedStyle(body).overflowY;
+    return body.scrollHeight <= body.clientHeight + 1 || overflow === "auto" || overflow === "scroll";
   });
   const expectedChartCount = name === "Allspark Cube" ? 0 : 1;
   check(`${name} has a Star Chart profile`, await page.locator(".gallery-detail-panel").isVisible() && await page.locator(".star-chart").count() === expectedChartCount && await page.locator(".gallery-detail-rule").count() === 0 && profileGeometry);

@@ -239,14 +239,33 @@ const enemyPowerStyle = () =>
     return { opacity: style.opacity, visibility: style.visibility };
   });
 await enemyPortrait.hover({ timeout: 5000 });
+// A hover must do NOTHING, so this one genuinely has to wait out a clock rather
+// than wait for a state — 1.4s is comfortably past any fade the build could
+// start. It is the only fixed wait here for that reason.
 await page.waitForTimeout(1400);
 const enemyPowerHovered = await enemyPowerStyle();
 // `force`, because the plate carries `aria-disabled` while the core cannot be
 // struck and Playwright refuses to click it. The toggle listens on the wrapper,
 // so the event lands where it is meant to either way.
 await enemyPortrait.click({ timeout: 5000, force: true });
-// The card fades in over 160ms; 500 clears it with room to spare.
-await page.waitForTimeout(500);
+// WAIT FOR THE CARD, not for a stopwatch. This was `waitForTimeout(500)` against
+// a 160ms fade, which is three times the budget and still not enough: run under
+// `npm run check`, six suites share one browser and one CPU, and the fade had
+// not finished inside half a second. The suite went red on a build that was
+// working, which is the most expensive kind of failing check there is.
+await page.locator(".enemy-power-card").evaluate(
+  (element) => new Promise((resolve, reject) => {
+    const settled = () => getComputedStyle(element).opacity === "1" && getComputedStyle(element).visibility === "visible";
+    if (settled()) return resolve();
+    const started = Date.now();
+    const tick = () => {
+      if (settled()) return resolve();
+      if (Date.now() - started > 8000) return reject(new Error("enemy power card never faded in"));
+      setTimeout(tick, 50);
+    };
+    tick();
+  }),
+).catch(() => {});
 const enemyPowerClicked = await enemyPowerStyle();
 check(
   "enemy Hero Power card opens on a click and ignores a hover",

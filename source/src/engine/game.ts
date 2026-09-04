@@ -196,6 +196,50 @@ export function createInitialGame(
 }
 
 /**
+ * The enemy body the tutorial teaches against, chosen by what the lesson NEEDS.
+ *
+ * Three separate things in the tutorial lean on this minion's rules, so it is
+ * picked by those rules instead of by a card id:
+ *
+ *   - It must have TAUNT. Lesson three's text is "choose the enemy Taunt
+ *     minion", and Taunt closing the core is the thing that lesson exists to
+ *     show. Without it the player may swing at the core and never meet the rule.
+ *   - It must be UNABLE TO ATTACK. Lesson three needs a minion of the player's
+ *     still standing to swing with, and the enemy's turn happens first.
+ *   - It must SURVIVE that swing, so lesson four's Battlecry has something to
+ *     point at, and it must print no effect of its own to explain.
+ *
+ * It was a card id — `c171` — and every one of those properties left the card
+ * underneath it without a word. Goblins was a plain 2/1 Taunt when the tutorial
+ * was written and is a Deathrattle minion with no Taunt now, so the lesson text
+ * named a keyword that was not on the board, the "keep it alive" guard below was
+ * gated on `keywords.includes("Taunt")` and silently stopped firing, and the
+ * Recruit was free to trade its 2 ATK into the 1/1 the player had just been told
+ * to play. The tutorial dead-ended on lesson three: no minion of yours to click,
+ * no Taunt to click it at, and a coach that goes on asking for both.
+ *
+ * A missing target is now a thrown error rather than an empty enemy board,
+ * because a tutorial that quietly teaches nothing is the failure being fixed.
+ */
+function pickTutorialTarget(cards: CardDefinition[]): CardDefinition {
+  const suits = (card: CardDefinition) =>
+    card.keywords.includes("Taunt") &&
+    card.keywords.includes("Cannot Attack") &&
+    card.effectId === "none";
+  // Cheapest first, then by id, so the position is the same on every machine and
+  // does not move when an unrelated card is added above it in the CSV.
+  const target = cards
+    .filter(suits)
+    .sort((left, right) => left.cost - right.cost || left.id.localeCompare(right.id))[0];
+  if (!target) {
+    throw new Error(
+      "Tutorial has no teaching target: no card in data/cards.csv is Taunt + Cannot Attack with no effect.",
+    );
+  }
+  return target;
+}
+
+/**
  * A small deterministic teaching position for the first Tutorial duel.
  *
  * The normal game stays random. The tutorial deliberately puts a basic body,
@@ -205,9 +249,19 @@ export function createInitialGame(
  */
 function configureTutorialState(state: GameState, cards: CardDefinition[]): void {
   const byId = new Map(cards.map((card) => [card.id, card]));
+  // A basic body, a targeted Battlecry, and a draw card, in that order: the
+  // first is what lesson one plays and the second is what lesson four prompts.
   const playerHand = ["c169", "c005", "c173"].filter((id) => byId.has(id));
-  const enemyHand = ["c139", "c142", "c173"].filter((id) => byId.has(id));
-  const target = byId.get("c171") ?? byId.get("c139");
+  // The Recruit takes exactly one turn inside the tutorial, on 2 mana and a
+  // Coin, so ONE of these can reach the board and it must be unable to touch
+  // the 1-HP minion lesson one just taught the player to play. Survivors is a
+  // plain 2/2 body that arrives asleep; the other two cost more than the enemy
+  // can pay before the fourth lesson is over. Modern Tank used to sit here and
+  // its Battlecry deals 1 damage to an enemy minion, which is precisely the
+  // player's new minion and the end of lesson three. Nothing declined it on
+  // purpose — the Recruit simply had 2 mana and did not spend the Coin.
+  const enemyHand = ["c118", "c142", "c143"].filter((id) => byId.has(id));
+  const target = pickTutorialTarget(cards);
 
   state.players[0].hand = playerHand;
   state.players[1].hand = enemyHand;
@@ -225,22 +279,14 @@ function configureTutorialState(state: GameState, cards: CardDefinition[]): void
   state.bottomDeck = [];
   state.discard = [];
 
-  const removed = new Set([...playerHand, ...enemyHand, target?.id].filter((id): id is string => Boolean(id)));
+  const removed = new Set([...playerHand, ...enemyHand, target.id]);
   state.deck = state.deck.filter((id) => !removed.has(id));
 
-  if (target) {
-    const minion = createMinion(target, 1, state);
-    minion.sleeping = false;
-    // Keep the teaching target alive after the first simultaneous combat so
-    // the following Battlecry lesson still has a legal enemy minion to pick.
-    // It remains the real Taunt card and is only reinforced in the curated
-    // tutorial position.
-    if (minion.keywords.includes("Taunt")) {
-      minion.maxHp = Math.max(minion.maxHp, 2);
-      minion.hp = minion.maxHp;
-    }
-    state.players[1].board[2] = minion;
-  }
+  // No stat surgery. The old position propped the target up to 2 HP so it would
+  // survive the player's swing; a card that cannot attack and carries a real
+  // wall's health survives it on its printed numbers, which is also the card a
+  // player will meet again in a normal duel.
+  state.players[1].board[2] = createMinion(target, 1, state);
 }
 
 export function applyAction(

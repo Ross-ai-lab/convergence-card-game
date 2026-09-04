@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 196,697 bytes, roughly 49k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~51% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 204,091 bytes, roughly 51k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~49% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -45,6 +45,7 @@
 
 - [Changing cards and effects](#changing-cards-and-effects)
   - [Every save that changes a card must name the cards it changed](#every-save-that-changes-a-card-must-name-the-cards-it-changed)
+  - [The tutorial picks its teaching target by RULES, never by card id](#the-tutorial-picks-its-teaching-target-by-rules-never-by-card-id)
   - [Ask what happened to a card instead of reconstructing it](#ask-what-happened-to-a-card-instead-of-reconstructing-it)
   - [Reference requests must be globally safe and future-proof](#reference-requests-must-be-globally-safe-and-future-proof)
   - [Card wording is uniform, and that is a mechanical requirement](#card-wording-is-uniform-and-that-is-a-mechanical-requirement)
@@ -63,6 +64,7 @@
   - [Three things the board now says out loud](#three-things-the-board-now-says-out-loud)
   - [Developer tools can arm the enemy](#developer-tools-can-arm-the-enemy)
   - [Developer tools can jump to the result screen](#developer-tools-can-jump-to-the-result-screen)
+  - [The gallery's Star Chart profile SCROLLS, and hidden overflow is why it had to](#the-gallerys-star-chart-profile-scrolls-and-hidden-overflow-is-why-it-had-to)
   - [Visual design changes require close-up and full-screen QA](#visual-design-changes-require-close-up-and-full-screen-qa)
   - [Title-menu design QA record](#title-menu-design-qa-record)
 - [The rarity shine](#the-rarity-shine)
@@ -140,7 +142,7 @@ march toward a finish line that has already been crossed.
 
 ## What Convergence is
 
-Convergence is a non-commercial browser card duel where 167 named characters and forces from fiction collide alongside ten Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
+Convergence is a non-commercial browser card duel where 172 named characters and forces from fiction collide alongside ten Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
 
 - **Recruit** — deliberately forgiving.
 - **Veteran** — plays each move correctly but does not plan beyond it.
@@ -645,7 +647,7 @@ sorting by nothing, and it would leave a brand-new player looking at a list with
 gallery therefore reads normally until the first pack lands.
 
 **`progress` is at v2 and v1 is deleted on load, not migrated.** v1 described a roster that was
-entirely unlocked, so carrying it forward would hand a returning player all 205 cards and delete the
+entirely unlocked, so carrying it forward would hand a returning player all 216 cards and delete the
 feature on the machine that most needed it. The version bump is also what resets the record.
 
 ## Project structure and source of truth
@@ -654,18 +656,18 @@ feature on the machine that most needed it. The version bump is also what resets
 - `source/data/relics.csv` is the relic authority.
 - `source/src/engine/` is the authority for game behaviour. React and CSS files under `source/src/` are the interface authority.
 - `source/src/engine/types.ts` holds every card vocabulary ONCE, as a `const` array — `EFFECT_IDS`, `RELIC_IDS`, `KEYWORDS`, `RARITY_TIERS`, `CAMPS`, `ALIGNMENTS`, `EFFECT_TIMINGS` — and derives the TypeScript type from it. `csv.ts` builds its validation sets from the same arrays; the plain-Node scripts read them through `engineVocabulary()` in `scripts/card-tools.mjs`, which parses them straight out of `types.ts` rather than listing them a third time. Add a value in one place only. The lists were kept by hand for a long time, and only one copy was checked by the compiler, so an effect added to the type and forgotten in the validator would pass every test and then reject the first real card that used it.
-- **`RARITY_TIERS` is the tier table, commonest first, with the name a player sees.** The order of the array IS the ranking. Seven separate lists used to encode some part of it — which tier speaks on arrival, which get a shine, how the gallery sorts them, what the pack saves for last, which tier the opening pool evicts, and what the public codex page calls each one — and each carried its own idea of the order, which is how Legendary once sorted above Epic. Read `rarityRank`, `rarityName`, `BASELINE_RARITY` and `TOP_RARITY` instead of writing a colour down.
+- **`RARITY_TIERS` is the tier table, commonest first, with the name a player sees.** The order of the array IS the ranking. Seven separate lists used to encode some part of it — which tier speaks on arrival, which get a shine, how the gallery sorts them, what the pack saves for last, and which tier the opening pool evicts — and each carried its own idea of the order, which is how Legendary once sorted above Epic. Read `rarityRank`, `rarityName`, `BASELINE_RARITY` and `TOP_RARITY` instead of writing a colour down.
 - **`scripts/` is inside `tsconfig.json`.** It was outside it until 1 September 2026, so the balance harness, the gate and the ladder comparison were TypeScript that nothing typechecked — `tsc -b` covered `src` alone. Turning it on found one real defect immediately: the ladder's matchup array was declared without the per-duel `results` field it has been pushing, and reading, all along.
 - **`strict` is on in `tsconfig.json`.** It was off until 1 September 2026 while the code was already written as though it were on, so every `| null`, every `??` and every non-null assertion in the engine was unchecked decoration. Turning it on produced zero errors, which is the measure of how carefully the null-handling had been done by hand; it is now the compiler's job to keep it that way.
 - `source/src/textfit.ts` controls measured card-text fitting. The current effect-text upper cap is 64 design units; flavour text is capped at 32, but the real rendered size is chosen by measurement.
 - `play/` is the generated static game copied into the repository for GitHub Pages. Build it from `source/`; do not hand-edit it. The owner plays only through the public `/play/` URL above, never from this local folder.
-- `docs/Convergence Browser Game Roadmap.html` is useful for design direction and browsing, but its embedded roster can lag behind the live CSV.
 - `materials/local-production/` contains optional rebuild tools and source libraries. It is not required to play the included build.
 - `counter/` is the small aggregate player-count service used by the public landing page.
 - `source/src/progress.ts` is everything that outlives a duel: the record, the collection marks, and the unlock index. `source/src/unlocks.ts` decides WHICH cards the unlock index points at — see [Gradual card unlocking](#gradual-card-unlocking). Both are pure and both are tested; neither reads a CSV.
 - `source/src/screens/Screens.tsx` holds the **How to play** guide as `HowToPlayContent`. It is the player-facing twin of [Rules at a glance](#rules-at-a-glance) and [Conditions and keywords](#conditions-and-keywords) above: a rules change has to land in both, and the guide is the copy a player will actually read. Its glossary is NOT written there — it is rendered from `source/src/keywords.ts`, which is also what the card face's keyword tooltips read.
 - `source/src/keywords.ts` is the single copy of every keyword definition, plus the longest-first match table the card face scans rules text with. Two surfaces render it; neither owns it.
 - `source/scripts/readme-index.mjs` owns this page's section ORDER and regenerates its navigation block. The order lives in that file and nowhere else, and a `##` section missing from it is an error rather than a silent append. `node scripts/readme-index.mjs --check` fails when the page is stale.
+- `source/scripts/check-features.mjs` is the browser suite for the three screens the duel checks never open: the tutorial, developer mode, and the gallery's Star Chart profile. `npm run check:features`, and `npm run check` runs it as the `features` suite.
 - `source/scripts/dump-log.ts` plays one self-play duel and prints every line the duel log would show. See [The duel log](#the-duel-log).
 - `.claude/launch.json` is the agent-facing dev-server entry, so a session opens the game with one call instead of inventing a shell command for it.
 - `source/scripts/` holds the tooling. `simulate.ts` is the balance harness: self-play, fuzzing, the dial sweep, and the difficulty ladder. `balance-gate.ts` and `balance-gate.test.ts` hold the pure pass, fail, and skip logic, with one planted failure per check. `ladder-compare.ts` is the paired ladder comparison. `source/balance.config.json` carries every threshold with the reasoning for it written alongside. The `apply-balance-pass*.mjs` files record each past pass with the measured number behind every change.
@@ -686,7 +688,9 @@ npm run build -- --base=./
 
 Use the development or preview server URL, not a `file://` URL. A white page can mean the server is stopped, a different folder is being served, or `play/` is behind `source/`.
 
-**Address the dev server as `http://localhost:5177`, never `http://127.0.0.1:5177`.** `vite.config.ts` sets no `server.host`, so the server binds to `localhost` and on a machine where that resolves to `::1` a request to the IPv4 literal is refused outright. Every browser harness here takes the URL as its first argument and defaults to `localhost`; `shoot-rules.mjs` defaulted to the IPv4 literal instead and failed with `ERR_CONNECTION_REFUSED` against a perfectly healthy server, which reads as a broken script rather than a wrong address.
+**Address the dev server as `http://localhost:5177`, never `http://127.0.0.1:5177`.** `vite.config.ts` sets no `server.host`, so the server binds to `localhost` and on a machine where that resolves to `::1` a request to the IPv4 literal is refused outright. Every browser harness here takes the URL as its first argument and defaults to `localhost`; `shoot-rules.mjs` defaulted to the IPv4 literal instead and failed with `ERR_CONNECTION_REFUSED` against a perfectly healthy server, which reads as a broken script rather than a wrong address. `check-features.mjs` still carried that same wrong default on 4 September 2026 and was fixed with it.
+
+**5177 is PINNED in `vite.config.ts`, and `strictPort` is the half that matters.** Eight browser harnesses and `npm run check` all default to that port and this section documents it, but Vite's own default is 5173 and nothing had ever set it — so `npm run dev` served a port nothing looked at, and every browser check answered `ERR_CONNECTION_REFUSED` against a healthy server. `.claude/launch.json` said 5173 too, so the agent-facing entry point agreed with the accident rather than with the contract. Both now say 5177. `strictPort: true` is what keeps it true: without it Vite walks quietly to 5178 when something else holds the port, and the whole thing comes apart again with no error anywhere.
 
 **Keep the suite fast, and treat any test over about ten seconds as a defect to be explained.** `npm test` is the thing a session runs after every change, so its cost is paid dozens of times a day, and it has twice grown a two-minute test that was really a balance measurement in disguise. The rule that catches both: a test may play a whole duel only when the thing it asserts is a property OF a whole duel — that the game terminates, that no illegal action is ever produced, that the bot never stalls on its own prompt. Anything else — who wins, how often, whether a flag is wired — is either a balance question, which belongs in the harness, or a state question, which should read the state.
 
@@ -697,7 +701,7 @@ fixed section order and regenerates the navigation block at the top, whose byte 
 both go stale on every edit — and a banner quoting a stale size is worse than no banner, because it
 tells a session the truncation will not happen to them.
 
-Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
+Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run check:features`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
 
 ### Which checks a change actually needs
 
@@ -726,8 +730,8 @@ npm run check -- --only ui # one suite, for working on the checks themselves
 
 `scripts/check-all.mjs` reads `git status` and matches every changed path
 against a small table of what each suite can reach — a `.tsx` or `.css` file
-reaches the UI and the card faces, anything under `public/audio/` or `src/audio/`
-reaches the sound, `data/` reaches the validator. `npm test` runs whatever
+reaches the UI, the card faces and the feature screens, anything under
+`public/audio/` or `src/audio/` reaches the sound, `data/` reaches the validator. `npm test` runs whatever
 changed, because seventy seconds is cheap and "small" is the change it catches.
 **A change to `scripts/browser.mjs` or to a check script re-runs every browser
 suite**, or the one edit nobody re-checks is the edit to the checker.
@@ -740,8 +744,27 @@ each other. Measured on the first real run: **624 seconds of work finished in
 328**, with all four suites green. Sharing the browser saves seconds; running
 them together is what saves the minutes.
 
+**A CHECK THAT IS NOT IN A SUITE IS NOT A CHECK.** `check-features.mjs` covers
+the tutorial, developer mode and the gallery's Star Chart profile: three screens
+no other harness opens. It was called `shoot-new-features.mjs`, sat in no npm
+script and in no suite, and defaulted to the IPv4 literal this section warns
+about — so nobody could run it by accident and it refused the connection when
+they tried. By 4 September 2026 both things it guards had broken underneath it:
+the tutorial dead-ended on its third lesson, and every Star Chart profile was
+clipping its last rows. Neither failure needed a subtle bug; they needed nobody
+watching. It is a suite now.
+
 The individual commands all still exist and still work on their own. What they
 lost is the requirement to remember which of them to type.
+
+**Wait for the STATE, never for a stopwatch, and least of all inside these
+suites.** Six of them share one browser and one CPU, so every fixed
+`waitForTimeout` is a bet on how busy the machine is. The enemy Hero Power check
+waited 500ms for a 160ms fade — three times the budget — and went red on a
+working build every single time the suites ran together, while passing alone. A
+check that fails on a correct build is worse than no check, because the next
+session learns to read past it. The one fixed wait that is legitimate is the
+opposite assertion: proving something does NOT happen has no state to wait for.
 
 **The dev server has to be up** for anything with a browser in it, exactly as
 before, and `npm run publish:pages` still validates and rebuilds before anything
@@ -797,6 +820,35 @@ The hook fails open when Node is unavailable, so a machine without the toolchain
 ```
 npm run changed-cards
 ```
+
+### The tutorial picks its teaching target by RULES, never by card id
+
+`configureTutorialState` in `src/engine/game.ts` builds the first-duel position.
+Three of its four lessons lean on the one enemy minion it places, so that minion
+is now chosen by the properties the lessons need — **Taunt**, **Cannot Attack**,
+no printed effect — and a roster with no such card throws rather than deals an
+empty enemy board. Today that resolves to Fort.
+
+It was the card id `c171`, and every property underneath it left without a word.
+Goblins was a plain 2/1 Taunt when the tutorial was written and is a Deathrattle
+minion with no Taunt now, so three things stopped at once: lesson three's text
+named a keyword that was not on the board, the "keep the target alive" guard was
+written as `if (minion.keywords.includes("Taunt"))` and silently never fired, and
+the Recruit was free to trade 2 ATK into the 1-HP minion lesson one had just
+taught the player to play. **The guided first duel dead-ended on lesson three** —
+no minion of yours to click, no Taunt to click it at, and a coach that goes on
+asking for both. The test that should have caught it asserted the target's NAME
+and nothing else, so it passed the whole way through.
+
+The enemy hand is chosen the same way and for the same reason: the Recruit takes
+exactly one turn inside the tutorial, on 2 mana and a Coin, so nothing it can
+afford may be able to remove the player's new minion. Modern Tank used to sit
+there printing "Deal 1 damage to an enemy minion", and nothing declined it on
+purpose — the bot simply had 2 mana and did not spend the Coin.
+
+Two tests hold it now, both in `game.test.ts`: one asserts the position's rules
+rather than its names, and one plays the opening turn and the Recruit's reply and
+asserts both sides still have what lessons three and four ask for.
 
 ### Ask what happened to a card instead of reconstructing it
 
@@ -1268,6 +1320,43 @@ asks whether the duel was LOST, and only a duel against the bot can be — in
 hotseat somebody always won. Jumping from a hotseat mode therefore played the
 victory piece under `Enemy wins`, which made the defeat music unreachable from the
 one tool built to reach these screens.
+
+### The gallery's Star Chart profile SCROLLS, and hidden overflow is why it had to
+
+Clicking a gallery card opens its Star Chart profile: the card face, the six-axis
+lore chart, the lore and quote, Strengths and Weaknesses, and the Signature move
+and Relationships row. `.gallery-detail-body` is a two-column grid inside a panel
+capped at `calc(100vh - 24px)`.
+
+**It was `overflow: hidden`, and it was cutting almost every profile.** Measured
+at 1440x900 on 4 September 2026: **33 of 36 profiles lost between 83 and 143
+pixels off the bottom** — the Relationships chips and part of the Signature move,
+gone, with no scrollbar and no way to reach them. At 780x460 the loss was 417px.
+Nothing reported it because hidden overflow is silent by construction: the
+content is laid out, measured, and then not painted.
+
+The cause is dated. The profile copy was enlarged to 24px on 30 August 2026 at
+the owner's request, and 24px of variable-length lore in a fixed-height dialog
+cannot be made to fit by layout alone. Two changes, in that order of importance:
+
+- **`overflow-y: auto`.** Given the choice between the text size he asked for and
+  a scrollbar, the scrollbar loses nothing. `overscroll-behavior: contain` keeps
+  the wheel inside the dialog, and `scrollbar-color` paints the thumb in the
+  panel's own gold so it reads as part of the design.
+- **The last row spans both columns.** On desktop the card owns the first
+  left-hand row and the chart owns the second, so the third row had 280px of
+  empty panel beside it. Widening that row alone took the clipped count from 33
+  of 36 to 20 of 36 before the scroll was added; the rest is the text size.
+
+**A headless screenshot cannot answer "is there a scrollbar".** Playwright's
+bundled Chromium uses overlay scrollbars, so `offsetWidth - clientWidth` is 0 and
+the bar never appears in a PNG. The same page in a real Chromium on this machine
+reserves 15px, or 10px with `scrollbar-width: thin`. Measure the gutter in a real
+browser before concluding a scroll container has no affordance.
+
+**Chromium ignores `::-webkit-scrollbar` once `scrollbar-width` is set.** Styling
+both is not belt and braces, it is twenty dead lines: the standard properties win
+and the pseudo-element block never applies.
 
 ### Visual design changes require close-up and full-screen QA
 
@@ -1824,6 +1913,9 @@ The card-level numbers quoted in the four subsections below were measured on 202
 - **Anything the bot cannot value is unmeasured, not balanced.** `scoreState` prices Passive and Ongoing minions as a class through `ENGINE_PREMIUM` but cannot tell a strong engine from a weak one, and its only card-flow term is hand length, so a draw engine is worth nothing to it and a targeted discard scores the same as a random one. Seven of nineteen outliers in one pass were the bot's blindness rather than the card's power. Two usable consequences: a card the bot under-values that is winning anyway is stronger than measured and safe to nerf, and a card whose whole effect is invisible to the bot cannot be tuned from these numbers at all. Write that caveat next to the number, not in your head.
 - **A high play rate with a low win rate means the card is being used and failing**, which is precisely when the body is the wrong lever. A 2-cost minion measured at 34% was buffed from 1/2 to 1/5 and came back at 33.6%, unmoved: its keyword made it unable to attack and it had no Taunt, so nothing obliged the enemy to attack it either. Its ATK was decoration and its HP defended nothing. Read the keyword's implementation, not its flavour, before changing a number.
 - **Count every outcome you exclude.** A draw is not a win, not a loss, not a stall and not a soft-lock, so it drops out of the coin-flip, ladder, and snowball denominators at once. The game could start ending in draws half the time and every published rate would still look normal, just measured on a smaller sample nobody mentioned. Give each exclusion its own counter and its own threshold, and print the excluded count beside the rate it shrank.
+- **A gap is a difference between two numbers, and either one of them can be the thing that moved.** A card was nerfed and its distance from its own cost tier got WORSE: its win rate barely shifted, but another card in the same tier was cut in the same pass, so the tier average fell out from under it. Before crediting a moved gap to the card you touched, check whether its comparison group moved instead.
+- **The outlier count is a worklist, not a score, while a pass is running.** It went 9 to 14 across one pass WHILE the roster was getting tighter, because moving nine cards moves their tiers' averages and re-labels their neighbours. The spread between the best and worst card is the honest measure of a pass; the count only says how much is left to look at.
+- **Buff a badly losing card in small steps.** A card measured 15.7 points below its tier was given +3/+2 in one move and came back 27.9 points higher, overshooting to +11 above it. Two separate passes learned this the same way. Correct half the gap, measure, repeat: one correction sized to the whole gap lands on the far side of it.
 - **Ask "who is ahead" with more than one number before building a snowball metric on it.** The turn-5 health leader wins only 58%, because the player on more health that early is often simply the one who has not committed to an attack yet. Board strength alone gives 56%. The player ahead on both at once gives 59.5%, which is also what a human would call being ahead.
 
 ### Gating on the game, not on the harness
@@ -2150,7 +2242,7 @@ When changing a rule, add or update a focused test and make the card text agree 
 - Card text needs real font measurement. A fixed maximum can make short text needlessly tiny while still failing long text.
 - Board cards must communicate their full rules without hover-only discovery.
 - UI tests must assert setup state, not merely click a control and continue. A swallowed click can leave the test green while it tests the wrong game state.
-- Treat CSV and engine data as current truth when a visual roadmap and live data disagree.
+- Treat `source/data/` and the engine as current truth. Any second copy of the roster (a generated page, a spreadsheet, a lore document) is a snapshot no fresher than its last rebuild, so it never wins an argument with the CSV.
 - Test asset paths under the deployment base path, and load moving card art eagerly so remounted cards do not render black.
 - Test sound with the browser’s real analyser. A playing flag is not evidence that the listener graph has audio.
 
@@ -2164,8 +2256,6 @@ When changing a rule, add or update a focused test and make the card text agree 
 - Morgott token art: owner-supplied `source/public/card-art/raw/token-morgott.webp`.
 - [Original audio-track collection](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z)
 - [Rendered card-production library](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Card-Production.7z)
-- [Project roadmap](docs/Convergence%20Browser%20Game%20Roadmap.html)
-- [Voice-cast reference](docs/Convergence%20Voice%20Cast.html)
 
 ## Fan-project notice
 

@@ -26,7 +26,7 @@ export type Alignment = (typeof ALIGNMENTS)[number];
  * One table, because the alternative was seven. The colour is the internal
  * label — it names the gem on the card, not the tier — and the ranking, the
  * display names and "which tiers are above Rare" were separately typed out in
- * `App.tsx` (four times), `unlocks.ts` (twice) and `scripts/build-codex.mjs`,
+ * `App.tsx` (four times) and `unlocks.ts` (twice),
  * each list carrying its own idea of the order. Everything downstream now reads
  * this one, and the order of the array IS the ranking: index 0 is the baseline
  * tier every other one escalates from.
@@ -76,7 +76,7 @@ export const RELIC_RARITY = "Relic";
  *
  * Same story as `RELIC_RARITY`: a placeholder for a property relics do not have,
  * kept out of `CAMPS` so no card can carry it, and named here because the card
- * face, the gallery's hidden-option list and the codex all had it typed out.
+ * face and the gallery's hidden-option list both had it typed out.
  */
 export const RELIC_CAMP_LABEL = "Ascension";
 /**

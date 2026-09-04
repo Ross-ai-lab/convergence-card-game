@@ -97,7 +97,7 @@ let engineVocabularyCache = null;
  * The engine's card vocabularies, read from `types.ts` and `tokens.ts`.
  *
  * `rarityName` maps a frame colour to the tier name a player sees, which the
- * codex page and the gallery both print.
+ * gallery prints.
  */
 export function engineVocabulary() {
   if (engineVocabularyCache) return engineVocabularyCache;

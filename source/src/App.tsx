@@ -3766,8 +3766,8 @@ const HIDDEN_FILTER_VALUES: Partial<Record<FilterKey, string[]>> = {
  *
  * The colours are internal labels — they name the gem on the card, not the tier
  * — so a filter offering "Yellow" and "Red" would ask the player to know an
- * implementation detail. `rarityName` is the engine's own table, shared with the
- * public codex page, so the two can no longer drift.
+ * implementation detail. `rarityName` is the engine's own table, so every
+ * surface that names a tier reads the same one.
  */
 function filterOptionLabel(key: FilterKey, value: string): string {
   return key === "rarity" ? rarityName(value) : value;

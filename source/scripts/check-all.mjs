@@ -86,6 +86,22 @@ const SUITES = [
     browser: true,
     reaches: [/^source\/public\/audio\//, /^source\/src\/audio\//, /^source\/data\/announcer\.csv$/, HARNESS],
   },
+  {
+    // The tutorial, developer mode and the gallery's Star Chart profile: three
+    // screens `ui` and `cardface` never open. It ran nowhere for weeks and both
+    // halves of it had rotted by the time anyone looked, so it is a suite now
+    // rather than a script somebody has to remember.
+    name: "features",
+    command: ["node", "scripts/check-features.mjs", BASE],
+    browser: true,
+    reaches: [
+      /^source\/src\/.*\.(tsx|css)$/,
+      /^source\/src\/engine\/game\.ts$/,
+      /^source\/src\/data\/lore/,
+      /^source\/src\/unlocks\.ts$/,
+      HARNESS,
+    ],
+  },
 ];
 
 /** Everything git knows has changed, tracked or not, as repo-relative paths. */

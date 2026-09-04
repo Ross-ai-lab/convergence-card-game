@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary, readySwings } from "./game";
+import { chooseBotAction } from "./bot";
 import type { GameState, MinionInstance, PlayerId } from "./types";
 import { spawnTestMinion } from "./test-utils";
 
@@ -93,6 +94,14 @@ describe("Convergence engine", () => {
     expect(drafted.bottomDeck).toContain(replacedId);
   });
 
+  /**
+   * The tutorial's teaching target, asserted by its RULES rather than its name.
+   *
+   * The old version of this test pinned the name "Goblins" and nothing else,
+   * which is why it went on passing after Goblins lost its Taunt and became a
+   * Deathrattle minion. The lesson text says "choose the enemy Taunt minion" and
+   * the third lesson cannot be finished without one, so Taunt is the assertion.
+   */
   it("builds the tutorial from a real, deterministic game position", () => {
     const state = createInitialGame(cards, "tutorial-seed", relics, {
       tutorial: true,
@@ -106,10 +115,55 @@ describe("Convergence engine", () => {
       "Batman",
       "Nezu",
     ]);
-    expect(state.players[1].board[2]?.name).toBe("Goblins");
-    expect(state.players[1].board[2]?.sleeping).toBe(false);
+    const target = state.players[1].board[2];
+    expect(target).not.toBeNull();
+    // Lesson three names this keyword out loud, and Taunt closing the core is
+    // the whole point of that lesson.
+    expect(target?.keywords).toContain("Taunt");
+    // It must never swing at the minion lesson one taught the player to play.
+    expect(target?.keywords).toContain("Cannot Attack");
+    // Lesson four points a Battlecry at it, so it has to outlive lesson three's
+    // swing, and it must print no rule of its own for a first-duel player to read.
+    expect(target?.effectId).toBe("none");
+    expect(target?.hp).toBeGreaterThan(1);
     expect(state.players[0].board.every((slot) => slot === null)).toBe(true);
     expect(getLegalActions(state, library).some((action) => action.type === "play_card")).toBe(true);
+  });
+
+  /**
+   * The tutorial has to still be finishable after the Recruit has had its turn.
+   *
+   * This is the failure the position-only test above cannot see. Lesson three
+   * asks the player to swing, and the enemy moves in between: with a 2 ATK body
+   * on the enemy board and a damage Battlecry in its hand, the Recruit removed
+   * the 1-HP minion the player had just been told to play, and the coach sat on
+   * lesson three asking for a green rim that could never appear.
+   */
+  it("leaves both sides something to do after the Recruit's turn", () => {
+    let state = createInitialGame(cards, "tutorial-walk", relics, { tutorial: true });
+
+    const play = getLegalActions(state, library).find((action) => action.type === "play_card");
+    expect(play).toBeDefined();
+    state = applyAction(state, play!, library).state;
+    state = applyAction(state, { type: "end_turn", player: 0 }, library).state;
+
+    let guard = 0;
+    while (state.activePlayer === 1 && state.phase === "main" && guard < 100) {
+      guard += 1;
+      const action = chooseBotAction(state, library, 1, "easy", getLegalActions(state, library));
+      if (!action) break;
+      state = applyAction(state, action, library).state;
+    }
+
+    expect(state.activePlayer).toBe(0);
+    // Lesson three: a minion of the player's, awake, ready to be clicked.
+    const mine = state.players[0].board.filter(Boolean);
+    expect(mine).toHaveLength(1);
+    expect(mine[0]?.sleeping).toBe(false);
+    // Lesson three again, and lesson four: something on the enemy board to
+    // point at, still wearing the Taunt the lesson names.
+    const taunts = state.players[1].board.filter((minion) => minion?.keywords.includes("Taunt"));
+    expect(taunts).toHaveLength(1);
   });
 
   it("reuses a known legal-action list without changing action resolution", () => {
