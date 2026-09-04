@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 192,205 bytes, roughly 48k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~52% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 194,559 bytes, roughly 49k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~51% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -498,7 +498,9 @@ nothing for a wait to protect.
   115px and 278px depending on how many arrived and how big the window is, so one hover scale would
   land somewhere different every time — and on a fifteen-card pack in a small window, still too small
   to read. `hoverLift` in `App.tsx` works the multiplier back from whatever the grid did, so the
-  enlarged card always lands at `PACK_HOVER_WIDTH` = 420px.
+  enlarged card always lands at `PACK_HOVER_WIDTH` = **315px**, cut a quarter from 420 on
+  4 September 2026 (owner's ruling): at 420 an enlarged card covered most of its neighbours, and the
+  point is to read one card rather than to lose the row it came from.
 - **An edge card grows INWARD.** `--lift-origin` is set per card from its column and row, because
   enlarging from the centre pushed the first card 63px off the left of a 1920 screen — and the grid is
   deliberately as wide as the window now, so the outer column is exactly where a pointer lands most.
@@ -507,12 +509,16 @@ nothing for a wait to protect.
   animation beats a plain `:hover` declaration in the cascade — the hover would simply never apply.
   `.pack-scroll` also had to stop clipping, or the enlarged card would be cut off along the top row
   and both sides.
-- **A HEADLESS HARNESS CANNOT SEE THIS WORKING, and the reason generalises.** The pane never paints,
-  so a CSS *transition* never advances: the hovered card measures and photographs at its starting
-  size, `:hover` matches, the rule is in the CSSOM, the custom property resolves, and the computed
-  transform is still the identity matrix. Injecting `transition: none` before measuring is what makes
-  the end state visible. Any hover, fade or slide checked this way needs the same treatment before it
-  is called broken.
+- **A HEADLESS HARNESS CANNOT SEE THIS WORKING, and `settleMotion` in `scripts/browser.mjs` is the
+  answer to it.** The pane never paints, so a CSS *transition* never advances: the hovered card
+  measures and photographs at its starting size while `:hover` matches, the rule sits in the CSSOM,
+  the custom property resolves, and the computed transform is still the identity matrix. Call
+  `settleMotion(page)` after the screen is set up and before measuring — `check:ui` does, for the
+  pack-hover check at the end of it. **The negative delay in that helper is the part worth reading**:
+  shortening an animation's duration is not enough, because on a page that never painted its clock may
+  never have started, so it stays at 0% — the pack's cards kept reporting two-thirds of their settled
+  width until the helper started every animation a second in the past. Any hover, fade, slide or deal
+  checked this way needs it before it is called broken.
 
 Raised from three on 3 September 2026, owner's ruling, and the change is the SHAPE rather than the
 number. Three hits had a middle; five has a climb, and each hit now cuts its own line into the box, so
@@ -1421,11 +1427,23 @@ game talking over its own ending. Music says the same thing and does not wear ou
   this pass replaced rather than kept. `materials/local-production/asset-tools/fetch-screen-music.py`
   is the front door: `--dry-run` searches and ranks candidates without downloading anything, and the
   chosen video ids live in `screen-music-picks.json` so a re-run fetches the same track.
-- **EACH ONE PLAYS IN FULL**, 1:59 to 7:19 (owner's ruling, 4 September 2026). They were 16 and 22
+- **EACH ONE PLAYS IN FULL**, 1:56 to 7:17 (owner's ruling, 4 September 2026). They were 16 and 22
   second excerpts cut by `build-card-stings.py`'s picker; `--cut` still does that, and the default is
-  now the whole track, levelled to the same `loudnorm` target as everything else with a 0.35s fade in
-  and a 2.5s fade out. The cost of a whole track is that it starts where the recording starts: a piece
-  with a quiet opening now opens quietly, where the excerpt began at its loudest bar.
+  now the whole track with a 0.35s fade in and a 2.5s fade out. The cost of a whole track is that it
+  starts where the recording starts: a piece with a quiet opening now opens quietly, where the
+  excerpt began at its loudest bar.
+- **THE SILENT LEAD-IN IS TRIMMED, and the level is MEASURED before it is applied.** Both exist
+  because of the same complaint — "the win music is glitchy the first 2 seconds" — and neither was a
+  glitch in the recording. A YouTube upload commonly opens on two or three seconds of room tone, and
+  a one-pass `loudnorm` is a dynamic normaliser: it lifted that near-silence to reach its target.
+  Measured on the win track, the source's lead-in runs at an RMS of 0.003–0.007 and the encode had it
+  at 0.06–0.18, about **thirty times louder** — three seconds of amplified hiss before the first note.
+  `lead_in_seconds` finds where the music actually starts, using a threshold that is a fraction of the
+  track's own level so a genuinely soft opening is not cut into (trimmed: 2.8s from the win, 1.4s from
+  the pack, 1.1s and 0.8s from the other two). `loudnorm_filter` then measures the track and applies a
+  single fixed gain, which is what "levelled" should have meant on a seven-minute piece all along.
+  Measured after: all four sit at **-16.0 to -16.2 LUFS** with a loudness range of 4.7 to 9.3 LU and
+  true peaks under -1.3 dBTP — levelled with each other, and with their own dynamics intact.
 - **A cue is STREAMED through an `<audio>` element; card themes stay decoded.** `decodeAudioData` on a
   seven-minute file would hold the entire download before a note sounded and then keep tens of
   megabytes of PCM alive, which is the wrong shape for music that starts when a screen appears.
@@ -1437,6 +1455,12 @@ game talking over its own ending. Music says the same thing and does not wear ou
   instead is ducked by its own duck — measured on the master bus at **0.018** wired that way against
   **0.29–0.48** wired correctly, which is the difference between "there is something playing" and
   music.
+- **THE PACK STOPS THE BED OUTRIGHT, and ducking was not enough.** Owner's ruling, 4 September 2026:
+  "there are 2 musics playing at the same time". A bed at a tenth under a piece of music is still a
+  second piece of music, and both were audible through the whole ceremony. The music effect in
+  `App.tsx` now answers `pack` before it answers anything else and calls `setTrack(null)`; the bed
+  returns the moment the pack is collected, because that same effect runs again. The three endings
+  need no such rule — a finished duel has already stopped the bed.
 - **One at a time, and it leaves with its screen.** A second cue cuts the first, `stopCue` ends one
   when its screen closes, and the ending waits for the pack to be collected — the pack sits above the
   result screen, so the two would otherwise start together.

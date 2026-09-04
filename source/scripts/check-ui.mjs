@@ -30,7 +30,7 @@
  * these checks are a coin flip on whether the opening hand is affordable —
  * which is how the audio harness failed the first time it ran.
  */
-import { launch } from "./browser.mjs";
+import { launch, settleMotion } from "./browser.mjs";
 
 const BASE = process.argv[2] || "http://localhost:5177";
 const TITLE_ONLY = process.argv.includes("--title-only");
@@ -1410,6 +1410,74 @@ await newBoard({ place: false });
     );
   }
 }
+
+// ---------------------------------------------------------------- the pack
+//
+// Opened through the developer tools rather than by finishing a duel: the pack
+// screen is otherwise reachable only by winning enough cards, which is why its
+// layout shipped broken twice.
+await page.goto(BASE, { waitUntil: "domcontentloaded" });
+await page.evaluate(() => localStorage.clear());
+await page.reload({ waitUntil: "domcontentloaded" });
+await page.locator(".title-screen").waitFor({ state: "visible", timeout: 8000 });
+await page.keyboard.type("Ross");
+await page.getByRole("button", { name: "Open developer tools", exact: true }).click();
+await page.locator(".developer-panel").waitFor({ state: "visible", timeout: 6000 });
+await page.getByRole("button", { name: "Open 5-card pack", exact: true }).click();
+await page.locator(".pack-veil").waitFor({ state: "visible", timeout: 8000 });
+
+check(
+  "the sealed pack screen carries no words",
+  (await page.evaluate(() => document.querySelector(".pack-stage").innerText.trim())) === "\u2726",
+  "only the sigil on the pack itself",
+);
+
+for (let hit = 0; hit < 8; hit += 1) {
+  const sealed = page.locator(".pack-box:not(.is-charged)");
+  if (!(await sealed.isVisible().catch(() => false))) break;
+  await sealed.click({ force: true, timeout: 4000 }).catch(() => {});
+  await page.waitForTimeout(260);
+}
+await page.locator(".pack-collect:not([disabled])").waitFor({ state: "visible", timeout: 25000 });
+
+// THE TRANSITION HAS TO BE SETTLED FIRST. This page never paints, so the lift
+// would still be measured at its starting size and this check would fail on a
+// feature that works. See settleMotion in browser.mjs.
+await settleMotion(page);
+const packCard = page.locator(".pack-card").nth(1);
+const restingWidth = await packCard.evaluate((el) =>
+  Math.round(el.querySelector(".card-face").getBoundingClientRect().width),
+);
+const packSpot = await packCard.evaluate((el) => {
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+});
+await page.mouse.move(packSpot.x, packSpot.y);
+await page.waitForTimeout(120);
+const liftedWidth = await packCard.evaluate((el) =>
+  Math.round(el.querySelector(".card-face").getBoundingClientRect().width),
+);
+check(
+  "pointing at a pack card enlarges it",
+  liftedWidth > restingWidth * 1.2 && liftedWidth >= 300 && liftedWidth <= 340,
+  `${restingWidth}px resting, ${liftedWidth}px lifted`,
+);
+
+const packCardCount = await page.locator(".pack-card").count();
+const packFits = await page.evaluate(() => {
+  const stage = document.querySelector(".pack-stage");
+  const collect = document.querySelector(".pack-collect");
+  return {
+    stageOverflow: stage.scrollHeight - stage.clientHeight,
+    collectBottom: Math.round(collect.getBoundingClientRect().bottom),
+    windowHeight: window.innerHeight,
+  };
+});
+check(
+  "the whole pack fits on one screen",
+  packCardCount === 5 && packFits.stageOverflow === 0 && packFits.collectBottom <= packFits.windowHeight,
+  JSON.stringify(packFits),
+);
 
 await browser.close();
 

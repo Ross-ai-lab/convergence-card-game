@@ -830,6 +830,15 @@ export default function App() {
   const lowestCore = Math.min(game.players[0].health, game.players[1].health);
 
   useEffect(() => {
+    // THE PACK TAKES THE BED OFF ENTIRELY (owner's ruling, 4 September 2026).
+    // Ducking it to a tenth was not enough: a bed at a tenth under a piece of
+    // music is still a second piece of music, and the two were audible together
+    // through the whole ceremony. It comes back when the pack is collected,
+    // because this effect runs again the moment `pack` clears.
+    if (pack) {
+      void sfx.setTrack(null);
+      return;
+    }
     // THE SCREEN IS ASKED FIRST, and that ordering is the whole of a bug fixed
     // 3 September 2026. A finished duel keeps `phase === "gameOver"` when the
     // player takes the Menu button back to the title — nothing resets the game
@@ -846,7 +855,7 @@ export default function App() {
       return;
     }
     void sfx.setTrack(lowestCore <= TENSION_CORE ? "tension" : "battle");
-  }, [screen, game.phase, lowestCore]);
+  }, [screen, game.phase, lowestCore, pack]);
 
   // Hotseat hands the screen to whoever's turn it is. Against the bot the screen
   // STAYS on Player One — the opponent is a real opponent, so its hand is never
@@ -5724,8 +5733,12 @@ interface PackLayout {
  * enlarged card is a different size every time — and on a fifteen-card pack in a
  * small window, still too small to read. This is the size it lands at instead,
  * and the multiplier is worked back from whatever the grid did.
+ *
+ * 315, cut a quarter from 420 on 4 September 2026 (owner's ruling). At 420 an
+ * enlarged card covered most of its neighbours; the point is to read one card,
+ * not to lose the row it came from.
  */
-const PACK_HOVER_WIDTH = 420;
+const PACK_HOVER_WIDTH = 315;
 /** Never smaller than the card already is, never a jump that covers the screen. */
 const PACK_HOVER_RANGE = { min: 1.25, max: 3.2 };
 

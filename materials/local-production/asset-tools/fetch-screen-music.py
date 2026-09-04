@@ -35,6 +35,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
+
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 HERE = Path(__file__).resolve().parent
@@ -222,29 +224,107 @@ def probe_seconds(path: Path) -> float:
         return 0.0
 
 
+def lead_in_seconds(src: Path) -> float:
+    """
+    Where the MUSIC starts, as opposed to where the file starts.
+
+    A YouTube upload commonly opens on two or three seconds of room tone before
+    the first note. That is inaudible in the source and a real fault in the
+    output, because a normaliser has to lift near-silence by a huge factor to
+    reach its target — the win music opened on three seconds of amplified hiss
+    for exactly this reason (owner: "the win music is glitchy the first 2
+    seconds"). Measured on that track: the source's lead-in runs at an RMS of
+    0.003–0.007 and the encode had it at 0.06–0.18, roughly thirty times louder.
+
+    The threshold is a FRACTION OF THE TRACK'S OWN LEVEL rather than a fixed
+    number, so a piece that genuinely opens soft is not cut into.
+    """
+    samples = card_stings.decode_mono(src)
+    rate = card_stings.ANALYSIS_RATE
+    step = rate // 10  # 100 ms
+    frames = len(samples) // step
+    if frames < 20:
+        return 0.0
+    rms = np.sqrt(np.mean(samples[: frames * step].reshape(frames, step).astype(np.float64) ** 2, axis=1))
+    loud = float(np.percentile(rms, 90))
+    if loud <= 0:
+        return 0.0
+    threshold = loud * 0.08
+    # Three bins in a row, so one click or one cough does not count as the start.
+    for index in range(frames - 3):
+        if all(rms[index + offset] > threshold for offset in range(3)):
+            # A breath of pre-roll, so the first note is not clipped off its own
+            # attack.
+            return max(0.0, index / 10 - 0.15)
+    return 0.0
+
+
+def loudnorm_filter(src: Path, start: float) -> str:
+    """
+    TWO-PASS loudnorm, measured on the part of the track that will be used.
+
+    One-pass loudnorm is a dynamic normaliser: it rides the level as it goes, so
+    a quiet passage is pushed up and a loud one pulled down while you listen.
+    That is fine on a six-second sting and wrong on a seven-minute orchestral
+    piece, which is largely made of quiet passages and loud ones. The measured
+    pass turns it into a single fixed gain, which is what "levelled" should have
+    meant all along.
+
+    Falls back to the one-pass filter if the measuring run says anything
+    unexpected: a slightly pumped cue beats no cue.
+    """
+    target = "I=-16:TP=-1.5:LRA=11"
+    probe = run(
+        [
+            "ffmpeg", "-v", "info", "-y", "-ss", f"{start:.2f}", "-i", str(src), "-vn",
+            "-af", f"loudnorm={target}:print_format=json", "-f", "null", "-",
+        ],
+        timeout=900,
+    )
+    text = probe.stderr or ""
+    brace = text.rfind("{")
+    if brace < 0:
+        return f"loudnorm={target}"
+    try:
+        measured = json.loads(text[brace : text.rfind("}") + 1])
+        return (
+            f"loudnorm={target}"
+            f":measured_I={measured['input_i']}"
+            f":measured_TP={measured['input_tp']}"
+            f":measured_LRA={measured['input_lra']}"
+            f":measured_thresh={measured['input_thresh']}"
+            f":offset={measured['target_offset']}"
+            ":linear=true:print_format=summary"
+        )
+    except (json.JSONDecodeError, KeyError):
+        return f"loudnorm={target}"
+
+
 def build_full(src: Path, dst: Path) -> tuple[bool, str]:
     """
     The WHOLE track, levelled, with a fade at each end.
 
     Owner's ruling, 4 September 2026: these four cues play in full rather than as
-    cuts. `loudnorm` at the same target the card stings use, so a moment piece
-    and a card theme sit at one level; nothing else about the recording is
-    touched.
+    cuts. What is trimmed is only the silent lead-in, and the level is measured
+    before it is applied — see the two helpers above, both of which exist because
+    of the same three seconds of amplified hiss.
     """
     seconds = probe_seconds(src)
     if seconds <= 1:
         return False, "unreadable source duration"
-    fade_out_at = max(0.0, seconds - FULL_FADE_OUT)
+    start = lead_in_seconds(src)
+    kept = seconds - start
+    fade_out_at = max(0.0, kept - FULL_FADE_OUT)
     filters = (
         f"afade=t=in:st=0:d={FULL_FADE_IN},"
         f"afade=t=out:st={fade_out_at}:d={FULL_FADE_OUT},"
-        "loudnorm=I=-16:TP=-1.5:LRA=11"
+        f"{loudnorm_filter(src, start)}"
     )
     dst.parent.mkdir(parents=True, exist_ok=True)
     tmp = dst.with_suffix(".tmp.ogg")
     proc = run(
         [
-            "ffmpeg", "-v", "error", "-y", "-i", str(src),
+            "ffmpeg", "-v", "error", "-y", "-ss", f"{start:.2f}", "-i", str(src),
             # See the same pair in build-card-stings.py: without `-vn` the MP4's
             # picture is re-encoded into the .ogg, and `loudnorm` hands the
             # encoder its own 192 kHz analysis rate. Together they made a
@@ -259,14 +339,15 @@ def build_full(src: Path, dst: Path) -> tuple[bool, str]:
         tmp.unlink(missing_ok=True)
         return False, (proc.stderr or "").strip()[-160:]
     produced = probe_seconds(tmp)
-    # Within a second of the source: an encode that silently stopped early is the
-    # failure this catches, and it looks like success everywhere else.
-    if produced < seconds - 1.0:
+    # Within a second of what was kept: an encode that silently stopped early is
+    # the failure this catches, and it looks like success everywhere else.
+    if produced < kept - 1.0:
         tmp.unlink(missing_ok=True)
-        return False, f"only {produced:.1f}s of {seconds:.1f}s encoded"
+        return False, f"only {produced:.1f}s of {kept:.1f}s encoded"
     dst.unlink(missing_ok=True)
     tmp.replace(dst)
-    return True, f"{produced:.1f}s, {dst.stat().st_size / 1024 / 1024:.1f} MB"
+    lead = f", {start:.1f}s of lead-in trimmed" if start > 0.05 else ""
+    return True, f"{produced:.1f}s, {dst.stat().st_size / 1024 / 1024:.1f} MB{lead}"
 
 
 def main() -> None:
