@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 195,431 bytes, roughly 49k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~51% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 196,697 bytes, roughly 49k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~51% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -711,18 +711,41 @@ another. Every one of those edits looked too small to be worth a run. The suite
 is the cheapest thing in this project that can tell you that you were wrong, and
 skipping it moves the discovery to the published site.
 
-**The BROWSER checks are the ones to skip, and skipping them is a judgement
-about reach, not about size.** `check:ui`, `check:audio`, `check:cardface`,
-`shoot` and the shoot scripts each need a dev server and take minutes. Match
-them to what the change can reach:
+**`npm run check` IS THE FRONT DOOR, and the table above is what it now does for
+you.** Built 4 September 2026, after the owner asked whether a project this size
+really needs six separate check commands. It does need the checks; what it did
+not need was a session picking between them from memory every time, because a
+wrong pick is exactly how something reaches the published site broken.
 
-| What changed | What to run |
-|---|---|
-| Engine rules, the bot, the save, scripts | `npm test` and `npm run validate:data` |
-| A card's stats, text or keywords | those, plus `npm run check:cardface` — text length drives the auto-fit |
-| Anything drawn on screen: layout, CSS, a component, a new prompt | those, plus `npm run check:ui` |
-| Sound, a card theme, a herald line | plus `npm run check:audio` |
-| Anything at all, before publishing | `npm run publish:pages`, which validates and rebuilds |
+```bash
+npm run check              # only what the current changes could break
+npm run check -- --all     # every suite, whatever changed
+npm run check -- --list    # say what it would run, run nothing
+npm run check -- --only ui # one suite, for working on the checks themselves
+```
+
+`scripts/check-all.mjs` reads `git status` and matches every changed path
+against a small table of what each suite can reach — a `.tsx` or `.css` file
+reaches the UI and the card faces, anything under `public/audio/` or `src/audio/`
+reaches the sound, `data/` reaches the validator. `npm test` runs whatever
+changed, because seventy seconds is cheap and "small" is the change it catches.
+**A change to `scripts/browser.mjs` or to a check script re-runs every browser
+suite**, or the one edit nobody re-checks is the edit to the checker.
+
+**AND IT RUNS THEM AT THE SAME TIME.** They used to run one after another, each
+starting its own browser. They now share one browser server — `launch()` in
+`browser.mjs` connects to it when `CONVERGENCE_BROWSER_WS` is set, and every
+suite still gets its own context, so their storage and their pages cannot see
+each other. Measured on the first real run: **624 seconds of work finished in
+328**, with all four suites green. Sharing the browser saves seconds; running
+them together is what saves the minutes.
+
+The individual commands all still exist and still work on their own. What they
+lost is the requirement to remember which of them to type.
+
+**The dev server has to be up** for anything with a browser in it, exactly as
+before, and `npm run publish:pages` still validates and rebuilds before anything
+goes live.
 
 **The balance harness is a separate decision.** `npm run sim` and
 `npm run check:balance` measure win rates, not correctness, so they answer a

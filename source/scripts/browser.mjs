@@ -3,9 +3,20 @@ export async function loadChromium() {
   return (await import("playwright")).chromium;
 }
 
-/** The usual launch, with any extra Chromium args a caller needs. */
+/**
+ * The usual launch, with any extra Chromium args a caller needs.
+ *
+ * When `CONVERGENCE_BROWSER_WS` is set it CONNECTS to that already-running
+ * browser instead of starting one. `check-all.mjs` sets it so several suites
+ * share one browser while running at the same time; each still gets its own
+ * context, so their storage and their pages cannot see each other. A connected
+ * `browser.close()` only drops the connection, which is why the suites can keep
+ * calling it exactly as they do when they own the browser.
+ */
 export async function launch(extraArgs = []) {
   const chromium = await loadChromium();
+  const shared = process.env.CONVERGENCE_BROWSER_WS;
+  if (shared) return chromium.connect(shared);
   return chromium.launch({
     ...(extraArgs.length ? { args: extraArgs } : {}),
   });
