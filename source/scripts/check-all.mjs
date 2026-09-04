@@ -87,6 +87,15 @@ const SUITES = [
     reaches: [/^source\/public\/audio\//, /^source\/src\/audio\//, /^source\/data\/announcer\.csv$/, HARNESS],
   },
   {
+    // A new card with no test is the one thing the effect-coverage gate exists to
+    // catch, and it can only catch it if something runs it. Card data and engine
+    // branches are the only two edits that can create that gap.
+    name: "coverage",
+    command: ["npm", "run", "check:coverage"],
+    browser: false,
+    reaches: [/^source\/data\/cards\.csv$/, /^source\/src\/engine\//, /^source\/scripts\/check-effect-coverage/],
+  },
+  {
     // The tutorial, developer mode and the gallery's Star Chart profile: three
     // screens `ui` and `cardface` never open. It ran nowhere for weeks and both
     // halves of it had rotted by the time anyone looked, so it is a suite now
@@ -171,17 +180,65 @@ if (wanted.some((suite) => suite.browser)) {
   process.env.CONVERGENCE_BROWSER_WS = server.wsEndpoint();
 }
 
-const results = await Promise.all(wanted.map(run));
+/**
+ * TWO BROWSER SUITES AT A TIME, and it costs nothing.
+ *
+ * Four of them at once put four Chromium contexts, four React apps and four
+ * animation loops on one CPU, and the suites that drive a UI started failing on
+ * a working build: a click would sit through its whole timeout because the app
+ * had not finished leaving the title screen yet, and the error reads as a
+ * z-index bug in the product rather than as a busy machine. An intermittent red
+ * is worse than no check, because the next session learns to read past it.
+ *
+ * The cap is close to free because the suites are wildly uneven. `ui` alone is
+ * about 300s and the other three together are about 290, so with the long one
+ * started first the two lanes finish inside the time `ui` already took.
+ * Measured 4 September 2026: 339s unlimited against 818s of work, 346s capped
+ * against 741 — the work itself got cheaper because nothing was fighting.
+ *
+ * The plain-Node suites are not capped. They are not competing for a renderer,
+ * and `tests` is the long pole among them.
+ */
+const BROWSER_LANES = 2;
+
+async function runAll(suites) {
+  const results = [];
+  const plain = suites.filter((suite) => !suite.browser);
+  // LONGEST FIRST. Alphabetical order put the 300-second suite last and the
+  // whole run took 451s instead of 339 — two lanes are slower than no lanes if
+  // the long pole starts after the short ones. `costs` is a rough ordering hint
+  // measured 4 September 2026, not a budget: only the sort uses it.
+  const costs = { ui: 300, audio: 145, features: 125, cardface: 25 };
+  const queue = [...suites.filter((suite) => suite.browser)].sort(
+    (a, b) => (costs[b.name] ?? 0) - (costs[a.name] ?? 0) || a.name.localeCompare(b.name),
+  );
+  const lane = async () => {
+    for (;;) {
+      const suite = queue.shift();
+      if (!suite) return;
+      results.push(await run(suite));
+    }
+  };
+  await Promise.all([
+    ...plain.map(async (suite) => results.push(await run(suite))),
+    ...Array.from({ length: BROWSER_LANES }, lane),
+  ]);
+  return results;
+}
+
+const wallStart = Date.now();
+const results = await runAll(wanted);
 if (server) await server.close();
 
 const failed = results.filter((result) => !result.ok);
 for (const result of failed) {
   console.log(`\n----- ${result.suite} -----\n${result.output.trim().split("\n").slice(-40).join("\n")}`);
 }
-const longest = Math.max(0, ...results.map((r) => r.seconds));
+// Real wall clock, not the longest suite: with lanes those are different numbers.
+const elapsed = Math.round((Date.now() - wallStart) / 1000);
 const total = results.reduce((sum, r) => sum + r.seconds, 0);
 console.log(
-  `\n${results.length - failed.length}/${results.length} suites passed in ${longest}s ` +
-    `(${total}s of work, run together).`,
+  `\n${results.length - failed.length}/${results.length} suites passed in ${elapsed}s ` +
+    `(${total}s of work; plain suites together, browser suites ${BROWSER_LANES} at a time).`,
 );
 process.exit(failed.length ? 1 : 0);

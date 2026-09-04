@@ -717,10 +717,12 @@ export function effectiveCardCost(state: GameState, playerId: PlayerId, card: Pl
   // because the card says "any minion" and because a discount that only your own
   // Freeze could unlock would make the card a two-card combo rather than an
   // opportunist.
-  const chill =
-    isMinionCard(card) && card.effectId === "deep_sea_discount" && boardHasFrozenOrChained(state)
-      ? DEEP_SEA_DISCOUNT
-      : 0;
+  const chilled =
+    isMinionCard(card) && card.effectId === "deep_sea_discount" && boardHasFrozenOrChained(state);
+  // Compared field-to-string rather than through `hasEffect`, which is where the
+  // tracer normally sees a passive, so this branch has to say so itself.
+  if (chilled) traceEffect("deep_sea_discount");
+  const chill = chilled ? DEEP_SEA_DISCOUNT : 0;
   return Math.max(0, (card.cost ?? 0) - (player.costReductions[card.id] ?? 0) - chill + enemyCardTax);
 }
 
@@ -5330,6 +5332,9 @@ function copyEnemyPassives(state: GameState): void {
   for (const owner of [0, 1] as PlayerId[]) {
     for (const wearer of state.players[owner].board) {
       if (!wearer || wearer.effectId !== "copy_all_enemy_passives") continue;
+      // Same reason as Deep Sea King's discount: this reads `effectId` directly
+      // rather than going through `hasEffect`, so the tracer cannot see it.
+      traceEffect("copy_all_enemy_passives");
       if (wearer.silenced || wearer.chained > 0) {
         wearer.gainedEffects = [];
         continue;

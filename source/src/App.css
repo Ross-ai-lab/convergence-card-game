@@ -5249,7 +5249,7 @@ button:disabled {
 .gallery-detail-panel {
   position: relative;
   display: flex;
-  width: min(1000px, 96vw);
+  width: min(1340px, 96vw);
   max-height: calc(100vh - 24px);
   flex-direction: column;
   overflow: hidden;
@@ -5297,11 +5297,7 @@ button:disabled {
   grid-template-columns: 280px minmax(0, 1fr);
   gap: 18px;
   padding: 12px 18px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(240, 199, 103, 0.6) rgba(255, 246, 222, 0.06);
+  overflow: hidden;
 }
 
 .gallery-detail-primary {
@@ -5397,7 +5393,7 @@ button:disabled {
 
 /* On desktop the card owns the first left-hand row, while the six-point chart
    gets the lower-left space directly beneath it. */
-@media (min-width: 761px) {
+@media (min-width: 821px) {
   .gallery-detail-primary {
     grid-row: 1;
   }
@@ -5495,7 +5491,7 @@ button:disabled {
 .gallery-detail-lore p {
   margin: 0;
   color: rgba(255, 243, 218, 0.85);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   line-height: 1.45;
 }
 
@@ -5505,19 +5501,19 @@ button:disabled {
   border-left: 3px solid var(--quote-accent, var(--teal));
   color: rgba(255, 235, 192, 0.88);
   font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-style: italic;
 }
 
 /* Relics no longer spend the first row on a radar. Give their lore the space
    back as readable prose instead of leaving a wide, empty column beside it. */
 .gallery-detail-panel.is-relic .gallery-detail-lore p {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   line-height: 1.48;
 }
 
 .gallery-detail-panel.is-relic .gallery-detail-lore blockquote {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .gallery-detail-columns {
@@ -5537,7 +5533,7 @@ button:disabled {
 .gallery-detail-box h3 {
   margin: 0 0 6px;
   color: #fff0c1;
-  font-size: 0.78rem;
+  font-size: 1.25rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -5548,7 +5544,7 @@ button:disabled {
   margin: 0;
   padding-left: 17px;
   color: rgba(255, 243, 218, 0.78);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   line-height: 1.35;
 }
 
@@ -5559,17 +5555,17 @@ button:disabled {
   display: grid;
   gap: 6px;
   color: rgba(255, 243, 218, 0.78);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   line-height: 1.4;
 }
 
 .gallery-detail-panel.is-relic .gallery-detail-box h3 {
-  font-size: 0.84rem;
+  font-size: 1.25rem;
 }
 
 .gallery-detail-panel.is-relic .gallery-detail-box ul,
 .gallery-detail-panel.is-relic .gallery-detail-box-copy {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   line-height: 1.42;
 }
 
@@ -5594,12 +5590,12 @@ button:disabled {
   border-radius: 999px;
   color: rgba(255, 243, 218, 0.7);
   background: rgba(255, 246, 222, 0.045);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   line-height: 1.25;
 }
 
 .gallery-detail-panel.is-relic .detail-rival {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .detail-rival.linked {
@@ -5620,11 +5616,11 @@ button:disabled {
 .gallery-detail-locked p {
   margin: 0;
   color: rgba(255, 243, 218, 0.7);
-  font-size: 0.78rem;
+  font-size: 1.25rem;
   line-height: 1.5;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 820px) {
   .gallery-detail-body {
     grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
     gap: 10px;
@@ -5725,7 +5721,7 @@ button:disabled {
   }
 
   .gallery-detail-lore p {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     line-height: 1.1;
   }
 
@@ -5776,7 +5772,7 @@ button:disabled {
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-lore p {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     line-height: 1.1;
   }
 
@@ -5803,7 +5799,29 @@ button:disabled {
    1920x1012 screen. The modal must fit that real working area, not only a
    generous headless viewport. Keep the compact chrome while giving the card
    and chart the larger footprint requested for a Star Chart. */
-@media (min-width: 761px) and (max-height: 800px) {
+/* The band nothing covered: tall enough for the desktop arrangement, not tall
+   enough for it at full size. A 900-pixel laptop is the commonest screen there
+   is, and both 1536x864 and 1280x851 were clipping their last row here. The card
+   gives back 39px of height and the two row gaps give back 8; the overflow was
+   25 and 38. Deliberately gentler than the 800px block below, which is a
+   different problem — that one has to fit a whole profile into two thirds of a
+   screen. Source order matters: the shorter band comes after this one and wins
+   where both apply. */
+@media (min-width: 821px) and (min-height: 801px) and (max-height: 900px) {
+  .gallery-detail-body {
+    gap: 14px;
+  }
+
+  .gallery-detail-card {
+    width: 252px;
+  }
+
+  .gallery-detail-body {
+    grid-template-columns: 252px minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 821px) and (max-height: 800px) {
   .gallery-detail-veil {
     padding: 10px;
   }
@@ -5833,13 +5851,13 @@ button:disabled {
   }
 
   .gallery-detail-lore p {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     line-height: 1.1;
   }
 
   .gallery-detail-lore blockquote {
     margin-top: 8px;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .gallery-detail-columns {
@@ -5858,7 +5876,7 @@ button:disabled {
   .gallery-detail-box ul,
   .gallery-detail-box-copy {
     gap: 4px;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     line-height: 1.27;
   }
 
@@ -5868,30 +5886,30 @@ button:disabled {
 
   .detail-rival {
     padding: 4px 6px;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-lore p {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     line-height: 1.1;
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-lore blockquote {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-box h3 {
-    font-size: 0.78rem;
+    font-size: 1.25rem;
   }
 
   .gallery-detail-panel.is-relic .gallery-detail-box ul,
   .gallery-detail-panel.is-relic .gallery-detail-box-copy {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     line-height: 1.32;
   }
 
   .gallery-detail-panel.is-relic .detail-rival {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .gallery-detail-relationships .gallery-detail-box-copy {
@@ -5904,7 +5922,7 @@ button:disabled {
     padding: 0;
     border: 0;
     background: none;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .gallery-detail-relationships .detail-rival + .detail-rival::before {
@@ -5965,7 +5983,7 @@ button:disabled {
   }
 
   .gallery-detail-lore p {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     line-height: 1.1;
   }
 

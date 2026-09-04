@@ -136,20 +136,42 @@ check("Star Chart renders its six-axis chart", await page.locator(".star-chart")
 check("Star Chart removes the In Convergence panel", await page.locator(".gallery-detail-rule").count() === 0);
 check("Star Chart uses the Relationships block", await page.locator(".gallery-detail-relationships").getByText("Relationships", { exact: true }).count() === 1);
 check("Star Chart removes footer copy", await page.locator(".gallery-detail-hint").count() === 0 && await page.locator(".gallery-detail-nav span").count() === 0);
-/** Nothing is unreachable: the profile either fits, or the reader can scroll to the rest. */
-const reachable = (geometry) => geometry.fits || geometry.overflow === "auto" || geometry.overflow === "scroll";
+/**
+ * THE PROFILE FITS. Owner's ruling, 4 September 2026: no scrolling here.
+ *
+ * The assertion has now been wrong in both directions, which is worth keeping.
+ * It began as "overflow is hidden AND it fits", which sounds like this rule and
+ * is not: a hidden overflow that does NOT fit passes the first half and silently
+ * eats the last row, which is exactly what happened for weeks after the profile
+ * copy was enlarged. Then it became "fits OR can scroll", which was honest about
+ * reachability and permitted the scrollbar the owner has since ruled out.
+ *
+ * What it checks now is the thing that is actually required: the content is no
+ * taller than the box. `overflow` is reported alongside so a failure says which
+ * of the two states it is in, and a scrollable body fails here on purpose.
+ */
+const fitsOnOneScreen = (geometry) => geometry.fits === true;
 const modalGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
   const body = panel.querySelector(".gallery-detail-body");
   return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
 });
-check("Star Chart reaches all of its content", reachable(modalGeometry), `overflow ${modalGeometry.overflow}`);
+check("Star Chart fits on one screen", fitsOnOneScreen(modalGeometry), `overflow ${modalGeometry.overflow}`);
+await page.setViewportSize({ width: 1536, height: 864 });
+await page.waitForTimeout(200);
+const laptopGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
+  const body = panel.querySelector(".gallery-detail-body");
+  return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
+});
+// The 801-900px height band. Nothing covered it, and both 1536x864 and 1280x851
+// were clipping their last row inside it.
+check("laptop-height Star Chart fits on one screen", fitsOnOneScreen(laptopGeometry));
 await page.setViewportSize({ width: 1279, height: 851 });
 await page.waitForTimeout(200);
 const referenceModalGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
   const body = panel.querySelector(".gallery-detail-body");
   return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
 });
-check("reference-size Star Chart reaches all of its content", reachable(referenceModalGeometry));
+check("reference-size Star Chart fits on one screen", fitsOnOneScreen(referenceModalGeometry));
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-reference-size.png"), fullPage: false });
 await page.setViewportSize({ width: 1536, height: 736 });
 await page.waitForTimeout(200);
@@ -158,7 +180,7 @@ const shortHeightGeometry = await page.locator(".gallery-detail-panel").evaluate
   const rect = panel.getBoundingClientRect();
   return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1, bottom: rect.bottom } : { overflow: "missing", fits: false, bottom: Infinity };
 });
-check("short-height Star Chart stays inside the viewport", reachable(shortHeightGeometry) && shortHeightGeometry.bottom <= 736);
+check("short-height Star Chart fits on one screen", fitsOnOneScreen(shortHeightGeometry) && shortHeightGeometry.bottom <= 736);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-short-height.png"), fullPage: false });
 await page.waitForTimeout(400);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart.png"), fullPage: false });
@@ -168,7 +190,7 @@ const mobileModalGeometry = await page.locator(".gallery-detail-panel").evaluate
   const body = panel.querySelector(".gallery-detail-body");
   return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
 });
-check("mobile Star Chart reaches all of its content", reachable(mobileModalGeometry));
+check("mobile Star Chart fits on one screen", fitsOnOneScreen(mobileModalGeometry));
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-mobile.png"), fullPage: false });
 await page.setViewportSize({ width: 1440, height: 900 });
 await page.getByRole("button", { name: "Close Star Chart", exact: true }).click();
@@ -179,9 +201,7 @@ for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Gr
   await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 5000 });
   const profileGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
     const body = panel.querySelector(".gallery-detail-body");
-    if (!body) return false;
-    const overflow = getComputedStyle(body).overflowY;
-    return body.scrollHeight <= body.clientHeight + 1 || overflow === "auto" || overflow === "scroll";
+    return body ? body.scrollHeight <= body.clientHeight + 1 : false;
   });
   const expectedChartCount = name === "Allspark Cube" ? 0 : 1;
   check(`${name} has a Star Chart profile`, await page.locator(".gallery-detail-panel").isVisible() && await page.locator(".star-chart").count() === expectedChartCount && await page.locator(".gallery-detail-rule").count() === 0 && profileGeometry);

@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 204,091 bytes, roughly 51k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~49% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 209,345 bytes, roughly 52k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~48% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -44,6 +44,7 @@
 **Changing the game**
 
 - [Changing cards and effects](#changing-cards-and-effects)
+  - [EVERY NEW CARD SHIPS WITH A TEST, and `npm run check:coverage` is the gate](#every-new-card-ships-with-a-test-and-npm-run-checkcoverage-is-the-gate)
   - [Every save that changes a card must name the cards it changed](#every-save-that-changes-a-card-must-name-the-cards-it-changed)
   - [The tutorial picks its teaching target by RULES, never by card id](#the-tutorial-picks-its-teaching-target-by-rules-never-by-card-id)
   - [Ask what happened to a card instead of reconstructing it](#ask-what-happened-to-a-card-instead-of-reconstructing-it)
@@ -64,7 +65,7 @@
   - [Three things the board now says out loud](#three-things-the-board-now-says-out-loud)
   - [Developer tools can arm the enemy](#developer-tools-can-arm-the-enemy)
   - [Developer tools can jump to the result screen](#developer-tools-can-jump-to-the-result-screen)
-  - [The gallery's Star Chart profile SCROLLS, and hidden overflow is why it had to](#the-gallerys-star-chart-profile-scrolls-and-hidden-overflow-is-why-it-had-to)
+  - [The gallery's Star Chart profile FITS ON ONE SCREEN](#the-gallerys-star-chart-profile-fits-on-one-screen)
   - [Visual design changes require close-up and full-screen QA](#visual-design-changes-require-close-up-and-full-screen-qa)
   - [Title-menu design QA record](#title-menu-design-qa-record)
 - [The rarity shine](#the-rarity-shine)
@@ -701,7 +702,7 @@ fixed section order and regenerates the navigation block at the top, whose byte 
 both go stale on every edit — and a banner quoting a stale size is worse than no banner, because it
 tells a session the truncation will not happen to them.
 
-Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run check:features`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
+Run the relevant checks before calling a code change finished. Useful focused checks include `npm run check:ui`, `npm run check:audio`, `npm run check:cardface`, `npm run check:features`, `npm run check:coverage`, `npm run shoot`, `npm run sim`, and `npm run check:balance`. Browser checks need the local server running where their help text says so.
 
 ### Which checks a change actually needs
 
@@ -731,7 +732,8 @@ npm run check -- --only ui # one suite, for working on the checks themselves
 `scripts/check-all.mjs` reads `git status` and matches every changed path
 against a small table of what each suite can reach — a `.tsx` or `.css` file
 reaches the UI, the card faces and the feature screens, anything under
-`public/audio/` or `src/audio/` reaches the sound, `data/` reaches the validator. `npm test` runs whatever
+`public/audio/` or `src/audio/` reaches the sound, `data/` reaches the validator
+and the effect-coverage gate. `npm test` runs whatever
 changed, because seventy seconds is cheap and "small" is the change it catches.
 **A change to `scripts/browser.mjs` or to a check script re-runs every browser
 suite**, or the one edit nobody re-checks is the edit to the checker.
@@ -743,6 +745,23 @@ suite still gets its own context, so their storage and their pages cannot see
 each other. Measured on the first real run: **624 seconds of work finished in
 328**, with all four suites green. Sharing the browser saves seconds; running
 them together is what saves the minutes.
+
+**Two browser suites at a time, longest first, and the cap is free.** Four
+Chromium contexts, four React apps and four animation loops on one CPU made the
+UI suites fail on working builds: a click sat through its whole timeout because
+the app had not finished leaving the title screen, and the error reads as a
+z-index bug in the product rather than as a busy machine. One red run in three,
+which is the worst possible rate — often enough to waste a session, rare enough
+to be dismissed. The cap costs nothing because the suites are wildly uneven:
+measured 4 September 2026, **339s unlimited against 818s of work, and 339s capped
+against 767** — the same wall clock, and the work itself got cheaper because
+nothing was fighting. The plain-Node suites are not capped; they are not
+competing for a renderer.
+
+**Longest first is not optional there.** Sorting the browser queue alphabetically
+put the 300-second suite last and took the run from 339s to **451s** — two lanes
+are slower than no lanes when the long pole starts after the short ones.
+`check-all.mjs` carries a rough per-suite cost purely to order that queue.
 
 **A CHECK THAT IS NOT IN A SUITE IS NOT A CHECK.** `check-features.mjs` covers
 the tutorial, developer mode and the gallery's Star Chart profile: three screens
@@ -770,12 +789,17 @@ opposite assertion: proving something does NOT happen has no state to wait for.
 before, and `npm run publish:pages` still validates and rebuilds before anything
 goes live.
 
-**The balance harness is a separate decision.** `npm run sim` and
-`npm run check:balance` measure win rates, not correctness, so they answer a
-question about the roster rather than about the code. Run the fuzz sweep
-(`npx tsx scripts/simulate.ts --mode fuzz --games 300`) after any change to
-combat, targeting or the effect queue: it drives about twenty thousand random
-legal moves with every invariant armed and takes half a minute.
+**The balance harness is a separate decision, and it is BANNED unless the owner
+asked for it in the message you are answering** — see [NEVER run a balance patch
+without being asked](#never-run-a-balance-patch-without-being-asked-every-single-time).
+`npm run sim` and `npm run check:balance` measure win rates, not correctness, so
+they answer a question about the roster rather than about the code.
+
+**The fuzz sweep is the exception the ban names explicitly.** Run
+`npx tsx scripts/simulate.ts --mode fuzz --games 300` after any change to combat,
+targeting or the effect queue: it drives about twenty thousand random legal moves
+with every invariant armed and takes half a minute. It reports crashes and dead
+ends rather than win rates, which is why it survives a ban on measurement.
 
 After changing the **How to play** guide, run `node scripts/shoot-rules.mjs http://localhost:5177` against a running dev server. It starts a duel, answers the Hero Power offer, opens the guide, and walks the panel down in overlapping screen-height steps into `.preview/rules/`, plus one full-height capture. That step exists because the guide is roughly 2,500 pixels of content inside a 600-pixel window: a single screenshot photographs the first quarter of it and proves nothing about the rest, and no other harness opens the panel at all.
 
@@ -800,6 +824,39 @@ Multiple threads usually work on Convergence at the same time. Files, generated 
 ## Changing cards and effects
 
 For stats, wording, keywords, timing, or art paths, update the relevant `cards.csv` row, validate the data, run focused tests, and rebuild the playable copy when needed.
+
+### EVERY NEW CARD SHIPS WITH A TEST, and `npm run check:coverage` is the gate
+
+**Owner's ruling, 4 September 2026.** A card whose effect no test names is a card
+nobody has checked, and it is indistinguishable from a card that works. Kaku
+Kaioh printed "Deal 4x damage" while the engine multiplied by 2 for the game's
+entire balance history: the CSV was right, the type list was right, the printed
+text was right, and the one number that decided combat was wrong, because no test
+ever read it.
+
+`scripts/check-effect-coverage.mjs` runs the suite with effect tracing on and
+fails when any effect on any card is named by no test file. A test that asserts
+something about a card has to refer to it — by name or by effect id, because that
+is how you place the card and how you find it again — so "names it" is a
+reasonable proxy for "checks it". It over-credits and cannot under-credit, which
+is the safe way round.
+
+It was a report rather than a gate on purpose: nobody was going to write a
+hundred tests at once, and a check that is red on every run gets muted within a
+week. The roster reached **176 of 176 named** on 4 September 2026, so the only
+thing the gate can catch now is a new card arriving without a test, which is
+exactly what it should catch and exactly when it is cheapest to fix. `npm run
+check` runs it as the `coverage` suite whenever `data/cards.csv` or the engine
+changes.
+
+**Two lists stay reports and must not be turned into gates.** "Ran but nothing
+checks them" is a subset of the gate and empties with it. "Never ran at all" is
+not a defect: an effect can be genuinely hard for a simulation to reach and still
+be properly tested. Two effects sat on that list while having tests, because the
+tracer hangs off `hasEffect` and those two compare `effectId` to a string
+directly; both now call `traceEffect` themselves. A permanent false alarm on the
+one report whose job is to hand a session a real to-do list is worse than no
+report.
 
 ### Every save that changes a card must name the cards it changed
 
@@ -1321,42 +1378,56 @@ hotseat somebody always won. Jumping from a hotseat mode therefore played the
 victory piece under `Enemy wins`, which made the defeat music unreachable from the
 one tool built to reach these screens.
 
-### The gallery's Star Chart profile SCROLLS, and hidden overflow is why it had to
+### The gallery's Star Chart profile FITS ON ONE SCREEN
 
-Clicking a gallery card opens its Star Chart profile: the card face, the six-axis
-lore chart, the lore and quote, Strengths and Weaknesses, and the Signature move
-and Relationships row. `.gallery-detail-body` is a two-column grid inside a panel
-capped at `calc(100vh - 24px)`.
+**Owner's ruling, 4 September 2026: no scrolling in the Star Chart.** Clicking a
+gallery card opens its profile — the card face, the six-axis lore chart, the lore
+and quote, Strengths and Weaknesses, and the Signature move and Relationships
+row. All of it is visible at once or the check goes red. `check-features.mjs`
+asserts it at five sizes and `.gallery-detail-body` is `overflow: hidden`, which
+is only honest because the fit is now measured rather than hoped for.
 
-**It was `overflow: hidden`, and it was cutting almost every profile.** Measured
-at 1440x900 on 4 September 2026: **33 of 36 profiles lost between 83 and 143
+**It was silently amputating almost every profile.** Measured at 1440x900 on
+4 September 2026 before any of this: **33 of 36 profiles lost between 83 and 143
 pixels off the bottom** — the Relationships chips and part of the Signature move,
 gone, with no scrollbar and no way to reach them. At 780x460 the loss was 417px.
-Nothing reported it because hidden overflow is silent by construction: the
-content is laid out, measured, and then not painted.
+Nothing reported it, because hidden overflow is silent by construction: the
+content is laid out, measured, and then not painted. The check that should have
+caught it asserted `overflow === "hidden" && fits`, and a hidden overflow that
+does not fit passes the first half of that.
 
-The cause is dated. The profile copy was enlarged to 24px on 30 August 2026 at
-the owner's request, and 24px of variable-length lore in a fixed-height dialog
-cannot be made to fit by layout alone. Two changes, in that order of importance:
+Four changes make it fit, and the order is the useful part:
 
-- **`overflow-y: auto`.** Given the choice between the text size he asked for and
-  a scrollbar, the scrollbar loses nothing. `overscroll-behavior: contain` keeps
-  the wheel inside the dialog, and `scrollbar-color` paints the thumb in the
-  panel's own gold so it reads as part of the design.
+- **The type is 20px throughout.** Body copy came down from 24px, section
+  headings went up from 12.5px. Those headings were collateral from a bulk
+  enlargement on 30 August that replaced seven different sizes with `1.5rem` in
+  one sweep, so "STRENGTHS" was labelling text twice its own size.
 - **The last row spans both columns.** On desktop the card owns the first
   left-hand row and the chart owns the second, so the third row had 280px of
-  empty panel beside it. Widening that row alone took the clipped count from 33
-  of 36 to 20 of 36 before the scroll was added; the rest is the text size.
+  empty panel beside it. Worth about half the overflow on its own.
+- **A height band for 801-900px.** There were two bands, "any height" and "800 or
+  shorter", and nothing in between — so a 1536x864 or 1280x851 laptop got the
+  full-size treatment with 60 to 90 fewer pixels to put it in, and clipped by 25
+  and 38. The band gives back 39px of card and 8px of gap. The 800px block below
+  it is a different problem and stays as it is.
+- **The tablet breakpoint moved from 760px to 820px.** 768x1024 is iPad portrait,
+  and at 760 it kept the desktop two-column layout with a 280px card inside a
+  737px panel, overflowing by 15px. The stacked layout handles that width and
+  always could.
 
-**A headless screenshot cannot answer "is there a scrollbar".** Playwright's
-bundled Chromium uses overlay scrollbars, so `offsetWidth - clientWidth` is 0 and
-the bar never appears in a PNG. The same page in a real Chromium on this machine
-reserves 15px, or 10px with `scrollbar-width: thin`. Measure the gutter in a real
-browser before concluding a scroll container has no affordance.
+**Panel width is not a lever here, and that is worth knowing before reaching for
+it.** Widening from 1000px to 1340px changed the overflow at every clipping size
+by exactly zero pixels. The profile is not overflowing because text wraps; it is
+overflowing because the card is 392px tall and the chart is 220px tall and those
+two numbers do not care how wide the panel is. Measure the row stack before
+tuning a dimension the content does not read.
 
-**Chromium ignores `::-webkit-scrollbar` once `scrollbar-width` is set.** Styling
-both is not belt and braces, it is twenty dead lines: the standard properties win
-and the pseudo-element block never applies.
+**A headless screenshot cannot tell you whether a scroll container has a
+scrollbar.** Playwright's bundled Chromium uses overlay scrollbars, so the gutter
+measures 0 and the bar never appears in a PNG; the same page in a real Chromium
+on this machine reserves 15px, or 10px with `scrollbar-width: thin`. That matters
+here in reverse now: a layout that only fits because the harness reserved no
+scrollbar will overflow on a real machine.
 
 ### Visual design changes require close-up and full-screen QA
 
@@ -1777,9 +1848,21 @@ Do not casually regenerate approved menu, battle, or tension music. Preserve the
 **Do not run the balance harness, a balance pass, a dial sweep or a difficulty
 ladder unless the owner has asked for that run in the message you are answering.**
 Owner's ruling, 2 September 2026. It is a hard ban, and it covers
-`npm run sim`, `npm run check:balance`, `scripts/simulate.ts` in any mode, the
-`apply-balance-pass*.mjs` scripts, and any new script that measures or retunes
-the game.
+`npm run sim`, `npm run check:balance`, every measuring mode of
+`scripts/simulate.ts`, the `apply-balance-pass*.mjs` scripts, and any new script
+that measures or retunes the game.
+
+**The fuzz sweep is the one carve-out, and it is deliberate.**
+`npx tsx scripts/simulate.ts --mode fuzz --games 300` is not banned: run it after
+any change to combat, targeting or the effect queue. The ban as first written
+said "`scripts/simulate.ts` in any mode", which swept the sweep up with the
+harness and left this page telling a session to run it in one section and never
+to run it in another. Owner's ruling, 4 September 2026, on being shown the
+contradiction. The reason is that the sweep matches none of the three reasons
+below: it takes half a minute rather than an hour and forty, it reports crashes
+and soft-locks rather than win rates, and finding a state with no legal moves is
+correctness work, not parked balance work. Everything else in `simulate.ts`
+stays banned.
 
 Three things make it a rule rather than a preference:
 

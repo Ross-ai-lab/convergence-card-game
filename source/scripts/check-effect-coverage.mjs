@@ -195,8 +195,28 @@ for (const effectId of firedButUnchecked.sort()) {
   console.log(`  ${effectId}: ${rosterEffects.get(effectId).join(", ")}`);
 }
 
-// A report, not a gate. Nobody is writing 100 tests today, and a check that goes
-// red on every run gets muted within a week, which would cost the report the one
-// job it has. It exits non-zero only for the unambiguous bug: a card wired to an
-// effect the engine cannot run at all.
-process.exitCode = unreachable.length ? 1 : 0;
+// IT IS A GATE NOW, on the "named by a test" half.
+//
+// It was a report on purpose: at the time nobody was going to write a hundred
+// tests, and a check that is red on every run gets muted within a week, which
+// costs the report the one job it has. The roster reached 100% on 4 September
+// 2026, so the argument expired — the only thing left for this gate to catch is
+// a NEW card arriving without a test, which is exactly what it should catch, and
+// exactly when it is cheapest to fix. Owner's ruling, same day: every new card
+// ships with a test.
+//
+// The other two lists stay reports. "Ran but nothing checks them" is a subset of
+// this gate and dies with it. "Never ran at all" is not a defect: an effect can
+// be genuinely hard for a simulation to reach and still be properly tested.
+if (checked.length !== total) {
+  const missing = all.filter((effectId) => !namedInTests(effectId));
+  console.error(
+    `\nNO TEST NAMES ${missing.length} effect${missing.length === 1 ? "" : "s"}. ` +
+      `Every card ships with a test that names the card or its effect id:`,
+  );
+  for (const effectId of missing.sort()) {
+    console.error(`  ${effectId}: ${rosterEffects.get(effectId).join(", ")}`);
+  }
+}
+
+process.exitCode = unreachable.length || checked.length !== total ? 1 : 0;

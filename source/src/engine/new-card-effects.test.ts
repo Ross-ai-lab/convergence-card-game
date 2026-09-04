@@ -3048,3 +3048,100 @@ describe("a copied engine works like a printed one", () => {
     expect(after.players[0].board[0]).toMatchObject(before);
   });
 });
+
+/**
+ * The three effects `npm run check:coverage` reported as NEVER RUN.
+ *
+ * Not "no test asserts them" — no test, and no simulated duel, had ever taken
+ * the branch at all. Reading each one against its printed text said they were
+ * right, and reading is not evidence; a card whose code has never executed is a
+ * card nobody has seen work.
+ */
+describe("effects the coverage report found had never executed", () => {
+  it("Deep Sea King costs 3 less while ANY minion on either board is Frozen or Chained", () => {
+    const state = mainState("deep-sea-discount");
+    const card = library[cardId("Deep Sea King")];
+    expect(card.cost).toBe(5);
+
+    // Nothing is disabled: the card is full price.
+    expect(effectiveCardCost(state, 0, card)).toBe(5);
+
+    // Its own side, Frozen. The card says "any minion", so this counts.
+    const frozen: GameState = { ...state, players: [...state.players] as GameState["players"] };
+    frozen.players[0] = { ...state.players[0], board: [...state.players[0].board] };
+    frozen.players[0].board[0] = minion("Zoro", 0, { frozen: true });
+    expect(effectiveCardCost(frozen, 0, card)).toBe(2);
+
+    // The enemy side, Chained. Also counts, and that is the deliberate half:
+    // a discount only your own Freeze could unlock would make this a combo
+    // piece rather than an opportunist.
+    const chained: GameState = { ...state, players: [...state.players] as GameState["players"] };
+    chained.players[1] = { ...state.players[1], board: [...state.players[1].board] };
+    chained.players[1].board[0] = minion("Zoro", 1, { chained: 2 });
+    expect(effectiveCardCost(chained, 0, card)).toBe(2);
+
+    // The discount is Deep Sea King's alone.
+    expect(effectiveCardCost(chained, 0, library[cardId("Zoro")])).toBe(library[cardId("Zoro")].cost);
+  });
+
+  it("Pillar Men is restored to full health by a kill, and only by a kill", () => {
+    const state = mainState("pillar-men-kill-heal");
+    // Chained is its printed price, so the test hands it a swing rather than
+    // waiting two turns for one; the effect under test is the heal.
+    // 2 of 4 HP, against a 1/1. It has to survive the counter-blow to be healed
+    // by the kill, because the heal is paid AFTER the whole exchange on purpose
+    // — see resolveKillRewards. At 1 HP it dies to the retaliation and the
+    // reward is never earned, which is the behaviour that ruling exists for.
+    state.players[0].board[0] = minion("Pillar Men", 0, { hp: 2, chained: 0, sleeping: false });
+    state.players[1].board[0] = minion("Nezu", 1);
+
+    const killed = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(killed.players[1].board[0]).toBeNull();
+    const healed = killed.players[0].board[0]!;
+    expect(healed.hp).toBe(healed.maxHp);
+    expect(healed.maxHp).toBe(4);
+
+    // A swing that kills nothing heals nothing. The wall is given 0 ATK so the
+    // retaliation cannot muddy which of the two numbers moved, and no Taunt, so
+    // nothing else on that board could have been the legal target.
+    const survivor = mainState("pillar-men-no-kill");
+    survivor.players[0].board[0] = minion("Pillar Men", 0, { hp: 1, chained: 0, sleeping: false });
+    survivor.players[1].board[0] = minion("Nezu", 1, { atk: 0, hp: 9, maxHp: 9 });
+    const missed = applyAction(survivor, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(missed.players[1].board[0]?.hp).toBe(9 - missed.players[0].board[0]!.atk);
+    expect(missed.players[0].board[0]?.hp).toBe(1);
+  });
+
+  it("All for One wears every enemy Passive, and gives each back as its owner leaves", () => {
+    const state = mainState("all-for-one-copy");
+    // Two enemy passives, and one enemy Battlecry that must NOT be copied.
+    state.players[1].board[0] = minion("John Wick", 1);
+    state.players[1].board[1] = minion("Zoro", 1);
+    state.players[1].board[2] = minion("Nezu", 1);
+
+    const after = play(state, 0, "All for One", 0);
+    const worn = after.players[0].board[0]!;
+    const ids = worn.gainedEffects.map((effect) => effect.effectId);
+    expect(ids).toContain("friendly_death_buff_1_1");
+    expect(ids).toContain("on_kill_buff_1");
+    // Nezu's "Draw 1 card" is a Battlecry, so it is not a Passive to copy.
+    expect(ids).not.toContain("draw_card");
+    // And it never copies itself, or two of them would each wear the other's
+    // copy of the other's copy.
+    expect(ids).not.toContain("copy_all_enemy_passives");
+
+    // It is an aura, rebuilt every recompute: the enemy leaving takes its power.
+    const lost: GameState = { ...after, players: [...after.players] as GameState["players"] };
+    lost.players[1] = { ...after.players[1], board: [...after.players[1].board] };
+    lost.players[1].board[1] = null;
+    const settled = applyAction(lost, { type: "end_turn", player: 0 }, library).state;
+    expect(settled.players[0].board[0]!.gainedEffects.map((effect) => effect.effectId)).not.toContain("on_kill_buff_1");
+
+    // Silenced, it wears nothing at all.
+    const silenced: GameState = { ...after, players: [...after.players] as GameState["players"] };
+    silenced.players[0] = { ...after.players[0], board: [...after.players[0].board] };
+    silenced.players[0].board[0] = { ...worn, silenced: true };
+    const quiet = applyAction(silenced, { type: "end_turn", player: 0 }, library).state;
+    expect(quiet.players[0].board[0]!.gainedEffects).toHaveLength(0);
+  });
+});
