@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 207,502 bytes, roughly 52k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~48% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 221,109 bytes, roughly 55k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~45% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -17,6 +17,7 @@
 - [Version 1.0 — complete, 21 August 2026](#version-10-complete-21-august-2026)
 - [What Convergence is](#what-convergence-is)
 - [What the game still needs](#what-the-game-still-needs)
+  - [Campaign design — phase one](#campaign-design-phase-one)
 
 **How the game plays**
 
@@ -158,6 +159,138 @@ No account or installation is required. The public site records only an aggregat
 The live game and `source/data/cards.csv` now contain 172 named character cards plus 10 Basic reference cards, 182 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
 
 ## What the game still needs
+
+<!-- CAMPAIGN-DESIGN-START -->
+### Campaign design — phase one
+
+**Design only.** Approved direction and proposed content for review. The current playable game has not changed. Exact card IDs live in [the draft campaign data](materials/campaign-design.json). The generated review page is a reading copy of this proposal.
+
+| Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
+|---:|---|---|---|---|---:|
+| 1 | GLaDOS | Tech fortifications | Recruit | Stand Fast | 9 |
+| 2 | Tai Lung | Martial growth | Recruit | Sharpen | 9 |
+| 3 | Yujiro | Nature duelists | Recruit | Sharpen | 9 |
+| 4 | Light Yagami | Information and sacrifice | Recruit | Blood Price | 9 |
+| 5 | Lord Voldemort | Protected dark magic | Veteran | Call a Recruit | 9 |
+| 6 | Darth Vader | Imperial machinery | Veteran | Core Bolt | 9 |
+| 7 | Conquest | Ruthless combat | Veteran | Sharpen | 9 |
+| 8 | Dio Brando | Frozen battlefield | Veteran | Dampen | 9 |
+| 9 | All for One | Stolen abilities | Veteran | Wither | 9 |
+| 10 | Meruem | Predators and protection | Veteran | Reforged Chains | 10 |
+| 11 | Ainz Ooal Gown | Undead court | Veteran | Call a Recruit | 10 |
+| 12 | Eye of Sauron | The siege of Mordor | Veteran | Stand Fast | 10 |
+| 13 | Kaido | Pirate emperors | Ascendant A | Sharpen | 11 |
+| 14 | Gilgamesh | Relic arsenal | Ascendant A | Blood Price | 10 |
+| 15 | Gojo | Silence and execution | Ascendant B | Dampen | 10 |
+| 16 | Elden Beast | Magic and rebirth | Ascendant B | Mend Core | 10 |
+| 17 | Boros | Monsters and heroes | Ascendant C | Mend Core | 11 |
+| 18 | Thanos | Cosmic convergence | Ascendant D | Wither | 16 |
+| 19 | Mastered Ultra Instinct Goku | Champions of light | Ascendant E | Vital Spark | 6 |
+| 20 | Bill Cipher | Reality fracture | Ascendant E | Blood Price | 1 |
+
+#### Scope and status
+
+Phase one is a reviewable design, not a gameplay release. The owner approved the direction; the proposed boss order, exact card lists and difficulty placement still need review. Runtime code and existing browser saves are unchanged.
+
+The campaign replaces the old shared-deck progression. Shared decks are retired entirely, including after campaign completion. Earlier README sections describe the currently shipped game; their no-deck-building and no-campaign decisions are superseded for the upcoming implementation.
+
+
+#### Campaign and rewards
+
+Twenty chapters unlock strictly in order. A first victory clears its chapter, grants its fixed reward once and opens the next chapter. Defeat, draw, surrender and abandoned attempts grant nothing. Replays of cleared chapters are proposed to remain available without additional cards or Hero Powers.
+
+Every player starts with the same thirty listed cards, including all ten Basic cards and no Mythics. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
+
+Approved reward adjustment: chapters 1–9 award 9 each; chapters 10–12, 14–16 award 10 each; chapters 13 and 17 award 11 each; chapter 18 awards 16; chapter 19 awards 6; chapter 20 awards Bill Cipher only. Total: 30 starters + 186 rewards = all 216 cards.
+
+Marvel combines MCU, Marvel and Loki labels: twelve minions and four relics, sixteen cards. The earlier conversational count of seventeen was an arithmetic error. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
+
+Basic remains an explicit reference-card category, including Star Destroyer. Those ten cards must stay in the starter deck even if their names resemble a boss franchise. Universe aliases are recorded in the design data; generic Myth is not treated as one story universe.
+
+Filler rewards were selected once during design and are stored as explicit IDs. No random reward roll happens when playing, replaying, resetting or loading the game. Future roster additions require an intentional reward-plan revision; never silently reroll earlier packs.
+
+Daily packs and loss/draw unlocks are removed completely. Campaign first clears are the only ordinary unlock source in this design. After completion, free duels award no additional cards because the complete current roster is already owned.
+
+
+#### Personal deck and hotseat
+
+A starting deck contains exactly thirty different unlocked cards, with one copy per card. The thirty-card limit applies at duel setup. Draws, discards, tokens, theft, copying and other legitimate effects can change the cards in play without changing the saved deck list.
+
+The deck builder opens after the first chapter win. Before that, the starter deck is visible but read-only: there are no spare cards to exchange. Rewards enter the collection, never append themselves to the active deck. The player explicitly swaps cards before the next duel.
+
+Proposed initial scope: one saved personal deck, not multiple named presets. The builder provides selected-card count, cost curve, search, cost/camp/alignment/type filters, and clear selected/available states. An incomplete draft may be saved, but Start Duel requires thirty valid unique cards. Provide a deliberate Restore Starter action.
+
+Editing is available between duels. An ongoing or resumed duel keeps the deck snapshot it started with. The campaign page offers Edit Deck and Next Chapter; completing chapter twenty also reveals Recruit, Veteran and Ascendant.
+
+Hotseat is available from the start. Proposed setup: each seat selects a separate thirty-card deck from the same local unlocked collection. Both seats may include the same card; uniqueness applies within each deck. Start with the starter list for both seats, preserve the privacy curtain, and keep hotseat rewards and campaign progress at zero.
+
+After the campaign, each bot duel samples thirty unique cards completely randomly from the full playable roster, including relics. No hidden mana-curve or synergy correction is applied. The player still chooses their own thirty-card deck. Random opponents may therefore have poor curves or weak combinations.
+
+
+#### Boss identity and duel rules
+
+Each opponent is represented by its existing card portrait, character name and chapter number. Replace Player Two across the banner, target labels, introduction, log and results. Keep health, mana, hand count and the named Hero Power visible; the portrait also opens its card details.
+
+The opponent starts at standard 75 Core HP with ordinary mana, hand size and turn rules. Its character card is included once in its deck; the portrait does not create a free board minion, force an opening draw or grant its card passive to the Core.
+
+Every boss deck is a fixed list of thirty unique cards, including the entire assigned universe. Shuffle that list independently each new attempt. Filler choices favour the listed theme, but required universe cards can mix camps and alignments. Boss fillers use starter or earlier reward cards, avoiding future reserved universes.
+
+The proposed player always takes the current first-player seat in campaign play. Keep the current three-card opening, player mulligan, second-player Coin, standard hand limit and five board slots. Difficulty comes from deck composition and bot decisions; no extra health or exclusive encounter rules are introduced.
+
+Use existing character art for the banner redesign. Story dialogue, chapter introductions, custom portraits, unique boss powers and special encounter rules are deferred to the next creative pass.
+
+
+#### Hero Powers and difficulty
+
+First-time campaign clears unlock player Hero Powers in the existing order: Mend Core, Core Bolt, Stand Fast, Reforged Chains, Call a Recruit, Sharpen, Vital Spark, Blood Price, Dampen, Wither. Chapter one begins without a player Hero Power; the first clear unlocks Mend Core. Chapters 11–20 have no additional power unlock.
+
+Every boss uses its listed fixed existing Hero Power from its first attempt. Each costs the standard two mana and follows the usual once-per-turn limit. Replays cannot accelerate the player power track.
+
+Chapters 1–4 use Recruit behaviour. Chapters 5–12 use Veteran behaviour. Chapters 13–14 use full-turn Ascendant search with all four cheat flags off. Chapters 15–16 enable reply-reading. Chapter 17 also enables true-dice knowledge. Chapter 18 also values the top of each separate deck. Chapters 19–20 additionally draw two and keep one through Foresight.
+
+These intermediate Ascendant profiles are proposed new configurations, not existing menu levels. They reuse current search machinery and retain its current search limits. Decks and this curve are structurally checked, not balance-tested; separate-deck gameplay must be tested before claiming a smooth difficulty curve.
+
+
+#### Separate-deck effect contract
+
+Store draw pile and bottom-of-deck cards separately for each seat. Ordinary draw, mulligan, Blood Price, Nezu and Domovoy use the acting player's deck. Fatigue rises only when that player tries to draw from their own empty draw pile and bottom pile; the opponent's remaining cards do not prevent it.
+
+Detective L and Ascendant Foresight offer two cards from the controller's own deck. Return the rejected card to that same deck bottom, preserving current behaviour. With only one card available, offer that one; an empty deck follows the ordinary fatigue rule. Sir Nighteye reveals the controller's own top card.
+
+Morpheus, Kagaya and Vegapunk search the controller's remaining deck and bottom pile. Indiana Jones, Gol D. Roger and Frieren discover relics there; Domovoy draws one there. Offer fewer choices when fewer eligible cards remain. No valid candidate means no card gained, not a fallback draw from the enemy deck.
+
+Chaos summons from its controller's deck. Existing effects which take or equip relics from the deck, including Gilgamesh and the Heroic Spirits, take from that same side. Temporary generated tokens and printed copy or transformation effects keep their legitimate rules; they never permanently unlock cards.
+
+Angstrom Levy returns the targeted minion to the targeted side's deck bottom and selects its same-cost replacement from that side's remaining deck. Search before returning the target, so it cannot replace itself. No eligible replacement leaves the slot empty. This is an explicit proposed separate-deck ruling.
+
+Track original deck ownership separately from current controller for stolen cards. An explicit return-to-owner effect follows original ownership; an effect explicitly tied to the targeted side, such as the proposed Angstrom ruling, follows that side. Keep current controller for combat, buffs and ordinary draw effects. Audit discard/resurrection ownership together with deck ownership.
+
+Ascendant Clairvoyance evaluates each seat's next card from that seat's deck. It no longer pretends that taking a card denies the same card to the player. True Dice and reply-reading retain their current meanings. Update bot projections, undo, choice cancellation, save/resume and deck counters together.
+
+
+#### Progress reset policy
+
+Owner policy: never be afraid to reset Convergence progress during development. Prefer a clean reset over fragile migration when progression or save semantics change. Record what resets and apply the reset once through a version change, not repeatedly on every page load.
+
+For campaign implementation, reset existing collections to the curated thirty-card starter, campaign completion to zero, unfinished duels, selected decks, collection marks, records and Hero Power unlocks. Preserve unrelated preferences such as sound volume. Phase one does not perform that reset.
+
+Developer tools remain available from the start. A developer-assisted campaign victory counts as a normal first clear and grants that chapter's reward and Hero Power progress. A victory outside campaign mode does not clear an unnamed chapter. Deliberate developer Unlock All remains an explicit exception to reserved rewards.
+
+Persist first-clear progress, exact unlocked IDs, deck selection and unviewed reward presentation together. Reopening the game must never pay the same chapter twice, and closing during pack animation must not lose its cards. Avoid the old count-as-prefix model, which cannot express reserved fixed rewards reliably.
+
+
+#### Implementation boundaries and acceptance
+
+Next phase would implement separate piles in engine/types.ts and engine/game.ts; adapt bot.ts and affected engine tests; replace progression in progress.ts, unlocks.ts and storage.ts; add campaign definitions and deck validation; and build campaign/deck-builder screens through App.tsx, screens/Screens.tsx and their styles.
+
+Create focused campaign, deck validation, first-clear and save-reset checks. Verify all 600 boss-deck slots, 216 unique unlock allocations, complete universe inclusion, no future reserved card leakage, exact thirty-card setup, relic counting, per-seat draws, independent fatigue, ownership after theft, hotseat isolation, replay idempotency and developer-assisted completion.
+
+Verify the real campaign start, first reward, first swap, named enemy banner, saved duel resume and chapter-twenty completion in desktop and phone layouts. Test the adapted effects on sparse decks as well as complete decks. Bot matchups are a later validation activity; no balance ladder or card-stat patch was run in phase one.
+
+Do not implement dialogue, new cards, new art, custom boss rules, multiple named deck presets, multiplayer services or shared-deck compatibility in the proposed first implementation. No game deployment occurs during phase-one design.
+
+<!-- CAMPAIGN-DESIGN-END -->
+
 
 **The duel itself is finished and it is fun.** The owner has played it and enjoyed it. Treat "does a
 turn feel good" as an answered question, not an open one, and do not put a human playtest back on any
