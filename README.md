@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 209,345 bytes, roughly 52k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~48% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 207,502 bytes, roughly 52k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~48% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -1082,54 +1082,21 @@ The engine’s central contract is `applyAction(state, action, library) -> { sta
 
 ## Interface and card faces
 
-**What keeps a gallery of 216 card faces scrollable, and the measurements behind each part.** Every
-cell is a full card face: about 23 elements, its own size container, gradients, rails, gems and six
-text measurements. Measured on the locked gallery at 148 cells, laying all of them out costs
-**219 ms** against **4.5 ms** when they are skipped — roughly **1.4 ms per cell**, which is why three
-rows arriving inside one frame is felt as a stutter. Four things hold it together and they are not
-interchangeable.
+**Performance across the menu, gallery and duel.** The renderer avoids work for covered or distant content while retaining the existing artwork, card sizes and visible motion.
 
-1. **`content-visibility: auto` on `.gallery-cell`** skips layout and paint for off-screen cells. The
-   cell keeps its box because `aspect-ratio` sits on the CELL and is not contained away with its
-   contents, so nothing jumps and the scrollbar is honest from the first frame.
-2. **`contain-intrinsic-size: auto 264px auto 370px`** on the same rule. The `auto` keywords are the
-   point, not the lengths: without an intrinsic size a cell that leaves the viewport throws its layout
-   away and rebuilds it from nothing on the way back, and with `auto` the browser reuses the size it
-   last measured. The lengths themselves never apply, because `aspect-ratio` wins — measured before
-   and after, neither the scroll height nor the row height moves by a pixel.
-3. **The card shine pauses while the body is scrolling.** A card face carries up to six blended,
-   infinitely animating layers; measured in the unlocked gallery that is **112 animating spans**, all
-   of them compositing on every frame the browser draws. `.gallery-body` gets an `is-scrolling` class
-   from a passive scroll listener that writes to `classList` rather than to state — re-rendering the full roster
-   memoised cells to say "we are moving" would cost more than the animations it is quietening — and
-   the CSS sets `animation-play-state: paused`. Paused, not hidden: every layer freezes where it was,
-   so a still gallery is pixel-identical to what it was before this rule existed.
-4. **Card art warms on idle once the screen has finished appearing.** The cells load their art lazily,
-   which is right for the first paint and wrong for the twentieth: the browser's lazy heuristics look
-   only a short way ahead and a fast flick outruns them, which is what leaves a screenful of cards
-   showing a frame and no picture. After the last cell mounts, the gallery pulls the whole set six at
-   a time on idle callbacks, so it never competes with a scroll and costs
-   the opening nothing.
+- The opaque title hides the underlying table. Opening-hand, draw-choice, targeting and result panels mount only during play. Translucent overlays pause the covered menu and table animations, preserving their current pose.
+- Gallery cells always retain their full grid boxes and keyboard controls. One shared `IntersectionObserver` per gallery mounts full faces within 700 pixels of its scrolling viewport and releases distant faces. Focus also mounts a face. Filtering resets the scroll position; Star Chart navigation still uses the complete filtered roster.
+- Nearby artwork loads eagerly with asynchronous decoding. The former whole-roster idle mount and whole-roster image warm-up are removed. This bounds DOM and image work; a jump to distant, uncached cards can still wait for their artwork to download.
+- `content-visibility: auto`, intrinsic-size reuse and the cell's own aspect ratio remain. The existing passive scroll listener pauses shine while moving.
+- `CardFace` is memoized by its actual fields and live condition values. Font readiness propagates through context, so memoization never pins fallback-font measurements. Pointer samples coalesce to one update per animation frame; release and cancellation discard queued samples.
+- The seam's traveling highlights animate transforms instead of `left` and `right`, preserving their paths without layout on every frame.
+- `BotSearch` runs the existing deterministic opponent in `bot.worker.ts`. It reuses a completed worker and terminates unfinished work when state changes or play ends. Late replies cannot play stale actions. The existing move delay follows the result. If workers fail to load, a deferred main-thread fallback preserves playability, with the old blocking cost on that fallback path. Search rules, strength and card balance are unchanged.
 
-5. **A locked card draws a SEALED FACE, not a full one.** `SealedFace` in `App.tsx` renders the four
-   things a sealed card is supposed to show — frame colour, name, mana cost, and a shape behind the
-   glass — and nothing else. No rules panel, no flavour, no origin, no rails, no stat gems, no shine.
-   That is the printed doctrine for a locked card rather than a saving invented to fit one, and the
-   saving arrives with it. Measured in one browser, in one sitting, against the full face beside it:
-   **8 elements against 18**, and **0.97 ms of layout per cell against 2.23 ms** — a locked card now
-   costs **56% less** to lay out than an unlocked one. At 148 locked cards that is the difference
-   between about 330 ms and about 144 ms for the whole grid.
+Measured at 1440 × 900 in local Chromium on 5 September 2026: the starting unlocked gallery went from 50 mounted faces to 16; the locked gallery went from 166 to 16 (14 at the bottom). The locked scroll height remained 19,755 pixels. These are structural workload measurements, not an FPS promise. Shared-machine timings are diagnostic only.
 
-   Its artwork runs the full height of the face, because the 490 units below the printed art window
-   belong to the plaque, the flavour line and the gems, and a sealed card draws none of them. Left as
-   it was, a locked card was a picture in the top half and a flat dark slab in the bottom half, which
-   reads as a card that failed to load rather than a card that is sealed.
+`source/scripts/check-performance.mjs` is included in `npm run check`. It checks bounded faces, top/bottom scrolling, filter reset, narrow-screen detail access, paused covered animation, and exact worker action parity at all three difficulties. It writes diagnostic metrics and screenshots under `.preview/performance/`. Worker lifecycle unit tests cover reuse, cancellation, late replies and load-failure fallback.
 
-Only the first two are about layout. Items three and four are about paint and decode, and neither was
-measured against a frame budget: the browser tab available to this project's agents stays backgrounded,
-where `requestAnimationFrame` never fires. The element counts, the byte totals and the layout timings
-above are all measured; the frame-rate improvement is reasoned from them.
-
+Locked cards retain the sealed face: frame, name, mana and full-height obscured artwork. Unlocked faces retain their rules, flavour, stats and animated rarity layers.
 
 Cards are DOM-rendered by `CardFace` and CSS, using a 750 × 1050 design coordinate system. Keep full card faces readable in hand and on the board. Text fitting must use `source/src/textfit.ts`, which measures the real fonts and finds the largest size that fits the box; the 64/32 caps are upper bounds, not a substitute for measurement.
 
@@ -1380,54 +1347,17 @@ one tool built to reach these screens.
 
 ### The gallery's Star Chart profile FITS ON ONE SCREEN
 
-**Owner's ruling, 4 September 2026: no scrolling in the Star Chart.** Clicking a
-gallery card opens its profile — the card face, the six-axis lore chart, the lore
-and quote, Strengths and Weaknesses, and the Signature move and Relationships
-row. All of it is visible at once or the check goes red. `check-features.mjs`
-asserts it at five sizes and `.gallery-detail-body` is `overflow: hidden`, which
-is only honest because the fit is now measured rather than hoped for.
+**No scrolling in the Star Chart.** Minions and relics use the same dossier structure: a named header, epithet and origin/rarity chips, a card rail, and a prose column. Minions add the six-axis radar beside the lore. Relics omit the radar without removing their card from normal flow. The four information blocks are Strengths, Weaknesses, Signature move and Relationships.
 
-**It was silently amputating almost every profile.** Measured at 1440x900 on
-4 September 2026 before any of this: **33 of 36 profiles lost between 83 and 143
-pixels off the bottom** — the Relationships chips and part of the Signature move,
-gone, with no scrollbar and no way to reach them. At 780x460 the loss was 417px.
-Nothing reported it, because hidden overflow is silent by construction: the
-content is laid out, measured, and then not painted. The check that should have
-caught it asserted `overflow === "hidden" && fits`, and a hidden overflow that
-does not fit passes the first half of that.
+The camp colour themes the panel edge, header, chips and radar. Relics have their own teal accent. The border glow is static; entrance motion uses transform and opacity. The gallery behind a profile pauses its rarity shine, avoiding animation work underneath the blurred veil.
 
-Four changes make it fit, and the order is the useful part:
+The Star Chart styling lives in `source/src/gallery-detail.css`, separate from the shared game styling in `App.css`. Desktop card columns size from the viewport; rank text wraps within that width instead of widening the rail. At 1000 pixels and below, named grid positions put the card and radar side by side above the prose. The card column has an explicit width, so a long rank line wraps instead of squeezing the radar. Phones keep the information blocks in two columns to retain all content on one screen. Their text and card are smaller than on desktop, which is the space trade-off for the no-scroll requirement.
 
-- **The type is 20px throughout.** Body copy came down from 24px, section
-  headings went up from 12.5px. Those headings were collateral from a bulk
-  enlargement on 30 August that replaced seven different sizes with `1.5rem` in
-  one sweep, so "STRENGTHS" was labelling text twice its own size.
-- **The last row spans both columns.** On desktop the card owns the first
-  left-hand row and the chart owns the second, so the third row had 280px of
-  empty panel beside it. Worth about half the overflow on its own.
-- **A height band for 801-900px.** There were two bands, "any height" and "800 or
-  shorter", and nothing in between — so a 1536x864 or 1280x851 laptop got the
-  full-size treatment with 60 to 90 fewer pixels to put it in, and clipped by 25
-  and 38. The band gives back 39px of card and 8px of gap. The 800px block below
-  it is a different problem and stays as it is.
-- **The tablet breakpoint moved from 760px to 820px.** 768x1024 is iPad portrait,
-  and at 760 it kept the desktop two-column layout with a 280px card inside a
-  737px panel, overflowing by 15px. The stacked layout handles that width and
-  always could.
+The radar uses 24-unit axis names and 26-unit values in a 300-unit drawing. They scale with the chart; the caption remains 13 CSS pixels even on phones. Card rules remain present in the small profile face. Locked profiles show a sealed face and unlock explanation, without exposing the locked lore or chart.
 
-**Panel width is not a lever here, and that is worth knowing before reaching for
-it.** Widening from 1000px to 1340px changed the overflow at every clipping size
-by exactly zero pixels. The profile is not overflowing because text wraps; it is
-overflowing because the card is 392px tall and the chart is 220px tall and those
-two numbers do not care how wide the panel is. Measure the row stack before
-tuning a dimension the content does not read.
+`check-features.mjs` checks both overflow and overlap, including clipping inside individual sections. Parent scroll height alone cannot catch an absolutely positioned relic card covering its own prose. The suite includes every profile at six desktop, laptop, tablet and phone sizes through `profile-layout.mjs`, plus targeted screenshots and interaction checks. `npm run check` remains the single front door.
 
-**A headless screenshot cannot tell you whether a scroll container has a
-scrollbar.** Playwright's bundled Chromium uses overlay scrollbars, so the gutter
-measures 0 and the bar never appears in a PNG; the same page in a real Chromium
-on this machine reserves 15px, or 10px with `scrollbar-width: thin`. That matters
-here in reverse now: a layout that only fits because the harness reserved no
-scrollbar will overflow on a real machine.
+The shared styles for gallery controls, sealed faces, packs, rarity shine, card colours and the hand must survive profile redesigns. They followed the profile section in older source revisions; replacing the stylesheet tail accidentally removed them during the interrupted redesign. They are restored, and profile styling now lives in its own file. Their interaction and animation checks must pass before publication.
 
 ### Visual design changes require close-up and full-screen QA
 

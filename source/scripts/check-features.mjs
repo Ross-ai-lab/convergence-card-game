@@ -22,6 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { launch } from "./browser.mjs";
+import { checkProfileLayouts } from "./profile-layout.mjs";
 
 const BASE = process.argv[2] || "http://localhost:5177";
 const sourceDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -150,47 +151,101 @@ check("Star Chart removes footer copy", await page.locator(".gallery-detail-hint
  * taller than the box. `overflow` is reported alongside so a failure says which
  * of the two states it is in, and a scrollable body fails here on purpose.
  */
-const fitsOnOneScreen = (geometry) => geometry.fits === true;
-const modalGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
+const fitsOnOneScreen = (geometry) => geometry.fits === true && geometry.overlap <= 2 && geometry.clipped <= 2 && geometry.outside <= 1;
+
+/**
+ * Reads BOTH failure modes, because they are independent and only one of them
+ * was ever measured.
+ *
+ * `fits` catches content taller than its box. It cannot catch content sitting
+ * ON TOP of other content, and that is exactly how every relic profile shipped
+ * broken: the old layout positioned a relic's card absolutely, which took it out
+ * of flow, collapsed the column holding it, and printed the Signature move
+ * underneath the artwork. The body's scroll height never changed, so this file
+ * reported it green for as long as it existed. `overlap` is the largest
+ * intersection between the card and anything in the prose column.
+ */
+const geometryOf = (panel) => {
   const body = panel.querySelector(".gallery-detail-body");
-  return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
+  const card = panel.querySelector(".gallery-detail-card")?.getBoundingClientRect();
+  let overlap = 0;
+  let clipped = 0;
+  for (const element of panel.querySelectorAll('.gallery-detail-box, .gallery-detail-lore, .gdx-head')) {
+    clipped = Math.max(clipped, element.scrollHeight - element.clientHeight, element.scrollWidth - element.clientWidth);
+  }
+  const rect = panel.getBoundingClientRect();
+  const outside = Math.max(0, rect.bottom - innerHeight, -rect.top, rect.right - innerWidth, -rect.left);
+  if (card) {
+    for (const element of panel.querySelectorAll(".gdx-main *")) {
+      const box = element.getBoundingClientRect();
+      if (!box.width || !box.height) continue;
+      const x = Math.min(card.right, box.right) - Math.max(card.left, box.left);
+      const y = Math.min(card.bottom, box.bottom) - Math.max(card.top, box.top);
+      if (x > 2 && y > 2) overlap = Math.max(overlap, Math.round(Math.min(x, y)));
+    }
+  }
+  return body
+    ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 && body.scrollWidth <= body.clientWidth + 1, overlap, clipped, outside }
+    : { overflow: "missing", fits: false, overlap: 999, clipped: 999, outside: 999 };
+};
+const modalGeometry = await page.locator(".gallery-detail-panel").evaluate(geometryOf);
+check(
+  "Star Chart fits on one screen with nothing over the card",
+  fitsOnOneScreen(modalGeometry),
+  `overflow ${modalGeometry.overflow}, card overlap ${modalGeometry.overlap}px`,
+);
+
+// The header is new, and it is the only place the character's name appears
+// outside the artwork. A profile that opens without saying whose it is was the
+// state this replaced.
+check(
+  "the dossier names the card and its epithet",
+  (await page.locator(".gdx-title h2").textContent())?.trim() === "Joker" &&
+    (await page.locator(".gdx-epithet").count()) === 1,
+);
+check("the dossier carries its origin and rarity chips", (await page.locator(".gdx-chip").count()) >= 2);
+// The camp colour reaches the whole panel, not just the radar. Every profile in
+// the gallery looked identical while this was set on two elements.
+const accentReach = await page.locator(".gallery-detail-panel").evaluate((panel) => {
+  const accent = getComputedStyle(panel).getPropertyValue("--accent").trim();
+  return { accent, head: getComputedStyle(panel.querySelector(".gdx-head")).borderBottomColor };
 });
-check("Star Chart fits on one screen", fitsOnOneScreen(modalGeometry), `overflow ${modalGeometry.overflow}`);
+check("the camp accent themes the panel", Boolean(accentReach.accent) && accentReach.head !== "rgba(0, 0, 0, 0)", accentReach.accent);
+const chartType = await page.locator('.star-chart').evaluate(chart => ({
+  label: parseFloat(getComputedStyle(chart.querySelector('.star-chart-axis-name')).fontSize),
+  caption: parseFloat(getComputedStyle(chart.nextElementSibling).fontSize),
+}));
+check('chart names are enlarged and the caption is at least 13px', chartType.label >= 24 && chartType.caption >= 13);
 await page.setViewportSize({ width: 1536, height: 864 });
 await page.waitForTimeout(200);
-const laptopGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
-  const body = panel.querySelector(".gallery-detail-body");
-  return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
-});
+const laptopGeometry = await page.locator(".gallery-detail-panel").evaluate(geometryOf);
 // The 801-900px height band. Nothing covered it, and both 1536x864 and 1280x851
 // were clipping their last row inside it.
 check("laptop-height Star Chart fits on one screen", fitsOnOneScreen(laptopGeometry));
 await page.setViewportSize({ width: 1279, height: 851 });
 await page.waitForTimeout(200);
-const referenceModalGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
-  const body = panel.querySelector(".gallery-detail-body");
-  return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
-});
+const referenceModalGeometry = await page.locator(".gallery-detail-panel").evaluate(geometryOf);
 check("reference-size Star Chart fits on one screen", fitsOnOneScreen(referenceModalGeometry));
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-reference-size.png"), fullPage: false });
 await page.setViewportSize({ width: 1536, height: 736 });
 await page.waitForTimeout(200);
-const shortHeightGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
-  const body = panel.querySelector(".gallery-detail-body");
-  const rect = panel.getBoundingClientRect();
-  return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1, bottom: rect.bottom } : { overflow: "missing", fits: false, bottom: Infinity };
-});
+// `geometryOf` is serialised into the page, so it cannot be CALLED from another
+// arrow that runs there — the name does not exist on that side. Read the panel's
+// own box separately in Node instead.
+const shortHeightGeometry = {
+  ...(await page.locator(".gallery-detail-panel").evaluate(geometryOf)),
+  bottom: (await page.locator(".gallery-detail-panel").boundingBox())?.y
+    + (await page.locator(".gallery-detail-panel").boundingBox())?.height,
+};
 check("short-height Star Chart fits on one screen", fitsOnOneScreen(shortHeightGeometry) && shortHeightGeometry.bottom <= 736);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-short-height.png"), fullPage: false });
 await page.waitForTimeout(400);
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart.png"), fullPage: false });
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(250);
-const mobileModalGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
-  const body = panel.querySelector(".gallery-detail-body");
-  return body ? { overflow: getComputedStyle(body).overflowY, fits: body.scrollHeight <= body.clientHeight + 1 } : { overflow: "missing", fits: false };
-});
+const mobileModalGeometry = await page.locator(".gallery-detail-panel").evaluate(geometryOf);
 check("mobile Star Chart fits on one screen", fitsOnOneScreen(mobileModalGeometry));
+check('phone chart caption remains at least 13px', await page.locator('.gallery-detail-chart-caption').evaluate(el => parseFloat(getComputedStyle(el).fontSize) >= 13));
 await page.screenshot({ path: path.join(outputDir, "gallery-star-chart-mobile.png"), fullPage: false });
 await page.setViewportSize({ width: 1440, height: 900 });
 await page.getByRole("button", { name: "Close Star Chart", exact: true }).click();
@@ -199,21 +254,27 @@ for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Gr
   await page.locator(".gallery-search").fill(name);
   await page.locator('.gallery-cell[role="button"]').first().click();
   await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 5000 });
-  const profileGeometry = await page.locator(".gallery-detail-panel").evaluate((panel) => {
-    const body = panel.querySelector(".gallery-detail-body");
-    return body ? body.scrollHeight <= body.clientHeight + 1 : false;
-  });
+  const profileGeometry = fitsOnOneScreen(await page.locator(".gallery-detail-panel").evaluate(geometryOf));
   const expectedChartCount = name === "Allspark Cube" ? 0 : 1;
   check(`${name} has a Star Chart profile`, await page.locator(".gallery-detail-panel").isVisible() && await page.locator(".star-chart").count() === expectedChartCount && await page.locator(".gallery-detail-rule").count() === 0 && profileGeometry);
   if (name === "Allspark Cube") {
     check("Relic Star Charts remove the radar", await page.locator(".star-chart").count() === 0);
     check("Relic Star Charts hide Lore attributes", await page.locator(".gallery-detail-chart-caption").count() === 0);
+    // THE RELIC BUG. A relic has no radar, and the layout it used to share with
+    // minions dealt with the missing element by positioning the card absolutely
+    // — so the card left the flow and the Signature move printed underneath the
+    // artwork. It fitted perfectly the whole time.
+    const relicGeometry = await page.locator(".gallery-detail-panel").evaluate(geometryOf);
+    check("a relic profile puts nothing underneath its own card", relicGeometry.overlap <= 2, `${relicGeometry.overlap}px overlap`);
+    check("a relic profile still shows its rank line", (await page.locator(".gdx-rank").count()) === 1);
     await page.waitForTimeout(1000);
     await page.screenshot({ path: path.join(outputDir, "gallery-relic-star-chart.png"), fullPage: false });
   }
   await page.getByRole("button", { name: "Close Star Chart", exact: true }).click();
   await page.locator(".gallery-detail-panel").waitFor({ state: "detached", timeout: 5000 });
 }
+
+await checkProfileLayouts(page, geometryOf, fitsOnOneScreen, check);
 
 const failed = results.filter((result) => !result.condition);
 await browser.close();

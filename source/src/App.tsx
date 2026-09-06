@@ -1,6 +1,7 @@
-import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, createContext, memo, useContext, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
+import "./gallery-detail.css";
 // Board effects (camp signatures, the Mythic entrance, the killing blow). Loaded
 // HERE, immediately after App.css, on purpose: that is the exact cascade slot
 // they occupied when they lived in screens/Screens.css, so moving the file could
@@ -14,7 +15,11 @@ import "./dev-only.css";
 import { sfx, type SfxName } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
 import { LORE_DETAILS, type LoreDetail } from "./data/lore";
-import { chooseBotAction, BOT_CHEATS } from "./engine/bot";
+import { BOT_CHEATS } from "./engine/bot";
+import { BotSearch } from "./engine/bot-search";
+import { useGalleryVisibility } from "./gallery-visibility";
+import { useFrameState } from "./frame-state";
+
 import {
   HERO_POWER_COST,
   HERO_POWER_UNLOCK_ORDER,
@@ -112,6 +117,8 @@ import {
   type GameMode,
   RecordScreen,
 } from "./screens/Screens";
+
+const FontRevisionContext = createContext(0);
 
 type Selection =
   | { kind: "hand"; handIndex: number }
@@ -702,9 +709,9 @@ export default function App() {
   const [tauntFlash, setTauntFlash] = useState<TauntFlash>(null);
   /** Non-zero for the moment the killing blow lands, keyed so it replays. */
   const [lethal, setLethal] = useState(0);
-  const [drag, setDrag] = useState<DragState>(null);
+  const [drag, setDrag, scheduleDrag] = useFrameState<DragState>(null);
   const [targetArrowOrigin, setTargetArrowOrigin] = useState<ScreenPoint | null>(null);
-  const [targetArrowPointer, setTargetArrowPointer] = useState<ScreenPoint | null>(null);
+  const [targetArrowPointer, setTargetArrowPointer, scheduleTargetArrowPointer] = useFrameState<ScreenPoint | null>(null);
   const [playerCount, setPlayerCount] = useState<number | null>(null);
   const fxId = useRef(1);
   /** Herald lines already spoken this duel. A ref, so a re-render cannot re-fire one. */
@@ -714,6 +721,8 @@ export default function App() {
   const hoverTimer = useRef<number | null>(null);
   const hoverRequest = useRef(0);
   const legalActions = useMemo(() => getLegalActions(game, library), [game, library]);
+  const botSearch = useMemo(() => new BotSearch(), []);
+  useEffect(() => () => botSearch.dispose(), [botSearch]);
 
   // Browsers only allow audio to start from a genuine gesture, so the context
   // is unlocked by the first real pointerdown/keydown rather than on mount.
@@ -736,7 +745,7 @@ export default function App() {
   // the fallback's metrics. One re-render once they arrive re-measures the whole
   // roster. It cannot flash oversized text: the fallback is WIDER than Nunito,
   // so the first pass errs a little small and then grows.
-  const [, refit] = useState(0);
+  const [fontRevision, refit] = useState(0);
   useEffect(() => {
     onFontsReady(() => refit((n) => n + 1));
   }, []);
@@ -800,11 +809,16 @@ export default function App() {
   // and the animations get to play between its moves.
   useEffect(() => {
     if (mode.kind !== "bot" || screen !== "playing" || duelIntro) return;
-    const action = chooseBotAction(game, library, BOT_ID, mode.skill);
-    if (!action) return;
-    const timer = window.setTimeout(() => perform(action), game.phase === "main" ? BOT_DELAY_MS : BOT_FIRST_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [game, mode, screen, library, duelIntro]);
+    const actor = game.phase === "mulligan" ? game.mulligan?.player
+      : game.phase === "drawChoice" ? game.drawChoice?.player
+      : game.phase === "targeting" ? game.pendingTarget?.player : game.activePlayer;
+    if (game.phase === "gameOver" || actor !== BOT_ID) return;
+    let timer = 0;
+    const cancel = botSearch.search({ game, library, player: BOT_ID, skill: mode.skill }, (action) => {
+      if (action) timer = window.setTimeout(() => perform(action), game.phase === "main" ? BOT_DELAY_MS : BOT_FIRST_DELAY_MS);
+    });
+    return () => { cancel(); window.clearTimeout(timer); };
+  }, [game, mode, screen, library, duelIntro, botSearch]);
 
   // Hotseat: the moment the active player changes, the seat is stale and the
   // curtain has to come back down. Reading it off the state rather than off the
@@ -2157,7 +2171,7 @@ export default function App() {
 
   function trackTargetPointer(event: React.PointerEvent<HTMLElement>) {
     if (game.phase === "main" && selection?.kind === "attacker" && !drag?.active) {
-      setTargetArrowPointer({ x: event.clientX, y: event.clientY });
+      scheduleTargetArrowPointer({ x: event.clientX, y: event.clientY });
       return;
     }
     if (
@@ -2168,7 +2182,7 @@ export default function App() {
     ) {
       return;
     }
-    setTargetArrowPointer({ x: event.clientX, y: event.clientY });
+    scheduleTargetArrowPointer({ x: event.clientX, y: event.clientY });
   }
 
   function onHandCard(handIndex: number) {
@@ -2400,7 +2414,9 @@ export default function App() {
         setTargetArrowPointer(null);
       }
     }
-    if (drag.active || becameActive) setDrag({ ...drag, x: e.clientX, y: e.clientY, active: true });
+    // Activate immediately so a release before the next frame still drops the card.
+    if (becameActive) setDrag({ ...drag, x: e.clientX, y: e.clientY, active: true });
+    else if (drag.active) scheduleDrag({ ...drag, x: e.clientX, y: e.clientY, active: true });
   }
 
   function endDrag(e: React.PointerEvent) {
@@ -2608,9 +2624,11 @@ export default function App() {
   }, [screen, overlay, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length]);
 
   return (
-    <main
+    <FontRevisionContext value={fontRevision}><main
       className={[
         "hs-shell",
+        screen === "title" ? "at-title" : "",
+        overlay || developerToolsOpen || pack ? "has-overlay" : "",
         drag?.active ? "grabbing" : "",
         tutorialActive ? "tutorial-mode" : "",
         developerDuelActive ? "developer-duel" : "",
@@ -3090,7 +3108,7 @@ export default function App() {
       {/* Board/slot prompts are now entirely in-board: the highlighted legal
           slots are the instruction, so a fixed tip strip only adds noise.
           Hand, value, and board-or-core choices still need their controls. */}
-      {pendingTarget && pendingTarget.kind !== "board" && pendingTarget.kind !== "slot" ? (
+      {screen === "playing" && pendingTarget && pendingTarget.kind !== "board" && pendingTarget.kind !== "slot" ? (
         <TargetPrompt
           pending={pendingTarget}
           library={library}
@@ -3103,15 +3121,15 @@ export default function App() {
         />
       ) : null}
 
-      {game.phase === "drawChoice" && game.drawChoice && game.drawChoice.player === viewerId ? (
+      {screen === "playing" && game.phase === "drawChoice" && game.drawChoice && game.drawChoice.player === viewerId ? (
         <DrawChoiceOverlay game={game} library={library} onChoose={perform} locked={botThinking} />
       ) : null}
 
-      {game.phase === "mulligan" && game.mulligan?.player === viewerId && !duelIntro ? (
+      {screen === "playing" && game.phase === "mulligan" && game.mulligan?.player === viewerId && !duelIntro ? (
         <MulliganOverlay game={game} library={library} onChoose={perform} locked={botThinking} />
       ) : null}
 
-      {game.phase === "gameOver" ? (
+      {screen === "playing" && game.phase === "gameOver" ? (
         <GameOver
           game={game}
           library={library}
@@ -3179,7 +3197,7 @@ export default function App() {
       ) : null}
 
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "gallery" ? <CardGallery progress={progress} onClose={() => setOverlay(null)} /> : null}
+      {overlay === "gallery" ? <CardGallery progress={progress} fontRevision={fontRevision} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
       {overlay === "heroPowers" ? (
         <HeroPowersScreen
@@ -3218,7 +3236,7 @@ export default function App() {
           onTestCard={(cardId) => beginDuel({ kind: "bot", skill: "easy" }, { testCardId: cardId })}
         />
       ) : null}
-    </main>
+    </main></FontRevisionContext>
   );
 }
 
@@ -3711,9 +3729,6 @@ const NAME_CEILING_COMPACT = 72;
  * (rarity "Relic", camp "Ascension") appear on their own without a special case,
  * and a new camp or rarity would appear the moment a card used one.
  */
-/** Cells built on the first frame; the rest follow when the browser is idle. */
-const FIRST_GALLERY_BATCH = 36;
-
 type FilterKey = "cost" | "rarity" | "camp" | "alignment";
 
 const FILTER_LABEL: Record<FilterKey, string> = {
@@ -3795,7 +3810,7 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
 type UnlockFilter = "unlocked" | "locked";
 type GalleryEntry = { key: string; card: PlayableCard; face: CardFaceModel };
 
-function CardGallery({ progress, onClose }: { progress: Progress; onClose: () => void }) {
+function CardGallery({ progress, fontRevision, onClose }: { progress: Progress; fontRevision: number; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [help, setHelp] = useState(false);
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
@@ -3806,17 +3821,6 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
     camp: "",
     alignment: "",
   });
-  /**
-   * How many cells are mounted right now.
-   *
-   * Building the full roster of card faces in one go is about 850 ms of DOM work, which is
-   * a visible hitch on a screen that should just appear. The first batch is
-   * roughly two screens deep and lands immediately; the rest arrive on the next
-   * idle callback, by which time the reader is still looking at row one. Nothing
-   * about scrolling changes, because `content-visibility` was already skipping
-   * the off-screen ones — this is about the cost of CREATING them.
-   */
-  const [mounted, setMounted] = useState(FIRST_GALLERY_BATCH);
   /** The scrolling element, so the scroll handler can flag it without a render. */
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const openEntry = useCallback((entryKey: string) => setSelectedEntryKey(entryKey), []);
@@ -3948,75 +3952,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
     if (selectedEntryKey && !selectedEntry) setSelectedEntryKey(null);
   }, [selectedEntryKey, selectedEntry]);
 
-  // A new search or a new order means a different first screen, so the batch
-  // starts again rather than leaving the top of the list unmounted.
-  useEffect(() => {
-    setMounted(FIRST_GALLERY_BATCH);
-  }, [needle, filters, status]);
-
-  useEffect(() => {
-    if (mounted >= sorted.length) return;
-    // Bound to window. Pulling requestIdleCallback off the object and calling it
-    // bare throws "Illegal invocation" in Chromium, and the failure is silent
-    // here -- the first batch had already painted, so the gallery simply stopped
-    // at 36 cards and looked finished.
-    // The { timeout } is load-bearing, not a nicety. A hidden tab never goes
-    // "idle" in Chromium, so a bare requestIdleCallback never fires -- measured,
-    // not assumed. A player who opens the gallery and switches tabs would have
-    // come back to a gallery permanently stuck at its first 36 cards. With a
-    // timeout the callback is guaranteed to run.
-    const idle: (fn: () => void) => number = window.requestIdleCallback
-      ? (fn) => window.requestIdleCallback(fn, { timeout: 300 })
-      : (fn) => window.setTimeout(fn, 32);
-    const cancel = (handle: number) =>
-      window.cancelIdleCallback ? window.cancelIdleCallback(handle) : window.clearTimeout(handle);
-    const handle = idle(() => setMounted(sorted.length));
-    return () => cancel(handle);
-  }, [mounted, sorted.length]);
-
-  /**
-   * Warms every card image the moment the screen has finished appearing.
-   *
-   * `lazyArt` is right for the FIRST paint and wrong for the twentieth: asking
-   * for the whole roster at once is the single biggest cost of opening the gallery,
-   * which is why the cells load lazily — but the browser's lazy heuristics only
-   * look a short way ahead, and a fast flick outruns them, which is what leaves
-   * a screenful of cards showing a frame and no picture.
-   *
-   * Warming them AFTER the open costs the opening nothing. The whole set is
-   * fetched a few at a time on idle callbacks so it never competes with a
-   * scroll, and decoded off the main thread. By the time
-   * anyone has scrolled anywhere the file is already in the cache and the lazy
-   * <img> resolves instantly.
-   */
-  useEffect(() => {
-    if (mounted < sorted.length) return;
-    const urls = sorted.map((entry) => entry.face.art).filter((art): art is string => Boolean(art));
-    let index = 0;
-    let stopped = false;
-    let handle = 0;
-    // Bound to window for the same reason the batch loader is: calling
-    // requestIdleCallback bare throws "Illegal invocation" in Chromium.
-    const idle: (fn: () => void) => number = window.requestIdleCallback
-      ? (fn) => window.requestIdleCallback(fn, { timeout: 500 })
-      : (fn) => window.setTimeout(fn, 32);
-    const cancel = (id: number) =>
-      window.cancelIdleCallback ? window.cancelIdleCallback(id) : window.clearTimeout(id);
-    const pump = () => {
-      if (stopped) return;
-      for (let taken = 0; taken < 6 && index < urls.length; taken += 1, index += 1) {
-        const image = new Image();
-        image.decoding = "async";
-        image.src = urls[index];
-      }
-      if (index < urls.length) handle = idle(pump);
-    };
-    handle = idle(pump);
-    return () => {
-      stopped = true;
-      cancel(handle);
-    };
-  }, [mounted, sorted]);
+  useEffect(() => { bodyRef.current?.scrollTo({ top: 0 }); }, [needle, filters, status]);
 
   /**
    * Flags the body while it is being scrolled, so the CSS can park the card
@@ -4048,7 +3984,7 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
 
   return (
     <div
-      className="screen-veil gallery-veil"
+      className={`screen-veil gallery-veil${selectedEntry || help ? " has-detail" : ""}`}
       onPointerDown={(event) => event.target === event.currentTarget && onClose()}
     >
       {/* Deliberately NOT `wide`. That class sets its own 760px width at the same
@@ -4114,10 +4050,11 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
         <div className="screen-panel-body gallery-body" ref={bodyRef}>
           {sorted.length ? (
             <div className="gallery-grid">
-              {sorted.slice(0, mounted).map((entry) => (
+              {sorted.map((entry) => (
                 <GalleryCell
                   key={entry.key}
                   face={entry.face}
+                  fontRevision={fontRevision}
                   locked={!collection.unlocked.has(entry.key)}
                   entryKey={entry.key}
                   onOpen={openEntry}
@@ -4155,57 +4092,89 @@ function CardGallery({ progress, onClose }: { progress: Progress; onClose: () =>
   );
 }
 
+/**
+ * The six-axis lore radar.
+ *
+ * Redesigned 5 September 2026. The old one drew a 240-unit chart at 220px with
+ * 10px labels, which renders around 9 real pixels — unreadable, and absurd once
+ * the profile copy around it went to 20px. Three things changed and all three
+ * are about legibility rather than decoration: the axis name and its value are
+ * now two stacked lines instead of one cramped string, the value is the larger
+ * of the two because the number is what a reader is actually scanning for, and
+ * the whole chart is drawn 1:1 so an SVG unit IS a CSS pixel and a size written
+ * here is the size on screen.
+ *
+ * The rings fade outward so the shape reads against them rather than through a
+ * uniform grid, and the plotted polygon carries a real glow in the card's camp
+ * colour, which is what makes a hexagon feel like an instrument.
+ */
 function StarChart({ values, accent, name }: { values: number[]; accent: string; name: string }) {
-  const size = 240;
+  const size = 300;
   const centre = size / 2;
-  const radius = 72;
+  const radius = 90;
   const point = (index: number, value: number, extra = 0) => {
     const angle = (-90 + index * 60) * (Math.PI / 180);
-    const distance = radius * Math.max(0, Math.min(10, value)) / 10 + extra;
-    return {
-      x: centre + Math.cos(angle) * distance,
-      y: centre + Math.sin(angle) * distance,
-      angle,
-    };
+    const distance = (radius * Math.max(0, Math.min(10, value))) / 10 + extra;
+    return { x: centre + Math.cos(angle) * distance, y: centre + Math.sin(angle) * distance, angle };
   };
   const polygon = (value: number) =>
     STAR_CHART_AXES.map((_axis, index) => {
-      const pointValue = point(index, value);
-      return `${pointValue.x.toFixed(1)},${pointValue.y.toFixed(1)}`;
+      const at = point(index, value);
+      return `${at.x.toFixed(1)},${at.y.toFixed(1)}`;
     }).join(" ");
   const dataPoints = STAR_CHART_AXES.map((_axis, index) => point(index, values[index] ?? 0));
+  const accentStyle = { "--chart-accent": accent } as CSSProperties;
+  // One id per mounted chart, so two charts on one page cannot share a filter.
+  const glowId = `radar-glow-${name.replace(/[^a-z0-9]+/gi, "")}`;
 
   return (
-    <svg className="star-chart" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${name} Star Chart`}>
+    <svg className="star-chart" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${name} Star Chart`} style={accentStyle}>
+      <defs>
+        <filter id={glowId} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <radialGradient id={`${glowId}-bed`}>
+          <stop offset="0%" stopColor={accent} stopOpacity="0.16" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <circle cx={centre} cy={centre} r={radius + 10} fill={`url(#${glowId}-bed)`} />
+
+      {/* Outermost ring brightest: it is the boundary the shape is read against. */}
       {[2, 4, 6, 8, 10].map((level) => (
-        <polygon key={level} className="star-chart-ring" points={polygon(level)} />
+        <polygon key={level} className="star-chart-ring" points={polygon(level)} style={{ opacity: 0.18 + level * 0.028 }} />
       ))}
       {STAR_CHART_AXES.map((_axis, index) => {
         const end = point(index, 10);
         return <line key={index} className="star-chart-axis" x1={centre} y1={centre} x2={end.x} y2={end.y} />;
       })}
+
       <polygon
         className="star-chart-data"
         points={dataPoints.map((item) => `${item.x.toFixed(1)},${item.y.toFixed(1)}`).join(" ")}
-        style={{ "--chart-accent": accent } as CSSProperties}
+        filter={`url(#${glowId})`}
       />
       {dataPoints.map((item, index) => (
-        <circle
-          key={index}
-          className="star-chart-point"
-          cx={item.x}
-          cy={item.y}
-          r="4"
-          style={{ "--chart-accent": accent } as CSSProperties}
-        />
+        <circle key={index} className="star-chart-point" cx={item.x} cy={item.y} r="4.5" />
       ))}
+
       {STAR_CHART_AXES.map((axis, index) => {
-        const label = point(index, 10, 21);
-        const anchor = Math.cos(label.angle) > 0.28 ? "start" : Math.cos(label.angle) < -0.28 ? "end" : "middle";
+        const label = point(index, 10, 24);
+        const cos = Math.cos(label.angle);
+        const anchor = cos > 0.28 ? "start" : cos < -0.28 ? "end" : "middle";
+        // The top and bottom labels sit on the axis, so they need the whole
+        // two-line block nudged clear of the ring rather than just the baseline.
+        const lift = Math.sin(label.angle) < -0.9 ? -12 : Math.sin(label.angle) > 0.9 ? 2 : -6;
         return (
-          <text key={axis} className="star-chart-label" x={label.x} y={label.y} textAnchor={anchor}>
-            {axis} <tspan>{values[index] ?? 0}</tspan>
-          </text>
+          <g key={axis} className="star-chart-label" textAnchor={anchor}>
+            <text x={label.x} y={label.y + lift} className="star-chart-axis-name">{axis}</text>
+            <text x={label.x} y={label.y + lift + 24} className="star-chart-axis-value">{values[index] ?? 0}</text>
+          </g>
         );
       })}
     </svg>
@@ -4216,9 +4185,44 @@ function campAccent(camp: string): string {
   if (camp === "Nature") return "#79c66a";
   if (camp === "Tech") return "#70c9ff";
   if (camp === "ALL") return "#f0c767";
+  // Relics print "Ascension" where a character prints its camp, and fell
+  // through to the Magic purple, so every relic wore another class's colour.
+  // Teal is what their own card frame is printed in.
+  if (camp === RELIC_CAMP_LABEL) return "#56d8cd";
   return "#b996ff";
 }
 
+/**
+ * The card dossier.
+ *
+ * Rebuilt from scratch 5 September 2026 at the owner's request. The version it
+ * replaces was four identical rounded rectangles of grey text with the card
+ * floating in dead space beside them, and it had no title at all — the only
+ * place the character's name appeared was inside the artwork.
+ *
+ * Two structural decisions carry the whole thing:
+ *
+ * 1. THE LAYOUT IS A RAIL AND A COLUMN, not a grid with per-variant overrides.
+ *    The old one placed everything on one grid and then reshaped it with
+ *    `display: contents`, explicit `grid-row`s, a `:last-child` span and — for
+ *    relics, which have no radar — an ABSOLUTELY POSITIONED card. That last hack
+ *    took the card out of flow, collapsed the column that was holding it, and
+ *    let every relic profile print its Signature move underneath its own card
+ *    art. Nothing in the layout said which cell anything belonged to, so the
+ *    variant that had one fewer element simply fell through the floor. A rail
+ *    holds the card and whatever sits under it; a column holds the prose. A
+ *    relic just has a different thing in the rail.
+ * 2. THE CAMP COLOUR DRIVES THE PANEL. It reached the radar and the quote bar
+ *    and nothing else, so every profile in the game looked identical. It is now
+ *    the edge light, the header rule, the chips, the section bars and the radar,
+ *    which is what makes a Tech card feel unlike a Magic one.
+ *
+ * The header is new and is built out of data that was already sitting in
+ * `lore.ts` unread: `epithet` ("Baba Yaga", "Clown Prince of Crime") and `rank`
+ * ("C-tier · #25 in Willpower"). Relics carry both too — their rank reads
+ * "Arthurian legend · Sacred vessel" — so the rail has something real to hold
+ * where a relic's radar would have been.
+ */
 function GalleryDetailModal({
   entry,
   locked,
@@ -4232,6 +4236,7 @@ function GalleryDetailModal({
 }) {
   const profile = locked ? null : loreFor(entry.card);
   const accent = campAccent(entry.face.camp);
+  const isRelic = isRelicCard(entry.card);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -4254,77 +4259,85 @@ function GalleryDetailModal({
   return (
     <div className="gallery-detail-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
       <section
-        className={`gallery-detail-panel ${isRelicCard(entry.card) ? "is-relic" : "is-minion"}`}
+        className={`gallery-detail-panel ${isRelic ? "is-relic" : "is-minion"}`}
         role="dialog"
         aria-modal="true"
         aria-label={`${entry.face.name} Star Chart`}
+        style={{ "--accent": accent } as CSSProperties}
       >
         <button type="button" className="screen-x gallery-detail-close" onClick={onClose} aria-label="Close Star Chart">×</button>
 
+        <header className="gdx-head">
+          <div className="gdx-title">
+            <h2>{entry.face.name}</h2>
+            {profile?.epithet ? <p className="gdx-epithet">{profile.epithet}</p> : null}
+          </div>
+          <div className="gdx-chips">
+            <span className="gdx-chip is-origin">{profile?.origin || entry.face.origin}</span>
+            <span className="gdx-chip">{rarityName(entry.face.rarity)}</span>
+            {isRelic ? null : <span className="gdx-chip is-camp">{entry.face.camp}</span>}
+            {isRelic ? null : <span className="gdx-chip">{entry.face.alignment}</span>}
+          </div>
+        </header>
+
         <div className="gallery-detail-body">
-          <div className={`gallery-detail-primary${locked ? " is-locked" : ""}`}>
+          <div className="gdx-rail">
             <div className="gallery-detail-card">
               {locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} interactiveKeywords />}
             </div>
             {locked ? <p className="gallery-detail-sealed-note">Rules remain sealed until this card joins your deck.</p> : null}
+            {!locked && profile?.rank ? <p className="gdx-rank">{profile.rank}</p> : null}
           </div>
 
-          {locked ? (
-            <div className="gallery-detail-locked">
-              <span className="gallery-detail-kicker">The Rift is holding this profile</span>
-              <h3>Unlock this card to read its Star Chart</h3>
-              <p>The artwork, name, and cost remain visible. Its lore profile stays sealed until the card enters your shared deck.</p>
-            </div>
-          ) : profile ? (
-            <>
-              {(() => {
-                const loreCopy = (
-                  <>
+          <div className="gdx-main">
+            {locked ? (
+              <div className="gallery-detail-locked">
+                <span className="gallery-detail-kicker">The Rift is holding this profile</span>
+                <h3>Unlock this card to read its Star Chart</h3>
+                <p>The artwork, name, and cost remain visible. Its lore profile stays sealed until the card enters your shared deck.</p>
+              </div>
+            ) : profile ? (
+              <>
+                <div className="gdx-top">
+                  <div className="gallery-detail-lore">
                     <p>{profile.lore}</p>
-                    {profile.quote ? <blockquote style={{ "--quote-accent": accent } as CSSProperties}>“{profile.quote}”</blockquote> : null}
-                  </>
-                );
-                return isRelicCard(entry.card) ? (
-                  <div className="gallery-detail-lore">{loreCopy}</div>
-                ) : (
-                  <div className="gallery-detail-chart-row">
-                    <div className="gallery-detail-chart-wrap">
+                    {profile.quote ? <blockquote>“{profile.quote}”</blockquote> : null}
+                  </div>
+                  {isRelic ? null : (
+                    <div className="gdx-scope">
                       <StarChart values={profile.vals} accent={accent} name={entry.face.name} />
                       <span className="gallery-detail-chart-caption">Lore attributes · 0 to 10</span>
                     </div>
-                    <div className="gallery-detail-lore">{loreCopy}</div>
-                  </div>
-                );
-              })()}
+                  )}
+                </div>
 
-              <div className="gallery-detail-columns">
-                <DetailList title="Strengths" tone="strength" items={profile.str} />
-                <DetailList title="Weaknesses" tone="weakness" items={profile.wk} />
+                <div className="gdx-grid">
+                  <DetailList title="Strengths" tone="strength" items={profile.str} />
+                  <DetailList title="Weaknesses" tone="weakness" items={profile.wk} />
+                  <DetailBox title="Signature move" tone="signature">
+                    {profile.sig_name ? <strong>{profile.sig_name}</strong> : null}
+                    <span>{profile.sig_desc || "No signature move recorded."}</span>
+                  </DetailBox>
+                  <section className="gallery-detail-box gallery-detail-relationships is-bonds">
+                    <h3>Relationships</h3>
+                    <div className="gallery-detail-box-copy">
+                      {profile.rivals.length ? profile.rivals.map((rival) => (
+                        <span key={`${rival.who}-${rival.rel}`} className={rival.id ? "detail-rival linked" : "detail-rival"}>
+                          <b>{rival.who}</b>{rival.rel ? <> <i>{rival.rel}</i></> : null}
+                        </span>
+                      )) : <span className="detail-rival">No recorded relationship</span>}
+                    </div>
+                  </section>
+                </div>
+              </>
+            ) : (
+              <div className="gallery-detail-locked">
+                <span className="gallery-detail-kicker">Card profile</span>
+                <h3>This card has no Star Chart entry yet</h3>
+                <p>The current card rules remain authoritative above. The lore page has not profiled this card.</p>
               </div>
-              <div className="gallery-detail-columns">
-                <DetailBox title="Signature move">
-                  {profile.sig_name ? <strong>{profile.sig_name}</strong> : null}
-                  <span>{profile.sig_desc || "No signature move recorded."}</span>
-                </DetailBox>
-                <section className="gallery-detail-box gallery-detail-relationships">
-                  <h3>Relationships</h3>
-                  <div className="gallery-detail-box-copy">
-                    {profile.rivals.length ? profile.rivals.map((rival) => (
-                      <span key={`${rival.who}-${rival.rel}`} className={rival.id ? "detail-rival linked" : "detail-rival"}>
-                        {rival.who}{rival.rel ? ` · ${rival.rel}` : ""}
-                      </span>
-                    )) : <span className="detail-rival">No recorded relationship</span>}
-                  </div>
-                </section>
-              </div>
-            </>
-          ) : (
-            <div className="gallery-detail-locked">
-              <span className="gallery-detail-kicker">Card profile</span>
-              <h3>This card has no Star Chart entry yet</h3>
-              <p>The current card rules remain authoritative above. The lore page has not profiled this card.</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </section>
     </div>
@@ -4340,24 +4353,16 @@ function DetailList({ title, tone, items }: { title: string; tone: "strength" | 
   );
 }
 
-function DetailBox({ title, children }: { title: string; children: ReactNode }) {
+function DetailBox({ title, tone, children }: { title: string; tone?: string; children: ReactNode }) {
   return (
-    <section className="gallery-detail-box">
+    <section className={tone ? `gallery-detail-box is-${tone}` : "gallery-detail-box"}>
       <h3>{title}</h3>
       <div className="gallery-detail-box-copy">{children}</div>
     </section>
   );
 }
 
-/**
- * One card in the gallery, held still between renders.
- *
- * The gallery mounts every card in the game at once, and each card face is a
- * size container with its own gradients, shadows and six text measurements. Two
- * things keep that affordable and they belong together: this memo stops a search
- * keystroke re-rendering the full roster, and `content-visibility: auto` on
- * `.gallery-cell` stops the browser laying out and painting the ones off screen.
- */
+/** A stable, focusable grid shell with a full face only near the viewport. */
 const GalleryCell = memo(function GalleryCell({
   entryKey,
   face,
@@ -4367,13 +4372,17 @@ const GalleryCell = memo(function GalleryCell({
 }: {
   entryKey: string;
   face: CardFaceModel;
+  fontRevision: number;
   mark: CollectionMark;
   /** Not yet in the shared deck. Shown, never hidden — see `UnlockHelp`. */
   locked?: boolean;
   onOpen: (entryKey: string) => void;
 }) {
+  const { ref, near, onFocus } = useGalleryVisibility();
   return (
     <div
+      ref={ref}
+      onFocus={onFocus}
       className={locked ? `gallery-cell mark-${mark} is-locked` : `gallery-cell mark-${mark}`}
       data-mark={mark}
       title={locked ? "Locked — not yet in the shared deck" : COLLECTION_TITLE[mark]}
@@ -4388,8 +4397,8 @@ const GalleryCell = memo(function GalleryCell({
         }
       }}
     >
-      {locked ? <SealedFace card={face} lazyArt /> : <CardFace card={face} lazyArt />}
-      {locked ? (
+      {near ? locked ? <SealedFace card={face} /> : <CardFace card={face} /> : null}
+      {near && locked ? (
         <span className="gallery-lock" aria-hidden="true">
           {/* An ANTIQUE ORNATE padlock, drawn rather than fetched because it is
               furniture — an icon in the same family as the keyword artwork, not
@@ -4795,7 +4804,18 @@ function splitOnKeywords(text: string): Array<{ text: string; entry?: KeywordEnt
   return pieces;
 }
 
-function CardFace({
+function sameFaceValues(a: object, b: object): boolean {
+  if (a === b) return true;
+  const left = a as Record<string, unknown>;
+  const right = b as Record<string, unknown>;
+  const keys = Object.keys(left);
+  return keys.length === Object.keys(right).length && keys.every((key) => {
+    const x = left[key], y = right[key];
+    return Object.is(x, y) || (Array.isArray(x) && Array.isArray(y)
+      && x.length === y.length && x.every((value, index) => Object.is(value, y[index])));
+  });
+}
+const CardFace = memo(function CardFace({
   card,
   lazyArt = false,
   states = [],
@@ -4832,6 +4852,7 @@ function CardFace({
    */
   interactiveKeywords?: boolean;
 }) {
+  useContext(FontRevisionContext);
   // The card is DRAWN, not shown. Every number here is live, so a buff recolours
   // the real gem instead of pasting a second number over a picture, and changing
   // a line of cards.csv changes the card.
@@ -4965,7 +4986,7 @@ function CardFace({
       </div>
     </article>
   );
-}
+}, (a, b) => sameFaceValues(a.card, b.card) && sameFaceValues({ ...a, card: null }, { ...b, card: null }));
 
 function MinionFace({
   minion,

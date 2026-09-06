@@ -51,9 +51,15 @@ const ONLY = (process.argv.find((arg) => arg.startsWith("--only")) ?? "").split(
 // The harness itself: editing the shared browser helper or a check script has to
 // re-run the suites that ride on it, or the one change nobody re-checks is the
 // change to the checker.
-const HARNESS = /^source\/scripts\/(browser|check-)/;
+const HARNESS = /^source\/scripts\/(browser|profile-layout|check-)/;
 
 const SUITES = [
+  {
+    name: "performance",
+    command: ["node", "scripts/check-performance.mjs", BASE],
+    browser: true,
+    reaches: [/^source\/src\//, HARNESS],
+  },
   {
     name: "tests",
     command: ["npm", "test"],
@@ -208,7 +214,7 @@ async function runAll(suites) {
   // whole run took 451s instead of 339 — two lanes are slower than no lanes if
   // the long pole starts after the short ones. `costs` is a rough ordering hint
   // measured 4 September 2026, not a budget: only the sort uses it.
-  const costs = { ui: 300, audio: 145, features: 125, cardface: 25 };
+  const costs = { ui: 300, audio: 145, features: 350, cardface: 25 };
   const queue = [...suites.filter((suite) => suite.browser)].sort(
     (a, b) => (costs[b.name] ?? 0) - (costs[a.name] ?? 0) || a.name.localeCompare(b.name),
   );

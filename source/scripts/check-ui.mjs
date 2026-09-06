@@ -1451,11 +1451,19 @@ check(
   "only the sigil on the pack itself",
 );
 
+// The box floats and shakes; stop motion for this interaction assertion so a
+// forced click cannot land on its old position. Observe each hit, never swallow
+// a missed click and wait for a reveal that was not actually triggered.
+await settleMotion(page);
 for (let hit = 0; hit < 8; hit += 1) {
   const sealed = page.locator(".pack-box:not(.is-charged)");
   if (!(await sealed.isVisible().catch(() => false))) break;
-  await sealed.click({ force: true, timeout: 4000 }).catch(() => {});
-  await page.waitForTimeout(260);
+  const previous = await sealed.getAttribute("aria-label");
+  await sealed.click({ force: true, timeout: 4000 });
+  await page.waitForFunction((label) => {
+    const box = document.querySelector('.pack-box');
+    return !box || box.getAttribute('aria-label') !== label;
+  }, previous);
 }
 await page.locator(".pack-collect:not([disabled])").waitFor({ state: "visible", timeout: 25000 });
 
