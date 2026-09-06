@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 221,109 bytes, roughly 55k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~45% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 223,169 bytes, roughly 56k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~45% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -163,7 +163,7 @@ The live game and `source/data/cards.csv` now contain 172 named character cards 
 <!-- CAMPAIGN-DESIGN-START -->
 ### Campaign design — phase one
 
-**Design only.** Approved direction and proposed content for review. The current playable game has not changed. Exact card IDs live in [the draft campaign data](materials/campaign-design.json). The generated review page is a reading copy of this proposal.
+**Chunk 1 complete.** Campaign definitions and deck validation are implemented but not connected to live gameplay. Exact card IDs and difficulty configurations live in [the campaign data](materials/campaign-design.json). `source/src/campaign.ts` imports this single source and exposes immutable typed definitions. `source/src/decks.ts` validates thirty unique collectible, unlocked cards. The generated review page is a reading copy of those definitions.
 
 | Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
@@ -177,20 +177,20 @@ The live game and `source/data/cards.csv` now contain 172 named character cards 
 | 8 | Dio Brando | Frozen battlefield | Veteran | Dampen | 9 |
 | 9 | All for One | Stolen abilities | Veteran | Wither | 9 |
 | 10 | Meruem | Predators and protection | Veteran | Reforged Chains | 10 |
-| 11 | Ainz Ooal Gown | Undead court | Veteran | Call a Recruit | 10 |
-| 12 | Eye of Sauron | The siege of Mordor | Veteran | Stand Fast | 10 |
-| 13 | Kaido | Pirate emperors | Ascendant A | Sharpen | 11 |
-| 14 | Gilgamesh | Relic arsenal | Ascendant A | Blood Price | 10 |
-| 15 | Gojo | Silence and execution | Ascendant B | Dampen | 10 |
-| 16 | Elden Beast | Magic and rebirth | Ascendant B | Mend Core | 10 |
-| 17 | Boros | Monsters and heroes | Ascendant C | Mend Core | 11 |
-| 18 | Thanos | Cosmic convergence | Ascendant D | Wither | 16 |
-| 19 | Mastered Ultra Instinct Goku | Champions of light | Ascendant E | Vital Spark | 6 |
-| 20 | Bill Cipher | Reality fracture | Ascendant E | Blood Price | 1 |
+| 11 | Ainz Ooal Gown | Undead court | Ascendant (no cheats) | Call a Recruit | 10 |
+| 12 | Eye of Sauron | The siege of Mordor | Ascendant (no cheats) | Stand Fast | 10 |
+| 13 | Kaido | Pirate emperors | Ascendant (no cheats) | Sharpen | 11 |
+| 14 | Gilgamesh | Relic arsenal | Ascendant (no cheats) | Blood Price | 10 |
+| 15 | Gojo | Silence and execution | Ascendant | Dampen | 10 |
+| 16 | Elden Beast | Magic and rebirth | Ascendant | Mend Core | 10 |
+| 17 | Boros | Monsters and heroes | Ascendant | Mend Core | 11 |
+| 18 | Thanos | Cosmic convergence | Ascendant | Wither | 16 |
+| 19 | Mastered Ultra Instinct Goku | Champions of light | Ascendant | Vital Spark | 6 |
+| 20 | Bill Cipher | Reality fracture | Ascendant | Blood Price | 1 |
 
 #### Scope and status
 
-Phase one is a reviewable design, not a gameplay release. The owner approved the direction; the proposed boss order, exact card lists and difficulty placement still need review. Runtime code and existing browser saves are unchanged.
+Chunk 1 implements typed campaign definitions and deck validation. The twenty bosses, revised starter, fixed rewards and four difficulty profiles are defined and tested. These modules are not connected to the live game; menus, duels, rewards and browser saves remain unchanged.
 
 The campaign replaces the old shared-deck progression. Shared decks are retired entirely, including after campaign completion. Earlier README sections describe the currently shipped game; their no-deck-building and no-campaign decisions are superseded for the upcoming implementation.
 
@@ -199,7 +199,7 @@ The campaign replaces the old shared-deck progression. Shared decks are retired 
 
 Twenty chapters unlock strictly in order. A first victory clears its chapter, grants its fixed reward once and opens the next chapter. Defeat, draw, surrender and abandoned attempts grant nothing. Replays of cleared chapters are proposed to remain available without additional cards or Hero Powers.
 
-Every player starts with the same thirty listed cards, including all ten Basic cards and no Mythics. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
+Every player starts with the same thirty listed cards: exactly three at each mana cost from one through ten, including all ten Basic cards and no Mythics. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
 
 Approved reward adjustment: chapters 1–9 award 9 each; chapters 10–12, 14–16 award 10 each; chapters 13 and 17 award 11 each; chapter 18 awards 16; chapter 19 awards 6; chapter 20 awards Bill Cipher only. Total: 30 starters + 186 rewards = all 216 cards.
 
@@ -233,7 +233,7 @@ Each opponent is represented by its existing card portrait, character name and c
 
 The opponent starts at standard 75 Core HP with ordinary mana, hand size and turn rules. Its character card is included once in its deck; the portrait does not create a free board minion, force an opening draw or grant its card passive to the Core.
 
-Every boss deck is a fixed list of thirty unique cards, including the entire assigned universe. Shuffle that list independently each new attempt. Filler choices favour the listed theme, but required universe cards can mix camps and alignments. Boss fillers use starter or earlier reward cards, avoiding future reserved universes.
+Every boss deck is a fixed list of thirty unique cards, including the entire assigned universe. Shuffle that list independently each new attempt. Filler choices favour the listed theme, but required universe cards can mix camps and alignments. Boss fillers may use non-reserved cards whose rewards come later. Earlier defeated universes may also supply fillers; future boss universes remain excluded. Seeing a filler in a boss deck never unlocks it. Only the explicitly listed reward pack grants cards.
 
 The proposed player always takes the current first-player seat in campaign play. Keep the current three-card opening, player mulligan, second-player Coin, standard hand limit and five board slots. Difficulty comes from deck composition and bot decisions; no extra health or exclusive encounter rules are introduced.
 
@@ -246,9 +246,9 @@ First-time campaign clears unlock player Hero Powers in the existing order: Mend
 
 Every boss uses its listed fixed existing Hero Power from its first attempt. Each costs the standard two mana and follows the usual once-per-turn limit. Replays cannot accelerate the player power track.
 
-Chapters 1–4 use Recruit behaviour. Chapters 5–12 use Veteran behaviour. Chapters 13–14 use full-turn Ascendant search with all four cheat flags off. Chapters 15–16 enable reply-reading. Chapter 17 also enables true-dice knowledge. Chapter 18 also values the top of each separate deck. Chapters 19–20 additionally draw two and keep one through Foresight.
+Chapters 1–4 use Recruit behaviour. Chapters 5–10 use Veteran behaviour. Chapters 11–14 use full-turn Ascendant search with all four cheat flags disabled. Chapters 15–20 use full Ascendant capabilities: reply-reading, true-dice knowledge, Clairvoyance and Foresight.
 
-These intermediate Ascendant profiles are proposed new configurations, not existing menu levels. They reuse current search machinery and retain its current search limits. Decks and this curve are structurally checked, not balance-tested; separate-deck gameplay must be tested before claiming a smooth difficulty curve.
+The cheat-free Ascendant configuration is defined for later bot integration. Passing hard skill alone to the current bot still enables cheats; the adapter must explicitly pass the campaign cheat flags as well. Keep current search limits. The flat curve applies only to the starter deck, not to custom or boss decks. Decks and the difficulty schedule are structurally checked, not balance-tested.
 
 
 #### Separate-deck effect contract
@@ -279,9 +279,17 @@ Developer tools remain available from the start. A developer-assisted campaign v
 Persist first-clear progress, exact unlocked IDs, deck selection and unviewed reward presentation together. Reopening the game must never pay the same chapter twice, and closing during pack animation must not lose its cards. Avoid the old count-as-prefix model, which cannot express reserved fixed rewards reliably.
 
 
+#### Chunk 1 implementation and regeneration
+
+Chunk 1 is complete. The active application imports neither new module. `campaign.ts` exposes immutable starter, chapter and difficulty definitions from `materials/campaign-design.json`; `decks.ts` performs pure deck construction validation. It requires an explicit collectible roster and unlocked collection, reports wrong sizes, duplicate copies, unknown IDs and locked cards, and never changes the input deck. Tokens are excluded by supplying the collectible roster rather than the engine library. Relics occupy normal slots. The flat curve and no-Mythic rule apply only to the curated starter.
+
+`campaign.test.ts` and `decks.test.ts` cover roster allocation, universe reservation, the exact starter curve, every boss deck, first/final difficulty boundaries, malformed chapter numbers, immutability, duplicate/locked/unknown IDs, and unrestricted legal custom curves. Tests also prove an early boss can use later filler cards without awarding them. No browser progress is written by these modules.
+
+Maintain card IDs and the four difficulty profiles in the JSON; do not duplicate them in TypeScript. Maintain prose here. Regenerate the reading copy with `python materials/render-campaign-design.py "<absolute report path>"`. The renderer reads the JSON, current CSVs, Hero Power names and this section; it never rerolls cards or rewrites the source files. The earlier `.preview/build-campaign-design.py` was a one-time design allocation tool and must not be used to maintain this implementation.
+
 #### Implementation boundaries and acceptance
 
-Next phase would implement separate piles in engine/types.ts and engine/game.ts; adapt bot.ts and affected engine tests; replace progression in progress.ts, unlocks.ts and storage.ts; add campaign definitions and deck validation; and build campaign/deck-builder screens through App.tsx, screens/Screens.tsx and their styles.
+Chunk 2 would implement separate piles and adapt engine effects and bot behaviour. Chunk 3 would connect campaign progression, deck editing and reset/save handling. Chunk 4 would finish named enemy banners, results, hotseat and post-campaign modes, then verify and release the complete update. Chunk 1 has not changed any of those live systems.
 
 Create focused campaign, deck validation, first-clear and save-reset checks. Verify all 600 boss-deck slots, 216 unique unlock allocations, complete universe inclusion, no future reserved card leakage, exact thirty-card setup, relic counting, per-seat draws, independent fatigue, ownership after theft, hotseat isolation, replay idempotency and developer-assisted completion.
 
