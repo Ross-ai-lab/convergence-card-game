@@ -4,10 +4,10 @@ import { HERO_POWER_IDS } from "./engine/hero-powers";
 import type { HeroPowerId } from "./engine/types";
 
 /**
- * Chunk 1 exposes definitions only: no storage, RNG, duel setup or menu hooks.
+ * Definitions only: no storage, RNG or menu hooks. campaign-duel.ts creates duels.
  * The JSON is the sole card-list source for this module and the review report.
- * The future bot adapter must pass BOTH botSkill and cheats; skill="hard" alone
- * still enables all cheats in the currently shipped bot.
+ * campaign-duel.ts stores the cheat profile in state; callers also pass botSkill
+ * to search. Without saved overrides, skill="hard" uses the old full-cheat default.
  */
 export type CampaignDifficultyId = keyof typeof definition.difficultyProfiles;
 

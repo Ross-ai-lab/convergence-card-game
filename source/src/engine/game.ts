@@ -1,9 +1,12 @@
 import { isMinionCard, isRelicCard } from "./types";
+import { drawPileFor, remainingDeckCards } from "./draw-piles";
+import { validateDeck } from "../decks";
 import { HERO_POWER_COST, heroPowerDefinition } from "./hero-powers";
 import { traceEffect } from "./trace";
 import { isTokenCardId, tokenCard, TOKEN_CARDS } from "./tokens";
 import type {
   ApplyResult,
+  BotCheats,
   Camp,
   SlotAuraId,
   CardDefinition,
@@ -132,6 +135,9 @@ export function hasInfiniteMana(state: Pick<GameState, "cheatMode" | "cheatPlaye
 
 /** Knobs the simulator sweeps. The game itself always uses the defaults. */
 export interface GameSetup {
+  /** Explicit collectible deck lists; each must contain thirty unique cards. */
+  decks?: readonly [readonly string[], readonly string[]];
+  botCheats?: readonly [Readonly<BotCheats> | null, Readonly<BotCheats> | null];
   startingHealth?: number;
   manaRamp?: number;
   /** Seat granted permanent Foresight — the Ascendant opponent's draw cheat. */
@@ -149,10 +155,19 @@ export function createInitialGame(
   setup: GameSetup = {},
 ): GameState {
   const health = setup.startingHealth ?? DEFAULT_STARTING_HEALTH;
-  const deck = buildDeck(
+  const deck = setup.decks ? [] : buildDeck(
     [...cards, ...relicDefs.filter((relic) => relic.relicId !== "none")],
     seed,
   );
+  const collectibleIds = [...cards, ...relicDefs.filter((relic) => relic.relicId !== "none")]
+    .filter((card) => !isTokenCardId(card.id)).map((card) => card.id);
+  if (setup.decks) {
+    if (setup.tutorial) throw new Error("A scripted tutorial cannot use constructed duel decks");
+    for (const [seat, ids] of setup.decks.entries()) {
+      const result = validateDeck(ids, collectibleIds, collectibleIds);
+      if (!result.valid) throw new Error(`Invalid deck for player ${seat}: ${JSON.stringify(result.issues)}`);
+    }
+  }
   const players: [PlayerState, PlayerState] = [makePlayer(0, "Player One", health), makePlayer(1, "Player Two", health)];
   const state: GameState = {
     phase: "mulligan",
@@ -168,6 +183,11 @@ export function createInitialGame(
     deck,
     bottomDeck: [],
     discard: [],
+    ...(setup.decks ? { playerDecks: [
+      { deck: seededShuffle([...setup.decks[0]], `${seed}:player:0`), bottomDeck: [] },
+      { deck: seededShuffle([...setup.decks[1]], `${seed}:player:1`), bottomDeck: [] },
+    ] as GameState["playerDecks"] } : {}),
+    ...(setup.botCheats ? { botCheats: setup.botCheats.map((cheats) => cheats ? { ...cheats } : null) as GameState["botCheats"] } : {}),
     drawChoice: null,
     pendingTarget: null,
     pendingPlayCancel: null,
@@ -586,11 +606,11 @@ function confirmMulligan(state: GameState, playerId: PlayerId, events: GameEvent
   for (const handIndex of [...selectedIndices].sort((left, right) => right - left)) {
     player.hand.splice(handIndex, 1);
   }
-  const replacements = rejected.length > 0 ? drawFromDeck(state, rejected.length, events) : [];
+  const replacements = rejected.length > 0 ? drawFromDeck(state, playerId, rejected.length, events) : [];
   for (const cardId of replacements) putCardInHand(state, playerId, cardId, events);
   // The replaced cards go to the bottom only after the new cards are drawn, so
   // a player cannot immediately redraw the card they just rejected.
-  state.bottomDeck.unshift(...rejected);
+  drawPileFor(state, playerId).bottomDeck.unshift(...rejected);
   if (rejected.length > 0) {
     events.push({
       kind: "draw",
@@ -961,6 +981,7 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     instanceId: `m${state.nextInstance}`,
     cardId: card.id,
     owner,
+    ...(state.playerDecks ? { originalOwner: owner } : {}),
     name: card.name,
     cost: card.cost,
     atk: card.atk,
@@ -1044,6 +1065,13 @@ function applyOnPlayEffects(
   runEffect(state, minion, slotIndex, library, events);
 }
 
+/** Saved bot settings override legacy Foresight; a live Detective L still grants it. */
+export function hasForesight(state: GameState, playerId: PlayerId): boolean {
+  return (state.botCheats?.[playerId]?.foresight ?? (state.foresightFor === playerId)) ||
+    state.players[playerId].board.some((minion) => Boolean(minion &&
+      hasEffect(minion, "foresight_draw") && !minion.silenced && minion.chained === 0));
+}
+
 function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, events: GameEvent[]): void {
   state.activePlayer = playerId;
   state.turnNumber += 1;
@@ -1057,14 +1085,9 @@ function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, e
   // the Ascendant opponent's standing cheat, which is the same mechanic granted
   // permanently rather than earned by putting a minion on the board.
   //
-  // The deck is SHARED, so this is not only a better draw for whoever holds it:
-  // the card it rejects is the card the other seat was about to draw.
-  const foresight =
-    state.foresightFor === playerId ||
-    player.board.some(
-      (minion) => minion && hasEffect(minion, "foresight_draw") && !minion.silenced && minion.chained === 0,
-    );
-  const drawn = drawFromDeck(state, foresight ? 2 : 1, events);
+  // In separate-deck duels the offers and rejected cards stay in this seat's pile.
+  const foresight = hasForesight(state, playerId);
+  const drawn = drawFromDeck(state, playerId, foresight ? 2 : 1, events);
 
   if (foresight && drawn.length > 1) {
     state.phase = "drawChoice";
@@ -1095,7 +1118,7 @@ function chooseDraw(
   const chosen = drawChoice.cards[choiceIndex];
   const rejected = drawChoice.cards.filter((_cardId, index) => index !== choiceIndex);
   putCardInHand(state, playerId, chosen, events);
-  state.bottomDeck.unshift(...rejected);
+  drawPileFor(state, playerId).bottomDeck.unshift(...rejected);
   if (rejected.length > 0) {
     events.push({ kind: "draw", text: `${state.players[playerId].name} sends ${rejected.length} card to the bottom.`, player: playerId });
   }
@@ -1104,10 +1127,10 @@ function chooseDraw(
 }
 
 function announceTopDeck(state: GameState, library: CardLibrary, events: GameEvent[]): void {
-  const topCardId = state.deck[0] ?? state.bottomDeck[state.bottomDeck.length - 1];
-  if (!topCardId) return;
-  const cardName = library[topCardId]?.name ?? "a card";
   for (const player of state.players) {
+    const topCardId = remainingDeckCards(state, player.id)[0];
+    if (!topCardId) continue;
+    const cardName = library[topCardId]?.name ?? "a card";
     const seer = player.board.find(
       (minion) => minion && hasEffect(minion, "reveal_top_deck") && !minion.silenced && minion.chained === 0,
     );
@@ -1354,26 +1377,34 @@ function resolveDuePandoraBoxes(state: GameState, playerId: PlayerId, events: Ga
 // running at once ended duels the turn a board completed, and the ping was the
 // one that made a card's cost and ATK irrelevant. Hearthstone has no such rule.
 
-function drawFromDeck(state: GameState, count: number, events: GameEvent[]): string[] {
+function drawFromDeck(state: GameState, playerId: PlayerId, count: number, events: GameEvent[]): string[] {
+  const pile = drawPileFor(state, playerId);
   const drawn: string[] = [];
   for (let index = 0; index < count; index += 1) {
-    if (state.deck.length === 0 && state.bottomDeck.length > 0) {
-      state.deck = state.bottomDeck.splice(0).reverse();
+    if (pile.deck.length === 0 && pile.bottomDeck.length > 0) {
+      pile.deck = pile.bottomDeck.splice(0).reverse();
     }
-    const card = state.deck.shift();
+    const card = pile.deck.shift();
     if (!card) break;
     drawn.push(card);
   }
   if (drawn.length === 0) {
-    events.push({ kind: "draw", text: "The shared deck is empty." });
+    events.push(state.playerDecks
+      ? { kind: "draw", text: `${state.players[playerId].name}'s deck is empty.`, player: playerId }
+      : { kind: "draw", text: "The shared deck is empty." });
   }
   return drawn;
 }
 
 function drawDirect(state: GameState, playerId: PlayerId, count: number, events: GameEvent[]): void {
-  const cards = drawFromDeck(state, count, events);
+  const cards = drawFromDeck(state, playerId, count, events);
   for (const cardId of cards) {
     putCardInHand(state, playerId, cardId, events);
+  }
+  if (state.playerDecks) {
+    for (let missed = cards.length; missed < count && state.phase !== "gameOver"; missed++) {
+      applyFatigue(state, playerId, events);
+    }
   }
 }
 
@@ -1912,14 +1943,14 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
     side: "friendly",
     prompt: "Choose 1 of 3 Tech cards from the deck",
     values: (state, _source, library) =>
-      discoverTechCards(state, library).map((card) => ({ label: card.name, value: card.id })),
+      discoverTechCards(state, _source.owner, library).map((card) => ({ label: card.name, value: card.id })),
   },
   discover_random_keyword_minion: {
     kind: "option",
     side: "friendly",
     prompt: "Discover a Taunt, a Divine Shield and a Passive minion",
     values: (state, _source, library) =>
-      discoverKeywordMinions(state, library).map((card) => ({ label: card.name, value: card.id })),
+      discoverKeywordMinions(state, _source.owner, library).map((card) => ({ label: card.name, value: card.id })),
   },
   replace_same_cost_random: { side: "any", prompt: "Choose another minion", includeSelf: false },
   // --- the hard cards ---
@@ -2142,17 +2173,17 @@ function requestChoice(
   return "asked";
 }
 
-/** Relics currently available as cards in the shared deck, in deck order. */
-function relicsInDeck(state: GameState, library: CardLibrary): RelicDefinition[] {
-  return [...state.deck, ...state.bottomDeck]
+/** Relics available in the effect controller's draw and bottom piles. */
+function relicsInDeck(state: GameState, playerId: PlayerId, library: CardLibrary): RelicDefinition[] {
+  return [...drawPileFor(state, playerId).deck, ...drawPileFor(state, playerId).bottomDeck]
     .map((cardId) => library[cardId])
     .filter((card): card is RelicDefinition => isRelicCard(card));
 }
 
-/** Distinct minion cards still in the shared draw pile, in deck order. */
-function minionsInDrawPile(state: GameState, library: CardLibrary): CardDefinition[] {
+/** Distinct minion cards still in this seat's draw and bottom piles. */
+function minionsInDrawPile(state: GameState, playerId: PlayerId, library: CardLibrary): CardDefinition[] {
   const seen = new Set<string>();
-  return [...state.deck, ...state.bottomDeck].flatMap((cardId) => {
+  return [...drawPileFor(state, playerId).deck, ...drawPileFor(state, playerId).bottomDeck].flatMap((cardId) => {
     const card = library[cardId];
     if (!isMinionCard(card) || seen.has(card.id)) return [];
     seen.add(card.id);
@@ -2178,9 +2209,9 @@ function discoverThree<T>(state: GameState, pool: T[]): T[] {
   return offers;
 }
 
-/** Vegapunk's offers: three random Tech minions left in the shared deck. */
-function discoverTechCards(state: GameState, library: CardLibrary): CardDefinition[] {
-  return discoverThree(state, minionsInDrawPile(state, library).filter((card) => card.camp === "Tech"));
+/** Vegapunk's offers: three random Tech minions left in the controller's deck. */
+function discoverTechCards(state: GameState, playerId: PlayerId, library: CardLibrary): CardDefinition[] {
+  return discoverThree(state, minionsInDrawPile(state, playerId, library).filter((card) => card.camp === "Tech"));
 }
 
 /**
@@ -2194,8 +2225,8 @@ function discoverTechCards(state: GameState, library: CardLibrary): CardDefiniti
  * it typed into the CSV, and `validate-cards.mjs` now fails the build if that
  * gap comes back.
  */
-function discoverKeywordMinions(state: GameState, library: CardLibrary): CardDefinition[] {
-  const pile = minionsInDrawPile(state, library);
+function discoverKeywordMinions(state: GameState, playerId: PlayerId, library: CardLibrary): CardDefinition[] {
+  const pile = minionsInDrawPile(state, playerId, library);
   const taken = new Set<string>();
   const offers: CardDefinition[] = [];
   for (const keyword of ["Taunt", "Divine Shield", "Passive"] as const) {
@@ -2210,22 +2241,22 @@ function discoverKeywordMinions(state: GameState, library: CardLibrary): CardDef
 
 /** Discover up to three distinct alignment cards, using the duel's seeded RNG. */
 function discoverAlignmentMinions(
-  state: GameState,
+  state: GameState, playerId: PlayerId,
   alignment: "Good" | "Evil",
   library: CardLibrary,
 ): CardDefinition[] {
-  return discoverThree(state, minionsInDrawPile(state, library).filter((card) => card.alignment === alignment));
+  return discoverThree(state, minionsInDrawPile(state, playerId, library).filter((card) => card.alignment === alignment));
 }
 
-function removeCardFromDrawPile(state: GameState, cardId: string): boolean {
-  const deckIndex = state.deck.indexOf(cardId);
+function removeCardFromDrawPile(state: GameState, playerId: PlayerId, cardId: string): boolean {
+  const deckIndex = drawPileFor(state, playerId).deck.indexOf(cardId);
   if (deckIndex >= 0) {
-    state.deck.splice(deckIndex, 1);
+    drawPileFor(state, playerId).deck.splice(deckIndex, 1);
     return true;
   }
-  const bottomIndex = state.bottomDeck.indexOf(cardId);
+  const bottomIndex = drawPileFor(state, playerId).bottomDeck.indexOf(cardId);
   if (bottomIndex >= 0) {
-    state.bottomDeck.splice(bottomIndex, 1);
+    drawPileFor(state, playerId).bottomDeck.splice(bottomIndex, 1);
     return true;
   }
   return false;
@@ -2238,13 +2269,13 @@ function grantRandomRelic(
   library: CardLibrary,
   events: GameEvent[],
 ): void {
-  const available = relicsInDeck(state, library);
+  const available = relicsInDeck(state, playerId, library);
   if (available.length === 0) {
     events.push(effectEvent(`${source.name} finds no Ascension Relic.`, source));
     return;
   }
   const relic = available[rollInt(state, available.length)];
-  if (!relic || !removeCardFromDrawPile(state, relic.id)) return;
+  if (!relic || !removeCardFromDrawPile(state, playerId, relic.id)) return;
   putCardInHand(state, playerId, relic.id, events);
   events.push(effectEvent(`${source.name} grants a random Ascension Relic: ${relic.name}.`, source));
 }
@@ -2259,13 +2290,13 @@ function summonRandomCostFromDeck(
   const player = state.players[playerId];
   const slot = player.board.findIndex((entry) => !entry);
   if (slot < 0) return;
-  const candidates = [...state.deck, ...state.bottomDeck].filter((cardId) => {
+  const candidates = [...drawPileFor(state, playerId).deck, ...drawPileFor(state, playerId).bottomDeck].filter((cardId) => {
     const card = library[cardId];
     return isMinionCard(card) && card.cost === cost;
   });
   if (candidates.length === 0) return;
   const cardId = candidates[rollInt(state, candidates.length)];
-  if (!cardId || !removeCardFromDrawPile(state, cardId)) return;
+  if (!cardId || !removeCardFromDrawPile(state, playerId, cardId)) return;
   const card = library[cardId];
   if (!isMinionCard(card)) return;
   const summoned = createMinion(card, playerId, state);
@@ -2287,10 +2318,10 @@ function summonRandomMinionFromDeck(
       ? preferredSlot
       : player.board.findIndex((entry) => !entry);
   if (slot < 0) return;
-  const candidates = [...state.deck, ...state.bottomDeck].filter((cardId) => isMinionCard(library[cardId]));
+  const candidates = [...drawPileFor(state, summoner).deck, ...drawPileFor(state, summoner).bottomDeck].filter((cardId) => isMinionCard(library[cardId]));
   if (candidates.length === 0) return;
   const cardId = candidates[rollInt(state, candidates.length)];
-  if (!cardId || !removeCardFromDrawPile(state, cardId)) return;
+  if (!cardId || !removeCardFromDrawPile(state, summoner, cardId)) return;
   const card = library[cardId];
   if (!isMinionCard(card)) return;
   const summoned = createMinion(card, summoner, state);
@@ -2335,20 +2366,20 @@ function replaceWithRandomSameCost(state: GameState, target: MinionInstance, lib
   // Pick the replacement from the draw pile BEFORE the displaced minion joins
   // it, or Angstrom Levy can "replace" a minion with the very card he just
   // buried — there is one copy of everything in this deck.
-  const candidates = [...state.deck, ...state.bottomDeck].filter((cardId) => {
+  const candidates = [...drawPileFor(state, owner).deck, ...drawPileFor(state, owner).bottomDeck].filter((cardId) => {
     const card = library[cardId];
     return isMinionCard(card) && card.cost === target.cost;
   });
   // `unshift`, not `push`. `drawFromDeck` refills with `bottomDeck.reverse()`,
   // so the LAST entry here is drawn FIRST — pushing put the card on top of the
   // deck, which is the opposite of what the card promises.
-  state.bottomDeck.unshift(target.cardId);
+  drawPileFor(state, owner).bottomDeck.unshift(target.cardId);
   if (candidates.length === 0) {
     events.push({ kind: "effect", text: `${target.name} is put on the bottom of the deck, but no same-cost minion replaces it.`, player: owner, cardId: target.cardId });
     return;
   }
   const cardId = candidates[rollInt(state, candidates.length)];
-  if (!cardId || !removeCardFromDrawPile(state, cardId)) return;
+  if (!cardId || !removeCardFromDrawPile(state, owner, cardId)) return;
   const replacement = library[cardId];
   if (!isMinionCard(replacement)) return;
   const summoned = createMinion(replacement, owner, state);
@@ -2365,7 +2396,7 @@ function takeRelicFromDeckToHand(
 ): RelicDefinition | null {
   const relic = library[relicId];
   if (!isRelicCard(relic)) return null;
-  if (!removeCardFromDrawPile(state, relicId)) return null;
+  if (!removeCardFromDrawPile(state, playerId, relicId)) return null;
   putCardInHand(state, playerId, relicId, events);
   return relic;
 }
@@ -2387,7 +2418,7 @@ function triggerRelicDiscoveries(
     const source = sourceSlot >= 0 ? state.players[playerId].board[sourceSlot] : null;
     if (!source || source.silenced || source.effectId !== "frieren_relic_discover") continue;
     if (source.relicDiscoveryTurn === state.turnNumber) continue;
-    if (relicsInDeck(state, library).length === 0) continue;
+    if (relicsInDeck(state, playerId, library).length === 0) continue;
     source.relicDiscoveryTurn = state.turnNumber;
     const suspended = runEffect(state, source, sourceSlot, library, events);
     if (suspended) {
@@ -2425,7 +2456,7 @@ function runEffect(
           kind: "option",
           side: "friendly",
           prompt: source.effectId === "discover_relic_self" ? "Discover 1 of 3 Ascension Relics" : "Choose 1 of 3 Ascension Relics",
-          values: discoverThree(state, relicsInDeck(state, library)).map((relic) => ({ label: relic.name, value: relic.id })),
+          values: discoverThree(state, relicsInDeck(state, source.owner, library)).map((relic) => ({ label: relic.name, value: relic.id })),
         },
         library,
       );
@@ -2450,7 +2481,7 @@ function runEffect(
           kind: "option",
           side: "friendly",
           prompt: "Discover 1 of 3 Ascension Relics",
-          values: discoverThree(state, relicsInDeck(state, library)).map((relic) => ({ label: relic.name, value: relic.id })),
+          values: discoverThree(state, relicsInDeck(state, source.owner, library)).map((relic) => ({ label: relic.name, value: relic.id })),
         },
         library,
       );
@@ -2465,7 +2496,7 @@ function runEffect(
   }
 
   // Morpheus pauses twice: the pill chooses Good or Evil, then the chosen
-  // alignment offers three random minions from the shared deck to draw.
+  // alignment offers three random minions from the controller's deck to draw.
   if (source.effectId === "morpheus_choice") {
     if (!chosen || chosen.kind !== "option") {
       const pill = requestChoice(state, source, TARGETED_EFFECTS.morpheus_choice!, library);
@@ -2476,7 +2507,7 @@ function runEffect(
 
     const alignment = chosen.option.value === "good" ? "Good" : chosen.option.value === "evil" ? "Evil" : null;
     if (alignment) {
-      const offers = discoverAlignmentMinions(state, alignment, library);
+      const offers = discoverAlignmentMinions(state, source.owner, alignment, library);
       if (offers.length === 0) {
         events.push(effectEvent(`${label} finds no ${alignment} minion in the deck.`, source));
         return false;
@@ -2499,7 +2530,7 @@ function runEffect(
 
     const card = library[chosen.option.value];
     if (!isMinionCard(card) || (card.alignment !== "Good" && card.alignment !== "Evil")) return false;
-    if (!removeCardFromDrawPile(state, card.id)) return false;
+    if (!removeCardFromDrawPile(state, source.owner, card.id)) return false;
     putCardInHand(state, source.owner, card.id, events);
     events.push(effectEvent(`${label} draws ${card.name} from the deck.`, source));
     return false;
@@ -2644,9 +2675,11 @@ function runEffect(
       const chosen = candidates[rollInt(state, candidates.length)];
       if (!chosen) return false;
       deadMinions.splice(chosen.index, 1);
+      const originalOwner = player.deadMinionOwners?.splice(chosen.index, 1)[0];
       const discardIndex = state.discard.indexOf(chosen.cardId);
       if (discardIndex >= 0) state.discard.splice(discardIndex, 1);
       const reborn = createMinion(chosen.card, source.owner, state);
+      if (originalOwner !== undefined) reborn.originalOwner = originalOwner;
       reborn.suppressArrivalTheme = true;
       player.board[slot] = reborn;
       events.push(effectEvent(`${label} Rebirths ${reborn.name}.`, source));
@@ -2874,7 +2907,7 @@ function runEffect(
     //
     // The randomness runs through the seeded RNG like everything else, never
     // Math.random, so a duel replays identically from its seed.
-    const available = relicsInDeck(state, library);
+    const available = relicsInDeck(state, source.owner, library);
     if (available.length) {
       const choice = available[rollInt(state, available.length)];
       const relic = takeRelicFromDeckToHand(state, source.owner, choice.id, library, events);
@@ -2962,7 +2995,7 @@ function runEffect(
     // while the engine simply took one at random, so the choice it promised
     // never reached the player.
     const card = pickedValue ? library[pickedValue] : undefined;
-    if (pickedValue && isMinionCard(card) && removeCardFromDrawPile(state, pickedValue)) {
+    if (pickedValue && isMinionCard(card) && removeCardFromDrawPile(state, source.owner, pickedValue)) {
       putCardInHand(state, source.owner, pickedValue, events);
       events.push(effectEvent(`${label} discovers ${card.name}.`, source));
     }
@@ -3022,7 +3055,7 @@ function runEffect(
     events.push(effectEvent(`${label} restores all friendly minions.`, source));
   } else if (source.effectId === "discover_tech_card") {
     const card = pickedValue ? library[pickedValue] : undefined;
-    if (pickedValue && isMinionCard(card) && card.camp === "Tech" && removeCardFromDrawPile(state, pickedValue)) {
+    if (pickedValue && isMinionCard(card) && card.camp === "Tech" && removeCardFromDrawPile(state, source.owner, pickedValue)) {
       putCardInHand(state, source.owner, pickedValue, events);
       events.push(effectEvent(`${label} draws ${card.name}.`, source));
     }
@@ -3443,7 +3476,7 @@ function returnAllMinionsToHand(
     }
     state.players[owner].board[slot] = null;
     discardAttachedRelics(state, minion);
-    putCardInHand(state, owner, minion.cardId, events, minion.instanceId);
+    putCardInHand(state, state.playerDecks ? (minion.originalOwner ?? owner) : owner, minion.cardId, events, minion.instanceId);
   }
 }
 
@@ -3479,6 +3512,7 @@ function transformMinionFromPool(
   }
   const transformed = createMinion(replacement, target.owner, state);
   if (preservedRelic) transformed.relic = preservedRelic;
+  if (target.originalOwner !== undefined) transformed.originalOwner = target.originalOwner;
   transformed.suppressArrivalTheme = true;
   state.players[target.owner].board[slot] = transformed;
   // `sourceLabel` exists because a RELIC can be the thing doing this, and a
@@ -3570,7 +3604,7 @@ function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, libr
     (minion): minion is MinionInstance =>
       Boolean(minion && minion.instanceId !== source.instanceId && hasFreeRelicSlot(minion)),
   );
-  const available = relicsInDeck(state, library).map((relic) => relic.id);
+  const available = relicsInDeck(state, source.owner, library).map((relic) => relic.id);
   let granted = 0;
   for (const bearer of bearers) {
     const eligible = available.filter((cardId) => {
@@ -3585,7 +3619,7 @@ function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, libr
     const availableIndex = available.indexOf(cardId);
     if (availableIndex < 0) continue;
     available.splice(availableIndex, 1);
-    if (!cardId || !removeCardFromDrawPile(state, cardId)) continue;
+    if (!cardId || !removeCardFromDrawPile(state, source.owner, cardId)) continue;
     const relic = library[cardId];
     if (!isRelicCard(relic)) continue;
     equipRelic(state, bearer, createRelicInstance(relic), library, events);
@@ -3595,13 +3629,13 @@ function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, libr
 }
 
 function equipRandomRelic(state: GameState, source: MinionInstance, library: CardLibrary, events: GameEvent[]): void {
-  const available = relicsInDeck(state, library).filter((relic) => canEquipRelicToBearer(relic, source));
+  const available = relicsInDeck(state, source.owner, library).filter((relic) => canEquipRelicToBearer(relic, source));
   if (available.length === 0) {
     events.push(effectEvent(`${source.name} finds no Ascension Relic.`, source));
     return;
   }
   const relic = available[rollInt(state, available.length)];
-  if (!relic || !removeCardFromDrawPile(state, relic.id)) return;
+  if (!relic || !removeCardFromDrawPile(state, source.owner, relic.id)) return;
   equipRelic(state, source, createRelicInstance(relic), library, events);
 }
 
@@ -5474,7 +5508,11 @@ function destroyAtSlot(
     putCardInHand(state, playerId, minion.cardId, events, minion.instanceId);
   } else {
     state.discard.push(minion.cardId);
-    (state.players[playerId].deadMinions ??= []).push(minion.cardId);
+    const fallen = state.players[playerId];
+    if (state.playerDecks) {
+      (fallen.deadMinionOwners ??= (fallen.deadMinions ?? []).map(() => playerId)).push(minion.originalOwner ?? playerId);
+    }
+    (fallen.deadMinions ??= []).push(minion.cardId);
     events.push({ kind: "death", text: `${message}.`, player: playerId, instanceId: minion.instanceId, cardId: minion.cardId });
   }
   // Relics die with their bearer. They are cards again only in the discard pile;
@@ -5778,6 +5816,7 @@ function createRebornBody(
     state,
   );
   reborn.suppressArrivalTheme = true;
+  if (dead.originalOwner !== undefined) reborn.originalOwner = dead.originalOwner;
   reborn.hp = 1;
   return reborn;
 }

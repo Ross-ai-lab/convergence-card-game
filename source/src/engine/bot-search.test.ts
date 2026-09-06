@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotSearch, type BotRequest } from './bot-search';
 import { createInitialGame, makeCardLibrary } from './game';
 import { cards, relics } from '../data/cards';
+import { CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES } from '../campaign';
+import { chooseBotAction } from './bot';
 
 class WorkerStub {
   static instances: WorkerStub[] = [];
@@ -19,6 +21,32 @@ const request: BotRequest = {
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); WorkerStub.instances = []; });
 
 describe('background bot search lifecycle', () => {
+  it('passes separate piles and cheat-free Ascendant settings through the worker boundary', () => {
+    vi.stubGlobal('Worker', WorkerStub);
+    const game = createInitialGame(cards, 'fair-worker', relics, {
+      decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK],
+      botCheats: [null, CAMPAIGN_DIFFICULTIES.ascendantFair.cheats],
+    });
+    const search = new BotSearch();
+    search.search({ ...request, game, skill: 'hard' }, vi.fn());
+    const sent = structuredClone(WorkerStub.instances[0].postMessage.mock.calls[0][0]);
+    expect(sent.game.playerDecks).toEqual(game.playerDecks);
+    expect(sent.game.botCheats[1]).toEqual(CAMPAIGN_DIFFICULTIES.ascendantFair.cheats);
+    expect(sent.skill).toBe('hard'); search.dispose();
+  });
+  it('uses the same saved campaign settings in the no-worker fallback', () => {
+    vi.useFakeTimers(); vi.stubGlobal('Worker', undefined);
+    const game = createInitialGame(cards, 'fair-fallback', relics, {
+      decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK],
+      botCheats: [null, CAMPAIGN_DIFFICULTIES.ascendantFair.cheats],
+    });
+    game.phase = 'main'; game.mulligan = null; game.activePlayer = 1;
+    game.players[1].hand = ['c004'];
+    const expected = chooseBotAction(game, request.library, 1, 'hard');
+    const search = new BotSearch(); const receive = vi.fn();
+    search.search({ ...request, game, skill: 'hard' }, receive); vi.runAllTimers();
+    expect(receive).toHaveBeenCalledWith(expected); search.dispose();
+  });
   it('reuses a completed worker for the next move', () => {
     vi.stubGlobal('Worker', WorkerStub);
     const search = new BotSearch();

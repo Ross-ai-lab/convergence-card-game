@@ -1470,6 +1470,9 @@ await page.locator(".pack-collect:not([disabled])").waitFor({ state: "visible", 
 // THE TRANSITION HAS TO BE SETTLED FIRST. This page never paints, so the lift
 // would still be measured at its starting size and this check would fail on a
 // feature that works. See settleMotion in browser.mjs.
+// Opening/revealing the pack can leave the pointer over the second card.
+// Move away before measuring its unhovered size.
+await page.mouse.move(0, 0);
 await settleMotion(page);
 const packCard = page.locator(".pack-card").nth(1);
 const restingWidth = await packCard.evaluate((el) =>

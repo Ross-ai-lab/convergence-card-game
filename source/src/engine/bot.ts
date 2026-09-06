@@ -1,4 +1,7 @@
-import { applyAction, getLegalActions, actionKey, readySwings, STARTING_CORE, type CardLibrary } from "./game";
+import { remainingDeckCards } from "./draw-piles";
+import type { BotCheats } from "./types";
+export type { BotCheats } from "./types";
+import { hasForesight, applyAction, getLegalActions, actionKey, readySwings, STARTING_CORE, type CardLibrary } from "./game";
 import { isMinionCard, type GameAction, type GameState, type MinionInstance, type PlayerId } from "./types";
 
 /**
@@ -38,24 +41,6 @@ export type BotSkill = "easy" | "normal" | "hard";
  * inside `beginTurn`, so the engine grants it from `GameState.foresightFor` and
  * the app sets that field from this table when the duel begins.
  */
-export interface BotCheats {
-  /**
-   * Sees the real outcome of a random effect before committing to it.
-   *
-   * Every skill used to have this by accident: a candidate move is tested by
-   * applying it to a copy of the real state, and the RNG seed lives IN the
-   * state, so the copy rolled exactly the dice the game was about to roll.
-   * Recruit and Veteran now evaluate on a scrambled seed instead, which is what
-   * a player does — guess, and find out afterwards.
-   */
-  trueDice: boolean;
-  /** Branches the opponent's reply instead of assuming one greedy line. */
-  readsYourReply: boolean;
-  /** Values the next cards of the SHARED deck, for both seats. */
-  clairvoyance: boolean;
-  /** Draw two and keep one every turn. Granted by the engine, not by this file. */
-  foresight: boolean;
-}
 
 export const BOT_CHEATS: Record<BotSkill, BotCheats> = {
   easy: { trueDice: false, readsYourReply: false, clairvoyance: false, foresight: false },
@@ -458,15 +443,31 @@ function upcomingValue(cardId: string, library: CardLibrary): number {
 }
 
 /**
- * Reading the top of the shared deck, which is the cheat that a shared deck
- * makes interesting: every card the Ascendant sees coming is a card it knows the
- * OTHER seat might get instead. Positive means the near future favours the bot.
- *
- * Draws alternate, so the walk alternates with them, and a seat holding
- * Foresight burns two to keep the better one — which is why the same cheat that
- * improves its draw also decides which card the opponent never sees.
+ * Positive means the near future favours the bot. Separate-deck forecasts walk
+ * each seat's own queue, including its bottom cards. Foresight returns rejected
+ * offers to that same queue. The legacy app retains its old shared-pile forecast
+ * until the campaign menu cutover; no new shared-deck mode is being introduced.
  */
 export function clairvoyanceEdge(state: GameState, library: CardLibrary, botId: PlayerId): number {
+  if (state.playerDecks) {
+    const queues = [remainingDeckCards(state, 0), remainingDeckCards(state, 1)];
+    let seat: PlayerId = state.activePlayer === 0 ? 1 : 0;
+    let edge = 0;
+    for (let step = 0; step < CLAIRVOYANT_DEPTH; step++) {
+      const offers = queues[seat].splice(0, hasForesight(state, seat) ? 2 : 1);
+      if (offers.length) {
+        let best = 0;
+        for (let index = 1; index < offers.length; index++) {
+          if (upcomingValue(offers[index], library) > upcomingValue(offers[best], library)) best = index;
+        }
+        edge += (seat === botId ? 1 : -1) * upcomingValue(offers[best], library) * (CLAIRVOYANT_WEIGHT / (step + 1));
+        queues[seat].push(...offers.filter((_, index) => index !== best));
+      }
+      seat = seat === 0 ? 1 : 0;
+    }
+    return edge;
+  }
+
   const enemyId: PlayerId = botId === 0 ? 1 : 0;
   // Whoever is active has already drawn for this turn, so the next card off the
   // deck belongs to the other seat.
@@ -852,10 +853,12 @@ function beamOwnTurn(
   return finished;
 }
 
-/**
- * Picks the bot's next move, or null when it has none (not its turn, or the game
- * is over). Always returns something the engine already called legal.
- */
+/** One resolution path shared by normal search, worker requests and restored games. */
+export function botCheatsFor(state: GameState, botId: PlayerId, skill: BotSkill): BotCheats {
+  return state.botCheats?.[botId] ?? BOT_CHEATS[skill];
+}
+
+/** Pick a legal move, or null outside this bot's turn or after game over. */
 export function chooseBotAction(
   state: GameState,
   library: CardLibrary,
@@ -876,7 +879,7 @@ export function chooseBotAction(
   }
   if (legal.length === 1) return legal[0];
 
-  const cheats = BOT_CHEATS[skill];
+  const cheats = botCheatsFor(state, botId, skill);
   const scored = scoreOpenings(state, library, botId, cheats.trueDice, legal);
 
   if (skill === "easy") {

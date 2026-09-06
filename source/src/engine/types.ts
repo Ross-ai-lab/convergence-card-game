@@ -1,4 +1,21 @@
 export type PlayerId = 0 | 1;
+
+export interface BotCheats {
+  /** Evaluate random effects using their actual seeded outcomes. */
+  trueDice: boolean;
+  /** Branch the opponent's response instead of assuming one greedy reply. */
+  readsYourReply: boolean;
+  /** Value upcoming draws using each seat's own pile in constructed duels. */
+  clairvoyance: boolean;
+  /** Draw up to two and keep one; rejected cards return to that seat's bottom. */
+  foresight: boolean;
+}
+
+export interface DrawPile {
+  deck: string[];
+  /** Stored newest-bottom first; the last element is drawn first. */
+  bottomDeck: string[];
+}
 /**
  * The three source camps plus the umbrella camp. ALL is deliberately not an
  * alias for any one source camp: it receives their positive camp buffs, while
@@ -370,6 +387,8 @@ export interface MinionInstance {
   instanceId: string;
   cardId: string;
   owner: PlayerId;
+  /** Original owner for effects explicitly returning a stolen minion to its owner. */
+  originalOwner?: PlayerId;
   name: string;
   cost: number;
   atk: number;
@@ -482,6 +501,8 @@ export interface PlayerState {
   randomAttacksUntilTurn?: number | null;
   /** Card ids of friendly minions that have died this game, in death order. */
   deadMinions?: string[];
+  /** Parallel ownership history for separate-deck resurrection. */
+  deadMinionOwners?: PlayerId[];
   fatigue: number;
   turnsStarted: number;
 }
@@ -759,6 +780,10 @@ export interface GameState {
   deck: string[];
   bottomDeck: string[];
   discard: string[];
+  /** Staged separate-deck duels. Absent only in the pre-campaign app/save path. */
+  playerDecks?: [DrawPile, DrawPile];
+  /** Saved per-seat overrides; null uses the existing menu difficulty defaults. */
+  botCheats?: [BotCheats | null, BotCheats | null];
   drawChoice: DrawChoice | null;
   pendingTarget: PendingTarget | null;
   /** Keeps a play-to-hand escape alive across multi-step target prompts. */

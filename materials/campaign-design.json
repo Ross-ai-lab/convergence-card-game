@@ -1,5 +1,5 @@
 {
-  "status": "Chunk 1: validated campaign definitions; not connected to live gameplay",
+  "status": "Chunks 1 and 2: definitions and separate-deck engine implemented; campaign UI and progression not connected",
   "rosterCount": 216,
   "starterCardIds": [
     "c169",

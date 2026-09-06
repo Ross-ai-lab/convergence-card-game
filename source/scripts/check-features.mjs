@@ -76,7 +76,15 @@ await page.locator('[aria-label="Player Two\'s board"] .board-slot.targetable').
 check("tutorial reaches the fourth lesson after hitting Taunt", await page.locator(".tutorial-coach-top small").innerText() === "4 / 4");
 await page.locator('[aria-label="Player One\'s hand"] .hand-card').filter({ hasText: "Batman" }).first().click();
 await page.locator('[aria-label="Player One\'s board"] .board-slot.empty').first().click();
-await page.locator('[aria-label="Player Two\'s board"] .board-slot.choosable').first().click();
+// Recruit may play no extra minion. With only the teaching target, the engine
+// auto-selects it and opens Batman's gadget choices directly.
+// Board-only targeting deliberately hides the tip popup, so either the board
+// choices or the gadget value buttons are the valid ready signal.
+await page.waitForFunction(() =>
+  [...document.querySelectorAll(".board-slot.choosable, .target-prompt .prompt-value")]
+    .some((element) => element.getClientRects().length > 0));
+const batmanTarget = page.locator('[aria-label="Player Two\'s board"] .board-slot.choosable').first();
+if (await batmanTarget.isVisible()) await batmanTarget.click();
 await page.locator(".target-prompt .prompt-value").first().click();
 check("tutorial marks complete after four lessons", await page.locator(".tutorial-coach").getByText("Tutorial complete", { exact: true }).count() === 1);
 await page.screenshot({ path: path.join(outputDir, "tutorial-after-taunt.png"), fullPage: false });

@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 223,169 bytes, roughly 56k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~45% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 226,637 bytes, roughly 57k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~44% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -163,7 +163,7 @@ The live game and `source/data/cards.csv` now contain 172 named character cards 
 <!-- CAMPAIGN-DESIGN-START -->
 ### Campaign design — phase one
 
-**Chunk 1 complete.** Campaign definitions and deck validation are implemented but not connected to live gameplay. Exact card IDs and difficulty configurations live in [the campaign data](materials/campaign-design.json). `source/src/campaign.ts` imports this single source and exposes immutable typed definitions. `source/src/decks.ts` validates thirty unique collectible, unlocked cards. The generated review page is a reading copy of those definitions.
+**Chunks 1 and 2 complete.** Campaign definitions, deck validation and the separate-deck engine are implemented. The campaign UI and progression are not connected yet. Exact card IDs and difficulty configurations live in [the campaign data](materials/campaign-design.json). `source/src/campaign.ts` imports this single source and exposes immutable typed definitions. `source/src/decks.ts` validates thirty unique collectible, unlocked cards. The generated review page is a reading copy of those definitions.
 
 | Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
@@ -190,7 +190,7 @@ The live game and `source/data/cards.csv` now contain 172 named character cards 
 
 #### Scope and status
 
-Chunk 1 implements typed campaign definitions and deck validation. The twenty bosses, revised starter, fixed rewards and four difficulty profiles are defined and tested. These modules are not connected to the live game; menus, duels, rewards and browser saves remain unchanged.
+Chunk 1 defined and validated the campaign. Chunk 2 implements independent player piles, adapted deck effects, saved bot cheat profiles and an engine entry point for campaign duels. The current title screen still launches the pre-campaign path. No campaign menus, progress resets or public deployment occur in this chunk.
 
 The campaign replaces the old shared-deck progression. Shared decks are retired entirely, including after campaign completion. Earlier README sections describe the currently shipped game; their no-deck-building and no-campaign decisions are superseded for the upcoming implementation.
 
@@ -248,7 +248,7 @@ Every boss uses its listed fixed existing Hero Power from its first attempt. Eac
 
 Chapters 1–4 use Recruit behaviour. Chapters 5–10 use Veteran behaviour. Chapters 11–14 use full-turn Ascendant search with all four cheat flags disabled. Chapters 15–20 use full Ascendant capabilities: reply-reading, true-dice knowledge, Clairvoyance and Foresight.
 
-The cheat-free Ascendant configuration is defined for later bot integration. Passing hard skill alone to the current bot still enables cheats; the adapter must explicitly pass the campaign cheat flags as well. Keep current search limits. The flat curve applies only to the starter deck, not to custom or boss decks. Decks and the difficulty schedule are structurally checked, not balance-tested.
+The campaign duel adapter stores the chosen cheat profile in duel state. Bot search, its worker fallback and the actual Foresight draw read that saved profile. A hard-skill call without a saved override retains the existing full-cheat menu default. Keep current search limits. The flat curve applies only to the starter deck, not to custom or boss decks. Decks and the difficulty schedule are structurally checked, not balance-tested.
 
 
 #### Separate-deck effect contract
@@ -261,9 +261,9 @@ Morpheus, Kagaya and Vegapunk search the controller's remaining deck and bottom 
 
 Chaos summons from its controller's deck. Existing effects which take or equip relics from the deck, including Gilgamesh and the Heroic Spirits, take from that same side. Temporary generated tokens and printed copy or transformation effects keep their legitimate rules; they never permanently unlock cards.
 
-Angstrom Levy returns the targeted minion to the targeted side's deck bottom and selects its same-cost replacement from that side's remaining deck. Search before returning the target, so it cannot replace itself. No eligible replacement leaves the slot empty. This is an explicit proposed separate-deck ruling.
+Angstrom Levy returns the targeted minion to the targeted side's deck bottom and selects its same-cost replacement from that side's remaining deck. Search before returning the target, so it cannot replace itself. No eligible replacement leaves the slot empty. This separate-deck ruling is implemented.
 
-Track original deck ownership separately from current controller for stolen cards. An explicit return-to-owner effect follows original ownership; an effect explicitly tied to the targeted side, such as the proposed Angstrom ruling, follows that side. Keep current controller for combat, buffs and ordinary draw effects. Audit discard/resurrection ownership together with deck ownership.
+Played minions record their original owner separately from the current controller. Rick Prime returns stolen minions to that original owner. Reborn, transformations and friendly resurrection preserve that ownership. Effects explicitly returning a card to your hand use the current controller; a later play creates a card owned by that recipient. Angstrom uses the targeted side. Combat, buffs and draw effects use the current controller. Resurrection consumes only that controller's death history; the discard list remains a combined event record and never supplies draws.
 
 Ascendant Clairvoyance evaluates each seat's next card from that seat's deck. It no longer pretends that taking a card denies the same card to the player. True Dice and reply-reading retain their current meanings. Update bot projections, undo, choice cancellation, save/resume and deck counters together.
 
@@ -281,15 +281,27 @@ Persist first-clear progress, exact unlocked IDs, deck selection and unviewed re
 
 #### Chunk 1 implementation and regeneration
 
-Chunk 1 is complete. The active application imports neither new module. `campaign.ts` exposes immutable starter, chapter and difficulty definitions from `materials/campaign-design.json`; `decks.ts` performs pure deck construction validation. It requires an explicit collectible roster and unlocked collection, reports wrong sizes, duplicate copies, unknown IDs and locked cards, and never changes the input deck. Tokens are excluded by supplying the collectible roster rather than the engine library. Relics occupy normal slots. The flat curve and no-Mythic rule apply only to the curated starter.
+Chunk 1 supplied the definitions and validator. Chunk 2 now uses the validator in constructed duel setup. `campaign.ts` exposes immutable starter, chapter and difficulty definitions from `materials/campaign-design.json`; `decks.ts` performs pure deck construction validation. It requires an explicit collectible roster and unlocked collection, reports wrong sizes, duplicate copies, unknown IDs and locked cards, and never changes the input deck. Tokens are excluded by supplying the collectible roster rather than the engine library. Relics occupy normal slots. The flat curve and no-Mythic rule apply only to the curated starter.
 
 `campaign.test.ts` and `decks.test.ts` cover roster allocation, universe reservation, the exact starter curve, every boss deck, first/final difficulty boundaries, malformed chapter numbers, immutability, duplicate/locked/unknown IDs, and unrestricted legal custom curves. Tests also prove an early boss can use later filler cards without awarding them. No browser progress is written by these modules.
 
 Maintain card IDs and the four difficulty profiles in the JSON; do not duplicate them in TypeScript. Maintain prose here. Regenerate the reading copy with `python materials/render-campaign-design.py "<absolute report path>"`. The renderer reads the JSON, current CSVs, Hero Power names and this section; it never rerolls cards or rewrites the source files. The earlier `.preview/build-campaign-design.py` was a one-time design allocation tool and must not be used to maintain this implementation.
 
+#### Chunk 2 engine implementation
+
+`GameSetup.decks` accepts two explicit thirty-card collectible lists. The lists may share card IDs across seats, but each list must be unique and valid. Each list is copied and shuffled with its own seed suffix, then deals three cards. `playerDecks` stores two independent draw/bottom piles; the legacy aggregate draw arrays are empty in these duels. `engine/draw-piles.ts` provides per-seat pile access, exact remaining order and counts for the upcoming UI integration.
+
+`createCampaignDuel` in `source/src/campaign-duel.ts` validates the player's unlocked deck, loads the fixed boss deck and Hero Power, names the opponent, and copies the difficulty's cheat flags into state. It returns the state, chapter and difficulty. Availability gates, first-clear rewards, selected player-power unlock validation and persistence of campaign chapter progress belong to chunk 3; this engine entry point does not grant rewards or write browser storage.
+
+Every draw and deck-search effect passes its controller explicitly, including effects resolving outside that controller's turn. Separate-deck direct draws now incur escalating fatigue for each missing card. Foresight inspects up to two, keeps one, and bottoms the reject in the same pile; having only one card causes no extra fatigue. Empty discoveries have no enemy-deck fallback. Clairvoyance forecasts the two queues separately and returns rejected offers to the same forecast queue.
+
+Save loading validates optional per-seat piles, cheat flags and ownership history. Round-trip tests cover a pending Foresight choice and identical continuation after reload. Both worker and no-worker bot paths preserve the saved cheat profile. No save-version reset is performed now: the current app still creates pre-campaign duels, and the migration/reset cutover remains chunk 3. The old draw path is a temporary integration bridge, not a retained selectable shared-deck mode. The scripted tutorial stays on its existing setup path; combining tutorial setup with constructed decks is rejected explicitly.
+
+Focused tests cover both seats, overlapping card IDs, independent shuffles and fatigue, mulligans, full-hand burns, sparse decks, discoveries, summoned/equipped cards, Angstrom, Sir Nighteye, stolen-card returns, Reborn/resurrection ownership, cancellation, deterministic replay, worker transport, and malformed saves. No card stats, search-depth limits or reward definitions changed. No balance ladder was run. The feature-browser check now accepts both Batman target paths: automatic selection when one enemy is legal, and a manual choice when several are legal. This repairs a timing-independent test assumption without changing tutorial gameplay. The pack-hover check also moves the pointer away before measuring the resting card, avoiding an already-hovered baseline. Verification: 62 focused engine/save/worker checks passed; all eight project suites passed across the final runs, with UI and features passing isolated reruns after those harness repairs. TypeScript and the production build passed. No deployment was performed.
+
 #### Implementation boundaries and acceptance
 
-Chunk 2 would implement separate piles and adapt engine effects and bot behaviour. Chunk 3 would connect campaign progression, deck editing and reset/save handling. Chunk 4 would finish named enemy banners, results, hotseat and post-campaign modes, then verify and release the complete update. Chunk 1 has not changed any of those live systems.
+Chunk 2 has implemented separate piles, effect routing, saved bot overrides and the campaign engine adapter. Chunk 3 will connect campaign progression, deck editing, deck counters, start/resume flows and the development reset. Chunk 4 will finish named enemy banners, results, hotseat and post-campaign modes, then verify and release the complete update.
 
 Create focused campaign, deck validation, first-clear and save-reset checks. Verify all 600 boss-deck slots, 216 unique unlock allocations, complete universe inclusion, no future reserved card leakage, exact thirty-card setup, relic counting, per-seat draws, independent fatigue, ownership after theft, hotseat isolation, replay idempotency and developer-assisted completion.
 

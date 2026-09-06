@@ -155,6 +155,21 @@ export function loadGame(): SavedGame | null {
     if (typeof game.rngSeed !== "number" || typeof game.turnNumber !== "number") return null;
     if (typeof game.manaRamp !== "number" || game.manaRamp <= 0) return null;
     if (!Array.isArray(game.deck) || !Array.isArray(game.effectQueue)) return null;
+    // Chunk 2 fields are optional while the current app still creates old-style
+    // duels. Reset/version cutover happens when campaign progression is connected.
+    const stringArray = (value: unknown): value is string[] =>
+      Array.isArray(value) && value.every((entry) => typeof entry === "string");
+    if (game.playerDecks !== undefined && (
+      !Array.isArray(game.playerDecks) || game.playerDecks.length !== 2 ||
+      !game.playerDecks.every((pile) => pile && stringArray(pile.deck) && stringArray(pile.bottomDeck)) ||
+      game.deck.length !== 0 || !stringArray(game.bottomDeck) || game.bottomDeck.length !== 0
+    )) return null;
+    if (game.botCheats !== undefined && (
+      !Array.isArray(game.botCheats) || game.botCheats.length !== 2 ||
+      !game.botCheats.every((cheats) => cheats === null || (cheats &&
+        typeof cheats.trueDice === "boolean" && typeof cheats.readsYourReply === "boolean" &&
+        typeof cheats.clairvoyance === "boolean" && typeof cheats.foresight === "boolean"))
+    )) return null;
     if (parsed.version === SAVE_VERSION - 1) {
       migrateLegacyRelics(game as LegacyGameState);
       migrateLegacyMechanics(game);
@@ -176,9 +191,13 @@ export function loadGame(): SavedGame | null {
       player.board.every(
         (minion) =>
           minion === null ||
-          (Array.isArray(minion.gainedEffects) && "temporaryControl" in minion),
+          (Array.isArray(minion.gainedEffects) && "temporaryControl" in minion &&
+            (minion.originalOwner === undefined || minion.originalOwner === 0 || minion.originalOwner === 1)),
       ) &&
       Array.isArray(player.slotAuras) &&
+      (player.deadMinionOwners === undefined || (Array.isArray(player.deadMinionOwners) &&
+        player.deadMinionOwners.length === (player.deadMinions?.length ?? 0) &&
+        player.deadMinionOwners.every((owner) => owner === 0 || owner === 1))) &&
       player.costReductions !== undefined;
     if (!game.players.every(playerShapeOk)) return null;
     if (!Array.isArray(game.stasis)) return null;

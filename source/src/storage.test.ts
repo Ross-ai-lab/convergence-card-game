@@ -4,6 +4,8 @@ import { createInitialGame } from "./engine/game";
 import { cards, relics } from "./data/cards";
 import type { GameState } from "./engine/types";
 import { spawnTestMinion } from "./engine/test-utils";
+import { CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES } from "./campaign";
+import { applyAction, makeCardLibrary } from "./engine/game";
 
 /**
  * The save slot, exercised through a stand-in for `window.localStorage`.
@@ -35,6 +37,38 @@ afterEach(() => {
 });
 
 describe("the save slot", () => {
+  it("round-trips separate piles, pending Foresight, ownership and campaign cheat flags", () => {
+    vi.stubGlobal("window", { localStorage: memoryLocalStorage() });
+    const game = createInitialGame(cards, "separate-save", relics, {
+      decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK],
+      botCheats: [null, CAMPAIGN_DIFFICULTIES.ascendant.cheats],
+    });
+    game.phase = "drawChoice"; game.mulligan = null; game.activePlayer = 1;
+    game.drawChoice = { player: 1, cards: game.playerDecks![1].deck.splice(0, 2) };
+    game.playerDecks![0].bottomDeck = [game.playerDecks![0].deck.pop()!];
+    game.players[0].board[0] = spawnTestMinion(cards[0], 0, { originalOwner: 1 });
+    saveGame(game, [], { kind: "bot", skill: "hard" }, 1_000);
+    const restored = loadGame()!.game;
+    expect(restored).toEqual(game);
+    const choice = { type: "choose_draw" as const, player: 1 as const, choiceIndex: 0 };
+    const library = makeCardLibrary(cards, relics);
+    expect(applyAction(restored, choice, library)).toEqual(applyAction(game, choice, library));
+  });
+
+  it.each([
+    { playerDecks: [] },
+    { playerDecks: [{ deck: [], bottomDeck: [] }, { deck: [3], bottomDeck: [] }] },
+    { playerDecks: [null, null] },
+    { playerDecks: [{ deck: [], bottomDeck: [] }, { deck: [], bottomDeck: [] }], deck: ["c001"] },
+    { botCheats: [{}, null] },
+    { botCheats: [null, { trueDice: true, readsYourReply: false, clairvoyance: false, foresight: "yes" }] },
+  ])("rejects malformed optional separate-deck state %#", (corruption) => {
+    const storage = memoryLocalStorage(); vi.stubGlobal("window", { localStorage: storage });
+    saveGame(liveDuel(), [], { kind: "bot", skill: "hard" }, 1_000);
+    const saved = JSON.parse(storage.values.get(SAVE_KEY)!);
+    Object.assign(saved.game, corruption); storage.values.set(SAVE_KEY, JSON.stringify(saved));
+    expect(loadGame()).toBeNull();
+  });
   it("round-trips a duel in progress", () => {
     const storage = memoryLocalStorage();
     vi.stubGlobal("window", { localStorage: storage });
