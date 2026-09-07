@@ -15,6 +15,7 @@
  */
 
 import { launch } from "./browser.mjs";
+import { seedCampaignProgress } from "./campaign-fixtures.mjs";
 import { engineVocabulary, readRelics } from "./card-tools.mjs";
 
 const BASE = process.argv[2] || "http://localhost:5177";
@@ -42,6 +43,7 @@ async function completeOpeningMulligan() {
 }
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
+await seedCampaignProgress(page);
 await page.waitForTimeout(900);
 
 // Regression: the very first real gesture may be the Duel button itself. That

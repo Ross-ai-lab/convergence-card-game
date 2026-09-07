@@ -1,6 +1,21 @@
 /** Construction rules only. In-duel copying, theft and tokens do not edit a saved deck. */
 export const DECK_SIZE = 30;
 
+/** A seeded uniform shuffle with no curve, camp, rarity or minion-count correction. */
+export function randomDeck(rosterIds: readonly string[], seed: string): string[] {
+  const ids = [...new Set(rosterIds)];
+  if (ids.length < DECK_SIZE) throw new Error("A random deck needs at least thirty collectible cards");
+  let value = 2166136261;
+  for (const char of seed) value = Math.imul(value ^ char.charCodeAt(0), 16777619);
+  if (value === 0) value = 1;
+  for (let index = ids.length - 1; index > 0; index--) {
+    value ^= value << 13; value ^= value >>> 17; value ^= value << 5;
+    const swap = Math.floor(((value >>> 0) / 4294967296) * (index + 1));
+    [ids[index], ids[swap]] = [ids[swap], ids[index]];
+  }
+  return ids.slice(0, DECK_SIZE);
+}
+
 export type DeckIssue =
   | { code: "wrong-size"; actual: number; required: number }
   | { code: "duplicate-card"; cardId: string }

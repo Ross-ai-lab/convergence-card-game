@@ -123,7 +123,7 @@ export const KEYWORDS: KeywordEntry[] = [
   {
     term: "Discover",
     text:
-      "Offers you three cards from the shared deck and you keep one. The other two stay in the deck. Your opponent is not shown what you were offered.",
+      "Offers you three cards from your deck and you keep one. The other two stay in the deck. Your opponent is not shown what you were offered.",
   },
   {
     term: "Transform",

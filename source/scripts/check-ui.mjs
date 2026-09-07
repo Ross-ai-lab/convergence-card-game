@@ -31,6 +31,7 @@
  * which is how the audio harness failed the first time it ran.
  */
 import { launch, settleMotion } from "./browser.mjs";
+import { seedCampaignProgress } from "./campaign-fixtures.mjs";
 
 const BASE = process.argv[2] || "http://localhost:5177";
 const TITLE_ONLY = process.argv.includes("--title-only");
@@ -125,7 +126,7 @@ const resetTally = (await page.locator(".unlock-tally").textContent())?.trim() ?
 check(
   "developer reset restores normal progression",
   (await page.locator(".developer-cheat-panel").count()) === 0 &&
-    /^50 \/ \d+$/.test(resetTally),
+    /^30 \/ \d+$/.test(resetTally),
   "developer controls hide and the starting pool returns",
 );
 
@@ -133,6 +134,8 @@ check(
 // layer. A full-screen decorative wrapper once caught their pointer events,
 // leaving the right-side buttons clickable while every duel control was dead.
 const difficultyClicks = [];
+// Free-opponent controls intentionally exist only after all campaign chapters.
+await seedCampaignProgress(page);
 for (const selector of [".orbit-choice-easy", ".orbit-choice-hard", ".orbit-choice-normal"]) {
   await page.locator(selector).click({ timeout: 2000 }).catch(() => {});
   difficultyClicks.push((await page.locator(selector).getAttribute("aria-pressed")) === "true");
@@ -316,8 +319,10 @@ if (TITLE_ONLY) {
  */
 async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
+  await seedCampaignProgress(page, 20, { boardDeck: true });
   await page.locator(".hotseat-trigger").first().click();
   await page.locator(".hotseat-confirm-start").click();
+  await page.getByRole("button", { name: "Start two-player duel", exact: true }).click();
   await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 });
   await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 });
   // Player One is the only seat with a mulligan. Confirm it so the scenarios

@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 226,637 bytes, roughly 57k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~44% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 205,507 bytes, roughly 51k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~49% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -144,26 +144,20 @@ march toward a finish line that has already been crossed.
 
 ## What Convergence is
 
-Convergence is a non-commercial browser card duel where 172 named characters and forces from fiction collide alongside ten Basic reference cards in one shared deck. It supports a hotseat duel on one screen or solo play against three opponent levels:
+Convergence is a browser card duel with 172 named character cards, ten Basic cards and 34 relics. The current source implements a twenty-chapter campaign and separate thirty-card decks. Each player starts with the same thirty unlocked cards, exactly three at each mana cost. Campaign first clears add fixed cards to the collection, and the player chooses what to swap into their deck.
 
-- **Recruit** — deliberately forgiving.
-- **Veteran** — plays each move correctly but does not plan beyond it.
-- **Ascendant** — searches a full turn, assumes you answer well, and cheats. See [The cheat ladder](#the-cheat-ladder).
+The campaign is the only ordinary solo mode until all twenty chapters are cleared. Hotseat is available from the start. Completion opens Recruit, Veteran and Ascendant free duels with completely random thirty-card opponent decks. There is no selectable shared-deck mode.
 
-[Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/play/)
+No account or installation is required. Progress and live duels are saved locally in the browser. The public site counts visits in aggregate.
 
-**Owner play location:** Play only through the public [GitHub Pages game URL](https://ross-ai-lab.github.io/convergence-card-game/play/). The local `play/` folder is a generated deployment artifact for building and publishing; it is not the owner's play location.
-
-No account or installation is required. The public site records only an aggregate count of browsers that opened the game, not player names or visitor records. The roster is **172 character cards, 10 Basic reference cards, and 34 Ascension Relics**, 216 in all, and there is no deck-building screen. What a duel draws from is the **unlocked** slice of that roster: it opens on 50 cards and grows with every duel finished against the practice opponent — see [Gradual card unlocking](#gradual-card-unlocking). Each new duel generates fresh browser entropy, shuffles the unlocked pool once, and then draws from the top. The seeded order is stored in game state so Continue, undo, tests, and replays remain exact.
-
-The live game and `source/data/cards.csv` now contain 172 named character cards plus 10 Basic reference cards, 182 card definitions in total; the lore guide is a reference document, and the live roster is the source of truth.
+**Release boundary:** chunks 1–3 are implemented locally. The public [play page](https://ross-ai-lab.github.io/convergence-card-game/play/) has not received the campaign update. Chunk 4 owns final presentation checks and publication. The generated local `play/` folder remains a deployment artifact, not the owner's play location.
 
 ## What the game still needs
 
 <!-- CAMPAIGN-DESIGN-START -->
 ### Campaign design — phase one
 
-**Chunks 1 and 2 complete.** Campaign definitions, deck validation and the separate-deck engine are implemented. The campaign UI and progression are not connected yet. Exact card IDs and difficulty configurations live in [the campaign data](materials/campaign-design.json). `source/src/campaign.ts` imports this single source and exposes immutable typed definitions. `source/src/decks.ts` validates thirty unique collectible, unlocked cards. The generated review page is a reading copy of those definitions.
+**Chunks 1–3 complete locally.** Campaign definitions, the separate-deck engine, chapter selection, deck editing, first-clear rewards and save/reset handling are connected. Publication and the final presentation pass remain chunk 4. Exact card IDs and difficulty configurations live in [the campaign data](materials/campaign-design.json). `source/src/campaign.ts` imports this single source and exposes immutable typed definitions. `source/src/decks.ts` validates thirty unique collectible, unlocked cards. The generated review page is a reading copy of those definitions.
 
 | Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
@@ -190,14 +184,14 @@ The live game and `source/data/cards.csv` now contain 172 named character cards 
 
 #### Scope and status
 
-Chunk 1 defined and validated the campaign. Chunk 2 implements independent player piles, adapted deck effects, saved bot cheat profiles and an engine entry point for campaign duels. The current title screen still launches the pre-campaign path. No campaign menus, progress resets or public deployment occur in this chunk.
+Chunk 1 defined the campaign. Chunk 2 implemented separate piles and bot profiles. Chunk 3 connects the menus, deck builder, rewards and persistence. Current source resets pre-campaign records once, preserves sound preferences, and starts ordinary duels with separate thirty-card decks. No public deployment has occurred.
 
-The campaign replaces the old shared-deck progression. Shared decks are retired entirely, including after campaign completion. Earlier README sections describe the currently shipped game; their no-deck-building and no-campaign decisions are superseded for the upcoming implementation.
+Campaign progression replaces the old shared-deck economy. Shared decks are retired from all ordinary play, including after completion. The scripted developer tutorial remains a separate teaching setup and grants no progression.
 
 
 #### Campaign and rewards
 
-Twenty chapters unlock strictly in order. A first victory clears its chapter, grants its fixed reward once and opens the next chapter. Defeat, draw, surrender and abandoned attempts grant nothing. Replays of cleared chapters are proposed to remain available without additional cards or Hero Powers.
+Twenty chapters unlock strictly in order. A first victory clears its chapter, grants its fixed reward once and opens the next chapter. Defeat, draw, surrender and abandoned attempts grant nothing. Replays of cleared chapters remain available without additional cards or Hero Powers.
 
 Every player starts with the same thirty listed cards: exactly three at each mana cost from one through ten, including all ten Basic cards and no Mythics. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
 
@@ -218,11 +212,11 @@ A starting deck contains exactly thirty different unlocked cards, with one copy 
 
 The deck builder opens after the first chapter win. Before that, the starter deck is visible but read-only: there are no spare cards to exchange. Rewards enter the collection, never append themselves to the active deck. The player explicitly swaps cards before the next duel.
 
-Proposed initial scope: one saved personal deck, not multiple named presets. The builder provides selected-card count, cost curve, search, cost/camp/alignment/type filters, and clear selected/available states. An incomplete draft may be saved, but Start Duel requires thirty valid unique cards. Provide a deliberate Restore Starter action.
+One personal deck is saved, plus the second hotseat seat's deck. There are no named deck presets. The builder provides selected-card count, cost curve, search, cost/camp/alignment/type filters, and clear selected/available states. An incomplete draft may be saved, but Start Duel requires thirty valid unique cards. Provide a deliberate Restore Starter action.
 
 Editing is available between duels. An ongoing or resumed duel keeps the deck snapshot it started with. The campaign page offers Edit Deck and Next Chapter; completing chapter twenty also reveals Recruit, Veteran and Ascendant.
 
-Hotseat is available from the start. Proposed setup: each seat selects a separate thirty-card deck from the same local unlocked collection. Both seats may include the same card; uniqueness applies within each deck. Start with the starter list for both seats, preserve the privacy curtain, and keep hotseat rewards and campaign progress at zero.
+Hotseat is available from the start. Each seat selects a separate thirty-card deck from the same local unlocked collection. Both seats may include the same card; uniqueness applies within each deck. Start with the starter list for both seats, preserve the privacy curtain, and keep hotseat rewards and campaign progress at zero.
 
 After the campaign, each bot duel samples thirty unique cards completely randomly from the full playable roster, including relics. No hidden mana-curve or synergy correction is applied. The player still chooses their own thirty-card deck. Random opponents may therefore have poor curves or weak combinations.
 
@@ -272,7 +266,7 @@ Ascendant Clairvoyance evaluates each seat's next card from that seat's deck. It
 
 Owner policy: never be afraid to reset Convergence progress during development. Prefer a clean reset over fragile migration when progression or save semantics change. Record what resets and apply the reset once through a version change, not repeatedly on every page load.
 
-For campaign implementation, reset existing collections to the curated thirty-card starter, campaign completion to zero, unfinished duels, selected decks, collection marks, records and Hero Power unlocks. Preserve unrelated preferences such as sound volume. Phase one does not perform that reset.
+For campaign implementation, reset existing collections to the curated thirty-card starter, campaign completion to zero, unfinished duels, selected decks, collection marks, records and Hero Power unlocks. Preserve unrelated preferences such as sound volume. The local campaign build performs this reset on first load through progress v3 and duel-save v28; the live public site will reset when the campaign release is published.
 
 Developer tools remain available from the start. A developer-assisted campaign victory counts as a normal first clear and grants that chapter's reward and Hero Power progress. A victory outside campaign mode does not clear an unnamed chapter. Deliberate developer Unlock All remains an explicit exception to reserved rewards.
 
@@ -299,9 +293,21 @@ Save loading validates optional per-seat piles, cheat flags and ownership histor
 
 Focused tests cover both seats, overlapping card IDs, independent shuffles and fatigue, mulligans, full-hand burns, sparse decks, discoveries, summoned/equipped cards, Angstrom, Sir Nighteye, stolen-card returns, Reborn/resurrection ownership, cancellation, deterministic replay, worker transport, and malformed saves. No card stats, search-depth limits or reward definitions changed. No balance ladder was run. The feature-browser check now accepts both Batman target paths: automatic selection when one enemy is legal, and a manual choice when several are legal. This repairs a timing-independent test assumption without changing tutorial gameplay. The pack-hover check also moves the pointer away before measuring the resting card, avoiding an already-hovered baseline. Verification: 62 focused engine/save/worker checks passed; all eight project suites passed across the final runs, with UI and features passing isolated reruns after those harness repairs. TypeScript and the production build passed. No deployment was performed.
 
+#### Chunk 3 menus, progression and saves
+
+The title screen opens Campaign until all twenty chapters are cleared. Only the next unfinished chapter is playable; cleared chapters offer replay without rewards. Hotseat is always available. The starter is visible but read-only before the first clear, except after the explicit developer Unlock All action. The campaign page lists bosses, difficulties and fixed first-clear rewards.
+
+The deck builder displays unlocked cards, artwork, printed stats, rarity and effects, with search and cost/camp/alignment/type filters. Selected-only view and the mana curve follow the draft. Edits persist automatically. Removing a card may save a 29-card draft, but a new duel is blocked until the list contains exactly thirty unique unlocked cards. Rewards never append themselves to the selected deck. Both hotseat decks use the same local collection and are validated independently. A live saved duel retains its original deck snapshot even if a draft changes at the title screen.
+
+Progress v3 stores completed chapters, explicit unlocked IDs, the two deck drafts, selected Hero Power, record/collection marks, settled duel IDs and pending reward cards. The first-clear transaction records the win, unlocks the fixed cards, advances the next chapter, grants the player power and saves the pending pack together. Pack acknowledgment only clears that presentation queue. Reopening during a pack shows the same unviewed reward; retrying an already-settled duel cannot pay twice. Replays, losses, draws, hotseat and free duels grant no cards or additional power unlocks. The daily pack economy and its generation code/styles were removed.
+
+Duel save v28 records campaign chapter, skill, duel identity, separate piles and cheat profile. Old progress/save keys are removed once; sound preferences are preserved. Progress-save errors show a retry message instead of silently claiming success. Continue includes the first main turn immediately after mulligan. Active developer-assisted campaign wins count; result previews outside a campaign do not. Leaving a tutorial never records it as a completed duel.
+
+`scripts/check-campaign.mjs` runs through the existing `npm run check` entry point. It checks the real first clear, pack reload/acknowledgment, draft blocking, card swap, replay/loss handling, final chapter reward, free-play unlock, random opponent deck and responsive screens. `scripts/campaign-fixtures.mjs` prepares completed progression using the same pure first-clear transactions for existing browser suites. Board fixtures use enough Tech minions and relics to test three-choice discoveries without depending on which cards happened to enter the opening hand. Unit coverage lives in `campaign-progress.test.ts` and the revised record/save tests. Final verification passed: 102 focused unit checks, the full test suite, the campaign browser flow, performance, audio, card layout, feature screens and UI interaction checks across the final runs. TypeScript and the production build passed. Desktop and phone campaign/deck screens were inspected. No public deployment or balance ladder was run.
+
 #### Implementation boundaries and acceptance
 
-Chunk 2 has implemented separate piles, effect routing, saved bot overrides and the campaign engine adapter. Chunk 3 will connect campaign progression, deck editing, deck counters, start/resume flows and the development reset. Chunk 4 will finish named enemy banners, results, hotseat and post-campaign modes, then verify and release the complete update.
+Chunks 1–3 are implemented. Chunk 4 will finish the enemy banner presentation and final end-to-end release verification, then publish the campaign update. Story, unique boss rules and additional cards remain separate future work.
 
 Create focused campaign, deck validation, first-clear and save-reset checks. Verify all 600 boss-deck slots, 216 unique unlock allocations, complete universe inclusion, no future reserved card leakage, exact thirty-card setup, relic counting, per-seat draws, independent fatigue, ownership after theft, hotseat isolation, replay idempotency and developer-assisted completion.
 
@@ -311,46 +317,13 @@ Do not implement dialogue, new cards, new art, custom boss rules, multiple named
 
 <!-- CAMPAIGN-DESIGN-END -->
 
-
-**The duel itself is finished and it is fun.** The owner has played it and enjoyed it. Treat "does a
-turn feel good" as an answered question, not an open one, and do not put a human playtest back on any
-list of remaining work. Older notes that describe the playtest as pending are stale; correct them
-where you find them.
-
-**Meta-progression exists now, in three forms.** A duel used to end and leave nothing behind, so the
-tenth duel was indistinguishable from the first. Built 20 August 2026, extended 23 August 2026:
-
-- **A record.** Duels played, won and lost per opponent level, plus the last ten results. Reached from
-  the title screen, which only shows the door once a duel has finished.
-- **A collection.** Every card is marked in the gallery by how far it has got: dimmed until it has
-  been in your hand, plain once it has, a teal ring once you have played it, a gold ring once you have
-  won a duel with it on the board.
-- **Gradual unlocking**, described in its own section below.
-
-All three live in `source/src/progress.ts`, under their own localStorage key with their own version.
-**They are deliberately NOT part of the save**: a save holds one duel and is cleared at game over,
-and a record has to survive exactly that. The React side is three lines calling `finishDuel`, because
-the judgement — which ladder, what counts as a loss — is the part that goes quietly wrong, so it lives
-in a pure function with tests rather than in a component.
-
-**Two larger candidates were considered and are NOT being built.** They are recorded here so nobody
-re-proposes them as gaps:
-
-- **A ladder** (beat Recruit to open Veteran) — the record already answers "how am I doing", and
-  locking away two thirds of the opponents on a game one person plays for fun costs more than it adds.
-- **A run**, and the **draft mode** that pairs with it. Draft is not a feature here, it is a different
-  game: this engine deals both players from ONE shared deck, and that is what makes Foresight and
-  Clairvoyance mean anything — the card the Ascendant rejects is the card you were about to draw. Give
-  each player their own deck and that whole layer is deleted. Do not propose it as an addition.
-
-Gradual unlocking is neither of those two and does not reopen them. It locks no opponent and starts no
-run: it narrows the ONE shared deck and widens it again, which is a change to a single argument.
+The remaining delivery work is chunk 4: final enemy-banner presentation and release verification. Campaign difficulty has not been fine-tuned through a balance ladder. Do not run balance tuning without a separate request.
 
 ## Rules at a glance
 
 - Both cores begin at **75 health**. Reduce the opposing core to zero to win.
-- Both players draw from the same shuffled deck and open with **3 cards**. Player One may replace any number of those cards once during the mulligan; Player Two keeps the opening hand. The second player also receives **The Coin**.
-- Hero Powers are selected from the title-screen **Hero Powers** menu. Each bot win unlocks the next player power permanently, in the order shown in that menu. In a bot duel, the opponent receives one random power from all ten and needs no unlocks. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
+- Each player draws from their own shuffled thirty-card deck and opens with **3 cards**. Player One may replace any number of those cards once during the mulligan; Player Two keeps the opening hand. The second player also receives **The Coin**.
+- Hero Powers are selected from the title-screen **Hero Powers** menu. Each first clear of chapters 1–10 unlocks the next player power permanently, in the order shown in that menu. Campaign bosses use fixed powers. Free-play opponents receive one random power from all ten. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
 - At the start of a turn, draw one card. Mana starts at **1**, refills each turn, and increases by one each turn up to **10**.
 - Your hand holds at most **10 cards**. A card drawn into a full hand burns and is discarded.
 - Play a hand card into one of **five board slots** by paying its cost. Effects that summon minions also need an open slot.
@@ -359,7 +332,7 @@ run: it narrows the ONE shared deck and widens it again, which is a change to a 
 - Combat is simultaneous: attacker and defender deal damage to each other, even when the attack kills the defender.
 - **Taunt** must be dealt with before attacks can reach the opposing core, unless an effect or relic explicitly bypasses that defence.
 - **Silence** strips printed text, keywords, and stat buffs at once. A minion pumped above its printed stats falls back to them; a minion pushed below them stays there. A silenced minion's **Divine Shield** blocks nothing while the silence holds.
-- When the shared deck and its bottom-deck cards are empty, drawing causes escalating fatigue damage: 1, then 2, then 3, and so on.
+- When a player's own deck and bottom-deck cards are empty, drawing causes escalating fatigue damage: 1, then 2, then 3, and so on.
 
 Nothing damages a core automatically just because a turn starts; core damage comes from a minion attacking it or from an effect that explicitly says it damages a core.
 
@@ -367,7 +340,7 @@ Nothing damages a core automatically just because a turn starts; core damage com
 
 ### Starting and resuming
 
-The title screen offers **Continue your duel** when a live duel was saved in that browser, solo play at one of the three bot levels, and a two-player hotseat duel. A duel is saved locally after state changes; completed duels are not offered for resuming. Hotseat uses a privacy curtain while the screen is passed so the next player cannot see the previous player's hand.
+The title screen offers **Continue duel** for a saved duel, the campaign, the deck builder and two-player hotseat. Recruit, Veteran and Ascendant free play appears only after chapter twenty is cleared. A duel is saved locally after state changes; completed duels are not offered for resuming. Hotseat uses a privacy curtain while the screen is passed so the next player cannot see the previous player's hand.
 
 ### Opening duel animation timeline
 
@@ -393,7 +366,7 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 ### During a duel
 
 - Each player starts with three cards. Player One may select any number to replace once; the second player also receives **The Coin**, which spends for +1 mana that turn.
-- Choose an unlocked Hero Power from the title-screen menu before starting. Bot wins unlock the ten player powers in order; the selected power appears beside the Core and costs 2 mana once per turn. The bot receives one random power from all ten each duel.
+- Choose an unlocked Hero Power from the title-screen menu before starting. First clears of chapters 1–10 unlock the ten player powers in order; the selected power appears beside the Core and costs 2 mana once per turn. The bot receives one random power from all ten each duel.
 - Click or drag a hand card onto an empty slot to play it.
 - Click or drag a ready minion onto an enemy minion or the enemy core to attack.
 - Press **Space** or **Enter** to end the turn.
@@ -402,7 +375,7 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 - **The Coin** appears for the player who goes second and spends for +1 mana that turn.
 - **Restart** begins a fresh duel.
 - **How to play** opens the in-duel rules guide.
-- **Settings** contains sound mute/volume controls and returns to the title screen. Choose the bot level on the title screen before starting a duel.
+- **Settings** contains sound mute/volume controls and returns to the title screen. Campaign difficulty is fixed by chapter; free-play difficulty is chosen on the title screen after campaign completion.
 - **Cards** opens the card gallery from the title screen.
 - **Cheat Off/On** is a separate toolbar sandbox switch. When enabled, mana is infinite; it is intended for testing and experimentation, not normal balance.
 - **Log** is the drawer on the left edge. It prints every event of the duel, newest first.
@@ -515,294 +488,11 @@ Thirty-two relics would be
 
 ## Gradual card unlocking
 
-**The shared deck opens on 50 cards and grows by finishing duels.** Built 23 August 2026, in
-`source/src/unlocks.ts`, with `source/src/unlocks.test.ts` covering every claim below.
+Card unlocking is now campaign-only. The canonical chapter packs are in `materials/campaign-design.json`; `progress.ts` awards only a first clear of the next chapter. Thirty starter cards plus 186 chapter rewards cover the current 216-card roster once each. Refer to [Campaign design — phase one](#campaign-design-phase-one) for the exact chapter table and current implementation status.
 
-| Result | Cards |
-|---|---|
-| Beat the Ascendant | +15 |
-| Beat the Veteran | +10 |
-| Beat the Recruit | +5 |
-| Lose or draw, any level | +1 |
-| Hotseat, any outcome | 0 |
+There are no daily cards, loss rewards, draw rewards or repeat-win packs. Completing a chapter changes the collection, not the saved thirty-card deck. The player edits that deck explicitly between duels. Developer Unlock All remains an intentional bypass, but it does not mark chapters complete or reveal free-play difficulty controls.
 
-Raised from 10 / 6 / 3 on 26 August 2026. Owner's ruling, and the table is the only place the numbers
-live: `UNLOCK_REWARD` in `unlocks.ts` feeds the in-game "?" panel directly, so nothing has to be kept
-in step by hand.
-
-**Hotseat pays nothing on purpose.** Both seats are the same person and `progress.ts` records every
-hotseat duel as won, so paying it would make conceding to yourself the fastest route to the roster.
-
-**Why the reason for the feature is recurrence, not collecting.** A duel is a median 22 player-turns,
-so it consumes roughly 30 of 216 cards and about 15 of them reach one player's hand. At the full
-roster a given card reaches your hand about once every thirteen duels, which is far too rare to form
-an opinion about it. At 50 it is about once every three.
-
-**The count is an ORDER plus an INDEX, never a growing set of ids.** `progress.unlockOrder` holds all
-216 ids and `progress.unlocked` says how far down it the deck reaches. An order is fixed once, so
-every prefix of it can be balanced by construction; a set built batch by batch can only be balanced
-batch by batch, and batches that are each fair still stack into a lopsided whole. An index also cannot
-re-lock a card, cannot lose one, and cannot disagree with itself.
-
-**The order is balanced on two axes, in two passes, and this is the part that matters.** A plain
-shuffle would hand out a 50-card pool whose mana curve wanders by several cards per bucket, and a pool
-holding four 10-cost cards and one 1-cost card is a pool you cannot open a turn with — the duel's
-measured pacing rests on the printed curve. Minions and relics are spread by cost separately, then
-interleaved by their share of the roster, both passes using the Sainte-Laguë divisor. Measured across
-400 seeds and every pool size: the minion curve drifts at most **0.87 of a card**, the relic share at
-most **0.5**, and the combined curve at most **1.34**. The single-pass version that treated relics as
-an eleventh cost bucket drifted **3.99**, which is why it is not the version that shipped.
-
-**The opening 50 holds every BASIC card and no Mythic at all.** Owner's ruling, laid over the balanced
-order on 26 August 2026 by `applyOpeningRules` in `unlocks.ts`. Two rules, and each fixes a different
-thing the plain balanced order got wrong.
-
-The ten BASIC cards are the plain, no-franchise ones — Modern Tank, Fort, Battleship, Meteor and the
-rest — and they are exactly one card at every mana cost from 1 to 10. They are the cleanest possible
-spine for a first pool, and leaving them to chance meant half of them were missing from it.
-
-No Mythic belongs there for the opposite reason. A Mythic is what a duel PAYS you, and a roster of 19
-of them handed six over before the first duel had been played, which spends the best moment the
-feature has. Each evicted Mythic is traded for a Rare, the tier the BASIC cards themselves sit in, so
-the pool keeps its size and its shape.
-
-**The evicted Mythics are SPREAD through the locked remainder, never parked at the front of it.** That
-was the first build and it is the wrong shape: it hands those six cards straight back on the very
-first win, which is the same mistake as starting with them, delayed by one duel. They are interleaved
-with the same Sainte-Laguë divisor the roster order uses, so a Mythic arrives roughly every eighth
-unlock and every prefix of the remainder holds them within about one card of their fair share. Stop
-after any number of wins and the proportion still holds.
-
-**This is a REORDER, not a re-generation, and it is applied to the opening slice only.** The balanced
-order still decides which cards land where past card 50, and both lanes of the spread keep the
-relative order the balanced pass gave them, so the mana curve underneath is undisturbed. It also
-settles in one pass: run it twice and the second finds nothing to move.
-
-**It is the one place a card can be taken back, and that is deliberate.** A record written before these
-rules existed already had Mythics in its opening 50; loading it moves them out. `ensureUnlockOrder`
-runs on every load, so the migration needs no version bump and no reset. Every other path still obeys
-"a card that has been unlocked can never leave".
-
-**50 cards does not deck anyone out — measured, not assumed.** 600 self-play duels at a 50-card shared
-pool: the deck empties in **1.3%** of them, fatigue is dealt in **1.0%**, and the median duel runs 24
-turns against 25 at the full roster. The arithmetic that said otherwise assumed the 54-turn outlier
-was common; it is not. Anything below 50 has not been measured and must be before it is used.
-
-**Restricting the deck restricts everything, with no per-effect work.** Every effect that fetches a
-card — summon-from-deck, the relic grants, the Discover offers — reads `state.deck`, never the card
-library, so cutting the deck cuts all of them at once. The library passed to the engine stays FULL on
-purpose: a saved duel or a minion already in play can name a locked card, and every one of those has
-to keep resolving.
-
-**AN UNLOCKED CARD IS NEVER DIMMED, and the collection mark moved off the card face.** Owner's ruling,
-26 August 2026, reversing the build before it. Unseen used to be the loud state: the whole face was
-desaturated and darkened until the pointer touched it, so the wall answered "how much of this have I
-actually met" from across the room. It answered it by hiding the artwork, which is the one thing a
-gallery exists to show, and it left the art of a card you already own visible only while you were
-hovering it. The mark now sits on the CELL, beside the played and won rings that were already there:
-a card you have MET carries a pale ring and an unmet card carries nothing. Same fact, read the other
-way round — the wall fills with rings as the collection grows, rather than clearing of shadow.
-
-**Locked cards are SEALED, not merely marked, and the padlock is meant to be in the way.** The gallery
-greys them and covers the middle of the face with a padlock at **68% of the card width**, so a locked
-card shows its name, its frame colour and a shape behind the glass, and nothing that tells you what it
-does. It was twice shrunk so the rules text underneath stayed readable, and that was the wrong goal
-both times: a locked card the player can read is a card already spent, and what arrives in a pack
-should still be news. Owner's ruling. Keep it large.
-
-The padlock is drawn rather than fetched because it is furniture — an icon, in the same family as the
-keyword artwork, not a photograph. **The SILHOUETTE is what makes it look antique**, and the first
-version got that wrong: a rounded rectangle with a band and four rivets reads as a padlock ICON, the
-kind a browser puts in an address bar, and no amount of extra rivets rescues it. What says "old" is
-the outline — broad flared horns at the four corners, sides that pinch inward between them, a wide
-foot with only a slight dip — and scrollwork inside it.
-
-Two things learned drawing it. **The foot must be BROAD**: a long central spike made it a shield or a
-pendant, and a real padlock is wide at the bottom because it has to hold a mechanism. And **the
-scrollwork must stay out of the middle**: two curls level with the keyhole plus a curve beneath it
-read as eyes and a mouth, which is the one thing an ornate lock must not do. They sit in the
-shoulders and the haunches instead, following the body's edge. Every dark mark is a hole, a groove or
-a shadow, so the whole thing still works as one flat colour over any artwork.
-
-**The Collection filter has NO "any" option and starts on Unlocked.** It is the only filter that
-behaves that way. The gallery is your collection first and the locked wall second, so mixing 50
-readable cards into the locked remainder is a list that answers neither question. The deliberate
-cost is that no view shows all 216 at once.
-
-**The "?" opens a POPUP, and it prints the reward table and nothing else.** A panel pushed in above
-the grid shoved 200 cards down the page to make room, so opening it lost the reader's place in the
-list and closing it lost the place again. Everything it used to print around the table — a paragraph
-of preamble, the reason hotseat pays nothing, a paragraph on how batches are balanced — was true and
-unread: the table already answers the only question anyone opens it to ask.
-
-**The pack.** A duel that earns cards ends on a sealed pack that takes FIVE strikes to open, then
-holds for a second and bursts, dealing the cards out one at a time.
-
-**NEITHER SCREEN CARRIES PROSE.** Owner's ruling, 4 September 2026. The count above the sealed pack
-("10 new cards"), the running instruction below it ("Strike it open", "Again", "Once more", "It is
-giving way…") and the kicker over the dealt cards ("Added to the shared deck") are all gone. A pack
-that shakes, cracks a new line on every hit and brightens as it goes is already saying what to do, and
-cards arriving one at a time already say they have been added. The button keeps its `aria-label`,
-which is where an instruction genuinely belongs, and the running total stays because it is a number
-nothing else reports.
-
-**POINTING AT A DEALT CARD ENLARGES IT, with no delay at all.** Owner's ruling, 4 September 2026. The
-two-second rest that guards the hand exists because a card there is also a control — click it and it
-is played — and the pack is the opposite case: the cards are only ever being read, so there is
-nothing for a wait to protect.
-
-- **`--pack-lift` is COMPUTED, not a fixed multiplier.** A pack card is drawn anywhere between about
-  115px and 278px depending on how many arrived and how big the window is, so one hover scale would
-  land somewhere different every time — and on a fifteen-card pack in a small window, still too small
-  to read. `hoverLift` in `App.tsx` works the multiplier back from whatever the grid did, so the
-  enlarged card always lands at `PACK_HOVER_WIDTH` = **315px**, cut a quarter from 420 on
-  4 September 2026 (owner's ruling): at 420 an enlarged card covered most of its neighbours, and the
-  point is to read one card rather than to lose the row it came from.
-- **An edge card grows INWARD.** `--lift-origin` is set per card from its column and row, because
-  enlarging from the centre pushed the first card 63px off the left of a 1920 screen — and the grid is
-  deliberately as wide as the window now, so the outer column is exactly where a pointer lands most.
-- **The lift is on an inner element, and that is not a style choice.** `.pack-card` carries the deal
-  animation, an animation with `both` holds its final transform on that element forever, and a filled
-  animation beats a plain `:hover` declaration in the cascade — the hover would simply never apply.
-  `.pack-scroll` also had to stop clipping, or the enlarged card would be cut off along the top row
-  and both sides.
-- **A HEADLESS HARNESS CANNOT SEE THIS WORKING, and `settleMotion` in `scripts/browser.mjs` is the
-  answer to it.** The pane never paints, so a CSS *transition* never advances: the hovered card
-  measures and photographs at its starting size while `:hover` matches, the rule sits in the CSSOM,
-  the custom property resolves, and the computed transform is still the identity matrix. Call
-  `settleMotion(page)` after the screen is set up and before measuring — `check:ui` does, for the
-  pack-hover check at the end of it. **The negative delay in that helper is the part worth reading**:
-  shortening an animation's duration is not enough, because on a page that never painted its clock may
-  never have started, so it stays at 0% — the pack's cards kept reporting two-thirds of their settled
-  width until the helper started every animation a second in the past. Any hover, fade, slide or deal
-  checked this way needs it before it is called broken.
-
-Raised from three on 3 September 2026, owner's ruling, and the change is the SHAPE rather than the
-number. Three hits had a middle; five has a climb, and each hit now cuts its own line into the box, so
-the damage is countable instead of merely louder. `PACK_CRACKS` in `App.tsx` describes the five lines
-in one place — angle and length each — and a crack element mounts on the click that makes it, so its
-cut animation runs once rather than fading up. The shake and the glow read a `--hit` custom property
-instead of having a hand-written state each, and the button is keyed on the count so the shake
-restarts every time.
-
-**The burst is a CIRCLE, and it used to be a rectangle.** Owner's ruling, 3 September 2026. Two
-unrelated faults made the same wrong shape:
-
-- **The sealed pack's light was clipped square.** `.pack-stage` carried `overflow: hidden`, and the
-  charged box glows through a 90px `box-shadow` — so the bloom was cut off dead flat along the
-  stage's top and bottom edges, and the pack about to burst read as a lit rectangle. The clip was
-  there to stop the reveal grid overflowing, which is no longer a thing that can happen: the grid is
-  scaled to fit and `.pack-scroll` clips whatever is left. Removing it is what makes the light round.
-- **The explosion had no light of its own.** It was ninety-two sparks and nothing else, which reads
-  as confetti appearing rather than as something going off — a firework is light first and debris
-  second. `.pack-flash` is a round white core that swells and dies, and two `.pack-shock` rings run
-  outward through it; all three are circles centred on the pack, so the blast has a shape instead of
-  a bounding box. The sparks' vertical throw was also multiplied by 0.8, which squashed the whole
-  thing into a wide oval; that is gone, the count is 128, and the reach now scales with the smaller
-  screen dimension so the same blast is the same event on a laptop and on a 1440p monitor.
-
-**The fifth hit does not open it.** The box holds for `PACK_BURST_DELAY_MS` — one second — fully
-cracked, white-hot and straining, and then goes. That pause is what the count exists for: the player
-lands the last hit and then watches it fail, which is a different event from a box that opens the
-moment it has been clicked enough times. `opened` is its own state rather than `hits >= PACK_HITS`
-for exactly this reason, so the fireworks, the deal and the Collect button did not have to learn
-about the pause.
-
-**`Open 5/10/15-card pack` in the developer tools reaches this screen directly.** It draws random
-cards from the whole roster and does NOT touch the record: nothing is unlocked, and the log says so.
-Every part of the screen above — five hits, the held beat, the burst, the stagger, the reveal order,
-the row balancing — was otherwise reachable only by finishing a duel and winning enough to earn that
-many cards, which made the fifteen-card layout close to untestable. The buttons sit outside the
-in-duel block, because the pack screen is not part of a duel. It deals in `revealOrder`, best LAST, so the prize of the
-batch lands on the moment the player is watching rather than in the middle of the row. Rarity decides
-and cost breaks the tie, and **relics outrank every character tier, Mythic included** — owner's call,
-with scarcity behind it (34 relics against 19 Mythics) and the fact that a relic changes what another
-card does rather than adding a body. The ordering is cosmetic and runs after the contents are settled,
-so it cannot bias the reward; a test pins that. Pack cards are **206px minimum and never
-lazy-loaded** — see the 200px floor under [Interface and card faces](#interface-and-card-faces), and
-note that a card dealing itself onto the table as an empty black frame is the reward arriving broken.
-Rows are balanced by an explicit width rather than left to wrap, because six cards wrapping naturally
-strand one under a row of five.
-
-**THE PACK NEVER SCROLLS. Every card in it is on screen at once.** Owner's ruling, 3 September 2026.
-It used to scroll at fifteen, which put a third of the reward below a fold that nothing on the screen
-mentioned — and the one screen a player is certain to look at is the one that just paid them.
-
-The way it fits is a **CSS transform on the whole reveal, never a smaller card**. `.card-face` is
-`container-type: size` and silently drops its rules text below roughly 200px, so shrinking the cards
-to fit would hand over fifteen cards that no longer say what they do — the failure that is worse than
-scrolling, and the harder one to notice, because the screen still looks right. A transform changes
-what is PAINTED and not what is MEASURED: every card goes on laying itself out at 206px, the
-container query never sees the difference, and only the pixels get smaller.
-
-`packLayout` in `App.tsx` does the sums, and it is the one place the grid is decided. It tries EVERY
-balanced split and keeps the shape that needs the least shrinking, with the flattest one taking a tie.
-The height it measures against is READ off the laid-out wrapper (`.pack-scroll` is the stage's one
-flexible child, so what the kicker, the total and the Collect button leave over is exactly its height)
-rather than estimated from a constant; `PACK_STAGE_RESERVE` is the first-frame fallback only.
-
-**THE GRID MAY BE DRAWN BIGGER THAN IT IS LAID OUT, up to `PACK_MAX_SCALE` = 1.35.** Owner's ruling,
-3 September 2026 — "why so much wasted space". Three separate things were pinning a fifteen-card pack
-into a 1,081px column on a 1,920px screen, and all three had to go, because fixing any two still left
-the third holding it:
-
-| What held it | Why it looked reasonable | What it actually did |
-|---|---|---|
-| `PACK_MAX_PER_ROW = 5` | A row of eight reads as a wall | Forced three rows, which are tall, so the grid then had to shrink to fit the HEIGHT |
-| `min(1180px, 96vw)` on `.pack-stage` | A sane maximum for a dialog | The grid could not be wider than its parent, whatever the screen was |
-| `max-height: 94vh` on the same box | Obviously right | An auto-height box has no leftover space to hand its flexible child, so the measured height came back equal to the grid's own height and the scale could never exceed 1 |
-
-The stage is `width: 96vw; height: 94vh` now, the wrapper is `flex: 1 1 0`, and there is no cap on
-cards per row. Measured after: fifteen cards go eight-and-seven at **1.06 scale on 1920 × 1080**, using
-1,843px of width with 217px cards; five cards render at **1.27**, at 262px each. A 1440 × 900 window
-still lands at 0.81 and 1024 × 640 at 0.56 — the small screens were never the problem, and nothing
-about the 206px floor moved. The ceiling exists because a transform scaled far past 1 rasterises text
-softly; a third bigger is what this face takes while staying crisp.
-
-**The tally rides inside the Cards button** on the title screen, stacked under its label, and
-disappears once the roster is complete rather than reading 216 of 216 forever. It lived outside the
-button first and had to be nearly invisible there, because between two gold pills it read as a third
-one; inside a button it cannot be mistaken for a control, so it can afford to be legible.
-
-**A free pack every day, worth 5 cards.** Built 2 September 2026. `lastDailyPack` on the record
-holds the last local calendar day whose pack was taken; `dailyPackAvailable` and `claimDailyPack` in
-`progress.ts` are pure and tested, and the title screen shows a gold **Today's pack** button while one
-is owed.
-
-- **A DAY STRING, never a timestamp.** A timestamp would make "a new day" mean "24 hours since last
-  time", which punishes a player for opening the game an hour earlier than yesterday and slides the
-  reward later every day until it lands in the night. `todayKey` builds it from local date fields
-  rather than `toISOString`, which converts to UTC first and rolls the day over at the wrong moment
-  for everyone not on it — an evening in Baku is already tomorrow in that string.
-- **Five cards, which is deliberately the Recruit win and no more.** The pack is paid for by opening
-  the game, not by playing it, so it must never be the fastest route to the roster: beating the
-  Ascendant is still worth three of them.
-- **A COMPLETE ROSTER also hides it, and that is the other reason it can be missing.**
-  `dailyPackAvailable` returns false when `unlocked` has reached the end of `unlockOrder`, because a
-  pack with nothing to give is a ceremony around an empty box. The tell is the Cards button on the
-  same screen: its `50 / 216` tally disappears at the same moment and for the same reason. Reset
-  progress from the developer panel to see either of them again.
-- **The button DISAPPEARS once taken, rather than greying out.** A dead control saying "come back
-  tomorrow" would be permanent furniture advertising something the player cannot have, for 23 hours
-  out of every 24. Its absence is the reward already collected.
-- **It opens the ordinary pack screen.** A second reward ceremony would be a second thing to keep in
-  step with `revealOrder`, and it would make the daily cards feel like a different currency from the
-  ones a duel pays. They are the same cards off the same order.
-- **The guard is the identity check, not the button.** `claimDailyPack` returns the record unchanged
-  when nothing is owed, and the caller does nothing when it gets the same object back — so a double
-  click, a stale render, or a tab left open past midnight cannot pay twice.
-
-**The gallery's Unlocked view puts newly earned cards FIRST, newest first.** A pack deals five cards
-and then hands the player a list of two hundred sorted by mana, which is the one order that
-guarantees those five are scattered and none of them is on the first screen. The unlock order already
-records when each card arrived, so recency costs one lookup. **The opening 50 are exempt and keep
-mana order**: they were never earned, so ranking them by their position in a shuffled order would be
-sorting by nothing, and it would leave a brand-new player looking at a list with no shape. The
-gallery therefore reads normally until the first pack lands.
-
-**`progress` is at v2 and v1 is deleted on load, not migrated.** v1 described a roster that was
-entirely unlocked, so carrying it forward would hand a returning player all 216 cards and delete the
-feature on the machine that most needed it. The version bump is also what resets the record.
+`unlocks.ts` now handles only the presentation order of a pack: rarity first, mana cost as the tie-breaker, relics last. It never decides which cards are awarded. The previous proportional/random opening-pool generator and count-as-prefix storage model have been retired.
 
 ## Project structure and source of truth
 

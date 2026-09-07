@@ -24,11 +24,11 @@ function memoryLocalStorage() {
   };
 }
 
-const SAVE_KEY = "convergence.save.v27";
-const LEGACY_SAVE_KEY = "convergence.save.v26";
+const SAVE_KEY = "convergence.save.v28";
+const LEGACY_SAVE_KEY = "convergence.save.v27";
 
 function liveDuel(): GameState {
-  const state = createInitialGame(cards, "storage-test", relics);
+  const state = createInitialGame(cards, "storage-test", relics, { decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK] });
   return { ...state, phase: "main", mulligan: null, turnNumber: 4 };
 }
 
@@ -109,32 +109,9 @@ describe("the save slot", () => {
 });
 
 describe("the v26 migration", () => {
-  it("hands back an effect parked by the retired copy-and-trigger", () => {
-    // A v26 save could be written mid-copy: the minion wearing a borrowed effect
-    // with its own parked in `copyRestoreEffectId`. That field and the effect
-    // that set it are both gone now, so nothing in this build would ever put the
-    // real one back and the minion would keep somebody else's power for the rest
-    // of the duel.
-    const storage = memoryLocalStorage();
-    vi.stubGlobal("window", { localStorage: storage });
-
-    const midCopy = liveDuel();
-    const board = [...midCopy.players[0].board];
-    board[0] = {
-      ...spawnTestMinion(cards.find((card) => card.name === "All for One")!, 0),
-      // Wearing a borrowed Battlecry, with its own effect parked behind it.
-      effectId: "aoe_damage_3",
-      copyRestoreEffectId: "copy_all_enemy_passives",
-    } as GameState["players"][number]["board"][number];
-    midCopy.players[0] = { ...midCopy.players[0], board: board as GameState["players"][number]["board"] };
-
-    storage.values.set(
-      LEGACY_SAVE_KEY,
-      JSON.stringify({ version: 26, game: midCopy, events: [], mode: { kind: "hotseat" }, savedAt: 1 }),
-    );
-
-    const minion = loadGame()?.game.players[0].board[0];
-    expect(minion?.effectId).toBe("copy_all_enemy_passives");
-    expect((minion as { copyRestoreEffectId?: unknown } | null | undefined)?.copyRestoreEffectId).toBeUndefined();
+  it("resets pre-campaign saves instead of migrating them", () => {
+    const storage = memoryLocalStorage(); vi.stubGlobal("window", { localStorage: storage });
+    storage.values.set(LEGACY_SAVE_KEY, JSON.stringify({ version: 27, game: liveDuel(), events: [], mode: { kind: "hotseat" }, savedAt: 1 }));
+    expect(loadGame()).toBeNull(); expect(storage.values.has(LEGACY_SAVE_KEY)).toBe(false);
   });
 });

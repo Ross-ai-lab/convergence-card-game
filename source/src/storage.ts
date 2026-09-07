@@ -1,8 +1,9 @@
-import type { EffectId, GameEvent, GameState, RelicInstance } from "./engine/types";
+import type { GameEvent, GameState } from "./engine/types";
 import type { BotSkill } from "./engine/bot";
+import { CAMPAIGN_DIFFICULTIES, getCampaignChapter } from "./campaign";
 
 /** How the duel is being played. Mirrors GameMode in screens/Screens.tsx. */
-export type SavedMode = { kind: "hotseat" } | { kind: "bot"; skill: BotSkill };
+export type SavedMode = ({ kind: "hotseat" } | { kind: "bot"; skill: BotSkill } | { kind: "campaign"; chapter: number; skill: BotSkill }) & { duelId?: string };
 
 const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 
@@ -88,16 +89,9 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // the duel. The migration below hands it back before the field is dropped. That
 // is the whole reason for the bump: the field going missing is harmless, a
 // minion silently keeping somebody else's power is not.
-const SAVE_VERSION = 27;
+// v28: campaign cutover deliberately resets all pre-campaign duels.
+const SAVE_VERSION = 28;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
-const LEGACY_SAVE_KEY = "convergence.save.v26";
-
-type LegacyPlayer = GameState["players"][number] & { relics?: RelicInstance[] };
-type LegacyGameState = Omit<GameState, "players"> & {
-  players: [LegacyPlayer, LegacyPlayer];
-  relicPool?: RelicInstance[];
-};
-
 export interface SavedGame {
   version: number;
   game: GameState;
@@ -145,10 +139,14 @@ export function saveGame(game: GameState, events: GameEvent[], mode: SavedMode, 
  */
 export function loadGame(): SavedGame | null {
   try {
-    const raw = window.localStorage.getItem(SAVE_KEY) ?? window.localStorage.getItem(LEGACY_SAVE_KEY);
+    const retired = Object.keys(window.localStorage).filter((key) => /^convergence\.save\.v\d+$/.test(key) && Number(key.split("v").at(-1)) < SAVE_VERSION);
+    for (const key of retired) window.localStorage.removeItem(key);
+    // Also remove known keys in minimal storage adapters without enumerable keys.
+    for (let version = 1; version < SAVE_VERSION; version++) window.localStorage.removeItem(`convergence.save.v${version}`);
+    const raw = window.localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<SavedGame>;
-    if (!parsed || (parsed.version !== SAVE_VERSION && parsed.version !== SAVE_VERSION - 1)) return null;
+    if (!parsed || parsed.version !== SAVE_VERSION) return null;
     const game = parsed.game as GameState | undefined;
     if (!game || typeof game !== "object") return null;
     if (!Array.isArray(game.players) || game.players.length !== 2) return null;
@@ -159,6 +157,7 @@ export function loadGame(): SavedGame | null {
     // duels. Reset/version cutover happens when campaign progression is connected.
     const stringArray = (value: unknown): value is string[] =>
       Array.isArray(value) && value.every((entry) => typeof entry === "string");
+    if (!game.playerDecks) return null;
     if (game.playerDecks !== undefined && (
       !Array.isArray(game.playerDecks) || game.playerDecks.length !== 2 ||
       !game.playerDecks.every((pile) => pile && stringArray(pile.deck) && stringArray(pile.bottomDeck)) ||
@@ -170,10 +169,6 @@ export function loadGame(): SavedGame | null {
         typeof cheats.trueDice === "boolean" && typeof cheats.readsYourReply === "boolean" &&
         typeof cheats.clairvoyance === "boolean" && typeof cheats.foresight === "boolean"))
     )) return null;
-    if (parsed.version === SAVE_VERSION - 1) {
-      migrateLegacyRelics(game as LegacyGameState);
-      migrateLegacyMechanics(game);
-    }
     if (
       !Array.isArray(game.heroPowers) ||
       game.heroPowers.length !== 2 ||
@@ -203,11 +198,20 @@ export function loadGame(): SavedGame | null {
     if (!Array.isArray(game.stasis)) return null;
     if (!Array.isArray(game.darkDimension)) return null;
     if (game.phase === "gameOver") return null; // finished duels are not worth resuming
-    // An unrecognisable mode falls back to hotseat rather than rejecting the whole
-    // save — losing the difficulty is a shrug, losing the duel is not.
     const saved = parsed.mode;
-    const mode: SavedMode =
-      saved && saved.kind === "bot" && SKILLS.includes(saved.skill) ? { kind: "bot", skill: saved.skill } : { kind: "hotseat" };
+    if (!saved || !["hotseat", "bot", "campaign"].includes(saved.kind)) return null;
+    let mode: SavedMode;
+    const identity = typeof saved.duelId === "string" ? { duelId: saved.duelId } : {};
+    if (saved.kind === "campaign") {
+      const chapter = getCampaignChapter(saved.chapter);
+      if (!chapter) return null;
+      const difficulty = CAMPAIGN_DIFFICULTIES[chapter.difficultyId];
+      if (!game.botCheats?.[1] || (Object.keys(difficulty.cheats) as Array<keyof typeof difficulty.cheats>).some((key) => game.botCheats![1]![key] !== difficulty.cheats[key])) return null;
+      mode = { kind: "campaign", chapter: chapter.chapter, skill: difficulty.botSkill, ...identity };
+    } else if (saved.kind === "bot") {
+      if (!SKILLS.includes(saved.skill)) return null;
+      mode = { kind: "bot", skill: saved.skill, ...identity };
+    } else mode = { kind: "hotseat", ...identity };
     return {
       version: SAVE_VERSION,
       game,
@@ -220,92 +224,10 @@ export function loadGame(): SavedGame | null {
   }
 }
 
-/** Convert v10's auto-equip satchel into the hand/deck card model. */
-function migrateLegacyRelics(game: LegacyGameState): void {
-  for (const player of game.players) {
-    const satchelIds = Array.isArray(player.relics) ? player.relics.map((relic) => relic.id) : [];
-    delete player.relics;
-    for (const relicId of satchelIds) {
-      if (player.hand.length < 10) player.hand.push(relicId);
-      else game.discard.push(relicId);
-    }
-  }
-  game.deck.push(...(game.relicPool ?? []).map((relic) => relic.id));
-  delete game.relicPool;
-}
-
-function migrateLegacyMechanics(game: GameState): void {
-  if (game.cheatPlayer === undefined) game.cheatPlayer = game.cheatMode ? 0 : null;
-  if (game.foresightFor === undefined) game.foresightFor = null;
-  if (!game.pocketRooms) game.pocketRooms = [];
-  if (!Array.isArray(game.stasis)) game.stasis = [];
-  if (!Array.isArray(game.darkDimension)) game.darkDimension = [];
-  const stasisMinions = game.stasis.map((entry) => entry.minion);
-  const darkDimensionMinions = game.darkDimension.map((entry) => entry.minion);
-  for (const player of game.players) {
-    if (player.heroDivineShield === undefined) player.heroDivineShield = false;
-    if (player.randomAttacksFromTurn === undefined) player.randomAttacksFromTurn = null;
-    if (player.randomAttacksUntilTurn === undefined) player.randomAttacksUntilTurn = null;
-    if (player.manaPenaltyNextTurn === undefined) player.manaPenaltyNextTurn = 0;
-    for (const minion of [...player.board, ...stasisMinions, ...darkDimensionMinions]) {
-      if (!minion) continue;
-      // v17 saves can still contain the pre-pass numeric effect labels. The
-      // live CSV uses descriptive labels so validation can catch a stale
-      // number, but an in-progress board should keep working after migration.
-      const legacyEffectId = minion.effectId as string;
-      if (legacyEffectId === "time_bomb_ongoing_5") minion.effectId = "time_bomb_destroy_all";
-      if (legacyEffectId === "attack_3x") minion.effectId = "flash_speed";
-      for (const gained of minion.gainedEffects) {
-        const gainedId = gained.effectId as string;
-        if (gainedId === "time_bomb_ongoing_5") gained.effectId = "time_bomb_destroy_all";
-        if (gainedId === "attack_3x") gained.effectId = "flash_speed";
-      }
-      // Hand back an effect parked by the retired `copy_and_trigger`. A v26
-      // save is the last shape that could be mid-copy, and nothing in this build
-      // would ever restore it.
-      const parked = (minion as { copyRestoreEffectId?: EffectId | null }).copyRestoreEffectId;
-      if (parked) minion.effectId = parked;
-      delete (minion as { copyRestoreEffectId?: EffectId | null }).copyRestoreEffectId;
-      if (minion.markedForDeathAtTurn === undefined) minion.markedForDeathAtTurn = null;
-      if (minion.untargetableUntilTurn === undefined) minion.untargetableUntilTurn = null;
-      if (minion.protectedByMeleoron === undefined) minion.protectedByMeleoron = null;
-      if (minion.auraBonuses === undefined) minion.auraBonuses = [];
-      if (minion.evadedAttackAtTurn === undefined) minion.evadedAttackAtTurn = null;
-      if (minion.rescueUsedAtTurn === undefined) minion.rescueUsedAtTurn = null;
-      if (minion.divineShieldAuraSources === undefined) minion.divineShieldAuraSources = [];
-      if (minion.brokenAuraSources === undefined) minion.brokenAuraSources = [];
-      if (minion.deathStarTarget === undefined) minion.deathStarTarget = null;
-      if (minion.commandmentsTriggeredAtTurn === undefined) minion.commandmentsTriggeredAtTurn = null;
-      if (minion.passiveSilenceSources === undefined) minion.passiveSilenceSources = [];
-      if (minion.chainGrowthPending === undefined) minion.chainGrowthPending = false;
-      if (minion.temporaryControl === undefined) minion.temporaryControl = null;
-      if (minion.relicDiscoveryTurn === undefined) minion.relicDiscoveryTurn = null;
-      for (const relic of [minion.relic, minion.relic2 ?? null]) {
-        if (relic?.relicId === "time_turner" && relic.previousTurnStartHp === undefined) {
-          relic.previousTurnStartHp = minion.hp;
-        }
-      }
-    }
-  }
-  const savedMulligan = (game as GameState & { mulligan?: GameState["mulligan"] }).mulligan;
-  if (savedMulligan === undefined) game.mulligan = null;
-  if (!Array.isArray(game.heroPowers)) game.heroPowers = [null, null];
-  if (!Array.isArray(game.heroPowerUsed)) game.heroPowerUsed = [false, false];
-}
-
-/**
- * Throws the in-progress duel away — both the current key and the one version
- * back that `loadGame` is still willing to read.
- *
- * Clearing only the current key was a resurrection bug: a finished duel wiped
- * v25, the next load found nothing there, fell through to the v24 key that was
- * never removed, and restored a duel from a previous session as though the
- * player had left it running.
- */
 export function clearSave(): void {
   try {
-    window.localStorage.removeItem(SAVE_KEY);
-    window.localStorage.removeItem(LEGACY_SAVE_KEY);
+    for (let version = 1; version <= SAVE_VERSION; version++) window.localStorage.removeItem(`convergence.save.v${version}`);
+
   } catch {
     // ignore — see saveGame
   }

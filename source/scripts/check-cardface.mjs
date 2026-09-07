@@ -62,6 +62,7 @@ await page.goto(BASE, { waitUntil: "domcontentloaded" });
 // before it opens the shared board.
 await page.locator(".hotseat-trigger").first().click();
 await page.locator(".hotseat-confirm-start").click();
+await page.getByRole("button", { name: "Start two-player duel", exact: true }).click();
 // Wait for the hook itself, not for a guessed 1200ms. `window.__debug` is
 // registered from inside a DYNAMIC import, so the first page load after a
 // rebuild has to fetch and transform that module before it appears — which took

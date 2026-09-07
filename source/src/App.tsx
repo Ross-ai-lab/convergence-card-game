@@ -22,10 +22,7 @@ import { useFrameState } from "./frame-state";
 
 import {
   HERO_POWER_COST,
-  HERO_POWER_UNLOCK_ORDER,
-  firstUnlockedHeroPower,
   heroPowerDefinition,
-  isHeroPowerUnlocked,
   randomHeroPower,
 } from "./engine/hero-powers";
 import {
@@ -82,25 +79,20 @@ import {
   botWins,
   clearProgress,
   emptyProgress,
-  claimDailyPack,
-  dailyPackAvailable,
   finishDuel,
   loadProgress,
-  todayKey,
   saveProgress,
   totals,
   unlockAllProgress,
   type Progress,
 } from "./progress";
-import {
-  DAILY_PACK_CARDS,
-  STARTING_POOL,
-  UNLOCK_REWARD,
-  ensureUnlockOrder,
-  newlyUnlocked,
-  revealOrder,
-  unlockedPool,
-} from "./unlocks";
+import { STARTING_POOL, revealOrder } from "./unlocks";
+import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES } from "./campaign";
+import { createCampaignDuel } from "./campaign-duel";
+import { campaignComplete, canPlayChapter, acknowledgeRewards, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { randomDeck, validateDeck } from "./decks";
+import { remainingDeckCount } from "./engine/draw-piles";
+import { CampaignScreen, DeckBuilder, HotseatSetup } from "./screens/CampaignScreens";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
@@ -452,7 +444,7 @@ const BOT_ID: PlayerId = 1;
  * Every other cheat lives in the bot's own search. Hotseat grants it to nobody.
  */
 function foresightSeat(mode: GameMode): PlayerId | null {
-  return mode.kind === "bot" && BOT_CHEATS[mode.skill].foresight ? BOT_ID : null;
+  return mode.kind !== "hotseat" && BOT_CHEATS[mode.skill].foresight ? BOT_ID : null;
 }
 // The practice bot thinks fast enough to be invisible — these pauses exist so a
 // human can watch what it did, not because it is slow.
@@ -552,38 +544,29 @@ export default function App() {
   // all name a card that is not currently unlocked, and every one of them has to
   // keep working.
   const library = useMemo(() => makeCardLibrary(cards, relics), []);
-  /**
-   * The unlocked slice of the roster: what a NEW duel is dealt from.
-   *
-   * Restricting the deck is the whole of the feature, because every effect that
-   * fetches a card — summon-from-deck, the relic grants, the Discover offers —
-   * reads `state.deck` rather than the library. Cut the deck and they are all
-   * cut with it, with no per-effect work at all.
-   */
-  const initialProgress = useMemo(() => ensureUnlockOrder(loadProgress(), [...cards, ...relics]), []);
+  // Campaign ownership and deck drafts are loaded independently of a live duel.
+  const initialProgress = useMemo(() => loadProgress(), []);
   /**
    * The only thing in this game that outlives a duel. Held in state so the title
    * screen and the gallery re-render the moment a duel is folded in, and written
    * straight through to localStorage whenever it changes.
    */
   const [progress, setProgress] = useState<Progress>(initialProgress);
-  // The unlock order is generated on the first load that ever runs, and it has
-  // to reach disk before the first duel ends — otherwise the pack that duel
-  // hands over would be torn from an order nothing had saved.
+  // Save the initial campaign record before a first duel can finish.
   useEffect(() => {
-    if (initialProgress.unlockOrder.length) saveProgress(initialProgress);
+    if (!saveProgress(initialProgress)) setStorageError(true);
   }, [initialProgress]);
-  const pool = useMemo(() => {
-    const ids = new Set(unlockedPool(progress.unlockOrder, progress.unlocked));
-    if (!ids.size) return { cards, relics };
-    return { cards: cards.filter((card) => ids.has(card.id)), relics: relics.filter((relic) => ids.has(relic.id)) };
-  }, [progress.unlockOrder, progress.unlocked]);
   // A duel in progress is restored from localStorage; anything unreadable or
   // from an older engine falls back to a fresh game (see storage.ts).
-  const restored = useMemo(() => loadGame(), []);
+  const restored = useMemo(() => {
+    const saved = loadGame();
+    if (saved?.mode.kind === "bot" && !campaignComplete(initialProgress)) return null;
+    if (saved?.mode.kind === "campaign" && !canPlayChapter(initialProgress, saved.mode.chapter)) return null;
+    return saved;
+  }, [initialProgress]);
   const [game, setGame] = useState(() => {
-    if (!restored) return createInitialGame(pool.cards, createDuelSeed(), pool.relics);
-    if (restored.mode.kind !== "bot" || restored.game.heroPowers[1]) return restored.game;
+    if (!restored) return createInitialGame(cards, createDuelSeed(), relics, { decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK] });
+    if (restored.mode.kind === "hotseat" || restored.game.heroPowers[1]) return restored.game;
     return {
       ...restored.game,
       heroPowers: heroPowersForDuel(restored.mode, restored.game.heroPowers[0], String(restored.game.rngSeed)),
@@ -594,35 +577,36 @@ export default function App() {
     restored ? [...restored.events, { kind: "info" as const, text: "Duel restored from your last session." }] : [openingEvent],
   );
   const [mode, setMode] = useState<GameMode>(() => restored?.mode ?? { kind: "hotseat" });
-  const vsBot = mode.kind === "bot";
+  const vsBot = mode.kind !== "hotseat";
   // The front door. A restored duel still starts here rather than dumping a
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "heroPowers">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "heroPowers" | "campaign" | "deck" | "hotseat">(null);
   const [developerCheatRevealed, setDeveloperCheatRevealed] = useState(false);
   const [developerToolsOpen, setDeveloperToolsOpen] = useState(false);
   const [developerDuelActive, setDeveloperDuelActive] = useState(false);
   const [tutorialActive, setTutorialActive] = useState(false);
   const [tutorialCompleted, setTutorialCompleted] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
-  /**
-   * The pack a just-won duel earned, waiting to be torn open. Null whenever
-   * there is nothing to open — a loss that earned one card still fills it, and
-   * hotseat never does.
-   */
-  const [pack, setPack] = useState<string[] | null>(null);
-  const initialBotWinCount = initialProgress.developerCheat ? HERO_POWER_UNLOCK_ORDER.length : botWins(initialProgress);
-  const [selectedHeroPower, setSelectedHeroPower] = useState<HeroPowerId | null>(() => firstUnlockedHeroPower(initialBotWinCount));
-  const botWinCount = useMemo(
-    () => (progress.developerCheat ? HERO_POWER_UNLOCK_ORDER.length : botWins(progress)),
-    [progress],
-  );
+  // Unviewed first-clear rewards survive reload; developer previews are transient.
+  const [pack, setPack] = useState<string[] | null>(() => initialProgress.pendingRewards.length ? initialProgress.pendingRewards : null);
+  const [storageError, setStorageError] = useState(false);
+  const [builderSeat, setBuilderSeat] = useState<0 | 1>(0);
+  const [builderReturn, setBuilderReturn] = useState<"campaign" | "hotseat">("campaign");
+  const selectedHeroPower = progress.selectedHeroPower;
+  const botWinCount = botWins(progress);
+  function persistProgress(next: Progress) {
+    setProgress(next); const saved = saveProgress(next); setStorageError(!saved); return saved;
+  }
+  function setSelectedHeroPower(power: HeroPowerId) { persistProgress(selectHeroPower(progress, power)); }
+  function openDeck(seat: 0 | 1 = 0, back: "campaign" | "hotseat" = "campaign") {
+    setBuilderSeat(seat); setBuilderReturn(back); setOverlay("deck");
+  }
+  function closePack() {
+    if (!progress.pendingRewards.length || persistProgress(acknowledgeRewards(progress))) setPack(null);
+  }
   const totalDuels = useMemo(() => totals(progress).played, [progress]);
-  useEffect(() => {
-    const first = firstUnlockedHeroPower(botWinCount);
-    setSelectedHeroPower((current) => (current && isHeroPowerUnlocked(current, botWinCount) ? current : first));
-  }, [botWinCount]);
 
   useEffect(() => {
     if (screen !== "title" || overlay !== null) return;
@@ -795,10 +779,10 @@ export default function App() {
   // Persist after every change. A finished duel is not worth resuming, so the
   // slot is cleared instead of holding a game-over screen forever.
   useEffect(() => {
-    if (tutorialActive || developerDuelActive || game.phase === "gameOver") {
+    if (tutorialActive || (developerDuelActive && mode.kind !== "campaign")) {
       clearSave();
       setHasLiveSave(false);
-    } else if (screen === "playing") {
+    } else if (screen === "playing" && game.phase !== "gameOver") {
       saveGame(game, events, mode, Date.now());
       setHasLiveSave(true);
     }
@@ -808,7 +792,7 @@ export default function App() {
   // it walks through draw picks and targeting prompts exactly like a human does
   // and the animations get to play between its moves.
   useEffect(() => {
-    if (mode.kind !== "bot" || screen !== "playing" || duelIntro) return;
+    if (mode.kind === "hotseat" || screen !== "playing" || duelIntro) return;
     const actor = game.phase === "mulligan" ? game.mulligan?.player
       : game.phase === "drawChoice" ? game.drawChoice?.player
       : game.phase === "targeting" ? game.pendingTarget?.player : game.activePlayer;
@@ -834,7 +818,7 @@ export default function App() {
   // first thing a card says is not preceded by a fetch.
   useEffect(() => {
     if (screen !== "playing") return;
-    sfx.prefetchCardThemes(game.players[mode.kind === "bot" ? 0 : game.activePlayer].hand);
+    sfx.prefetchCardThemes(game.players[mode.kind !== "hotseat" ? 0 : game.activePlayer].hand);
   }, [game, mode.kind, screen]);
 
 
@@ -1393,13 +1377,14 @@ export default function App() {
     // A card that ARRIVED in a hand while the deck SHRANK is a draw; a card that
     // arrived without the deck moving was stolen or created, and flying that one
     // out of the pile would be a lie about where it came from.
-    const deckBefore = prev.deck.length + prev.bottomDeck.length;
-    const deckAfter = next.deck.length + next.bottomDeck.length;
-    if (deckAfter < deckBefore) {
+    const drewFor = (id: PlayerId) => remainingDeckCount(next, id) < remainingDeckCount(prev, id) ||
+      (prev.drawChoice?.player === id && !next.drawChoice);
+    if (drewFor(0) || drewFor(1)) {
       const pile = document.querySelector(".deck-pile");
       const pileBox = pile?.getBoundingClientRect();
       const newFlights: Flight[] = [];
       next.players.forEach((p, i) => {
+        if (!drewFor(p.id)) return;
         if (p.hand.length <= prev.players[i].hand.length) return;
         const mine = p.id === viewerId;
         const target = mine
@@ -1550,21 +1535,7 @@ export default function App() {
     setEvents((items) => [...items, ...visibleEvents].slice(-EVENT_LOG_LIMIT));
   }
 
-  /**
-   * Folds the finished duel into the permanent record, exactly once.
-   *
-   * It runs from an effect rather than from the action handler because a duel
-   * can also end on the BOT's move, on a Deathrattle resolving inside somebody
-   * else's action, or on a restored save that was already over. Watching the
-   * phase catches every one of those; hooking the handler caught only the first.
-   *
-   * A DEVELOPER DUEL COUNTS, and that is the owner's ruling, reversing the
-   * build before it. A test duel used to be recorded nowhere and therefore paid
-   * nothing, which meant the one route into the game that starts with a chosen
-   * card was also the one route that ended in silence: no record line, and no
-   * pack. The tutorial is still exempt, because it is a scripted board rather
-   * than a duel and every player would win it once for free.
-   */
+  // Record each non-tutorial duel once. Only first campaign clears grant cards.
   useEffect(() => {
     if (game.phase !== "gameOver" || duelRecorded.current || tutorialActive) return;
     duelRecorded.current = true;
@@ -1573,93 +1544,49 @@ export default function App() {
       { winner: game.winner, viewerId, mode, turns: game.turnNumber, at: Date.now() },
       { seen: [...duelCards.current.seen], played: [...duelCards.current.played] },
     );
-    setProgress(next);
-    saveProgress(next);
-    // The pack is read from the two counts rather than recomputed from the
-    // reward table, so the cards torn out of it are exactly the cards the record
-    // just committed. Recomputing here is how the screen and the save drift.
-    const earned = newlyUnlocked(next.unlockOrder, progress.unlocked, next.unlocked);
-    if (earned.length) setPack(earned);
+    const saved = persistProgress(next);
+    if (saved) { clearSave(); setHasLiveSave(false); }
+    if (next.pendingRewards.length) setPack(next.pendingRewards);
   }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress, tutorialActive]);
 
-  /**
-   * Takes the day's free cards and opens them in the ordinary pack.
-   *
-   * Deliberately the SAME pack screen a won duel uses. A second reward
-   * ceremony would be a second thing to build, a second thing to keep in step
-   * with the reveal order, and — the part that matters — it would make the
-   * daily cards feel like a different currency from the ones a duel pays. They
-   * are the same cards off the same order.
-   *
-   * `claimDailyPack` returns the record unchanged when nothing is owed, so a
-   * double click, a stale render or a tab left open past midnight cannot pay
-   * twice: the guard is the identity check below, not the button's disabled
-   * state.
-   */
-  function claimDaily() {
-    const next = claimDailyPack(progress, todayKey());
-    if (next === progress) return;
-    sfx.play("button");
-    sfx.unlock();
-    setProgress(next);
-    saveProgress(next);
-    const earned = newlyUnlocked(next.unlockOrder, progress.unlocked, next.unlocked);
-    if (earned.length) setPack(earned);
+  function prepareDuel(next: GameMode, seed: string, developer = false) {
+    if (next.kind === "campaign") return createCampaignDuel({ chapter: next.chapter, playerDeck: progress.playerDeck,
+      unlockedCardIds: progress.unlockedIds, cards, relics, seed, heroPower: selectedHeroPower }).state;
+    const playerDeck = developer ? CAMPAIGN_STARTER_DECK : progress.playerDeck;
+    const opponentDeck = next.kind === "hotseat" ? progress.hotseatDeck : randomDeck(CAMPAIGN_CARD_IDS, `${seed}:opponent`);
+    return createInitialGame(cards, seed, relics, { decks: [playerDeck, opponentDeck],
+      foresightFor: foresightSeat(next), heroPowers: heroPowersForDuel(next, selectedHeroPower, seed) });
   }
 
   function restart() {
-    sfx.play("button");
-    sfx.unlock();
-    sfx.stopCardTheme();
-    // An ending piece is 16 seconds long, and leaving the screen it belongs to
-    // must take it with you rather than play it over the next one.
-    sfx.stopCue();
-    clearSave();
-    setTutorialActive(false);
-    setTutorialCompleted(false);
-    setTutorialStep(0);
-    setDeveloperDuelActive(false);
-    setDeveloperToolsOpen(false);
-    duelCards.current = { seen: new Set(), played: new Set() };
-    duelRecorded.current = false;
-    setPack(null);
-    setDuelIntro({ id: fxId.current++, phase: "prelude" });
-    // A restart keeps the mode, so it keeps the opponent's cheats too.
-    const seed = createDuelSeed();
-    setGame(
-      createInitialGame(pool.cards, seed, pool.relics, {
-        foresightFor: foresightSeat(mode),
-        heroPowers: heroPowersForDuel(mode, selectedHeroPower, seed),
-      }),
-    );
-    setHistory([]);
-    setSelection(null);
-    clearFx();
-    setSeatedPlayer(0);
-    setLethal(0);
-    heraldSaid.current = new Set();
-    sfx.playOpeningCue(0.35);
-    setEvents([{ kind: "info", text: "A new shared deck is prepared." }]);
+    if (mode.kind === "campaign" && game.winner === viewerId) { toTitle(); setOverlay("campaign"); return; }
+    beginDuel(mode);
   }
 
   function activateDeveloperCheat() {
     const next = unlockAllProgress(progress);
-    setProgress(next);
-    saveProgress(next);
-    setSelectedHeroPower(firstUnlockedHeroPower(HERO_POWER_UNLOCK_ORDER.length));
+    persistProgress(next);
   }
 
   function resetDeveloperProgress() {
     clearProgress();
-    const next = ensureUnlockOrder(emptyProgress(), [...cards, ...relics]);
-    setProgress(next);
-    saveProgress(next);
-    setSelectedHeroPower(null);
+    const next = emptyProgress();
+    persistProgress(next);
+    clearSave(); setHasLiveSave(false); duelRecorded.current = true;
+    setPack(null); setOverlay(null); setScreen("title");
+    setGame(createInitialGame(cards, createDuelSeed(), relics, { decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK] }));
     setDeveloperCheatRevealed(false);
   }
 
   /** Starts a fresh duel in the chosen mode, straight from the title screen. */
   function beginDuel(next: GameMode, options: { testCardId?: string } = {}) {
+    if (next.kind === "campaign" && !canPlayChapter(progress, next.chapter)) return;
+    if (next.kind === "bot" && !campaignComplete(progress) && !options.testCardId) { setOverlay("campaign"); return; }
+    if (!options.testCardId && !validateDeck(progress.playerDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) { openDeck(); return; }
+    if (next.kind === "hotseat" && !validateDeck(progress.hotseatDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) { openDeck(1, "hotseat"); return; }
+    const seed = createDuelSeed();
+    const nextGame = prepareDuel(next, seed, Boolean(options.testCardId));
+    next = { ...next, duelId: seed }; setOverlay(null);
     sfx.play("button");
     sfx.unlock();
     sfx.stopCardTheme();
@@ -1677,11 +1604,6 @@ export default function App() {
     setPack(null);
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setMode(next);
-    const seed = createDuelSeed();
-    const nextGame = createInitialGame(pool.cards, seed, pool.relics, {
-      foresightFor: foresightSeat(next),
-      heroPowers: heroPowersForDuel(next, selectedHeroPower, seed),
-    });
     if (options.testCardId && library[options.testCardId]) {
       nextGame.players[0].hand = [options.testCardId, ...nextGame.players[0].hand].slice(0, 10);
       nextGame.cheatMode = true;
@@ -1699,7 +1621,7 @@ export default function App() {
       {
         kind: "info",
         text:
-          next.kind === "bot"
+          next.kind !== "hotseat"
             ? "A practice opponent takes the far side of the board."
             : "Two players, one screen. The board hides itself when the turn changes hands.",
       },
@@ -1747,6 +1669,7 @@ export default function App() {
   }
 
   function toTitle() {
+    if (tutorialActive) duelRecorded.current = true;
     sfx.play("button");
     sfx.stopCardTheme();
     sfx.stopCue();
@@ -1799,7 +1722,7 @@ export default function App() {
   /** Infinite mana, exposed inside the Ross-only developer workbench. */
   function toggleCheatMode() {
     sfx.play("button");
-    setDeveloperDuelActive(true);
+    setDeveloperDuelActive(mode.kind !== "campaign");
     // ONE reading of the switch drives both the write and the log line. The
     // updater used to make its own decision from `current` while the log read
     // the render's `game`, so the two could describe opposite outcomes; and an
@@ -1970,7 +1893,8 @@ export default function App() {
     const card = library[cardId];
     // Claimed BEFORE the state change, because the recording effect fires on the
     // phase and would otherwise have already run by the time this returns.
-    duelRecorded.current = true;
+    const campaignResult = screen === "playing" && mode.kind === "campaign" && game.phase !== "gameOver";
+    duelRecorded.current = !campaignResult;
     setDeveloperDuelActive(true);
     setDeveloperToolsOpen(false);
     setScreen("playing");
@@ -1979,7 +1903,7 @@ export default function App() {
     // duel was LOST, and only a duel against the bot can be: in hotseat somebody
     // always won, so `Enemy wins` from a hotseat mode played the victory piece
     // and the loss music could not be heard from the developer tools at all.
-    setMode({ kind: "bot", skill: "normal" });
+    if (!campaignResult) setMode({ kind: "bot", skill: "normal" });
     heraldSaid.current.delete("ending");
     const mvpOwner: PlayerId = winner === "draw" ? viewerId : winner;
     const tally: Record<string, DamageTallyEntry> = card
@@ -2841,12 +2765,13 @@ export default function App() {
 
           <div
             className={flights.length > 0 ? "deck-pile drawing" : "deck-pile"}
-            title="Shared draw deck"
+            title={`Your deck: ${remainingDeckCount(game, viewerId)}. Opponent deck: ${remainingDeckCount(game, viewerId === 0 ? 1 : 0)}.`}
           >
             <span className="card-back" />
             <span className="card-back" />
             <span className="card-back" />
-            <em>{game.deck.length + game.bottomDeck.length}</em>
+            <em aria-label="Cards in your deck">You {remainingDeckCount(game, viewerId)}</em>
+            {game.playerDecks && <strong className="enemy-deck-remaining" aria-label="Cards in opponent deck">Enemy {remainingDeckCount(game, viewerId === 0 ? 1 : 0)}</strong>}
           </div>
         </section>
 
@@ -3134,6 +3059,7 @@ export default function App() {
           game={game}
           library={library}
           tutorial={tutorialActive}
+          campaign={mode.kind === "campaign"}
           onRestart={tutorialActive ? beginTutorial : restart}
           onMenu={toTitle}
         />
@@ -3150,7 +3076,7 @@ export default function App() {
       {/* Above the result screen, not beside it. The pack is the reward for the
           duel that just ended, so it has to be the thing in the way. */}
       {pack ? (
-        <CardPack ids={pack} library={library} total={progress.unlocked} onDone={() => setPack(null)} />
+        <CardPack ids={pack} library={library} total={progress.unlockedIds.length} onDone={closePack} />
       ) : null}
 
       {/* The curtain sits above every other overlay: nothing behind it may be
@@ -3166,7 +3092,7 @@ export default function App() {
 
       {screen === "title" ? (
         <TitleScreen
-          canContinue={hasLiveSave && game.phase !== "gameOver" && (game.turnNumber > 1 || game.phase === "mulligan")}
+          canContinue={hasLiveSave && game.phase !== "gameOver"}
           playerCount={playerCount}
           onContinue={() => {
             sfx.play("button");
@@ -3174,7 +3100,11 @@ export default function App() {
             setDuelIntro(null);
             setScreen("playing");
           }}
-          onStart={beginDuel}
+          onStart={(next) => next.kind === "hotseat" ? setOverlay("hotseat") : beginDuel(next)}
+          campaignCleared={campaignComplete(progress)}
+          completedChapters={progress.completedChapters}
+          onCampaign={() => setOverlay("campaign")}
+          onDeck={() => openDeck()}
           onSettings={() => setOverlay("settings")}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
@@ -3188,14 +3118,19 @@ export default function App() {
           onDeveloperUnlock={activateDeveloperCheat}
           onDeveloperReset={resetDeveloperProgress}
           duelsPlayed={totalDuels}
-          dailyPackReady={dailyPackAvailable(progress, todayKey())}
-          dailyPackCards={DAILY_PACK_CARDS}
-          onDailyPack={claimDaily}
-          unlocked={progress.unlocked}
-          rosterSize={progress.unlockOrder.length || cards.length + relics.length}
+          unlocked={progress.unlockedIds.length}
+          rosterSize={cards.length + relics.length}
         />
       ) : null}
 
+      {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)} onEdit={() => openDeck()}
+        onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
+      {overlay === "deck" && <DeckBuilder progress={progress} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+        onClose={() => setOverlay(builderReturn)} />}
+      {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
+        onStart={() => beginDuel({ kind: "hotseat" })} />}
+      {storageError && <div className="campaign-storage-error" role="alert">Progress could not be saved. Keep this page open and retry.
+        <button onClick={() => { if (persistProgress(progress) && game.phase === "gameOver") { clearSave(); setHasLiveSave(false); } }}>Retry save</button></div>}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
       {overlay === "gallery" ? <CardGallery progress={progress} fontRevision={fontRevision} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
@@ -3803,7 +3738,7 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
  *
  * It is also the only filter with NO "any" option, and the only one that starts
  * switched on. Owner's ruling: the gallery is your collection first and the
- * locked wall second, so mixing 50 readable cards into 166 sealed ones is a
+ * locked wall second, so mixing unlocked and sealed cards is a
  * list that answers neither question. There is therefore no view that shows the
  * whole roster at once, which is the deliberate cost of that.
  */
@@ -3851,7 +3786,7 @@ function CardGallery({ progress, fontRevision, onClose }: { progress: Progress; 
       seen: new Set(progress.seen),
       played: new Set(progress.played),
       wonWith: new Set(progress.wonWith),
-      unlocked: new Set(unlockedPool(progress.unlockOrder, progress.unlocked)),
+      unlocked: new Set(progress.unlockedIds),
     }),
     [progress],
   );
@@ -3862,9 +3797,9 @@ function CardGallery({ progress, fontRevision, onClose }: { progress: Progress; 
    */
   const unlockRank = useMemo(() => {
     const rank = new Map<string, number>();
-    progress.unlockOrder.forEach((id, index) => rank.set(id, index));
+    progress.unlockedIds.forEach((id, index) => rank.set(id, index));
     return rank;
-  }, [progress.unlockOrder]);
+  }, [progress.unlockedIds]);
   const entries = useMemo(() => {
     const all = allEntries;
     if (!needle) return all;
@@ -4294,7 +4229,7 @@ function GalleryDetailModal({
               <div className="gallery-detail-locked">
                 <span className="gallery-detail-kicker">The Rift is holding this profile</span>
                 <h3>Unlock this card to read its Star Chart</h3>
-                <p>The artwork, name, and cost remain visible. Its lore profile stays sealed until the card enters your shared deck.</p>
+                <p>The artwork, name, and cost remain visible. Its lore profile stays sealed until the card is unlocked.</p>
               </div>
             ) : profile ? (
               <>
@@ -4374,7 +4309,7 @@ const GalleryCell = memo(function GalleryCell({
   face: CardFaceModel;
   fontRevision: number;
   mark: CollectionMark;
-  /** Not yet in the shared deck. Shown, never hidden — see `UnlockHelp`. */
+  /** Not yet unlocked. Shown, never hidden — see `UnlockHelp`. */
   locked?: boolean;
   onOpen: (entryKey: string) => void;
 }) {
@@ -4385,7 +4320,7 @@ const GalleryCell = memo(function GalleryCell({
       onFocus={onFocus}
       className={locked ? `gallery-cell mark-${mark} is-locked` : `gallery-cell mark-${mark}`}
       data-mark={mark}
-      title={locked ? "Locked — not yet in the shared deck" : COLLECTION_TITLE[mark]}
+      title={locked ? "Locked — not yet in your collection" : COLLECTION_TITLE[mark]}
       role="button"
       tabIndex={0}
       aria-label={locked ? `${face.name}, locked card` : `Open Star Chart for ${face.name}`}
@@ -4510,63 +4445,14 @@ const GalleryCell = memo(function GalleryCell({
  * the only question anyone opens this to ask.
  */
 function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => void }) {
-  const left = Math.max(0, progress.unlockOrder.length - progress.unlocked);
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        // Stops the gallery's own Escape handler closing the whole screen
-        // behind this. One press should shut one thing.
-        event.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
-
-  return (
-    <div
-      className="help-veil"
-      onPointerDown={(event) => event.target === event.currentTarget && onClose()}
-    >
-      <section className="help-pop" role="dialog" aria-label="How unlocking works">
-        <button type="button" className="help-x" onClick={onClose} aria-label="Close">
-          ×
-        </button>
-        <h3>Unlocking cards</h3>
-        <table className="help-table">
-          <tbody>
-            <tr>
-              <th scope="row">Beat the Ascendant</th>
-              <td>+{UNLOCK_REWARD.hard.won} cards</td>
-            </tr>
-            <tr>
-              <th scope="row">Beat the Veteran</th>
-              <td>+{UNLOCK_REWARD.normal.won} cards</td>
-            </tr>
-            <tr>
-              <th scope="row">Beat the Recruit</th>
-              <td>+{UNLOCK_REWARD.easy.won} cards</td>
-            </tr>
-            <tr>
-              <th scope="row">Lose or draw</th>
-              <td>+{UNLOCK_REWARD.normal.lost} card</td>
-            </tr>
-            <tr>
-              <th scope="row">Hotseat</th>
-              <td>–</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className="help-state">
-          <strong>
-            {progress.unlocked} of {progress.unlockOrder.length || cards.length + relics.length}
-          </strong>{" "}
-          unlocked{left ? `, ${left} still to find` : " — the whole roster is yours"}.
-        </p>
-      </section>
-    </div>
-  );
+  const left = cards.length + relics.length - progress.unlockedIds.length;
+  return <div className="overlay" onClick={onClose}><section className="unlock-help" onClick={(event) => event.stopPropagation()}>
+    <button type="button" className="close-button" onClick={onClose} aria-label="Close">×</button><h3>Unlocking cards</h3>
+    <p>Start with 30 cards. First-time campaign victories unlock the fixed cards listed on each chapter.</p>
+    <p>Your deck always starts a duel with exactly 30 different unlocked cards. Swap cards in the deck builder after your first victory.</p>
+    <p>Losses, draws, replays and hotseat duels grant no cards. There are no daily packs.</p>
+    <p className="help-state">{progress.unlockedIds.length} cards unlocked{left ? ` · ${left} still to earn` : " · collection complete"}.</p>
+  </section></div>;
 }
 
 /**
@@ -5552,7 +5438,7 @@ function MulliganOverlay({
         <span>Opening Hand</span>
         <h2>{locked ? "Waiting for the opening hand…" : "Choose cards to replace"}</h2>
         <p className="mulligan-intro">
-          Select any number of cards to mulligan. Replacements come from the shared deck, then your old cards go to the bottom.
+          Select any number of cards to mulligan. Replacements come from your deck, then your old cards go to the bottom.
         </p>
         <div className="mulligan-row">
           {game.players[mulligan.player].hand.map((cardId, handIndex) => {
@@ -6361,7 +6247,7 @@ function DeveloperTools({
                       type="button"
                       className="developer-secondary"
                       onClick={() => onShowResult(viewerId, selected.id)}
-                      title="Opens the result screen only. Nothing is recorded."
+                      title="Shows this result. An active campaign duel counts toward progression."
                     >
                       I win
                     </button>
@@ -6369,7 +6255,7 @@ function DeveloperTools({
                       type="button"
                       className="developer-secondary"
                       onClick={() => onShowResult(otherId, selected.id)}
-                      title="Opens the result screen only. Nothing is recorded."
+                      title="Shows this result. An active campaign duel counts toward progression."
                     >
                       Enemy wins
                     </button>
@@ -6377,7 +6263,7 @@ function DeveloperTools({
                       type="button"
                       className="developer-secondary"
                       onClick={() => onShowResult("draw", selected.id)}
-                      title="Opens the result screen only. Nothing is recorded."
+                      title="Shows this result. An active campaign duel counts toward progression."
                     >
                       Draw
                     </button>
@@ -6398,6 +6284,7 @@ function GameOver({
   game,
   library,
   tutorial = false,
+  campaign = false,
   onRestart,
   onMenu,
 }: {
@@ -6405,6 +6292,7 @@ function GameOver({
   /** So the MVP can be drawn as its real card face rather than as a thumbnail. */
   library: CardLibrary;
   tutorial?: boolean;
+  campaign?: boolean;
   onRestart: () => void;
   onMenu: () => void;
 }) {
@@ -6487,7 +6375,7 @@ function GameOver({
           </div>
         ) : null}
         <div className="gameover-buttons">
-          <button type="button" className="primary" onClick={onRestart}>{tutorial ? "Play tutorial again" : "Rematch"}</button>
+          <button type="button" className="primary" onClick={onRestart}>{tutorial ? "Play tutorial again" : campaign && winnerId === 0 ? "Campaign & deck" : "Rematch"}</button>
           <button type="button" onClick={onMenu}>Menu</button>
         </div>
       </section>

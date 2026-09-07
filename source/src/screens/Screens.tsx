@@ -23,7 +23,6 @@ import {
   CornersIn,
   CornersOut,
   Crown,
-  Gift,
   Scroll,
   GearSix,
   Lightning,
@@ -55,7 +54,8 @@ import {
 import type { BotSkill } from "../engine/bot";
 import { STARTING_POOL } from "../unlocks";
 
-export type GameMode = { kind: "hotseat" } | { kind: "bot"; skill: BotSkill };
+export type { SavedMode as GameMode } from "../storage";
+import type { SavedMode as GameMode } from "../storage";
 export type DuelIntroPhase = "prelude" | "reveal" | "draw" | "mana" | "exit";
 
 export function FullscreenButton({
@@ -225,12 +225,9 @@ function Overlay({
 // ---------------------------------------------------------------------------
 
 export function TitleScreen({
-  canContinue,
+  canContinue, campaignCleared, completedChapters, onCampaign, onDeck,
   playerCount,
   duelsPlayed,
-  dailyPackReady,
-  dailyPackCards,
-  onDailyPack,
   unlocked,
   rosterSize,
   developerCheatRevealed,
@@ -252,12 +249,11 @@ export function TitleScreen({
   playerCount: number | null;
   /** Total duels finished on this device; the Record door is also useful at zero. */
   duelsPlayed: number;
-  /** Whether today's free pack is still waiting to be taken. */
-  dailyPackReady: boolean;
-  /** How many cards it holds, so the button never spells the number itself. */
-  dailyPackCards: number;
-  onDailyPack: () => void;
-  /** Cards the shared deck may currently draw from, and the whole roster. */
+  campaignCleared: boolean;
+  completedChapters: number;
+  onCampaign: () => void;
+  onDeck: () => void;
+  /** Unlocked collection size and the whole roster. */
   unlocked: number;
   rosterSize: number;
   developerCheatRevealed: boolean;
@@ -299,7 +295,7 @@ export function TitleScreen({
       <FullscreenButton active={isFullscreen} onToggle={onToggleFullscreen} className="title-fullscreen-trigger" />
 
       <div className="duel-orbit" aria-label="Choose an opponent">
-        {(Object.keys(SKILL_BLURB) as BotSkill[]).map((option) => {
+        {campaignCleared && (Object.keys(SKILL_BLURB) as BotSkill[]).map((option) => {
           const Icon = skillIcon[option];
           return (
             <button
@@ -319,9 +315,9 @@ export function TitleScreen({
           );
         })}
 
-        <button type="button" className="duel-trigger" onClick={() => onStart({ kind: "bot", skill })}>
-          <span>Duel</span>
-          <small>{SKILL_BLURB[skill].title}</small>
+        <button type="button" className={campaignCleared ? "duel-trigger" : "duel-trigger campaign-duel-trigger"} onClick={() => campaignCleared ? onStart({ kind: "bot", skill }) : onCampaign()}>
+          <span>{campaignCleared ? "Duel" : "Campaign"}</span>
+          <small>{campaignCleared ? SKILL_BLURB[skill].title : `Chapter ${Math.min(20, completedChapters + 1)} / 20`}</small>
         </button>
       </div>
       <div className="title-inner">
@@ -342,26 +338,9 @@ export function TitleScreen({
           </button>
         ) : null}
 
-        {/* The day's free pack.
-
-            It is loud on purpose and it is loud for exactly as long as it is
-            true: once taken, the button is GONE rather than greyed out. A dead
-            control that says "come back tomorrow" is a permanent piece of
-            furniture advertising something the player cannot have, and it would
-            sit there for 23 of every 24 hours. Its absence is the reward
-            already collected. */}
-        {dailyPackReady ? (
-          <button type="button" className="daily-pack-trigger" onClick={onDailyPack}>
-            <span className="daily-pack-shine" aria-hidden="true" />
-            <Gift size={26} weight="fill" aria-hidden="true" />
-            <span className="daily-pack-copy">
-              <strong>Today&rsquo;s pack</strong>
-              <small>{dailyPackCards} free cards</small>
-            </span>
-          </button>
-        ) : null}
-
         <div className="title-links title-actions">
+          {campaignCleared && <button type="button" className="campaign-trigger" onClick={onCampaign}>Campaign</button>}
+          <button type="button" className="deck-trigger" onClick={onDeck}>{completedChapters ? "My deck" : "Starter deck"}</button>
           <button
             type="button"
             className="hotseat-trigger"
@@ -506,7 +485,7 @@ export function TitleScreen({
           <div className="hotseat-confirm developer-reset-confirm">
             <p className="hotseat-confirm-question">Reset card progress?</p>
             <p className="hotseat-confirm-note">
-              This clears card unlocks, collection marks, and the duel record. Your current duel stays untouched.
+              This clears card unlocks, collection marks, and the duel record. Your current duel and campaign progress are also reset.
             </p>
             <div className="hotseat-confirm-actions">
               <button
@@ -553,7 +532,7 @@ export function HeroPowersScreen({
     <Overlay title="Hero Powers" onClose={onClose} wide>
       <div className="hero-power-menu">
         <p className="hero-power-menu-intro">
-          Win against the bot to unlock one Hero Power per win. Each unlock is permanent.
+          Clear each of the first ten campaign chapters to unlock a Hero Power. Replays do not count.
           <b>{` ${Math.min(botWins, HERO_POWER_UNLOCK_ORDER.length)}/${HERO_POWER_UNLOCK_ORDER.length} unlocked`}</b>
         </p>
         <div className="hero-power-menu-grid">
@@ -582,7 +561,7 @@ export function HeroPowersScreen({
                 }}
               >
                 <span className="hero-power-menu-status">
-                  {unlocked ? (selected ? "Selected" : `Unlocked · ${unlockAt}`) : `Locked · win ${unlockAt}`}
+                  {unlocked ? (selected ? "Selected" : `Unlocked · chapter ${unlockAt}`) : `Locked · chapter ${unlockAt}`}
                 </span>
                 <strong><Lightning size={18} weight="fill" aria-hidden="true" /> {definition.name}</strong>
                 <span>{definition.text}</span>
@@ -694,7 +673,7 @@ function HowToPlayContent() {
   return (
     <div className="rules">
       <p className="rules-intro">
-        Two cores, one shared deck, five slots each. Everything below is in the order you meet it.
+        Two cores, two separate decks, five slots each. Everything below is in the order you meet it.
       </p>
 
       <section className="rules-chapter">
@@ -707,9 +686,9 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">2</span> The shared deck</h4>
+        <h4><span className="rules-step-no">2</span> Your deck</h4>
         <ul className="rules-list">
-          <li>Both players draw from the <b>same shuffled deck</b>, one copy of each card. It holds the cards you have <b>unlocked</b>: {STARTING_POOL} to begin with, growing with every duel you finish against the bot, up to the full {MINION_COUNT} minions and {RELIC_COUNT} relics.</li>
+          <li>Each player draws from their <b>own shuffled deck of {STARTING_POOL} different cards</b>. Campaign victories expand your collection. Swap unlocked cards into your deck between duels; the deck stays at 30 cards.</li>
           <li>You open with <b>3 cards</b>. Player One may replace any number of them once before the duel begins. Going second also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
           <li>Your hand holds <b>10 cards</b>. A card drawn into a full hand burns and is gone.</li>
           <li>When the deck runs dry, every further draw costs you core health: <b>1, then 2, then 3</b>, and up from there.</li>
@@ -778,7 +757,7 @@ function HowToPlayContent() {
       <section className="rules-chapter">
         <h4><span className="rules-step-no">7</span> Ascension Relics</h4>
         <ul className="rules-list">
-          <li>The <b>{RELIC_COUNT} relics</b> ride in the same shared deck and arrive in hand like any other card.</li>
+          <li>The <b>{RELIC_COUNT} relics</b> count toward your 30-card deck and arrive in hand like any other card.</li>
           <li>Play one onto a friendly minion to equip it. A minion carries up to <b>two</b>, in independent slots.</li>
           <li>Every relic prints bare <b>RELIC</b> in its flavour-text slot, without quotation marks. This is the fixed relic label, not individual lore text.</li>
           <li>An attached relic stays with its bearer. A minion cannot choose to return it to its owner, and a relic cannot be manually returned to hand.</li>
