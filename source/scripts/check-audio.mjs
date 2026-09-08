@@ -39,7 +39,16 @@ const check = (label, ok, detail) => {
 async function completeOpeningMulligan() {
   const confirm = page.locator(".mulligan-panel button.primary");
   await confirm.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
-  if (await confirm.isVisible().catch(() => false)) await confirm.click();
+  if (await confirm.isVisible().catch(() => false)) {
+    await confirm.click();
+    const passToTwo = page.locator(".pass-screen .primary");
+    if (await passToTwo.isVisible().catch(() => false)) {
+      await passToTwo.click();
+      await page.locator(".mulligan-panel button.primary").click();
+      const passToOne = page.locator(".pass-screen .primary");
+      if (await passToOne.isVisible().catch(() => false)) await passToOne.click();
+    }
+  }
 }
 
 await page.goto(BASE, { waitUntil: "domcontentloaded" });

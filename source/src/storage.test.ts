@@ -24,8 +24,8 @@ function memoryLocalStorage() {
   };
 }
 
-const SAVE_KEY = "convergence.save.v28";
-const LEGACY_SAVE_KEY = "convergence.save.v27";
+const SAVE_KEY = "convergence.save.v29";
+const LEGACY_SAVE_KEY = "convergence.save.v28";
 
 function liveDuel(): GameState {
   const state = createInitialGame(cards, "storage-test", relics, { decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK] });
@@ -88,7 +88,7 @@ describe("the save slot", () => {
     // key, so leaving it in place after a clear used to resurrect an old duel on
     // the next visit — the title screen offered Continue on a game nobody had
     // been playing.
-    storage.values.set(LEGACY_SAVE_KEY, JSON.stringify({ version: 26, game: liveDuel(), events: [], mode: { kind: "hotseat" }, savedAt: 1 }));
+    storage.values.set(LEGACY_SAVE_KEY, JSON.stringify({ version: 28, game: liveDuel(), events: [], mode: { kind: "hotseat" }, savedAt: 1 }));
     saveGame(liveDuel(), [], { kind: "hotseat" }, 2);
 
     clearSave();
@@ -111,7 +111,7 @@ describe("the save slot", () => {
 describe("the v26 migration", () => {
   it("resets pre-campaign saves instead of migrating them", () => {
     const storage = memoryLocalStorage(); vi.stubGlobal("window", { localStorage: storage });
-    storage.values.set(LEGACY_SAVE_KEY, JSON.stringify({ version: 27, game: liveDuel(), events: [], mode: { kind: "hotseat" }, savedAt: 1 }));
+    storage.values.set(LEGACY_SAVE_KEY, JSON.stringify({ version: 28, game: liveDuel(), events: [], mode: { kind: "hotseat" }, savedAt: 1 }));
     expect(loadGame()).toBeNull(); expect(storage.values.has(LEGACY_SAVE_KEY)).toBe(false);
   });
 });

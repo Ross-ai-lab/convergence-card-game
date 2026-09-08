@@ -138,6 +138,8 @@ export interface GameSetup {
   /** Explicit collectible deck lists; each must contain thirty unique cards. */
   decks?: readonly [readonly string[], readonly string[]];
   botCheats?: readonly [Readonly<BotCheats> | null, Readonly<BotCheats> | null];
+  /** Seats that receive an opening mulligan, in order. */
+  mulliganPlayers?: readonly PlayerId[];
   startingHealth?: number;
   manaRamp?: number;
   /** Seat granted permanent Foresight — the Ascendant opponent's draw cheat. */
@@ -191,7 +193,11 @@ export function createInitialGame(
     drawChoice: null,
     pendingTarget: null,
     pendingPlayCancel: null,
-    mulligan: { player: 0, selected: [false, false, false] },
+    mulligan: {
+      player: setup.mulliganPlayers?.[0] ?? 0,
+      selected: [false, false, false],
+      ...(setup.mulliganPlayers && setup.mulliganPlayers.length > 1 ? { players: [...setup.mulliganPlayers] } : {}),
+    },
     heroPowers: setup.heroPowers
       ? [...setup.heroPowers] as [HeroPowerId | null, HeroPowerId | null]
       : [null, null],
@@ -619,6 +625,19 @@ function confirmMulligan(state: GameState, playerId: PlayerId, events: GameEvent
     });
   } else {
     events.push({ kind: "draw", text: `${player.name} keeps the opening hand.`, player: playerId });
+  }
+  const queue = mulligan.players ?? [mulligan.player];
+  const queueIndex = queue.indexOf(playerId);
+  const nextPlayer = queueIndex >= 0 ? queue[queueIndex + 1] : undefined;
+  if (nextPlayer !== undefined) {
+    state.mulligan = {
+      player: nextPlayer,
+      selected: Array(state.players[nextPlayer].hand.length).fill(false),
+      players: queue.slice(queueIndex + 1),
+    };
+    state.phase = "mulligan";
+    events.push({ kind: "info", text: `${state.players[nextPlayer].name} chooses an opening hand.`, player: nextPlayer });
+    return;
   }
   state.mulligan = null;
   state.phase = "main";

@@ -10,7 +10,7 @@ const progress = () => page.evaluate(() => JSON.parse(localStorage.getItem('conv
 async function board() {
   await page.locator('.duel-intro').waitFor({ state: 'detached', timeout: 20000 });
   await page.locator('.mulligan-panel button.primary').click();
-  await page.waitForFunction(() => window.__debug?.state().phase === 'main' && JSON.parse(localStorage.getItem('convergence.save.v28') ?? '{}').game?.phase === 'main');
+  await page.waitForFunction(() => window.__debug?.state().phase === 'main' && JSON.parse(localStorage.getItem('convergence.save.v29') ?? '{}').game?.phase === 'main');
 }
 async function finish(label = 'I win') {
   await page.getByRole('button', { name: 'DEV tools', exact: true }).click();
@@ -46,7 +46,15 @@ try {
   await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).getByRole('button', { name: 'Close', exact: true }).click();
   await page.locator('.duel-trigger').click();
   assert.equal(await page.locator('.campaign-chapter button:not([disabled])').count(), 1);
-  await page.getByRole('button', { name: 'View starter deck', exact: true }).click();
+  const lockedChapterCard = page.locator('[data-chapter="1"]');
+  const lockedChapterText = await lockedChapterCard.textContent();
+  assert(!lockedChapterText.includes('Tech fortifications'));
+  assert(!lockedChapterText.includes('Recruit'));
+  assert(!lockedChapterText.includes('first-win'));
+  assert.equal(await lockedChapterCard.locator('details').count(), 0);
+  assert(!(await page.locator('.campaign-panel').textContent()).includes('cards unlocked'));
+  await page.getByRole('button', { name: 'Close campaign', exact: true }).click();
+  await page.getByRole('button', { name: 'Starter deck', exact: true }).click();
   assert.equal(await page.locator('.deck-card').count(), 30);
   assert.deepEqual(await page.locator('.deck-curve span').allTextContents(), Array(10).fill('3'));
   assert.equal(await page.locator('.deck-card button:not([disabled])').count(), 0);
@@ -59,7 +67,7 @@ try {
   await page.getByRole('button', { name: 'Done', exact: true }).click();
   await page.screenshot({ path: '../.preview/campaign/chapters.png' });
   await page.getByRole('button', { name: 'Play chapter 1', exact: true }).click(); await board();
-  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v28')));
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v29')));
   assert.equal(saved.mode.kind, 'campaign'); assert.equal(saved.mode.chapter, 1);
   assert.equal(saved.game.playerDecks[0].deck.length, 27); assert.equal(saved.game.playerDecks[1].deck.length, 27);
   assert.equal(await page.locator('.campaign-hero .boss-portrait').getAttribute('alt'), 'GLaDOS portrait');
@@ -84,8 +92,15 @@ try {
   assert.equal(record.playerDeck.length, 30); assert.equal(record.selectedHeroPower, 'core_heal');
   await page.reload(); await page.locator('.pack-stage').waitFor(); assert.equal((await progress()).pendingRewards.length, 9);
   await collectPack(); assert.equal((await progress()).pendingRewards.length, 0);
-  await page.keyboard.type('Ross');
-  await page.locator('.duel-trigger').click(); await page.getByRole('button', { name: 'Edit deck', exact: true }).click();
+  const resultCampaign = page.getByRole('button', { name: 'Campaign & deck', exact: true });
+  if (await resultCampaign.isVisible().catch(() => false)) await resultCampaign.click();
+  else await page.locator('.duel-trigger').click();
+  const clearedChapterCard = page.locator('[data-chapter="1"]');
+  assert.equal(await clearedChapterCard.locator('details[open]').count(), 1);
+  assert((await clearedChapterCard.textContent()).includes('Rewards unlocked'));
+  assert((await clearedChapterCard.textContent()).includes('GLaDOS'));
+  await page.getByRole('button', { name: 'Close campaign', exact: true }).click();
+  await page.getByRole('button', { name: 'My deck', exact: true }).click();
   await page.getByRole('button', { name: 'Remove John Wick', exact: true }).click();
   assert.equal((await progress()).playerDeck.length, 29);
   await page.getByRole('button', { name: 'Done', exact: true }).click();
@@ -112,7 +127,7 @@ try {
   await page.keyboard.type('Ross');
   assert.equal(await page.locator('.orbit-choice-easy').count(), 0);
   await page.locator('.duel-trigger').click(); await page.getByRole('button', { name: 'Play chapter 20', exact: true }).click(); await board();
-  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v28')));
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v29')));
   assert.equal(saved.game.botCheats[1].foresight, true);
   await finish(); await page.waitForFunction(() => JSON.parse(localStorage.getItem('convergence.progress.v3')).completedChapters === 20);
   assert.equal((await progress()).unlockedIds.length, 216); assert.deepEqual((await progress()).pendingRewards, ['c041']);
@@ -120,7 +135,7 @@ try {
   assert.equal(await page.locator('.orbit-choice-easy, .orbit-choice-normal, .orbit-choice-hard').count(), 3);
   await page.screenshot({ path: '../.preview/campaign/completed.png' });
   await page.locator('.duel-trigger').click(); await board();
-  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v28')));
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v29')));
   assert.equal(saved.mode.kind, 'bot'); assert.equal(saved.game.playerDecks[1].deck.length + saved.game.players[1].hand.length, 30);
   assert.deepEqual(errors, []);
   console.log('PASS campaign: reset, gates, flat starter, resume, first win, durable pack, deck swaps, invalid draft, replay/loss, final reward and random free duel.');

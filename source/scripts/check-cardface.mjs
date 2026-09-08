@@ -72,6 +72,17 @@ await page
   .waitForFunction(() => Boolean(window.__debug), null, { timeout: 15000 })
   .catch(() => {});
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
+const firstMulligan = page.locator(".mulligan-panel button.primary");
+if (await firstMulligan.isVisible().catch(() => false)) {
+  await firstMulligan.click();
+  const passToTwo = page.locator(".pass-screen .primary");
+  if (await passToTwo.isVisible().catch(() => false)) {
+    await passToTwo.click();
+    await page.locator(".mulligan-panel button.primary").click();
+    const passToOne = page.locator(".pass-screen .primary");
+    if (await passToOne.isVisible().catch(() => false)) await passToOne.click();
+  }
+}
 
 const planted = await page.evaluate((names) => {
   if (!window.__debug) return false;

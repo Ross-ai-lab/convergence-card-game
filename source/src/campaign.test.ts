@@ -111,6 +111,13 @@ describe("campaign definitions", () => {
     expect(getCampaignChapter(18)!.universeCardIds).toHaveLength(16);
   });
 
+  it("keeps the first campaign boss at Legendary rarity", () => {
+    const glados = byId.get("c104");
+    expect(glados?.name).toBe("GLaDOS");
+    if (!glados || glados.kind !== "minion") throw new Error("GLaDOS must be a minion");
+    expect(glados.rarity).toBe("Yellow");
+  });
+
   it("protects shared definitions from mutation by future consumers", () => {
     expect(Object.isFrozen(CAMPAIGN_STARTER_DECK)).toBe(true);
     for (const chapter of CAMPAIGN_CHAPTERS) {

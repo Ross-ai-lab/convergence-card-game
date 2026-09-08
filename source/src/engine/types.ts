@@ -510,10 +510,12 @@ export interface PlayerState {
 export type GamePhase = "mulligan" | "main" | "drawChoice" | "targeting" | "gameOver";
 
 export interface MulliganState {
-  /** Only the starting player takes a mulligan in this game. */
+  /** The seat currently choosing replacement cards. */
   player: PlayerId;
   /** One flag per opening card; true means replace it. */
   selected: boolean[];
+  /** Hotseat can queue both seats; bot and campaign duels queue only seat zero. */
+  players?: PlayerId[];
 }
 
 export interface DrawChoice {
@@ -788,7 +790,7 @@ export interface GameState {
   pendingTarget: PendingTarget | null;
   /** Keeps a play-to-hand escape alive across multi-step target prompts. */
   pendingPlayCancel?: PendingPlayReturn | null;
-  /** The player-only opening mulligan, or null once the duel has started. */
+  /** The current opening mulligan seat, or null once the duel has started. */
   mulligan: MulliganState | null;
   /** The selected power for each player. */
   heroPowers: [HeroPowerId | null, HeroPowerId | null];

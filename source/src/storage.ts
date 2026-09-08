@@ -90,7 +90,9 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // is the whole reason for the bump: the field going missing is harmless, a
 // minion silently keeping somebody else's power is not.
 // v28: campaign cutover deliberately resets all pre-campaign duels.
-const SAVE_VERSION = 28;
+// v29: hotseat now gives both seats an opening mulligan, so the pending
+// mulligan carries a queue of seats. Older in-progress openings are discarded.
+const SAVE_VERSION = 29;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
 export interface SavedGame {
   version: number;
@@ -153,16 +155,16 @@ export function loadGame(): SavedGame | null {
     if (typeof game.rngSeed !== "number" || typeof game.turnNumber !== "number") return null;
     if (typeof game.manaRamp !== "number" || game.manaRamp <= 0) return null;
     if (!Array.isArray(game.deck) || !Array.isArray(game.effectQueue)) return null;
-    // Chunk 2 fields are optional while the current app still creates old-style
-    // duels. Reset/version cutover happens when campaign progression is connected.
+    // Constructed duels always carry two separate piles. The save version cutover
+    // rejects pre-campaign or pre-hotseat-mulligan duels before they reach React.
     const stringArray = (value: unknown): value is string[] =>
       Array.isArray(value) && value.every((entry) => typeof entry === "string");
     if (!game.playerDecks) return null;
-    if (game.playerDecks !== undefined && (
+    if (
       !Array.isArray(game.playerDecks) || game.playerDecks.length !== 2 ||
       !game.playerDecks.every((pile) => pile && stringArray(pile.deck) && stringArray(pile.bottomDeck)) ||
       game.deck.length !== 0 || !stringArray(game.bottomDeck) || game.bottomDeck.length !== 0
-    )) return null;
+    ) return null;
     if (game.botCheats !== undefined && (
       !Array.isArray(game.botCheats) || game.botCheats.length !== 2 ||
       !game.botCheats.every((cheats) => cheats === null || (cheats &&
@@ -178,7 +180,11 @@ export function loadGame(): SavedGame | null {
     if ((game.phase as string) === "heroPowerChoice") return null;
     if (
       game.phase === "mulligan" &&
-      (!game.mulligan || game.mulligan.player !== 0 || !Array.isArray(game.mulligan.selected))
+      (!game.mulligan || ![0, 1].includes(game.mulligan.player) || !Array.isArray(game.mulligan.selected) ||
+        (game.mulligan.players !== undefined && (!Array.isArray(game.mulligan.players) ||
+          game.mulligan.players.length === 0 || game.mulligan.players.some((player) => ![0, 1].includes(player)) ||
+          new Set(game.mulligan.players).size !== game.mulligan.players.length ||
+          game.mulligan.players[0] !== game.mulligan.player)))
     ) return null;
     const playerShapeOk = (player: SavedGame["game"]["players"][number]) =>
       Array.isArray(player?.board) &&

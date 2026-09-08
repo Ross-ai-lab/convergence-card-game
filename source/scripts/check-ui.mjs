@@ -136,6 +136,11 @@ check(
 const difficultyClicks = [];
 // Free-opponent controls intentionally exist only after all campaign chapters.
 await seedCampaignProgress(page);
+check(
+  "campaign completion reveals free difficulties",
+  (await page.locator(".orbit-choice").count()) === 3,
+  "Recruit, Veteran and Ascendant appear only after campaign completion",
+);
 for (const selector of [".orbit-choice-easy", ".orbit-choice-hard", ".orbit-choice-normal"]) {
   await page.locator(selector).click({ timeout: 2000 }).catch(() => {});
   difficultyClicks.push((await page.locator(selector).getAttribute("aria-pressed")) === "true");
@@ -170,6 +175,13 @@ check(
   "title duel controls stay still on hover",
   titleHoverDrifts.every(({ maxDrift }) => maxDrift < 0.25),
   titleHoverDrifts.map(({ selector, maxDrift }) => `${selector} ${maxDrift.toFixed(1)}px`).join(", "),
+);
+
+const soundIconMarkup = await page.locator(".settings-trigger svg").evaluate((element) => element.outerHTML);
+check(
+  "the main-menu Sound button uses a speaker icon",
+  /sound-icon/i.test(soundIconMarkup),
+  soundIconMarkup.match(/sound-icon[^" ]*/i)?.[0] ?? "sound icon class",
 );
 
 await page.locator(".hotseat-trigger").click({ timeout: 2000 });
@@ -230,6 +242,26 @@ check(
 );
 await page.locator(".mulligan-panel button.primary").click();
 await page.locator(".mulligan-panel").waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
+const secondMulligan = page.locator(".pass-screen .primary");
+if (await secondMulligan.isVisible().catch(() => false)) {
+  check(
+    "second player receives an opening mulligan",
+    (await page.locator(".pass-screen h2").textContent()) === "Player Two",
+    "the screen passes before Player Two chooses cards",
+  );
+  await secondMulligan.click();
+  await page.locator(".mulligan-panel").waitFor({ state: "visible", timeout: 5000 });
+  check(
+    "Player Two can replace opening cards",
+    (await page.locator(".mulligan-panel").textContent()).includes("Player Two") &&
+      (await page.locator(".mulligan-card").count()) === 3,
+    "both hotseat players see their own three-card mulligan",
+  );
+  await page.locator(".mulligan-panel button.primary").click();
+  await page.locator(".mulligan-panel").waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
+  await page.locator(".pass-screen .primary").waitFor({ state: "visible", timeout: 5000 });
+  await page.locator(".pass-screen .primary").click();
+}
 
 // CLICK, never hover (owner's ruling, 2 September 2026). This check waited a
 // second on a hover until 3 September 2026, which is the behaviour that ruling
@@ -325,11 +357,31 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   await page.getByRole("button", { name: "Start two-player duel", exact: true }).click();
   await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 });
   await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 });
-  // Player One is the only seat with a mulligan. Confirm it so the scenarios
-  // below start on the ordinary board.
+  // Hotseat now gives both seats a private mulligan. Confirm Player One, pass
+  // the curtain, confirm Player Two, then pass it back before board scenarios.
   const mulliganConfirm = page.locator(".mulligan-panel button.primary");
   await mulliganConfirm.waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
-  if (await mulliganConfirm.isVisible().catch(() => false)) await mulliganConfirm.click();
+  if (await mulliganConfirm.isVisible().catch(() => false)) {
+    await mulliganConfirm.click();
+    const passToTwo = page.locator(".pass-screen .primary");
+    if (await passToTwo.isVisible().catch(() => false)) {
+      check(
+        "hotseat passes to Player Two for mulligan",
+        (await page.locator(".pass-screen h2").textContent()) === "Player Two",
+        "Player One confirms before Player Two sees their hand",
+      );
+      await passToTwo.click();
+      check(
+        "hotseat Player Two mulligan is visible",
+        (await page.locator(".mulligan-panel").textContent()).includes("Player Two") &&
+          (await page.locator(".mulligan-card").count()) === 3,
+        "Player Two receives a private three-card opening hand",
+      );
+      await page.locator(".mulligan-panel button.primary").click();
+      const passToOne = page.locator(".pass-screen .primary");
+      if (await passToOne.isVisible().catch(() => false)) await passToOne.click();
+    }
+  }
   await page.waitForTimeout(300);
   // Wait for the test hook, not for a guessed 1100ms. It registers from an
   // effect after the board has mounted, and the first load after a rebuild has

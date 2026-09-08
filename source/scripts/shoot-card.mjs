@@ -217,14 +217,15 @@ try {
   await page.goto(base, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1200);
 
-  // A duel has to be running before `__debug` mounts — the hook is gated on the
-  // playing screen, not merely on DEV.
-  // Target the class, not the label. The accessible name of this control is
-  // "Duel" plus whichever difficulty is selected, so any name-based matcher goes
-  // stale the moment the difficulty wording changes — which is exactly how
-  // shoot-screens.mjs ended up waiting 30s for a `/Duel the/` button that no
-  // longer exists.
-  await page.locator(".duel-trigger").first().click();
+  // A duel has to be running before `__debug` mounts. Fresh profiles now open
+  // Campaign from the central button, so use the Ross-only developer test route
+  // to reach a real board without requiring twenty chapter clears.
+  await page.keyboard.type("Ross");
+  await page.getByRole("button", { name: "Open developer tools", exact: true }).click();
+  await page.locator(".developer-panel").waitFor({ state: "visible", timeout: 6000 });
+  await page.locator(".developer-search input").fill(wanted[0]);
+  await page.locator(".developer-card-row").first().click();
+  await page.getByRole("button", { name: "Start test duel with this card", exact: true }).click();
   await page.waitForFunction(() => Boolean(window.__debug?.place), null, { timeout: 20_000 });
   await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
 

@@ -94,6 +94,24 @@ describe("Convergence engine", () => {
     expect(drafted.bottomDeck).toContain(replacedId);
   });
 
+  it("queues both opening mulligans for an explicit hotseat setup", () => {
+    const starter = cards.slice(0, 30).map((card) => card.id);
+    const state = createInitialGame(cards, "hotseat-mulligan", relics, {
+      decks: [starter, starter],
+      mulliganPlayers: [0, 1],
+    });
+    expect(state.mulligan).toEqual({ player: 0, selected: [false, false, false], players: [0, 1] });
+    expect(getLegalActions(state, library)).toContainEqual({ type: "confirm_mulligan", player: 0 });
+    expect(getLegalActions(state, library)).not.toContainEqual({ type: "confirm_mulligan", player: 1 });
+    const p0 = applyAction(state, { type: "confirm_mulligan", player: 0 }, library).state;
+    expect(p0.phase).toBe("mulligan");
+    expect(p0.mulligan).toEqual({ player: 1, selected: [false, false, false], players: [1] });
+    expect(getLegalActions(p0, library)).toContainEqual({ type: "confirm_mulligan", player: 1 });
+    const p1 = applyAction(p0, { type: "confirm_mulligan", player: 1 }, library).state;
+    expect(p1.phase).toBe("main");
+    expect(p1.mulligan).toBeNull();
+  });
+
   /**
    * The tutorial's teaching target, asserted by its RULES rather than its name.
    *

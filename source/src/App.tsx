@@ -1563,7 +1563,8 @@ export default function App() {
     const playerDeck = developer ? CAMPAIGN_STARTER_DECK : progress.playerDeck;
     const opponentDeck = next.kind === "hotseat" ? progress.hotseatDeck : randomDeck(CAMPAIGN_CARD_IDS, `${seed}:opponent`);
     return createInitialGame(cards, seed, relics, { decks: [playerDeck, opponentDeck],
-      foresightFor: foresightSeat(next), heroPowers: heroPowersForDuel(next, selectedHeroPower, seed) });
+      foresightFor: foresightSeat(next), heroPowers: heroPowersForDuel(next, selectedHeroPower, seed),
+      mulliganPlayers: next.kind === "hotseat" ? [0, 1] : [0] });
   }
 
   function restart() {
@@ -3138,7 +3139,7 @@ export default function App() {
         />
       ) : null}
 
-      {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)} onEdit={() => openDeck()}
+      {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)}
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
       {overlay === "deck" && <DeckBuilder progress={progress} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn)} />}
@@ -5463,7 +5464,7 @@ function MulliganOverlay({
   return (
     <div className="overlay">
       <section className={locked ? "draw-panel mulligan-panel locked" : "draw-panel mulligan-panel"}>
-        <span>Opening Hand</span>
+        <span>{game.players[mulligan.player].name}'s Opening Hand</span>
         <h2>{locked ? "Waiting for the opening hand…" : "Choose cards to replace"}</h2>
         <p className="mulligan-intro">
           Select any number of cards to mulligan. Replacements come from your deck, then your old cards go to the bottom.

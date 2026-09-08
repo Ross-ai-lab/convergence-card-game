@@ -8,7 +8,7 @@
  *
  * Four screens, all overlays over the live board so nothing here can break a duel
  * in progress:
- *   TitleScreen  — the front door: continue, solo at three difficulties, hotseat.
+ *   TitleScreen  — the front door: continue, campaign, free play after completion, hotseat.
  *   HowToPlay     — the complete rules, as nine chapters plus two glossaries.
  *   SettingsPanel— sound controls and a route back to the title screen.
  *   PassScreen   — the hotseat privacy curtain. Without it, hotseat is not a game:
@@ -24,7 +24,6 @@ import {
   CornersOut,
   Crown,
   Scroll,
-  GearSix,
   Lightning,
   MusicNotes,
   Sparkle,
@@ -388,7 +387,7 @@ export function TitleScreen({
             <span>Hero Powers</span>
           </button>
           <button type="button" className="settings-trigger" onClick={onSettings}>
-            <GearSix size={22} weight="fill" aria-hidden="true" />
+            <SpeakerHigh className="sound-icon" size={22} weight="fill" aria-hidden="true" />
             <span>Sound</span>
           </button>
         </div>
@@ -450,7 +449,7 @@ export function TitleScreen({
           <div className="hotseat-confirm">
             <p className="hotseat-confirm-question">Start a two-player duel?</p>
             <p className="hotseat-confirm-note">
-              Both players share this screen. Player One gets the opening mulligan, and each hand is hidden during the
+              Both players share this screen. Each player chooses their opening hand, and each hand is hidden during the
               other player&apos;s turn.
             </p>
             <div className="hotseat-confirm-actions">
@@ -689,7 +688,7 @@ function HowToPlayContent() {
         <h4><span className="rules-step-no">2</span> Your deck</h4>
         <ul className="rules-list">
           <li>Each player draws from their <b>own shuffled deck of {STARTING_POOL} different cards</b>. Campaign victories expand your collection. Swap unlocked cards into your deck between duels; the deck stays at 30 cards.</li>
-          <li>You open with <b>3 cards</b>. Player One may replace any number of them once before the duel begins. Going second also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
+          <li>You open with <b>3 cards</b>. In solo and campaign play, Player One may replace any number once. In hotseat, both players replace cards once, privately and in order. Going second also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
           <li>Your hand holds <b>10 cards</b>. A card drawn into a full hand burns and is gone.</li>
           <li>When the deck runs dry, every further draw costs you core health: <b>1, then 2, then 3</b>, and up from there.</li>
         </ul>
@@ -704,7 +703,7 @@ function HowToPlayContent() {
           <li><b>End the turn</b> with Space.</li>
         </ol>
         <p className="rules-aside">
-          Hero Powers are chosen from the <b>Hero Powers</b> menu. Win against the bot to unlock them one at a time,
+          Hero Powers are chosen from the <b>Hero Powers</b> menu. Clear the first ten campaign chapters to unlock them one at a time,
           in the order shown there. A selected power costs 2 mana and works once per turn.
         </p>
       </section>
