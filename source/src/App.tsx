@@ -82,7 +82,6 @@ import {
   finishDuel,
   loadProgress,
   saveProgress,
-  totals,
   unlockAllProgress,
   type Progress,
 } from "./progress";
@@ -614,7 +613,6 @@ export default function App() {
   function closePack() {
     if (!progress.pendingRewards.length || persistProgress(acknowledgeRewards(progress))) setPack(null);
   }
-  const totalDuels = useMemo(() => totals(progress).played, [progress]);
 
   useEffect(() => {
     if (screen !== "title" || overlay !== null) return;
@@ -3125,7 +3123,6 @@ export default function App() {
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
           onGallery={() => setOverlay("gallery")}
-          onRecord={() => setOverlay("record")}
           onHeroPowers={() => setOverlay("heroPowers")}
           onTutorial={beginTutorial}
           onDeveloperTools={() => setDeveloperToolsOpen(true)}
@@ -3133,7 +3130,6 @@ export default function App() {
           developerCheatActive={progress.developerCheat}
           onDeveloperUnlock={activateDeveloperCheat}
           onDeveloperReset={resetDeveloperProgress}
-          duelsPlayed={totalDuels}
           unlocked={progress.unlockedIds.length}
           rosterSize={cards.length + relics.length}
         />
@@ -3153,7 +3149,7 @@ export default function App() {
             <button onClick={() => setOverlay(null)} aria-label="Close opponent details">Close</button></header>
           <div className="campaign-opponent-face"><CardFace card={playableFace(campaignBoss)} /></div>
           <p><strong>{heroPowerDefinition(campaignChapter.heroPowerId)?.name}</strong> · 2 mana<br />{heroPowerDefinition(campaignChapter.heroPowerId)?.text}</p>
-          <p>{progress.completedChapters >= campaignChapter.chapter ? "Chapter cleared. Replays grant no additional rewards." : `First victory unlocks ${campaignChapter.rewardCardIds.length} cards, including this character and their universe.`}</p>
+          {progress.completedChapters >= campaignChapter.chapter ? <p>Chapter cleared. Replays grant no additional rewards.</p> : null}
         </section>
       </div>}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}

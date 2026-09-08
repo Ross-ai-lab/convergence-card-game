@@ -15,7 +15,7 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
 }) {
   const valid = validateDeck(progress.playerDeck, rosterIds, progress.unlockedIds).valid;
   return <div className="campaign-overlay" role="dialog" aria-modal="true" aria-label="Campaign">
-    <section className="campaign-panel">
+    <section className="campaign-panel campaign-chapter-panel">
       <header className="campaign-header"><div><span className="campaign-eyebrow">CONVERGENCE</span><h2>Campaign</h2>
         </div>
         <button onClick={onClose} aria-label="Close campaign">Close</button></header>

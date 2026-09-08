@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 206,842 bytes, roughly 52k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~48% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 206,931 bytes, roughly 52k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~48% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -295,7 +295,7 @@ Focused tests cover both seats, overlapping card IDs, independent shuffles and f
 
 #### Chunk 3 menus, progression and saves
 
-The title screen opens Campaign until all twenty chapters are cleared. Only the next unfinished chapter is playable; cleared chapters offer replay without rewards. Hotseat is always available. The starter is visible but read-only before the first clear, except after the explicit developer Unlock All action. The campaign page lists only each boss and its chapter before victory. Theme, difficulty and reward details stay hidden until that chapter is cleared; then the reward names appear on the cleared chapter.
+The title screen opens Campaign until all twenty chapters are cleared. Only the next unfinished chapter is playable; cleared chapters offer replay without rewards. Hotseat is always available. The starter is visible but read-only before the first clear, except after the explicit developer Unlock All action. The title menu keeps Cards, Hero Powers and Sound; the old Win Record action is removed. The campaign page lists only each boss and its chapter before victory. Theme, difficulty and reward details stay hidden until that chapter is cleared; then the reward names appear on the cleared chapter.
 
 The deck builder displays unlocked cards, artwork, printed stats, rarity and effects, with search and cost/camp/alignment/type filters. Selected-only view and the mana curve follow the draft. Edits persist automatically. Removing a card may save a 29-card draft, but a new duel is blocked until the list contains exactly thirty unique unlocked cards. Rewards never append themselves to the selected deck. Both hotseat decks use the same local collection and are validated independently. A live saved duel retains its original deck snapshot even if a draft changes at the title screen.
 

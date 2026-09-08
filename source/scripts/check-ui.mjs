@@ -183,6 +183,11 @@ check(
   /sound-icon/i.test(soundIconMarkup),
   soundIconMarkup.match(/sound-icon[^" ]*/i)?.[0] ?? "sound icon class",
 );
+check(
+  "the retired Win Record button is absent",
+  (await page.getByRole("button", { name: "Win Record", exact: true }).count()) === 0,
+  "record history is no longer a title-menu action",
+);
 
 await page.locator(".hotseat-trigger").click({ timeout: 2000 });
 check(
@@ -191,6 +196,12 @@ check(
     (await page.locator(".title-screen").count()) === 1 &&
     (await page.locator(".duel-intro").count()) === 0,
   "confirmation is visible before a new duel intro begins",
+);
+check(
+  "local hotseat confirmation uses the requested wording",
+  (await page.locator(".hotseat-confirm-question").textContent())?.trim() === "Start local 2 player duel?" &&
+    (await page.locator(".hotseat-confirm-note").count()) === 0,
+  "the extra shared-screen sentence is removed",
 );
 await page.locator(".hotseat-confirm-cancel").click();
 
@@ -317,9 +328,14 @@ await page.mouse.move(0, 0);
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.locator(".title-links").getByRole("button", { name: "Sound", exact: true }).click();
 check(
-  "difficulty is not available inside Settings",
+  "Sound opens the audio panel",
+  (await page.getByRole("dialog", { name: "Sound", exact: true }).count()) === 1,
+  "the overlay heading is Sound",
+);
+check(
+  "difficulty is not available inside Sound",
   (await page.getByRole("dialog").getByText("Recruit", { exact: true }).count()) === 0,
-  "Settings contains sound controls only",
+  "Sound contains audio controls only",
 );
 
 if (TITLE_ONLY) {

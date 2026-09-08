@@ -50,7 +50,7 @@ await shoot("01-title");
 // --- a real board, against the bot, so minions actually arrive
 //
 // THE DUEL STARTS FIRST, before the overlay shots below, and that ordering is
-// load-bearing. "How to play" and "Sound & settings" are DUEL TOOLBAR buttons.
+// load-bearing. "How to play" and "Sound" are DUEL TOOLBAR buttons.
 // They exist in the DOM while the title screen is up, so Playwright resolves
 // them happily and then spends its whole timeout reporting `<div
 // class="title-screen"> intercepts pointer events` — an error that reads like a
@@ -77,7 +77,7 @@ await page.keyboard.press("Escape");
 
 // --- settings
 // Match the VISIBLE text, not the tooltip. This button's markup is
-// `title="Sound and settings"` wrapping the text `⚙ Settings`, and a button's
+// `title="Sound and settings"` wrapping the text `🔊 Sound`, and a button's
 // accessible name comes from its text content — the title is only a fallback
 // for a button that has none. Matching the tooltip therefore resolves nothing
 // at all and burns the full timeout without ever naming the real cause.

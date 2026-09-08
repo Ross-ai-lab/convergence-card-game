@@ -74,6 +74,7 @@ try {
   assert((await page.locator('.campaign-hero .boss-chapter').textContent()).includes('Chapter 1'));
   await page.getByRole('button', { name: 'Inspect GLaDOS', exact: true }).click();
   assert(await page.getByRole('dialog', { name: 'GLaDOS card details' }).isVisible());
+  assert(!(await page.getByRole('dialog', { name: 'GLaDOS card details' }).textContent()).includes('cards unlocked'));
   assert.equal((await progress()).unlockedIds.length, 30, 'Inspecting a locked boss cannot unlock it');
   await page.keyboard.press('Escape');
   assert.equal(await page.getByRole('dialog', { name: 'GLaDOS card details' }).count(), 0);

@@ -23,7 +23,6 @@ import {
   CornersIn,
   CornersOut,
   Crown,
-  Scroll,
   Lightning,
   MusicNotes,
   Sparkle,
@@ -226,7 +225,6 @@ function Overlay({
 export function TitleScreen({
   canContinue, campaignCleared, completedChapters, onCampaign, onDeck,
   playerCount,
-  duelsPlayed,
   unlocked,
   rosterSize,
   developerCheatRevealed,
@@ -237,7 +235,6 @@ export function TitleScreen({
   isFullscreen,
   onToggleFullscreen,
   onGallery,
-  onRecord,
   onHeroPowers,
   onTutorial,
   onDeveloperTools,
@@ -246,8 +243,6 @@ export function TitleScreen({
 }: {
   canContinue: boolean;
   playerCount: number | null;
-  /** Total duels finished on this device; the Record door is also useful at zero. */
-  duelsPlayed: number;
   campaignCleared: boolean;
   completedChapters: number;
   onCampaign: () => void;
@@ -263,7 +258,6 @@ export function TitleScreen({
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   onGallery: () => void;
-  onRecord: () => void;
   onHeroPowers: () => void;
   onTutorial: () => void;
   onDeveloperTools: () => void;
@@ -370,15 +364,6 @@ export function TitleScreen({
           </button>
           <button
             type="button"
-            className="gallery-trigger"
-            onClick={onRecord}
-            title={duelsPlayed > 0 ? "View your duel record" : "View your record — no duels played yet"}
-          >
-            <Scroll size={22} weight="fill" aria-hidden="true" />
-            <span>Win Record</span>
-          </button>
-          <button
-            type="button"
             className="hero-power-trigger"
             onClick={onHeroPowers}
             title="Choose an unlocked Hero Power"
@@ -447,11 +432,7 @@ export function TitleScreen({
       {hotseatConfirmOpen ? (
         <Overlay title="Two-player duel" onClose={() => setHotseatConfirmOpen(false)}>
           <div className="hotseat-confirm">
-            <p className="hotseat-confirm-question">Start a two-player duel?</p>
-            <p className="hotseat-confirm-note">
-              Both players share this screen. Each player chooses their opening hand, and each hand is hidden during the
-              other player&apos;s turn.
-            </p>
+            <p className="hotseat-confirm-question">Start local 2 player duel?</p>
             <div className="hotseat-confirm-actions">
               <button
                 type="button"
@@ -855,7 +836,7 @@ export function SettingsPanel({
   ];
 
   return (
-    <Overlay title="Settings" onClose={onClose} variant="settings">
+    <Overlay title="Sound" onClose={onClose} variant="settings">
       <div className="settings">
         <div className={muted ? "settings-status muted" : "settings-status"}>
           <span className="settings-status-icon" aria-hidden="true">
