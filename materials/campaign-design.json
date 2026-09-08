@@ -1,5 +1,5 @@
 {
-  "status": "Chunks 1–3 implemented locally: campaign UI, deck builder, progression and save reset connected; publication pending chunk 4",
+  "status": "Campaign release: all four implementation chunks complete",
   "rosterCount": 216,
   "starterCardIds": [
     "c169",

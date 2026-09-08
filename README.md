@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 205,507 bytes, roughly 51k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~49% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 206,902 bytes, roughly 52k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~48% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -144,20 +144,20 @@ march toward a finish line that has already been crossed.
 
 ## What Convergence is
 
-Convergence is a browser card duel with 172 named character cards, ten Basic cards and 34 relics. The current source implements a twenty-chapter campaign and separate thirty-card decks. Each player starts with the same thirty unlocked cards, exactly three at each mana cost. Campaign first clears add fixed cards to the collection, and the player chooses what to swap into their deck.
+Convergence is a browser card duel with 172 named character cards, 10 Basic cards and 34 relics. The current source implements a twenty-chapter campaign and separate 30-card decks. Each player starts with the same thirty unlocked cards, exactly three at each mana cost. Campaign first clears add fixed cards to the collection, and the player chooses what to swap into their deck.
 
 The campaign is the only ordinary solo mode until all twenty chapters are cleared. Hotseat is available from the start. Completion opens Recruit, Veteran and Ascendant free duels with completely random thirty-card opponent decks. There is no selectable shared-deck mode.
 
 No account or installation is required. Progress and live duels are saved locally in the browser. The public site counts visits in aggregate.
 
-**Release boundary:** chunks 1–3 are implemented locally. The public [play page](https://ross-ai-lab.github.io/convergence-card-game/play/) has not received the campaign update. Chunk 4 owns final presentation checks and publication. The generated local `play/` folder remains a deployment artifact, not the owner's play location.
+**Campaign release:** all four implementation chunks are complete. The public [play page](https://ross-ai-lab.github.io/convergence-card-game/play/) is the owner's play location. The local `play/` folder is the generated release artifact and must match the production build exactly before publication.
 
 ## What the game still needs
 
 <!-- CAMPAIGN-DESIGN-START -->
 ### Campaign design — phase one
 
-**Chunks 1–3 complete locally.** Campaign definitions, the separate-deck engine, chapter selection, deck editing, first-clear rewards and save/reset handling are connected. Publication and the final presentation pass remain chunk 4. Exact card IDs and difficulty configurations live in [the campaign data](materials/campaign-design.json). `source/src/campaign.ts` imports this single source and exposes immutable typed definitions. `source/src/decks.ts` validates thirty unique collectible, unlocked cards. The generated review page is a reading copy of those definitions.
+**Campaign implementation complete.** All four chunks are connected: chapter selection, character opponents, custom decks, fixed rewards, difficulty progression and persistence. The release procedure below verifies the generated package and public deployment. Exact card IDs and difficulty configurations live in [the campaign data](materials/campaign-design.json). `source/src/campaign.ts` imports this single source and exposes immutable typed definitions. `source/src/decks.ts` validates thirty unique collectible, unlocked cards. The generated review page is a reading copy of those definitions.
 
 | Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
@@ -184,7 +184,7 @@ No account or installation is required. Progress and live duels are saved locall
 
 #### Scope and status
 
-Chunk 1 defined the campaign. Chunk 2 implemented separate piles and bot profiles. Chunk 3 connects the menus, deck builder, rewards and persistence. Current source resets pre-campaign records once, preserves sound preferences, and starts ordinary duels with separate thirty-card decks. No public deployment has occurred.
+Chunk 1 defined the campaign. Chunk 2 implemented separate piles and bot profiles. Chunk 3 connects the menus, deck builder, rewards and persistence. Current source resets pre-campaign records once, preserves sound preferences, and starts ordinary duels with separate thirty-card decks. The release uses the existing public Pages deployment workflow.
 
 Campaign progression replaces the old shared-deck economy. Shared decks are retired from all ordinary play, including after completion. The scripted developer tutorial remains a separate teaching setup and grants no progression.
 
@@ -305,9 +305,17 @@ Duel save v28 records campaign chapter, skill, duel identity, separate piles and
 
 `scripts/check-campaign.mjs` runs through the existing `npm run check` entry point. It checks the real first clear, pack reload/acknowledgment, draft blocking, card swap, replay/loss handling, final chapter reward, free-play unlock, random opponent deck and responsive screens. `scripts/campaign-fixtures.mjs` prepares completed progression using the same pure first-clear transactions for existing browser suites. Board fixtures use enough Tech minions and relics to test three-choice discoveries without depending on which cards happened to enter the opening hand. Unit coverage lives in `campaign-progress.test.ts` and the revised record/save tests. Final verification passed: 102 focused unit checks, the full test suite, the campaign browser flow, performance, audio, card layout, feature screens and UI interaction checks across the final runs. TypeScript and the production build passed. Desktop and phone campaign/deck screens were inspected. No public deployment or balance ladder was run.
 
+#### Chunk 4 character banner and release
+
+Campaign opponents use their existing card portrait, character name, chapter and universe in the enemy banner. Health, mana, hand count, Hero Power, active/thinking feedback and shield/attack states remain intact. The portrait opens a read-only view of the boss card and fixed power without unlocking it. During attack selection, the portrait inspection button is removed so the same area continues to target the enemy Core. Details close through the Close button or Escape.
+
+All twenty banners were exercised at 1440×950, 1005×397 and 390×844. The campaign browser suite also checks that portrait inspection does not grant cards and does not intercept a core attack. The landing page and share metadata now describe the twenty-chapter campaign and thirty-card decks; the numeric claims validator checks the new copy against the live roster and chapter definitions.
+
+Release checks use `npm run check -- --all`, `npm run publish:pages`, the Pages workflow result and `node scripts/check-release.mjs <public-play-url>`. The production smoke test uses the actual published interface, with no source imports or development hooks: first-load reset, campaign gating, portrait/details, first victory, reward reload, deck swap, next chapter and phone layout. Test state is confined to a fresh browser context. Publishing includes the intentional old-progress reset; sound preferences are retained. No balance ladder or card-stat tuning was run.
+
 #### Implementation boundaries and acceptance
 
-Chunks 1–3 are implemented. Chunk 4 will finish the enemy banner presentation and final end-to-end release verification, then publish the campaign update. Story, unique boss rules and additional cards remain separate future work.
+All four campaign chunks are implemented. Story, unique boss rules and additional cards remain separate future work.
 
 Create focused campaign, deck validation, first-clear and save-reset checks. Verify all 600 boss-deck slots, 216 unique unlock allocations, complete universe inclusion, no future reserved card leakage, exact thirty-card setup, relic counting, per-seat draws, independent fatigue, ownership after theft, hotseat isolation, replay idempotency and developer-assisted completion.
 
@@ -317,7 +325,7 @@ Do not implement dialogue, new cards, new art, custom boss rules, multiple named
 
 <!-- CAMPAIGN-DESIGN-END -->
 
-The remaining delivery work is chunk 4: final enemy-banner presentation and release verification. Campaign difficulty has not been fine-tuned through a balance ladder. Do not run balance tuning without a separate request.
+Campaign delivery is complete; future additions are story content, unique encounters and new cards. Campaign difficulty has not been fine-tuned through a balance ladder. Do not run balance tuning without a separate request.
 
 ## Rules at a glance
 
@@ -462,7 +470,7 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 
 ## Ascension Relics
 
-The current relic pool contains **34 relics**. Relics are equipment cards: they are shuffled into the shared deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
+The current relic pool contains **34 relics**. Relics are equipment cards: they count toward a chosen thirty-card deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
 
 **The relic roster target is about 15% of the full roster.** Count relics against
 all minion cards and relics together. With the current 182 minion cards, the

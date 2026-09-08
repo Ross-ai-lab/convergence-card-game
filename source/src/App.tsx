@@ -577,12 +577,20 @@ export default function App() {
     restored ? [...restored.events, { kind: "info" as const, text: "Duel restored from your last session." }] : [openingEvent],
   );
   const [mode, setMode] = useState<GameMode>(() => restored?.mode ?? { kind: "hotseat" });
+  const campaignChapter = mode.kind === "campaign" ? CAMPAIGN_CHAPTERS[mode.chapter - 1] : undefined;
+  const campaignBoss = campaignChapter ? library[campaignChapter.bossId] : undefined;
   const vsBot = mode.kind !== "hotseat";
   // The front door. A restored duel still starts here rather than dumping a
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "heroPowers" | "campaign" | "deck" | "hotseat">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "heroPowers" | "campaign" | "deck" | "hotseat" | "opponent">(null);
+  useEffect(() => {
+    if (overlay !== "opponent") return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOverlay(null); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [overlay]);
   const [developerCheatRevealed, setDeveloperCheatRevealed] = useState(false);
   const [developerToolsOpen, setDeveloperToolsOpen] = useState(false);
   const [developerDuelActive, setDeveloperDuelActive] = useState(false);
@@ -2600,6 +2608,7 @@ export default function App() {
         >
           <HeroPlate
             enemy
+            identity={campaignBoss && campaignChapter ? { card: campaignBoss, chapter: campaignChapter.chapter, universe: campaignChapter.universe } : undefined}
             player={opponent}
             heroPower={game.heroPowers[opponentId]}
             cheatMode={opponentHasInfiniteMana}
@@ -2615,6 +2624,12 @@ export default function App() {
             onStrike={attackCore}
             onBlockedStrike={selection?.kind === "attacker" ? attackCore : undefined}
           />
+          {campaignBoss && !coreTargetable && selection?.kind !== "attacker" && <button
+            type="button" className="opponent-portrait-inspect" aria-label={`Inspect ${campaignBoss.name}`}
+            title={`View ${campaignBoss.name}'s card`}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => { event.stopPropagation(); setEnemyPowerOpen(false); setOverlay("opponent"); }}
+          />}
           <HeroPowerCard definition={heroPowerDefinition(game.heroPowers[opponentId])} />
         </div>
         <div className="system-buttons">
@@ -3131,6 +3146,15 @@ export default function App() {
         onStart={() => beginDuel({ kind: "hotseat" })} />}
       {storageError && <div className="campaign-storage-error" role="alert">Progress could not be saved. Keep this page open and retry.
         <button onClick={() => { if (persistProgress(progress) && game.phase === "gameOver") { clearSave(); setHasLiveSave(false); } }}>Retry save</button></div>}
+      {overlay === "opponent" && campaignBoss && campaignChapter && <div className="campaign-overlay" role="dialog" aria-modal="true" aria-label={`${campaignBoss.name} card details`}>
+        <section className="campaign-panel campaign-opponent-panel">
+          <header className="campaign-header"><div><span className="campaign-eyebrow">Chapter {campaignChapter.chapter} / 20 · {campaignChapter.universe}</span><h2>{campaignBoss.name}</h2></div>
+            <button onClick={() => setOverlay(null)} aria-label="Close opponent details">Close</button></header>
+          <div className="campaign-opponent-face"><CardFace card={playableFace(campaignBoss)} /></div>
+          <p><strong>{heroPowerDefinition(campaignChapter.heroPowerId)?.name}</strong> · 2 mana<br />{heroPowerDefinition(campaignChapter.heroPowerId)?.text}</p>
+          <p>{progress.completedChapters >= campaignChapter.chapter ? "Chapter cleared. Replays grant no additional rewards." : `First victory unlocks ${campaignChapter.rewardCardIds.length} cards, including this character and their universe.`}</p>
+        </section>
+      </div>}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
       {overlay === "gallery" ? <CardGallery progress={progress} fontRevision={fontRevision} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
@@ -5005,6 +5029,7 @@ function minionStates(
 
 function HeroPlate({
   player,
+  identity,
   heroPower,
   cheatMode,
   floats,
@@ -5021,6 +5046,7 @@ function HeroPlate({
   onBlockedStrike,
 }: {
   player: GameState["players"][number];
+  identity?: { card: PlayableCard; chapter: number; universe: string };
   heroPower?: HeroPowerId | null;
   cheatMode: boolean;
   floats: FloatNum[];
@@ -5041,6 +5067,7 @@ function HeroPlate({
   const wasHit = floats.some((f) => f.delta < 0);
   const classes = [
     "hero-plate",
+    identity ? "campaign-hero" : "",
     enemy ? "enemy" : "me",
     wasHit ? "hit" : "",
     // A plate cannot be both the thing you are about to hit and the thing
@@ -5065,10 +5092,11 @@ function HeroPlate({
       aria-disabled={canStrike ? undefined : true}
       aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : undefined}
     >
-      <span className="hero-sigil" title={`${player.name}'s sigil`}>
-        <HeroSigil playerId={player.id} />
+      <span className="hero-sigil" title={identity ? identity.card.name : `${player.name}'s sigil`}>
+        {identity ? <img className="boss-portrait" src={identity.card.art} alt={`${identity.card.name} portrait`} draggable={false} /> : <HeroSigil playerId={player.id} />}
       </span>
       <span className="hero-name">
+        {identity && <span className="boss-chapter" title={identity.universe}>Chapter {identity.chapter} · {identity.universe}</span>}
         <strong>
           {player.name}
           <span className="hero-think" aria-hidden="true">

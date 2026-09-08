@@ -1,6 +1,23 @@
 .duel-trigger.campaign-duel-trigger span{font-size:clamp(19px,1.9vw,27px);letter-spacing:.015em}
 .title-screen .developer-cheat-panel{top:82px}
 .deck-combat-stats{display:block;font-size:12px;color:#e4c882;margin:4px 0 6px}
+.deck-pile em{white-space:nowrap}
+.hero-plate.enemy.campaign-hero{width:370px;max-width:calc(100vw - 28px);min-width:0;gap:8px;padding:7px 10px;background:linear-gradient(125deg,#405047,#2c3930 65%,#443d2c);border-color:#c0a16b}
+.hero-plate.enemy.campaign-hero .hero-sigil{width:52px;height:52px;flex:0 0 52px;border-radius:12px;overflow:hidden;border:1px solid #e4c68b;background:#314840;box-shadow:0 0 0 2px #263b30,0 0 13px #dbb86633}
+.boss-portrait{width:100%;height:100%;object-fit:cover;object-position:50% 25%;display:block}
+.hero-plate.enemy.campaign-hero .hero-name{min-width:0;flex:1;gap:3px}
+.hero-plate.enemy.campaign-hero .hero-name strong{font-size:13px;line-height:1.08;white-space:normal;text-wrap:balance}
+.hero-plate.enemy.campaign-hero .boss-chapter{font-size:8px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e1c894;max-width:165px}
+.hero-plate.enemy.campaign-hero .hero-power-label{font-size:9px;line-height:1.1}
+.hero-plate.enemy.campaign-hero.targetable{border-color:#ff806d;box-shadow:0 0 0 2px #ef6b5570,0 0 22px #ef6b5580}
+.hero-plate.enemy.campaign-hero.active:not(.targetable){border-color:#ead093}
+.hero-plate.enemy.campaign-hero.is-shielded:not(.targetable){border-color:#8fe3ff}
+.opponent-portrait-inspect{position:absolute;z-index:6;left:12px;top:9px;width:52px;height:52px;min-height:0;padding:0;background:transparent;border:0;border-radius:12px;cursor:zoom-in}
+.opponent-portrait-inspect:hover{background:#eed58c14;transform:none;box-shadow:inset 0 0 0 2px #e6c887}
+.opponent-portrait-inspect:focus-visible{outline:2px solid #f4d388;outline-offset:2px}
+.campaign-opponent-panel{max-width:510px;text-align:center}.campaign-opponent-panel .campaign-header{text-align:left}.campaign-opponent-panel p{font-size:13px;line-height:1.45}.campaign-opponent-face{width:230px;height:322px;margin:20px auto;position:relative}.campaign-opponent-face .card-face{width:100%;height:100%}
+@media(max-width:680px){.hero-plate.enemy.campaign-hero{width:min(350px,calc(100vw - 28px));padding:6px 8px;gap:6px}.hero-plate.enemy.campaign-hero .hero-sigil{width:46px;height:46px;flex-basis:46px}.hero-plate.enemy.campaign-hero .hero-name strong{font-size:12px}.hero-plate.enemy.campaign-hero .boss-chapter{max-width:140px;font-size:7px}.opponent-portrait-inspect{left:10px;top:8px;width:46px;height:46px}.campaign-opponent-face{width:200px;height:280px}}
+@media(max-height:520px) and (min-width:681px){.campaign-opponent-panel{max-width:760px;display:grid;grid-template-columns:190px 1fr;gap:12px 24px}.campaign-opponent-panel .campaign-header{grid-column:2;grid-row:1}.campaign-opponent-face{width:180px;height:252px;margin:0;grid-column:1;grid-row:1/4}.campaign-opponent-panel p{margin:0;text-align:left}}
 .deck-pile .enemy-deck-remaining{position:absolute;right:-4px;top:-8px;padding:2px 6px;background:#352f25;border:1px solid #bd9363;color:#ecd6b8;border-radius:12px;font-size:10px;white-space:nowrap}
 .campaign-overlay{position:fixed;inset:0;z-index:160;display:grid;place-items:center;padding:24px;background:#193431f2;color:#f5e7cb;font-family:inherit}
 .campaign-panel{width:min(1160px,100%);max-height:calc(100dvh - 48px);overflow-y:auto;background:#29413a;border:1px solid #ad925c;border-radius:18px;padding:24px;box-shadow:0 15px 80px #172c2d99}

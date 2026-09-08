@@ -371,6 +371,7 @@ for (const [index, relic] of relics.entries()) {
  * which number in which sentence is wrong rather than "a regex did not match".
  */
 const basicCards = cards.filter((card) => card.origin.trim() === "Basic").length;
+const campaign = JSON.parse(fs.readFileSync(path.join(projectRoot, "..", "materials", "campaign-design.json"), "utf8"));
 const COUNT_CLAIMS = [
   {
     file: ["..", "index.html"],
@@ -381,38 +382,38 @@ const COUNT_CLAIMS = [
   {
     file: ["..", "index.html"],
     what: "landing-page hero line",
-    pattern: /(\d+) minions\. (\d+) relics\./,
-    expect: () => [cards.length, relics.length],
+    pattern: /(\d+) chapters\. (\d+) cards\./,
+    expect: () => [campaign.chapters.length, cards.length + relics.length],
   },
   {
     file: ["index.html"],
     what: "game <head> description",
-    pattern: /(\d+) worlds and (\d+) relics, pulled into one arena/,
-    expect: () => [cards.length, relics.length],
+    pattern: /(\d+) campaign chapters, (\d+) collectible cards and custom (\d+)-card decks/,
+    expect: () => [campaign.chapters.length, cards.length + relics.length, campaign.starterCardIds.length],
   },
   {
     file: ["index.html"],
     what: "game og:description",
-    pattern: /(\d+) worlds and (\d+) relics in one arena/,
-    expect: () => [cards.length, relics.length],
+    pattern: /(\d+) chapters\. (\d+) cards\. Build your own (\d+)-card deck/,
+    expect: () => [campaign.chapters.length, cards.length + relics.length, campaign.starterCardIds.length],
   },
   {
     file: ["..", "README.md"],
     what: "README opening paragraph",
-    pattern: /where (\d+) named characters and forces from fiction collide alongside ten Basic reference cards/,
-    expect: () => [cards.length - basicCards],
+    pattern: /with (\d+) named character cards, (\d+) Basic cards and (\d+) relics/,
+    expect: () => [cards.length - basicCards, basicCards, relics.length],
   },
   {
     file: ["..", "README.md"],
-    what: "README roster sentence",
-    pattern: /\*\*(\d+) character cards, (\d+) Basic reference cards, and (\d+) Ascension Relics\*\*, (\d+) in all/,
-    expect: () => [cards.length - basicCards, basicCards, relics.length, cards.length + relics.length],
+    what: "README campaign allocation",
+    pattern: /Total: (\d+) starters \+ (\d+) rewards = all (\d+) cards/,
+    expect: () => [campaign.starterCardIds.length, campaign.chapters.flatMap((chapter) => chapter.rewardCardIds).length, cards.length + relics.length],
   },
   {
     file: ["..", "README.md"],
-    what: "README card-data sentence",
-    pattern: /contain (\d+) named character cards plus (\d+) Basic reference cards, (\d+) card definitions in total/,
-    expect: () => [cards.length - basicCards, basicCards, cards.length],
+    what: "README deck size",
+    pattern: /separate (\d+)-card decks/,
+    expect: () => [campaign.starterCardIds.length],
   },
 ];
 
