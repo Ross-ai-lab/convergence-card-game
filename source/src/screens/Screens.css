@@ -1341,10 +1341,6 @@
   pointer-events: auto;
 }
 
-.continue-duel:hover {
-  transform: translate(-50%, -50%) translateY(-3px);
-}
-
 @media (min-width: 681px) and (max-width: 1600px) {
   .continue-duel {
     top: 68%;

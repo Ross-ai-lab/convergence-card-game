@@ -600,14 +600,14 @@ export default function App() {
   const [pack, setPack] = useState<string[] | null>(() => initialProgress.pendingRewards.length ? initialProgress.pendingRewards : null);
   const [storageError, setStorageError] = useState(false);
   const [builderSeat, setBuilderSeat] = useState<0 | 1>(0);
-  const [builderReturn, setBuilderReturn] = useState<"campaign" | "hotseat">("campaign");
+  const [builderReturn, setBuilderReturn] = useState<"title" | "campaign" | "hotseat">("title");
   const selectedHeroPower = progress.selectedHeroPower;
   const botWinCount = botWins(progress);
   function persistProgress(next: Progress) {
     setProgress(next); const saved = saveProgress(next); setStorageError(!saved); return saved;
   }
   function setSelectedHeroPower(power: HeroPowerId) { persistProgress(selectHeroPower(progress, power)); }
-  function openDeck(seat: 0 | 1 = 0, back: "campaign" | "hotseat" = "campaign") {
+  function openDeck(seat: 0 | 1 = 0, back: "title" | "campaign" | "hotseat" = "title") {
     setBuilderSeat(seat); setBuilderReturn(back); setOverlay("deck");
   }
   function closePack() {
@@ -1589,7 +1589,10 @@ export default function App() {
   function beginDuel(next: GameMode, options: { testCardId?: string } = {}) {
     if (next.kind === "campaign" && !canPlayChapter(progress, next.chapter)) return;
     if (next.kind === "bot" && !campaignComplete(progress) && !options.testCardId) { setOverlay("campaign"); return; }
-    if (!options.testCardId && !validateDeck(progress.playerDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) { openDeck(); return; }
+    if (!options.testCardId && !validateDeck(progress.playerDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) {
+      openDeck(0, next.kind === "campaign" ? "campaign" : next.kind === "hotseat" ? "hotseat" : "title");
+      return;
+    }
     if (next.kind === "hotseat" && !validateDeck(progress.hotseatDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) { openDeck(1, "hotseat"); return; }
     const seed = createDuelSeed();
     const nextGame = prepareDuel(next, seed, Boolean(options.testCardId));
@@ -3138,7 +3141,7 @@ export default function App() {
       {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)}
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
       {overlay === "deck" && <DeckBuilder progress={progress} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
-        onClose={() => setOverlay(builderReturn)} />}
+        onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}
       {storageError && <div className="campaign-storage-error" role="alert">Progress could not be saved. Keep this page open and retry.

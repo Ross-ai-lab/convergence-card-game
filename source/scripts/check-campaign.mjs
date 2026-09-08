@@ -75,6 +75,7 @@ try {
   await page.screenshot({ path: '../.preview/campaign/starter-mobile.png' });
   await page.setViewportSize({ width: 1440, height: 950 });
   await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.locator('.duel-trigger').click();
   await page.screenshot({ path: '../.preview/campaign/chapters.png' });
   await page.getByRole('button', { name: 'Play chapter 1', exact: true }).click(); await board();
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v29')));
@@ -95,7 +96,12 @@ try {
   const healthBefore = Number(await page.locator('.campaign-hero .health-gem').textContent());
   await page.locator('.campaign-hero .boss-portrait').click();
   assert(Number(await page.locator('.campaign-hero .health-gem').textContent()) < healthBefore);
-  await page.reload(); await page.locator('.title-screen').waitFor(); await page.keyboard.type('Ross'); await page.locator('.continue-duel').click();
+  await page.reload(); await page.locator('.title-screen').waitFor(); await page.keyboard.type('Ross'); await page.locator('.continue-duel').waitFor();
+  const continueBefore = await page.locator('.continue-duel').boundingBox();
+  await page.locator('.continue-duel').hover(); await page.waitForTimeout(220);
+  const continueAfter = await page.locator('.continue-duel').boundingBox();
+  assert(continueBefore && continueAfter && Math.abs(continueAfter.x - continueBefore.x) < 0.25 && Math.abs(continueAfter.y - continueBefore.y) < 0.25);
+  await page.locator('.continue-duel').click();
   assert.equal(await page.locator('.mulligan-panel').count(), 0);
   await finish();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('convergence.progress.v3')).completedChapters === 1);
@@ -115,6 +121,8 @@ try {
   await page.getByRole('button', { name: 'Remove John Wick', exact: true }).click();
   assert.equal((await progress()).playerDeck.length, 29);
   await page.getByRole('button', { name: 'Done', exact: true }).click();
+  assert.equal(await page.locator('.title-screen').count(), 1);
+  assert.equal(await page.locator('.campaign-chapter-panel').count(), 0);
   assert.equal(await page.locator('.campaign-chapter button:not([disabled])').count(), 0);
   await page.reload(); assert.equal((await progress()).playerDeck.length, 29);
   await page.locator('.title-screen').waitFor(); await page.keyboard.type('Ross');
@@ -128,6 +136,7 @@ try {
   }).every((img) => img.complete && img.naturalWidth > 0));
   await page.screenshot({ path: '../.preview/campaign/deck-editor.png' });
   await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.locator('.duel-trigger').click();
   await page.locator('[data-chapter="1"] button').click(); await board(); await finish();
   assert.equal((await progress()).unlockedIds.length, 39); assert.equal((await progress()).completedChapters, 1);
   assert.equal(await page.locator('.pack-stage').count(), 0);
