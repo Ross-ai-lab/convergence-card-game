@@ -48,6 +48,16 @@ try {
   assert.equal(await page.locator('.campaign-chapter button:not([disabled])').count(), 1);
   const lockedChapterCard = page.locator('[data-chapter="1"]');
   const lockedChapterText = await lockedChapterCard.textContent();
+  assert.equal(await page.locator('.campaign-chapter-panel > .campaign-header .campaign-eyebrow').count(), 0);
+  assert.equal(await page.locator('.campaign-chapter-panel .campaign-close').textContent(), '×');
+  const panelMetrics = await page.locator('.campaign-chapter-panel').evaluate((el) => ({
+    overflow: getComputedStyle(el).overflowY,
+    clientHeight: el.clientHeight,
+    scrollHeight: el.scrollHeight,
+  }));
+  assert.equal(panelMetrics.overflow, 'hidden');
+  assert.equal(panelMetrics.scrollHeight, panelMetrics.clientHeight);
+  assert.equal(await page.locator('.campaign-toolbar p').textContent(), 'Defeat each challenger to claim their universe and advance.');
   assert(!lockedChapterText.includes('Tech fortifications'));
   assert(!lockedChapterText.includes('Recruit'));
   assert(!lockedChapterText.includes('first-win'));

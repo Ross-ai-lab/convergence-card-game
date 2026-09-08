@@ -1324,9 +1324,10 @@
 
 .continue-duel {
   position: absolute;
-  top: clamp(16px, 3vh, 30px);
-  left: clamp(14px, 2.4vw, 34px);
+  top: 74.8%;
+  left: 50%;
   z-index: 6;
+  transform: translate(-50%, -50%);
   padding: 10px 16px;
   border: 1px solid rgba(240, 199, 103, 0.64);
   border-radius: 999px;
@@ -1338,6 +1339,16 @@
   text-transform: uppercase;
   box-shadow: 0 8px 24px rgba(4, 1, 10, 0.42);
   pointer-events: auto;
+}
+
+.continue-duel:hover {
+  transform: translate(-50%, -50%) translateY(-3px);
+}
+
+@media (min-width: 681px) and (max-width: 1600px) {
+  .continue-duel {
+    top: 68%;
+  }
 }
 
 .duel-orbit {
