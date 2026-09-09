@@ -139,6 +139,7 @@ try {
   assert(await page.locator('.gallery-detail-panel').isVisible(), 'Deck inspection works independently of collection filters');
   await page.getByRole('button', { name: 'Close Star Chart', exact: true }).click();
   await page.getByLabel('Filter by unlocked or locked').selectOption('unlocked');
+  await page.locator('.gallery-cell').first().locator('.card-face').waitFor({ state: 'visible' });
   await page.waitForFunction(() => [...document.querySelectorAll('.gallery-deck-row img')].filter((img) => {
     const rect = img.getBoundingClientRect(); return rect.top >= 0 && rect.bottom <= innerHeight;
   }).every((img) => img.complete && img.naturalWidth > 0));
