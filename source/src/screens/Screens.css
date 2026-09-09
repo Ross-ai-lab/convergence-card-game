@@ -1324,7 +1324,7 @@
 
 .continue-duel {
   position: absolute;
-  top: 74.8%;
+  top: 76.2%;
   left: 50%;
   z-index: 6;
   transform: translate(-50%, -50%);
@@ -1348,6 +1348,12 @@
 @media (min-width: 681px) and (max-width: 1600px) {
   .continue-duel {
     top: 68%;
+  }
+}
+
+@media (min-width: 681px) and (max-width: 1600px) and (max-height: 800px) {
+  .continue-duel {
+    top: 76.2%;
   }
 }
 
