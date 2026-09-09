@@ -91,7 +91,7 @@ import { createCampaignDuel } from "./campaign-duel";
 import { campaignComplete, canPlayChapter, acknowledgeRewards, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
 import { randomDeck, validateDeck } from "./decks";
 import { remainingDeckCount } from "./engine/draw-piles";
-import { CampaignScreen, DeckBuilder, HotseatSetup } from "./screens/CampaignScreens";
+import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
@@ -3125,7 +3125,6 @@ export default function App() {
           onSettings={() => setOverlay("settings")}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
-          onGallery={() => setOverlay("gallery")}
           onHeroPowers={() => setOverlay("heroPowers")}
           onTutorial={beginTutorial}
           onDeveloperTools={() => setDeveloperToolsOpen(true)}
@@ -3140,7 +3139,7 @@ export default function App() {
 
       {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)}
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
-      {overlay === "deck" && <DeckBuilder progress={progress} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+      {overlay === "deck" && <CardGallery progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}
@@ -3156,7 +3155,7 @@ export default function App() {
         </section>
       </div>}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "gallery" ? <CardGallery progress={progress} fontRevision={fontRevision} onClose={() => setOverlay(null)} /> : null}
+      {overlay === "gallery" ? <CardGallery progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
       {overlay === "heroPowers" ? (
         <HeroPowersScreen
@@ -3769,7 +3768,12 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
 type UnlockFilter = "unlocked" | "locked";
 type GalleryEntry = { key: string; card: PlayableCard; face: CardFaceModel };
 
-function CardGallery({ progress, fontRevision, onClose }: { progress: Progress; fontRevision: number; onClose: () => void }) {
+function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
+  progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onClose: () => void;
+}) {
+  const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
+  const readOnly = !progress.completedChapters && !progress.developerCheat;
+  const deckIds = new Set(deck);
   const [query, setQuery] = useState("");
   const [help, setHelp] = useState(false);
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
@@ -3905,7 +3909,7 @@ function CardGallery({ progress, fontRevision, onClose }: { progress: Progress; 
     });
   }, [entries, filters, status, collection, unlockRank]);
 
-  const selectedEntry = selectedEntryKey ? sorted.find((entry) => entry.key === selectedEntryKey) ?? null : null;
+  const selectedEntry = selectedEntryKey ? allEntries.find((entry) => entry.key === selectedEntryKey) ?? null : null;
 
   useEffect(() => {
     if (selectedEntryKey && !selectedEntry) setSelectedEntryKey(null);
@@ -3950,9 +3954,9 @@ function CardGallery({ progress, fontRevision, onClose }: { progress: Progress; 
           specificity as anything here can reach, and it is defined in a stylesheet
           that loads later, so it wins on source order and squeezes the grid to
           three columns. Leaving it off means nothing competes. */}
-      <section className="screen-panel gallery-panel" role="dialog" aria-label="Card gallery">
+      <section className="screen-panel gallery-panel" role="dialog" aria-label="My Deck" aria-modal="true">
         <header className="screen-panel-top">
-          <h2>Card gallery</h2>
+          <h2>My Deck</h2>
           <input
             className="gallery-search"
             type="search"
@@ -4006,10 +4010,12 @@ function CardGallery({ progress, fontRevision, onClose }: { progress: Progress; 
           </button>
         </header>
         {help ? <UnlockHelp progress={progress} onClose={() => setHelp(false)} /> : null}
+        <div className="gallery-workspace">
         <div className="screen-panel-body gallery-body" ref={bodyRef}>
           {sorted.length ? (
             <div className="gallery-grid">
               {sorted.map((entry) => (
+                <div className="gallery-deck-card" key={entry.key} data-card-id={entry.key}>
                 <GalleryCell
                   key={entry.key}
                   face={entry.face}
@@ -4027,11 +4033,42 @@ function CardGallery({ progress, fontRevision, onClose }: { progress: Progress; 
                           : "unseen"
                   }
                 />
+                {collection.unlocked.has(entry.key) && <button type="button" className={`gallery-deck-action${deckIds.has(entry.key) ? " is-selected" : ""}`}
+                  disabled={readOnly || (!deckIds.has(entry.key) && deck.length >= 30)}
+                  aria-label={`${deckIds.has(entry.key) ? "Remove" : "Add"} ${entry.face.name}`}
+                  onClick={() => onChange(deckIds.has(entry.key) ? deck.filter((id) => id !== entry.key) : [...deck, entry.key])}>
+                  {deckIds.has(entry.key) ? "✓ In deck" : "+ Add to deck"}
+                </button>}
+                </div>
               ))}
             </div>
           ) : (
             <p className="gallery-empty">Nothing matches “{query}”.</p>
           )}
+        </div>
+        <aside className="gallery-deck" aria-label={seat === 1 ? "Player Two deck" : "Current deck"}>
+          <header className="gallery-deck-heading"><h3>{seat === 1 ? "Player Two" : "My Deck"}</h3>
+            <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
+          <p className="gallery-deck-hint">{readOnly ? "Win chapter one to unlock deck editing." : deck.length === 30 ? "Remove a card, then add its replacement." : `Choose ${30 - deck.length} more ${30 - deck.length === 1 ? "card" : "cards"}.`}</p>
+          <div className="gallery-deck-list">{allEntries.filter((entry) => deckIds.has(entry.key))
+            .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
+            .map((entry) => <div className="gallery-deck-row" key={entry.key} data-card-id={entry.key}>
+              <img src={entry.card.art} alt="" loading="lazy" />
+              <button className="gallery-deck-inspect" onClick={() => { setSelectedEntryKey(entry.key); }} aria-label={`Inspect ${entry.face.name}`}>
+                <span className="gallery-deck-mana">{entry.face.cost}</span><span className="gallery-deck-name">{entry.face.name}</span>
+              </button>
+              <button className="gallery-deck-remove" disabled={readOnly} onClick={() => onChange(deck.filter((id) => id !== entry.key))}
+                aria-label={`Remove ${entry.face.name} from deck`} title={`Remove ${entry.face.name}`}>−</button>
+            </div>)}</div>
+          <footer className="gallery-deck-footer">
+            <details><summary>Mana curve</summary><div className="gallery-deck-curve" aria-label="Deck mana curve">{Array.from({ length: 10 }, (_, i) => {
+              const count = allEntries.filter((entry) => deckIds.has(entry.key) && entry.face.cost === i + 1).length;
+              return <div key={i}><span style={{ height: `${Math.max(2, count * 6)}px` }}>{count}</span><small>{i + 1}</small></div>;
+            })}</div></details>
+            {!readOnly && <button onClick={() => onChange([...CAMPAIGN_STARTER_DECK])}>Restore starter</button>}
+            <small>{readOnly ? "Starter deck · 30 cards" : "Changes save automatically"}</small>
+          </footer>
+        </aside>
         </div>
       </section>
       {selectedEntry ? (

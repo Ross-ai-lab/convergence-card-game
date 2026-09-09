@@ -1,9 +1,7 @@
-import { useMemo, useState } from "react";
 import { cards, relics } from "../data/cards";
-import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK } from "../campaign";
+import { CAMPAIGN_CHAPTERS } from "../campaign";
 import { canPlayChapter, campaignComplete, type Progress } from "../progress";
 import { validateDeck } from "../decks";
-import { isMinionCard, rarityName } from "../engine/types";
 import "./CampaignScreens.css";
 
 const roster = [...cards, ...relics];
@@ -33,51 +31,6 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
             {!available ? "Locked" : cleared ? "Replay · no rewards" : `Play chapter ${chapter.chapter}`}</button>
         </article>;
       })}</div>
-    </section>
-  </div>;
-}
-
-export function DeckBuilder({ progress, seat = 0, onChange, onClose }: {
-  progress: Progress; seat?: 0 | 1; onChange: (ids: string[]) => void; onClose: () => void;
-}) {
-  const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
-  const readOnly = !progress.completedChapters && !progress.developerCheat;
-  const [search, setSearch] = useState(""); const [camp, setCamp] = useState("");
-  const [alignment, setAlignment] = useState(""); const [cost, setCost] = useState("");
-  const [kind, setKind] = useState(""); const [selectedOnly, setSelectedOnly] = useState(false);
-  const selected = new Set(deck); const unlocked = new Set(progress.unlockedIds);
-  const shown = roster.filter((card) => unlocked.has(card.id) && (!selectedOnly || selected.has(card.id)) &&
-    (!search || `${card.name} ${card.origin} ${card.effect}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!cost || card.cost === Number(cost)) && (!kind || card.kind === kind) &&
-    (!camp || (isMinionCard(card) && (card.camp === camp || card.camp === "ALL"))) &&
-    (!alignment || (isMinionCard(card) && card.alignment === alignment)))
-    .sort((a, b) => (a.cost ?? 0) - (b.cost ?? 0) || a.name.localeCompare(b.name));
-  const curve = useMemo(() => Array.from({ length: 10 }, (_, i) => deck.filter((id) => cardById.get(id)?.cost === i + 1).length), [deck]);
-  return <div className="campaign-overlay" role="dialog" aria-modal="true" aria-label={`Player ${seat + 1} deck builder`}>
-    <section className="campaign-panel deck-builder">
-      <header className="campaign-header"><div><span className="campaign-eyebrow">YOUR COLLECTION</span><h2>{readOnly ? "Starter deck" : `Player ${seat + 1} deck`}</h2>
-        <p aria-live="polite">{deck.length} / 30 cards · {progress.unlockedIds.length} unlocked</p></div><button onClick={onClose}>Done</button></header>
-      <p className="deck-instructions">{readOnly ? "Win chapter one to earn cards you can swap into this deck." : "Remove a selected card, then choose its replacement. Changes save automatically; a duel requires exactly 30 cards."}</p>
-      <div className="deck-curve" aria-label="Deck mana curve">{curve.map((count, i) => <div key={i}>
-        <span style={{ height: `${Math.max(3, count / Math.max(3, ...curve) * 54)}px` }}>{count}</span><small>{i + 1}</small></div>)}</div>
-      <div className="deck-filters">
-        <input aria-label="Search unlocked cards" placeholder="Search cards or effects" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <select aria-label="Filter by mana" value={cost} onChange={(e) => setCost(e.target.value)}><option value="">All mana</option>{curve.map((_, i) => <option key={i} value={i + 1}>{i + 1} mana</option>)}</select>
-        <select aria-label="Filter by camp" value={camp} onChange={(e) => setCamp(e.target.value)}><option value="">All camps</option>{["Tech", "Nature", "Magic"].map((c) => <option key={c}>{c}</option>)}</select>
-        <select aria-label="Filter by alignment" value={alignment} onChange={(e) => setAlignment(e.target.value)}><option value="">All alignments</option>{["Good", "Evil", "Neutral"].map((a) => <option key={a}>{a}</option>)}</select>
-        <select aria-label="Filter by card type" value={kind} onChange={(e) => setKind(e.target.value)}><option value="">All types</option><option value="minion">Minions</option><option value="relic">Relics</option></select>
-        <label><input type="checkbox" checked={selectedOnly} onChange={(e) => setSelectedOnly(e.target.checked)} />Selected only</label>
-        {!readOnly && <button onClick={() => onChange([...CAMPAIGN_STARTER_DECK])}>Restore starter</button>}
-      </div>
-      <p className="deck-result-count">{shown.length} cards shown</p>
-      <div className="deck-cards">{shown.map((card) => <article className={`deck-card${selected.has(card.id) ? " selected" : ""}`} key={card.id} data-card-id={card.id}>
-        <img src={card.art} alt="" loading="lazy" /><div><span className="campaign-eyebrow">{card.cost} mana · {isMinionCard(card) ? `${card.camp} · ${card.alignment}` : "Relic"}</span>
-          <h3>{card.name}</h3>{isMinionCard(card) && <span className="deck-combat-stats">{card.atk} ATK · {card.hp} HP · {rarityName(card.rarity)}</span>}<p>{card.effect}</p></div>
-        <button disabled={readOnly || (!selected.has(card.id) && deck.length >= 30)} aria-pressed={selected.has(card.id)}
-          aria-label={`${selected.has(card.id) ? "Remove" : "Add"} ${card.name}`} onClick={() => onChange(selected.has(card.id) ? deck.filter((id) => id !== card.id) : [...deck, card.id])}>
-          {selected.has(card.id) ? (readOnly ? "In starter" : "Remove") : "Add"}</button>
-      </article>)}</div>
-      {!shown.length && <p className="campaign-warning">No unlocked cards match these filters.</p>}
     </section>
   </div>;
 }

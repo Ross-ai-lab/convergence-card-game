@@ -37,7 +37,7 @@ try{
  for(let hit=0;hit<8;hit++){const box=page.locator('.pack-box:not(.is-charged)');if(!await box.isVisible())break;const label=await box.getAttribute('aria-label');await box.click({force:true});await page.waitForFunction(label=>document.querySelector('.pack-box')?.getAttribute('aria-label')!==label,label);}
  await page.locator('.pack-collect:not([disabled])').click({timeout:25000});
  await page.locator('.deck-trigger').click();await page.getByRole('button',{name:'Remove John Wick',exact:true}).click();
- await page.getByLabel('Search unlocked cards').fill('GLaDOS');await page.getByRole('button',{name:'Add GLaDOS',exact:true}).click();
+ await page.getByLabel('Search the gallery').fill('GLaDOS');await page.getByRole('button',{name:'Add GLaDOS',exact:true}).click();
  assert.equal((await progress()).playerDeck.length,30);assert((await progress()).playerDeck.includes('c104'));
  await page.reload();assert((await progress()).playerDeck.includes('c104'));assert.equal((await progress()).pendingRewards.length,0);
  await page.locator('.duel-trigger').click();assert(await page.getByRole('button',{name:'Play chapter 2',exact:true}).isEnabled());

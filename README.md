@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 206,931 bytes, roughly 52k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~48% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 209,347 bytes, roughly 52k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~48% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -142,6 +142,7 @@ not list one as outstanding work.
 Changes after this point are maintenance or things the owner asks for, not a
 march toward a finish line that has already been crossed.
 
+
 ## What Convergence is
 
 Convergence is a browser card duel with 172 named character cards, 10 Basic cards and 34 relics. The current source implements a twenty-chapter campaign and separate 30-card decks. Each player starts with the same thirty unlocked cards, exactly three at each mana cost. Campaign first clears add fixed cards to the collection, and the player chooses what to swap into their deck.
@@ -151,6 +152,7 @@ The campaign is the only ordinary solo mode until all twenty chapters are cleare
 No account or installation is required. Progress and live duels are saved locally in the browser. The public site counts visits in aggregate.
 
 **Campaign release:** all four implementation chunks are complete. The public [play page](https://ross-ai-lab.github.io/convergence-card-game/play/) is the owner's play location. The local `play/` folder is the generated release artifact and must match the production build exactly before publication.
+
 
 ## What the game still needs
 
@@ -212,7 +214,7 @@ A starting deck contains exactly thirty different unlocked cards, with one copy 
 
 The deck builder opens after the first chapter win. Before that, the starter deck is visible but read-only: there are no spare cards to exchange. Rewards enter the collection, never append themselves to the active deck. The player explicitly swaps cards before the next duel.
 
-One personal deck is saved, plus the second hotseat seat's deck. There are no named deck presets. The builder provides selected-card count, cost curve, search, cost/camp/alignment/type filters, and clear selected/available states. An incomplete draft may be saved, but Start Duel requires thirty valid unique cards. Provide a deliberate Restore Starter action.
+One personal deck is saved, plus the second hotseat seat's deck. There are no named deck presets. The builder reuses the card gallery faces and search, mana, rarity, camp, alignment and collection filters. A separately scrolling right sidebar lists the saved deck by mana and name, with artwork, inspect and remove controls. Gallery cards have explicit add/remove controls beneath their unchanged faces. The sidebar includes the thirty-card count, expandable mana curve and Restore Starter. On phones the compact deck list sits above the gallery to keep card rules readable. An incomplete draft may be saved, but Start Duel requires thirty valid unique cards. Provide a deliberate Restore Starter action.
 
 Editing is available between duels. An ongoing or resumed duel keeps the deck snapshot it started with. The title screen opens My Deck, and completing chapter twenty also reveals Recruit, Veteran and Ascendant.
 
@@ -327,6 +329,7 @@ Dialogue, new cards, new art, custom boss rules, multiple named deck presets, mu
 
 Campaign delivery is complete; future additions are story content, unique encounters and new cards. Campaign difficulty has not been fine-tuned through a balance ladder. Do not run balance tuning without a separate request.
 
+
 ## Rules at a glance
 
 - Both cores begin at **75 health**. Reduce the opposing core to zero to win.
@@ -343,6 +346,7 @@ Campaign delivery is complete; future additions are story content, unique encoun
 - When a player's own deck and bottom-deck cards are empty, drawing causes escalating fatigue damage: 1, then 2, then 3, and so on.
 
 Nothing damages a core automatically just because a turn starts; core damage comes from a minion attacking it or from an effect that explicitly says it damages a core.
+
 
 ## Controls and modes
 
@@ -384,7 +388,7 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 - **Restart** begins a fresh duel.
 - **How to play** opens the in-duel rules guide.
 - **Settings** contains sound mute/volume controls and returns to the title screen. Campaign difficulty is fixed by chapter; free-play difficulty is chosen on the title screen after campaign completion.
-- **Cards** opens the card gallery from the title screen.
+- **My Deck** opens the combined card gallery and deck editor from the title screen.
 - **Cheat Off/On** is a separate toolbar sandbox switch. When enabled, mana is infinite; it is intended for testing and experimentation, not normal balance.
 - **Log** is the drawer on the left edge. It prints every event of the duel, newest first.
 
@@ -396,6 +400,7 @@ duel. The tutorial is still exempt, because it is a scripted board rather than a
 player would win it once for free.
 
 The board communicates conditions visually: a wall means Taunt, a gold rim means Divine Shield, a blue-and-white rim means Invulnerable, ice means Frozen, chains across the artwork mean Chained, a grey attack gem means the minion cannot attack, and a sleeping minion shows drifting `z` glyphs.
+
 
 ## Cards and card language
 
@@ -468,6 +473,7 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 
 **Evade** is the player-facing term throughout the game. Older internal identifiers may still contain `dodge` for save or code compatibility, but new card text and documentation should say Evade.
 
+
 ## Ascension Relics
 
 The current relic pool contains **34 relics**. Relics are equipment cards: they count toward a chosen thirty-card deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
@@ -494,6 +500,7 @@ Thirty-two relics would be
 - During a duel, attached relic badges show who is carrying each relic. They are
   previews only; there is no separate relic-shelf screen.
 
+
 ## Gradual card unlocking
 
 Card unlocking is now campaign-only. The canonical chapter packs are in `materials/campaign-design.json`; `progress.ts` awards only a first clear of the next chapter. Thirty starter cards plus 186 chapter rewards cover the current 216-card roster once each. Refer to [Campaign design — phase one](#campaign-design-phase-one) for the exact chapter table and current implementation status.
@@ -501,6 +508,7 @@ Card unlocking is now campaign-only. The canonical chapter packs are in `materia
 There are no daily cards, loss rewards, draw rewards or repeat-win packs. Completing a chapter changes the collection, not the saved thirty-card deck. The player edits that deck explicitly between duels. Developer Unlock All remains an intentional bypass, but it does not mark chapters complete or reveal free-play difficulty controls.
 
 `unlocks.ts` now handles only the presentation order of a pack: rarity first, mana cost as the tie-breaker, relics last. It never decides which cards are awarded. The previous proportional/random opening-pool generator and count-as-prefix storage model have been retired.
+
 
 ## Project structure and source of truth
 
@@ -525,6 +533,7 @@ There are no daily cards, loss rewards, draw rewards or repeat-win packs. Comple
 - `source/scripts/` holds the tooling. `simulate.ts` is the balance harness: self-play, fuzzing, the dial sweep, and the difficulty ladder. `balance-gate.ts` and `balance-gate.test.ts` hold the pure pass, fail, and skip logic, with one planted failure per check. `ladder-compare.ts` is the paired ladder comparison. `source/balance.config.json` carries every threshold with the reasoning for it written alongside. The `apply-balance-pass*.mjs` files record each past pass with the measured number behind every change.
 
 The maintained game is React and TypeScript with a deterministic rules engine, DOM-rendered full card faces, Ascension Relics, persistent local saves, and a practice bot.
+
 
 ## Run and verify
 
@@ -668,9 +677,11 @@ In this project, **publish** always means make the current game change live at t
 
 For a deployable update, run `npm run publish:pages` from `source/`. That command validates the data, builds with `--base=./`, replaces the generated `source/dist/` contents in `play/`, and fails unless every published file exactly matches the generated build. After it succeeds, publish the generated copy to the public GitHub repository. GitHub Pages serves `play/` from the repository's published static site.
 
+
 ## Parallel work
 
 Multiple threads usually work on Convergence at the same time. Files, generated artifacts, tests, and documentation may shift while you are working; that is expected. Preserve changes you did not create, do not revert them, and do not stop the other threads. Re-read the current file before making an overlapping edit. A small compile or test repair is fine when necessary, but keep it behavior-neutral unless the thread that owns the change explicitly asks for a behavior change.
+
 
 ## Changing cards and effects
 
@@ -841,6 +852,7 @@ Whenever a user asks to recommend effects for a minion or recommend minions for 
 
 Printed timing must match play. For every target or choice, specify whether it selects a minion, board slot, hand card, or random legal object. Test no-valid-target, cancellation, opponent-turn, and resolution behaviour where relevant.
 
+
 ## Engine rules that must stay coherent
 
 **Five cards changed shape on 2 September 2026 in ways the engine has to keep
@@ -930,6 +942,7 @@ the mechanics behind them.
   wrong relic entirely. Typing the parameter makes that a compile error.
 
 The engine’s central contract is `applyAction(state, action, library) -> { state, events, legalActions }`. An action outside the legal-action list is rejected without changing the state. Targeting pauses the game in a target-selection state so human and bot choices follow the same route and survive saving, cloning, and undo.
+
 
 ## Interface and card faces
 
@@ -1241,6 +1254,7 @@ The final pass established these decisions:
 
 Interaction verification covered Recruit, Veteran, and Ascendant selection; the selected Duel label; playable Veteran and two-player launches; Settings open/close/return; no overflow at 390 × 844 or 1005 × 397; and a clean browser console. The implementation passed production build, automated tests, and live-site verification. The original local evidence captures were `.preview/github-pages-final-1331x848.png` and `.preview/github-pages-settings-verified.png`; `.preview/` is disposable evidence and is not published.
 
+
 ## The rarity shine
 
 **Every card above Rare carries an animated shine, and each tier's is a different KIND of thing rather than the same thing in a different colour.** Built 23 August 2026, in `source/src/App.css` under the same heading, driven by `.cf-shine` in `App.tsx`.
@@ -1366,6 +1380,7 @@ An earlier attempt named its layer `.cf-camp`, which was already the left rail's
 An unmet card in the gallery does NOT shine, and that is correct rather than a bug: the collection's own grayscale dimming sits on the whole card face and wins. The shine is for cards you have met, and for the pack, the hand and the preview, where nothing dims them.
 
 **A LOCKED card carries no shine and no camp mark at all**, and that is an explicit rule rather than a side effect. A blend-mode layer is not a colour a grayscale filter can drain, so sealed relics went on flickering with teal light while sealed characters sat dead, and the locked wall stopped reading as one wall. A locked card shows its seal and nothing else.
+
 
 ## Assets and audio
 
@@ -1621,6 +1636,7 @@ Use the tools under `materials/local-production/asset-tools/` for production reb
 [The four moment pieces](#the-four-moment-pieces-and-the-endings-the-herald-no-longer-narrates)). For audio changes, run the browser analyser check with `npm run check:audio`; a UI counter or a `musicPlaying` flag can say music is active while the browser’s audio graph is silent. Keep synthetic voices original and do not clone real actors.
 
 Do not casually regenerate approved menu, battle, or tension music. Preserve the existing loudness, loop-seam, and energy checks when replacing them.
+
 
 ## Balance, pacing, and bot
 
@@ -2081,6 +2097,7 @@ pocket room releases one minion twice" in a single run.
 
 Do not make the simulated rules, bot skill, or turn timing “10× faster” by simplifying them: that would measure a different game. Safe implementation optimisations may reuse already-computed legal actions and candidate results, and independent duels may eventually run across CPU workers if deterministic output and result ordering are preserved. The current harness applies the safe reuse optimisation; the Ascendant ladder remains the unavoidable dominant cost because it searches whole turns.
 
+
 ## Contributing
 
 Contributions are welcome through a fork and pull request. Keep each change focused, explain the player-visible result, and run the relevant checks before proposing it.
@@ -2096,6 +2113,7 @@ Contributions are welcome through a fork and pull request. Keep each change focu
 
 When changing a rule, add or update a focused test and make the card text agree with the implementation. Preserve player-selected targeting unless a card explicitly says that the target is random, positional, weakest, costliest, or otherwise automatic. Do not include generated folders, local launchers, secrets, or personal paths in a contribution.
 
+
 ## Development lessons
 
 - A card’s text and its resolution can live in different places. Update CSV, engine, and a focused test together so the card does what it says.
@@ -2110,6 +2128,7 @@ When changing a rule, add or update a focused test and make the card text agree 
 - Test asset paths under the deployment base path, and load moving card art eagerly so remounted cards do not render black.
 - Test sound with the browser’s real analyser. A playing flag is not evidence that the listener graph has audio.
 
+
 ## Included materials and links
 
 - [Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/)
@@ -2121,9 +2140,11 @@ When changing a rule, add or update a focused test and make the card text agree 
 - [Original audio-track collection](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z)
 - [Rendered card-production library](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Card-Production.7z)
 
+
 ## Fan-project notice
 
 Convergence is a non-commercial fan project made for personal play and educational experimentation. Character names, franchises, imagery, and music belong to their respective rights holders. The project is not endorsed by or affiliated with those rights holders.
+
 
 ## Sources
 

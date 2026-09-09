@@ -234,7 +234,6 @@ export function TitleScreen({
   onSettings,
   isFullscreen,
   onToggleFullscreen,
-  onGallery,
   onHeroPowers,
   onTutorial,
   onDeveloperTools,
@@ -257,7 +256,6 @@ export function TitleScreen({
   onSettings: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
-  onGallery: () => void;
   onHeroPowers: () => void;
   onTutorial: () => void;
   onDeveloperTools: () => void;
@@ -333,7 +331,6 @@ export function TitleScreen({
 
         <div className="title-links title-actions">
           {campaignCleared && <button type="button" className="campaign-trigger" onClick={onCampaign}>Campaign</button>}
-          <button type="button" className="deck-trigger" onClick={onDeck}>{completedChapters ? "My deck" : "Starter deck"}</button>
           <button
             type="button"
             className="hotseat-trigger"
@@ -351,10 +348,10 @@ export function TitleScreen({
               away behind the gallery's "?", and this is a number to notice in
               passing, not an announcement. Once the roster is complete it
               disappears rather than reading the whole roster forever. */}
-          <button type="button" className="gallery-trigger" onClick={onGallery}>
+          <button type="button" className="gallery-trigger deck-trigger" onClick={onDeck}>
             <Cards size={22} weight="fill" aria-hidden="true" />
             <span className="gallery-trigger-stack">
-              <span>Cards</span>
+              <span>My Deck</span>
               {unlocked < rosterSize ? (
                 <small className="unlock-tally">
                   {unlocked} / {rosterSize}
