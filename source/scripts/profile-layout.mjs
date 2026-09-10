@@ -2,7 +2,7 @@
 export async function checkProfileLayouts(page, geometryOf, fits, check) {
   await page.locator('.gallery-search').fill('');
   const total = Number(await page.locator('.gallery-count').textContent());
-  await page.locator('.gallery-cell').first().click();
+  await page.locator('.gallery-card-name').first().click();
   await page.locator('.gallery-detail-panel').waitFor();
   await page.evaluate(() => document.fonts.ready);
   const sizes = [[1920, 1080], [1536, 736], [1001, 700], [768, 1024], [390, 844], [360, 740]];
