@@ -5107,9 +5107,13 @@ button:disabled {
 /* Two classes deep on purpose: `.screen-panel.wide` already sets a 760px width,
    which beats a single-class selector and squeezed the grid to three columns. */
 .screen-panel.gallery-panel {
-  width: min(1480px, 96vw);
-  height: min(92vh, 1100px);
+  width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  border-radius: 0;
 }
+.screen-veil.gallery-veil { padding: 0; }
 
 .gallery-panel .screen-panel-top {
   gap: 12px;
@@ -5151,13 +5155,17 @@ button:disabled {
 }
 
 /* Collection faces and the saved deck share one screen, with independent scrolling. */
-.gallery-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 264px; flex: 1; min-height: 0; overflow: hidden; }
-.gallery-workspace .gallery-body { min-height: 0; padding: 16px 18px; }
+.gallery-workspace { display: grid; grid-template-columns: minmax(0, 1fr) clamp(280px, 20vw, 380px); flex: 1; min-height: 0; overflow: hidden; }
+.gallery-workspace .gallery-body { min-height: 0; padding: 8px; }
 .gallery-deck-card { min-width: 0; }
-.gallery-deck-action { width: 100%; margin-top: 6px; padding: 5px 8px; border: 1px solid #75613c; border-radius: 5px; background: #211b15; color: #e8d6af; font: inherit; font-size: 12px; cursor: pointer; }
-.gallery-deck-action.is-selected { color: #f4cf75; background: #342919; border-color: #a17c38; }
-.gallery-deck-action:disabled { cursor: default; }
-.gallery-deck-action:disabled:not(.is-selected) { opacity: .45; }
+.gallery-cell .gallery-card-add, .gallery-cell .gallery-card-name { position: absolute; margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; border-radius: 0; opacity: 1; transform: none; }
+.gallery-cell .gallery-card-add { inset: 0; z-index: 4; width: 100%; height: 100%; cursor: copy; border-radius: 12px; }
+.gallery-cell .gallery-card-add:disabled { cursor: default; }
+.gallery-cell .gallery-card-name { left: 5%; top: 0; width: 82%; height: 6%; z-index: 5; cursor: pointer; }
+.gallery-cell .gallery-card-add:not(:disabled):hover { box-shadow: inset 0 0 0 2px #e7c67c; }
+.gallery-cell.is-in-deck .gallery-card-add { box-shadow: inset 0 0 0 2px #b68d44; }
+.gallery-cell .gallery-card-name:hover { background: #ffdc7b22; }
+.gallery-cell .gallery-card-add:focus-visible, .gallery-cell .gallery-card-name:focus-visible { outline: 2px solid #ffe5a2; outline-offset: -3px; }
 .gallery-deck { min-height: 0; display: flex; flex-direction: column; background: linear-gradient(160deg, #261e18, #120f12 70%); border-left: 1px solid #74603b; padding: 14px 10px 10px; }
 .gallery-deck-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px; }
 .gallery-deck-heading h3 { margin: 0; color: #f0cc75; font-size: 20px; }
@@ -5165,7 +5173,8 @@ button:disabled {
 .gallery-deck-heading small { font-size: 13px; color: #b7a887; }
 .gallery-deck-heading .is-incomplete { color: #ffb076; }
 .gallery-deck-hint { margin: 8px 4px 12px; font-size: 11px; line-height: 1.5; color: #c2b39b; }
-.gallery-deck-list { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #8b7149 #171214; padding-right: 4px; }
+.gallery-deck-list { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
+.gallery-workspace .gallery-body, .gallery-deck-list { scrollbar-width: thin; scrollbar-color: #8b7149 #171214; }
 .gallery-deck-row { position: relative; isolation: isolate; display: flex; min-height: 35px; margin-bottom: 4px; overflow: hidden; border: 1px solid #746047; border-radius: 4px; background: #302820; }
 .gallery-deck-row > img { position: absolute; z-index: -2; right: 0; top: 0; width: 65%; height: 100%; object-fit: cover; object-position: center 30%; }
 .gallery-deck-row::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #19151b 14%, #19151bd9 46%, #19151b44 80%, #19151b99); }

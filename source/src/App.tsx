@@ -4023,6 +4023,9 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
                   locked={!collection.unlocked.has(entry.key)}
                   entryKey={entry.key}
                   onOpen={openEntry}
+                  inDeck={deckIds.has(entry.key)}
+                  canAdd={!readOnly && !deckIds.has(entry.key) && deck.length < 30 && collection.unlocked.has(entry.key)}
+                  onAdd={() => onChange([...deck, entry.key])}
                   mark={
                     collection.wonWith.has(entry.key)
                       ? "won"
@@ -4033,12 +4036,6 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
                           : "unseen"
                   }
                 />
-                {collection.unlocked.has(entry.key) && <button type="button" className={`gallery-deck-action${deckIds.has(entry.key) ? " is-selected" : ""}`}
-                  disabled={readOnly || (!deckIds.has(entry.key) && deck.length >= 30)}
-                  aria-label={`${deckIds.has(entry.key) ? "Remove" : "Add"} ${entry.face.name}`}
-                  onClick={() => onChange(deckIds.has(entry.key) ? deck.filter((id) => id !== entry.key) : [...deck, entry.key])}>
-                  {deckIds.has(entry.key) ? "✓ In deck" : "+ Add to deck"}
-                </button>}
                 </div>
               ))}
             </div>
@@ -4365,6 +4362,9 @@ const GalleryCell = memo(function GalleryCell({
   mark,
   locked = false,
   onOpen,
+  inDeck,
+  canAdd,
+  onAdd,
 }: {
   entryKey: string;
   face: CardFaceModel;
@@ -4373,27 +4373,25 @@ const GalleryCell = memo(function GalleryCell({
   /** Not yet unlocked. Shown, never hidden — see `UnlockHelp`. */
   locked?: boolean;
   onOpen: (entryKey: string) => void;
+  inDeck: boolean;
+  canAdd: boolean;
+  onAdd: () => void;
 }) {
   const { ref, near, onFocus } = useGalleryVisibility();
   return (
     <div
       ref={ref}
       onFocus={onFocus}
-      className={locked ? `gallery-cell mark-${mark} is-locked` : `gallery-cell mark-${mark}`}
+      className={`gallery-cell mark-${mark}${locked ? " is-locked" : ""}${inDeck ? " is-in-deck" : ""}`}
       data-mark={mark}
-      title={locked ? "Locked — not yet in your collection" : COLLECTION_TITLE[mark]}
-      role="button"
-      tabIndex={0}
-      aria-label={locked ? `${face.name}, locked card` : `Open Star Chart for ${face.name}`}
-      onClick={() => onOpen(entryKey)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen(entryKey);
-        }
-      }}
+      title={COLLECTION_TITLE[mark]}
     >
       {near ? locked ? <SealedFace card={face} /> : <CardFace card={face} /> : null}
+      <button type="button" className="gallery-card-add" aria-label={`Add ${face.name}`} aria-pressed={inDeck}
+        disabled={!canAdd} onClick={onAdd}
+        title={locked ? "Locked card" : inDeck ? "Already in your deck" : canAdd ? "Click to add to your deck" : "Deck editing unavailable or deck full"} />
+      <button type="button" className="gallery-card-name" aria-label={`Open Star Chart for ${face.name}`}
+        title={`Open ${face.name} lore`} onClick={() => onOpen(entryKey)} />
       {near && locked ? (
         <span className="gallery-lock" aria-hidden="true">
           {/* An ANTIQUE ORNATE padlock, drawn rather than fetched because it is

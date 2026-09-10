@@ -69,10 +69,20 @@ try {
   assert.equal(await page.locator('.deck-trigger').count(), 1, 'One merged title entry');
   assert.deepEqual(await page.locator('.gallery-deck-curve span').allTextContents(), Array(10).fill('3'));
   assert.equal(await page.locator('.gallery-deck-remove:not([disabled])').count(), 0);
+  assert.equal(await page.locator('.gallery-deck-action').count(), 0, 'No action rows beneath cards');
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: 950 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    assert(await page.locator('.gallery-panel').evaluate((panel) => {
+      const box = panel.getBoundingClientRect();
+      return Math.abs(box.x) < 1 && Math.abs(box.y) < 1 && Math.abs(box.width - innerWidth) < 1 && Math.abs(box.height - innerHeight) < 1;
+    }), 'My Deck must use the full viewport');
   }
+  assert(await page.evaluate(() => {
+    const gallery = getComputedStyle(document.querySelector('.gallery-body'));
+    const deck = getComputedStyle(document.querySelector('.gallery-deck-list'));
+    return gallery.scrollbarColor === deck.scrollbarColor && gallery.scrollbarWidth === deck.scrollbarWidth;
+  }), 'Both scrollbars must match');
   await page.screenshot({ path: '../.preview/campaign/starter-mobile.png' });
   await page.setViewportSize({ width: 1440, height: 950 });
   await page.getByRole('button', { name: 'Close', exact: true }).click();
@@ -119,7 +129,7 @@ try {
   assert((await clearedChapterCard.textContent()).includes('GLaDOS'));
   await page.getByRole('button', { name: 'Close campaign', exact: true }).click();
   await page.locator('.deck-trigger').click();
-  await page.getByRole('button', { name: 'Remove John Wick', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove John Wick from deck', exact: true }).click();
   assert.equal((await progress()).playerDeck.length, 29);
   await page.getByRole('button', { name: 'Close', exact: true }).click();
   assert.equal(await page.locator('.title-screen').count(), 1);
@@ -130,11 +140,17 @@ try {
   await page.locator('.deck-trigger').click();
   await page.getByLabel('Search the gallery').fill('GLaDOS');
   assert.equal(await page.locator('.gallery-deck-row').count(), 29, 'Collection search must not filter the saved deck');
+  await page.getByRole('button', { name: 'Open Star Chart for GLaDOS', exact: true }).click();
+  assert(await page.getByRole('dialog', { name: 'GLaDOS Star Chart', exact: true }).isVisible());
+  assert.equal((await progress()).playerDeck.length, 29, 'Clicking a card name must not add it');
+  await page.getByRole('button', { name: 'Close Star Chart', exact: true }).click();
   await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).click();
+  assert.equal(await page.locator('.gallery-detail-panel').count(), 0, 'Clicking the card body must not open lore');
+  assert(!(await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).isEnabled()), 'Selected cards cannot be added twice');
   record = await progress(); assert.equal(record.playerDeck.length, 30); assert(record.playerDeck.includes('c104')); assert(!record.playerDeck.includes('c001'));
   await page.getByLabel('Search the gallery').fill('');
   await page.getByLabel('Filter by unlocked or locked').selectOption('locked');
-  assert.equal(await page.locator('.gallery-deck-action').count(), 0, 'Locked cards cannot be added');
+  assert.equal(await page.locator('.gallery-card-add:not(:disabled)').count(), 0, 'Locked cards cannot be added');
   await page.getByRole('button', { name: 'Inspect GLaDOS', exact: true }).click();
   assert(await page.locator('.gallery-detail-panel').isVisible(), 'Deck inspection works independently of collection filters');
   await page.getByRole('button', { name: 'Close Star Chart', exact: true }).click();

@@ -126,7 +126,7 @@ await page.screenshot({ path: path.join(outputDir, "green-end-turn.png"), fullPa
 await fresh();
 await page.locator(".gallery-trigger").filter({ hasText: "My Deck" }).click();
 await page.locator('select[aria-label="Filter by unlocked or locked"]').selectOption("locked");
-await page.locator('.gallery-cell[role="button"]').first().click();
+await page.locator('.gallery-card-name').first().click();
 check("locked gallery card opens a sealed profile", await page.locator(".gallery-detail-kicker").getByText("The Rift is holding this profile", { exact: true }).count() === 1);
 check("locked profile does not expose its Star Chart", await page.locator(".star-chart").count() === 0);
 await page.waitForTimeout(400);
@@ -138,7 +138,7 @@ await page.keyboard.type("Ross");
 await page.getByRole("button", { name: "Unlock all cards + powers", exact: true }).click();
 await page.locator(".gallery-trigger").filter({ hasText: "My Deck" }).click();
 await page.locator(".gallery-search").fill("Joker");
-await page.locator('.gallery-cell[role="button"]').first().click();
+await page.locator('.gallery-card-name').first().click();
 await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 5000 });
 check("gallery card opens a Star Chart modal", await page.locator(".gallery-detail-panel").isVisible());
 check("Star Chart renders its six-axis chart", await page.locator(".star-chart").count() === 1);
@@ -260,7 +260,7 @@ await page.getByRole("button", { name: "Close Star Chart", exact: true }).click(
 await page.locator(".gallery-detail-panel").waitFor({ state: "detached", timeout: 5000 });
 for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Greyrat", "Prince Lloyd", "Motoko Kusanagi", "Allspark Cube"]) {
   await page.locator(".gallery-search").fill(name);
-  await page.locator('.gallery-cell[role="button"]').first().click();
+  await page.locator('.gallery-card-name').first().click();
   await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 5000 });
   const profileGeometry = fitsOnOneScreen(await page.locator(".gallery-detail-panel").evaluate(geometryOf));
   const expectedChartCount = name === "Allspark Cube" ? 0 : 1;

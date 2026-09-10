@@ -46,7 +46,7 @@ try {
   await sample('bottom');
   assert.equal(results.bottom.scrollHeight, results.locked.scrollHeight, 'Unmounting faces must preserve scroll geometry');
   assert(results.bottom.faces > 0 && results.bottom.faces < 40, 'Bottom rows must mount without retaining the full roster');
-  await page.locator('.gallery-cell').last().click();
+  await page.locator('.gallery-card-name').last().click();
   await page.locator('.gallery-detail-panel').waitFor();
   await page.getByLabel('Close Star Chart').click();
   await page.getByLabel('Search the gallery').fill('no-such-card-zzzz');
@@ -55,8 +55,8 @@ try {
   await page.waitForFunction(() => document.querySelector('.gallery-body')?.scrollTop === 0);
   await page.locator('.gallery-cell .card-face').first().waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('.gallery-cell').last().press('End');
-  await page.locator('.gallery-cell').last().click();
+  await page.locator('.gallery-card-name').last().press('End');
+  await page.locator('.gallery-card-name').last().click();
   await page.locator('.gallery-detail-panel').waitFor();
   await page.getByLabel('Close Star Chart').click();
   await mkdir('../.preview/performance', { recursive: true });
