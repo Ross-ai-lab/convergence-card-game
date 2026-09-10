@@ -55,6 +55,13 @@ const HARNESS = /^source\/scripts\/(browser|profile-layout|campaign-fixtures|che
 
 const SUITES = [
   {
+    name: "workbook",
+    command: ["node", "scripts/check-card-workbook.mjs"],
+    browser: false,
+    always: true,
+    reaches: [/^source\/data\//, /^source\/scripts\/sync-card-workbook/, /^materials\/.*\.xlsx/],
+  },
+  {
     name: "campaign",
     command: ["node", "scripts/check-campaign.mjs", BASE],
     browser: true,

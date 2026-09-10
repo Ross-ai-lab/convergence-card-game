@@ -25,6 +25,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Verify card workbook matches the current game
+        run: node source/scripts/sync-card-workbook.mjs --check
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
 

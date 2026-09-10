@@ -9,3 +9,7 @@ __pycache__/
 .env.*
 # Disposable local evidence: screenshots, balance runs, capture walls.
 .preview/
+# In-progress atomic workbook exports; the finished workbook and sync record are tracked.
+materials/*.xlsx.sync.lock
+materials/*.xlsx.*.tmp
+materials/*.xlsx.*.tmp.inspect.ndjson
