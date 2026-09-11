@@ -289,7 +289,7 @@ export const EFFECT_IDS = [
   "fantastic_four_aura",
   "evade_first_attack",
   "heal_self_full",
-  "deathrattle_summon_morgott",
+  "summon_margit",
   "replace_same_cost_random",
   "deathrattle_random_evil",
   "highest_atk_only",
@@ -432,9 +432,9 @@ export interface MinionInstance {
   temporaryControl: TemporaryMinionControl | null;
   /** Mahoraga: every attacker that has already swung at this minion. */
   attackedBy: string[];
-  /** APR: this minion may never attack again. */
+  /** Knuckle: this minion cannot attack until its lock expires. */
   attackLocked: boolean;
-  /** APR: the lock expires after the minion misses two of its own turns. */
+  /** Knuckle: the lock expires after the minion misses two of its own turns. */
   attackLockedUntilTurn: number | null;
   /** Ten Commandments: this source has already chained one attacker this turn. */
   commandmentsTriggeredAtTurn: number | null;

@@ -73,10 +73,10 @@ describe("combat-reaction cards", () => {
     expect(after.players[1].board[0]).toBeNull();
   });
 
-  it("APR locks the attacking minion for exactly two of its turns", () => {
+  it("Knuckle locks the attacking minion for exactly two of its turns", () => {
     const state = mainState();
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, hp: 99, maxHp: 99 });
-    state.players[1].board[0] = makeMinion("APR", 1, { hp: 99, maxHp: 99 });
+    state.players[1].board[0] = makeMinion("Knuckle", 1, { hp: 99, maxHp: 99 });
 
     const after = attack(state, 0, 0);
     const attacker = after.players[0].board[0];
@@ -84,13 +84,13 @@ describe("combat-reaction cards", () => {
     expect(attacker?.attackLockedUntilTurn).toBe(after.turnNumber + 6);
 
     // And that really removes it from the legal-move list while the lock is
-    // active. Reset the spent swing so this assertion tests APR, not the normal
+    // active. Reset the spent swing so this assertion tests Knuckle, not the normal
     // once-per-turn attack limit.
     const fresh = { ...after, activePlayer: 0 as PlayerId };
     fresh.players[0].board[0]!.attacksUsed = 0;
     expect(getLegalActions(fresh, library).some((action) => action.type === "attack_minion")).toBe(false);
 
-    // turnNumber advances once per player's turn. APR therefore skips the
+    // turnNumber advances once per player's turn. Knuckle therefore skips the
     // attacker's next two owner turns and releases it on the third.
     let released = fresh;
     for (const player of [0, 1, 0, 1, 0, 1] as PlayerId[]) {

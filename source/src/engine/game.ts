@@ -1635,7 +1635,7 @@ function attackMinion(
       applyChain(state, survivingAttacker, events);
       events.push(effectEvent(`${defender.name} chains ${survivingAttacker.name}.`, defender));
     }
-    // APR: whoever swung at it never swings again.
+    // Knuckle: the attacker misses its next two owner turns.
     if (hasEffect(defender, "attack_lock") && attackerAlive && survivingAttacker) {
       survivingAttacker.attackLocked = true;
       survivingAttacker.attackLockedUntilTurn = state.turnNumber + 6;
@@ -2910,6 +2910,14 @@ function runEffect(
     summonShadowClones(state, source, events);
   } else if (source.effectId === "star_destroyer_tie_fighters") {
     summonTieFighters(state, source, events);
+  } else if (source.effectId === "summon_margit") {
+    const slot = player.board.findIndex((minion) => !minion);
+    if (slot >= 0) {
+      const summoned = createMinion(tokenCard("token:margit"), source.owner, state);
+      summoned.suppressArrivalTheme = true;
+      player.board[slot] = summoned;
+      events.push(effectEvent(`${label} summons Margit the Fell Omen (1/1 with Taunt).`, source));
+    }
   } else if (source.effectId === "chaos_random_summon") {
     summonRandomMinionFromDeck(state, source, library, events);
   } else if (source.effectId === "heroic_relics") {
@@ -5016,7 +5024,7 @@ function attackForbidden(minion: MinionInstance): boolean {
   // meant the card face, the keyword column and the engine each had their own
   // answer. Both now carry the keyword.
   if (!minion.silenced && hasKeyword(minion, "Cannot Attack")) return true;
-  return minion.attackLocked; // APR has taken this swing until its lock expires
+  return minion.attackLocked; // Knuckle has taken this swing until its lock expires
 }
 
 function canAttack(minion: MinionInstance): boolean {
@@ -5706,14 +5714,6 @@ function resolveCardDeathrattleOnce(
           destroyAtSlot(state, owner, slot, events, `${dead.name} destroys all minions`, null, false);
         }
       }
-    }
-  } else if (dead.effectId === "deathrattle_summon_morgott") {
-    const slot = state.players[dead.owner].board[deadSlot] ? state.players[dead.owner].board.findIndex((minion) => !minion) : deadSlot;
-    if (slot >= 0) {
-      const morgott = tokenCard("token:morgott", { origin: dead.origin });
-      const summoned = createMinion(morgott, dead.owner, state);
-      state.players[dead.owner].board[slot] = summoned;
-      events.push(effectEvent(`${dead.name}'s Deathrattle summons Morgott, the Omen King.`, dead));
     }
   } else if (dead.effectId === "deathrattle_summon_drakath") {
     const slot = state.players[dead.owner].board[deadSlot]

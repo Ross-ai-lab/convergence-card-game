@@ -6,6 +6,7 @@
    ============================================================================ */
 
 :root {
+  --convergence-cursor: url("./assets/convergence-cursor.svg") 3 2, default;
   --ink: #fff5e3;
   --ink-dark: #2b1c10;
   --muted: #c9bea7;
@@ -32,6 +33,7 @@
 }
 
 body {
+  cursor: var(--convergence-cursor);
   margin: 0;
   min-width: 360px;
   overflow: hidden;
@@ -49,7 +51,7 @@ button {
   background: rgba(255, 246, 222, 0.08);
   font: inherit;
   font-weight: 900;
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
   transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 
@@ -1796,7 +1798,7 @@ button:disabled {
   border-color: rgba(96, 178, 255, 0.9);
   background: linear-gradient(150deg, rgba(40, 82, 126, 0.88), rgba(23, 31, 47, 0.95));
   color: var(--ink);
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
   box-shadow: 0 0 18px rgba(70, 150, 255, 0.26);
   opacity: 1;
 }
@@ -1878,7 +1880,7 @@ button:disabled {
   padding: 0;
   border: 0;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
   /* The drag is pointer-driven, so the browser's own pan/zoom gesture has to be
      taken off these or a drag on a touchscreen scrolls the page instead of
      moving the card. Same reason on the board slots and the relic badge. */
@@ -2144,16 +2146,16 @@ button:disabled {
     linear-gradient(180deg, rgba(255, 236, 190, 0.1), transparent 30%),
     linear-gradient(160deg, #3c2513, #24140a 80%);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(20, 10, 4, 0.7);
-  cursor: default;
+  cursor: var(--convergence-cursor);
 }
 
 .hero-plate:disabled {
   opacity: 1;
-  cursor: default;
+  cursor: var(--convergence-cursor);
 }
 
 .hero-plate[aria-disabled="true"] {
-  cursor: default;
+  cursor: var(--convergence-cursor);
 }
 
 .hero-plate:hover {
@@ -2288,7 +2290,7 @@ button:disabled {
   box-shadow: 0 0 8px rgba(255, 226, 150, 0.22);
   /* Not `help`. The question-mark pointer promises a tooltip, and the answer
      here is the full card face that opens the moment you hover. */
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
@@ -2442,7 +2444,7 @@ button:disabled {
   border-color: rgba(255, 120, 90, 0.95);
   box-shadow: 0 0 0 3px rgba(211, 62, 40, 0.55), 0 0 34px rgba(211, 62, 40, 0.5);
   animation: breath-red 1.3s ease-in-out infinite;
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
 }
 
 .hero-plate.hit {
@@ -3779,7 +3781,7 @@ button:disabled {
   border-radius: 0 10px 10px 0;
   color: var(--muted);
   background: var(--panel);
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
   writing-mode: vertical-rl;
   font-size: 0.72rem;
   font-weight: 950;
@@ -3882,7 +3884,7 @@ button:disabled {
 }
 
 .debug-panel summary {
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
   color: var(--muted);
   font-size: 0.7rem;
   font-weight: 900;
@@ -3998,7 +4000,7 @@ button:disabled {
   border-radius: 12px;
   background: transparent;
   color: var(--ink);
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -4054,7 +4056,7 @@ button:disabled {
   padding: 0;
   border: 0;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
 }
 
 .choice-card:hover .card-face {
@@ -4447,7 +4449,7 @@ button:disabled {
 
 /* Legal victims pulse; everything else recedes so the choice is unmissable. */
 .board-slot.choosable {
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
 }
 
 /* On .cf-stage like every other ring — see the board-rings block above. */
@@ -4572,7 +4574,7 @@ button:disabled {
 
 /* Hovering the badge swaps the preview to the relic's own full card. */
 .relic-badge.peekable {
-  cursor: default;
+  cursor: var(--convergence-cursor);
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
@@ -4685,7 +4687,7 @@ button:disabled {
   border: 2px solid transparent;
   border-radius: 8px;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
 }
 
 .prompt-hand-card:hover:not(:disabled) {
@@ -4852,7 +4854,7 @@ button:disabled {
 }
 
 .draw-panel.locked .choice-card {
-  cursor: default;
+  cursor: var(--convergence-cursor);
   opacity: 0.75;
 }
 
@@ -5158,12 +5160,12 @@ button:disabled {
 .gallery-workspace { display: grid; grid-template-columns: minmax(0, 1fr) clamp(280px, 20vw, 380px); flex: 1; min-height: 0; overflow: hidden; }
 .gallery-workspace .gallery-body { min-height: 0; padding: 8px; }
 .gallery-deck-card { min-width: 0; }
-.gallery-cell .gallery-card-add, .gallery-cell .gallery-card-name { position: absolute; margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; border-radius: 0; opacity: 1; transform: none; }
-.gallery-cell .gallery-card-add { inset: 0; z-index: 4; width: 100%; height: 100%; cursor: copy; border-radius: 12px; }
-.gallery-cell .gallery-card-add:disabled { cursor: default; }
-.gallery-cell .gallery-card-name { left: 5%; top: 0; width: 82%; height: 6%; z-index: 5; cursor: pointer; }
+.gallery-cell .gallery-card-add, .gallery-cell .gallery-card-name { position: absolute; margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; border-radius: 0; opacity: 1; transform: none; transition: none; }
+.gallery-cell .gallery-card-add { inset: 0; z-index: 4; width: 100%; height: 100%; cursor: var(--convergence-cursor); border-radius: 12px; }
+.gallery-cell .gallery-card-add:disabled { cursor: var(--convergence-cursor); }
+.gallery-cell .gallery-card-name { left: 5%; top: 0; width: 82%; height: 6%; z-index: 5; cursor: var(--convergence-cursor); }
 .gallery-cell .gallery-card-add:not(:disabled):hover { box-shadow: inset 0 0 0 2px #e7c67c; }
-.gallery-cell.is-in-deck .gallery-card-add { box-shadow: inset 0 0 0 2px #b68d44; }
+.gallery-cell.is-in-deck .gallery-card-add { box-shadow: inset 0 0 0 3px #55dc83; }
 .gallery-cell .gallery-card-name:hover { background: #ffdc7b22; }
 .gallery-cell .gallery-card-add:focus-visible, .gallery-cell .gallery-card-name:focus-visible { outline: 2px solid #ffe5a2; outline-offset: -3px; }
 .gallery-deck { min-height: 0; display: flex; flex-direction: column; background: linear-gradient(160deg, #261e18, #120f12 70%); border-left: 1px solid #74603b; padding: 14px 10px 10px; }
@@ -5178,16 +5180,16 @@ button:disabled {
 .gallery-deck-row { position: relative; isolation: isolate; display: flex; min-height: 35px; margin-bottom: 4px; overflow: hidden; border: 1px solid #746047; border-radius: 4px; background: #302820; }
 .gallery-deck-row > img { position: absolute; z-index: -2; right: 0; top: 0; width: 65%; height: 100%; object-fit: cover; object-position: center 30%; }
 .gallery-deck-row::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #19151b 14%, #19151bd9 46%, #19151b44 80%, #19151b99); }
-.gallery-deck-inspect { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; border: 0; background: transparent; color: #fff0d2; padding: 3px 0 3px 5px; text-align: left; cursor: pointer; }
+.gallery-deck-inspect { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; border: 0; background: transparent; color: #fff0d2; padding: 3px 0 3px 5px; text-align: left; cursor: var(--convergence-cursor); }
 .gallery-deck-mana { display: grid; place-items: center; flex: 0 0 26px; height: 27px; background: linear-gradient(135deg, #9be0fa, #24719c 56%, #163659); border: 1px solid #b4e8ff; clip-path: polygon(50% 0,100% 28%,100% 72%,50% 100%,0 72%,0 28%); color: white; font-size: 16px; font-weight: 800; text-shadow: 0 1px 2px #092c56; }
 .gallery-deck-name { font-size: 12px; font-weight: 700; line-height: 1.15; text-shadow: 0 1px 3px #000; overflow-wrap: anywhere; }
-.gallery-deck-remove { flex: 0 0 25px; padding: 0; border: 0; border-left: 1px solid #b49a5940; background: #17121366; color: #e6c27c; font-size: 20px; cursor: pointer; }
-.gallery-deck-remove:disabled { opacity: .25; cursor: default; }
+.gallery-deck-remove { flex: 0 0 25px; padding: 0; border: 0; border-left: 1px solid #b49a5940; background: #17121366; color: #e6c27c; font-size: 20px; cursor: var(--convergence-cursor); }
+.gallery-deck-remove:disabled { opacity: .25; cursor: var(--convergence-cursor); }
 .gallery-deck-row:hover { border-color: #e2bc70; }
 .gallery-deck-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 4px 0; border-top: 1px solid #79603c66; font-size: 11px; }
 .gallery-deck-footer details { width: 100%; color: #c8b58e; }
-.gallery-deck-footer summary { cursor: pointer; }
-.gallery-deck-footer > button { padding: 5px 8px; border: 1px solid #76613e; border-radius: 5px; background: #282016; color: #dfc58f; font: inherit; cursor: pointer; }
+.gallery-deck-footer summary { cursor: var(--convergence-cursor); }
+.gallery-deck-footer > button { padding: 5px 8px; border: 1px solid #76613e; border-radius: 5px; background: #282016; color: #dfc58f; font: inherit; cursor: var(--convergence-cursor); }
 .gallery-deck-footer > small { color: #a99d86; font-size: 10px; }
 .gallery-deck-curve { height: 92px; display: flex; gap: 5px; align-items: end; padding: 8px 0; }
 .gallery-deck-curve > div { flex: 1; text-align: center; }
@@ -5306,7 +5308,7 @@ button:disabled {
    inside Convergence's dark wood, parchment-gold, teal, and rarity language.
    --------------------------------------------------------------------------- */
 .gallery-cell[role="button"] {
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
   outline: none;
 }
 
@@ -5497,7 +5499,7 @@ button:disabled {
   color: rgba(246, 236, 216, 0.9);
   font: inherit;
   font-size: 0.8rem;
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
 }
 
 /* An engaged filter has to be obvious, or a player wonders where the cards went. */
@@ -5601,7 +5603,7 @@ button:disabled {
   font-size: 1rem;
   font-weight: 900;
   line-height: 1;
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
 }
 
 .gallery-help:hover,
@@ -5700,7 +5702,7 @@ button:disabled {
   color: rgba(246, 236, 216, 0.6);
   font-size: 1.2rem;
   line-height: 1;
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
 }
 
 .help-x:hover {
@@ -5803,7 +5805,7 @@ button:disabled {
     0 30px 70px rgba(0, 0, 0, 0.78),
     0 0 40px rgba(240, 199, 103, 0.22),
     inset 0 0 46px rgba(240, 199, 103, 0.12);
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
   animation: pack-float 3.4s ease-in-out infinite;
 }
 
@@ -6188,7 +6190,7 @@ button:disabled {
 
 .pack-collect:disabled {
   opacity: 0.35;
-  cursor: default;
+  cursor: var(--convergence-cursor);
 }
 
 /* A phone gets one or two cards per row and more of them. The card is still LAID
@@ -6987,7 +6989,7 @@ button:disabled {
   background: none;
   color: var(--gold);
   font: inherit;
-  cursor: help;
+  cursor: var(--convergence-cursor);
   text-decoration: underline dotted currentColor;
   text-underline-offset: 0.16em;
 }

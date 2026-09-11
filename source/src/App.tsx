@@ -4063,7 +4063,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
               return <div key={i}><span style={{ height: `${Math.max(2, count * 6)}px` }}>{count}</span><small>{i + 1}</small></div>;
             })}</div></details>
             {!readOnly && <button onClick={() => onChange([...CAMPAIGN_STARTER_DECK])}>Restore starter</button>}
-            <small>{readOnly ? "Starter deck · 30 cards" : "Changes save automatically"}</small>
+            {readOnly && <small>Starter deck · 30 cards</small>}
           </footer>
         </aside>
         </div>
@@ -4384,12 +4384,10 @@ const GalleryCell = memo(function GalleryCell({
       onFocus={onFocus}
       className={`gallery-cell mark-${mark}${locked ? " is-locked" : ""}${inDeck ? " is-in-deck" : ""}`}
       data-mark={mark}
-      title={COLLECTION_TITLE[mark]}
     >
       {near ? locked ? <SealedFace card={face} /> : <CardFace card={face} /> : null}
       <button type="button" className="gallery-card-add" aria-label={`Add ${face.name}`} aria-pressed={inDeck}
-        disabled={!canAdd} onClick={onAdd}
-        title={locked ? "Locked card" : inDeck ? "Already in your deck" : canAdd ? "Click to add to your deck" : "Deck editing unavailable or deck full"} />
+        disabled={!canAdd} onClick={onAdd} />
       <button type="button" className="gallery-card-name" aria-label={`Open Star Chart for ${face.name}`}
         title={`Open ${face.name} lore`} onClick={() => onOpen(entryKey)} />
       {near && locked ? (
@@ -4546,13 +4544,6 @@ const RAIL_ALIGNMENTS = new Set(["good", "neutral", "evil"]);
 
 /** How far a card has got in your collection. Ordered weakest to strongest. */
 type CollectionMark = "unseen" | "seen" | "played" | "won";
-
-const COLLECTION_TITLE: Record<CollectionMark, string> = {
-  unseen: "Not yet drawn",
-  seen: "Has been in your hand",
-  played: "You have played it",
-  won: "You have won with it",
-};
 
 /**
  * A locked card, drawn cheaply.

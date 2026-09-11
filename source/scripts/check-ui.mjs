@@ -142,7 +142,9 @@ check(
   "Recruit, Veteran and Ascendant appear only after campaign completion",
 );
 for (const selector of [".orbit-choice-easy", ".orbit-choice-hard", ".orbit-choice-normal"]) {
-  await page.locator(selector).click({ timeout: 2000 }).catch(() => {});
+  await page.locator(selector).click({ timeout: 10000 }).then(() =>
+    page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-pressed') === 'true', selector, {timeout:10000})
+  ).catch(() => {});
   difficultyClicks.push((await page.locator(selector).getAttribute("aria-pressed")) === "true");
 }
 check(

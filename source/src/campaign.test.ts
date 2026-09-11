@@ -108,7 +108,8 @@ describe("campaign definitions", () => {
     expect(campaignUniverse("Tensura")).toBe(campaignUniverse("That time I got reincarnated as a Slime"));
     expect(campaignUniverse(byId.get("c068")!.origin)).toBe("Basic");
     expect(getCampaignChapter(10)!.universeCardIds).toHaveLength(9);
-    expect(getCampaignChapter(18)!.universeCardIds).toHaveLength(16);
+    expect(getCampaignChapter(18)!.universeCardIds).toHaveLength(15);
+    expect(getCampaignChapter(18)!.fillerRewardIds).toContain("c105");
   });
 
   it("keeps the first campaign boss at Legendary rarity", () => {

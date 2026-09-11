@@ -851,7 +851,7 @@
   border-radius: 999px;
   background: rgba(255, 246, 222, 0.14);
   outline: none;
-  cursor: pointer;
+  cursor: var(--convergence-cursor);
 }
 
 .fader input[type="range"]::-webkit-slider-thumb {
@@ -1604,7 +1604,7 @@ button.duel-trigger:hover:not(:disabled) {
   border-color: rgba(118, 228, 237, 0.72);
   background: rgba(25, 66, 72, 0.88);
   color: #c9fbfb;
-  cursor: default;
+  cursor: var(--convergence-cursor);
 }
 
 .developer-cheat-reset {

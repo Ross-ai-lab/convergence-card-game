@@ -6,6 +6,7 @@ import { parseCardsCsv, parseRelicsCsv } from "./csv";
 import cardsCsv from "../../data/cards.csv?raw";
 import relicsCsv from "../../data/relics.csv?raw";
 import type { GameState, PlayerId } from "./types";
+import { CAMPAIGN_STARTER_DECK } from "../campaign";
 
 const cards = parseCardsCsv(cardsCsv);
 const relics = parseRelicsCsv(relicsCsv);
@@ -27,7 +28,10 @@ function playOut(seed: string, skills: [BotSkill, BotSkill], cap = 200, starting
  * the legality probe below, which still plays every skill to the end.
  */
 function playSteps(seed: string, skills: [BotSkill, BotSkill], steps: number, startingHealth = 75): GameState {
-  let state = createInitialGame(cards, seed, relics, { startingHealth });
+  let state = createInitialGame(cards, seed, relics, {
+    startingHealth,
+    decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK],
+  });
   for (let step = 0; step < steps; step += 1) {
     if (state.phase === "gameOver") break;
     const actor: PlayerId =
@@ -40,6 +44,7 @@ function playSteps(seed: string, skills: [BotSkill, BotSkill], steps: number, st
           : state.activePlayer;
     const action = chooseBotAction(state, library, actor, skills[actor]);
     if (!action) break;
+    expect(getLegalActions(state, library).some(legal => actionKey(legal) === actionKey(action))).toBe(true);
     state = applyAction(state, action, library).state;
   }
   return state;
@@ -148,9 +153,9 @@ describe("the bot", () => {
 
   // These play real duels to the end, and `hard` searches whole turns, so they
   // run in seconds rather than milliseconds. The default 5 s vitest timeout kills
-  // them — every heavy case below states its own. The full-roster hard duel can
-  // exceed 30 seconds while still making progress, so this legality probe gets
-  // a 60-second ceiling without changing the engine or pacing rules.
+  // them — every heavy case below states its own. These use the production
+  // thirty-card separate-deck setup. The retired shared-roster setup exhausted
+  // this timeout while testing a duel format players can no longer start.
   it.each(skills)("%s only ever returns a legal action, and finishes duels", (skill) => {
     const finished = playOut(`legal-${skill}`, [skill, skill]);
     expect(finished.phase).toBe("gameOver");

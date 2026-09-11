@@ -56,6 +56,13 @@ function endTurn(state: GameState, player: PlayerId): GameState {
 }
 
 describe("2026 card replacements", () => {
+  it("keeps the requested card names and origins current", () => {
+    expect(cards.find(c=>c.id==="c047")).toMatchObject({name:"Escanor"});
+    expect(cards.find(c=>c.id==="c105")).toMatchObject({name:"The Driller",origin:"Transformers"});
+    expect(cards.find(c=>c.id==="c135")).toMatchObject({name:"Knuckle",effectId:"attack_lock"});
+    expect(cards.find(c=>c.id==="c005")).toMatchObject({name:"Batman",origin:"DCEU"});
+    expect(cards.find(c=>c.id==="c155")).toMatchObject({name:"Morgott, the Omen King",cost:3,atk:1,hp:1,keywords:["Taunt"],effectTiming:"onPlay"});
+  });
   it("loads the four requested cards with their final metadata", () => {
     expect(cards.find((card) => card.name === "Xenomorph Queen")).toMatchObject({
       cost: 4,
@@ -310,14 +317,14 @@ describe("2026 card replacements", () => {
       Zoro: { cost: 5, atk: 4, hp: 4, effectId: "on_kill_buff_1", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Gain +1/+1 after killing a minion" },
       "One-Eyed Owl": { cost: 5, atk: 4, hp: 4, effectId: "chain_watch_growth", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Whenever a minion becomes Chained, Frozen or Silenced, gain +1/+1" },
       "Gravelord Nito": { cost: 4, atk: 2, hp: 3, effectId: "nito_any_death_1_1", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Gain +1/+1 when a minion dies" },
-      "Margit the Fell Omen": {
+      "Morgott, the Omen King": {
         cost: 3,
         atk: 1,
         hp: 1,
-        effectId: "deathrattle_summon_morgott",
-        effectTiming: "deathrattle",
-        keywords: ["Deathrattle"],
-        effect: "Deathrattle: Summon Morgott, the Omen King (3/3)",
+        effectId: "summon_margit",
+        effectTiming: "onPlay",
+        keywords: ["Taunt"],
+        effect: "Taunt. Battlecry: Summon Margit (1/1 with Taunt)",
       },
       "T-1000": { cost: 5, atk: 3, hp: 5, effectId: "heal_self_full", effectTiming: "ongoing", keywords: ["Ongoing"] },
       "Silver Surfer": {
@@ -363,7 +370,7 @@ describe("2026 card replacements", () => {
       Vegapunk: { effectId: "discover_tech_card", effectTiming: "onPlay", keywords: [] },
       "John Wick": { atk: 1, hp: 1, effectId: "friendly_death_buff_1_1", effectTiming: "passive" },
       Joker: { atk: 1, hp: 1, effectId: "copy_minion_to_hand", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Put a copy of a minion in your hand" },
-      "Escanor \"The One\"": { cost: 8, atk: 8, hp: 4, effectId: "double_other_friendly_attack", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Double your other friendly minions attack" },
+      "Escanor": { cost: 8, atk: 8, hp: 4, effectId: "double_other_friendly_attack", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Double your other friendly minions attack" },
       "Lelouch Lamperouge": { cost: 8, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion" },
       "Ultron Prime": {
         cost: 7,
@@ -843,14 +850,29 @@ describe("2026 card replacements", () => {
     expect(enemyTurn.players[1].board[0]).toBeNull();
   });
 
-  it("Margit summons Morgott with his dedicated token art", () => {
-    const state = mainState("morgott-token-art");
-    state.players[0].board[0] = minion("Margit the Fell Omen", 0, { hp: 1, maxHp: 1 });
-    state.players[1].board[0] = minion("Zoro", 1, { atk: 99, hp: 20, maxHp: 20, sleeping: false });
-    state.activePlayer = 1;
+  it("Morgott summons a 1/1 Taunt Margit on play and has no old Deathrattle", () => {
+    const state = mainState("morgott-summons-margit");
+    const summoned = play(state, 0, "Morgott, the Omen King", 0);
+    expect(summoned.players[0].board[0]).toMatchObject({cardId:"c155", name:"Morgott, the Omen King", atk:1, hp:1, maxHp:1, keywords:["Taunt"], effectId:"summon_margit", art:"/card-art/raw/token-morgott.webp"});
+    expect(summoned.players[0].board[1]).toMatchObject({cardId:"token:margit", name:"Margit the Fell Omen", atk:1, hp:1, maxHp:1, keywords:["Taunt"], effectId:"none", sleeping:true, suppressArrivalTheme:true, art:"/card-art/raw/c155.webp"});
+    expect(summoned.players[0].board.filter(Boolean)).toHaveLength(2);
+    summoned.players[1].board[0] = minion("Zoro", 1, {atk:99,hp:20,maxHp:20,sleeping:false});
+    summoned.activePlayer = 1;
+    const killed = applyAction(summoned,{type:"attack_minion",player:1,attackerSlot:0,targetSlot:0},library).state;
+    expect(killed.players[0].board[0]).toBeNull();
+    expect(killed.players[0].board.filter(Boolean)).toHaveLength(1);
+    expect(killed.players[0].board[1]?.cardId).toBe("token:margit");
+  });
 
-    const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(after.players[0].board[0]).toMatchObject({ name: "Morgott, the Omen King", atk: 3, hp: 3, art: "/card-art/raw/token-morgott.webp" });
+  it("Morgott respects a full board and summons for the correct player", () => {
+    const full = mainState("morgott-full-board");
+    for(let slot=0;slot<4;slot++) full.players[0].board[slot]=minion("John Wick",0);
+    const blocked=play(full,0,"Morgott, the Omen King",4);
+    expect(blocked.players[0].board.filter(Boolean)).toHaveLength(5);
+    expect(blocked.players[0].board.some(m=>m?.cardId==="token:margit")).toBe(false);
+    const second=play(mainState("morgott-second-seat"),1,"Morgott, the Omen King",3);
+    expect(second.players[0].board.every(m=>m===null)).toBe(true);
+    expect(second.players[1].board[0]).toMatchObject({cardId:"token:margit",owner:1,atk:1,hp:1,keywords:["Taunt"]});
   });
 
   it("Giant Tree's Nature aura is removed when the Tree leaves play", () => {
@@ -1457,14 +1479,14 @@ describe("2026 card replacements", () => {
   it("Black Hole silences before destroying every minion, preventing their Deathrattles", () => {
     const state = mainState("black-hole-deathrattle");
     state.players[0].board[0] = minion("Black Hole", 0, { hp: 1, maxHp: 1 });
-    state.players[0].board[1] = minion("Margit the Fell Omen", 0);
+    state.players[0].board[1] = minion("Silver Surfer", 0);
     state.players[1].board[0] = minion("John Wick", 1, { atk: 2, hp: 5, maxHp: 5, sleeping: false });
     state.players[1].board[1] = minion("Dragon", 1);
     state.activePlayer = 1;
 
     const after = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(after.players.every((player) => player.board.every((entry) => entry === null))).toBe(true);
-    expect(after.players[0].deadMinions).not.toContain("token:morgott");
+    expect(after.players[0].deadMinions).not.toContain("token:galactus");
   });
 
   it("Elder Centipede grows +2/+2 on its ongoing turn and All Might lowers enemy ATK", () => {
@@ -2137,13 +2159,13 @@ describe("2026 card replacements", () => {
     expect(afterFriendlyDeath.players[0].board[0]).toMatchObject({ atk: 3, hp: 4, maxHp: 4 });
   });
 
-  it("Escanor The One doubles the ATK of his other friendly minions", () => {
+  it("Escanor doubles the ATK of his other friendly minions", () => {
     const state = mainState("escanor-double-attack");
     state.players[0].board[1] = minion("Zoro", 0, { atk: 3, hp: 5, maxHp: 5 });
     state.players[0].board[2] = minion("Saitama", 0, { atk: 5, hp: 6, maxHp: 6 });
     state.players[1].board[0] = minion("John Wick", 1, { atk: 7, hp: 10, maxHp: 10 });
 
-    const after = play(state, 0, 'Escanor "The One"', 0);
+    const after = play(state, 0, 'Escanor', 0);
     expect(after.pendingTarget).toBeNull();
     expect(after.players[0].board[0]).toMatchObject({ atk: 8, hp: 4, maxHp: 4 });
     expect(after.players[0].board[1]?.atk).toBe(6);

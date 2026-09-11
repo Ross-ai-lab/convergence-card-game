@@ -248,7 +248,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c005": {
     "name": "Batman",
-    "origin": "DCU",
+    "origin": "DCEU",
     "epithet": "the Dark Knight",
     "rar": "Epic",
     "camp": "Tech",
@@ -276,12 +276,12 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "wk": [
       "No powers, purely mortal",
       "Overworked, running on no sleep",
-      "Rigid no-kill rule exploited"
+      "Human vulnerability beneath the armor"
     ],
     "sig_name": "Batarang",
     "sig_desc": "Signature bat-shaped throwing weapon that never misses.",
-    "playstyle": "Tempo-denying crowd control",
-    "ability": "Freeze 2 enemy minions.",
+    "playstyle": "Flexible single-target crowd control",
+    "ability": "Battlecry: Choose an enemy minion. Choose one gadget: Freeze it; Silence it; or give it -3 ATK",
     "rivals": [
       {
         "who": "Joker",
@@ -2515,15 +2515,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c047": {
-    "name": "Escanor \"The One\"",
+    "name": "Escanor",
     "origin": "Seven Deadly Sins",
     "epithet": "Lion's Sin of Pride",
     "rar": "Mythic",
     "camp": "Magic",
     "align": "Good",
-    "cost": 9,
-    "atk": 7,
-    "hp": 7,
+    "cost": 8,
+    "atk": 8,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       9,
@@ -2548,8 +2548,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "sig_name": "Sunshine",
     "sig_desc": "Power multiplies with the sun, peaking as The One.",
-    "playstyle": "Hits hardest completely alone",
-    "ability": "Ongoing: If you control no other minions, deal 8 DMG to an enemy minion of your choice",
+    "playstyle": "Doubles the attack of other friendly minions",
+    "ability": "Battlecry: Double your other friendly minions attack",
     "rivals": [
       {
         "who": "Meliodas",
@@ -5504,14 +5504,14 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c105": {
     "name": "The Driller",
-    "origin": "MCU",
-    "epithet": "Subterranean Drill Machine",
+    "origin": "Transformers",
+    "epithet": "Cybertronian Drilling Beast",
     "rar": "Rare",
     "camp": "Tech",
     "align": "Evil",
     "cost": 5,
-    "atk": 4,
-    "hp": 4,
+    "atk": 1,
+    "hp": 1,
     "cc": "#1a86a8",
     "vals": [
       6,
@@ -5522,22 +5522,22 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       2
     ],
     "rank": "C-tier · #79 in Strength · #81 in Toughness",
-    "lore": "It is one of Mole Man's subterranean drill tanks, built to tunnel beneath cities and drag entire buildings into Subterranea. Mindless and heavily armored, it exists only to smash forward and shield its fellow machines.",
+    "lore": "The Driller is Shockwave's massive, tentacled Cybertronian beast. It burrows underground and tears through buildings with its segmented mechanical body.",
     "quote": "",
     "str": [
-      "Heavy armored ramming force",
-      "Tunnels beneath any defense",
-      "Shields allied units"
+      "Armored mechanical body",
+      "Burrows beneath defenses",
+      "Tears through large structures"
     ],
     "wk": [
       "No independent judgment",
-      "Dim-witted, easily outsmarted",
-      "Poor mobility and agility"
+      "An enormous exposed target",
+      "Vulnerable to heavy firepower"
     ],
-    "sig_name": "Subterranean Drill Ram",
-    "sig_desc": "Bores through streets to surface, shielding fellow tanks",
-    "playstyle": "Frontline taunt enabler",
-    "ability": "Taunt Ongoing: Give another minion Taunt",
+    "sig_name": "Drilling Tentacles",
+    "sig_desc": "Burrows underground and tears through structures with spinning limbs.",
+    "playstyle": "Consumes damaged or fragile Tech minions",
+    "ability": "Battlecry: Consume an enemy Tech minion with 4 HP or lower",
     "rivals": [
       {
         "who": "Mister Fantastic",
@@ -7108,15 +7108,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c135": {
-    "name": "APR",
+    "name": "Knuckle",
     "origin": "HxH",
-    "epithet": "The Hakoware Loan",
+    "epithet": "The Hakoware Hunter",
     "rar": "Rare",
     "camp": "Magic",
     "align": "Good",
     "cost": 3,
     "atk": 0,
-    "hp": 2,
+    "hp": 3,
     "cc": "#7a52c8",
     "vals": [
       3,
@@ -7127,22 +7127,22 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       1
     ],
     "rank": "C-tier · #95 in Magic · #131 in Strength",
-    "lore": "A.P.R. is the currency of Knuckle's Nen ability Hakoware, a tiny loan-shark construct that lends aura to a target with mounting interest. Each strike deepens the debt until the victim's own Nen shuts down, bankrupting them mid-fight.",
+    "lore": "Knuckle is a Beast Hunter whose Nen ability, Hakoware, lends aura to a target and adds mounting interest. His small A.P.R. construct tracks the debt until the victim's Nen is forced into bankruptcy.",
     "quote": "Your aura is mine to collect.",
     "str": [
-      "Drains foes through debt",
-      "Turns interest into a weapon",
-      "Impossible to simply ignore"
+      "Skilled close-range Nen combatant",
+      "Turns aura debt into a weapon",
+      "Protective and compassionate"
     ],
     "wk": [
-      "Almost no direct power",
-      "Only a support construct",
-      "Needs Knuckle to function"
+      "Mercy can interrupt his strategy",
+      "Hakoware needs time to build debt",
+      "Must manage distance from his target"
     ],
     "sig_name": "Hakoware (A.P.R.)",
     "sig_desc": "Lends aura at interest until the debt shuts you down.",
-    "playstyle": "Permanently disables an attacker",
-    "ability": "Passive: After the enemy minion attacks this minion, it can never attack again",
+    "playstyle": "Punishes attackers with a two-turn attack lock",
+    "ability": "Taunt. Passive: After the enemy minion attacks this minion, it can't attack for 2 turns",
     "rivals": [
       {
         "who": "Knuckle Bine",
@@ -8183,13 +8183,13 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c155": {
-    "name": "Margit the fell omen",
+    "name": "Morgott, the Omen King",
     "origin": "Elden Ring",
-    "epithet": "The Fell Omen",
+    "epithet": "The Omen King",
     "rar": "Rare",
     "camp": "Magic",
-    "align": "Evil",
-    "cost": 2,
+    "align": "Neutral",
+    "cost": 3,
     "atk": 1,
     "hp": 1,
     "cc": "#2f9c63",
@@ -8202,7 +8202,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       6
     ],
     "rank": "B-tier · #25 in Willpower · #30 in Magic",
-    "lore": "Margit is a cursed Omen who guards the path to Stormveil, conjuring holy blades from thin air to turn back the Tarnished again and again. He is secretly Morgott, a shunned prince hiding his true, tragic self behind a disguise.",
+    "lore": "Morgott is the shunned Omen prince behind Margit's disguise. He conjures holy blades and hammers, turning back the Tarnished while hiding his tragic identity.",
     "quote": "Well, thou art of passing skill.",
     "str": [
       "Conjures holy blades and hammers",
@@ -8216,8 +8216,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "sig_name": "Conjured Holy Armaments",
     "sig_desc": "Summons golden swords, daggers, and a great hammer at will.",
-    "playstyle": "Empowers and heals Evil allies",
-    "ability": "Ongoing: Give a friendly Evil minion +3/+2 and heal it",
+    "playstyle": "Deploys two 1/1 Taunt bodies when a board slot is free",
+    "ability": "Taunt. Battlecry: Summon Margit (1/1 with Taunt)",
     "rivals": [
       {
         "who": "the Tarnished",

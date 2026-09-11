@@ -70,6 +70,11 @@ try {
   assert.deepEqual(await page.locator('.gallery-deck-curve span').allTextContents(), Array(10).fill('3'));
   assert.equal(await page.locator('.gallery-deck-remove:not([disabled])').count(), 0);
   assert.equal(await page.locator('.gallery-deck-action').count(), 0, 'No action rows beneath cards');
+  assert(!(await page.locator('.gallery-deck-footer').textContent()).includes('Changes save automatically'));
+  assert.equal(await page.locator('.gallery-card-add[title], .gallery-cell[title]').count(), 0, 'Card bodies must not show hover messages');
+  const selectedStyle = await page.locator('.gallery-cell.is-in-deck .gallery-card-add').first().evaluate(el => ({shadow:getComputedStyle(el).boxShadow,cursor:getComputedStyle(el).cursor}));
+  assert(selectedStyle.shadow.includes('85, 220, 131'), 'Selected cards need a green outline');
+  assert(selectedStyle.cursor.startsWith('url(') && !selectedStyle.cursor.includes('copy'), 'Cards use the custom cursor without a copy badge');
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: 950 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -147,6 +152,7 @@ try {
   await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).click();
   assert.equal(await page.locator('.gallery-detail-panel').count(), 0, 'Clicking the card body must not open lore');
   assert(!(await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).isEnabled()), 'Selected cards cannot be added twice');
+  assert((await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).evaluate(el=>getComputedStyle(el).boxShadow)).includes('85, 220, 131'), 'Adding a card applies its green outline immediately');
   record = await progress(); assert.equal(record.playerDeck.length, 30); assert(record.playerDeck.includes('c104')); assert(!record.playerDeck.includes('c001'));
   await page.getByLabel('Search the gallery').fill('');
   await page.getByLabel('Filter by unlocked or locked').selectOption('locked');

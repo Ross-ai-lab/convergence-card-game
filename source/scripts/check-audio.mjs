@@ -260,17 +260,17 @@ const before = await page.evaluate(() => window.__sfx.getStats().themesPlayed);
 // whether the opening hand happened to contain a board-playable card or a
 // relic that needs a bearer.
 await page.evaluate(() => window.__debug?.giveCard("Modern Tank"));
-const hand = page.locator(".hand-card").last();
+const hand = page.locator(".hand-card").filter({hasText:"Modern Tank"}).last();
 let placed = false;
 if (await hand.count()) {
-  await hand.click({ timeout: 2000 }).catch(() => {});
-  await page.waitForTimeout(400);
+  await hand.click({ timeout: 10000 });
   const slots = page.locator(".board-slot.placeable");
+  await slots.first().waitFor({state:"visible",timeout:10000});
   if (await slots.count()) {
-    await slots.first().click({ timeout: 2000 }).catch(() => {});
+    await slots.first().click({ timeout: 10000 });
     placed = true;
   }
-  await page.waitForTimeout(2400);
+  await page.waitForFunction(before => window.__sfx.getStats().themesPlayed > before, before, {timeout:10000});
 }
 const after = await page.evaluate(() => window.__sfx.getStats());
 check(

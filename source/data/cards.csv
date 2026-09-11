@@ -3,7 +3,7 @@ c001,John Wick,1,1,1,Black,Nature,Neutral,Passive,friendly_death_buff_1_1,passiv
 c002,Joker,1,1,1,Red,Nature,Evil,,copy_minion_to_hand,onPlay,"Battlecry: Put a copy of a minion in your hand",The punchline was already loaded.,DCU,/card-art/raw/c002.webp
 c003,Detective L,1,1,4,Yellow,Nature,Good,Passive,foresight_draw,passive,"Passive: Your draw now shows 2 cards, pick one",Justice works in probabilities.,Death Note,/card-art/raw/c003.webp
 c004,Bigfoot,2,2,2,Black,Nature,Neutral,Passive,dodge_50,passive,Passive: Evades 50% of incoming attacks,The woods answer with silence.,Myth,/card-art/raw/c004.webp
-c005,Batman,2,1,1,Purple,Tech,Good,,batman_gadget_choice,onPlay,"Battlecry: Choose an enemy minion. Choose one gadget: Freeze it; Silence it; or give it -3 ATK",Preparation beats power.,DCU,/card-art/raw/c005.webp
+c005,Batman,2,1,1,Purple,Tech,Good,,batman_gadget_choice,onPlay,Battlecry: Choose an enemy minion. Choose one gadget: Freeze it; Silence it; or give it -3 ATK,Preparation beats power.,DCEU,/card-art/raw/c005.webp
 c006,Sandworm,2,1,3,Black,Nature,Neutral,Taunt;Passive,small_attack_ward,passive,Taunt. Passive: Cannot be damaged by minions with 2 or less ATK,The desert itself has teeth.,Dune,/card-art/raw/c006.webp
 c007,Pandora's Actor,2,2,2,Red,Magic,Evil,,copy_minion_effects,onPlay,Battlecry: Choose another minion. Become it. HP and ATK are not copied,Every role is useful.,Overlord,/card-art/raw/c007.webp
 c008,T-1000,5,3,5,Purple,Tech,Neutral,Ongoing,heal_self_full,ongoing,Ongoing: Fully heal yourself,It remembers its shape.,Terminator,/card-art/raw/c008.webp
@@ -45,7 +45,7 @@ c043,Doctor Manhattan,10,1,1,Purple,Magic,Neutral,,set_stats_choice,onPlay,Battl
 c044,Mastered Ultra Instinct Goku,10,6,7,Purple,Magic,Good,Passive,evade_first_attack,passive,Passive: Evade the first attack targeting Goku each enemy turn,Activate Universe Breathing Technique,Dragon Ball,/card-art/raw/c044.webp
 c045,Rick Prime,10,1,1,Purple,Tech,Evil,,rick_return_all,onPlay,Battlecry: Return all other minions to their owners' hands,What…,Rick and Morty,/card-art/raw/c045.webp
 c046,The Watcher,10,10,7,Purple,Magic,Neutral,Cannot Attack;Passive,watcher_reveal_hand,passive,Cannot attack. Passive: Your opponent's hand is revealed to you,The Witness,MCU,/card-art/raw/c046.webp
-c047,"Escanor ""The One""",8,8,4,Red,Magic,Good,,double_other_friendly_attack,onPlay,"Battlecry: Double your other friendly minions attack","The Sun, incarnated",Seven Deadly Sins,/card-art/raw/c047.webp
+c047,Escanor,8,8,4,Red,Magic,Good,,double_other_friendly_attack,onPlay,Battlecry: Double your other friendly minions attack,"The Sun, incarnated",Seven Deadly Sins,/card-art/raw/c047.webp
 c048,Lelouch Lamperouge,8,1,1,Yellow,Magic,Neutral,,mind_control_enemy,onPlay,Battlecry: Gain control of an enemy minion,Obey,Code Geass,/card-art/raw/c048.webp
 c049,Rimuru Tempest,9,1,1,Yellow,Magic,Good,,rimuru_tempest,onPlay,Battlecry: Destroy a minion. Gain its stats. Ongoing: Gain +1/+1,Infinite growth,Tensura,/card-art/raw/c049.webp
 c050,Aizen,9,4,4,Purple,Magic,Evil,Reborn,aizen_reborn_twice,reborn,Reborn twice. Silence and chain your killer,All part of the plan,Bleach,/card-art/raw/c050.webp
@@ -101,7 +101,7 @@ c101,The 7 Heroic Spirits,7,2,2,Purple,Magic,Neutral,,heroic_relics,onPlay,Battl
 c102,Dragon,5,3,5,Black,Nature,Neutral,Taunt,none,none,Taunt,ROAR,Myth,/card-art/raw/c102.webp
 c103,Fort,5,4,5,Black,Tech,Neutral,Taunt;Cannot Attack,none,none,Taunt. Cannot attack,-,Basic,/card-art/raw/c103.webp
 c104,GLaDOS,5,2,3,Yellow,Tech,Evil,Passive;Cannot Attack,glados_adjacent_tech,passive,Cannot attack. Passive: Adjacent friendly Tech minions have Taunt and +2/+2,The test continues,Portal,/card-art/raw/c104.webp
-c105,The Driller,5,1,1,Black,Tech,Evil,,consume_tech_4_hp,onPlay,Battlecry: Consume an enemy Tech minion with 4 HP or lower,Latest design,MCU,/card-art/raw/c105.webp
+c105,The Driller,5,1,1,Black,Tech,Evil,,consume_tech_4_hp,onPlay,Battlecry: Consume an enemy Tech minion with 4 HP or lower,Latest design,Transformers,/card-art/raw/c105.webp
 c106,Transformers,5,2,5,Black,Tech,Neutral,,consume_all_friendly_tech,onPlay,Battlecry: Consume all friendly Tech minions and gain their stats and effects,Cybertronian,Transformers,/card-art/raw/c106.webp
 c107,Chrollo,4,3,5,Yellow,Magic,Evil,,steal_passive,onPlay,Battlecry: Copy a passive from a minion. That minion loses the passive as long as Chrollo is alive,A poisonous spider,HxH,/card-art/raw/c107.webp
 c108,Musashi,4,2,1,Yellow,Nature,Neutral,,destroy_all_damaged_enemies,onPlay,Battlecry: Destroy all damaged enemy minions,Another duel to win,Baki,/card-art/raw/c108.webp
@@ -131,7 +131,7 @@ c131,Illumi,3,1,1,Purple,Magic,Evil,,mind_control_2,onPlay,Battlecry: Gain contr
 c132,Kento Nanami,3,1,1,Purple,Magic,Good,,set_hp_1,onPlay,Battlecry: Set an enemy minion's HP to 1,7:3 Ratio Technique,Jujutsu Kaisen,/card-art/raw/c132.webp
 c133,Kuma,3,2,3,Purple,Tech,Good,,bounce_friendly_discount,onPlay,Battlecry: Return a friendly minion to your hand. It costs 5 less the next time it is played this game (minimum 1),Weapon,One Piece,/card-art/raw/c133.webp
 c134,Tai Lung,3,3,3,Purple,Nature,Evil,Chained;Passive,tai_lung_kill_keywords,passive,"Chained. Passive: Whenever Tai Lung kills a minion, gain +1/+1 and its keywords",Imprisoned for 20 years,Kung-Fu Panda,/card-art/raw/c134.webp
-c135,APR,3,0,3,Black,Magic,Good,Taunt;Passive,attack_lock,passive,"Taunt. Passive: After the enemy minion attacks this minion, it can't attack for 2 turns",Taxes,HxH,/card-art/raw/c135.webp
+c135,Knuckle,3,0,3,Black,Magic,Good,Taunt;Passive,attack_lock,passive,"Taunt. Passive: After the enemy minion attacks this minion, it can't attack for 2 turns",Taxes,HxH,/card-art/raw/c135.webp
 c136,Cthulhu,8,8,8,Black,Magic,Neutral,Chained;Passive,immune_tech_minions,passive,Chained. Passive: Immune to Tech minions,He dreams,Myth,/card-art/raw/c136.webp
 c137,Giant Crystal,3,1,1,Black,Magic,Neutral,Divine Shield,buff_all_magic_2_1,ongoing,Divine Shield. Ongoing: Give all other friendly Magic minions +2/+1,Spawnpoint,Core,/card-art/raw/c137.webp
 c138,Giant Tree,3,1,1,Black,Nature,Neutral,Passive,buff_all_nature_2_1,passive,Passive: All other friendly Nature minions have +2/+1,Older than the roots it feeds.,Core,/card-art/raw/c138.webp
@@ -151,7 +151,7 @@ c151,Mr. Oliva,2,3,2,Purple,Nature,Neutral,Passive,oliva_ward,passive,Passive: C
 c152,Stain,2,1,1,Purple,Magic,Evil,,destroy_damaged_enemy,onPlay,Battlecry: Destroy a damaged minion,No heroes,MHA,/card-art/raw/c152.webp
 c153,Black Ops,2,2,2,Black,Tech,Neutral,Passive,black_ops_ignore_taunt,passive,Passive: Ignore Taunt,Classified,Basic,/card-art/raw/c153.webp
 c154,Gravelord Nito,4,2,3,Black,Magic,Neutral,Passive,nito_any_death_1_1,passive,Passive: Gain +1/+1 when a minion dies,The first of the dead keeps the count.,Dark Souls,/card-art/raw/c154.webp
-c155,Margit the Fell Omen,3,1,1,Black,Magic,Neutral,Deathrattle,deathrattle_summon_morgott,deathrattle,"Deathrattle: Summon Morgott, the Omen King (3/3)",The immovable,Elden Ring,/card-art/raw/c155.webp
+c155,"Morgott, the Omen King",3,1,1,Black,Magic,Neutral,Taunt,summon_margit,onPlay,Taunt. Battlecry: Summon Margit (1/1 with Taunt),The immovable,Elden Ring,/card-art/raw/token-morgott.webp
 c156,Ouken,2,2,1,Black,Magic,Evil,Reborn,ouken_reborn,reborn,Reborn infinitely. Become Chained after each Reborn,Immortality cost him everything,Ranking of Kings,/card-art/raw/c156.webp
 c157,Pillar Men,4,4,4,Black,Nature,Evil,Chained;Passive,pillar_men_kill_heal,passive,"Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health",They outwaited the sun.,JoJo,/card-art/raw/c157.webp
 c159,Indiana Jones,1,1,1,Red,Nature,Good,,discover_relic_self,onPlay,Battlecry: Discover 1 of 3 Ascension Relics. Add it to your hand,Mine,Indiana Jones,/card-art/raw/c159.webp
