@@ -165,9 +165,11 @@ export type Keyword = (typeof KEYWORDS)[number];
  */
 export const EFFECT_IDS = [
   "none",
+  "deathrattle_damage_both_cores_20",
+  "carrier_lock_enemy_tech",
   "draw_card",
   "draw_relic",
-  "small_attack_ward",
+  "small_attack_ward_3",
   "aoe_damage_3",
   "time_bomb_destroy_all",
   "godzilla_damage_burst",
@@ -232,7 +234,7 @@ export const EFFECT_IDS = [
   "immune_magic_minions",
   "immune_tech_minions",
   "immune_nature_minions",
-  "enemy_cards_cost_1_more",
+  "enemy_magic_minions_cost_2_more",
   "dodge_80",
   "on_kill_buff_1",
   "on_survive_buff_1",
@@ -242,7 +244,7 @@ export const EFFECT_IDS = [
   "shifu_shield",
   "kaku_evade_counter",
   "superman_damage_cap_3",
-  "charge_ignore_taunt",
+  "nyan_unerring_attacks",
   "batman_gadget_choice",
   "steal_and_equip_relic",
   "flowey_save_load",
@@ -308,7 +310,6 @@ export const EFFECT_IDS = [
   "invulnerable_if_frozen",
   "summon_sins",
   "yoda_lowest_atk_buff",
-  "king_attack_lock_random",
   "dominion_authority",
   "kratos_lockdown",
   "ten_commandments_first_attack",
@@ -384,6 +385,8 @@ export interface TemporaryMinionControl {
 }
 
 export interface MinionInstance {
+  /** Recomputed from living enemy Carrier Strike Groups. */
+  techAttackSuppressed?: boolean;
   instanceId: string;
   cardId: string;
   owner: PlayerId;
@@ -481,7 +484,7 @@ export interface PlayerState {
   id: PlayerId;
   name: string;
   health: number;
-  /** Aladdin Lamp: one Divine Shield for this player's core. */
+  /** Genie: one Divine Shield for this player's core. */
   heroDivineShield?: boolean;
   maxMana: number;
   mana: number;

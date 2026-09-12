@@ -1,6 +1,6 @@
 {
   "status": "Campaign release: all four implementation chunks complete",
-  "rosterCount": 216,
+  "rosterCount": 218,
   "starterCardIds": [
     "c169",
     "c001",
@@ -48,7 +48,7 @@
     "Tensura": "Tensura",
     "That time I got reincarnated as a Slime": "Tensura"
   },
-  "universeException": "Basic cards stay Basic, including Star Destroyer. They are required starter references, not franchise rewards.",
+  "universeException": "Star Destroyer now has Star Wars origin but retains its existing starter ownership. New Basic cards are initial collection options, not automatic changes to saved thirty-card decks.",
   "rewardSelection": "Filler IDs selected once during design. The runtime must read the listed IDs and never reroll them.",
   "chapters": [
     {
@@ -1442,5 +1442,42 @@
       }
     }
   },
-  "bossFillerPolicy": "A boss may use non-reserved filler cards rewarded later. Deck membership never grants an unlock. Future boss universes remain excluded until their own chapter."
+  "bossFillerPolicy": "A boss may use non-reserved filler cards rewarded later. Deck membership never grants an unlock. Future boss universes remain excluded until their own chapter.",
+  "initialUnlockedCardIds": [
+    "c169",
+    "c001",
+    "r031",
+    "c153",
+    "c006",
+    "r028",
+    "c139",
+    "c141",
+    "c138",
+    "c118",
+    "c054",
+    "r024",
+    "c103",
+    "c008",
+    "r001",
+    "c092",
+    "c085",
+    "c031",
+    "c068",
+    "c012",
+    "c076",
+    "c176",
+    "c016",
+    "c020",
+    "c177",
+    "c050",
+    "c053",
+    "c178",
+    "c043",
+    "c045",
+    "c186",
+    "c187"
+  ],
+  "universeExemptCardIds": [
+    "c068"
+  ]
 }

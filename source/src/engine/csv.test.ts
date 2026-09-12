@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { cards, resolvePublicAssetUrl } from "../data/cards";
 
 describe("card CSV data", () => {
-  it("loads the full 182-card roster", () => {
-    expect(cards).toHaveLength(182);
-    expect(new Set(cards.map((card) => card.id)).size).toBe(182);
-    expect(new Set(cards.map((card) => card.name)).size).toBe(182);
+  it("loads the full 184-card roster", () => {
+    expect(cards).toHaveLength(184);
+    expect(new Set(cards.map((card) => card.id)).size).toBe(184);
+    expect(new Set(cards.map((card) => card.name)).size).toBe(184);
   });
 
   it("contains the v1 systems needed for engine coverage", () => {
@@ -30,7 +30,7 @@ describe("card CSV data", () => {
     const changed = new Map(cards.map((card) => [card.name, card]));
     expect(changed.get("Kaido")?.keywords).not.toContain("Chained");
     expect(changed.get("Kaido")?.keywords).not.toContain("Taunt");
-    expect(changed.get("King")?.keywords).not.toContain("Taunt");
+    expect(changed.get("King")?.keywords).toEqual(["Taunt"]);
     expect(changed.get("Kaku Kaioh")?.keywords).not.toContain("Taunt");
     expect(changed.get("Gandalf the White")?.keywords).toContain("Divine Shield");
     expect(changed.get("Gandalf the White")?.effect).toBe("Divine Shield. Battlecry: Give all friendly Good minions Divine Shield");
@@ -44,13 +44,13 @@ describe("card CSV data", () => {
     });
     expect(changed.get("Stain")).toMatchObject({ atk: 1, hp: 1 });
     expect(changed.get("Eye of Sauron")).toMatchObject({
-      cost: 5,
-      atk: 1,
-      hp: 5,
-      effectId: "enemy_cards_cost_1_more",
+      cost: 3,
+      atk: 0,
+      hp: 4,
+      effectId: "enemy_magic_minions_cost_2_more",
       effectTiming: "passive",
       keywords: ["Passive"],
-      effect: "Passive: Enemy cards cost 1 more",
+      effect: "Passive: Enemy Magic minions cost 2 more",
     });
     expect(changed.get("Kizaru")).toMatchObject({ atk: 4, hp: 4 });
     expect(changed.get("Ten Tails")?.effect).toBe("Battlecry: Chain all other minions");
@@ -66,9 +66,9 @@ describe("card CSV data", () => {
       effect: "Battlecry: Deal 4 damage to all other minions",
     });
     expect(changed.get("Planetary Defense Grid")).toMatchObject({
-      cost: 9,
-      atk: 4,
-      hp: 8,
+      cost: 7,
+      atk: 3,
+      hp: 7,
       effectId: "planetary_defense_grid_taunt_buff",
       effectTiming: "passive",
       origin: "Basic",
@@ -83,9 +83,9 @@ describe("card CSV data", () => {
     });
   });
 
-  it("has exactly one Basic reference card at each mana tier from 1 through 10", () => {
+  it("has Basic reference cards across every mana tier from 1 through 10", () => {
     const basicCosts = cards.filter((card) => card.origin === "Basic").map((card) => card.cost).sort((a, b) => a - b);
-    expect(basicCosts).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect([...new Set(basicCosts)]).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   it("loads Luffy's chained-minion rescue Battlecry", () => {

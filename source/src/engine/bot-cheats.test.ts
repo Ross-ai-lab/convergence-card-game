@@ -168,7 +168,7 @@ describe("reading the dice", () => {
       hand: [],
       coins: 0,
       board: [
-        dummy("Fort", HUMAN, { atk: 1, hp: 1, maxHp: 1 }),
+        dummy("Military Fort", HUMAN, { atk: 1, hp: 1, maxHp: 1 }),
         dummy("Death Star", HUMAN, { atk: 20, hp: 20, maxHp: 20 }),
         dummy("Kurogiri", HUMAN, { atk: 20, hp: 20, maxHp: 20 }),
         null,
@@ -229,7 +229,7 @@ describe("Clairvoyance", () => {
   }
 
   const bomb = cardId("Black Hole"); // 10 mana, the top of the printed power scale
-  const scrap = cardId("Fort"); // 1 mana
+  const scrap = cardId("Military Fort"); // 1 mana
 
   // Every assertion below has to turn on WHICH card is coming, not merely on
   // whose turn it is to draw. An earlier version compared "deck with a bomb" to
@@ -294,7 +294,7 @@ describe("Insight+", () => {
     // rolls powers, so make that test fixture's tactical premise explicit.
     let state = createInitialGame(cards, "insight-plus", stableInsightRelics, { heroPowers: ["core_trade_draw", "core_trade_draw"] });
     const collected: GameState[] = [];
-    for (let step = 0; step < 400 && collected.length < 12; step += 1) {
+    for (let step = 0; step < 400 && collected.length < 48; step += 1) {
       if (state.phase === "gameOver") break;
       const actor: PlayerId =
         state.phase === "mulligan" && state.mulligan

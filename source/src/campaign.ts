@@ -1,4 +1,5 @@
 import definition from "../../materials/campaign-design.json";
+import storyDefinition from "../../materials/campaign-story.json";
 import type { BotCheats, BotSkill } from "./engine/bot";
 import { HERO_POWER_IDS } from "./engine/hero-powers";
 import type { HeroPowerId } from "./engine/types";
@@ -18,6 +19,7 @@ export interface CampaignDifficulty {
 }
 
 export interface CampaignChapter {
+  readonly story: Readonly<{ entrance: string; defeat: string; play: string }>;
   readonly chapter: number;
   readonly bossId: string;
   readonly universe: string;
@@ -56,9 +58,19 @@ const difficultyIds = Object.keys(CAMPAIGN_DIFFICULTIES) as CampaignDifficultyId
 const freezeIds = (ids: readonly string[]): readonly string[] => Object.freeze([...ids]);
 
 export const CAMPAIGN_STARTER_DECK = freezeIds(definition.starterCardIds);
+export const CAMPAIGN_INITIAL_COLLECTION = freezeIds(definition.initialUnlockedCardIds);
+export const CAMPAIGN_UNIVERSE_EXEMPT_IDS = freezeIds(definition.universeExemptCardIds);
+export const CAMPAIGN_PROTAGONIST = storyDefinition.protagonist;
+export const CAMPAIGN_PREMISE = storyDefinition.premise;
 export const CAMPAIGN_ROSTER_SIZE = definition.rosterCount;
 export const CAMPAIGN_CHAPTERS: readonly CampaignChapter[] = Object.freeze(
-  definition.chapters.map((raw): CampaignChapter => Object.freeze({
+  definition.chapters.map((raw): CampaignChapter => {
+    const story = storyDefinition.chapters.find(entry => entry.chapter === raw.chapter);
+    if (!story || story.bossId !== raw.bossId || !story.entrance || !story.defeat || !story.play) {
+      throw new Error(`Campaign chapter ${raw.chapter} needs matching entrance, defeat and collected-card dialogue.`);
+    }
+    return Object.freeze({
+    story: Object.freeze({entrance: story.entrance, defeat: story.defeat, play: story.play}),
     chapter: raw.chapter,
     bossId: raw.bossId,
     universe: raw.universe,
@@ -70,7 +82,7 @@ export const CAMPAIGN_CHAPTERS: readonly CampaignChapter[] = Object.freeze(
     rewardCardIds: freezeIds(raw.rewardCardIds),
     fillerRewardIds: freezeIds(raw.fillerRewardIds),
     deckCardIds: freezeIds(raw.deckCardIds),
-  })),
+  }); }),
 );
 
 /** Reject invalid chapter numbers rather than falling back to an easier opponent. */

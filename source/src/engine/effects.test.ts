@@ -296,7 +296,7 @@ describe("full-roster effects", () => {
     state.players[0].health = 60;
     const afterPlay = playCardFor(state, 0, "Flowey", 0);
     const afterTurn = toMyNextTurn(afterPlay);
-    expect(afterTurn.players[0].board[0]).toMatchObject({ name: "Flowey", hp: 1, maxHp: 1 });
+    expect(afterTurn.players[0].board[0]).toMatchObject({ name: "Flowey", hp: 2, maxHp: 2 });
   });
 
   it("Kizaru starts with Divine Shield and restores it on his owner's turn", () => {

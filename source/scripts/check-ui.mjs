@@ -126,7 +126,7 @@ const resetTally = (await page.locator(".unlock-tally").textContent())?.trim() ?
 check(
   "developer reset restores normal progression",
   (await page.locator(".developer-cheat-panel").count()) === 0 &&
-    /^30 \/ \d+$/.test(resetTally),
+    /^32 \/ \d+$/.test(resetTally),
   "developer controls hide and the starting pool returns",
 );
 
@@ -694,7 +694,7 @@ await newBoard();
     skip("a Taunt blocker flashes red on a blocked attack", "no __debug hook (production build?)");
   } else {
     await page.evaluate(() => {
-      window.__debug.place("Fort", "them", 0);
+      window.__debug.place("Military Fort", "them", 0);
       window.__debug.place("John Wick", "them", 1);
     });
     await page.waitForTimeout(250);

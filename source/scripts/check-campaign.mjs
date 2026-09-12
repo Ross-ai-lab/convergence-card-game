@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { launch, settleMotion } from './browser.mjs';
 import { seedCampaignProgress } from './campaign-fixtures.mjs';
+import { skipCampaignDialogue } from './story-fixtures.mjs';
 import { mkdir } from 'node:fs/promises';
 
 const base = process.argv[2] ?? 'http://localhost:5177';
@@ -8,16 +9,28 @@ const browser = await launch(); const page = await browser.newPage({ viewport: {
 const errors = []; page.on('pageerror', (error) => errors.push(error.message));
 const progress = () => page.evaluate(() => JSON.parse(localStorage.getItem('convergence.progress.v3')));
 async function board() {
+  await skipCampaignDialogue(page);
   await page.locator('.duel-intro').waitFor({ state: 'detached', timeout: 20000 });
+  await page.locator('.mulligan-panel').waitFor();
+  assert(await page.locator('.mulligan-card').evaluateAll(cards => cards.every(card => {
+    const width=card.querySelector('.card-face').getBoundingClientRect().width;
+    return [...card.querySelectorAll('.cf-rail')].every(label=>parseFloat(getComputedStyle(label).fontSize)<=width*26/750+0.6)
+      && [...card.querySelectorAll('.cf-flavor span')].every(label=>parseFloat(getComputedStyle(label).fontSize)<=width*(card.querySelector('.rarity-relic')?58:32)/750+0.6);
+  })), 'Mulligan labels must retain the normal card-relative font sizes');
+  await page.screenshot({path:'../.preview/campaign/mulligan-normal-type.png'});
   await page.locator('.mulligan-panel button.primary').click();
   await page.waitForFunction(() => window.__debug?.state().phase === 'main' && JSON.parse(localStorage.getItem('convergence.save.v29') ?? '{}').game?.phase === 'main');
 }
-async function finish(label = 'I win') {
+async function finish(label = 'I win', keepSpeech = false) {
   await page.getByRole('button', { name: 'DEV tools', exact: true }).click();
   await page.locator('.developer-search input').fill('John Wick');
   await page.locator('.developer-card-row').first().click();
   await page.getByRole('button', { name: label, exact: true }).click();
   await page.waitForFunction(() => document.querySelector('.result-overlay'));
+  if (label === 'I win' && !keepSpeech) {
+    await page.locator('[data-story-stage="defeat"]').waitFor();
+    await skipCampaignDialogue(page);
+  }
 }
 async function collectPack() {
   await page.locator('.pack-veil').waitFor({ state: 'visible' });
@@ -36,7 +49,7 @@ try {
   await mkdir('../.preview/campaign', { recursive: true });
   await page.goto(base); await page.evaluate(() => { localStorage.clear(); localStorage.setItem('convergence.progress.v2', '{"unlocked":216}'); localStorage.setItem('sound-test-preference', 'preserve'); }); await page.reload();
   await page.locator('.title-screen').waitFor();
-  assert.equal((await progress()).unlockedIds.length, 30);
+  assert.equal((await progress()).unlockedIds.length, 32);
   assert.equal(await page.locator('.orbit-choice-easy, .orbit-choice-normal, .orbit-choice-hard, .daily-pack-trigger').count(), 0);
   assert.equal(await page.evaluate(() => localStorage.getItem('sound-test-preference')), 'preserve');
   await page.screenshot({ path: '../.preview/campaign/title.png' });
@@ -48,7 +61,7 @@ try {
   assert.equal(await page.locator('.campaign-chapter button:not([disabled])').count(), 1);
   const lockedChapterCard = page.locator('[data-chapter="1"]');
   const lockedChapterText = await lockedChapterCard.textContent();
-  assert.equal(await page.locator('.campaign-chapter-panel > .campaign-header .campaign-eyebrow').count(), 0);
+  assert.equal(await page.locator('.campaign-chapter-panel > .campaign-header .campaign-eyebrow').textContent(), "RICK GRAMPS' COLLECTION");
   assert.equal(await page.locator('.campaign-chapter-panel .campaign-close').textContent(), '×');
   const panelMetrics = await page.locator('.campaign-chapter-panel').evaluate((el) => ({
     overflow: getComputedStyle(el).overflowY,
@@ -67,8 +80,8 @@ try {
   await page.locator('.deck-trigger').click();
   assert.equal(await page.locator('.gallery-deck-row').count(), 30);
   assert.equal(await page.locator('.deck-trigger').count(), 1, 'One merged title entry');
-  assert.deepEqual(await page.locator('.gallery-deck-curve span').allTextContents(), Array(10).fill('3'));
-  assert.equal(await page.locator('.gallery-deck-remove:not([disabled])').count(), 0);
+  assert.deepEqual(await page.locator('.gallery-deck-curve span').allTextContents(), ['3','2','3','6','2','2','4','3','2','3']);
+  assert.equal(await page.locator('.gallery-deck-remove:not([disabled])').count(), 30);
   assert.equal(await page.locator('.gallery-deck-action').count(), 0, 'No action rows beneath cards');
   assert(!(await page.locator('.gallery-deck-footer').textContent()).includes('Changes save automatically'));
   assert.equal(await page.locator('.gallery-card-add[title], .gallery-cell[title]').count(), 0, 'Card bodies must not show hover messages');
@@ -93,7 +106,17 @@ try {
   await page.getByRole('button', { name: 'Close', exact: true }).click();
   await page.locator('.duel-trigger').click();
   await page.screenshot({ path: '../.preview/campaign/chapters.png' });
-  await page.getByRole('button', { name: 'Play chapter 1', exact: true }).click(); await board();
+  await page.getByRole('button', { name: 'Play chapter 1', exact: true }).click();
+  await page.locator('[data-story-stage="prologue"]').waitFor();
+  assert((await page.locator('.campaign-speech-text').textContent()).includes('Rick Gramps'));
+  await page.locator('.campaign-speech-text').click();
+  await page.screenshot({path:'../.preview/campaign/story-prologue.png'});
+  await page.locator('[data-story-skip]').click();
+  await page.locator('[data-story-stage="entrance"]').waitFor();
+  assert((await page.locator('.campaign-speech-panel h2').textContent()).includes('GLaDOS'));
+  await page.locator('.campaign-speech-text').click();
+  await page.screenshot({path:'../.preview/campaign/story-entrance.png'});
+  await board();
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v29')));
   assert.equal(saved.mode.kind, 'campaign'); assert.equal(saved.mode.chapter, 1);
   assert.equal(saved.game.playerDecks[0].deck.length, 27); assert.equal(saved.game.playerDecks[1].deck.length, 27);
@@ -102,7 +125,7 @@ try {
   await page.getByRole('button', { name: 'Inspect GLaDOS', exact: true }).click();
   assert(await page.getByRole('dialog', { name: 'GLaDOS card details' }).isVisible());
   assert(!(await page.getByRole('dialog', { name: 'GLaDOS card details' }).textContent()).includes('cards unlocked'));
-  assert.equal((await progress()).unlockedIds.length, 30, 'Inspecting a locked boss cannot unlock it');
+  assert.equal((await progress()).unlockedIds.length, 32, 'Inspecting a locked boss cannot unlock it');
   await page.keyboard.press('Escape');
   assert.equal(await page.getByRole('dialog', { name: 'GLaDOS card details' }).count(), 0);
   await page.evaluate(() => window.__debug.place('Modern Tank', 'me', 0));
@@ -119,11 +142,15 @@ try {
   assert(continueBefore && continueAfter && Math.abs(continueAfter.x - continueBefore.x) < 0.25 && Math.abs(continueAfter.y - continueBefore.y) < 0.25);
   await page.locator('.continue-duel').click();
   assert.equal(await page.locator('.mulligan-panel').count(), 0);
-  await finish();
+  await finish("I win", true);
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('convergence.progress.v3')).completedChapters === 1);
-  let record = await progress(); assert.equal(record.unlockedIds.length, 39); assert.equal(record.pendingRewards.length, 9);
+  let record = await progress(); assert.equal(record.unlockedIds.length, 41); assert.equal(record.pendingRewards.length, 9);
+  assert.equal(record.pendingBossSpeech,1);
   assert.equal(record.playerDeck.length, 30); assert.equal(record.selectedHeroPower, 'core_heal');
-  await page.reload(); await page.locator('.pack-stage').waitFor(); assert.equal((await progress()).pendingRewards.length, 9);
+  await page.reload(); await page.locator('[data-story-stage="defeat"]').waitFor();
+  await page.locator('.campaign-speech-text').click();
+  await page.screenshot({path:'../.preview/campaign/story-defeat.png'});
+  await skipCampaignDialogue(page); await page.locator('.pack-stage').waitFor(); assert.equal((await progress()).pendingRewards.length, 9);
   await collectPack(); assert.equal((await progress()).pendingRewards.length, 0);
   const resultCampaign = page.getByRole('button', { name: 'Campaign & deck', exact: true });
   if (await resultCampaign.isVisible().catch(() => false)) await resultCampaign.click();
@@ -168,8 +195,17 @@ try {
   await page.screenshot({ path: '../.preview/campaign/deck-editor.png' });
   await page.getByRole('button', { name: 'Close', exact: true }).click();
   await page.locator('.duel-trigger').click();
-  await page.locator('[data-chapter="1"] button').click(); await board(); await finish();
-  assert.equal((await progress()).unlockedIds.length, 39); assert.equal((await progress()).completedChapters, 1);
+  await page.locator('[data-chapter="1"] button').click(); await board();
+  await page.evaluate(()=>window.__debug.giveCard('GLaDOS'));
+  const enableCheat=page.locator('.cheat-toggle:not(.active)');
+  if(await enableCheat.isVisible())await enableCheat.click();
+  await page.locator('.hand-card').filter({hasText:'GLaDOS'}).last().click();
+  await page.locator('.board-slot.placeable.empty').first().click();
+  await page.locator('[data-boss-speech="GLaDOS"]').waitFor();
+  assert((await page.locator('.collected-boss-speech .speech-accessible').textContent()).includes('Your assistant has arrived'));
+  await page.screenshot({path:'../.preview/campaign/collected-boss-speech.png'});
+  await finish();
+  assert.equal((await progress()).unlockedIds.length, 41); assert.equal((await progress()).completedChapters, 1);
   assert.equal(await page.locator('.pack-stage').count(), 0);
   await page.getByRole('button', { name: 'Campaign & deck', exact: true }).click();
   await page.getByRole('button', { name: 'Play chapter 2', exact: true }).click(); await board(); await finish('Enemy wins');
@@ -181,7 +217,7 @@ try {
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v29')));
   assert.equal(saved.game.botCheats[1].foresight, true);
   await finish(); await page.waitForFunction(() => JSON.parse(localStorage.getItem('convergence.progress.v3')).completedChapters === 20);
-  assert.equal((await progress()).unlockedIds.length, 216); assert.deepEqual((await progress()).pendingRewards, ['c041']);
+  assert.equal((await progress()).unlockedIds.length, 218); assert.deepEqual((await progress()).pendingRewards, ['c041']);
   await collectPack(); await page.getByRole('button', { name: 'Menu', exact: true }).click();
   assert.equal(await page.locator('.orbit-choice-easy, .orbit-choice-normal, .orbit-choice-hard').count(), 3);
   await page.screenshot({ path: '../.preview/campaign/completed.png' });

@@ -164,9 +164,9 @@ describe("separate-deck abilities", () => {
 
   it("Angstrom buries and replaces an enemy using the enemy deck, never the actor's", () => {
     let state = main(); state.players[1].board[0] = body("c004", 1);
-    state.playerDecks![0].deck = ["c153"]; state.playerDecks![1].deck = ["c006"];
+    state.playerDecks![0].deck = ["c153"]; state.playerDecks![1].deck = ["c005"];
     state = resolveChoices(play(state, "c163"));
-    expect(state.players[1].board[0]?.cardId).toBe("c006");
+    expect(state.players[1].board[0]?.cardId).toBe("c005");
     expect(state.playerDecks![1].bottomDeck).toEqual(["c004"]); expect(state.playerDecks![0].deck).toEqual(["c153"]);
   });
 

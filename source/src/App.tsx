@@ -86,12 +86,13 @@ import {
   type Progress,
 } from "./progress";
 import { STARTING_POOL, revealOrder } from "./unlocks";
-import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES } from "./campaign";
+import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES, CAMPAIGN_PREMISE, CAMPAIGN_PROTAGONIST } from "./campaign";
 import { createCampaignDuel } from "./campaign-duel";
-import { campaignComplete, canPlayChapter, acknowledgeRewards, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeRewards, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
 import { randomDeck, validateDeck } from "./decks";
 import { remainingDeckCount } from "./engine/draw-piles";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
+import { CampaignSpeech, CollectedBossSpeech, type SpeechCue } from "./screens/CampaignSpeech";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
@@ -598,6 +599,11 @@ export default function App() {
   const [tutorialStep, setTutorialStep] = useState(0);
   // Unviewed first-clear rewards survive reload; developer previews are transient.
   const [pack, setPack] = useState<string[] | null>(() => initialProgress.pendingRewards.length ? initialProgress.pendingRewards : null);
+  const [chapterSpeech, setChapterSpeech] = useState<{mode: Extract<GameMode,{kind:"campaign"}>; stage:"prologue"|"entrance"} | null>(null);
+  const [bossLines, setBossLines] = useState<SpeechCue[]>([]);
+  const closeBossLine = useCallback(() => setBossLines(lines => lines.slice(1)), []);
+  const defeatedChapter = progress.pendingBossSpeech ? CAMPAIGN_CHAPTERS.find(chapter => chapter.chapter === progress.pendingBossSpeech) : undefined;
+  const defeatedBoss = defeatedChapter ? library[defeatedChapter.bossId] : undefined;
   const [storageError, setStorageError] = useState(false);
   const [builderSeat, setBuilderSeat] = useState<0 | 1>(0);
   const [builderReturn, setBuilderReturn] = useState<"title" | "campaign" | "hotseat">("title");
@@ -613,6 +619,26 @@ export default function App() {
   function closePack() {
     if (!progress.pendingRewards.length || persistProgress(acknowledgeRewards(progress))) setPack(null);
   }
+  function continueChapterSpeech() {
+    if (!chapterSpeech) return;
+    if (chapterSpeech.stage === "prologue") {
+      const next = {...progress, storyIntroduced:true};
+      const saved = saveProgress(next); setStorageError(!saved);
+      if (saved) { setProgress(next); setChapterSpeech({...chapterSpeech,stage:"entrance"}); }
+      return;
+    }
+    const next = chapterSpeech.mode;
+    setChapterSpeech(null);
+    beginDuel(next,{skipStory:true});
+  }
+  function closeDefeatSpeech() {
+    const next = {...progress,pendingBossSpeech:null};
+    const saved = saveProgress(next); setStorageError(!saved);
+    if (saved) setProgress(next);
+  }
+  useEffect(() => {
+    if (screen !== "playing" || game.phase === "gameOver") setBossLines([]);
+  }, [screen, game.phase]);
 
   useEffect(() => {
     if (screen !== "title" || overlay !== null) return;
@@ -1474,6 +1500,17 @@ export default function App() {
     }
     const result = applyAction(game, action, library);
     if (result.state !== game) {
+      if (!tutorialActive && (mode.kind === "hotseat" || action.player === viewerId)) {
+        for (const event of result.events) {
+          if (event.kind !== "play" || event.player !== action.player || !event.cardId) continue;
+          const chapter = CAMPAIGN_CHAPTERS.find(entry => entry.bossId === event.cardId && entry.chapter <= progress.completedChapters);
+          const boss = chapter ? library[chapter.bossId] : undefined;
+          if (chapter && boss && isMinionCard(boss)) {
+            const cue = {id:fxId.current++,name:boss.name,art:boss.art,text:chapter.story.play,accent:campAccent(boss.camp)};
+            setBossLines(lines => [...lines, cue]);
+          }
+        }
+      }
       spawnFx(game, result.state, action, result.events);
       if (result.state.activePlayer !== game.activePlayer && result.state.phase !== "gameOver") {
         sfx.play("turn", 0.05);
@@ -1586,7 +1623,7 @@ export default function App() {
   }
 
   /** Starts a fresh duel in the chosen mode, straight from the title screen. */
-  function beginDuel(next: GameMode, options: { testCardId?: string } = {}) {
+  function beginDuel(next: GameMode, options: { testCardId?: string; skipStory?: boolean } = {}) {
     if (next.kind === "campaign" && !canPlayChapter(progress, next.chapter)) return;
     if (next.kind === "bot" && !campaignComplete(progress) && !options.testCardId) { setOverlay("campaign"); return; }
     if (!options.testCardId && !validateDeck(progress.playerDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) {
@@ -1594,6 +1631,11 @@ export default function App() {
       return;
     }
     if (next.kind === "hotseat" && !validateDeck(progress.hotseatDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) { openDeck(1, "hotseat"); return; }
+    if (next.kind === "campaign" && !options.skipStory) {
+      setOverlay(null);
+      setChapterSpeech({mode:next,stage:progress.storyIntroduced ? "entrance" : "prologue"});
+      return;
+    }
     const seed = createDuelSeed();
     const nextGame = prepareDuel(next, seed, Boolean(options.testCardId));
     next = { ...next, duelId: seed }; setOverlay(null);
@@ -1612,6 +1654,7 @@ export default function App() {
     duelCards.current = { seen: new Set(), played: new Set() };
     duelRecorded.current = false;
     setPack(null);
+    setBossLines([]);
     setDuelIntro({ id: fxId.current++, phase: "prelude" });
     setMode(next);
     if (options.testCardId && library[options.testCardId]) {
@@ -2562,7 +2605,7 @@ export default function App() {
       className={[
         "hs-shell",
         screen === "title" ? "at-title" : "",
-        overlay || developerToolsOpen || pack ? "has-overlay" : "",
+        overlay || developerToolsOpen || pack || chapterSpeech || defeatedChapter ? "has-overlay" : "",
         drag?.active ? "grabbing" : "",
         tutorialActive ? "tutorial-mode" : "",
         developerDuelActive ? "developer-duel" : "",
@@ -3092,7 +3135,7 @@ export default function App() {
 
       {/* Above the result screen, not beside it. The pack is the reward for the
           duel that just ended, so it has to be the thing in the way. */}
-      {pack ? (
+      {pack && !defeatedChapter ? (
         <CardPack ids={pack} library={library} total={progress.unlockedIds.length} onDone={closePack} />
       ) : null}
 
@@ -3106,6 +3149,19 @@ export default function App() {
       ) : null}
 
       {duelIntro ? <DuelIntro phase={duelIntro.phase} /> : null}
+      {bossLines[0] && screen === "playing" && game.phase !== "gameOver" ? <CollectedBossSpeech key={bossLines[0].id} cue={bossLines[0]} onDone={closeBossLine} /> : null}
+      {chapterSpeech && (() => {
+        const chapter = CAMPAIGN_CHAPTERS[chapterSpeech.mode.chapter-1];
+        const boss = library[chapter.bossId];
+        return <CampaignSpeech key={`${chapterSpeech.stage}-${chapter.chapter}`} stage={chapterSpeech.stage} chapter={chapter.chapter}
+          name={chapterSpeech.stage === "prologue" ? CAMPAIGN_PROTAGONIST : boss.name}
+          text={chapterSpeech.stage === "prologue" ? CAMPAIGN_PREMISE : chapter.story.entrance}
+          art={chapterSpeech.stage === "prologue" ? undefined : boss.art} accent={isMinionCard(boss) ? campAccent(boss.camp) : "#d7b76f"}
+          onContinue={continueChapterSpeech} onCancel={() => {setChapterSpeech(null);setOverlay("campaign");}} />;
+      })()}
+      {defeatedChapter && defeatedBoss && <CampaignSpeech key={`defeat-${defeatedChapter.chapter}`} stage="defeat" chapter={defeatedChapter.chapter}
+        name={defeatedBoss.name} text={defeatedChapter.story.defeat} art={defeatedBoss.art}
+        accent={isMinionCard(defeatedBoss) ? campAccent(defeatedBoss.camp) : "#d7b76f"} onContinue={closeDefeatSpeech} />}
 
       {screen === "title" ? (
         <TitleScreen
@@ -3772,7 +3828,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
   progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onClose: () => void;
 }) {
   const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
-  const readOnly = !progress.completedChapters && !progress.developerCheat;
+  const readOnly = !canEditDeck(progress);
   const deckIds = new Set(deck);
   const [query, setQuery] = useState("");
   const [help, setHelp] = useState(false);
@@ -5045,7 +5101,7 @@ function minionStates(
     minion.silenced ? "is-silenced" : "",
     minion.divineShield && !minion.silenced ? "is-shielded" : "",
     activeInvulnerable ? "is-invulnerable" : "",
-    minion.attackLocked || (!minion.silenced && minion.keywords.includes("Cannot Attack"))
+    minion.attackLocked || minion.techAttackSuppressed || (!minion.silenced && minion.keywords.includes("Cannot Attack"))
       ? "is-locked"
       : "",
     minion.markedBy || minion.markedForDeathAtTurn !== null && minion.markedForDeathAtTurn !== undefined ? "is-marked" : "",

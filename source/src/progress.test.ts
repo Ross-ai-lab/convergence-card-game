@@ -23,7 +23,7 @@ describe("the duel record", () => {
     const before = emptyProgress();
     const after = unlockAllProgress(before);
     expect(after.developerCheat).toBe(true);
-    expect(after.unlockedIds).toHaveLength(216);
+    expect(after.unlockedIds).toHaveLength(218);
     expect(after.ladders).toEqual(before.ladders);
     expect(after.recent).toEqual(before.recent);
   });

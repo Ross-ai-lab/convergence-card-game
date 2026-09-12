@@ -1,7 +1,8 @@
 import { RARITY_TIERS, rarityRank, RELIC_RARITY } from "./engine/types";
 import type { PlayableCard } from "./engine/types";
+import { CAMPAIGN_INITIAL_COLLECTION } from "./campaign";
 
-export const STARTING_POOL = 30;
+export const STARTING_POOL = CAMPAIGN_INITIAL_COLLECTION.length;
 
 /** Presentation order only. Campaign definitions decide membership. */
 function revealRank(rarity: string): number {

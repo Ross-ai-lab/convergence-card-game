@@ -32,7 +32,7 @@ export interface LoreDetail {
 export const LORE_DETAILS: Record<string, LoreDetail> = {
   "c001": {
     "name": "John Wick",
-    "origin": "Myth",
+    "origin": "John Wick",
     "epithet": "Baba Yaga",
     "rar": "Rare",
     "camp": "Nature",
@@ -65,7 +65,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Gun-Fu",
     "sig_desc": "Fluid marksmanship blending martial arts with pistol combat.",
     "playstyle": "Disruptive hand-denial pressure",
-    "ability": "Choose a card in the opponent's hand. They must play it next turn or it is burned.",
+    "ability": "Passive: Whenever a friendly minion dies, gain +1/+1",
     "rivals": [
       {
         "who": "the High Table",
@@ -86,13 +86,13 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c002": {
     "name": "Joker",
-    "origin": "DCU",
+    "origin": "DCEU",
     "epithet": "Clown Prince of Crime",
     "rar": "Mythic",
     "camp": "Nature",
     "align": "Evil",
     "cost": 1,
-    "atk": 2,
+    "atk": 1,
     "hp": 1,
     "cc": "#2f9c63",
     "vals": [
@@ -119,7 +119,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Joker Venom",
     "sig_desc": "Toxin that kills victims locked in a rictus grin.",
     "playstyle": "Hand disruption, information theft",
-    "ability": "Choose 2 cards in your opponent's hand, reveal them, then shuffle one back into the deck.",
+    "ability": "Battlecry: Put a copy of a minion in your hand",
     "rivals": [
       {
         "who": "Batman",
@@ -307,9 +307,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Nature",
     "align": "Neutral",
-    "cost": 2,
-    "atk": 2,
-    "hp": 4,
+    "cost": 4,
+    "atk": 3,
+    "hp": 3,
     "cc": "#2f9c63",
     "vals": [
       9,
@@ -335,7 +335,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "The Maker's Maw",
     "sig_desc": "Engulfs anything that disturbs the open desert sand.",
     "playstyle": "Unkillable taunt wall",
-    "ability": "Taunt. Cannot be damaged by minions with 2 or less ATK.",
+    "ability": "Taunt. Passive: Cannot be damaged by minions with 3 or less ATK",
     "rivals": [
       {
         "who": "the Fremen",
@@ -361,9 +361,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Mythic",
     "camp": "Magic",
     "align": "Evil",
-    "cost": 2,
-    "atk": 2,
-    "hp": 2,
+    "cost": 5,
+    "atk": 5,
+    "hp": 5,
     "cc": "#7a52c8",
     "vals": [
       5,
@@ -389,7 +389,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Greater Doppelganger",
     "sig_desc": "Copies any being's exact form, stats, and skills.",
     "playstyle": "Direct face-damage burst",
-    "ability": "Deal 2 damage to the enemy core.",
+    "ability": "Battlecry: Choose another minion. Become it. HP and ATK are not copied",
     "rivals": [
       {
         "who": "Ainz Ooal Gown",
@@ -469,9 +469,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Legendary",
     "camp": "Tech",
     "align": "Neutral",
-    "cost": 6,
+    "cost": 5,
     "atk": 0,
-    "hp": 7,
+    "hp": 9,
     "cc": "#1a86a8",
     "vals": [
       5,
@@ -497,7 +497,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Reset Charge Cascade",
     "sig_desc": "Dozens of TVA charges chained to shatter a timeline.",
     "playstyle": "One-shot board wipe",
-    "ability": "Deal 3 damage to all enemy minions.",
+    "ability": "Ongoing: Destroy ALL minions",
     "rivals": [
       {
         "who": "the TVA",
@@ -1117,9 +1117,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Mythic",
     "camp": "Magic",
     "align": "Evil",
-    "cost": 9,
-    "atk": 1,
-    "hp": 8,
+    "cost": 6,
+    "atk": 3,
+    "hp": 3,
     "cc": "#7a52c8",
     "vals": [
       1,
@@ -1145,7 +1145,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Death Note",
     "sig_desc": "Notebook that kills anyone whose name is written in it.",
     "playstyle": "Removes the weakest threat",
-    "ability": "Destroy the lowest-ATK enemy minion.",
+    "ability": "Battlecry: Destroy an enemy Nature minion",
     "rivals": [
       {
         "who": "L",
@@ -1279,8 +1279,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Nature",
     "align": "Evil",
-    "cost": 9,
-    "atk": 3,
+    "cost": 8,
+    "atk": 6,
     "hp": 6,
     "cc": "#2f9c63",
     "vals": [
@@ -1307,7 +1307,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Viltrumite Physiology",
     "sig_desc": "Alien strength, durability, and regeneration far past human limits.",
     "playstyle": "Scales harder vs Good",
-    "ability": "Gain +3/+2 for each enemy Good minion.",
+    "ability": "Ongoing: Gain +2/+2 for each enemy Good minion",
     "rivals": [
       {
         "who": "Invincible",
@@ -1387,9 +1387,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Mythic",
     "camp": "Tech",
     "align": "Good",
-    "cost": 10,
-    "atk": 5,
-    "hp": 8,
+    "cost": 8,
+    "atk": 6,
+    "hp": 6,
     "cc": "#1a86a8",
     "vals": [
       7,
@@ -1415,7 +1415,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Bullet Stop",
     "sig_desc": "Freezes speeding bullets in midair by will.",
     "playstyle": "Protects key allies from control",
-    "ability": "Protect a friendly slot from targeting, silence, and freeze.",
+    "ability": "Battlecry: Choose a friendly minion board slot. Minions on that slot cannot be Silenced, Frozen, or Chained",
     "rivals": [
       {
         "who": "Agent Smith",
@@ -1657,7 +1657,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Magic",
     "align": "Evil",
-    "cost": 5,
+    "cost": 4,
     "atk": 4,
     "hp": 4,
     "cc": "#7a52c8",
@@ -1685,7 +1685,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Sulfuras, Hand of Ragnaros",
     "sig_desc": "A molten hammer that channels his fire lord power.",
     "playstyle": "Executes weak Neutral minions",
-    "ability": "Destroy a random Neutral enemy minion with less than 3 HP.",
+    "ability": "Cannot attack. Ongoing: Deal 3 damage to a random enemy minion or the enemy core",
     "rivals": [
       {
         "who": "Majordomo Executus",
@@ -1981,9 +1981,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Legendary",
     "camp": "Magic",
     "align": "Evil",
-    "cost": 5,
-    "atk": 2,
-    "hp": 5,
+    "cost": 3,
+    "atk": 0,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       0,
@@ -2008,8 +2008,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "sig_name": "The All-Seeing Gaze",
     "sig_desc": "Sees any who wear the Ring or defy it.",
-    "playstyle": "Peers into the enemy hand",
-    "ability": "Reveal a random card from the enemy hand.",
+    "playstyle": "Taxes enemy Magic minions by two mana",
+    "ability": "Passive: Enemy Magic minions cost 2 more",
     "rivals": [
       {
         "who": "Frodo Baggins",
@@ -2089,9 +2089,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Nature",
     "align": "Evil",
-    "cost": 5,
-    "atk": 4,
-    "hp": 4,
+    "cost": 3,
+    "atk": 3,
+    "hp": 3,
     "cc": "#2f9c63",
     "vals": [
       6,
@@ -2117,7 +2117,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "",
     "sig_desc": "",
     "playstyle": "Strongest alone among Evil",
-    "ability": "If this is your only Evil minion, gain +3/+3.",
+    "ability": "Passive: Costs 3 less while any minion is Frozen or Chained",
     "rivals": [
       {
         "who": "Saitama",
@@ -2300,14 +2300,14 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c043": {
     "name": "Doctor Manhattan",
-    "origin": "DCU",
+    "origin": "Watchmen",
     "epithet": "The Blue God",
     "rar": "Epic",
     "camp": "Magic",
     "align": "Neutral",
     "cost": 10,
-    "atk": 3,
-    "hp": 7,
+    "atk": 1,
+    "hp": 1,
     "cc": "#2f9c63",
     "vals": [
       9,
@@ -2333,7 +2333,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Intrinsic Field Manipulation",
     "sig_desc": "Disassembles and reshapes matter down to the atom.",
     "playstyle": "Rewrites any minion's stats",
-    "ability": "Ongoing: Set any one minion's ATK and HP to values between 1 and 5",
+    "ability": "Battlecry: Choose an enemy minion board slot. Minions on that slot have their stats permanently set to 1/1",
     "rivals": [
       {
         "who": "Ozymandias",
@@ -2575,9 +2575,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Legendary",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 9,
-    "atk": 2,
-    "hp": 7,
+    "cost": 7,
+    "atk": 1,
+    "hp": 1,
     "cc": "#7a52c8",
     "vals": [
       2,
@@ -2603,7 +2603,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Power of Absolute Obedience",
     "sig_desc": "One look forces total, absolute obedience to his command.",
     "playstyle": "Mind-controls a weakened minion",
-    "ability": "Ongoing: Gain control of a minion with 4 HP or less at the start of your next turn",
+    "ability": "Battlecry: Gain control of an enemy minion",
     "rivals": [
       {
         "who": "Suzaku Kururugi",
@@ -3277,9 +3277,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 8,
-    "atk": 4,
-    "hp": 6,
+    "cost": 5,
+    "atk": 1,
+    "hp": 1,
     "cc": "#1a86a8",
     "vals": [
       6,
@@ -3305,7 +3305,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Primordial Boons",
     "sig_desc": "Grants great power after a temporary handicap.",
     "playstyle": "Board-wide power at a cost",
-    "ability": "Ongoing: Give all friendly minions +4/-1",
+    "ability": "Battlecry: Summon a random minion from your deck",
     "rivals": [
       {
         "who": "Zagreus",
@@ -3650,14 +3650,14 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c068": {
     "name": "Star Destroyer",
-    "origin": "Basic",
+    "origin": "Star Wars",
     "epithet": "Imperial Capital Ship",
     "rar": "Rare",
     "camp": "Tech",
     "align": "Neutral",
-    "cost": 8,
-    "atk": 8,
-    "hp": 8,
+    "cost": 7,
+    "atk": 5,
+    "hp": 5,
     "cc": "#1a86a8",
     "vals": [
       7,
@@ -3683,7 +3683,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Turbolaser Barrage",
     "sig_desc": "A wall of cannon fire that shreds smaller ships.",
     "playstyle": "Heavy plain beater",
-    "ability": "Vanilla beater — no ability.",
+    "ability": "Battlecry: Summon two 1/1 TIE Fighters with Charge",
     "rivals": [
       {
         "who": "the Rebel Alliance",
@@ -3865,15 +3865,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c072": {
-    "name": "Aladdin Lamp",
+    "name": "Genie",
     "origin": "Aladdin",
     "epithet": "Genie of the Lamp",
     "rar": "Epic",
     "camp": "Magic",
     "align": "Neutral",
     "cost": 7,
-    "atk": 4,
-    "hp": 6,
+    "atk": 5,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       5,
@@ -3899,7 +3899,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Three Wishes",
     "sig_desc": "Reshapes reality itself, within the ancient rules.",
     "playstyle": "Steals from the enemy hand",
-    "ability": "Ongoing: Steal a card in your opponent's hand",
+    "ability": "Battlecry: Make a wish",
     "rivals": [
       {
         "who": "Jafar",
@@ -3907,7 +3907,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
         "id": ""
       },
       {
-        "who": "Aladdin",
+        "who": "Genie",
         "rel": "the master who freed him",
         "id": "c072"
       },
@@ -4141,9 +4141,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Nature",
     "align": "Good",
-    "cost": 7,
-    "atk": 1,
-    "hp": 7,
+    "cost": 1,
+    "atk": 0,
+    "hp": 5,
     "cc": "#2f9c63",
     "vals": [
       1,
@@ -4168,8 +4168,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "sig_name": "King Engine",
     "sig_desc": "His pounding, terrified heartbeat sounds like a war drum",
-    "playstyle": "Freezes anything that hits it",
-    "ability": "Passive: Whenever this minion takes damage, freeze the attacker",
+    "playstyle": "A cheap Taunt defender with no attack-lock ability",
+    "ability": "Taunt.",
     "rivals": [
       {
         "who": "Saitama",
@@ -4352,9 +4352,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Magic",
     "align": "Evil",
-    "cost": 6,
-    "atk": 4,
-    "hp": 5,
+    "cost": 8,
+    "atk": 6,
+    "hp": 6,
     "cc": "#7a52c8",
     "vals": [
       8,
@@ -4380,7 +4380,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "",
     "sig_desc": "Nine specialists, each strong enough to solo an army",
     "playstyle": "Rewards an evil-heavy board",
-    "ability": "Ongoing: If you control 2 or more Evil minions, this minion gains Divine Shield",
+    "ability": "Battlecry: Choose 1 friendly minion board slot. Minions on that board slot gain +1/+1 at the start of your turn",
     "rivals": [
       {
         "who": "Slane Theocracy",
@@ -4401,9 +4401,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Nature",
     "align": "Evil",
-    "cost": 6,
-    "atk": 3,
-    "hp": 5,
+    "cost": 7,
+    "atk": 4,
+    "hp": 6,
     "cc": "#2f9c63",
     "vals": [
       8,
@@ -4429,7 +4429,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "",
     "sig_desc": "Gains any Nen ability from those he devours",
     "playstyle": "Cleans up weakened boards fast",
-    "ability": "Ongoing: Destroy all enemy minions with 2 HP or less",
+    "ability": "Passive: Whenever Meruem kills a minion, gain +1/+1 and gain its effects",
     "rivals": [
       {
         "who": "Isaac Netero",
@@ -4504,9 +4504,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Magic",
     "align": "Good",
-    "cost": 6,
-    "atk": 4,
-    "hp": 5,
+    "cost": 4,
+    "atk": 1,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       6,
@@ -4532,7 +4532,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Holy Smite",
     "sig_desc": "7th-tier light spell, brutal against evil-aligned foes",
     "playstyle": "Pure support, full-heal utility",
-    "ability": "Ongoing: Restore one friendly Good minion of your choice to full health",
+    "ability": "Passive: Friendly minions cannot be mind-controlled, returned to hand, or transformed by enemy effects",
     "rivals": [
       {
         "who": "Slane Theocracy",
@@ -5137,9 +5137,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Magic",
     "align": "Evil",
-    "cost": 5,
-    "atk": 2,
-    "hp": 4,
+    "cost": 7,
+    "atk": 6,
+    "hp": 6,
     "cc": "#7a52c8",
     "vals": [
       8,
@@ -5165,7 +5165,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Soul-Soul Fruit",
     "sig_desc": "Steals lifespans to breed living, soul-powered homies",
     "playstyle": "Cannibalizes her own board",
-    "ability": "Ongoing: Destroy a friendly minion. Gain its ATK and HP, in addition to your own",
+    "ability": "Battlecry: Destroy a friendly minion. Gain its ATK and HP, in addition to your own",
     "rivals": [
       {
         "who": "Kaido",
@@ -5293,15 +5293,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c101": {
-    "name": "The 7? Heroic Spirits",
+    "name": "The 7 Heroic Spirits",
     "origin": "Fate",
     "epithet": "Servants of the Grail",
     "rar": "Epic",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 5,
-    "atk": 3,
-    "hp": 6,
+    "cost": 9,
+    "atk": 4,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       8,
@@ -5327,7 +5327,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Noble Phantasm",
     "sig_desc": "Anti-unit or anti-army legendary weapon unleashed",
     "playstyle": "Removal-focused execute finisher",
-    "ability": "Ongoing: Destroy a random other minion with less than 3 HP if it is Neutral",
+    "ability": "Battlecry: All your other minions gain a random Ascension Relic",
     "rivals": [
       {
         "who": "Gilgamesh",
@@ -5401,15 +5401,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c103": {
-    "name": "Fort",
+    "name": "Military Fort",
     "origin": "Basic",
-    "epithet": "",
+    "epithet": "Modern fortified stronghold",
     "rar": "Rare",
     "camp": "Tech",
     "align": "Neutral",
-    "cost": 5,
-    "atk": 5,
-    "hp": 5,
+    "cost": 4,
+    "atk": 4,
+    "hp": 4,
     "cc": "#1a86a8",
     "vals": [
       3,
@@ -5420,7 +5420,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       0
     ],
     "rank": "C-tier · #57 in Toughness · #131 in Strength",
-    "lore": "It is a basic defensive structure with heavy toughness and zero offense, magic, or will of its own. It exists purely to occupy a lane and absorb attacks.",
+    "lore": "A layered military stronghold protected by walls, towers, radar and air defenses. Its role is to hold the line and shelter the forces behind it.",
     "quote": "",
     "str": [
       "Very high toughness",
@@ -5431,10 +5431,10 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       "No abilities whatsoever",
       "Easily bypassed by evasion"
     ],
-    "sig_name": "",
-    "sig_desc": "",
+    "sig_name": "Layered Defenses",
+    "sig_desc": "Fortified walls and overlapping defenses obstruct the enemy advance.",
     "playstyle": "Pure stat-stick blocker",
-    "ability": "Vanilla beater — no ability.",
+    "ability": "Taunt. Cannot attack",
     "rivals": [
       {
         "who": "evasive attackers",
@@ -6628,8 +6628,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Legendary",
     "camp": "Nature",
     "align": "Evil",
-    "cost": 3,
-    "atk": 3,
+    "cost": 4,
+    "atk": 2,
     "hp": 2,
     "cc": "#2f9c63",
     "vals": [
@@ -6656,7 +6656,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Devour",
     "sig_desc": "Engulfs a weaker minion whole and grows from it.",
     "playstyle": "Eats small foes to grow",
-    "ability": "Ongoing: Kill a minion with stats equal or less than 3/3. Gain it's stats",
+    "ability": "Battlecry: Consume an enemy Nature minion with 4 HP or lower",
     "rivals": [
       {
         "who": "Saitama",
@@ -6682,9 +6682,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Legendary",
     "camp": "Nature",
     "align": "Evil",
-    "cost": 3,
+    "cost": 4,
     "atk": 3,
-    "hp": 2,
+    "hp": 1,
     "cc": "#2f9c63",
     "vals": [
       3,
@@ -6709,8 +6709,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "sig_name": "",
     "sig_desc": "Blinding speed that dodges attacks and vanishes.",
-    "playstyle": "Coin-flip dodges attacks",
-    "ability": "Passive: Nyan has 50% (roll a dice) to escape an attack—Nyan takes no damage and deals no counterattack",
+    "playstyle": "Charges past Taunt and evasion",
+    "ability": "Charge. Passive: Attacks ignore Taunt and cannot be evaded",
     "rivals": [
       {
         "who": "Saitama",
@@ -7006,8 +7006,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Tech",
     "align": "Good",
-    "cost": 3,
-    "atk": 2,
+    "cost": 5,
+    "atk": 3,
     "hp": 3,
     "cc": "#1a86a8",
     "vals": [
@@ -7034,7 +7034,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Paw-Paw Fruit",
     "sig_desc": "Repels any object, body, or pain with a single push.",
     "playstyle": "Bounces a minion back to hand",
-    "ability": "Ongoing: Return a friendly minion to your hand. It costs 5 less the next time it is played this game (minimum 1)",
+    "ability": "Battlecry: Return a friendly minion to your hand. It costs 5 less the next time it is played this game",
     "rivals": [
       {
         "who": "Monkey D. Luffy",
@@ -7168,9 +7168,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 3,
-    "atk": 2,
-    "hp": 3,
+    "cost": 6,
+    "atk": 6,
+    "hp": 6,
     "cc": "#7a52c8",
     "vals": [
       7,
@@ -7196,7 +7196,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Maddening Presence",
     "sig_desc": "His mere sight erodes the sanity and strength of foes.",
     "playstyle": "Saps the whole enemy board",
-    "ability": "Ongoing: All enemy minions lose 2 ATK",
+    "ability": "Chained. Passive: Immune to Tech minions",
     "rivals": [
       {
         "who": "humanity",
@@ -7865,9 +7865,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Nature",
     "align": "Neutral",
-    "cost": 2,
-    "atk": 1,
-    "hp": 1,
+    "cost": 3,
+    "atk": 3,
+    "hp": 2,
     "cc": "#2f9c63",
     "vals": [
       8,
@@ -7893,7 +7893,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Sky Eagle (Sky Piercer)",
     "sig_desc": "His divine halberd, splitting earth and sky alike.",
     "playstyle": "Matches an ally's attack",
-    "ability": "Ongoing: Copy ATK of any friendly minion on the board",
+    "ability": "Charge. Lu Bu can only attack the highest-ATK enemy if one exists",
     "rivals": [
       {
         "who": "Thor",
@@ -8459,9 +8459,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Legendary",
     "camp": "Magic",
     "align": "Evil",
-    "cost": 1,
-    "atk": 1,
-    "hp": 1,
+    "cost": 3,
+    "atk": 2,
+    "hp": 2,
     "cc": "#7a52c8",
     "vals": [
       1,
@@ -8487,7 +8487,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Your Best Friend",
     "sig_desc": "False friendship masking a cruel, empty heart.",
     "playstyle": "Rallies your Evil minions",
-    "ability": "Ongoing: Give +1/+1 to all friendly Evil minions",
+    "ability": "Battlecry: Save your core's current HP. Deathrattle: Set your core to the saved HP",
     "rivals": [
       {
         "who": "Frisk",
@@ -8567,9 +8567,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 1,
-    "atk": 1,
-    "hp": 1,
+    "cost": 4,
+    "atk": 3,
+    "hp": 3,
     "cc": "#1a86a8",
     "vals": [
       4,
@@ -8595,7 +8595,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Dimensional Portals",
     "sig_desc": "Tears open doorways between universes at will.",
     "playstyle": "Buffs a Neutral Tech ally",
-    "ability": "Ongoing: Give one friendly Neutral Tech minion +2/+2",
+    "ability": "Battlecry: Choose another minion. Put it on the bottom of the deck and summon a random minion of the same cost into its slot",
     "rivals": [
       {
         "who": "Invincible",
@@ -8621,9 +8621,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Tech",
     "align": "Neutral",
-    "cost": 1,
-    "atk": 1,
-    "hp": 1,
+    "cost": 2,
+    "atk": 2,
+    "hp": 2,
     "cc": "#1a86a8",
     "vals": [
       2,
@@ -8648,8 +8648,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "sig_name": "The -inator",
     "sig_desc": "An over-engineered gadget built for a trivial goal.",
-    "playstyle": "Random dice-roll gamble",
-    "ability": "Ongoing: Roll a dice: Low roll (1-2) = +1/+1 to all enemies Medium roll (3-5) = +2/+2 to itself High roll (6) = +4/4 to itself",
+    "playstyle": "Risks destruction each turn to double its current stats",
+    "ability": "Ongoing: 50% to die and 50% to double your stats",
     "rivals": [
       {
         "who": "Perry the Platypus",
@@ -9313,14 +9313,14 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c177": {
     "name": "Planetary Defense Grid",
-    "origin": "Science fiction",
+    "origin": "Basic",
     "epithet": "The Orbital Shield",
     "rar": "Rare",
     "camp": "Tech",
     "align": "Neutral",
-    "cost": 9,
-    "atk": 4,
-    "hp": 8,
+    "cost": 7,
+    "atk": 3,
+    "hp": 7,
     "cc": "#70c9ff",
     "vals": [
       7,
@@ -9346,7 +9346,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Orbital Intercept",
     "sig_desc": "A tracked object meets a guided response beyond the atmosphere.",
     "playstyle": "A patient guardian of a fragile world",
-    "ability": "A fictional defense network uses orbital assets to detect and intercept incoming objects.",
+    "ability": "Taunt. Passive: All other Taunt minions have +2/+2",
     "rivals": [
       {
         "who": "An incoming asteroid",
@@ -9740,7 +9740,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Nature",
     "align": "Neutral",
-    "cost": 2,
+    "cost": 3,
     "atk": 1,
     "hp": 1,
     "cc": "#2f9c63",
@@ -9767,8 +9767,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "sig_name": "Dragonslayer",
     "sig_desc": "A great iron sword made for monsters becomes the answer to anything that stands in his path.",
-    "playstyle": "A wounded survivor who becomes stronger when the world closes in",
-    "ability": "Guts fights with the Dragonslayer, a cannon arm, and a will that keeps moving after ordinary endurance is gone.",
+    "playstyle": "Gains attack and health as its core loses health",
+    "ability": "Passive: Gains +2/+2 for each 20 HP your Core is missing",
     "rivals": [
       {
         "who": "Griffith",
@@ -11612,5 +11612,81 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
         "id": ""
       }
     ]
+  },
+  "c186": {
+    "name": "Antimatter Bomb",
+    "origin": "Basic",
+    "rar": "Rare",
+    "camp": "Tech",
+    "align": "Neutral",
+    "cost": 9,
+    "atk": 1,
+    "hp": 1,
+    "cc": "#46e0ff",
+    "ability": "Deathrattle: Deal 20 damage to both cores",
+    "rivals": [],
+    "epithet": "Mutual destruction",
+    "vals": [
+      9,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "rank": "Catastrophic deterrent",
+    "lore": "A fragile antimatter warhead built around a single terrible promise: its destruction will punish both sides. Even its commander cannot escape the final blast.",
+    "quote": "No safe distance.",
+    "str": [
+      "Devastating core blast",
+      "Threatens both sides",
+      "Punishes destruction"
+    ],
+    "wk": [
+      "Extremely fragile",
+      "Harms its own commander",
+      "Silence disables the final blast"
+    ],
+    "sig_name": "Containment Failure",
+    "sig_desc": "Its final detonation deals 20 damage to both cores.",
+    "playstyle": "A risky finisher or deterrent"
+  },
+  "c187": {
+    "name": "Carrier Strike Group",
+    "origin": "Basic",
+    "rar": "Rare",
+    "camp": "Tech",
+    "align": "Neutral",
+    "cost": 5,
+    "atk": 1,
+    "hp": 5,
+    "cc": "#46e0ff",
+    "ability": "Passive: Enemy Tech minions cannot attack",
+    "rivals": [],
+    "epithet": "Fleet air superiority",
+    "vals": [
+      6,
+      7,
+      0,
+      0,
+      7,
+      4
+    ],
+    "rank": "Coordinated naval force",
+    "lore": "A carrier sails with escorts, aircraft and overlapping defenses. Together they dominate the battlespace, preventing enemy Tech minions from launching attacks while the fleet remains active.",
+    "quote": "The horizon belongs to the fleet.",
+    "str": [
+      "Disrupts enemy Tech forces",
+      "Durable supporting body",
+      "Coordinates a fleet of defenses"
+    ],
+    "wk": [
+      "Other camps remain free to attack",
+      "Silence ends the suppression",
+      "Its own attack is modest"
+    ],
+    "sig_name": "Air Superiority",
+    "sig_desc": "Enemy Tech minions cannot attack while the fleet is active.",
+    "playstyle": "Suppresses opposing Tech attackers"
   }
 };

@@ -399,6 +399,7 @@ export function applyAction(
   feedAfflictionWatchers(next, afflictedBefore, events);
   enforceDumbledoreCleansing(next, events);
   sweepDeaths(next, events);
+  refreshCarrierLocks(next);
   announceTopDeck(next, library, events);
   checkGameOver(next, events);
   if (next.phase !== "targeting") next.pendingPlayCancel = null;
@@ -501,7 +502,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
     .filter(({ minion }) => minion && attackTargetable(state, minion) && hasKeyword(minion, "Taunt") && !minion.silenced);
 
   player.board.forEach((minion, attackerSlot) => {
-    if (!minion || !canAttack(minion)) return;
+    if (!minion || !canAttack(minion, state)) return;
     const ignoresGuards = hasRelic(minion, "ignore_defences");
     const ignoresTaunt = tauntBypassActive(state, minion);
     const forced = ignoresGuards || ignoresTaunt ? [] : tauntTargets;
@@ -749,9 +750,9 @@ function resolveHeroPower(
 export function effectiveCardCost(state: GameState, playerId: PlayerId, card: PlayableCard): number {
   const player = state.players[playerId];
   const enemy = state.players[opponent(playerId)];
-  const enemyCardTax = enemy.board.filter(
-    (minion) => minion && !minion.silenced && hasEffect(minion, "enemy_cards_cost_1_more"),
-  ).length;
+  const enemyCardTax = isMinionCard(card) && card.camp === "Magic" ? 2 * enemy.board.filter(
+    (minion) => minion && !minion.silenced && hasEffect(minion, "enemy_magic_minions_cost_2_more"),
+  ).length : 0;
   // Deep Sea King is cheap while the sea is frozen. It reads EITHER board,
   // because the card says "any minion" and because a discount that only your own
   // Freeze could unlock would make the card a two-card combo rather than an
@@ -1241,7 +1242,6 @@ function resolveUpkeep(state: GameState, playerId: PlayerId, library: CardLibrar
   resolvePocketRooms(state, playerId, events);
   resolveMarkedDeaths(state, playerId, events);
   resolveDeathStar(state, playerId, events);
-  resolveKingAttackLocks(state, playerId, events);
 
   // John Wick's contract comes due.
   if (player.pressured && player.pressured.dueTurn <= state.turnNumber) {
@@ -3242,8 +3242,10 @@ function runEffect(
     if (coinFlip(state)) {
       destroyInstance(state, source.owner, source.instanceId, events, `${label} loses the coin flip`);
     } else {
-      buffMinion(source, 2, 1);
-      events.push(effectEvent(`${label} wins the coin flip for +2/+1.`, source));
+      source.atk *= 2;
+      source.hp *= 2;
+      source.maxHp *= 2;
+      events.push(effectEvent(`${label} wins the coin flip and doubles its stats.`, source));
     }
   } else if (source.effectId === "bounce_friendly") {
     const target = picked;
@@ -3289,7 +3291,7 @@ function runEffect(
         const attacker = state.players[source.owner].board[slot];
         if (!attacker) continue;
         if (attacker.frozen || attacker.chained > 0) continue;
-        if (attackForbidden(attacker)) continue;
+        if (attackForbidden(attacker, state)) continue;
         attackMinion(state, source.owner, slot, victimSlot, events);
       }
       events.push(effectEvent(`${label} orders every able friendly minion to attack ${picked.name}.`, source));
@@ -3764,21 +3766,6 @@ function releaseDarkDimensionForSource(state: GameState, sourceInstanceId: strin
   }
 }
 
-function resolveKingAttackLocks(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
-  const kings = state.players[opponent(playerId)].board.filter(
-    (minion): minion is MinionInstance => Boolean(minion && !minion.silenced && hasEffect(minion, "king_attack_lock_random")),
-  );
-  const candidates = state.players[playerId].board.filter(
-    (minion): minion is MinionInstance => Boolean(minion && !isUntargetable(state, minion)),
-  );
-  if (kings.length === 0 || candidates.length === 0) return;
-  const target = candidates[rollInt(state, candidates.length)];
-  const king = kings[0];
-  target.attackLocked = true;
-  target.attackLockedUntilTurn = Math.max(target.attackLockedUntilTurn ?? 0, state.turnNumber + 1);
-  events.push(effectEvent(`${king.name} locks ${target.name}'s attacks for this turn.`, king));
-}
-
 function resolveMarkedDeaths(state: GameState, _playerId: PlayerId, events: GameEvent[]): void {
   for (const owner of [0, 1] as PlayerId[]) {
     for (let slot = 0; slot < boardSize; slot += 1) {
@@ -3937,9 +3924,9 @@ function refreshPassiveAuras(state: GameState): void {
         const missingCore = Math.floor(Math.max(0, STARTING_CORE - state.players[source.owner].health) / 20);
         if (missingCore > 0) {
           source.atk += missingCore * 2;
-          source.maxHp += missingCore;
-          source.hp += missingCore;
-          source.auraBonuses!.push({ sourceId: source.instanceId, atk: missingCore * 2, hp: missingCore, keywords: [] });
+          source.maxHp += missingCore * 2;
+          source.hp += missingCore * 2;
+          source.auraBonuses!.push({ sourceId: source.instanceId, atk: missingCore * 2, hp: missingCore * 2, keywords: [] });
         }
       }
       if (!hasEffect(source, "glados_adjacent_tech")) continue;
@@ -4913,14 +4900,15 @@ function canDamage(
       return false;
     }
   }
-  if (!effectDamage && source.owner !== target.owner && hasEffect(target, "evade_first_attack") && !target.silenced) {
+  const cannotBeEvaded = combatDamage && attackTarget && !source.silenced && hasEffect(source, "nyan_unerring_attacks");
+  if (!cannotBeEvaded && !effectDamage && source.owner !== target.owner && hasEffect(target, "evade_first_attack") && !target.silenced) {
     if (target.evadedAttackAtTurn !== state.turnNumber) {
       target.evadedAttackAtTurn = state.turnNumber;
       events.push(effectEvent(`${target.name} evades the first attack targeting it this turn.`, target));
       return false;
     }
   }
-  if (!effectDamage && source.owner !== target.owner && !target.silenced) {
+  if (!cannotBeEvaded && !effectDamage && source.owner !== target.owner && !target.silenced) {
     // Includes himself now (owner's ruling, 2 September 2026): the card reads
     // "all friendly minions", and he is one of them.
     const kojiro = state.players[target.owner].board.find(
@@ -4935,7 +4923,7 @@ function canDamage(
     events.push(effectEvent(`${target.name} ignores the weak ATK damage.`, target));
     return false;
   }
-  if (!effectDamage && hasEffect(target, "small_attack_ward") && source.atk <= 2 && !target.silenced) {
+  if (!effectDamage && hasEffect(target, "small_attack_ward_3") && source.atk <= 3 && !target.silenced) {
     events.push(effectEvent(`${target.name} shrugs off the strike.`, target));
     return false;
   }
@@ -4947,25 +4935,25 @@ function canDamage(
     events.push(effectEvent(`${target.name} is unmoved.`, target));
     return false;
   }
-  if (!effectDamage && hasEffect(target, "dodge_50") && !target.silenced) {
+  if (!cannotBeEvaded && !effectDamage && hasEffect(target, "dodge_50") && !target.silenced) {
     if (coinFlip(state)) {
       events.push(effectEvent(`${target.name} slips away.`, target));
       return false;
     }
   }
-  if (!effectDamage && hasRelic(target, "evade_50") && !target.silenced) {
+  if (!cannotBeEvaded && !effectDamage && hasRelic(target, "evade_50") && !target.silenced) {
     if (coinFlip(state)) {
       events.push(effectEvent(`${target.name} evades the attack through Infinity Castle.`, target));
       return false;
     }
   }
-  if (!effectDamage && hasEffect(target, "dodge_80") && !target.silenced) {
+  if (!cannotBeEvaded && !effectDamage && hasEffect(target, "dodge_80") && !target.silenced) {
     if (rollInt(state, 100) < 80) {
       events.push(effectEvent(`${target.name} slips away.`, target));
       return false;
     }
   }
-  if (!effectDamage && source.owner !== target.owner && hasEffect(target, "kaku_evade_counter") && !target.silenced) {
+  if (!cannotBeEvaded && !effectDamage && source.owner !== target.owner && hasEffect(target, "kaku_evade_counter") && !target.silenced) {
     if (rollInt(state, 100) < 50) {
       events.push(effectEvent(`${target.name} evades the attack and turns its force back.`, target));
       const attackerSlot = slotOf(state, source);
@@ -4975,7 +4963,7 @@ function canDamage(
       return false;
     }
   }
-  if (!effectDamage && hasEffect(target, "korosensei_defense") && !target.silenced) {
+  if (!cannotBeEvaded && !effectDamage && hasEffect(target, "korosensei_defense") && !target.silenced) {
     if (rollInt(state, 100) < 20) {
       events.push(effectEvent(`${target.name} evades the attack.`, target));
       return false;
@@ -5018,7 +5006,18 @@ function highestEnemyAttack(state: GameState, owner: PlayerId): number {
  * `hasEffect` already answers false for a silenced or chained minion, so no
  * caller needs its own silence guard around one.
  */
-function attackForbidden(minion: MinionInstance): boolean {
+function carrierSuppresses(state: GameState, minion: MinionInstance): boolean {
+  return minion.camp === "Tech" && state.players[opponent(minion.owner)].board.some(source => source && hasEffect(source, "carrier_lock_enemy_tech"));
+}
+
+function refreshCarrierLocks(state: GameState): void {
+  for (const player of state.players) for (const minion of player.board) {
+    if (minion) minion.techAttackSuppressed = carrierSuppresses(state, minion);
+  }
+}
+
+function attackForbidden(minion: MinionInstance, state?: GameState): boolean {
+  if (state ? carrierSuppresses(state, minion) : minion.techAttackSuppressed) return true;
   // ONE rule, read off the keyword. Two cards used to state "Cannot attack" in
   // their prose only and be stopped by an effect-id check here instead, which
   // meant the card face, the keyword column and the engine each had their own
@@ -5027,9 +5026,9 @@ function attackForbidden(minion: MinionInstance): boolean {
   return minion.attackLocked; // Knuckle has taken this swing until its lock expires
 }
 
-function canAttack(minion: MinionInstance): boolean {
+function canAttack(minion: MinionInstance, state?: GameState): boolean {
   // A 0-ATK minion may still declare an attack; it simply deals no damage.
-  return readySwings(minion) > 0;
+  return readySwings(minion, state) > 0;
 }
 
 /**
@@ -5042,8 +5041,8 @@ function canAttack(minion: MinionInstance): boolean {
  * its remaining swing ignored, and a Cannot Attack body like Galactus was
  * counted as eight points of reach it could never deliver.
  */
-export function readySwings(minion: MinionInstance): number {
-  if (attackForbidden(minion)) return 0;
+export function readySwings(minion: MinionInstance, state?: GameState): number {
+  if (attackForbidden(minion, state)) return 0;
   if (minion.sleeping || minion.frozen || minion.chained > 0) return 0;
   return Math.max(0, maxAttacks(minion) - minion.attacksUsed);
 }
@@ -5108,7 +5107,7 @@ function hasEffect(minion: MinionInstance, effectId: EffectId): boolean {
  */
 function tauntBypassActive(state: GameState, minion: MinionInstance): boolean {
   if (hiddenByMeleoron(state, minion)) return true;
-  return !minion.silenced && (hasEffect(minion, "charge_ignore_taunt") || hasEffect(minion, "black_ops_ignore_taunt"));
+  return !minion.silenced && (hasEffect(minion, "nyan_unerring_attacks") || hasEffect(minion, "black_ops_ignore_taunt"));
 }
 
 function isSlotProtected(state: GameState, minion: MinionInstance): boolean {
@@ -5687,7 +5686,10 @@ function resolveCardDeathrattleOnce(
   // The dead minion is already out of its board slot when this function runs,
   // so reactToDeath cannot discover its own effect. Record it at resolution.
   traceEffect(dead.effectId);
-  if (dead.effectId === "deathrattle_damage_random_enemy") {
+  if (dead.effectId === "deathrattle_damage_both_cores_20") {
+    for (const owner of [0, 1] as PlayerId[]) dealCoreDamage(state, owner, 20, events, dead);
+    events.push(effectEvent(`${dead.name}'s Deathrattle deals 20 damage to both cores.`, dead));
+  } else if (dead.effectId === "deathrattle_damage_random_enemy") {
     const target = randomEnemyMinion(state, dead);
     const slot = target ? slotOf(state, target) : -1;
     if (target && slot >= 0) {

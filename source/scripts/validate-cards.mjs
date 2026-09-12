@@ -347,7 +347,7 @@ for (const [index, card] of cards.entries()) {
   }
 }
 
-if (cards.length !== 182) errors.push(`Expected 182 cards, found ${cards.length}`);
+if (cards.length !== 184) errors.push(`Expected 184 cards, found ${cards.length}`);
 if (relics.length !== 34) errors.push(`Expected 34 relics, found ${relics.length}`);
 for (const [index, relic] of relics.entries()) {
   checkEffectPunctuation(relic.name, index + 2, relic.effect, errors);
@@ -406,8 +406,8 @@ const COUNT_CLAIMS = [
   {
     file: ["..", "README.md"],
     what: "README campaign allocation",
-    pattern: /Total: (\d+) starters \+ (\d+) rewards = all (\d+) cards/,
-    expect: () => [campaign.starterCardIds.length, campaign.chapters.flatMap((chapter) => chapter.rewardCardIds).length, cards.length + relics.length],
+    pattern: /Total: (\d+) initial cards \+ (\d+) rewards = all (\d+) cards/,
+    expect: () => [campaign.initialUnlockedCardIds.length, campaign.chapters.flatMap((chapter) => chapter.rewardCardIds).length, cards.length + relics.length],
   },
   {
     file: ["..", "README.md"],

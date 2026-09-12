@@ -10,45 +10,91 @@
     "atk": 4,
     "hp": 3,
     "cc": "#79c66a",
-    "vals": [10, 8, 1, 0, 4, 2],
+    "vals": [
+      10,
+      8,
+      1,
+      0,
+      4,
+      2
+    ],
     "rank": "Astronomy · Stony meteoroid",
     "lore": "A meteor is the visible passage of a meteoroid through an atmosphere. Friction turns its descent into light, while the surviving mass may reach the ground as a meteorite.",
     "quote": "The sky writes in fire.",
-    "str": ["Extreme kinetic energy", "Can survive atmospheric entry", "Leaves a measurable impact"],
-    "wk": ["Ablates in an atmosphere", "Can fragment before impact", "Has no agency or intention"],
+    "str": [
+      "Extreme kinetic energy",
+      "Can survive atmospheric entry",
+      "Leaves a measurable impact"
+    ],
+    "wk": [
+      "Ablates in an atmosphere",
+      "Can fragment before impact",
+      "Has no agency or intention"
+    ],
     "sig_name": "Atmospheric Entry",
     "sig_desc": "A streak of ionized gas marks a piece of space meeting a world.",
     "playstyle": "An impersonal event of speed and gravity",
     "ability": "A meteoroid becomes luminous when atmospheric ablation excites the surrounding air.",
     "rivals": [
-      { "who": "The asteroid belt", "rel": "its possible birthplace", "id": "" },
-      { "who": "Earth's atmosphere", "rel": "the passage that reveals it", "id": "" }
+      {
+        "who": "The asteroid belt",
+        "rel": "its possible birthplace",
+        "id": ""
+      },
+      {
+        "who": "Earth's atmosphere",
+        "rel": "the passage that reveals it",
+        "id": ""
+      }
     ]
   },
   "c177": {
     "name": "Planetary Defense Grid",
-    "origin": "Science fiction",
+    "origin": "Basic",
     "epithet": "The Orbital Shield",
     "rar": "Rare",
     "camp": "Tech",
     "align": "Neutral",
-    "cost": 9,
-    "atk": 4,
-    "hp": 8,
+    "cost": 7,
+    "atk": 3,
+    "hp": 7,
     "cc": "#70c9ff",
-    "vals": [7, 10, 6, 5, 8, 8],
+    "vals": [
+      7,
+      10,
+      6,
+      5,
+      8,
+      8
+    ],
     "rank": "Science fiction · Planetary defense network",
     "lore": "A planetary defense grid is a network of sensors, tracking systems, and interceptors built to detect threats before they reach a inhabited world. Its strength is coordination across distance.",
     "quote": "The world below gets another minute.",
-    "str": ["Persistent surveillance", "Works across enormous distances", "Combines many systems into one response"],
-    "wk": ["Depends on working infrastructure", "Requires warning time", "A blind spot can defeat the network"],
+    "str": [
+      "Persistent surveillance",
+      "Works across enormous distances",
+      "Combines many systems into one response"
+    ],
+    "wk": [
+      "Depends on working infrastructure",
+      "Requires warning time",
+      "A blind spot can defeat the network"
+    ],
     "sig_name": "Orbital Intercept",
     "sig_desc": "A tracked object meets a guided response beyond the atmosphere.",
     "playstyle": "A patient guardian of a fragile world",
-    "ability": "A fictional defense network uses orbital assets to detect and intercept incoming objects.",
+    "ability": "Taunt. Passive: All other Taunt minions have +2/+2",
     "rivals": [
-      { "who": "An incoming asteroid", "rel": "the threat it tracks", "id": "" },
-      { "who": "The atmosphere", "rel": "the last line beneath it", "id": "" }
+      {
+        "who": "An incoming asteroid",
+        "rel": "the threat it tracks",
+        "id": ""
+      },
+      {
+        "who": "The atmosphere",
+        "rel": "the last line beneath it",
+        "id": ""
+      }
     ]
   },
   "c178": {
@@ -62,19 +108,42 @@
     "atk": 7,
     "hp": 4,
     "cc": "#b996ff",
-    "vals": [10, 10, 8, 0, 10, 1],
+    "vals": [
+      10,
+      10,
+      8,
+      0,
+      10,
+      1
+    ],
     "rank": "Astrophysics · Gravitational singularity",
     "lore": "A black hole is a region of spacetime whose gravity prevents anything that crosses its event horizon from escaping. Matter outside it can form a luminous accretion disk while the hole itself remains dark.",
     "quote": "Nothing escapes the event horizon.",
-    "str": ["Produces extraordinary gravity", "Can power a bright accretion disk", "Distorts light and time nearby"],
-    "wk": ["Cannot be observed directly", "Its interior is hidden beyond the horizon", "Evaporation is unimaginably slow for stellar holes"],
+    "str": [
+      "Produces extraordinary gravity",
+      "Can power a bright accretion disk",
+      "Distorts light and time nearby"
+    ],
+    "wk": [
+      "Cannot be observed directly",
+      "Its interior is hidden beyond the horizon",
+      "Evaporation is unimaginably slow for stellar holes"
+    ],
     "sig_name": "Event Horizon",
     "sig_desc": "The boundary where escape would require moving faster than light.",
     "playstyle": "A patient force of spacetime rather than a thinking being",
     "ability": "A black hole curves spacetime so strongly that the event horizon becomes a one-way boundary.",
     "rivals": [
-      { "who": "Hawking radiation", "rel": "theoretical loss over deep time", "id": "" },
-      { "who": "A neutron star", "rel": "another extreme stellar remnant", "id": "" }
+      {
+        "who": "Hawking radiation",
+        "rel": "theoretical loss over deep time",
+        "id": ""
+      },
+      {
+        "who": "A neutron star",
+        "rel": "another extreme stellar remnant",
+        "id": ""
+      }
     ]
   },
   "c179": {
@@ -88,20 +157,47 @@
     "atk": 2,
     "hp": 2,
     "cc": "#b996ff",
-    "vals": [6, 5, 8, 10, 10, 7],
+    "vals": [
+      6,
+      5,
+      8,
+      10,
+      10,
+      7
+    ],
     "rank": "Mushoku Tensei · Silent spellcaster",
     "lore": "Rudeus Greyrat is a shut-in reborn in a world of magic, determined to use a second life better than the first. Under Roxy's teaching he becomes an exceptional mage, while his family, friends, and the mana catastrophe force him to grow beyond talent.",
     "quote": "I will not waste this life.",
-    "str": ["Prodigious mana reserves", "Silent spellcasting", "Broad knowledge of elemental magic"],
-    "wk": ["Carries deep social and personal trauma", "Relies on preparation and distance", "His confidence can become recklessness"],
+    "str": [
+      "Prodigious mana reserves",
+      "Silent spellcasting",
+      "Broad knowledge of elemental magic"
+    ],
+    "wk": [
+      "Carries deep social and personal trauma",
+      "Relies on preparation and distance",
+      "His confidence can become recklessness"
+    ],
     "sig_name": "Stone Cannon",
     "sig_desc": "A compressed earth spell refined through control, range, and destructive force.",
     "playstyle": "A calculating reincarnate learning responsibility",
     "ability": "Rudeus is known for silent casting and advanced elemental magic, especially his Stone Cannon.",
     "rivals": [
-      { "who": "Roxy Migurdia", "rel": "teacher and first magical guide", "id": "" },
-      { "who": "Sylphiette", "rel": "childhood friend and partner", "id": "" },
-      { "who": "Orsted", "rel": "a terrifying turning point in his journey", "id": "" }
+      {
+        "who": "Roxy Migurdia",
+        "rel": "teacher and first magical guide",
+        "id": ""
+      },
+      {
+        "who": "Sylphiette",
+        "rel": "childhood friend and partner",
+        "id": ""
+      },
+      {
+        "who": "Orsted",
+        "rel": "a terrifying turning point in his journey",
+        "id": ""
+      }
     ]
   },
   "c180": {
@@ -115,20 +211,47 @@
     "atk": 2,
     "hp": 2,
     "cc": "#b996ff",
-    "vals": [4, 5, 8, 10, 10, 7],
+    "vals": [
+      4,
+      5,
+      8,
+      10,
+      10,
+      7
+    ],
     "rank": "7th Prince · Magical researcher",
     "lore": "Lloyd de Saloum is reborn as the seventh prince and treats magic as the one subject worthy of total attention. His curiosity, immense talent, and willingness to test dangerous theories make him brilliant, troublesome, and impossible to discourage.",
     "quote": "Let me perfect this spell.",
-    "str": ["Exceptional magical aptitude", "Relentless curiosity", "Learns by testing first principles"],
-    "wk": ["Treats danger as a research opportunity", "Can neglect ordinary social judgment", "His obsession isolates him"],
+    "str": [
+      "Exceptional magical aptitude",
+      "Relentless curiosity",
+      "Learns by testing first principles"
+    ],
+    "wk": [
+      "Treats danger as a research opportunity",
+      "Can neglect ordinary social judgment",
+      "His obsession isolates him"
+    ],
     "sig_name": "Perfected Formula",
     "sig_desc": "A spell is taken apart, understood, and rebuilt beyond its original limits.",
     "playstyle": "An irrepressible royal scholar",
     "ability": "Lloyd's defining talent is the obsessive study and refinement of magical techniques.",
     "rivals": [
-      { "who": "Sylpha", "rel": "loyal attendant and training partner", "id": "" },
-      { "who": "Tao", "rel": "friend and fellow learner", "id": "" },
-      { "who": "The Saloum royal family", "rel": "his home and responsibility", "id": "" }
+      {
+        "who": "Sylpha",
+        "rel": "loyal attendant and training partner",
+        "id": ""
+      },
+      {
+        "who": "Tao",
+        "rel": "friend and fellow learner",
+        "id": ""
+      },
+      {
+        "who": "The Saloum royal family",
+        "rel": "his home and responsibility",
+        "id": ""
+      }
     ]
   },
   "c181": {
@@ -142,20 +265,47 @@
     "atk": 2,
     "hp": 1,
     "cc": "#70c9ff",
-    "vals": [8, 7, 9, 8, 10, 10],
+    "vals": [
+      8,
+      7,
+      9,
+      8,
+      10,
+      10
+    ],
     "rank": "Ghost in the Shell · Section 9 commander",
     "lore": "Motoko Kusanagi is a full-body cyborg and the field commander of Japan's Public Security Section 9. She moves between physical and networked space while questioning what remains of a person when the body, memories, and identity can all be engineered.",
     "quote": "The net is vast and infinite.",
-    "str": ["Elite tactical judgment", "Deep cyberbrain access", "Comfortable in both physical and digital combat"],
-    "wk": ["Her body and memories can be compromised", "Identity is a continuing uncertainty", "Isolation follows exceptional capability"],
+    "str": [
+      "Elite tactical judgment",
+      "Deep cyberbrain access",
+      "Comfortable in both physical and digital combat"
+    ],
+    "wk": [
+      "Her body and memories can be compromised",
+      "Identity is a continuing uncertainty",
+      "Isolation follows exceptional capability"
+    ],
     "sig_name": "Ghost Dive",
     "sig_desc": "A conscious descent into a network where information and identity share one space.",
     "playstyle": "A disciplined investigator of the human-machine boundary",
     "ability": "Motoko's signature capabilities come from her cyberbrain, prosthetic body, and network infiltration skills.",
     "rivals": [
-      { "who": "Batou", "rel": "trusted field partner", "id": "" },
-      { "who": "Daisuke Aramaki", "rel": "chief and strategic superior", "id": "" },
-      { "who": "The Puppet Master", "rel": "a crisis of consciousness and identity", "id": "" }
+      {
+        "who": "Batou",
+        "rel": "trusted field partner",
+        "id": ""
+      },
+      {
+        "who": "Daisuke Aramaki",
+        "rel": "chief and strategic superior",
+        "id": ""
+      },
+      {
+        "who": "The Puppet Master",
+        "rel": "a crisis of consciousness and identity",
+        "id": ""
+      }
     ]
   },
   "c182": {
@@ -169,20 +319,47 @@
     "atk": 1,
     "hp": 4,
     "cc": "#2f9c63",
-    "vals": [8, 9, 8, 0, 6, 7],
+    "vals": [
+      8,
+      9,
+      8,
+      0,
+      6,
+      7
+    ],
     "rank": "Alien · Hive matriarch",
     "lore": "The Xenomorph Queen is the reproductive center of an alien hive, an immense organism that produces the next generation and defends its nest with terrifying force. Her intelligence is strategic rather than human, expressed through pheromones, instinct, and absolute control of the colony's survival.",
     "quote": "The hive survives.",
-    "str": ["Commands a lethal hive", "Enormous physical strength", "Armored body and corrosive blood"],
-    "wk": ["Protects the nest above all else", "Large target in open terrain", "Reproduction binds her to the hive"],
+    "str": [
+      "Commands a lethal hive",
+      "Enormous physical strength",
+      "Armored body and corrosive blood"
+    ],
+    "wk": [
+      "Protects the nest above all else",
+      "Large target in open terrain",
+      "Reproduction binds her to the hive"
+    ],
     "sig_name": "Royal Brood",
     "sig_desc": "A living colony turns every death around the nest into another body.",
     "playstyle": "A biological engine of sacrifice and relentless growth",
     "ability": "The Xenomorph Queen produces and directs the organisms that make an alien hive.",
     "rivals": [
-      { "who": "Ellen Ripley", "rel": "survivor who refuses to let the hive spread", "id": "" },
-      { "who": "The Colonial Marines", "rel": "soldiers who enter her nest", "id": "" },
-      { "who": "The alien hive", "rel": "the colony she creates and protects", "id": "" }
+      {
+        "who": "Ellen Ripley",
+        "rel": "survivor who refuses to let the hive spread",
+        "id": ""
+      },
+      {
+        "who": "The Colonial Marines",
+        "rel": "soldiers who enter her nest",
+        "id": ""
+      },
+      {
+        "who": "The alien hive",
+        "rel": "the colony she creates and protects",
+        "id": ""
+      }
     ]
   },
   "c183": {
@@ -196,20 +373,47 @@
     "atk": 2,
     "hp": 2,
     "cc": "#f0c767",
-    "vals": [9, 9, 8, 10, 10, 9],
+    "vals": [
+      9,
+      9,
+      8,
+      10,
+      10,
+      9
+    ],
     "rank": "Naruto · Nine-Tails jinchūriki",
     "lore": "Naruto Uzumaki begins as an outcast and grows into a leader capable of carrying the hopes of entire nations. His shadow clones, Rasengan, bond with Kurama, and Six Paths power turn persistence into world-changing strength.",
     "quote": "I never go back on my word.",
-    "str": ["Vast chakra reserves", "Shadow Clone technique", "Refuses to abandon a friend"],
-    "wk": ["Overextends to protect others", "Must balance many responsibilities", "Compassion leaves him open to manipulation"],
+    "str": [
+      "Vast chakra reserves",
+      "Shadow Clone technique",
+      "Refuses to abandon a friend"
+    ],
+    "wk": [
+      "Overextends to protect others",
+      "Must balance many responsibilities",
+      "Compassion leaves him open to manipulation"
+    ],
     "sig_name": "Shadow Clone Jutsu",
     "sig_desc": "One fighter becomes a formation of solid copies that share experience and overwhelm a battlefield.",
     "playstyle": "A relentless leader who turns one fighter into a whole formation",
     "ability": "Naruto's signature Shadow Clone Technique creates solid copies that share his experience and overwhelm a battlefield.",
     "rivals": [
-      { "who": "Sasuke Uchiha", "rel": "rival and closest bond", "id": "" },
-      { "who": "Kurama", "rel": "the beast who becomes his partner", "id": "" },
-      { "who": "The Ten-Tails", "rel": "the war-born threat he helps stop", "id": "c057" }
+      {
+        "who": "Sasuke Uchiha",
+        "rel": "rival and closest bond",
+        "id": ""
+      },
+      {
+        "who": "Kurama",
+        "rel": "the beast who becomes his partner",
+        "id": ""
+      },
+      {
+        "who": "The Ten-Tails",
+        "rel": "the war-born threat he helps stop",
+        "id": "c057"
+      }
     ]
   },
   "c184": {
@@ -223,20 +427,47 @@
     "atk": 2,
     "hp": 5,
     "cc": "#b996ff",
-    "vals": [4, 8, 9, 10, 10, 8],
+    "vals": [
+      4,
+      8,
+      9,
+      10,
+      10,
+      8
+    ],
     "rank": "Frieren · Elven archmage",
     "lore": "Frieren is an elven mage whose long life lets her study magic across centuries. After the Hero Himmel's journey ends, she begins a new journey of understanding, collecting spells, remembering people, and learning what brief human lives mean to her.",
     "quote": "I want to learn a spell.",
-    "str": ["Centuries of magical knowledge", "Patient preparation", "Exceptional mana concealment"],
-    "wk": ["Slow to recognise emotional bonds", "Can underestimate short-lived lives", "Often pursues curiosity before convenience"],
+    "str": [
+      "Centuries of magical knowledge",
+      "Patient preparation",
+      "Exceptional mana concealment"
+    ],
+    "wk": [
+      "Slow to recognise emotional bonds",
+      "Can underestimate short-lived lives",
+      "Often pursues curiosity before convenience"
+    ],
     "sig_name": "Zoltraak",
     "sig_desc": "A once-lethal demon spell becomes a familiar tool through patient analysis and mastery.",
     "playstyle": "A patient archivist whose power grows through knowledge",
     "ability": "Frieren's magic combines immense experience, precise analysis, and a collection of spells gathered over a long life.",
     "rivals": [
-      { "who": "Himmel", "rel": "the hero whose memory reshapes her journey", "id": "" },
-      { "who": "Flamme", "rel": "the teacher who hides her power from demons", "id": "" },
-      { "who": "Fern", "rel": "the apprentice who keeps her moving forward", "id": "" }
+      {
+        "who": "Himmel",
+        "rel": "the hero whose memory reshapes her journey",
+        "id": ""
+      },
+      {
+        "who": "Flamme",
+        "rel": "the teacher who hides her power from demons",
+        "id": ""
+      },
+      {
+        "who": "Fern",
+        "rel": "the apprentice who keeps her moving forward",
+        "id": ""
+      }
     ]
   },
   "c185": {
@@ -246,24 +477,51 @@
     "rar": "Rare",
     "camp": "Nature",
     "align": "Neutral",
-    "cost": 2,
+    "cost": 3,
     "atk": 1,
     "hp": 1,
     "cc": "#2f9c63",
-    "vals": [9, 8, 8, 0, 6, 10],
+    "vals": [
+      9,
+      8,
+      8,
+      0,
+      6,
+      10
+    ],
     "rank": "Berserk · Wandering swordsman",
     "lore": "Guts is a mercenary who survives betrayal, war, and the designs of monsters through stubborn strength and relentless skill. The Dragonslayer and the Berserker Armor let him challenge apostles, but every victory extracts a physical and emotional price.",
     "quote": "Struggle, endure, and move forward.",
-    "str": ["Exceptional swordsmanship", "Refuses impossible odds", "Turns pain into momentum"],
-    "wk": ["The Berserker Armor damages him", "Carries deep trauma", "A human body has limits"],
+    "str": [
+      "Exceptional swordsmanship",
+      "Refuses impossible odds",
+      "Turns pain into momentum"
+    ],
+    "wk": [
+      "The Berserker Armor damages him",
+      "Carries deep trauma",
+      "A human body has limits"
+    ],
     "sig_name": "Dragonslayer",
     "sig_desc": "A great iron sword made for monsters becomes the answer to anything that stands in his path.",
-    "playstyle": "A wounded survivor who becomes stronger when the world closes in",
-    "ability": "Guts fights with the Dragonslayer, a cannon arm, and a will that keeps moving after ordinary endurance is gone.",
+    "playstyle": "Gains attack and health as its core loses health",
+    "ability": "Passive: Gains +2/+2 for each 20 HP your Core is missing",
     "rivals": [
-      { "who": "Griffith", "rel": "friend and betrayer at the center of his trauma", "id": "" },
-      { "who": "Casca", "rel": "the person he protects through the darkness", "id": "" },
-      { "who": "Zodd", "rel": "an apostle who recognises his strength", "id": "" }
+      {
+        "who": "Griffith",
+        "rel": "friend and betrayer at the center of his trauma",
+        "id": ""
+      },
+      {
+        "who": "Casca",
+        "rel": "the person he protects through the darkness",
+        "id": ""
+      },
+      {
+        "who": "Zodd",
+        "rel": "an apostle who recognises his strength",
+        "id": ""
+      }
     ]
   },
   "r001": {
@@ -277,20 +535,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [7, 8, 10, 8, 8, 3],
+    "vals": [
+      7,
+      8,
+      10,
+      8,
+      8,
+      3
+    ],
     "rank": "Arthurian legend · Sacred vessel",
     "lore": "The Holy Grail is a sacred vessel whose identity changes across medieval romances and later tradition. In Arthurian stories it becomes the object of a quest that tests purity, courage, and spiritual insight rather than simple strength.",
     "quote": "The road matters as much as the cup.",
-    "str": ["Carries immense spiritual symbolism", "Calls for the highest kind of quest", "Endures through many retellings"],
-    "wk": ["Its form is uncertain", "Its location is unreachable by ordinary means", "The quest can expose the seeker's unworthiness"],
+    "str": [
+      "Carries immense spiritual symbolism",
+      "Calls for the highest kind of quest",
+      "Endures through many retellings"
+    ],
+    "wk": [
+      "Its form is uncertain",
+      "Its location is unreachable by ordinary means",
+      "The quest can expose the seeker's unworthiness"
+    ],
     "sig_name": "The Grail Quest",
     "sig_desc": "A sacred search that turns a knight's character into the measure of success.",
     "playstyle": "An elusive symbol of grace and fulfillment",
     "ability": "The Grail is traditionally associated with sacred nourishment, revelation, and the test of the worthy seeker.",
     "rivals": [
-      { "who": "Galahad", "rel": "the pure knight who finds it", "id": "" },
-      { "who": "King Arthur", "rel": "the court whose knights pursue it", "id": "" },
-      { "who": "Joseph of Arimathea", "rel": "a Christian origin in later tradition", "id": "" }
+      {
+        "who": "Galahad",
+        "rel": "the pure knight who finds it",
+        "id": ""
+      },
+      {
+        "who": "King Arthur",
+        "rel": "the court whose knights pursue it",
+        "id": ""
+      },
+      {
+        "who": "Joseph of Arimathea",
+        "rel": "a Christian origin in later tradition",
+        "id": ""
+      }
     ]
   },
   "r002": {
@@ -304,20 +589,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [8, 5, 7, 3, 5, 8],
+    "vals": [
+      8,
+      5,
+      7,
+      3,
+      5,
+      8
+    ],
     "rank": "Seven Deadly Sins · Demon sword",
     "lore": "Lostvayne is the sacred treasure of Meliodas, a short demon sword tied to his fighting style and the power of reflected magic. It represents the captain's violent history as much as his skill and loyalty to the Seven Deadly Sins.",
     "quote": "A captain's blade remembers.",
-    "str": ["Belongs to an extraordinary swordsman", "Supports clone-based combat techniques", "Carries the weight of Meliodas's past"],
-    "wk": ["Its power is tied to its wielder", "Clones divide the original's strength", "Its demonic history invites fear"],
+    "str": [
+      "Belongs to an extraordinary swordsman",
+      "Supports clone-based combat techniques",
+      "Carries the weight of Meliodas's past"
+    ],
+    "wk": [
+      "Its power is tied to its wielder",
+      "Clones divide the original's strength",
+      "Its demonic history invites fear"
+    ],
     "sig_name": "Lostvayne's Clones",
     "sig_desc": "The sacred treasure multiplies its wielder's presence at the price of divided power.",
     "playstyle": "A personal weapon shaped by a demon captain's restraint",
     "ability": "Lostvayne is Meliodas's sacred treasure and enables his physical clone technique.",
     "rivals": [
-      { "who": "Meliodas", "rel": "its chosen wielder", "id": "" },
-      { "who": "The Demon King", "rel": "the origin of his demonic legacy", "id": "" },
-      { "who": "Elizabeth", "rel": "the bond behind his change", "id": "" }
+      {
+        "who": "Meliodas",
+        "rel": "its chosen wielder",
+        "id": ""
+      },
+      {
+        "who": "The Demon King",
+        "rel": "the origin of his demonic legacy",
+        "id": ""
+      },
+      {
+        "who": "Elizabeth",
+        "rel": "the bond behind his change",
+        "id": ""
+      }
     ]
   },
   "r003": {
@@ -331,20 +643,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [8, 7, 10, 8, 9, 5],
+    "vals": [
+      8,
+      7,
+      10,
+      8,
+      9,
+      5
+    ],
     "rank": "Middle-earth · Ring of Power",
     "lore": "The One Ring is Sauron's instrument of domination, forged in the fires of Orodruin to control the other Rings of Power. Its promise of strength is inseparable from corruption, and its destruction requires returning it to the fire that made it.",
     "quote": "One Ring to rule them all.",
-    "str": ["Grants invisibility to a mortal wearer", "Amplifies the will of its master", "Can dominate lesser Rings"],
-    "wk": ["Corrupts those who carry it", "Its power depends on Sauron", "Can be destroyed only in its forging fire"],
+    "str": [
+      "Grants invisibility to a mortal wearer",
+      "Amplifies the will of its master",
+      "Can dominate lesser Rings"
+    ],
+    "wk": [
+      "Corrupts those who carry it",
+      "Its power depends on Sauron",
+      "Can be destroyed only in its forging fire"
+    ],
     "sig_name": "The Ring's Seduction",
     "sig_desc": "A promise of power turns the bearer's own desire into the road home.",
     "playstyle": "A beautiful object that makes possession a moral crisis",
     "ability": "The One Ring grants invisibility and magnifies the power of its maker, while corrupting its bearer.",
     "rivals": [
-      { "who": "Sauron", "rel": "maker and true master", "id": "" },
-      { "who": "Frodo Baggins", "rel": "bearer during its final journey", "id": "" },
-      { "who": "Gollum", "rel": "its long-corrupted former keeper", "id": "" }
+      {
+        "who": "Sauron",
+        "rel": "maker and true master",
+        "id": ""
+      },
+      {
+        "who": "Frodo Baggins",
+        "rel": "bearer during its final journey",
+        "id": ""
+      },
+      {
+        "who": "Gollum",
+        "rel": "its long-corrupted former keeper",
+        "id": ""
+      }
     ]
   },
   "r005": {
@@ -358,20 +697,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [8, 5, 9, 10, 8, 6],
+    "vals": [
+      8,
+      5,
+      9,
+      10,
+      8,
+      6
+    ],
     "rank": "MCU · Infinity Stone",
     "lore": "An Infinity Stone is one of six primordial crystals formed at the beginning of the universe. Each embodies a fundamental aspect of existence, and together they can reshape life on a cosmic scale.",
     "quote": "The universe is written in six laws.",
-    "str": ["Embodies a fundamental force", "Can be wielded on a cosmic scale", "Connects distant worlds and eras"],
-    "wk": ["A single Stone is incomplete", "Its power can destroy its wielder", "Concentration of the Stones invites conquest"],
+    "str": [
+      "Embodies a fundamental force",
+      "Can be wielded on a cosmic scale",
+      "Connects distant worlds and eras"
+    ],
+    "wk": [
+      "A single Stone is incomplete",
+      "Its power can destroy its wielder",
+      "Concentration of the Stones invites conquest"
+    ],
     "sig_name": "The Snap",
     "sig_desc": "The six Stones act together to turn a thought into a universal event.",
     "playstyle": "A cosmic artifact whose meaning depends on which force it contains",
     "ability": "The six Infinity Stones govern Space, Mind, Reality, Power, Time, and Soul in the Marvel Cinematic Universe.",
     "rivals": [
-      { "who": "Thanos", "rel": "collector who seeks the complete set", "id": "" },
-      { "who": "The Avengers", "rel": "defenders against its misuse", "id": "" },
-      { "who": "The Eternals", "rel": "beings shaped by the same cosmic history", "id": "" }
+      {
+        "who": "Thanos",
+        "rel": "collector who seeks the complete set",
+        "id": ""
+      },
+      {
+        "who": "The Avengers",
+        "rel": "defenders against its misuse",
+        "id": ""
+      },
+      {
+        "who": "The Eternals",
+        "rel": "beings shaped by the same cosmic history",
+        "id": ""
+      }
     ]
   },
   "r006": {
@@ -385,20 +751,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [5, 6, 9, 8, 8, 4],
+    "vals": [
+      5,
+      6,
+      9,
+      8,
+      8,
+      4
+    ],
     "rank": "Made in Abyss · Delver's relic",
     "lore": "A White Whistle is the relic of a legendary cave raider, made from a human life and recognized by the Abyss as a symbol of authority. It grants access to the deepest layers while binding exploration to sacrifice.",
     "quote": "The Abyss answers the brave and the cruel alike.",
-    "str": ["Marks the highest rank of delver", "Opens the path to deeper layers", "Carries the will of a sacrificed person"],
-    "wk": ["Requires an irreversible sacrifice", "The Abyss remains hostile", "Authority does not protect against the curse"],
+    "str": [
+      "Marks the highest rank of delver",
+      "Opens the path to deeper layers",
+      "Carries the will of a sacrificed person"
+    ],
+    "wk": [
+      "Requires an irreversible sacrifice",
+      "The Abyss remains hostile",
+      "Authority does not protect against the curse"
+    ],
     "sig_name": "The Sovereign's Call",
     "sig_desc": "A whistle made from a life gives its owner permission to descend farther.",
     "playstyle": "A badge of wonder, horror, and irreversible commitment",
     "ability": "White Whistles are made from human souls and identify the highest-ranked cave raiders in Made in Abyss.",
     "rivals": [
-      { "who": "Riko", "rel": "young delver carrying Lyza's whistle", "id": "" },
-      { "who": "Lyza the Annihilator", "rel": "legendary White Whistle and mother", "id": "" },
-      { "who": "Bondrewd", "rel": "a White Whistle whose experiments redefine sacrifice", "id": "" }
+      {
+        "who": "Riko",
+        "rel": "young delver carrying Lyza's whistle",
+        "id": ""
+      },
+      {
+        "who": "Lyza the Annihilator",
+        "rel": "legendary White Whistle and mother",
+        "id": ""
+      },
+      {
+        "who": "Bondrewd",
+        "rel": "a White Whistle whose experiments redefine sacrifice",
+        "id": ""
+      }
     ]
   },
   "r007": {
@@ -412,20 +805,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [6, 7, 8, 9, 7, 2],
+    "vals": [
+      6,
+      7,
+      8,
+      9,
+      7,
+      2
+    ],
     "rank": "Wizarding World · Slytherin's secret",
     "lore": "The Chamber of Secrets is a hidden chamber beneath Hogwarts built by Salazar Slytherin. It contains a Basilisk and can be opened by the heir of Slytherin through Parseltongue, turning an old prejudice into a living threat.",
     "quote": "Enemies of the heir, beware.",
-    "str": ["Conceals an ancient magical weapon", "Links architecture to Parseltongue", "Reveals Hogwarts's unresolved history"],
-    "wk": ["Depends on a particular heir", "Its monster can be opposed", "Its ideology isolates its creator"],
+    "str": [
+      "Conceals an ancient magical weapon",
+      "Links architecture to Parseltongue",
+      "Reveals Hogwarts's unresolved history"
+    ],
+    "wk": [
+      "Depends on a particular heir",
+      "Its monster can be opposed",
+      "Its ideology isolates its creator"
+    ],
     "sig_name": "The Basilisk's Awakening",
     "sig_desc": "A serpent older than the school rises when the hidden language is spoken.",
     "playstyle": "A secret legacy that turns fear into architecture",
     "ability": "The Chamber houses Salazar Slytherin's Basilisk and opens through the heir's Parseltongue.",
     "rivals": [
-      { "who": "Salazar Slytherin", "rel": "builder and ideological origin", "id": "" },
-      { "who": "Tom Riddle", "rel": "heir who reopens the Chamber", "id": "" },
-      { "who": "Harry Potter", "rel": "student who defeats its Basilisk", "id": "" }
+      {
+        "who": "Salazar Slytherin",
+        "rel": "builder and ideological origin",
+        "id": ""
+      },
+      {
+        "who": "Tom Riddle",
+        "rel": "heir who reopens the Chamber",
+        "id": ""
+      },
+      {
+        "who": "Harry Potter",
+        "rel": "student who defeats its Basilisk",
+        "id": ""
+      }
     ]
   },
   "r008": {
@@ -439,19 +859,42 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [5, 7, 7, 8, 9, 6],
+    "vals": [
+      5,
+      7,
+      7,
+      8,
+      9,
+      6
+    ],
     "rank": "Cyberpunk fantasy · Arcane interface",
     "lore": "Cyber-Enchantment is the old fantasy dream translated into circuitry: a ward encoded as a living protocol, a spell that travels through a network instead of a ley line.",
     "quote": "The network remembers the spell.",
-    "str": ["Marries symbolic magic with systems thinking", "Can protect information and identity", "Makes invisible structures legible"],
-    "wk": ["Depends on a compatible system", "A corrupted network corrupts the spell", "The interface can obscure the human cost"],
+    "str": [
+      "Marries symbolic magic with systems thinking",
+      "Can protect information and identity",
+      "Makes invisible structures legible"
+    ],
+    "wk": [
+      "Depends on a compatible system",
+      "A corrupted network corrupts the spell",
+      "The interface can obscure the human cost"
+    ],
     "sig_name": "Firewall Halo",
     "sig_desc": "An arcane boundary becomes a defensive loop around a connected mind.",
     "playstyle": "A speculative bridge between ritual and code",
     "ability": "Cyber-enchantment is a fantasy archetype in which magical wards are expressed through technology and networks.",
     "rivals": [
-      { "who": "The golem", "rel": "an older artificial life archetype", "id": "" },
-      { "who": "The firewall", "rel": "its technological counterpart", "id": "" }
+      {
+        "who": "The golem",
+        "rel": "an older artificial life archetype",
+        "id": ""
+      },
+      {
+        "who": "The firewall",
+        "rel": "its technological counterpart",
+        "id": ""
+      }
     ]
   },
   "r009": {
@@ -465,20 +908,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [10, 4, 7, 9, 7, 8],
+    "vals": [
+      10,
+      4,
+      7,
+      9,
+      7,
+      8
+    ],
     "rank": "Fate · Noble Phantasm of Gilgamesh",
     "lore": "Ea is the ancient sword wielded by Gilgamesh in the Fate series. Its rotating body represents the primordial separation of heaven and earth, and its Noble Phantasm, Enuma Elish, tears at the world's texture.",
     "quote": "The world has a seam.",
-    "str": ["Represents creation before recorded history", "Belongs to the King of Heroes", "Its attack is conceptual as well as physical"],
-    "wk": ["Only Gilgamesh fully claims it", "Its pride isolates its wielder", "Its greatest release is difficult to control"],
+    "str": [
+      "Represents creation before recorded history",
+      "Belongs to the King of Heroes",
+      "Its attack is conceptual as well as physical"
+    ],
+    "wk": [
+      "Only Gilgamesh fully claims it",
+      "Its pride isolates its wielder",
+      "Its greatest release is difficult to control"
+    ],
     "sig_name": "Enuma Elish",
     "sig_desc": "The Sword of Rupture rotates against the world and recreates the memory of its separation.",
     "playstyle": "A king's relic that treats reality as an artifact",
     "ability": "Ea is Gilgamesh's Noble Phantasm, and Enuma Elish is its anti-world release.",
     "rivals": [
-      { "who": "Gilgamesh", "rel": "its sole recognized wielder", "id": "" },
-      { "who": "Enkidu", "rel": "the king's closest equal", "id": "" },
-      { "who": "Iskandar", "rel": "another king who challenges his pride", "id": "" }
+      {
+        "who": "Gilgamesh",
+        "rel": "its sole recognized wielder",
+        "id": ""
+      },
+      {
+        "who": "Enkidu",
+        "rel": "the king's closest equal",
+        "id": ""
+      },
+      {
+        "who": "Iskandar",
+        "rel": "another king who challenges his pride",
+        "id": ""
+      }
     ]
   },
   "r010": {
@@ -492,20 +962,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [5, 4, 8, 10, 8, 6],
+    "vals": [
+      5,
+      4,
+      8,
+      10,
+      8,
+      6
+    ],
     "rank": "Wizarding World · Deathly Hallow",
     "lore": "The Elder Wand is one of the three Deathly Hallows, made by Death in the tale told to the Peverell brothers. Its reputation as the most powerful wand makes allegiance more important than possession.",
     "quote": "The last word is mine.",
-    "str": ["Channels exceptionally powerful magic", "Carries the myth of unbeatable skill", "Its allegiance can change history"],
-    "wk": ["Can be won without being stolen", "Its reputation encourages violence", "A wand is not a substitute for judgment"],
+    "str": [
+      "Channels exceptionally powerful magic",
+      "Carries the myth of unbeatable skill",
+      "Its allegiance can change history"
+    ],
+    "wk": [
+      "Can be won without being stolen",
+      "Its reputation encourages violence",
+      "A wand is not a substitute for judgment"
+    ],
     "sig_name": "The Wand's Allegiance",
     "sig_desc": "The wand's true loyalty follows defeat, not the hand that simply takes it.",
     "playstyle": "A legendary instrument whose power creates its own temptation",
     "ability": "The Elder Wand is unusually powerful, but its allegiance passes to the person who defeats its master.",
     "rivals": [
-      { "who": "Antioch Peverell", "rel": "legendary first owner", "id": "" },
-      { "who": "Albus Dumbledore", "rel": "keeper who defeats Grindelwald", "id": "" },
-      { "who": "Harry Potter", "rel": "last wielder in the Hallows story", "id": "" }
+      {
+        "who": "Antioch Peverell",
+        "rel": "legendary first owner",
+        "id": ""
+      },
+      {
+        "who": "Albus Dumbledore",
+        "rel": "keeper who defeats Grindelwald",
+        "id": ""
+      },
+      {
+        "who": "Harry Potter",
+        "rel": "last wielder in the Hallows story",
+        "id": ""
+      }
     ]
   },
   "r011": {
@@ -519,20 +1016,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [8, 7, 6, 3, 5, 5],
+    "vals": [
+      8,
+      7,
+      6,
+      3,
+      5,
+      5
+    ],
     "rank": "One Punch Man · Monsterization agent",
     "lore": "Monster Cells are created by the Monster Association to transform humans into monsters. Eating one can unlock a person's suppressed obsession, but the change usually means surrendering human identity for power.",
     "quote": "What would you become to win?",
-    "str": ["Amplifies a person's latent fixation", "Can create dramatic physical transformation", "Reflects the psychology of its host"],
-    "wk": ["The change can erase humanity", "The result depends on the host", "Power brings no guarantee of purpose"],
+    "str": [
+      "Amplifies a person's latent fixation",
+      "Can create dramatic physical transformation",
+      "Reflects the psychology of its host"
+    ],
+    "wk": [
+      "The change can erase humanity",
+      "The result depends on the host",
+      "Power brings no guarantee of purpose"
+    ],
     "sig_name": "Monsterization",
     "sig_desc": "An appetite or obsession is given a body large enough to rule the person who had it.",
     "playstyle": "A dangerous shortcut from frustration to identity",
     "ability": "Monster Cells transform humans into monsters by amplifying their desires and physical potential.",
     "rivals": [
-      { "who": "Orochi", "rel": "Monster King shaped by the Association", "id": "" },
-      { "who": "Garou", "rel": "a human who pursues monsterization by another path", "id": "" },
-      { "who": "Saitama", "rel": "the human ideal the monsters cannot understand", "id": "" }
+      {
+        "who": "Orochi",
+        "rel": "Monster King shaped by the Association",
+        "id": ""
+      },
+      {
+        "who": "Garou",
+        "rel": "a human who pursues monsterization by another path",
+        "id": ""
+      },
+      {
+        "who": "Saitama",
+        "rel": "the human ideal the monsters cannot understand",
+        "id": ""
+      }
     ]
   },
   "r012": {
@@ -546,20 +1070,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [5, 7, 9, 10, 9, 2],
+    "vals": [
+      5,
+      7,
+      9,
+      10,
+      9,
+      2
+    ],
     "rank": "Wizarding World · Alchemical masterpiece",
     "lore": "The Philosopher's Stone is an alchemical object capable of producing the Elixir of Life and turning any metal into pure gold. In the wizarding world it is made by Nicolas Flamel, whose long life becomes inseparable from the stone's fate.",
     "quote": "There are other ways to live forever.",
-    "str": ["Represents the height of alchemical craft", "Produces the Elixir of Life", "Turns transformation into a literal object"],
-    "wk": ["Its existence invites obsession", "The maker must choose when to destroy it", "Immortality cannot solve moral emptiness"],
+    "str": [
+      "Represents the height of alchemical craft",
+      "Produces the Elixir of Life",
+      "Turns transformation into a literal object"
+    ],
+    "wk": [
+      "Its existence invites obsession",
+      "The maker must choose when to destroy it",
+      "Immortality cannot solve moral emptiness"
+    ],
     "sig_name": "The Elixir of Life",
     "sig_desc": "A red draught postpones death while the stone remains in the world.",
     "playstyle": "A quiet answer to the fantasy of immortality",
     "ability": "The Philosopher's Stone creates the Elixir of Life and transmutes base metals into gold.",
     "rivals": [
-      { "who": "Nicolas Flamel", "rel": "its creator and keeper", "id": "" },
-      { "who": "Albus Dumbledore", "rel": "trusted friend of its maker", "id": "" },
-      { "who": "Lord Voldemort", "rel": "would use it to escape death", "id": "" }
+      {
+        "who": "Nicolas Flamel",
+        "rel": "its creator and keeper",
+        "id": ""
+      },
+      {
+        "who": "Albus Dumbledore",
+        "rel": "trusted friend of its maker",
+        "id": ""
+      },
+      {
+        "who": "Lord Voldemort",
+        "rel": "would use it to escape death",
+        "id": ""
+      }
     ]
   },
   "r013": {
@@ -573,20 +1124,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [7, 6, 9, 8, 8, 7],
+    "vals": [
+      7,
+      6,
+      9,
+      8,
+      8,
+      7
+    ],
     "rank": "Transformers · Source of machine life",
     "lore": "The AllSpark is the source of life for the Transformers and the object at the center of Cybertronian creation myths. It can awaken machines, sustain a civilization, and become the prize that turns Optimus Prime and Megatron against one another.",
     "quote": "Till all are one.",
-    "str": ["Creates or awakens Cybertronian life", "Carries the history of a world", "Unites machine identity with purpose"],
-    "wk": ["Its power can be weaponized", "It is vulnerable when removed from Cybertron", "Creation does not prevent civil war"],
+    "str": [
+      "Creates or awakens Cybertronian life",
+      "Carries the history of a world",
+      "Unites machine identity with purpose"
+    ],
+    "wk": [
+      "Its power can be weaponized",
+      "It is vulnerable when removed from Cybertron",
+      "Creation does not prevent civil war"
+    ],
     "sig_name": "The Spark of Creation",
     "sig_desc": "A source of living energy gives metal a mind, a voice, and a choice.",
     "playstyle": "A creation myth in mechanical form",
     "ability": "The AllSpark gives life to Transformers and is central to Cybertronian creation in the franchise.",
     "rivals": [
-      { "who": "Optimus Prime", "rel": "protector of Cybertron's future", "id": "" },
-      { "who": "Megatron", "rel": "would use it to remake the world", "id": "" },
-      { "who": "Bumblebee", "rel": "one of the lives it helps preserve", "id": "" }
+      {
+        "who": "Optimus Prime",
+        "rel": "protector of Cybertron's future",
+        "id": ""
+      },
+      {
+        "who": "Megatron",
+        "rel": "would use it to remake the world",
+        "id": ""
+      },
+      {
+        "who": "Bumblebee",
+        "rel": "one of the lives it helps preserve",
+        "id": ""
+      }
     ]
   },
   "r014": {
@@ -600,20 +1178,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [4, 6, 8, 8, 7, 5],
+    "vals": [
+      4,
+      6,
+      8,
+      8,
+      7,
+      5
+    ],
     "rank": "Tensura · Anti-magic mask",
     "lore": "The anti-magic mask is worn by Shizue Izawa, the Otherworlder known as Shizu. It suppresses magical energy and becomes part of the mystery surrounding the people and worlds that shaped her life.",
     "quote": "Some memories need a face.",
-    "str": ["Suppresses magical signatures", "Hides the wearer's identity", "Connects Shizu to a wider history"],
-    "wk": ["Its protection is not absolute", "The mask cannot heal its wearer", "Its meaning depends on Shizu's past"],
+    "str": [
+      "Suppresses magical signatures",
+      "Hides the wearer's identity",
+      "Connects Shizu to a wider history"
+    ],
+    "wk": [
+      "Its protection is not absolute",
+      "The mask cannot heal its wearer",
+      "Its meaning depends on Shizu's past"
+    ],
     "sig_name": "The Sealed Face",
     "sig_desc": "A mask turns overwhelming power into something a human body can carry.",
     "playstyle": "A symbol of restraint, memory, and borrowed identity",
     "ability": "Shizu's anti-magic mask suppresses magical energy and is associated with her Otherworlder history.",
     "rivals": [
-      { "who": "Shizue Izawa", "rel": "its wearer and emotional center", "id": "" },
-      { "who": "Leon Cromwell", "rel": "connected to Shizu's summoning and past", "id": "" },
-      { "who": "Rimuru Tempest", "rel": "inherits Shizu's story and mask", "id": "" }
+      {
+        "who": "Shizue Izawa",
+        "rel": "its wearer and emotional center",
+        "id": ""
+      },
+      {
+        "who": "Leon Cromwell",
+        "rel": "connected to Shizu's summoning and past",
+        "id": ""
+      },
+      {
+        "who": "Rimuru Tempest",
+        "rel": "inherits Shizu's story and mask",
+        "id": ""
+      }
     ]
   },
   "r015": {
@@ -627,20 +1232,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [8, 5, 8, 6, 8, 7],
+    "vals": [
+      8,
+      5,
+      8,
+      6,
+      8,
+      7
+    ],
     "rank": "One Piece · Devil Fruit",
     "lore": "A Devil Fruit grants its eater a strange ability, but takes away the ability to swim. The fruits range from elemental powers to transformations, and their deepest mysteries connect to the lost history of the world.",
     "quote": "The sea takes its price.",
-    "str": ["Gives one person a singular ability", "Allows wildly different forms of expression", "Some powers awaken into greater states"],
-    "wk": ["The sea rejects its eater", "Seastone can suppress its power", "Only one person can normally hold its power at a time"],
+    "str": [
+      "Gives one person a singular ability",
+      "Allows wildly different forms of expression",
+      "Some powers awaken into greater states"
+    ],
+    "wk": [
+      "The sea rejects its eater",
+      "Seastone can suppress its power",
+      "Only one person can normally hold its power at a time"
+    ],
     "sig_name": "Awakening",
     "sig_desc": "A Devil Fruit power reaches beyond its original host and changes the world around it.",
     "playstyle": "A gift whose freedom always carries a maritime cost",
     "ability": "Devil Fruits grant supernatural powers, while seawater and Seastone weaken their users in One Piece.",
     "rivals": [
-      { "who": "Monkey D. Luffy", "rel": "bearer of the Nika power", "id": "" },
-      { "who": "Marshall D. Teach", "rel": "the only known dual eater", "id": "" },
-      { "who": "The World Government", "rel": "seeks to control forbidden histories", "id": "" }
+      {
+        "who": "Monkey D. Luffy",
+        "rel": "bearer of the Nika power",
+        "id": ""
+      },
+      {
+        "who": "Marshall D. Teach",
+        "rel": "the only known dual eater",
+        "id": ""
+      },
+      {
+        "who": "The World Government",
+        "rel": "seeks to control forbidden histories",
+        "id": ""
+      }
     ]
   },
   "r016": {
@@ -654,19 +1286,42 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [2, 8, 6, 7, 5, 5],
+    "vals": [
+      2,
+      8,
+      6,
+      7,
+      5,
+      5
+    ],
     "rank": "Fantasy folklore · Apothecary staple",
     "lore": "The healing potion is a recurring fantasy image: a bottle of concentrated restoration carried by adventurers, soldiers, and hedge wizards. Its meaning is simple, but its ingredients reveal the healer's culture and craft.",
     "quote": "Every journey needs a remedy.",
-    "str": ["Represents practical care", "Portable and immediate in folklore", "Can be brewed by many traditions"],
-    "wk": ["Cannot replace a skilled healer", "Ingredients may be rare or poisonous", "A potion cannot undo every wound"],
+    "str": [
+      "Represents practical care",
+      "Portable and immediate in folklore",
+      "Can be brewed by many traditions"
+    ],
+    "wk": [
+      "Cannot replace a skilled healer",
+      "Ingredients may be rare or poisonous",
+      "A potion cannot undo every wound"
+    ],
     "sig_name": "The Restorative Draught",
     "sig_desc": "A small bottle carries the promise that damage does not have to be permanent.",
     "playstyle": "A humble symbol of preparation and mercy",
     "ability": "Healing potions are fantasy medicines that restore vitality through magical or alchemical ingredients.",
     "rivals": [
-      { "who": "The village apothecary", "rel": "traditional maker", "id": "" },
-      { "who": "The phoenix feather", "rel": "a rarer restorative symbol", "id": "" }
+      {
+        "who": "The village apothecary",
+        "rel": "traditional maker",
+        "id": ""
+      },
+      {
+        "who": "The phoenix feather",
+        "rel": "a rarer restorative symbol",
+        "id": ""
+      }
     ]
   },
   "r017": {
@@ -680,20 +1335,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [7, 8, 8, 6, 6, 1],
+    "vals": [
+      7,
+      8,
+      8,
+      6,
+      6,
+      1
+    ],
     "rank": "Hunter x Hunter · Royal birth",
     "lore": "The Chimera Ant Queen's nest is a place of feeding, growth, and violent evolution. The Queen produces offspring by consuming living creatures, and the colony's future emerges from the bodies and traits brought into the nest.",
     "quote": "The next generation is already moving.",
-    "str": ["Turns adaptation into inheritance", "Creates a collective identity", "Produces the Royal Guards and King"],
-    "wk": ["Depends on a living colony", "The Queen is bound to reproduction", "Evolution does not guarantee compassion"],
+    "str": [
+      "Turns adaptation into inheritance",
+      "Creates a collective identity",
+      "Produces the Royal Guards and King"
+    ],
+    "wk": [
+      "Depends on a living colony",
+      "The Queen is bound to reproduction",
+      "Evolution does not guarantee compassion"
+    ],
     "sig_name": "Royal Birth",
     "sig_desc": "A body formed from many lives emerges carrying the potential of a species.",
     "playstyle": "A biological engine of hunger, hierarchy, and transformation",
     "ability": "The Chimera Ant Queen produces offspring by consuming creatures and passing their traits into the colony.",
     "rivals": [
-      { "who": "Meruem", "rel": "the King born from the Queen", "id": "" },
-      { "who": "Neferpitou", "rel": "Royal Guard of the next generation", "id": "" },
-      { "who": "Komugi", "rel": "the human bond that changes the King", "id": "" }
+      {
+        "who": "Meruem",
+        "rel": "the King born from the Queen",
+        "id": ""
+      },
+      {
+        "who": "Neferpitou",
+        "rel": "Royal Guard of the next generation",
+        "id": ""
+      },
+      {
+        "who": "Komugi",
+        "rel": "the human bond that changes the King",
+        "id": ""
+      }
     ]
   },
   "r018": {
@@ -707,20 +1389,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [6, 3, 10, 9, 10, 8],
+    "vals": [
+      6,
+      3,
+      10,
+      9,
+      10,
+      8
+    ],
     "rank": "Death Note · Shinigami eye deal",
     "lore": "The Shinigami Eyes let a human see the name and remaining lifespan of another person. The price is half the human's remaining life, paid to a Shinigami in exchange for the sight.",
     "quote": "I can see your name.",
-    "str": ["Reveals hidden identity", "Makes mortality visible", "Turns uncertainty into knowledge"],
-    "wk": ["Costs half a human lifespan", "Requires a Shinigami bargain", "Knowledge can destroy the person who uses it"],
+    "str": [
+      "Reveals hidden identity",
+      "Makes mortality visible",
+      "Turns uncertainty into knowledge"
+    ],
+    "wk": [
+      "Costs half a human lifespan",
+      "Requires a Shinigami bargain",
+      "Knowledge can destroy the person who uses it"
+    ],
     "sig_name": "The Eye Deal",
     "sig_desc": "A bargain trades years of life for the ability to see the truth written above a person.",
     "playstyle": "A forbidden shortcut through identity and death",
     "ability": "A human with Shinigami Eyes sees names and lifespans after accepting the Shinigami's price.",
     "rivals": [
-      { "who": "Misa Amane", "rel": "human who accepts the deal", "id": "" },
-      { "who": "Light Yagami", "rel": "uses the deal as part of Kira's plans", "id": "" },
-      { "who": "Ryuk", "rel": "Shinigami observer of the human world", "id": "" }
+      {
+        "who": "Misa Amane",
+        "rel": "human who accepts the deal",
+        "id": ""
+      },
+      {
+        "who": "Light Yagami",
+        "rel": "uses the deal as part of Kira's plans",
+        "id": ""
+      },
+      {
+        "who": "Ryuk",
+        "rel": "Shinigami observer of the human world",
+        "id": ""
+      }
     ]
   },
   "r019": {
@@ -734,20 +1443,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [7, 4, 9, 6, 6, 10],
+    "vals": [
+      7,
+      4,
+      9,
+      6,
+      6,
+      10
+    ],
     "rank": "The Mask · Loki's wooden face",
     "lore": "The Mask is a supernatural green face associated with Loki that releases the wearer's suppressed impulses. It turns Stanley Ipkiss into the elastic, fourth-wall-breaking Big Head, with reality bending around comic instinct.",
     "quote": "Somebody stop me!",
-    "str": ["Releases impossible imagination", "Bends physical reality", "Turns fear into theatrical confidence"],
-    "wk": ["Amplifies the wearer's worst impulses", "The wearer can lose self-control", "Removing the mask removes the transformation"],
+    "str": [
+      "Releases impossible imagination",
+      "Bends physical reality",
+      "Turns fear into theatrical confidence"
+    ],
+    "wk": [
+      "Amplifies the wearer's worst impulses",
+      "The wearer can lose self-control",
+      "Removing the mask removes the transformation"
+    ],
     "sig_name": "The Big Head",
     "sig_desc": "A timid person becomes an animated force of impossible gags and elastic physics.",
     "playstyle": "A comic identity that makes inhibition physically disappear",
     "ability": "The Mask grants cartoon-like reality manipulation while amplifying the wearer's suppressed personality.",
     "rivals": [
-      { "who": "Stanley Ipkiss", "rel": "the reluctant human wearer", "id": "" },
-      { "who": "Loki", "rel": "mythic source of the mask", "id": "" },
-      { "who": "Dorian Tyrell", "rel": "criminal rival seeking its power", "id": "" }
+      {
+        "who": "Stanley Ipkiss",
+        "rel": "the reluctant human wearer",
+        "id": ""
+      },
+      {
+        "who": "Loki",
+        "rel": "mythic source of the mask",
+        "id": ""
+      },
+      {
+        "who": "Dorian Tyrell",
+        "rel": "criminal rival seeking its power",
+        "id": ""
+      }
     ]
   },
   "r020": {
@@ -761,20 +1497,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [7, 5, 8, 10, 8, 9],
+    "vals": [
+      7,
+      5,
+      8,
+      10,
+      8,
+      9
+    ],
     "rank": "MCU · Space Stone containment vessel",
     "lore": "The Tesseract is the crystalline containment vessel for the Space Stone in the Marvel Cinematic Universe. It powers the research of Project P.E.G.A.S.U.S., opens portals, and becomes a prize for the Red Skull, Loki, and Thanos.",
     "quote": "Space is negotiable.",
-    "str": ["Opens portals across vast distance", "Contains one of the Infinity Stones", "Connects Earth to cosmic powers"],
-    "wk": ["The container does not control the Stone", "Its power attracts conquerors", "Human experiments cannot safely master it"],
+    "str": [
+      "Opens portals across vast distance",
+      "Contains one of the Infinity Stones",
+      "Connects Earth to cosmic powers"
+    ],
+    "wk": [
+      "The container does not control the Stone",
+      "Its power attracts conquerors",
+      "Human experiments cannot safely master it"
+    ],
     "sig_name": "The Space Bridge",
     "sig_desc": "A blue gateway turns distance into a door and lets the universe arrive at once.",
     "playstyle": "A cosmic container mistaken for a manageable machine",
     "ability": "The Tesseract contains the Space Stone and enables portal travel in the Marvel Cinematic Universe.",
     "rivals": [
-      { "who": "Loki", "rel": "steals it for the Chitauri invasion", "id": "" },
-      { "who": "Red Skull", "rel": "first modern seeker of its power", "id": "" },
-      { "who": "Project P.E.G.A.S.U.S.", "rel": "research program built around it", "id": "" }
+      {
+        "who": "Loki",
+        "rel": "steals it for the Chitauri invasion",
+        "id": ""
+      },
+      {
+        "who": "Red Skull",
+        "rel": "first modern seeker of its power",
+        "id": ""
+      },
+      {
+        "who": "Project P.E.G.A.S.U.S.",
+        "rel": "research program built around it",
+        "id": ""
+      }
     ]
   },
   "r021": {
@@ -788,20 +1551,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [6, 8, 8, 7, 7, 10],
+    "vals": [
+      6,
+      8,
+      8,
+      7,
+      7,
+      10
+    ],
     "rank": "Demon Slayer · Nakime's fortress",
     "lore": "The Infinity Castle is the shifting extradimensional stronghold of Muzan Kibutsuji. Nakime controls its rooms with her biwa, moving demons and intruders through impossible distances as the Demon Slayer Corps closes in.",
     "quote": "The rooms keep moving.",
-    "str": ["Rewrites the architecture of a battlefield", "Separates enemies at will", "Makes distance meaningless inside the castle"],
-    "wk": ["Its structure depends on Nakime", "Muzan's command is the castle's purpose", "It offers no refuge from the outside world"],
+    "str": [
+      "Rewrites the architecture of a battlefield",
+      "Separates enemies at will",
+      "Makes distance meaningless inside the castle"
+    ],
+    "wk": [
+      "Its structure depends on Nakime",
+      "Muzan's command is the castle's purpose",
+      "It offers no refuge from the outside world"
+    ],
     "sig_name": "The Biwa's Corridors",
     "sig_desc": "One plucked string rearranges the fortress and sends every traveler somewhere else.",
     "playstyle": "A living maze shaped by a demon's instrument",
     "ability": "Nakime's Blood Demon Art controls the Infinity Castle and rearranges its rooms through her biwa.",
     "rivals": [
-      { "who": "Nakime", "rel": "the castle's spatial controller", "id": "" },
-      { "who": "Muzan Kibutsuji", "rel": "master of the fortress", "id": "" },
-      { "who": "Tanjiro Kamado", "rel": "Demon Slayer who enters its final battle", "id": "" }
+      {
+        "who": "Nakime",
+        "rel": "the castle's spatial controller",
+        "id": ""
+      },
+      {
+        "who": "Muzan Kibutsuji",
+        "rel": "master of the fortress",
+        "id": ""
+      },
+      {
+        "who": "Tanjiro Kamado",
+        "rel": "Demon Slayer who enters its final battle",
+        "id": ""
+      }
     ]
   },
   "r022": {
@@ -815,20 +1605,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [7, 5, 9, 8, 8, 2],
+    "vals": [
+      7,
+      5,
+      9,
+      8,
+      8,
+      2
+    ],
     "rank": "Greek myth · The forbidden jar",
     "lore": "Pandora's Box is more accurately a jar in the earliest Greek account. Zeus sends Pandora to humanity, and when the jar is opened, evils escape into the world while Hope remains inside or arrives last, depending on the reading.",
     "quote": "Curiosity opens what fear keeps closed.",
-    "str": ["Explains the arrival of suffering", "Preserves Hope as a final mystery", "Endures as a warning about curiosity"],
-    "wk": ["The story's details vary by translation", "Pandora is blamed for a divine punishment", "Hope's place inside the jar remains ambiguous"],
+    "str": [
+      "Explains the arrival of suffering",
+      "Preserves Hope as a final mystery",
+      "Endures as a warning about curiosity"
+    ],
+    "wk": [
+      "The story's details vary by translation",
+      "Pandora is blamed for a divine punishment",
+      "Hope's place inside the jar remains ambiguous"
+    ],
     "sig_name": "The Lid Lifted",
     "sig_desc": "One irreversible motion turns hidden possibility into the condition of the world.",
     "playstyle": "A myth about blame, knowledge, and the survival of hope",
     "ability": "Pandora's jar releases the world's evils, while Hope remains as the story's contested final presence.",
     "rivals": [
-      { "who": "Pandora", "rel": "the first woman and opener of the jar", "id": "" },
-      { "who": "Zeus", "rel": "divine author of the punishment", "id": "" },
-      { "who": "Epimetheus", "rel": "husband who accepts Pandora", "id": "" }
+      {
+        "who": "Pandora",
+        "rel": "the first woman and opener of the jar",
+        "id": ""
+      },
+      {
+        "who": "Zeus",
+        "rel": "divine author of the punishment",
+        "id": ""
+      },
+      {
+        "who": "Epimetheus",
+        "rel": "husband who accepts Pandora",
+        "id": ""
+      }
     ]
   },
   "r023": {
@@ -842,20 +1659,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [8, 4, 10, 4, 8, 2],
+    "vals": [
+      8,
+      4,
+      10,
+      4,
+      8,
+      2
+    ],
     "rank": "The Monkey's Paw · Cautionary talisman",
     "lore": "In W. W. Jacobs's short story, a mummified paw is said to grant three wishes. Sergeant-Major Morris warns the Whites about it, but the family wishes anyway and discovers that a fulfilled desire can arrive in the cruelest literal form.",
     "quote": "Be careful what you wish for.",
-    "str": ["Makes desire physically consequential", "Turns ordinary wishes into moral tests", "Its ambiguity creates lasting dread"],
-    "wk": ["Grants wishes through malicious interpretation", "The wisher cannot control the cost", "Every wish deepens the family's grief"],
+    "str": [
+      "Makes desire physically consequential",
+      "Turns ordinary wishes into moral tests",
+      "Its ambiguity creates lasting dread"
+    ],
+    "wk": [
+      "Grants wishes through malicious interpretation",
+      "The wisher cannot control the cost",
+      "Every wish deepens the family's grief"
+    ],
     "sig_name": "The Third Wish",
     "sig_desc": "The last wish is not a prize; it is an attempt to close the story the first two created.",
     "playstyle": "A horror object built from regret and literal language",
     "ability": "The paw grants three wishes whose outcomes twist the wisher's words into tragedy.",
     "rivals": [
-      { "who": "Sergeant-Major Morris", "rel": "brings the paw and warns the family", "id": "" },
-      { "who": "Mr. White", "rel": "wisher whose grief drives the story", "id": "" },
-      { "who": "Herbert White", "rel": "the loss behind the second wish", "id": "" }
+      {
+        "who": "Sergeant-Major Morris",
+        "rel": "brings the paw and warns the family",
+        "id": ""
+      },
+      {
+        "who": "Mr. White",
+        "rel": "wisher whose grief drives the story",
+        "id": ""
+      },
+      {
+        "who": "Herbert White",
+        "rel": "the loss behind the second wish",
+        "id": ""
+      }
     ]
   },
   "r024": {
@@ -869,20 +1713,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [6, 8, 10, 8, 8, 4],
+    "vals": [
+      6,
+      8,
+      10,
+      8,
+      8,
+      4
+    ],
     "rank": "Biblical relic · Covenant chest",
     "lore": "The Ark of the Covenant is the sacred chest described in the Hebrew Bible as the dwelling place of God's covenant with Israel. Indiana Jones and the Raiders of the Lost Ark turn its sacred imagery into an archaeological adventure about reverence and desecration.",
     "quote": "It belongs in a museum.",
-    "str": ["Represents covenant and presence", "Unites ritual, memory, and law", "Carries immense cultural symbolism"],
-    "wk": ["Must not be treated as ordinary treasure", "Its power is dangerous when profaned", "Its historical location is unknown"],
+    "str": [
+      "Represents covenant and presence",
+      "Unites ritual, memory, and law",
+      "Carries immense cultural symbolism"
+    ],
+    "wk": [
+      "Must not be treated as ordinary treasure",
+      "Its power is dangerous when profaned",
+      "Its historical location is unknown"
+    ],
     "sig_name": "The Presence",
     "sig_desc": "The lid and cherubim mark a boundary between a sacred promise and human curiosity.",
     "playstyle": "A holy object whose mystery resists possession",
     "ability": "The Ark is associated with the tablets of the covenant and divine presence in biblical tradition.",
     "rivals": [
-      { "who": "Moses", "rel": "receives the covenant tablets", "id": "" },
-      { "who": "Indiana Jones", "rel": "archaeologist who recovers it", "id": "" },
-      { "who": "René Belloq", "rel": "rival who treats it as a prize", "id": "" }
+      {
+        "who": "Moses",
+        "rel": "receives the covenant tablets",
+        "id": ""
+      },
+      {
+        "who": "Indiana Jones",
+        "rel": "archaeologist who recovers it",
+        "id": ""
+      },
+      {
+        "who": "René Belloq",
+        "rel": "rival who treats it as a prize",
+        "id": ""
+      }
     ]
   },
   "r025": {
@@ -896,20 +1767,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [6, 4, 10, 9, 10, 2],
+    "vals": [
+      6,
+      4,
+      10,
+      9,
+      10,
+      2
+    ],
     "rank": "Cthulhu Mythos · Forbidden grimoire",
     "lore": "The Necronomicon is a fictional grimoire created by H. P. Lovecraft and attributed to the mad poet Abdul Alhazred. Its fragments describe cosmic entities and rituals that make human knowledge feel small, temporary, and dangerous.",
     "quote": "The dead have footnotes.",
-    "str": ["Contains forbidden cosmic knowledge", "Expands horror beyond human scale", "Infects every library that mentions it"],
-    "wk": ["Reading it threatens sanity", "Its history is deliberately unreliable", "Knowledge does not grant control"],
+    "str": [
+      "Contains forbidden cosmic knowledge",
+      "Expands horror beyond human scale",
+      "Infects every library that mentions it"
+    ],
+    "wk": [
+      "Reading it threatens sanity",
+      "Its history is deliberately unreliable",
+      "Knowledge does not grant control"
+    ],
     "sig_name": "The Unreadable Passage",
     "sig_desc": "A page reveals a truth large enough to make the reader smaller.",
     "playstyle": "A book-shaped breach in the limits of human understanding",
     "ability": "The Necronomicon is a fictional occult book associated with Abdul Alhazred and the Cthulhu Mythos.",
     "rivals": [
-      { "who": "Abdul Alhazred", "rel": "fictional author of the book", "id": "" },
-      { "who": "Cthulhu", "rel": "one of the cosmic entities it invokes", "id": "" },
-      { "who": "Ash Williams", "rel": "modern horror hero who battles its derivatives", "id": "" }
+      {
+        "who": "Abdul Alhazred",
+        "rel": "fictional author of the book",
+        "id": ""
+      },
+      {
+        "who": "Cthulhu",
+        "rel": "one of the cosmic entities it invokes",
+        "id": ""
+      },
+      {
+        "who": "Ash Williams",
+        "rel": "modern horror hero who battles its derivatives",
+        "id": ""
+      }
     ]
   },
   "r026": {
@@ -923,20 +1821,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [7, 7, 10, 10, 8, 3],
+    "vals": [
+      7,
+      7,
+      10,
+      10,
+      8,
+      3
+    ],
     "rank": "Dragon Ball · Earth's wish orbs",
     "lore": "The Dragon Balls are seven magical orbs that summon Shenron when gathered. Their wishes are limited by the dragon and the creator of the set, while the search for them carries the story from a comic adventure into cosmic history.",
     "quote": "Your wish is granted.",
-    "str": ["Turns a scattered search into a miracle", "Connects Earth to its guardians", "Can restore lives and worlds"],
-    "wk": ["Must be gathered before use", "Shenron's power has limits", "The orbs scatter after a wish"],
+    "str": [
+      "Turns a scattered search into a miracle",
+      "Connects Earth to its guardians",
+      "Can restore lives and worlds"
+    ],
+    "wk": [
+      "Must be gathered before use",
+      "Shenron's power has limits",
+      "The orbs scatter after a wish"
+    ],
     "sig_name": "Summon Shenron",
     "sig_desc": "Seven lights gather, the dragon rises, and one request becomes history.",
     "playstyle": "A journey object that makes hope a physical collection",
     "ability": "Gathering the seven Dragon Balls summons Shenron, who grants a wish within his stated limits.",
     "rivals": [
-      { "who": "Shenron", "rel": "dragon summoned by the complete set", "id": "" },
-      { "who": "Bulma", "rel": "finder who begins the original search", "id": "" },
-      { "who": "Son Goku", "rel": "hero whose life grows around the orbs", "id": "" }
+      {
+        "who": "Shenron",
+        "rel": "dragon summoned by the complete set",
+        "id": ""
+      },
+      {
+        "who": "Bulma",
+        "rel": "finder who begins the original search",
+        "id": ""
+      },
+      {
+        "who": "Son Goku",
+        "rel": "hero whose life grows around the orbs",
+        "id": ""
+      }
     ]
   },
   "r027": {
@@ -950,20 +1875,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [10, 8, 9, 7, 7, 7],
+    "vals": [
+      10,
+      8,
+      9,
+      7,
+      7,
+      7
+    ],
     "rank": "Marvel · Hammer of Thor",
     "lore": "Mjolnir is the enchanted hammer of Thor, forged in a dying star and marked by Odin's worthiness enchantment. It returns to its wielder, commands storms, and has been lifted by heroes who prove themselves worthy of its responsibility.",
     "quote": "Whosoever holds this hammer, if they be worthy...",
-    "str": ["Commands thunder and flight", "Returns when called by its worthy wielder", "Makes worthiness a visible moral test"],
-    "wk": ["Cannot be lifted by the unworthy", "Its power is tied to responsibility", "The enchantment can be changed by its creator"],
+    "str": [
+      "Commands thunder and flight",
+      "Returns when called by its worthy wielder",
+      "Makes worthiness a visible moral test"
+    ],
+    "wk": [
+      "Cannot be lifted by the unworthy",
+      "Its power is tied to responsibility",
+      "The enchantment can be changed by its creator"
+    ],
     "sig_name": "Worthiness",
     "sig_desc": "The hammer answers the person who can carry its power without being ruled by it.",
     "playstyle": "A weapon that measures character before strength",
     "ability": "Mjolnir grants Thor control over storms and can be lifted only by those judged worthy by its enchantment.",
     "rivals": [
-      { "who": "Thor Odinson", "rel": "its principal wielder", "id": "" },
-      { "who": "Odin", "rel": "creator of the worthiness enchantment", "id": "" },
-      { "who": "Jane Foster", "rel": "worthy wielder during Thor's absence", "id": "" }
+      {
+        "who": "Thor Odinson",
+        "rel": "its principal wielder",
+        "id": ""
+      },
+      {
+        "who": "Odin",
+        "rel": "creator of the worthiness enchantment",
+        "id": ""
+      },
+      {
+        "who": "Jane Foster",
+        "rel": "worthy wielder during Thor's absence",
+        "id": ""
+      }
     ]
   },
   "r028": {
@@ -977,20 +1929,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [9, 6, 8, 6, 7, 8],
+    "vals": [
+      9,
+      6,
+      8,
+      6,
+      7,
+      8
+    ],
     "rank": "Arthurian legend · Sword of kingship",
     "lore": "Excalibur is King Arthur's famous sword, usually given to him by the Lady of the Lake. Later retellings sometimes merge it with the sword drawn from the stone, but the legends consistently make it a sign of rightful kingship and a weapon beyond ordinary craft.",
     "quote": "The right hand finds the hilt.",
-    "str": ["Represents rightful authority", "Carries supernatural sharpness and durability", "Unites Arthur's rule with mythic destiny"],
-    "wk": ["Its identity changes across traditions", "The sword cannot preserve a failing kingdom", "Its legend depends on Arthur's character"],
+    "str": [
+      "Represents rightful authority",
+      "Carries supernatural sharpness and durability",
+      "Unites Arthur's rule with mythic destiny"
+    ],
+    "wk": [
+      "Its identity changes across traditions",
+      "The sword cannot preserve a failing kingdom",
+      "Its legend depends on Arthur's character"
+    ],
     "sig_name": "The Lady's Gift",
     "sig_desc": "A blade rises from the lake as a sign that kingship can be granted, not merely seized.",
     "playstyle": "A symbol of authority that outlives the person who carries it",
     "ability": "Excalibur is Arthur's enchanted sword, associated with the Lady of the Lake and the king's legitimacy.",
     "rivals": [
-      { "who": "King Arthur", "rel": "the sword's chosen king", "id": "" },
-      { "who": "The Lady of the Lake", "rel": "giver of the blade", "id": "" },
-      { "who": "Merlin", "rel": "sage who guides Arthur's destiny", "id": "" }
+      {
+        "who": "King Arthur",
+        "rel": "the sword's chosen king",
+        "id": ""
+      },
+      {
+        "who": "The Lady of the Lake",
+        "rel": "giver of the blade",
+        "id": ""
+      },
+      {
+        "who": "Merlin",
+        "rel": "sage who guides Arthur's destiny",
+        "id": ""
+      }
     ]
   },
   "r029": {
@@ -1004,20 +1983,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [8, 8, 9, 9, 7, 10],
+    "vals": [
+      8,
+      8,
+      9,
+      9,
+      7,
+      10
+    ],
     "rank": "Ben 10 · Omnitrix device",
     "lore": "The Omnitrix is a device created by Azmuth that lets its wearer access the genetic templates of many alien species. It was designed as a tool for understanding and peace, but its range of forms makes it one of the most dangerous objects in the galaxy.",
     "quote": "It's hero time!",
-    "str": ["Stores a library of alien forms", "Turns adaptation into identity", "Makes knowledge a source of power"],
-    "wk": ["Its transformations have time limits", "The watch can choose the wrong form", "Its creator fears what others would do with it"],
+    "str": [
+      "Stores a library of alien forms",
+      "Turns adaptation into identity",
+      "Makes knowledge a source of power"
+    ],
+    "wk": [
+      "Its transformations have time limits",
+      "The watch can choose the wrong form",
+      "Its creator fears what others would do with it"
+    ],
     "sig_name": "Alien Selection",
     "sig_desc": "A flash of green light opens a new body and a new answer to the problem in front of it.",
     "playstyle": "A device of endless adaptation and imperfect control",
     "ability": "The Omnitrix allows its user to transform into sampled alien species while preserving a path back to human form.",
     "rivals": [
-      { "who": "Ben Tennyson", "rel": "the watch's young wielder", "id": "" },
-      { "who": "Azmuth", "rel": "its Galvan creator", "id": "" },
-      { "who": "Vilgax", "rel": "conqueror who seeks its power", "id": "" }
+      {
+        "who": "Ben Tennyson",
+        "rel": "the watch's young wielder",
+        "id": ""
+      },
+      {
+        "who": "Azmuth",
+        "rel": "its Galvan creator",
+        "id": ""
+      },
+      {
+        "who": "Vilgax",
+        "rel": "conqueror who seeks its power",
+        "id": ""
+      }
     ]
   },
   "r030": {
@@ -1031,20 +2037,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [7, 8, 8, 10, 8, 8],
+    "vals": [
+      7,
+      8,
+      8,
+      10,
+      8,
+      8
+    ],
     "rank": "JoJo · Stand-creating Arrow",
     "lore": "The Stand Arrows are mysterious weapons made from a meteorite carrying an otherworldly virus. Those who survive the piercing may awaken a Stand, while those who cannot endure it are left behind by the same force that grants another person extraordinary power.",
     "quote": "The arrow chooses.",
-    "str": ["Awakens hidden potential", "Turns a wound into a new identity", "Links separate lives to one mystery"],
-    "wk": ["Many victims do not survive", "Its origin remains obscure", "Power depends on the person's response"],
+    "str": [
+      "Awakens hidden potential",
+      "Turns a wound into a new identity",
+      "Links separate lives to one mystery"
+    ],
+    "wk": [
+      "Many victims do not survive",
+      "Its origin remains obscure",
+      "Power depends on the person's response"
+    ],
     "sig_name": "Stand Awakening",
     "sig_desc": "A single point of contact divides an ordinary life from the strange ability waiting beneath it.",
     "playstyle": "A dangerous gamble that rewards those who endure transformation",
     "ability": "The Stand Arrow can awaken a supernatural Stand in someone who survives its power.",
     "rivals": [
-      { "who": "Enya the Hag", "rel": "dealer in the Arrows' power", "id": "" },
-      { "who": "Giorno Giovanna", "rel": "wielder who reaches Requiem", "id": "c042" },
-      { "who": "Diavolo", "rel": "seeker of the Arrow's final evolution", "id": "" }
+      {
+        "who": "Enya the Hag",
+        "rel": "dealer in the Arrows' power",
+        "id": ""
+      },
+      {
+        "who": "Giorno Giovanna",
+        "rel": "wielder who reaches Requiem",
+        "id": "c042"
+      },
+      {
+        "who": "Diavolo",
+        "rel": "seeker of the Arrow's final evolution",
+        "id": ""
+      }
     ]
   },
   "r031": {
@@ -1058,20 +2091,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [6, 7, 8, 7, 9, 8],
+    "vals": [
+      6,
+      7,
+      8,
+      7,
+      9,
+      8
+    ],
     "rank": "Pokémon · Capsule for partners",
     "lore": "A Poké Ball is a compact device used to carry Pokémon between journeys and battles. Its small shape hides a carefully tuned interior, turning a powerful creature's movement between the wild and a trainer's side into a familiar red-and-white gesture.",
     "quote": "Gotta catch them all!",
-    "str": ["Makes partnership portable", "Bridges wild and civilised spaces", "Holds more than its size suggests"],
-    "wk": ["A Pokémon may resist capture", "The device is only useful with trust", "Not every species fits the same ball"],
+    "str": [
+      "Makes partnership portable",
+      "Bridges wild and civilised spaces",
+      "Holds more than its size suggests"
+    ],
+    "wk": [
+      "A Pokémon may resist capture",
+      "The device is only useful with trust",
+      "Not every species fits the same ball"
+    ],
     "sig_name": "Recall",
     "sig_desc": "A red flash folds a travelling partner into a safe capsule until the next call to action.",
     "playstyle": "A simple tool built around trust, timing, and return",
     "ability": "Poké Balls allow trainers to capture, carry, and call their Pokémon partners during a journey.",
     "rivals": [
-      { "who": "Ash Ketchum", "rel": "trainer whose partners define his journey", "id": "" },
-      { "who": "Professor Oak", "rel": "researcher of Pokémon and their habitats", "id": "" },
-      { "who": "Mewtwo", "rel": "powerful being that resists human control", "id": "" }
+      {
+        "who": "Ash Ketchum",
+        "rel": "trainer whose partners define his journey",
+        "id": ""
+      },
+      {
+        "who": "Professor Oak",
+        "rel": "researcher of Pokémon and their habitats",
+        "id": ""
+      },
+      {
+        "who": "Mewtwo",
+        "rel": "powerful being that resists human control",
+        "id": ""
+      }
     ]
   },
   "r032": {
@@ -1085,20 +2145,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [7, 8, 10, 9, 10, 5],
+    "vals": [
+      7,
+      8,
+      10,
+      9,
+      10,
+      5
+    ],
     "rank": "Harry Potter · Ministry time device",
     "lore": "A Time-Turner is a magical hourglass that lets its user revisit a limited span of time. Hermione Granger uses one to attend overlapping lessons, and later stories show how even a small change in chronology can carry enormous consequences.",
     "quote": "Minutes become possibilities.",
-    "str": ["Makes lost time reachable", "Rewards careful planning", "Turns sequence into a resource"],
-    "wk": ["Its range is tightly limited", "Paradoxes threaten careless users", "The Ministry restricts its use"],
+    "str": [
+      "Makes lost time reachable",
+      "Rewards careful planning",
+      "Turns sequence into a resource"
+    ],
+    "wk": [
+      "Its range is tightly limited",
+      "Paradoxes threaten careless users",
+      "The Ministry restricts its use"
+    ],
     "sig_name": "Rewind",
     "sig_desc": "Sand falls upward for a moment, returning a wound to the instant before it was made.",
     "playstyle": "A precise answer to damage that depends on remembering when it began",
     "ability": "A Time-Turner allows a witch or wizard to revisit a recent period of time through a charmed hourglass.",
     "rivals": [
-      { "who": "Hermione Granger", "rel": "student who uses one to manage her studies", "id": "" },
-      { "who": "Albus Dumbledore", "rel": "headmaster who understands its danger", "id": "c030" },
-      { "who": "The Department of Mysteries", "rel": "Ministry authority that studies time", "id": "" }
+      {
+        "who": "Hermione Granger",
+        "rel": "student who uses one to manage her studies",
+        "id": ""
+      },
+      {
+        "who": "Albus Dumbledore",
+        "rel": "headmaster who understands its danger",
+        "id": "c030"
+      },
+      {
+        "who": "The Department of Mysteries",
+        "rel": "Ministry authority that studies time",
+        "id": ""
+      }
     ]
   },
   "r033": {
@@ -1112,20 +2199,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [9, 9, 8, 6, 6, 9],
+    "vals": [
+      9,
+      9,
+      8,
+      6,
+      6,
+      9
+    ],
     "rank": "Marvel · Klyntar organism",
     "lore": "A symbiote is a living alien organism that bonds with a host and shares its senses, strength, and instincts. The relationship can become a partnership like Venom and Eddie Brock, or a struggle in which hunger and identity threaten to consume the person inside the suit.",
     "quote": "We are Venom.",
-    "str": ["Shares power through partnership", "Heals and protects its host", "Learns from every conflict"],
-    "wk": ["The bond can become possessive", "Fire and sound can hurt it", "Host and organism can disagree"],
+    "str": [
+      "Shares power through partnership",
+      "Heals and protects its host",
+      "Learns from every conflict"
+    ],
+    "wk": [
+      "The bond can become possessive",
+      "Fire and sound can hurt it",
+      "Host and organism can disagree"
+    ],
     "sig_name": "Second Chance",
     "sig_desc": "When the host should fall, the living suit holds the body together for one more struggle.",
     "playstyle": "A dangerous partnership that converts survival into dependence",
     "ability": "Marvel symbiotes bond with hosts to grant strength, healing, and a shared identity at a personal cost.",
     "rivals": [
-      { "who": "Eddie Brock", "rel": "host who forms the Venom partnership", "id": "" },
-      { "who": "Peter Parker", "rel": "first human host of the black suit", "id": "" },
-      { "who": "Knull", "rel": "creator and god of the symbiotes", "id": "" }
+      {
+        "who": "Eddie Brock",
+        "rel": "host who forms the Venom partnership",
+        "id": ""
+      },
+      {
+        "who": "Peter Parker",
+        "rel": "first human host of the black suit",
+        "id": ""
+      },
+      {
+        "who": "Knull",
+        "rel": "creator and god of the symbiotes",
+        "id": ""
+      }
     ]
   },
   "r034": {
@@ -1139,20 +2253,47 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [5, 6, 7, 10, 10, 4],
+    "vals": [
+      5,
+      6,
+      7,
+      10,
+      10,
+      4
+    ],
     "rank": "Men in Black · Memory eraser",
     "lore": "The neuralyzer is a compact device used by the Men in Black to erase or replace memories with a flash of light. It keeps the hidden alien world from becoming public knowledge, while leaving its agents responsible for deciding which truths ordinary people are allowed to remember.",
     "quote": "Look right here.",
-    "str": ["Erases dangerous knowledge", "Protects a secret world", "Solves conflict without visible force"],
-    "wk": ["Its use can be abused", "The erased truth may return", "Memory is not the same as understanding"],
+    "str": [
+      "Erases dangerous knowledge",
+      "Protects a secret world",
+      "Solves conflict without visible force"
+    ],
+    "wk": [
+      "Its use can be abused",
+      "The erased truth may return",
+      "Memory is not the same as understanding"
+    ],
     "sig_name": "Flash of Forgetting",
     "sig_desc": "A white pulse clears the mental residue of curses, fear, and unwanted control.",
     "playstyle": "A quiet reset button for a battlefield full of lingering consequences",
     "ability": "Men in Black agents use neuralyzers to erase or alter memories and preserve secrecy after supernatural encounters.",
     "rivals": [
-      { "who": "Agent K", "rel": "veteran agent who carries the device", "id": "" },
-      { "who": "Agent J", "rel": "partner learning the cost of secrecy", "id": "" },
-      { "who": "The Arquillian Prince", "rel": "alien crisis hidden from humanity", "id": "" }
+      {
+        "who": "Agent K",
+        "rel": "veteran agent who carries the device",
+        "id": ""
+      },
+      {
+        "who": "Agent J",
+        "rel": "partner learning the cost of secrecy",
+        "id": ""
+      },
+      {
+        "who": "The Arquillian Prince",
+        "rel": "alien crisis hidden from humanity",
+        "id": ""
+      }
     ]
   },
   "r035": {
@@ -1166,20 +2307,123 @@
     "atk": 0,
     "hp": 0,
     "cc": "#54d6c3",
-    "vals": [8, 7, 8, 9, 9, 10],
+    "vals": [
+      8,
+      7,
+      8,
+      9,
+      9,
+      10
+    ],
     "rank": "DC · Green Lantern power ring",
     "lore": "A Green Lantern power ring is an advanced device powered by will and connected to the emotional spectrum. It translates a Lantern's imagination into solid light, grants flight and protection, and answers most strongly when its wielder refuses to surrender.",
     "quote": "In brightest day, in blackest night.",
-    "str": ["Turns imagination into solid light", "Rewards courage and discipline", "Connects one bearer to a wider corps"],
-    "wk": ["Requires a strong will", "The ring's charge is finite", "Fear can interfere with its power"],
+    "str": [
+      "Turns imagination into solid light",
+      "Rewards courage and discipline",
+      "Connects one bearer to a wider corps"
+    ],
+    "wk": [
+      "Requires a strong will",
+      "The ring's charge is finite",
+      "Fear can interfere with its power"
+    ],
     "sig_name": "Hard-Light Construct",
     "sig_desc": "The ring shapes resolve into a weapon, shield, or bridge before the next choice has to be made.",
     "playstyle": "A tool that grows through patience, courage, and creative defence",
     "ability": "Green Lantern rings create hard-light constructs and empower their chosen wielders through willpower.",
     "rivals": [
-      { "who": "Hal Jordan", "rel": "test pilot chosen by Abin Sur's ring", "id": "" },
-      { "who": "John Stewart", "rel": "architect and Lantern whose constructs reflect precision", "id": "" },
-      { "who": "The Guardians of the Universe", "rel": "creators and overseers of the Corps", "id": "" }
+      {
+        "who": "Hal Jordan",
+        "rel": "test pilot chosen by Abin Sur's ring",
+        "id": ""
+      },
+      {
+        "who": "John Stewart",
+        "rel": "architect and Lantern whose constructs reflect precision",
+        "id": ""
+      },
+      {
+        "who": "The Guardians of the Universe",
+        "rel": "creators and overseers of the Corps",
+        "id": ""
+      }
     ]
+  },
+  "c186": {
+    "name": "Antimatter Bomb",
+    "origin": "Basic",
+    "rar": "Rare",
+    "camp": "Tech",
+    "align": "Neutral",
+    "cost": 9,
+    "atk": 1,
+    "hp": 1,
+    "cc": "#46e0ff",
+    "ability": "Deathrattle: Deal 20 damage to both cores",
+    "rivals": [],
+    "epithet": "Mutual destruction",
+    "vals": [
+      9,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "rank": "Catastrophic deterrent",
+    "lore": "A fragile antimatter warhead built around a single terrible promise: its destruction will punish both sides. Even its commander cannot escape the final blast.",
+    "quote": "No safe distance.",
+    "str": [
+      "Devastating core blast",
+      "Threatens both sides",
+      "Punishes destruction"
+    ],
+    "wk": [
+      "Extremely fragile",
+      "Harms its own commander",
+      "Silence disables the final blast"
+    ],
+    "sig_name": "Containment Failure",
+    "sig_desc": "Its final detonation deals 20 damage to both cores.",
+    "playstyle": "A risky finisher or deterrent"
+  },
+  "c187": {
+    "name": "Carrier Strike Group",
+    "origin": "Basic",
+    "rar": "Rare",
+    "camp": "Tech",
+    "align": "Neutral",
+    "cost": 5,
+    "atk": 1,
+    "hp": 5,
+    "cc": "#46e0ff",
+    "ability": "Passive: Enemy Tech minions cannot attack",
+    "rivals": [],
+    "epithet": "Fleet air superiority",
+    "vals": [
+      6,
+      7,
+      0,
+      0,
+      7,
+      4
+    ],
+    "rank": "Coordinated naval force",
+    "lore": "A carrier sails with escorts, aircraft and overlapping defenses. Together they dominate the battlespace, preventing enemy Tech minions from launching attacks while the fleet remains active.",
+    "quote": "The horizon belongs to the fleet.",
+    "str": [
+      "Disrupts enemy Tech forces",
+      "Durable supporting body",
+      "Coordinates a fleet of defenses"
+    ],
+    "wk": [
+      "Other camps remain free to attack",
+      "Silence ends the suppression",
+      "Its own attack is modest"
+    ],
+    "sig_name": "Air Superiority",
+    "sig_desc": "Enemy Tech minions cannot attack while the fleet is active.",
+    "playstyle": "Suppresses opposing Tech attackers"
   }
 }

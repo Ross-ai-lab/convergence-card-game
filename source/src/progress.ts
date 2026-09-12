@@ -1,7 +1,7 @@
 import type { BotSkill } from "./engine/bot";
 import type { HeroPowerId } from "./engine/types";
 import type { SavedMode } from "./storage";
-import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, getCampaignChapter } from "./campaign";
+import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_INITIAL_COLLECTION, getCampaignChapter } from "./campaign";
 import { firstUnlockedHeroPower, isHeroPowerUnlocked, HERO_POWER_UNLOCK_ORDER } from "./engine/hero-powers";
 
 export type LadderKey = BotSkill | "hotseat";
@@ -37,6 +37,8 @@ export interface DuelResult {
 }
 
 export interface Progress {
+  storyIntroduced: boolean;
+  pendingBossSpeech: number | null;
   version: number;
   developerCheat: boolean;
   ladders: Record<LadderKey, LadderRecord>;
@@ -57,17 +59,18 @@ export const PROGRESS_VERSION = 3;
 export const PROGRESS_KEY = "convergence.progress.v3";
 export const RECENT_LIMIT = 10;
 export const CAMPAIGN_CARD_IDS: readonly string[] = Object.freeze([
-  ...CAMPAIGN_STARTER_DECK, ...CAMPAIGN_CHAPTERS.flatMap((chapter) => chapter.rewardCardIds),
+  ...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.flatMap((chapter) => chapter.rewardCardIds),
 ]);
 const roster = new Set(CAMPAIGN_CARD_IDS);
 const emptyRecord = (): LadderRecord => ({ played: 0, won: 0, lost: 0, drawn: 0 });
 
 export function emptyProgress(): Progress {
   return {
+    storyIntroduced: false, pendingBossSpeech: null,
     version: PROGRESS_VERSION, developerCheat: false,
     ladders: { easy: emptyRecord(), normal: emptyRecord(), hard: emptyRecord(), hotseat: emptyRecord() },
     recent: [], seen: [], played: [], wonWith: [], completedChapters: 0,
-    unlockedIds: [...CAMPAIGN_STARTER_DECK], playerDeck: [...CAMPAIGN_STARTER_DECK],
+    unlockedIds: [...CAMPAIGN_INITIAL_COLLECTION], playerDeck: [...CAMPAIGN_STARTER_DECK],
     hotseatDeck: [...CAMPAIGN_STARTER_DECK], selectedHeroPower: null, pendingRewards: [], settledDuels: [],
   };
 }
@@ -97,15 +100,17 @@ export function loadProgress(): Progress {
     if (!saved || saved.version !== PROGRESS_VERSION) return emptyProgress();
     const progress = emptyProgress();
     progress.completedChapters = Math.min(CAMPAIGN_CHAPTERS.length, count(saved.completedChapters));
+    progress.storyIntroduced = saved.storyIntroduced === true;
+    progress.pendingBossSpeech = typeof saved.pendingBossSpeech === "number" && getCampaignChapter(saved.pendingBossSpeech) && saved.pendingBossSpeech <= progress.completedChapters ? saved.pendingBossSpeech : null;
     progress.developerCheat = saved.developerCheat === true;
-    const earned = [...CAMPAIGN_STARTER_DECK, ...CAMPAIGN_CHAPTERS.slice(0, progress.completedChapters).flatMap((chapter) => chapter.rewardCardIds)];
+    const earned = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.slice(0, progress.completedChapters).flatMap((chapter) => chapter.rewardCardIds)];
     // Reconstruct only legitimate earned IDs. Missing fields cannot unlock future bosses.
     progress.unlockedIds = progress.developerCheat ? [...CAMPAIGN_CARD_IDS] : earned;
     const allowed = new Set(progress.unlockedIds);
     const draft = (value: unknown) => Array.isArray(value)
       ? knownIds(value).filter((id) => allowed.has(id)).slice(0, 30) : [...CAMPAIGN_STARTER_DECK];
-    progress.playerDeck = progress.completedChapters > 0 || progress.developerCheat ? draft(saved.playerDeck) : [...CAMPAIGN_STARTER_DECK];
-    progress.hotseatDeck = progress.completedChapters > 0 || progress.developerCheat ? draft(saved.hotseatDeck) : [...CAMPAIGN_STARTER_DECK];
+    progress.playerDeck = canEditDeck(progress) ? draft(saved.playerDeck) : [...CAMPAIGN_STARTER_DECK];
+    progress.hotseatDeck = canEditDeck(progress) ? draft(saved.hotseatDeck) : [...CAMPAIGN_STARTER_DECK];
     progress.pendingRewards = knownIds(saved.pendingRewards).filter((id) => allowed.has(id));
     progress.seen = knownIds(saved.seen); progress.played = knownIds(saved.played); progress.wonWith = knownIds(saved.wonWith);
     progress.selectedHeroPower = saved.selectedHeroPower && isHeroPowerUnlocked(saved.selectedHeroPower, botWins(progress))
@@ -132,11 +137,13 @@ export function unlockAllProgress(progress: Progress): Progress {
     selectedHeroPower: progress.selectedHeroPower ?? firstUnlockedHeroPower(HERO_POWER_UNLOCK_ORDER.length) };
 }
 export function acknowledgeRewards(progress: Progress): Progress { return { ...progress, pendingRewards: [] }; }
+export function acknowledgeBossSpeech(progress: Progress): Progress { return {...progress, pendingBossSpeech: null}; }
+export function canEditDeck(progress: Progress): boolean { return progress.completedChapters > 0 || progress.developerCheat || progress.unlockedIds.length > CAMPAIGN_STARTER_DECK.length; }
 export function selectHeroPower(progress: Progress, power: HeroPowerId): Progress {
   return isHeroPowerUnlocked(power, botWins(progress)) ? { ...progress, selectedHeroPower: power } : progress;
 }
 export function saveDeckDraft(progress: Progress, deck: readonly string[], seat: 0 | 1 = 0): Progress {
-  if (!progress.completedChapters && !progress.developerCheat) return progress;
+  if (!canEditDeck(progress)) return progress;
   const allowed = new Set(progress.unlockedIds);
   if (deck.length > 30 || new Set(deck).size !== deck.length || deck.some((id) => !allowed.has(id))) return progress;
   return { ...progress, [seat === 0 ? "playerDeck" : "hotseatDeck"]: [...deck] };
@@ -153,6 +160,7 @@ export function recordDuel(progress: Progress, result: DuelResult, cards: { seen
   const completedChapters = firstClear ? firstClear.chapter : progress.completedChapters;
   const next: Progress = {
     ...progress, completedChapters, unlockedIds: merge(progress.unlockedIds, awarded),
+    pendingBossSpeech: result.outcome === "won" && result.ladder !== "hotseat" && result.chapter && getCampaignChapter(result.chapter) && result.chapter <= completedChapters ? result.chapter : progress.pendingBossSpeech,
     pendingRewards: merge(progress.pendingRewards, awarded),
     settledDuels: result.duelId ? [...progress.settledDuels, result.duelId].slice(-200) : progress.settledDuels,
     ladders: { ...progress.ladders, [result.ladder]: { played: old.played + 1,

@@ -22,7 +22,7 @@ export async function seedCampaignProgress(page, cleared = 20, { boardDeck = fal
       progress = progressModule.saveDeckDraft(progress, deck, 0);
       progress = progressModule.saveDeckDraft(progress, deck, 1);
     }
-    progressModule.saveProgress(progressModule.acknowledgeRewards(progress));
+    progressModule.saveProgress({...progressModule.acknowledgeBossSpeech(progressModule.acknowledgeRewards(progress)),storyIntroduced:true});
   }, { cleared, boardDeck });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.locator('.title-screen').waitFor();

@@ -51,7 +51,7 @@ const ONLY = (process.argv.find((arg) => arg.startsWith("--only")) ?? "").split(
 // The harness itself: editing the shared browser helper or a check script has to
 // re-run the suites that ride on it, or the one change nobody re-checks is the
 // change to the checker.
-const HARNESS = /^source\/scripts\/(browser|profile-layout|campaign-fixtures|check-)/;
+const HARNESS = /^source\/scripts\/(browser|profile-layout|campaign-fixtures|story-fixtures|check-)/;
 
 const SUITES = [
   {

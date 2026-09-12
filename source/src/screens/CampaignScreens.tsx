@@ -14,7 +14,7 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
   const valid = validateDeck(progress.playerDeck, rosterIds, progress.unlockedIds).valid;
   return <div className="campaign-overlay" role="dialog" aria-modal="true" aria-label="Campaign">
     <section className="campaign-panel campaign-chapter-panel">
-      <header className="campaign-header"><div><h2>Campaign</h2>
+      <header className="campaign-header"><div><span className="campaign-eyebrow">RICK GRAMPS' COLLECTION</span><h2>Campaign</h2>
         </div>
         <button className="campaign-close" onClick={onClose} aria-label="Close campaign">×</button></header>
       <div className="campaign-toolbar"><p>{campaignComplete(progress) ? "Campaign complete. Free duels are available on the title screen." : "Defeat each challenger to claim their universe and advance."}</p></div>

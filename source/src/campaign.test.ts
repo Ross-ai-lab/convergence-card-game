@@ -5,7 +5,7 @@ import { isMinionCard } from "./engine/types";
 import { validateDeck } from "./decks";
 import {
   CAMPAIGN_CHAPTERS, CAMPAIGN_DIFFICULTIES, CAMPAIGN_ROSTER_SIZE,
-  CAMPAIGN_STARTER_DECK, campaignUniverse, getCampaignChapter,
+  CAMPAIGN_STARTER_DECK, CAMPAIGN_INITIAL_COLLECTION, CAMPAIGN_UNIVERSE_EXEMPT_IDS, campaignUniverse, getCampaignChapter,
 } from "./campaign";
 
 const roster = [...cards, ...relics];
@@ -24,25 +24,28 @@ describe("campaign definitions", () => {
     expect(new Set(CAMPAIGN_CHAPTERS.map(({ universe }) => universe)).size).toBe(20);
   });
 
-  it("starts with three cards at EVERY mana cost, all ten Basics and no Mythics", () => {
+  it("keeps thirty deck cards and makes the new Basic alternatives available immediately", () => {
     expect(validateDeck(CAMPAIGN_STARTER_DECK, rosterIds, CAMPAIGN_STARTER_DECK).valid).toBe(true);
     const starter = CAMPAIGN_STARTER_DECK.map((id) => byId.get(id)!);
-    for (let cost = 1; cost <= 10; cost++) expect(starter.filter((card) => card.cost === cost)).toHaveLength(3);
+    expect(Array.from({length:10},(_,i)=>starter.filter(card=>card.cost===i+1).length)).toEqual([3,2,3,6,2,2,4,3,2,3]);
     expect(starter.filter((card) => !isMinionCard(card))).toHaveLength(4);
     expect(starter.some((card) => isMinionCard(card) && card.rarity === "Red")).toBe(false);
-    expect(starter.filter((card) => card.origin === "Basic").map(({ id }) => id).sort())
+    const initial=CAMPAIGN_INITIAL_COLLECTION.map(id=>byId.get(id)!);
+    expect(initial.filter((card) => card.origin === "Basic").map(({ id }) => id).sort())
       .toEqual(cards.filter((card) => card.origin === "Basic").map(({ id }) => id).sort());
-    expect(starter.filter((card) => card.origin === "Basic")).toHaveLength(10);
+    expect(initial.filter((card) => card.origin === "Basic")).toHaveLength(11);
+    expect(CAMPAIGN_INITIAL_COLLECTION).toHaveLength(32);
+    expect(CAMPAIGN_STARTER_DECK).toHaveLength(30);
   });
 
   it("allocates every current collectible once, with the approved pack sizes", () => {
     expect(CAMPAIGN_ROSTER_SIZE).toBe(roster.length);
-    expect(roster.length).toBe(216);
+    expect(roster.length).toBe(218);
     expect(CAMPAIGN_CHAPTERS.map(({ rewardCardIds }) => rewardCardIds.length))
       .toEqual([9,9,9,9,9,9,9,9,9,10,10,10,11,10,10,10,11,16,6,1]);
-    const allocated = [...CAMPAIGN_STARTER_DECK, ...CAMPAIGN_CHAPTERS.flatMap(({ rewardCardIds }) => rewardCardIds)];
-    expect(allocated).toHaveLength(216);
-    expect(new Set(allocated).size).toBe(216);
+    const allocated = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.flatMap(({ rewardCardIds }) => rewardCardIds)];
+    expect(allocated).toHaveLength(218);
+    expect(new Set(allocated).size).toBe(218);
     expect(allocated.sort()).toEqual([...rosterIds].sort());
     expect(getCampaignChapter(20)!.rewardCardIds).toEqual(["c041"]);
   });
@@ -50,7 +53,7 @@ describe("campaign definitions", () => {
   for (const chapter of CAMPAIGN_CHAPTERS) {
     it(`chapter ${chapter.chapter}: legal fixed deck, complete universe reward, no early unlock`, () => {
       expect(validateDeck(chapter.deckCardIds, rosterIds, rosterIds)).toEqual({ valid: true, issues: [] });
-      const universeIds = roster.filter((card) => campaignUniverse(card.origin) === chapter.universe).map(({ id }) => id);
+      const universeIds = roster.filter((card) => !CAMPAIGN_UNIVERSE_EXEMPT_IDS.includes(card.id) && campaignUniverse(card.origin) === chapter.universe).map(({ id }) => id);
       expect([...chapter.universeCardIds].sort()).toEqual(universeIds.sort());
       expect(chapter.universeCardIds).toContain(chapter.bossId);
       expect(HERO_POWER_IDS).toContain(chapter.heroPowerId);
@@ -106,7 +109,8 @@ describe("campaign definitions", () => {
     expect(campaignUniverse("DCU")).toBe(campaignUniverse("DC"));
     expect(campaignUniverse("RoR")).toBe(campaignUniverse("Record of Ragnarok"));
     expect(campaignUniverse("Tensura")).toBe(campaignUniverse("That time I got reincarnated as a Slime"));
-    expect(campaignUniverse(byId.get("c068")!.origin)).toBe("Basic");
+    expect(campaignUniverse(byId.get("c068")!.origin)).toBe("Star Wars");
+    expect(CAMPAIGN_UNIVERSE_EXEMPT_IDS).toContain("c068");
     expect(getCampaignChapter(10)!.universeCardIds).toHaveLength(9);
     expect(getCampaignChapter(18)!.universeCardIds).toHaveLength(15);
     expect(getCampaignChapter(18)!.fillerRewardIds).toContain("c105");

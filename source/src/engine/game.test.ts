@@ -51,7 +51,7 @@ describe("Convergence engine", () => {
       ...relics.filter((relic) => relic.relicId !== "none").map((relic) => relic.id),
     ];
 
-    expect(cards).toHaveLength(182);
+    expect(cards).toHaveLength(184);
     expect(relics).toHaveLength(34);
     expect(drawableIds).toHaveLength(expectedIds.length);
     expect(new Set(drawableIds)).toEqual(new Set(expectedIds));
@@ -293,7 +293,7 @@ describe("Convergence engine", () => {
 
   it("defender retaliates even when it dies (simultaneous combat)", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Pandora's Actor", 0); // 2 ATK / 2 HP, no combat passive
+    state.players[0].board[0] = makeMinion("Pandora's Actor", 0, { atk: 2, hp: 2, maxHp: 2 }); // Pin combat bodies independently of balance.
     // Pin the defender's body so this remains a simultaneous-combat test,
     // independent of later balance passes to John Wick's printed stats.
     state.players[1].board[0] = makeMinion("John Wick", 1, { atk: 1, hp: 1, maxHp: 1 });

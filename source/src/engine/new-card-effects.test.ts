@@ -93,13 +93,13 @@ describe("2026 card replacements", () => {
       effect: "Passive: The first time you cast a relic each turn, discover another relic",
     });
     expect(cards.find((card) => card.name === "Guts")).toMatchObject({
-      cost: 2,
+      cost: 3,
       atk: 1,
       hp: 1,
       rarity: "Black",
       effectId: "guts_missing_core_growth",
       effectTiming: "passive",
-      effect: "Passive: Gains +2/+1 for each 20 HP your Core is missing",
+      effect: "Passive: Gains +2/+2 for each 20 HP your Core is missing",
     });
   });
 
@@ -219,11 +219,11 @@ describe("2026 card replacements", () => {
     expect(nextAfter.players[0].hand).toHaveLength(2);
   });
 
-  it("Guts gains and loses a live +2/+1 aura as the Core crosses 20 HP thresholds", () => {
+  it("Guts gains and loses a live +2/+2 aura as the Core crosses 20 HP thresholds", () => {
     const state = mainState("guts-missing-core-growth");
     state.players[0].health = 54;
     const grown = play(state, 0, "Guts", 0);
-    expect(grown.players[0].board[0]).toMatchObject({ atk: 3, hp: 2, maxHp: 2 });
+    expect(grown.players[0].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
 
     const healed: GameState = { ...grown, players: [...grown.players] as GameState["players"] };
     healed.players[0] = { ...grown.players[0], health: 75 };
@@ -270,8 +270,8 @@ describe("2026 card replacements", () => {
       "Kento Nanami": { cost: 3, atk: 1, hp: 1, effectId: "set_hp_1", effectTiming: "onPlay", keywords: [] },
       "Ainz Ooal Gown": { cost: 9, atk: 3, hp: 3, effectId: "set_all_enemy_hp_1", effectTiming: "onPlay", keywords: [] },
       "Light Yagami": {
-        cost: 8,
-        atk: 4,
+        cost: 6,
+        atk: 3,
         hp: 3,
         effectId: "light_yagami_nature_kill",
         effectTiming: "onPlay",
@@ -279,13 +279,13 @@ describe("2026 card replacements", () => {
         effect: "Battlecry: Destroy an enemy Nature minion",
       },
       "Eye of Sauron": {
-        cost: 5,
-        atk: 1,
-        hp: 5,
-        effectId: "enemy_cards_cost_1_more",
+        cost: 3,
+        atk: 0,
+        hp: 4,
+        effectId: "enemy_magic_minions_cost_2_more",
         effectTiming: "passive",
         keywords: ["Passive"],
-        effect: "Passive: Enemy cards cost 1 more",
+        effect: "Passive: Enemy Magic minions cost 2 more",
       },
       "Yoriichi Type Zero": {
         cost: 3,
@@ -338,9 +338,9 @@ describe("2026 card replacements", () => {
       },
       "Pillar Men": { cost: 4, atk: 4, hp: 4, effectId: "pillar_men_kill_heal", effectTiming: "passive", keywords: ["Chained", "Passive"], effect: "Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health" },
       Cthulhu: {
-        cost: 8,
-        atk: 8,
-        hp: 8,
+        cost: 6,
+        atk: 6,
+        hp: 6,
         effectId: "immune_tech_minions",
         effectTiming: "passive",
         keywords: ["Chained", "Passive"],
@@ -357,13 +357,13 @@ describe("2026 card replacements", () => {
         effect: "Battlecry: Restore all friendly minions to full health. Deathrattle: Summon the Awakened (6/3)",
       },
       Chaos: {
-        cost: 8,
-        atk: 4,
-        hp: 4,
+        cost: 5,
+        atk: 1,
+        hp: 1,
         effectId: "chaos_random_summon",
         effectTiming: "onPlay",
         keywords: [],
-        effect: "Battlecry: Summon a random minion from the deck",
+        effect: "Battlecry: Summon a random minion from your deck",
       },
       UFO: { cost: 6, atk: 3, hp: 3, effectId: "none", effectTiming: "none", keywords: ["Divine Shield"], effect: "Divine Shield" },
       Yujiro: { atk: 4, hp: 4, effectId: "immune_nature_minions", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Immune to Nature minions" },
@@ -371,7 +371,7 @@ describe("2026 card replacements", () => {
       "John Wick": { atk: 1, hp: 1, effectId: "friendly_death_buff_1_1", effectTiming: "passive" },
       Joker: { atk: 1, hp: 1, effectId: "copy_minion_to_hand", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Put a copy of a minion in your hand" },
       "Escanor": { cost: 8, atk: 8, hp: 4, effectId: "double_other_friendly_attack", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Double your other friendly minions attack" },
-      "Lelouch Lamperouge": { cost: 8, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion" },
+      "Lelouch Lamperouge": { cost: 7, atk: 1, hp: 1, effectId: "mind_control_enemy", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Gain control of an enemy minion" },
       "Ultron Prime": {
         cost: 7,
         atk: 5,
@@ -381,11 +381,11 @@ describe("2026 card replacements", () => {
         keywords: ["Taunt", "Deathrattle"],
         effect: "Taunt. Deathrattle: Summon Vision (5/3) with Taunt",
       },
-      Neo: { cost: 10, atk: 5, hp: 7, effectId: "protect_slot", effectTiming: "onPlay" },
+      Neo: { cost: 8, atk: 6, hp: 6, effectId: "protect_slot", effectTiming: "onPlay" },
       "Monkey D. Luffy": { cost: 8, atk: 6, hp: 4, effectId: "free_chained_shield", effectTiming: "onPlay" },
-      Meruem: { cost: 6, atk: 4, hp: 5, effectId: "meruem_kill_copy", effectTiming: "passive" },
+      Meruem: { cost: 7, atk: 4, hp: 6, effectId: "meruem_kill_copy", effectTiming: "passive" },
       "The Driller": { cost: 5, atk: 1, hp: 1, effectId: "consume_tech_4_hp", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Consume an enemy Tech minion with 4 HP or lower" },
-      Gums: { cost: 3, atk: 1, hp: 1, effectId: "consume_nature_4_hp", effectTiming: "onPlay" },
+      Gums: { cost: 4, atk: 2, hp: 2, effectId: "consume_nature_4_hp", effectTiming: "onPlay" },
       "Thirteen Lords of Chaos": { atk: 4, hp: 2, effectId: "deathrattle_summon_drakath", effectTiming: "deathrattle", keywords: ["Deathrattle"] },
       "Sir Nighteye": { atk: 1, hp: 1, effectId: "reveal_top_deck", effectTiming: "passive", keywords: ["Passive"] },
       "Black Ops": {
@@ -399,8 +399,8 @@ describe("2026 card replacements", () => {
       },
       "The Five Convicts": { cost: 3, atk: 5, hp: 1, keywords: ["Taunt"], effectId: "none", effectTiming: "none", effect: "Taunt" },
       "Doctor Octopus": { cost: 4, atk: 3, hp: 3, effectId: "destroy_relic", effectTiming: "onPlay" },
-      "The 7 Heroic Spirits": { cost: 7, atk: 2, hp: 2, effectId: "heroic_relics" },
-      "Aladdin Lamp": { atk: 5, hp: 4, effectId: "aladdin_wish", effectTiming: "onPlay" },
+      "The 7 Heroic Spirits": { cost: 9, atk: 4, hp: 4, effectId: "heroic_relics" },
+      "Genie": { atk: 5, hp: 4, effectId: "aladdin_wish", effectTiming: "onPlay" },
       "The Mask": { cost: 6, atk: 4, hp: 3, effectId: "transform_random_allies_up", effectTiming: "onPlay", keywords: [] },
       Yubaba: { effectId: "devolve_enemy_minions", effectTiming: "onPlay", keywords: [] },
       V: { effectId: "deathrattle_random_evil", effectTiming: "deathrattle", keywords: ["Deathrattle"], effect: "Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core" },
@@ -424,7 +424,7 @@ describe("2026 card replacements", () => {
         effect: "Passive: All friendly Neutral or Magic minions have +2 ATK",
       },
       Darkwing: { effectTiming: "deathrattle", keywords: ["Deathrattle"], effectId: "kill_back", effect: "Deathrattle: The minion which kills this minion also dies right after" },
-      "Dr. Heinz Doofenshmirtz": { effect: "Ongoing: 50% to die and 50% to gain +2/+1" },
+      "Dr. Heinz Doofenshmirtz": { effect: "Ongoing: 50% to die and 50% to double your stats" },
       "G-Man": { atk: 3, hp: 6, effectId: "stasis_enemy", effectTiming: "onPlay", keywords: [] },
       Superman: { atk: 6, hp: 6, effectId: "superman_damage_cap_3", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Friendly Good minions cannot lose more than 3 HP at once" },
       "Darth Vader": {
@@ -451,7 +451,7 @@ describe("2026 card replacements", () => {
       Avengers: { atk: 4, hp: 4, effectId: "invuln_with_good_ally", effectTiming: "passive", keywords: ["Passive"] },
       "General Grievous": { atk: 3, hp: 3, alignment: "Evil", effectId: "grievous_on_kill_atk", effectTiming: "passive", keywords: ["Passive"] },
       Buddha: { atk: 3, hp: 4, effectId: "buddha_purify", effectTiming: "onPlay", keywords: [] },
-      "Deep Sea King": { atk: 4, hp: 4, effectId: "deep_sea_discount", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Costs 3 less while any minion is Frozen or Chained" },
+      "Deep Sea King": { atk: 3, hp: 3, effectId: "deep_sea_discount", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: Costs 3 less while any minion is Frozen or Chained" },
       "Seven Deadly Sins": { atk: 4, hp: 5, effectId: "summon_sins", effectTiming: "onPlay", keywords: [] },
       "Elder Centipede": { cost: 7, atk: 5, hp: 6, effectId: "self_buff_2", effectTiming: "ongoing", keywords: ["Ongoing"] },
       "All Might": {
@@ -482,12 +482,12 @@ describe("2026 card replacements", () => {
       },
       Sans: { cost: 4, atk: 2, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks" },
       "Doom Slayer": { cost: 8, atk: 3, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
-      Ragnaros: { cost: 6, atk: 6, hp: 6, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
+      Ragnaros: { cost: 4, atk: 4, hp: 4, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
       Musashi: { atk: 2, hp: 1 },
       Illumi: { atk: 1, hp: 1 },
       "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
-      King: { atk: 0, hp: 7, effectId: "king_attack_lock_random", effectTiming: "passive", keywords: ["Cannot Attack", "Passive"] },
-      "Dominion Authority": { atk: 4, hp: 5, effectId: "dominion_authority", effectTiming: "passive", keywords: ["Passive"] },
+      King: { cost: 1, atk: 0, hp: 5, effectId: "none", effectTiming: "none", keywords: ["Taunt"], effect: "Taunt" },
+      "Dominion Authority": { atk: 1, hp: 4, effectId: "dominion_authority", effectTiming: "passive", keywords: ["Passive"] },
       Kratos: {
         cost: 6,
         atk: 2,
@@ -511,9 +511,9 @@ describe("2026 card replacements", () => {
         origin: "Basic",
       },
       "Planetary Defense Grid": {
-        cost: 9,
-        atk: 4,
-        hp: 8,
+        cost: 7,
+        atk: 3,
+        hp: 7,
         effectId: "planetary_defense_grid_taunt_buff",
         effectTiming: "passive",
         keywords: ["Taunt", "Passive"],
@@ -573,25 +573,19 @@ describe("2026 card replacements", () => {
     });
   });
 
-  it("Eye of Sauron taxes every enemy card while its passive is active", () => {
+  it("Eye of Sauron taxes only enemy Magic minions by two mana", () => {
     const state = mainState("eye-of-sauron-tax");
-    state.cheatMode = false;
     state.players[1].board[0] = minion("Eye of Sauron", 1);
-    state.players[0].hand = [cardId("John Wick")];
-    state.players[0].mana = 1;
-
-    expect(getLegalActions(state, library)).not.toContainEqual({ type: "play_card", player: 0, handIndex: 0, slotIndex: 0 });
-
-    state.players[0].mana = 2;
-    expect(getLegalActions(state, library)).toContainEqual({ type: "play_card", player: 0, handIndex: 0, slotIndex: 0 });
-    const after = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library).state;
-    expect(after.players[0].mana).toBe(0);
-    expect(after.players[0].board[0]?.name).toBe("John Wick");
-
-    after.players[1].board[0]!.silenced = true;
-    after.players[0].hand = [cardId("John Wick")];
-    after.players[0].mana = 1;
-    expect(getLegalActions(after, library)).toContainEqual({ type: "play_card", player: 0, handIndex: 0, slotIndex: 1 });
+    const magic=cards.find(c=>c.name==="Genie")!;
+    const nature=cards.find(c=>c.name==="John Wick")!;
+    const tech=cards.find(c=>c.name==="Neo")!;
+    expect(effectiveCardCost(state,0,magic)).toBe(magic.cost+2);
+    expect(effectiveCardCost(state,0,nature)).toBe(nature.cost);
+    expect(effectiveCardCost(state,0,tech)).toBe(tech.cost);
+    expect(effectiveCardCost(state,0,relics[0])).toBe(relics[0].cost);
+    expect(effectiveCardCost(state,1,magic)).toBe(magic.cost);
+    state.players[1].board[0]!.silenced=true;
+    expect(effectiveCardCost(state,0,magic)).toBe(magic.cost);
   });
 
   it("Dumbledore cleanses existing disables and blocks new Silence, Freeze, and Chained", () => {
@@ -812,7 +806,7 @@ describe("2026 card replacements", () => {
 
   it("Aladdin can give the hero a Divine Shield", () => {
     const state = mainState();
-    const asking = play(state, 0, "Aladdin Lamp", 0);
+    const asking = play(state, 0, "Genie", 0);
     const shielded = choose(asking, 0);
     expect(shielded.players[0].heroDivineShield).toBe(true);
 
@@ -909,7 +903,7 @@ describe("2026 card replacements", () => {
     );
   });
 
-  it("Dr. Heinz's winning coin flip grants +2/+1", () => {
+  it("Dr. Heinz's winning coin flip doubles its stats", () => {
     for (let offset = 0; offset < 1000; offset += 1) {
       const seed = 0x80000000 + offset;
       const state = mainState(`heinz-${seed}`);
@@ -918,7 +912,7 @@ describe("2026 card replacements", () => {
       const after = endTurn(endTurn(state, 0), 1);
       const heinz = after.players[0].board[0];
       if (heinz && heinz.atk > 1) {
-        expect(heinz).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
+        expect(heinz).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
         return;
       }
     }
@@ -934,8 +928,8 @@ describe("2026 card replacements", () => {
       : asking;
     const pandora = after.players[0].board[0]!;
     expect(pandora.name).toBe("Sandworm");
-    expect(pandora.atk).toBe(2);
-    expect(pandora.maxHp).toBe(2);
+    expect(pandora.atk).toBe(5);
+    expect(pandora.maxHp).toBe(5);
     expect(pandora.keywords).toContain("Taunt");
     expect(pandora.divineShield).toBe(true);
   });
@@ -1392,15 +1386,15 @@ describe("2026 card replacements", () => {
   it("Deep Sea King costs 3 less while anything is Frozen or Chained", () => {
     const state = mainState("deep-sea-discount");
     const card = cards.find((entry) => entry.name === "Deep Sea King")!;
-    expect(effectiveCardCost(state, 0, card)).toBe(5);
+    expect(effectiveCardCost(state, 0, card)).toBe(3);
 
     state.players[1].board[0] = minion("Zoro", 1, { frozen: true });
-    expect(effectiveCardCost(state, 0, card)).toBe(2);
+    expect(effectiveCardCost(state, 0, card)).toBe(0);
 
     state.players[1].board[0]!.frozen = false;
     state.players[0].board[0] = minion("Zoro", 0, { chained: 2 });
     // Either board, either affliction: the card says "any minion".
-    expect(effectiveCardCost(state, 0, card)).toBe(2);
+    expect(effectiveCardCost(state, 0, card)).toBe(0);
   });
 
   it("Seven Deadly Sins fills the board with unique-keyword Sin tokens and their new art", () => {
@@ -1458,22 +1452,22 @@ describe("2026 card replacements", () => {
     // A plain Taunt body on the far side. Wall of Flesh used to stand here and
     // now grinds the board every turn, which would measure its Ongoing rather
     // than the Grid aura this test is about.
-    state.players[1].board[0] = minion("Fort", 1);
+    state.players[1].board[0] = minion("Military Fort", 1);
     state.players[1].board[1] = minion("John Wick", 1);
     const buffed = play(state, 0, "Planetary Defense Grid", 0);
 
-    // "All OTHER Taunt minions", so the grid keeps its printed 4/8 rather than
+    // "All OTHER Taunt minions", so the grid keeps its printed 3/7 rather than
     // feeding its own aura, and the buff is +2/+2.
-    expect(buffed.players[0].board[0]).toMatchObject({ atk: 4, hp: 8, maxHp: 8 });
+    expect(buffed.players[0].board[0]).toMatchObject({ atk: 3, hp: 7, maxHp: 7 });
     expect(buffed.players[0].board[1]).toMatchObject({ atk: 5, hp: 7, maxHp: 7 });
-    expect(buffed.players[1].board[0]).toMatchObject({ atk: 6, hp: 7, maxHp: 7 });
+    expect(buffed.players[1].board[0]).toMatchObject({ atk: 6, hp: 6, maxHp: 6 });
     expect(buffed.players[1].board[1]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
 
     buffed.players[0].board[0]!.silenced = true;
     const auraGone = endTurn(buffed, 0);
-    expect(auraGone.players[0].board[0]).toMatchObject({ atk: 4, hp: 8, maxHp: 8 });
+    expect(auraGone.players[0].board[0]).toMatchObject({ atk: 3, hp: 7, maxHp: 7 });
     expect(auraGone.players[0].board[1]).toMatchObject({ atk: 3, hp: 5, maxHp: 5 });
-    expect(auraGone.players[1].board[0]).toMatchObject({ atk: 4, hp: 5, maxHp: 5 });
+    expect(auraGone.players[1].board[0]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
   });
 
   it("Black Hole silences before destroying every minion, preventing their Deathrattles", () => {
@@ -1526,24 +1520,15 @@ describe("2026 card replacements", () => {
     expect(awake.players[1].board[0]?.atk).toBe(3);
   });
 
-  it("King locks one random enemy attacker at the start of each enemy turn", () => {
-    const state = mainState("king-lock");
-    state.players[0].board[0] = minion("King", 0);
-    state.players[1].board[0] = minion("John Wick", 1, { sleeping: false });
-    state.players[1].board[1] = minion("Zoro", 1, { sleeping: false });
-    const enemyTurn = endTurn(state, 0);
-    const locked = enemyTurn.players[1].board.filter((entry) => entry?.attackLocked);
-    expect(locked).toHaveLength(1);
-    expect(locked[0]?.attackLockedUntilTurn).toBe(enemyTurn.turnNumber + 1);
-  });
-
-  it("King does not choose a Chained minion for its random attack lock", () => {
-    const state = mainState("king-chain-lock");
-    state.players[0].board[0] = minion("King", 0);
-    state.players[1].board[0] = minion("John Wick", 1, { sleeping: false, chained: 2 });
-
-    const enemyTurn = endTurn(state, 0);
-    expect(enemyTurn.players[1].board[0]).toMatchObject({ chained: 1, attackLocked: false });
+  it("King is a 0/5 Taunt minion and no longer locks enemy attacks", () => {
+    const state = mainState("king-taunt");
+    state.players[0].board[0] = minion("King", 0, {sleeping:false});
+    state.players[1].board[0] = minion("John Wick", 1, {sleeping:false});
+    expect(state.players[0].board[0]).toMatchObject({atk:0,hp:5,keywords:["Taunt"],effectId:"none"});
+    expect(getLegalActions(state,library).some(a=>a.type==="attack_minion" && a.attackerSlot===0)).toBe(true);
+    const enemyTurn=endTurn(state,0);
+    expect(enemyTurn.players[1].board[0]?.attackLocked).toBe(false);
+    expect(getLegalActions(enemyTurn,library).some(a=>a.type==="attack_core")).toBe(false);
   });
 
   it("Dominion Authority blocks enemy mind control and returns", () => {
@@ -1833,7 +1818,7 @@ describe("2026 card replacements", () => {
     tech.players[0].board[0] = minion("Modern Tank", 0, { sleeping: false, atk: 5, hp: 20, maxHp: 20 });
     tech.players[1].board[0] = minion("Cthulhu", 1);
     const cthulhuHit = applyAction(tech, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(cthulhuHit.players[1].board[0]?.hp).toBe(8);
+    expect(cthulhuHit.players[1].board[0]?.hp).toBe(6);
 
     const nature = mainState("t1000-nature");
     nature.players[0].board[0] = minion("John Wick", 0, { sleeping: false, camp: "Nature", atk: 1, hp: 20, maxHp: 20 });
@@ -2128,7 +2113,7 @@ describe("2026 card replacements", () => {
     state.players[1].board[0] = minion("John Wick", 1, { atk: 0, hp: 1, maxHp: 1 });
     const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(after.players[1].board[0]).toBeNull();
-    expect(after.players[0].board[0]).toMatchObject({ atk: 5, hp: 6, maxHp: 6 });
+    expect(after.players[0].board[0]).toMatchObject({ atk: 5, hp: 7, maxHp: 7 });
     expect(after.players[0].board[0]?.gainedEffects).toContainEqual(
       expect.objectContaining({ effectId: "friendly_death_buff_1_1", timing: "passive" }),
     );
@@ -2331,7 +2316,7 @@ describe("2026 card replacements", () => {
 
     const after = play(state, 0, "Big Mom", 0);
     expect(after.players[0].board[2]).toBeNull();
-    expect(after.players[0].board[0]).toMatchObject({ atk: 5, hp: 9, maxHp: 9 });
+    expect(after.players[0].board[0]).toMatchObject({ atk: 8, hp: 10, maxHp: 10 });
   });
 
   it("Grand Master Oogway rescues one dying ally per turn and is Chained for it", () => {
@@ -2463,7 +2448,7 @@ describe("2026 card replacements", () => {
     const after = asking.pendingTarget ? choose(asking, 0) : asking;
     expect(after.players[1].board[0]).toBeNull();
     expect(after.players[1].board[1]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
-    expect(after.players[0].board[0]).toMatchObject({ atk: 4, hp: 5, maxHp: 5 });
+    expect(after.players[0].board[0]).toMatchObject({ atk: 5, hp: 6, maxHp: 6 });
   });
 
   it("Dabi deals exactly 1 damage to every other minion", () => {
@@ -2657,10 +2642,10 @@ describe("direct effect reachability", () => {
     expect(landed.players[1].board[0]?.hp).toBe(2);
   });
 
-  it("Sandworm ignores exactly 2 ATK and takes exact damage from 3 ATK", () => {
+  it("Sandworm ignores exactly 3 ATK and takes exact damage from 4 ATK", () => {
     const weak = mainState("sandworm-weak");
     weak.players[0].board[0] = minion("John Wick", 0, {
-      atk: 2,
+      atk: 3,
       hp: 10,
       maxHp: 10,
       sleeping: false,
@@ -2674,7 +2659,7 @@ describe("direct effect reachability", () => {
 
     const strong = mainState("sandworm-strong");
     strong.players[0].board[0] = minion("John Wick", 0, {
-      atk: 3,
+      atk: 4,
       hp: 10,
       maxHp: 10,
       sleeping: false,
@@ -2684,7 +2669,7 @@ describe("direct effect reachability", () => {
     });
     strong.players[1].board[0] = minion("Sandworm", 1, { hp: 5, maxHp: 5 });
     const damaged = applyAction(strong, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(damaged.players[1].board[0]?.hp).toBe(2);
+    expect(damaged.players[1].board[0]?.hp).toBe(1);
   });
 
   it("The Watcher cannot attack while its passive reveals the enemy hand", () => {
@@ -3083,16 +3068,16 @@ describe("effects the coverage report found had never executed", () => {
   it("Deep Sea King costs 3 less while ANY minion on either board is Frozen or Chained", () => {
     const state = mainState("deep-sea-discount");
     const card = library[cardId("Deep Sea King")];
-    expect(card.cost).toBe(5);
+    expect(card.cost).toBe(3);
 
     // Nothing is disabled: the card is full price.
-    expect(effectiveCardCost(state, 0, card)).toBe(5);
+    expect(effectiveCardCost(state, 0, card)).toBe(3);
 
     // Its own side, Frozen. The card says "any minion", so this counts.
     const frozen: GameState = { ...state, players: [...state.players] as GameState["players"] };
     frozen.players[0] = { ...state.players[0], board: [...state.players[0].board] };
     frozen.players[0].board[0] = minion("Zoro", 0, { frozen: true });
-    expect(effectiveCardCost(frozen, 0, card)).toBe(2);
+    expect(effectiveCardCost(frozen, 0, card)).toBe(0);
 
     // The enemy side, Chained. Also counts, and that is the deliberate half:
     // a discount only your own Freeze could unlock would make this a combo
@@ -3100,7 +3085,7 @@ describe("effects the coverage report found had never executed", () => {
     const chained: GameState = { ...state, players: [...state.players] as GameState["players"] };
     chained.players[1] = { ...state.players[1], board: [...state.players[1].board] };
     chained.players[1].board[0] = minion("Zoro", 1, { chained: 2 });
-    expect(effectiveCardCost(chained, 0, card)).toBe(2);
+    expect(effectiveCardCost(chained, 0, card)).toBe(0);
 
     // The discount is Deep Sea King's alone.
     expect(effectiveCardCost(chained, 0, library[cardId("Zoro")])).toBe(library[cardId("Zoro")].cost);

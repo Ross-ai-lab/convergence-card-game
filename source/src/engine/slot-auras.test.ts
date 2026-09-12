@@ -119,7 +119,7 @@ describe("slot auras", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Mastered Ultra Instinct Goku", 0, { sleeping: false });
     state.players[1].board[0] = dummy("Zoro", 1, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
-    state.players[1].board[1] = dummy("Fort", 1, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
+    state.players[1].board[1] = dummy("Military Fort", 1, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
     state.activePlayer = 1;
 
     const first = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
@@ -139,7 +139,7 @@ describe("forced-random attacks", () => {
     // The cursed slot's occupant swings at player 0; every enemy is a candidate.
     cursed.players[1].board[0] = dummy("Zoro", 1, { atk: 1 });
     cursed.players[0].board[1] = dummy("Death Star", 0, { hp: 30, maxHp: 30 });
-    cursed.players[0].board[2] = dummy("Fort", 0, { hp: 30, maxHp: 30 });
+    cursed.players[0].board[2] = dummy("Military Fort", 0, { hp: 30, maxHp: 30 });
     const swinging = { ...cursed, activePlayer: 1 as PlayerId };
 
     const after = applyAction(swinging, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library);
@@ -177,7 +177,7 @@ describe("forced-random attacks", () => {
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 1 });
     state.players[1].board[0] = makeMinion("Kurogiri", 1, { hp: 30, maxHp: 30 });
     state.players[1].board[1] = dummy("Death Star", 1, { hp: 30, maxHp: 30, keywords: ["Taunt"] });
-    state.players[1].board[2] = dummy("Fort", 1, { hp: 30, maxHp: 30 });
+    state.players[1].board[2] = dummy("Military Fort", 1, { hp: 30, maxHp: 30 });
     state.players[0].randomAttacksFromTurn = state.turnNumber;
     state.players[0].randomAttacksUntilTurn = state.turnNumber;
 
