@@ -7166,3 +7166,5 @@ button:disabled {
      ten-card hand runs past the edge of a 1280px board. */
   transform: scale(1.38) translateY(-10px);
 }
+
+.gallery-equipped{display:flex;align-items:center;gap:7px;white-space:nowrap;color:#dfcfaa;font-size:12px;cursor:var(--convergence-cursor)}.gallery-equipped input{accent-color:#cba455;width:16px;height:16px;margin:0}.gallery-panel .gallery-search{min-width:170px}@media(max-width:1300px){.gallery-equipped{order:3}.gallery-panel .screen-panel-top{flex-wrap:wrap}}

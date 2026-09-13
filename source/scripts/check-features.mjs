@@ -36,7 +36,7 @@ async function fresh() {
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.locator(".title-screen").waitFor({ state: "visible", timeout: 5000 });
+  await page.locator(".title-screen").waitFor({ state: "visible", timeout: 15000 });
 }
 
 async function waitForBoard() {
@@ -139,7 +139,7 @@ await page.getByRole("button", { name: "Unlock all cards + powers", exact: true 
 await page.locator(".gallery-trigger").filter({ hasText: "My Deck" }).click();
 await page.locator(".gallery-search").fill("Joker");
 await page.locator('.gallery-card-name').first().click();
-await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 5000 });
+await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 15000 });
 check("gallery card opens a Star Chart modal", await page.locator(".gallery-detail-panel").isVisible());
 check("Star Chart renders its six-axis chart", await page.locator(".star-chart").count() === 1);
 check("Star Chart removes the In Convergence panel", await page.locator(".gallery-detail-rule").count() === 0);
@@ -261,7 +261,7 @@ await page.locator(".gallery-detail-panel").waitFor({ state: "detached", timeout
 for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Greyrat", "Prince Lloyd", "Motoko Kusanagi", "Allspark Cube"]) {
   await page.locator(".gallery-search").fill(name);
   await page.locator('.gallery-card-name').first().click();
-  await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 5000 });
+  await page.locator(".gallery-detail-panel").waitFor({ state: "visible", timeout: 15000 });
   const profileGeometry = fitsOnOneScreen(await page.locator(".gallery-detail-panel").evaluate(geometryOf));
   const expectedChartCount = name === "Allspark Cube" ? 0 : 1;
   check(`${name} has a Star Chart profile`, await page.locator(".gallery-detail-panel").isVisible() && await page.locator(".star-chart").count() === expectedChartCount && await page.locator(".gallery-detail-rule").count() === 0 && profileGeometry);

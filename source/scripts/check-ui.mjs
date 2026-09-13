@@ -126,7 +126,7 @@ const resetTally = (await page.locator(".unlock-tally").textContent())?.trim() ?
 check(
   "developer reset restores normal progression",
   (await page.locator(".developer-cheat-panel").count()) === 0 &&
-    /^32 \/ \d+$/.test(resetTally),
+    /^30 \/ \d+$/.test(resetTally),
   "developer controls hide and the starting pool returns",
 );
 

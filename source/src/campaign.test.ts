@@ -27,14 +27,14 @@ describe("campaign definitions", () => {
   it("keeps thirty deck cards and makes the new Basic alternatives available immediately", () => {
     expect(validateDeck(CAMPAIGN_STARTER_DECK, rosterIds, CAMPAIGN_STARTER_DECK).valid).toBe(true);
     const starter = CAMPAIGN_STARTER_DECK.map((id) => byId.get(id)!);
-    expect(Array.from({length:10},(_,i)=>starter.filter(card=>card.cost===i+1).length)).toEqual([3,2,3,6,2,2,4,3,2,3]);
+    expect(Array.from({length:10},(_,i)=>starter.filter(card=>card.cost===i+1).length)).toEqual([3,2,3,6,2,2,4,3,3,2]);
     expect(starter.filter((card) => !isMinionCard(card))).toHaveLength(4);
     expect(starter.some((card) => isMinionCard(card) && card.rarity === "Red")).toBe(false);
     const initial=CAMPAIGN_INITIAL_COLLECTION.map(id=>byId.get(id)!);
     expect(initial.filter((card) => card.origin === "Basic").map(({ id }) => id).sort())
       .toEqual(cards.filter((card) => card.origin === "Basic").map(({ id }) => id).sort());
     expect(initial.filter((card) => card.origin === "Basic")).toHaveLength(11);
-    expect(CAMPAIGN_INITIAL_COLLECTION).toHaveLength(32);
+    expect(CAMPAIGN_INITIAL_COLLECTION).toHaveLength(30);
     expect(CAMPAIGN_STARTER_DECK).toHaveLength(30);
   });
 
@@ -42,7 +42,7 @@ describe("campaign definitions", () => {
     expect(CAMPAIGN_ROSTER_SIZE).toBe(roster.length);
     expect(roster.length).toBe(218);
     expect(CAMPAIGN_CHAPTERS.map(({ rewardCardIds }) => rewardCardIds.length))
-      .toEqual([9,9,9,9,9,9,9,9,9,10,10,10,11,10,10,10,11,16,6,1]);
+      .toEqual([11,9,9,9,9,9,9,9,9,10,10,10,11,10,10,10,11,16,6,1]);
     const allocated = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.flatMap(({ rewardCardIds }) => rewardCardIds)];
     expect(allocated).toHaveLength(218);
     expect(new Set(allocated).size).toBe(218);

@@ -38,6 +38,8 @@ export interface DuelResult {
 
 export interface Progress {
   storyIntroduced: boolean;
+  developerChaptersUnlocked: boolean;
+  pendingBossSpeechOutcome: "victory" | "loss";
   pendingBossSpeech: number | null;
   version: number;
   developerCheat: boolean;
@@ -66,7 +68,7 @@ const emptyRecord = (): LadderRecord => ({ played: 0, won: 0, lost: 0, drawn: 0 
 
 export function emptyProgress(): Progress {
   return {
-    storyIntroduced: false, pendingBossSpeech: null,
+    storyIntroduced: false, developerChaptersUnlocked: false, pendingBossSpeechOutcome: "victory", pendingBossSpeech: null,
     version: PROGRESS_VERSION, developerCheat: false,
     ladders: { easy: emptyRecord(), normal: emptyRecord(), hard: emptyRecord(), hotseat: emptyRecord() },
     recent: [], seen: [], played: [], wonWith: [], completedChapters: 0,
@@ -77,7 +79,7 @@ export function emptyProgress(): Progress {
 
 export function campaignComplete(progress: Progress): boolean { return progress.completedChapters === CAMPAIGN_CHAPTERS.length; }
 export function canPlayChapter(progress: Progress, chapter: number): boolean {
-  return Boolean(getCampaignChapter(chapter)) && chapter <= progress.completedChapters + 1;
+  return Boolean(getCampaignChapter(chapter)) && (progress.developerChaptersUnlocked || chapter <= progress.completedChapters + 1);
 }
 /** Player powers advance only on first chapter clears, never replay/free/hotseat wins. */
 export function botWins(progress: Progress): number {
@@ -101,14 +103,26 @@ export function loadProgress(): Progress {
     const progress = emptyProgress();
     progress.completedChapters = Math.min(CAMPAIGN_CHAPTERS.length, count(saved.completedChapters));
     progress.storyIntroduced = saved.storyIntroduced === true;
-    progress.pendingBossSpeech = typeof saved.pendingBossSpeech === "number" && getCampaignChapter(saved.pendingBossSpeech) && saved.pendingBossSpeech <= progress.completedChapters ? saved.pendingBossSpeech : null;
+    progress.developerChaptersUnlocked = saved.developerChaptersUnlocked === true;
+    progress.pendingBossSpeechOutcome = saved.pendingBossSpeechOutcome === "loss" ? "loss" : "victory";
+    progress.pendingBossSpeech = typeof saved.pendingBossSpeech === "number" && getCampaignChapter(saved.pendingBossSpeech) &&
+      (progress.developerChaptersUnlocked || saved.pendingBossSpeech <= progress.completedChapters + (progress.pendingBossSpeechOutcome === "loss" ? 1 : 0)) ? saved.pendingBossSpeech : null;
     progress.developerCheat = saved.developerCheat === true;
     const earned = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.slice(0, progress.completedChapters).flatMap((chapter) => chapter.rewardCardIds)];
     // Reconstruct only legitimate earned IDs. Missing fields cannot unlock future bosses.
     progress.unlockedIds = progress.developerCheat ? [...CAMPAIGN_CARD_IDS] : earned;
     const allowed = new Set(progress.unlockedIds);
-    const draft = (value: unknown) => Array.isArray(value)
-      ? knownIds(value).filter((id) => allowed.has(id)).slice(0, 30) : [...CAMPAIGN_STARTER_DECK];
+    const draft = (value: unknown) => {
+      if (!Array.isArray(value)) return [...CAMPAIGN_STARTER_DECK];
+      const oldStarter = CAMPAIGN_STARTER_DECK.map(id => ({c187:"c008",c186:"c045"} as Record<string,string>)[id] ?? id);
+      if (value.length === 30 && oldStarter.every(id => value.includes(id))) return [...CAMPAIGN_STARTER_DECK];
+      const migrated = knownIds(value.map(id => progress.completedChapters === 0 && !progress.developerCheat
+        ? ({c008:"c187",c045:"c186"} as Record<string,string>)[id as string] ?? id : id)).filter(id => allowed.has(id)).slice(0,30);
+      if (value.length === 30 && progress.completedChapters === 0) {
+        for (const id of CAMPAIGN_STARTER_DECK) if (migrated.length < 30 && !migrated.includes(id)) migrated.push(id);
+      }
+      return migrated;
+    };
     progress.playerDeck = canEditDeck(progress) ? draft(saved.playerDeck) : [...CAMPAIGN_STARTER_DECK];
     progress.hotseatDeck = canEditDeck(progress) ? draft(saved.hotseatDeck) : [...CAMPAIGN_STARTER_DECK];
     progress.pendingRewards = knownIds(saved.pendingRewards).filter((id) => allowed.has(id));
@@ -136,9 +150,10 @@ export function unlockAllProgress(progress: Progress): Progress {
   return { ...progress, developerCheat: true, unlockedIds: [...CAMPAIGN_CARD_IDS],
     selectedHeroPower: progress.selectedHeroPower ?? firstUnlockedHeroPower(HERO_POWER_UNLOCK_ORDER.length) };
 }
+export function unlockAllChapters(progress: Progress): Progress { return {...progress, developerChaptersUnlocked: true}; }
 export function acknowledgeRewards(progress: Progress): Progress { return { ...progress, pendingRewards: [] }; }
 export function acknowledgeBossSpeech(progress: Progress): Progress { return {...progress, pendingBossSpeech: null}; }
-export function canEditDeck(progress: Progress): boolean { return progress.completedChapters > 0 || progress.developerCheat || progress.unlockedIds.length > CAMPAIGN_STARTER_DECK.length; }
+export function canEditDeck(_progress: Progress): boolean { return true; }
 export function selectHeroPower(progress: Progress, power: HeroPowerId): Progress {
   return isHeroPowerUnlocked(power, botWins(progress)) ? { ...progress, selectedHeroPower: power } : progress;
 }
@@ -160,7 +175,8 @@ export function recordDuel(progress: Progress, result: DuelResult, cards: { seen
   const completedChapters = firstClear ? firstClear.chapter : progress.completedChapters;
   const next: Progress = {
     ...progress, completedChapters, unlockedIds: merge(progress.unlockedIds, awarded),
-    pendingBossSpeech: result.outcome === "won" && result.ladder !== "hotseat" && result.chapter && getCampaignChapter(result.chapter) && result.chapter <= completedChapters ? result.chapter : progress.pendingBossSpeech,
+    pendingBossSpeech: result.outcome !== "drawn" && result.ladder !== "hotseat" && result.chapter && canPlayChapter(progress, result.chapter) ? result.chapter : progress.pendingBossSpeech,
+    pendingBossSpeechOutcome: result.outcome === "lost" ? "loss" : "victory",
     pendingRewards: merge(progress.pendingRewards, awarded),
     settledDuels: result.duelId ? [...progress.settledDuels, result.duelId].slice(-200) : progress.settledDuels,
     ladders: { ...progress.ladders, [result.ladder]: { played: old.played + 1,

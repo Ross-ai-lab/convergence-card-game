@@ -12,9 +12,9 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
   progress: Progress; onPlay: (chapter: number) => void; onClose: () => void;
 }) {
   const valid = validateDeck(progress.playerDeck, rosterIds, progress.unlockedIds).valid;
-  return <div className="campaign-overlay" role="dialog" aria-modal="true" aria-label="Campaign">
+  return <div className="campaign-overlay campaign-map" role="dialog" aria-modal="true" aria-label="Campaign">
     <section className="campaign-panel campaign-chapter-panel">
-      <header className="campaign-header"><div><span className="campaign-eyebrow">RICK GRAMPS' COLLECTION</span><h2>Campaign</h2>
+      <header className="campaign-header"><img className="campaign-collector" src={`${import.meta.env.BASE_URL}campaign/rick-gramps.webp`} alt="Rick Gramps" /><div><span className="campaign-eyebrow">RICK GRAMPS' COLLECTION</span><h2>Campaign</h2>
         </div>
         <button className="campaign-close" onClick={onClose} aria-label="Close campaign">×</button></header>
       <div className="campaign-toolbar"><p>{campaignComplete(progress) ? "Campaign complete. Free duels are available on the title screen." : "Defeat each challenger to claim their universe and advance."}</p></div>
@@ -22,9 +22,12 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
       <div className="campaign-chapters">{CAMPAIGN_CHAPTERS.map((chapter) => {
         const boss = cardById.get(chapter.bossId)!; const cleared = chapter.chapter <= progress.completedChapters;
         const available = canPlayChapter(progress, chapter.chapter);
-        return <article key={chapter.chapter} className={`campaign-chapter${cleared ? " cleared" : ""}${available ? "" : " locked"}`} data-chapter={chapter.chapter}>
+        const next = chapter.chapter === progress.completedChapters + 1;
+        return <article key={chapter.chapter} className={`campaign-chapter${cleared ? " cleared" : ""}${next ? " next-chapter" : ""}${available ? "" : " locked"}`} data-chapter={chapter.chapter}>
           <img src={boss.art} alt={boss.name} loading="eager" />
+          <span className="chapter-number">{String(chapter.chapter).padStart(2,"0")}</span>
           <span className="campaign-eyebrow">Chapter {chapter.chapter} · {chapter.universe}</span><h3>{boss.name}</h3>
+          {next ? <p className="chapter-reward-preview">{chapter.rewardCardIds.length} cards locked behind this boss</p> : null}
           {cleared ? <details open><summary>Rewards unlocked</summary>
             <p>{chapter.rewardCardIds.map((id) => cardById.get(id)?.name ?? id).join(" · ")}</p></details> : null}
           <button className="primary" disabled={!available || !valid} onClick={() => onPlay(chapter.chapter)}>

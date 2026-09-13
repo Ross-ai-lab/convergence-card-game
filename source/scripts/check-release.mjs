@@ -12,7 +12,7 @@ try{
  await page.goto(base,{waitUntil:'domcontentloaded'});
  await page.evaluate(()=>{localStorage.clear();localStorage.setItem('convergence.progress.v2','{"unlocked":216}');localStorage.setItem('convergence.save.v27','{"version":27}');localStorage.setItem('sound-test-preference','preserved');});
  await page.reload();await page.locator('.title-screen').waitFor();
- assert.equal((await progress()).unlockedIds.length,32);assert.equal((await progress()).completedChapters,0);
+ assert.equal((await progress()).unlockedIds.length,30);assert.equal((await progress()).completedChapters,0);
  assert.equal(await page.locator('.orbit-choice,.daily-pack-trigger').count(),0);
  assert.equal(await page.evaluate(()=>localStorage.getItem('convergence.progress.v2')),null);
  assert.equal(await page.evaluate(()=>localStorage.getItem('sound-test-preference')),'preserved');
@@ -33,8 +33,8 @@ try{
  await page.locator('.developer-search input').fill('John Wick');await page.locator('.developer-card-row').first().click();
  await page.getByRole('button',{name:'I win',exact:true}).click();
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('convergence.progress.v3')).completedChapters===1);
- assert.equal((await progress()).unlockedIds.length,41);assert.equal((await progress()).pendingRewards.length,9);
- await page.reload();await page.locator('[data-story-stage="defeat"]').waitFor();await skipCampaignDialogue(page);await page.locator('.pack-veil').waitFor();assert.equal((await progress()).pendingRewards.length,9);
+ assert.equal((await progress()).unlockedIds.length,41);assert.equal((await progress()).pendingRewards.length,11);
+ await page.reload();await page.locator('[data-story-stage="defeat"]').waitFor();await skipCampaignDialogue(page);await page.locator('.pack-veil').waitFor();assert.equal((await progress()).pendingRewards.length,11);
  await settleMotion(page);
  for(let hit=0;hit<8;hit++){const box=page.locator('.pack-box:not(.is-charged)');if(!await box.isVisible())break;const label=await box.getAttribute('aria-label');await box.click({force:true});await page.waitForFunction(label=>document.querySelector('.pack-box')?.getAttribute('aria-label')!==label,label);}
  await page.locator('.pack-collect:not([disabled])').click({timeout:25000});

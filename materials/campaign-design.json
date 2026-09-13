@@ -15,7 +15,7 @@
     "c054",
     "r024",
     "c103",
-    "c008",
+    "c187",
     "r001",
     "c092",
     "c085",
@@ -31,7 +31,7 @@
     "c053",
     "c178",
     "c043",
-    "c045"
+    "c186"
   ],
   "universeAliases": {
     "MCU": "Marvel",
@@ -48,7 +48,7 @@
     "Tensura": "Tensura",
     "That time I got reincarnated as a Slime": "Tensura"
   },
-  "universeException": "Star Destroyer now has Star Wars origin but retains its existing starter ownership. New Basic cards are initial collection options, not automatic changes to saved thirty-card decks.",
+  "universeException": "Star Destroyer retains starter ownership despite its Star Wars origin. Antimatter Bomb and Carrier Strike Group replace T-1000 and Rick Prime in the starter deck; the replaced cards are GLaDOS rewards.",
   "rewardSelection": "Filler IDs selected once during design. The runtime must read the listed IDs and never reroll them.",
   "chapters": [
     {
@@ -72,7 +72,9 @@
         "c137",
         "c140",
         "c026",
-        "c064"
+        "c064",
+        "c008",
+        "c045"
       ],
       "fillerRewardIds": [
         "c093",
@@ -82,7 +84,9 @@
         "c137",
         "c140",
         "c026",
-        "c064"
+        "c064",
+        "c008",
+        "c045"
       ],
       "deckCardIds": [
         "c002",
@@ -1457,7 +1461,7 @@
     "c054",
     "r024",
     "c103",
-    "c008",
+    "c187",
     "r001",
     "c092",
     "c085",
@@ -1473,9 +1477,7 @@
     "c053",
     "c178",
     "c043",
-    "c045",
-    "c186",
-    "c187"
+    "c186"
   ],
   "universeExemptCardIds": [
     "c068"

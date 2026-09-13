@@ -238,6 +238,8 @@ export function TitleScreen({
   onTutorial,
   onDeveloperTools,
   onDeveloperUnlock,
+  onUnlockChapters,
+  chaptersUnlocked,
   onDeveloperReset,
 }: {
   canContinue: boolean;
@@ -260,6 +262,8 @@ export function TitleScreen({
   onTutorial: () => void;
   onDeveloperTools: () => void;
   onDeveloperUnlock: () => void;
+  onUnlockChapters: () => void;
+  chaptersUnlocked: boolean;
   onDeveloperReset: () => void;
 }) {
   const [skill, setSkill] = useState<BotSkill>("normal");
@@ -408,6 +412,7 @@ export function TitleScreen({
             >
               {developerCheatActive ? "All cards and powers unlocked" : "Unlock all cards + powers"}
             </button>
+            <button type="button" disabled={chaptersUnlocked} onClick={onUnlockChapters}>{chaptersUnlocked ? "All chapters unlocked" : "Unlock all chapters"}</button>
             <button
               type="button"
               className="developer-cheat-reset"

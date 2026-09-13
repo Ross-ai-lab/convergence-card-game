@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 213,302 bytes, roughly 53k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~47% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 213,873 bytes, roughly 53k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~47% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -148,15 +148,17 @@ march toward a finish line that has already been crossed.
 
 
 
+
 ## What Convergence is
 
-Convergence is a browser card duel with 173 named character cards, 11 Basic cards and 34 relics. The current source implements a twenty-chapter campaign and separate 30-card decks. Each player starts with thirty selected deck cards and thirty-two unlocked cards. Antimatter Bomb and Carrier Strike Group are immediate Basic alternatives; cost changes apply without silently rebuilding saved decks. Campaign first clears add fixed cards to the collection, and the player chooses what to swap into their deck.
+Convergence is a browser card duel with 173 named character cards, 11 Basic cards and 34 relics. The current source implements a twenty-chapter campaign and separate 30-card decks. Each player starts with thirty selected deck cards and thirty unlocked cards. Antimatter Bomb and Carrier Strike Group are immediate Basic alternatives; cost changes apply without silently rebuilding saved decks. Campaign first clears add fixed cards to the collection, and the player chooses what to swap into their deck.
 
 The campaign is the only ordinary solo mode until all twenty chapters are cleared. Hotseat is available from the start. Completion opens Recruit, Veteran and Ascendant free duels with completely random thirty-card opponent decks. There is no selectable shared-deck mode.
 
 No account or installation is required. Progress and live duels are saved locally in the browser. The public site counts visits in aggregate.
 
 **Campaign release:** all four implementation chunks are complete. The public [play page](https://ross-ai-lab.github.io/convergence-card-game/play/) is the owner's play location. The local `play/` folder is the generated release artifact and must match the production build exactly before publication.
+
 
 
 
@@ -172,7 +174,7 @@ No account or installation is required. Progress and live duels are saved locall
 
 | Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
-| 1 | GLaDOS | Tech fortifications | Recruit | Stand Fast | 9 |
+| 1 | GLaDOS | Tech fortifications | Recruit | Stand Fast | 11 |
 | 2 | Tai Lung | Martial growth | Recruit | Sharpen | 9 |
 | 3 | Yujiro | Nature duelists | Recruit | Sharpen | 9 |
 | 4 | Light Yagami | Information and sacrifice | Recruit | Blood Price | 9 |
@@ -204,13 +206,13 @@ Campaign progression replaces the old shared-deck economy. Shared decks are reti
 
 Twenty chapters unlock strictly in order. A first victory clears its chapter, grants its fixed reward once and opens the next chapter. Defeat, draw, surrender and abandoned attempts grant nothing. Replays of cleared chapters remain available without additional cards or Hero Powers.
 
-Every player starts with the same thirty-card deck and thirty-two unlocked cards, including all eleven Basic cards and no Mythics. The deck keeps its chosen cards as costs change. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
+Every player starts with the same thirty-card deck and thirty unlocked cards, including all eleven Basic cards and no Mythics. The deck keeps its chosen cards as costs change. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
 
-Approved reward adjustment: chapters 1–9 award 9 each; chapters 10–12, 14–16 award 10 each; chapters 13 and 17 award 11 each; chapter 18 awards 16; chapter 19 awards 6; chapter 20 awards Bill Cipher only. Total: 32 initial cards + 186 rewards = all 218 cards.
+Approved reward adjustment: chapter 1 awards 11; chapters 2–9 award 9 each; chapters 10–12, 14–16 award 10 each; chapters 13 and 17 award 11 each; chapter 18 awards 16; chapter 19 awards 6; chapter 20 awards Bill Cipher only. Total: 30 initial cards + 188 rewards = all 218 cards.
 
 Marvel combines MCU, Marvel and Loki labels: eleven minions and four relics, fifteen cards. Chapter eighteen retains its fixed sixteen-card reward, with The Driller from Transformers as its Tech filler. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
 
-Basic remains an explicit reference-card category. Star Destroyer now uses Star Wars origin but remains an exempt starting reference. The initial collection includes all Basic cards; new alternatives do not replace cards in existing saved decks. Universe aliases are recorded in the design data; generic Myth is not treated as one story universe.
+Basic remains an explicit reference-card category. Star Destroyer now uses Star Wars origin but remains an exempt starting reference. The starter equips all Basic cards. Untouched earlier starter decks migrate to the new starter; earned custom decks remain intact. Universe aliases are recorded in the design data; generic Myth is not treated as one story universe.
 
 Filler rewards were selected once during design and are stored as explicit IDs. No random reward roll happens when playing, replaying, resetting or loading the game. Future roster additions require an intentional reward-plan revision; never silently reroll earlier packs.
 
@@ -221,7 +223,7 @@ Daily packs and loss/draw unlocks are removed completely. Campaign first clears 
 
 A starting deck contains exactly thirty different unlocked cards, with one copy per card. The thirty-card limit applies at duel setup. Draws, discards, tokens, theft, copying and other legitimate effects can change the cards in play without changing the saved deck list.
 
-The deck builder is available from the start because the initial collection includes two spare Basic cards. Rewards enter the collection, never append themselves to the active deck. The player explicitly swaps cards before the next duel.
+The deck builder is available from the start. The initial collection contains the thirty equipped starter cards. Rewards enter the collection, never append themselves to the active deck. The player explicitly swaps cards before the next duel.
 
 One personal deck is saved, plus the second hotseat seat's deck. There are no named deck presets. The builder reuses the card gallery faces and search, mana, rarity, camp, alignment and collection filters. A separately scrolling right sidebar lists the saved deck by mana and name, with artwork, inspect and remove controls. My Deck fills the viewport without outer margins. The wider saved-deck sidebar and gallery use matching thin gold scrollbars. Clicking a gallery card adds it once when the deck has room; clicking its name opens the Star Chart. Cards already selected, locked cards and a full deck cannot be added. Removal stays in the saved-deck sidebar, and no action row occupies space beneath card faces. Selected cards gain an immediate green outline. Card bodies have no hover message or copy-cursor badge; the game uses a gold-and-violet crystal cursor. The sidebar includes the thirty-card count, expandable mana curve and Restore Starter. On phones the compact deck list sits above the gallery to keep card rules readable. An incomplete draft may be saved, but Start Duel requires thirty valid unique cards. Provide a deliberate Restore Starter action.
 
@@ -343,6 +345,7 @@ Campaign delivery is complete; future additions are story content, unique encoun
 
 
 
+
 ## Rules at a glance
 
 - Both cores begin at **75 health**. Reduce the opposing core to zero to win.
@@ -365,11 +368,12 @@ Nothing damages a core automatically just because a turn starts; core damage com
 
 
 
+
 ## Controls and modes
 
 ### Campaign story
 
-`materials/campaign-story.json` is the narrative source: Rick Gramps collects the greatest fighters across universes. Every chapter has distinct entrance, defeated and collected-card dialogue. The prologue appears on the first chapter entered after this feature is introduced. Entrance and defeat speeches use skippable typewriter panels and existing portraits, with no new speech audio. Victory dialogue is saved alongside rewards and must be acknowledged before the pack appears, including after reload. Playing a collected boss from hand produces a separate non-blocking speech bubble; enemy plays and unearned bosses do not claim allegiance. `CampaignSpeech.tsx` owns presentation, `progress.ts` owns the two backward-compatible story fields, and the engine remains independent of dialogue.
+`materials/campaign-story.json` is the narrative source: Rick Gramps collects the greatest fighters across universes. Every chapter has distinct entrance, player-victory, player-loss and collected-card dialogue. The prologue appears on the first chapter entered after this feature is introduced. Speeches use typewriter panels with a reveal/continue button and no skip control. Rick Gramps uses the generated portrait in source/public/campaign/rick-gramps.webp. No speech audio is added. Victory dialogue is saved alongside rewards and must be acknowledged before the pack appears, including after reload. Playing a collected boss from hand produces a separate non-blocking speech bubble; enemy plays and unearned bosses do not claim allegiance. `CampaignSpeech.tsx` owns presentation, `progress.ts` owns the backward-compatible story and chapter-access fields, and the engine remains independent of dialogue.
 
 ### Starting and resuming
 
@@ -421,6 +425,7 @@ duel. The tutorial is still exempt, because it is a scripted board rather than a
 player would win it once for free.
 
 The board communicates conditions visually: a wall means Taunt, a gold rim means Divine Shield, a blue-and-white rim means Invulnerable, ice means Frozen, chains across the artwork mean Chained, a grey attack gem means the minion cannot attack, and a sleeping minion shows drifting `z` glyphs.
+
 
 
 
@@ -503,6 +508,7 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 
 
 
+
 ## Ascension Relics
 
 The current relic pool contains **34 relics**. Relics are equipment cards: they count toward a chosen thirty-card deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
@@ -534,6 +540,7 @@ Thirty-two relics would be
 
 
 
+
 ## Gradual card unlocking
 
 Card unlocking is now campaign-only. The canonical chapter packs are in `materials/campaign-design.json`; `progress.ts` awards only a first clear of the next chapter. Thirty-two initial cards plus 186 chapter rewards cover the current 218-card roster once each. The starting and saved decks still contain thirty selected cards. Refer to [Campaign design — phase one](#campaign-design-phase-one) for the exact chapter table and current implementation status.
@@ -541,6 +548,7 @@ Card unlocking is now campaign-only. The canonical chapter packs are in `materia
 There are no daily cards, loss rewards, draw rewards or repeat-win packs. Completing a chapter changes the collection, not the saved thirty-card deck. The player edits that deck explicitly between duels. Developer Unlock All remains an intentional bypass, but it does not mark chapters complete or reveal free-play difficulty controls.
 
 `unlocks.ts` now handles only the presentation order of a pack: rarity first, mana cost as the tie-breaker, relics last. It never decides which cards are awarded. The previous proportional/random opening-pool generator and count-as-prefix storage model have been retired.
+
 
 
 
@@ -573,6 +581,7 @@ There are no daily cards, loss rewards, draw rewards or repeat-win packs. Comple
 - `source/scripts/` holds the tooling. `simulate.ts` is the balance harness: self-play, fuzzing, the dial sweep, and the difficulty ladder. `balance-gate.ts` and `balance-gate.test.ts` hold the pure pass, fail, and skip logic, with one planted failure per check. `ladder-compare.ts` is the paired ladder comparison. `source/balance.config.json` carries every threshold with the reasoning for it written alongside. The `apply-balance-pass*.mjs` files record each past pass with the measured number behind every change.
 
 The maintained game is React and TypeScript with a deterministic rules engine, DOM-rendered full card faces, Ascension Relics, persistent local saves, and a practice bot.
+
 
 
 
@@ -728,9 +737,11 @@ For a deployable update, run `npm run publish:pages` from `source/`. That comman
 
 
 
+
 ## Parallel work
 
 Multiple threads usually work on Convergence at the same time. Files, generated artifacts, tests, and documentation may shift while you are working; that is expected. Preserve changes you did not create, do not revert them, and do not stop the other threads. Re-read the current file before making an overlapping edit. A small compile or test repair is fine when necessary, but keep it behavior-neutral unless the thread that owns the change explicitly asks for a behavior change.
+
 
 
 
@@ -911,6 +922,7 @@ Printed timing must match play. For every target or choice, specify whether it s
 
 
 
+
 ## Engine rules that must stay coherent
 
 **Five cards changed shape on 2 September 2026 in ways the engine has to keep
@@ -1000,6 +1012,7 @@ the mechanics behind them.
   wrong relic entirely. Typing the parameter makes that a compile error.
 
 The engine’s central contract is `applyAction(state, action, library) -> { state, events, legalActions }`. An action outside the legal-action list is rejected without changing the state. Targeting pauses the game in a target-selection state so human and bot choices follow the same route and survive saving, cloning, and undo.
+
 
 
 
@@ -1321,6 +1334,7 @@ Interaction verification covered Recruit, Veteran, and Ascendant selection; the 
 
 
 
+
 ## The rarity shine
 
 **Every card above Rare carries an animated shine, and each tier's is a different KIND of thing rather than the same thing in a different colour.** Built 23 August 2026, in `source/src/App.css` under the same heading, driven by `.cf-shine` in `App.tsx`.
@@ -1446,6 +1460,7 @@ An earlier attempt named its layer `.cf-camp`, which was already the left rail's
 An unmet card in the gallery does NOT shine, and that is correct rather than a bug: the collection's own grayscale dimming sits on the whole card face and wins. The shine is for cards you have met, and for the pack, the hand and the preview, where nothing dims them.
 
 **A LOCKED card carries no shine and no camp mark at all**, and that is an explicit rule rather than a side effect. A blend-mode layer is not a colour a grayscale filter can drain, so sealed relics went on flickering with teal light while sealed characters sat dead, and the locked wall stopped reading as one wall. A locked card shows its seal and nothing else.
+
 
 
 
@@ -1706,6 +1721,7 @@ Use the tools under `materials/local-production/asset-tools/` for production reb
 [The four moment pieces](#the-four-moment-pieces-and-the-endings-the-herald-no-longer-narrates)). For audio changes, run the browser analyser check with `npm run check:audio`; a UI counter or a `musicPlaying` flag can say music is active while the browser’s audio graph is silent. Keep synthetic voices original and do not clone real actors.
 
 Do not casually regenerate approved menu, battle, or tension music. Preserve the existing loudness, loop-seam, and energy checks when replacing them.
+
 
 
 
@@ -2176,6 +2192,7 @@ Do not make the simulated rules, bot skill, or turn timing “10× faster” by 
 
 
 
+
 ## Contributing
 
 Contributions are welcome through a fork and pull request. Keep each change focused, explain the player-visible result, and run the relevant checks before proposing it.
@@ -2190,6 +2207,7 @@ Contributions are welcome through a fork and pull request. Keep each change focu
 - Tests: `*.test.ts` beside the code they cover
 
 When changing a rule, add or update a focused test and make the card text agree with the implementation. Preserve player-selected targeting unless a card explicitly says that the target is random, positional, weakest, costliest, or otherwise automatic. Do not include generated folders, local launchers, secrets, or personal paths in a contribution.
+
 
 
 
@@ -2215,6 +2233,7 @@ When changing a rule, add or update a focused test and make the card text agree 
 
 
 
+
 ## Included materials and links
 
 - [Play Convergence](https://ross-ai-lab.github.io/convergence-card-game/)
@@ -2231,9 +2250,11 @@ When changing a rule, add or update a focused test and make the card text agree 
 
 
 
+
 ## Fan-project notice
 
 Convergence is a non-commercial fan project made for personal play and educational experimentation. Character names, franchises, imagery, and music belong to their respective rights holders. The project is not endorsed by or affiliated with those rights holders.
+
 
 
 
@@ -2247,3 +2268,5 @@ Convergence is a non-commercial fan project made for personal play and education
 - [Relic data](source/data/relics.csv)
 - [Engine](source/src/engine/)
 - [Local production tools](materials/local-production/asset-tools/)
+
+Campaign polish: the starter equips Antimatter Bomb and Carrier Strike Group; T-1000 and Rick Prime are among GLaDOS's 11 rewards. Ross has a separate chapter-unlock switch that opens fights without recording victories. Each boss has entrance, victory, loss and collected-play dialogue. Dialogue has one forward control and no skip option. My Deck can hide equipped cards.

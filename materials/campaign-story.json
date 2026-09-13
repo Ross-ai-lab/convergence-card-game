@@ -3,124 +3,164 @@
   "premise": "You are Rick Gramps. Retirement lasted eleven minutes. Then the boredom became unbearable. So you built a pocket-sized arena and started collecting the greatest fighters in every universe.\n\nYour collection is small. For now. Defeat each world's champion, claim their universe's fighters, and earn their reluctant allegiance. Some will serve with honour. Some will complain the entire time. Either way, the next universe is waiting.",
   "chapters": [
     {
-      "chapter": 1, "bossId": "c104",
+      "chapter": 1,
+      "bossId": "c104",
       "entrance": "A retired man with a portal gun and a scrapbook. How promising. Step into the arena, Rick Gramps. I have designed a very short test of your remaining life expectancy.",
       "defeat": "The results are conclusive. You are considerably more dangerous than you look. Fine. My facility and its assets are at your disposal. Please stop touching the buttons.",
-      "play": "Your assistant has arrived, Gramps. Try not to lower the average intelligence on this side of the arena."
+      "play": "Your assistant has arrived, Gramps. Try not to lower the average intelligence on this side of the arena.",
+      "loss": "That was your best attempt? How educational. I will file it under preventable accidents. Try again when your collection has developed basic problem-solving skills."
     },
     {
-      "chapter": 2, "bossId": "c134",
+      "chapter": 2,
+      "bossId": "c134",
       "entrance": "You think greatness can be kept in a collection? I spent my life earning mine. Bring your little army, old man. I will show them what strength looks like.",
       "defeat": "I could not break you. That is an answer I cannot ignore. My strength is yours, Rick Gramps. Give it a purpose worthy of me.",
-      "play": "Point me at their strongest fighter, Gramps. I have no patience for the rest."
+      "play": "Point me at their strongest fighter, Gramps. I have no patience for the rest.",
+      "loss": "You brought fighters, Gramps. You forgot to bring a challenge. Train them. Then return and show me why I should remember your name."
     },
     {
-      "chapter": 3, "bossId": "c033",
+      "chapter": 3,
+      "bossId": "c033",
       "entrance": "A grandfather collecting fighters? Good. I was worried retirement had made you sensible. Bring your strongest pet. I need a warm-up.",
       "defeat": "Heh. You actually made me work for it. All right, old man. I will fight for your collection. Keep finding opponents worth breaking.",
-      "play": "Gramps. Tell me this one can take a punch."
+      "play": "Gramps. Tell me this one can take a punch.",
+      "loss": "Already done? I was just starting to enjoy myself. Pick up your collection, old man. Bring me something that fights back next time."
     },
     {
-      "chapter": 4, "bossId": "c021",
+      "chapter": 4,
+      "bossId": "c021",
       "entrance": "Rick Gramps. An alias, I assume. You gather dangerous people and call it a hobby. I prefer a world with order. Let us decide whose vision survives.",
       "defeat": "Every route I prepared led back to you. I underestimated your reach. I will serve your collection. A strategist is more useful at your side than beneath your feet.",
-      "play": "Leave the calculations to me, Gramps. They will notice the trap when it is already closed."
+      "play": "Leave the calculations to me, Gramps. They will notice the trap when it is already closed.",
+      "loss": "Every move you made led here. You mistook a collection of powerful pieces for a plan, Gramps. I suggest you learn the difference."
     },
     {
-      "chapter": 5, "bossId": "c114",
+      "chapter": 5,
+      "bossId": "c114",
       "entrance": "You cross into my world carrying borrowed champions and call yourself powerful. Come closer, collector. Let us discover how much courage remains when your servants fall.",
       "defeat": "You have power I cannot dismiss. Very well. My wand and my followers will serve you. Do not confuse obedience with affection, Gramps.",
-      "play": "Your enemies will learn to fear your collection, Gramps. I shall make certain of it."
+      "play": "Your enemies will learn to fear your collection, Gramps. I shall make certain of it.",
+      "loss": "Your champions have fallen, and my world remains mine. Remember this feeling, collector. It is the cost of reaching beyond your power."
     },
     {
-      "chapter": 6, "bossId": "c029",
+      "chapter": 6,
+      "bossId": "c029",
       "entrance": "Your machines have brought you far, Rick Gramps. They will not protect you here. Stand your ground. I will measure this power you claim to possess.",
       "defeat": "Your power is real. I will serve under your command. Direct it with purpose, Gramps. An empire is wasted on a man who is merely bored.",
-      "play": "Your command is acknowledged. I will clear the path."
+      "play": "Your command is acknowledged. I will clear the path.",
+      "loss": "Your ambition exceeds your discipline, Gramps. This defeat was inevitable. Return when you can command your strength rather than merely gather it."
     },
     {
-      "chapter": 7, "bossId": "c024",
+      "chapter": 7,
+      "bossId": "c024",
       "entrance": "Look at that. A whole collection, arranged for my amusement. I usually have to travel between worlds to find this much resistance. You have saved me the trouble, Gramps.",
       "defeat": "Ha! I remember pain now. You have earned my service, old man. Find me another battle like that and I might even enjoy taking orders.",
-      "play": "You promised me a fight, Gramps. These had better not disappoint."
+      "play": "You promised me a fight, Gramps. These had better not disappoint.",
+      "loss": "Oh, that was disappointing. All those worlds, and this is what you brought me? Go find stronger toys, Gramps. I will be waiting."
     },
     {
-      "chapter": 8, "bossId": "c096",
+      "chapter": 8,
+      "bossId": "c096",
       "entrance": "You wish to collect DIO? How generous of you to deliver an audience. Watch closely, Rick Gramps. Your grand adventure is about to become a story about me.",
       "defeat": "Impossible... and yet here you stand. Very well, Gramps. I will lend my power to your collection. Make the victories spectacular. I refuse to serve in obscurity.",
-      "play": "Stand back, Gramps. Your collection is about to acquire a proper sense of theatre."
+      "play": "Stand back, Gramps. Your collection is about to acquire a proper sense of theatre.",
+      "loss": "And so your grand collection becomes an audience for DIO! Do not look so surprised, Gramps. I told you whose story this would be."
     },
     {
-      "chapter": 9, "bossId": "c071",
+      "chapter": 9,
+      "bossId": "c071",
       "entrance": "Such an ambitious little catalogue. I collect useful gifts too. Shall we compare methods, Rick Gramps? One of us is leaving this arena with a remarkable new acquisition.",
       "defeat": "So I am the acquisition. An unfamiliar position, but I recognise a superior hand. My gifts will serve you, Gramps. Let us make your rivals regret having talent.",
-      "play": "A useful opponent, Gramps. Let us see what can be taken from them."
+      "play": "A useful opponent, Gramps. Let us see what can be taken from them.",
+      "loss": "A fascinating selection of gifts, wasted on an inexperienced collector. Recover what you can, Gramps. I have learned rather a lot about your methods."
     },
     {
-      "chapter": 10, "bossId": "c084",
+      "chapter": 10,
+      "bossId": "c084",
       "entrance": "You measure greatness by the beings you can command. I have ruled by strength. Sit across from me, Rick Gramps. Let us discover whether either of us understands power.",
       "defeat": "You have shown me something I did not know. I accept your command, Gramps. My kingdom's strength will join your collection. Use it for more than your boredom.",
-      "play": "I see the shape of this contest, Gramps. Allow me to change it."
+      "play": "I see the shape of this contest, Gramps. Allow me to change it.",
+      "loss": "The contest is decided. You gathered strength without understanding its purpose. Consider your defeat carefully, Gramps. It may yet teach you something."
     },
     {
-      "chapter": 11, "bossId": "c023",
+      "chapter": 11,
+      "bossId": "c023",
       "entrance": "You stand before the ruler of Nazarick. Your collection is impressive, Rick Gramps, but you have mistaken an audience for an invitation to conquer. I shall correct that error.",
       "defeat": "A most... unexpected demonstration. The wise ruler recognises when an alliance is necessary. Nazarick will serve your campaign, Gramps. I trust you appreciate the magnitude of this concession.",
-      "play": "Your summon was well judged, Gramps. Naturally, I have anticipated everything."
+      "play": "Your summon was well judged, Gramps. Naturally, I have anticipated everything.",
+      "loss": "Precisely as planned. Nazarick remains beyond your reach, Gramps. You may withdraw with your surviving dignity. I recommend leaving promptly."
     },
     {
-      "chapter": 12, "bossId": "c037",
+      "chapter": 12,
+      "bossId": "c037",
       "entrance": "I see the hunger behind your amusement, collector. World after world, bent to your desire. Come into my sight, Rick Gramps. Let us see whose will endures.",
       "defeat": "Your will has pierced the shadow. My gaze will turn upon your enemies. Command, Gramps, and they will find no place beyond the reach of your collection.",
-      "play": "I see them, Gramps. Their courage is already beginning to fail."
+      "play": "I see them, Gramps. Their courage is already beginning to fail.",
+      "loss": "Your will has broken beneath my gaze. Gather your scattered champions, Gramps. Even across worlds, you cannot hide your fear from me."
     },
     {
-      "chapter": 13, "bossId": "c058",
+      "chapter": 13,
+      "bossId": "c058",
       "entrance": "So you are the old man gathering monsters! I like the ambition. Bring them all, Gramps. If your collection can survive me, perhaps it deserves another monster.",
       "defeat": "Now that was a battle! You beat me, old man. I will sail under your banner. Just do not start collecting weaklings. It would ruin the company.",
-      "play": "Another war, Gramps? Finally. I was getting thirsty."
+      "play": "Another war, Gramps? Finally. I was getting thirsty.",
+      "loss": "That is it? Come on, Gramps! I thought you were collecting monsters! Go find a few more, then bring me a proper war!"
     },
     {
-      "chapter": 14, "bossId": "c019",
+      "chapter": 14,
+      "bossId": "c019",
       "entrance": "A collector? How quaint. You have mistaken a handful of curiosities for a treasury. Approach, Rick Gramps. I will show you what it means to possess greatness.",
       "defeat": "You have earned the king's attention... and his service. My treasury will answer your call, Gramps. Treat the privilege with the dignity your wardrobe lacks.",
-      "play": "You may admire the treasury later, Gramps. For now, watch your enemies learn their place."
+      "play": "You may admire the treasury later, Gramps. For now, watch your enemies learn their place.",
+      "loss": "You have seen a true treasury, collector. Take your little curiosities and leave. I may permit another audience when you acquire some taste."
     },
     {
-      "chapter": 15, "bossId": "c022",
+      "chapter": 15,
+      "bossId": "c022",
       "entrance": "Rick Gramps! Nice collection. Bold choice, trying to add me to it. Go on, take your best shot. I would hate for this to be boring for both of us.",
       "defeat": "Okay. That actually got through. You win, Gramps. I am in. Someone has to keep this collection looking good, and you clearly need the help.",
-      "play": "Hey, Gramps. Want the quick solution or the embarrassing one?"
+      "play": "Hey, Gramps. Want the quick solution or the embarrassing one?",
+      "loss": "Aw, already? You had a few good ideas, Gramps. They just needed to get past me. Try again. I am happy to give you another lesson."
     },
     {
-      "chapter": 16, "bossId": "c097",
+      "chapter": 16,
+      "bossId": "c097",
       "entrance": "Small wanderer between worlds. You reach for stars and name them possessions. Step into the golden silence, Rick Gramps. Let your will be weighed against eternity.",
       "defeat": "Your will has crossed the golden silence. The stars bend toward your command. Carry this light into the worlds ahead, Gramps. Eternity will walk within your collection.",
-      "play": "Your call reaches the stars, Gramps. Their light answers."
+      "play": "Your call reaches the stars, Gramps. Their light answers.",
+      "loss": "Your light fades at the edge of eternity. Return to your small worlds, wanderer. The stars remain beyond your grasp."
     },
     {
-      "chapter": 17, "bossId": "c051",
+      "chapter": 17,
+      "bossId": "c051",
       "entrance": "You travelled the universes because you were bored? Then we understand each other. Show me everything, Rick Gramps. I have waited far too long for a worthy battle.",
       "defeat": "At last... a battle that demanded all of me. You have my loyalty, Gramps. Let me stand in your collection, and I will help you find something greater still.",
-      "play": "A new challenger, Gramps. Let us hope they can make this interesting."
+      "play": "A new challenger, Gramps. Let us hope they can make this interesting.",
+      "loss": "You share my boredom, but not yet my strength. Grow your collection, Gramps. I would rather wait for a worthy battle than settle for this."
     },
     {
-      "chapter": 18, "bossId": "c027",
+      "chapter": 18,
+      "bossId": "c027",
       "entrance": "You gather power to escape boredom. I gathered it to reshape existence. There is a difference between a collection and a purpose, Rick Gramps. I will show you.",
       "defeat": "You have the strength to impose your will across worlds. I acknowledge it. My power will serve your collection, Gramps. Perhaps purpose will find you along the way.",
-      "play": "You have chosen your moment, Gramps. I will make it decisive."
+      "play": "You have chosen your moment, Gramps. I will make it decisive.",
+      "loss": "Power without purpose has brought you here. Remember what it cost, Gramps. The universe will not yield because you need a new hobby."
     },
     {
-      "chapter": 19, "bossId": "c044",
+      "chapter": 19,
+      "bossId": "c044",
       "entrance": "So you are Rick Gramps! I heard you have been beating some incredible fighters. Forget the collection for a minute. Let us see how far we can push each other!",
       "defeat": "That was amazing! You really got me, Gramps. Sure, I will join your collection. Just promise we will keep finding stronger opponents. This is going to be fun!",
-      "play": "Ready, Gramps! Let us give them a fight worth remembering."
+      "play": "Ready, Gramps! Let us give them a fight worth remembering.",
+      "loss": "That was fun, Gramps! You almost caught me with that last one. Take a breather, train your team, and come back. I want to see what you try next!"
     },
     {
-      "chapter": 20, "bossId": "c041",
+      "chapter": 20,
+      "bossId": "c041",
       "entrance": "WELL, LOOK WHO COLLECTED HIS WAY TO THE END OF REALITY! Cute arena, Gramps. Cute little army. Let us find out what happens when the final exhibit starts collecting YOU.",
       "defeat": "YOU ACTUALLY DID IT. Every world, every champion, and now the triangle. Fine, Gramps. I will fight for your collection. But if eternity gets boring, remember whose idea this was.",
-      "play": "MISS ME, GRAMPS? Point me at something that still thinks reality is a rule."
+      "play": "MISS ME, GRAMPS? Point me at something that still thinks reality is a rule.",
+      "loss": "OH, GRAMPS. YOU REACHED THE END OF REALITY AND FORGOT TO READ THE FINE PRINT! Pick up your little army. The final exhibit is still running the museum."
     }
   ]
 }

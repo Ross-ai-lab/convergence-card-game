@@ -39,6 +39,8 @@ export default defineConfig({
         clearTimeout(timer)
         timer = setTimeout(() => { void refresh() }, 350)
       }
+      // Campaign definitions live outside the Vite root and need explicit watching.
+      server.watcher.add(['../materials/campaign-design.json','../materials/campaign-story.json'].map(file => path.resolve(sourceDir,file)))
       server.watcher.add([...workbookSources])
       server.watcher.on('change', changed).on('add', changed).on('unlink', changed)
       server.httpServer?.once('close', () => {

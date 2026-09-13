@@ -19,7 +19,7 @@ export interface CampaignDifficulty {
 }
 
 export interface CampaignChapter {
-  readonly story: Readonly<{ entrance: string; defeat: string; play: string }>;
+  readonly story: Readonly<{ entrance: string; defeat: string; loss: string; play: string }>;
   readonly chapter: number;
   readonly bossId: string;
   readonly universe: string;
@@ -66,11 +66,11 @@ export const CAMPAIGN_ROSTER_SIZE = definition.rosterCount;
 export const CAMPAIGN_CHAPTERS: readonly CampaignChapter[] = Object.freeze(
   definition.chapters.map((raw): CampaignChapter => {
     const story = storyDefinition.chapters.find(entry => entry.chapter === raw.chapter);
-    if (!story || story.bossId !== raw.bossId || !story.entrance || !story.defeat || !story.play) {
+    if (!story || story.bossId !== raw.bossId || !story.entrance || !story.defeat || !story.loss || !story.play) {
       throw new Error(`Campaign chapter ${raw.chapter} needs matching entrance, defeat and collected-card dialogue.`);
     }
     return Object.freeze({
-    story: Object.freeze({entrance: story.entrance, defeat: story.defeat, play: story.play}),
+    story: Object.freeze({entrance: story.entrance, defeat: story.defeat, loss: story.loss, play: story.play}),
     chapter: raw.chapter,
     bossId: raw.bossId,
     universe: raw.universe,

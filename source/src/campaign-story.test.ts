@@ -8,12 +8,12 @@ describe('Rick Gramps campaign story',()=>{
     vi.stubGlobal('window',{localStorage:{getItem:(key:string)=>values.get(key)??null,setItem:(key:string,value:string)=>values.set(key,value),removeItem:(key:string)=>values.delete(key)}});
   });
   afterEach(()=>vi.unstubAllGlobals());
-  it('supplies three distinct speeches for each of the twenty bosses',()=>{
+  it('supplies four distinct speeches for each of the twenty bosses',()=>{
     expect(CAMPAIGN_PROTAGONIST).toBe('Rick Gramps');
     expect(CAMPAIGN_PREMISE).toContain('greatest fighters');
     expect(CAMPAIGN_CHAPTERS).toHaveLength(20);
-    const lines=CAMPAIGN_CHAPTERS.flatMap(c=>[c.story.entrance,c.story.defeat,c.story.play]);
-    expect(new Set(lines).size).toBe(60);
+    const lines=CAMPAIGN_CHAPTERS.flatMap(c=>[c.story.entrance,c.story.defeat,c.story.loss,c.story.play]);
+    expect(new Set(lines).size).toBe(80);
     expect(lines.every(line=>line.length>30)).toBe(true);
   });
   it('preserves old saves and defaults the new story fields safely',()=>{
@@ -29,16 +29,16 @@ describe('Rick Gramps campaign story',()=>{
     const mode={kind:'campaign' as const,chapter:1,skill:'easy' as const,duelId:'story-win'};
     const input={winner:0 as const,viewerId:0 as const,mode,turns:15,at:1};
     const won=finishDuel(emptyProgress(),input,{seen:[],played:[]});
-    expect(won.pendingBossSpeech).toBe(1);expect(won.pendingRewards).toHaveLength(9);
+    expect(won.pendingBossSpeech).toBe(1);expect(won.pendingRewards).toHaveLength(11);
     expect(saveProgress(won)).toBe(true);
     expect(loadProgress().pendingBossSpeech).toBe(1);
     const acknowledged=acknowledgeBossSpeech(loadProgress());
-    expect(acknowledged.pendingRewards).toHaveLength(9);
+    expect(acknowledged.pendingRewards).toHaveLength(11);
     expect(finishDuel(acknowledged,input,{seen:[],played:[]})).toBe(acknowledged);
     const replay=finishDuel(acknowledgeRewards(acknowledged),{...input,mode:{...mode,duelId:'story-replay'}},{seen:[],played:[]});
     expect(replay.pendingBossSpeech).toBe(1);expect(replay.pendingRewards).toEqual([]);
     const loss=finishDuel(acknowledgeBossSpeech(replay),{...input,winner:1,mode:{...mode,duelId:'story-loss'}},{seen:[],played:[]});
-    expect(loss.pendingBossSpeech).toBeNull();
+    expect(loss.pendingBossSpeech).toBe(1);expect(loss.pendingBossSpeechOutcome).toBe("loss");
   });
   it('rejects a pending speech for an undefeated future boss',()=>{
     saveProgress({...emptyProgress(),pendingBossSpeech:20});

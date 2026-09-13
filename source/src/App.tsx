@@ -83,6 +83,7 @@ import {
   loadProgress,
   saveProgress,
   unlockAllProgress,
+  unlockAllChapters,
   type Progress,
 } from "./progress";
 import { STARTING_POOL, revealOrder } from "./unlocks";
@@ -3156,11 +3157,11 @@ export default function App() {
         return <CampaignSpeech key={`${chapterSpeech.stage}-${chapter.chapter}`} stage={chapterSpeech.stage} chapter={chapter.chapter}
           name={chapterSpeech.stage === "prologue" ? CAMPAIGN_PROTAGONIST : boss.name}
           text={chapterSpeech.stage === "prologue" ? CAMPAIGN_PREMISE : chapter.story.entrance}
-          art={chapterSpeech.stage === "prologue" ? undefined : boss.art} accent={isMinionCard(boss) ? campAccent(boss.camp) : "#d7b76f"}
+          art={chapterSpeech.stage === "prologue" ? `${import.meta.env.BASE_URL}campaign/rick-gramps.webp` : boss.art} accent={isMinionCard(boss) ? campAccent(boss.camp) : "#d7b76f"}
           onContinue={continueChapterSpeech} onCancel={() => {setChapterSpeech(null);setOverlay("campaign");}} />;
       })()}
-      {defeatedChapter && defeatedBoss && <CampaignSpeech key={`defeat-${defeatedChapter.chapter}`} stage="defeat" chapter={defeatedChapter.chapter}
-        name={defeatedBoss.name} text={defeatedChapter.story.defeat} art={defeatedBoss.art}
+      {defeatedChapter && defeatedBoss && <CampaignSpeech key={`defeat-${defeatedChapter.chapter}`} stage={progress.pendingBossSpeechOutcome === "loss" ? "loss" : "defeat"} chapter={defeatedChapter.chapter}
+        name={defeatedBoss.name} text={progress.pendingBossSpeechOutcome === "loss" ? defeatedChapter.story.loss : defeatedChapter.story.defeat} art={defeatedBoss.art}
         accent={isMinionCard(defeatedBoss) ? campAccent(defeatedBoss.camp) : "#d7b76f"} onContinue={closeDefeatSpeech} />}
 
       {screen === "title" ? (
@@ -3187,6 +3188,8 @@ export default function App() {
           developerCheatRevealed={developerCheatRevealed}
           developerCheatActive={progress.developerCheat}
           onDeveloperUnlock={activateDeveloperCheat}
+          chaptersUnlocked={progress.developerChaptersUnlocked}
+          onUnlockChapters={() => persistProgress(unlockAllChapters(progress))}
           onDeveloperReset={resetDeveloperProgress}
           unlocked={progress.unlockedIds.length}
           rosterSize={cards.length + relics.length}
@@ -3832,6 +3835,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
   const deckIds = new Set(deck);
   const [query, setQuery] = useState("");
   const [help, setHelp] = useState(false);
+  const [showEquipped, setShowEquipped] = useState(true);
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const [status, setStatus] = useState<UnlockFilter>("unlocked");
   const [filters, setFilters] = useState<Record<FilterKey, string>>({
@@ -3933,7 +3937,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
       ? entries.filter((entry) => active.every((key) => faceValue(entry.face, key) === filters[key]))
       : entries;
     const wantUnlocked = status === "unlocked";
-    kept = kept.filter((entry) => collection.unlocked.has(entry.key) === wantUnlocked);
+    kept = kept.filter((entry) => collection.unlocked.has(entry.key) === wantUnlocked && (showEquipped || !deck.includes(entry.key)));
     // Mana then name, which is the order the roster reads in and the one a
     // filtered list needs to stay scannable. It removes the need for a separate
     // ordering control.
@@ -3963,7 +3967,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
       if (earnedA && earnedB) return rb - ra;
       return byCard(a, b);
     });
-  }, [entries, filters, status, collection, unlockRank]);
+  }, [entries, filters, status, collection, unlockRank, showEquipped, deck]);
 
   const selectedEntry = selectedEntryKey ? allEntries.find((entry) => entry.key === selectedEntryKey) ?? null : null;
 
@@ -4013,6 +4017,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
       <section className="screen-panel gallery-panel" role="dialog" aria-label="My Deck" aria-modal="true">
         <header className="screen-panel-top">
           <h2>My Deck</h2>
+          <label className="gallery-equipped"><input type="checkbox" checked={showEquipped} onChange={event => setShowEquipped(event.target.checked)} />Show equipped cards</label>
           <input
             className="gallery-search"
             type="search"
@@ -6485,8 +6490,7 @@ function GameOver({
           </div>
         ) : null}
         <div className="gameover-buttons">
-          <button type="button" className="primary" onClick={onRestart}>{tutorial ? "Play tutorial again" : campaign && winnerId === 0 ? "Campaign & deck" : "Rematch"}</button>
-          <button type="button" onClick={onMenu}>Menu</button>
+          {winnerId !== null && !tutorial ? <button type="button" className="primary" onClick={campaign ? onRestart : onMenu}>Continue</button> : <><button type="button" className="primary" onClick={onRestart}>{tutorial ? "Play tutorial again" : "Rematch"}</button><button type="button" onClick={onMenu}>Menu</button></>}
         </div>
       </section>
     </div>
