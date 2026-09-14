@@ -1,98 +1,148 @@
-"""Generate the campaign cast locally. Resume safely; never reuse stale speech.
+"""Convergence adapter for the shared Qwen VoiceDesign pipeline.
 
-Run with .preview/voice-runtime/Scripts/python.exe. --chapters 1,20 --stages play
-is a small audition. The default renders only the four audition clips. Full-cast production is paused.
+Dialogue and casting stay in this project.  Runtime setup, model loading,
+batching, loudness processing, resume logic and signal validation live in
+``Pipelines/audio/qwen/voice.py``.
 """
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
 from pathlib import Path
-import argparse, hashlib, json, os, subprocess, time
+
 
 ROOT = Path(__file__).resolve().parents[3]
-os.environ.setdefault('HF_HUB_DISABLE_XET', '1')
-os.environ.setdefault('TOKENIZERS_PARALLELISM', 'false')
-sox = list((Path(os.environ['LOCALAPPDATA']) / 'Microsoft/WinGet/Packages').glob('ChrisBagwell.SoX_*/sox-*/sox.exe'))
-if sox:
-    os.environ['PATH'] = str(sox[0].parent) + os.pathsep + os.environ['PATH']
+WORKSPACE = ROOT.parents[2]
+SHARED = WORKSPACE / "Pipelines/audio/qwen/voice.py"
+ENGINE = "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+STAGES = ("entrance", "defeat", "loss", "play")
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--chapters', default='')
-    parser.add_argument('--keys', default='01-play,06-entrance,19-defeat,20-loss')
-    parser.add_argument('--stages', default='entrance,defeat,loss,play')
-    parser.add_argument('--force', action='store_true')
-    parser.add_argument('--batch-size',type=int,default=4)
+
+def filters_for(chapter: int) -> list[str]:
+    filters = ["highpass=f=65"]
+    # These restrained treatments are part of the Convergence cast direction,
+    # not of the reusable engine.  They preserve the existing full-batch mix.
+    if chapter == 1:
+        filters += ["tremolo=f=32:d=0.08", "equalizer=f=2200:t=q:w=1:g=2"]
+    if chapter in (6, 12, 16):
+        filters += ["aecho=0.9:0.9:45:0.08"]
+    return filters
+
+
+def parse_selected(value: str, label: str) -> set[str] | None:
+    if not value or value.strip().lower() in {"all", "*"}:
+        return None
+    selected = {part.strip() for part in value.split(",") if part.strip()}
+    if not selected:
+        raise RuntimeError(f"--{label} selected nothing")
+    return selected
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--chapters", default="", help="chapter numbers, comma-separated; default is all 20")
+    parser.add_argument("--keys", default="all", help="recording keys, comma-separated; default is all 80")
+    parser.add_argument("--stages", default=",".join(STAGES), help="stage names, comma-separated")
+    parser.add_argument("--force", action="store_true", help="regenerate selected recordings even when current")
+    parser.add_argument("--batch-size", type=int, default=4)
+    parser.add_argument("--model-dir", default="", help="optional explicit Qwen model directory")
     args = parser.parse_args()
-    import numpy as np
-    import soundfile as sf
-    import torch
-    from qwen_tts import Qwen3TTSModel
-    torch.set_num_threads(4)
-    if not torch.cuda.is_available():
-        raise RuntimeError('CUDA is unavailable. Install the pinned CUDA torch build in the voice runtime.')
-    story = json.loads((ROOT/'materials/campaign-story.json').read_text(encoding='utf-8'))
-    cast = json.loads((ROOT/'materials/campaign-voice-cast.json').read_text(encoding='utf-8'))
-    selected = {int(n) for n in args.chapters.split(',') if n}
-    stages = args.stages.split(',')
-    target = ROOT/'.preview/voice-full-hold/campaign'
-    raw = ROOT/'.preview/campaign-voices/raw'
-    target.mkdir(parents=True, exist_ok=True)
-    raw.mkdir(parents=True, exist_ok=True)
-    manifest_path = ROOT/'.preview/voice-full-hold/campaign-voices.json'
-    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
-    model = None
-    for chapter in story['chapters']:
-        number = chapter['chapter']
-        if selected and number not in selected:
-            continue
-        voice = cast['cast'][str(number)]
-        jobs=[]
-        for stage in stages:
-            key=f'{number:02d}-{stage}'
-            if key not in args.keys.split(','):continue
-            text=chapter[stage]
-            spoken=(text.capitalize() if number==20 else text).replace('DIO','Dio')
-            instruction=voice['voice']+' Perform with '+voice['direction'][stage]+'. Fluent English, vivid natural acting, clear words, no music or sound effects.'
-            fingerprint=hashlib.sha256(json.dumps([cast['engine'],text,instruction,voice['seed'],'mix-v2']).encode()).hexdigest()
-            output=target/(key+'.ogg')
-            if not args.force and output.exists() and manifest.get(key,{}).get('fingerprint')==fingerprint:
-                print('CURRENT',key,flush=True);continue
-            jobs.append(dict(key=key,text=text,spoken=spoken,instruction=instruction,fingerprint=fingerprint,stage=stage,output=output))
-        if not jobs:continue
-        if model is None:
-            print('Loading',cast['engine'],'on',torch.cuda.get_device_name(),flush=True)
-            model=Qwen3TTSModel.from_pretrained(str(ROOT/'.preview/models/qwen-voice-design'),device_map='cuda:0',dtype=torch.float16,attn_implementation='sdpa',low_cpu_mem_usage=True)
-            # Decode waveforms one at a time to bound memory on the 6 GB GPU.
-            original_decode=model.model.speech_tokenizer.decode
-            def serial_decode(items,**kwargs):
-                waves=[];rate=None
-                for item in items:
-                    out,rate=original_decode([item],**kwargs);waves.extend(out)
-                return waves,rate
-            model.model.speech_tokenizer.decode=serial_decode
-            print('Model loaded; allocated GB',round(torch.cuda.memory_allocated()/1e9,2),flush=True)
-        for offset in range(0,len(jobs),args.batch_size):
-            batch=jobs[offset:offset+args.batch_size]
-            torch.manual_seed(voice['seed']);torch.cuda.empty_cache()
-            start=time.time();print('GENERATE',','.join(job['key'] for job in batch),voice['name'],flush=True)
-            with torch.inference_mode():
-                waves,rate=model.generate_voice_design(text=[job['spoken'] for job in batch],language=['English']*len(batch),instruct=[job['instruction'] for job in batch],max_new_tokens=900)
-            elapsed=time.time()-start
-            for job,samples in zip(batch,waves):
-                key=job['key'];output=job['output'];samples=np.asarray(samples,dtype=np.float32);duration=len(samples)/rate
-                if not np.isfinite(samples).all() or duration<2 or duration>65 or np.max(np.abs(samples))<.01:
-                    raise RuntimeError(f'{key}: invalid/silent/runaway audio ({duration:.1f}s). Inspect before continuing.')
-                wav=raw/(key+'.wav');sf.write(wav,samples,rate)
-                filters=['highpass=f=65']
-                if number==1:filters+=['tremolo=f=32:d=0.08','equalizer=f=2200:t=q:w=1:g=2']
-                if number in (6,12,16):filters+=['aecho=0.9:0.9:45:0.08']
-                measure=subprocess.run(['ffmpeg','-hide_banner','-nostats','-i',str(wav),'-af',','.join(filters+['loudnorm=I=-18:TP=-1.5:LRA=9:print_format=json']),'-f','null','-'],capture_output=True,text=True,check=True)
-                levels=json.JSONDecoder().raw_decode(measure.stderr[measure.stderr.rfind('{'):])[0]
-                filters+=[f"loudnorm=I=-18:TP=-1.5:LRA=9:measured_I={levels['input_i']}:measured_TP={levels['input_tp']}:measured_LRA={levels['input_lra']}:measured_thresh={levels['input_thresh']}:offset={levels['target_offset']}:linear=true"]
-                subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y','-i',str(wav),'-af',','.join(filters),'-c:a','libvorbis','-q:a','5',str(output)],check=True)
-                final_duration=float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',str(output)],text=True))
-                manifest[key]={'chapter':number,'bossId':chapter['bossId'],'stage':job['stage'],'duration':round(final_duration,3),'text':job['text'],'fingerprint':job['fingerprint'],'audioSha256':hashlib.sha256(output.read_bytes()).hexdigest()}
-                manifest_path.write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
-                print('DONE',key,'speech',round(duration,1),'seconds; batch wall',round(elapsed,1),'seconds; peak VRAM GB',round(torch.cuda.max_memory_allocated()/1e9,2),flush=True)
-    print('Manifest clips:',len(manifest),flush=True)
+    if args.batch_size < 1 or args.batch_size > 4:
+        parser.error("--batch-size must be between 1 and 4 on the approved 6 GB GPU")
 
-if __name__ == '__main__':
-    main()
+    story = json.loads((ROOT / "materials/campaign-story.json").read_text(encoding="utf-8"))
+    cast = json.loads((ROOT / "materials/campaign-voice-cast.json").read_text(encoding="utf-8"))
+    chapters = {int(value) for value in args.chapters.split(",") if value.strip()}
+    stages = [stage.strip() for stage in args.stages.split(",") if stage.strip()]
+    unknown_stages = sorted(set(stages) - set(STAGES))
+    if unknown_stages:
+        parser.error(f"unknown stage(s): {', '.join(unknown_stages)}; expected {', '.join(STAGES)}")
+    selected_keys = parse_selected(args.keys, "keys")
+
+    jobs: list[dict[str, object]] = []
+    for chapter in story["chapters"]:
+        number = int(chapter["chapter"])
+        if chapters and number not in chapters:
+            continue
+        voice = cast["cast"][str(number)]
+        for stage in stages:
+            key = f"{number:02d}-{stage}"
+            if selected_keys is not None and key not in selected_keys:
+                continue
+            text = str(chapter[stage])
+            spoken = text.capitalize() if number == 20 else text
+            direction = str(voice["direction"][stage])
+            jobs.append({
+                "id": key,
+                "text": text,
+                "spoken": spoken,
+                "voice": str(voice["voice"]),
+                "direction": direction,
+                "seed": int(voice["seed"]),
+                "engine": ENGINE,
+                "filters": filters_for(number),
+            })
+
+    known_keys = {str(job["id"]) for job in jobs}
+    if selected_keys is not None:
+        unknown = sorted(selected_keys - known_keys)
+        if unknown:
+            raise RuntimeError(f"Unknown campaign voice key(s): {', '.join(unknown)}")
+    if not jobs:
+        raise RuntimeError("No campaign voice jobs selected")
+
+    target = ROOT / ".preview/voice-full-hold/campaign"
+    raw = ROOT / ".preview/campaign-voices/raw"
+    manifest_path = ROOT / ".preview/voice-full-hold/campaign-voices.json"
+    input_path = ROOT / ".preview/voice-full-hold/campaign-jobs.json"
+    input_path.parent.mkdir(parents=True, exist_ok=True)
+    input_path.write_text(json.dumps({"jobs": jobs}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    command = [
+        sys.executable,
+        str(SHARED),
+        "generate",
+        "--input", str(input_path),
+        "--output-dir", str(target),
+        "--manifest", str(manifest_path),
+        "--raw-dir", str(raw),
+        "--batch-size", str(args.batch_size),
+    ]
+    if args.model_dir:
+        command += ["--model-dir", args.model_dir]
+    if args.force:
+        command.append("--force")
+    result = subprocess.run(command, cwd=WORKSPACE)
+    if result.returncode != 0:
+        return result.returncode
+
+    # Keep the Convergence manifest useful to the game-specific validator.
+    # The shared engine owns audio fields; this adapter owns chapter, boss and
+    # stage identity.
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for job in jobs:
+        key = str(job["id"])
+        number = int(key.split("-", 1)[0])
+        stage = key.split("-", 1)[1]
+        chapter = next(item for item in story["chapters"] if int(item["chapter"]) == number)
+        entry = manifest.get(key, {})
+        entry.update({
+            "chapter": number,
+            "bossId": chapter["bossId"],
+            "stage": stage,
+            "text": chapter[stage],
+        })
+        manifest[key] = entry
+    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Convergence campaign jobs: {len(jobs)} requested; manifest now contains {len(manifest)} recordings")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except RuntimeError as exc:
+        print(f"CAMPAIGN VOICE ERROR: {exc}", file=sys.stderr)
+        raise SystemExit(1)

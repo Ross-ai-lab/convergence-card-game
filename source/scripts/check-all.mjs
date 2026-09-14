@@ -106,6 +106,19 @@ const SUITES = [
     reaches: [/^source\/public\/audio\//, /^source\/src\/audio\//, /^source\/data\/announcer\.csv$/, HARNESS],
   },
   {
+    name: "campaign-voices",
+    command: ["node", "scripts/check-campaign-voices.mjs", BASE],
+    browser: true,
+    reaches: [
+      /^source\/public\/audio\/campaign\//,
+      /^source\/data\/campaign-voices\.json$/,
+      /^materials\/campaign-(story|voice-cast)\.json$/,
+      /^source\/src\/audio\//,
+      /^source\/src\/screens\/CampaignSpeech/,
+      HARNESS,
+    ],
+  },
+  {
     // A new card with no test is the one thing the effect-coverage gate exists to
     // catch, and it can only catch it if something runs it. Card data and engine
     // branches are the only two edits that can create that gap.
@@ -227,7 +240,7 @@ async function runAll(suites) {
   // whole run took 451s instead of 339 — two lanes are slower than no lanes if
   // the long pole starts after the short ones. `costs` is a rough ordering hint
   // measured 4 September 2026, not a budget: only the sort uses it.
-  const costs = { ui: 300, audio: 145, features: 350, cardface: 25 };
+  const costs = { ui: 300, audio: 145, "campaign-voices": 110, features: 350, cardface: 25 };
   const queue = [...suites.filter((suite) => suite.browser)].sort(
     (a, b) => (costs[b.name] ?? 0) - (costs[a.name] ?? 0) || a.name.localeCompare(b.name),
   );

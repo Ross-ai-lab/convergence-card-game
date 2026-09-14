@@ -1,0 +1,722 @@
+{
+  "01-play": {
+    "chapter": 1,
+    "bossId": "c104",
+    "stage": "play",
+    "duration": 7.1,
+    "text": "Your assistant has arrived, Gramps. Try not to lower the average intelligence on this side of the arena.",
+    "fingerprint": "c026166fe4adc08b5789b43ed1ac3306f133a4e709e2e0994737e5f386f77aae",
+    "audioSha256": "b20f93f32df1c61436b077a04237f14bd97d44c79ae0bb66cf865674c987bab7"
+  },
+  "20-play": {
+    "chapter": 20,
+    "bossId": "c041",
+    "stage": "play",
+    "duration": 6.8,
+    "text": "MISS ME, GRAMPS? Point me at something that still thinks reality is a rule.",
+    "fingerprint": "c5798b9fbe073f33842d4353ea0cf8c40f68cb6ee93204c47b2ebb919d66b06a",
+    "audioSha256": "4a4dc5d6feb56d1b03255a5ab535b1f627be5490836e745f84269a6e0dd7354d"
+  },
+  "02-entrance": {
+    "chapter": 2,
+    "bossId": "c134",
+    "stage": "entrance",
+    "duration": 12.0,
+    "text": "You think greatness can be kept in a collection? I spent my life earning mine. Bring your little army, old man. I will show them what strength looks like.",
+    "fingerprint": "26ac2f6e56e43231d5a08e239c6b14a2b17d6200d173e1b091fec9221db139c7",
+    "audioSha256": "ad5d7c8c1c5f6bdf8c8735a23da54ea1af205f2adae0c091333eaea2942bc5bf"
+  },
+  "02-defeat": {
+    "chapter": 2,
+    "bossId": "c134",
+    "stage": "defeat",
+    "duration": 9.2,
+    "text": "I could not break you. That is an answer I cannot ignore. My strength is yours, Rick Gramps. Give it a purpose worthy of me.",
+    "fingerprint": "b51a60af263b6f781da45e7fa960b866038385e7e80e4b95383f5c895910f451",
+    "audioSha256": "f1db97044dccfff0c593a898fab7b892460ef7b6cc9b057ae0e3484f202794a6"
+  },
+  "02-loss": {
+    "chapter": 2,
+    "bossId": "c134",
+    "stage": "loss",
+    "duration": 7.5,
+    "text": "You brought fighters, Gramps. You forgot to bring a challenge. Train them. Then return and show me why I should remember your name.",
+    "fingerprint": "b5a004b89d753de8f07ea6a0818289a6cb937571a0e34ed573761091e2e1725e",
+    "audioSha256": "d88b3ecd09cf5ba17ea4b2ab6958abf97559b9dcc99d0fb8dcf4e3a943ad300c"
+  },
+  "02-play": {
+    "chapter": 2,
+    "bossId": "c134",
+    "stage": "play",
+    "duration": 4.24,
+    "text": "Point me at their strongest fighter, Gramps. I have no patience for the rest.",
+    "fingerprint": "cae01574af72ca7cb306a142b468a02c9070dce98c500f53960055303d87bd74",
+    "audioSha256": "cee198a5e555d76017caa4354f021c5b1fb69833249c7fd47a738ae3c54b2362"
+  },
+  "01-entrance": {
+    "chapter": 1,
+    "bossId": "c104",
+    "stage": "entrance",
+    "duration": 12.3,
+    "text": "A retired man with a portal gun and a scrapbook. How promising. Step into the arena, Rick Gramps. I have designed a very short test of your remaining life expectancy.",
+    "fingerprint": "b07465da603ce4b17a3837c19bc5d6dac94a028bb903f82977fe95c3db14189c",
+    "audioSha256": "54c50c8bdbefbc4ccf6023d7ad375d513703a7e0775f8237025a6cec6c964568"
+  },
+  "01-defeat": {
+    "chapter": 1,
+    "bossId": "c104",
+    "stage": "defeat",
+    "duration": 12.4,
+    "text": "The results are conclusive. You are considerably more dangerous than you look. Fine. My facility and its assets are at your disposal. Please stop touching the buttons.",
+    "fingerprint": "b268ed4d02394b9a3a9df2084c177400230da467f59bc7b769ac7c68c5e2dc9c",
+    "audioSha256": "554616b36d51bb41b0d6316d88b8c3aa1c0cd6de6c4e00629a1bd0e6b85afa9b"
+  },
+  "01-loss": {
+    "chapter": 1,
+    "bossId": "c104",
+    "stage": "loss",
+    "duration": 10.2,
+    "text": "That was your best attempt? How educational. I will file it under preventable accidents. Try again when your collection has developed basic problem-solving skills.",
+    "fingerprint": "dd86dd4662a91787ee8b877d11525973f004dbc3e0a4baa2a95c359e1392658a",
+    "audioSha256": "0ba7f92c2d4f4ec897437cfb979a8fdcc4a9fd7f870b79c5d2e002a55a6f97a3"
+  },
+  "03-entrance": {
+    "chapter": 3,
+    "bossId": "c033",
+    "stage": "entrance",
+    "duration": 11.2,
+    "text": "A grandfather collecting fighters? Good. I was worried retirement had made you sensible. Bring your strongest pet. I need a warm-up.",
+    "fingerprint": "9223d30ad32e1f28f15e3627a18e0042a042839f332d44f9a29bca75363cde22",
+    "audioSha256": "2a36716ddbfde52e307302cea4741e69f5a82bc09ba61039466867ff68ccfaee"
+  },
+  "03-defeat": {
+    "chapter": 3,
+    "bossId": "c033",
+    "stage": "defeat",
+    "duration": 10.5,
+    "text": "Heh. You actually made me work for it. All right, old man. I will fight for your collection. Keep finding opponents worth breaking.",
+    "fingerprint": "5c16a8cebba7b44e3c0c7b56e3e4212749e4eca484f863e685eea909ded94b5d",
+    "audioSha256": "86bca889703af4ff290c7f3b48b7603161a7634c68cef6e1fd23bf630a82c804"
+  },
+  "03-loss": {
+    "chapter": 3,
+    "bossId": "c033",
+    "stage": "loss",
+    "duration": 10.32,
+    "text": "Already done? I was just starting to enjoy myself. Pick up your collection, old man. Bring me something that fights back next time.",
+    "fingerprint": "7ea7ef3c672b43cc9c0bcc7b4963907302d107c3d8856664d34c9e3f81762250",
+    "audioSha256": "6d904dd6f1e489a38a403e433d1cbf41e773c44ce01c0295bac67e84d325e5e7"
+  },
+  "03-play": {
+    "chapter": 3,
+    "bossId": "c033",
+    "stage": "play",
+    "duration": 3.361,
+    "text": "Gramps. Tell me this one can take a punch.",
+    "fingerprint": "7302d0954297ae3667b9fbcbdbf3fdd6855ab34aaa0f21fc17b425948113fed8",
+    "audioSha256": "83d9780bd0d821a9da878d9b03ded44357dcb6b7a54a20e7b4421e125331a400"
+  },
+  "04-entrance": {
+    "chapter": 4,
+    "bossId": "c021",
+    "stage": "entrance",
+    "duration": 11.7,
+    "text": "Rick Gramps. An alias, I assume. You gather dangerous people and call it a hobby. I prefer a world with order. Let us decide whose vision survives.",
+    "fingerprint": "ec1998326c58a64dc3464e202ea98e044621153dfc768c8c6412f47252184b83",
+    "audioSha256": "77ff0954bd7fd27e5a1bd1c58a8fb806c3fb5779eba15fe76a785255dc86bdeb"
+  },
+  "04-defeat": {
+    "chapter": 4,
+    "bossId": "c021",
+    "stage": "defeat",
+    "duration": 11.1,
+    "text": "Every route I prepared led back to you. I underestimated your reach. I will serve your collection. A strategist is more useful at your side than beneath your feet.",
+    "fingerprint": "6a5aac5922d61f70bb73c53fda870c2e2526cadc64ba74814f5440820cbb71ac",
+    "audioSha256": "17957b282a51d8a59ae5d69d44a7f10b7d6ab1e1116335dd1693cb9c7b6e4b63"
+  },
+  "04-loss": {
+    "chapter": 4,
+    "bossId": "c021",
+    "stage": "loss",
+    "duration": 9.3,
+    "text": "Every move you made led here. You mistook a collection of powerful pieces for a plan, Gramps. I suggest you learn the difference.",
+    "fingerprint": "6fe652433d4bc6352419f18de1320108a3d6ea8c3c4b4abd3e1023a48b3f8334",
+    "audioSha256": "a16b571961407cff48c96aacc1df0863c376a8312204801c3453c702b9dca6fb"
+  },
+  "04-play": {
+    "chapter": 4,
+    "bossId": "c021",
+    "stage": "play",
+    "duration": 5.92,
+    "text": "Leave the calculations to me, Gramps. They will notice the trap when it is already closed.",
+    "fingerprint": "98d70de9cd5684db6c09f0ebd7dce944773e99bed233606f8bda5e992b721c72",
+    "audioSha256": "01f9711c0f81334da833efe0808b5a77a7b000dcd28e5e43f6f4733ea25312c0"
+  },
+  "05-entrance": {
+    "chapter": 5,
+    "bossId": "c114",
+    "stage": "entrance",
+    "duration": 14.32,
+    "text": "You cross into my world carrying borrowed champions and call yourself powerful. Come closer, collector. Let us discover how much courage remains when your servants fall.",
+    "fingerprint": "b8a5d03e4176f021e7f340a7c58dc81ab98839a361ec070b33bc6dea05b9b143",
+    "audioSha256": "a4d12493da74a414e78310989ce537d8c4902ef7facd163c1bfbf2b63a0d9b4e"
+  },
+  "05-defeat": {
+    "chapter": 5,
+    "bossId": "c114",
+    "stage": "defeat",
+    "duration": 14.7,
+    "text": "You have power I cannot dismiss. Very well. My wand and my followers will serve you. Do not confuse obedience with affection, Gramps.",
+    "fingerprint": "0844ca4d4db7ada4a2902767e2c0db3a5e4f2f9614d8988993c13e141538de96",
+    "audioSha256": "aa9ec33c409485a88b8ae349b2f02d7cc36380f73254c81fe91d8c66295e8312"
+  },
+  "05-loss": {
+    "chapter": 5,
+    "bossId": "c114",
+    "stage": "loss",
+    "duration": 11.6,
+    "text": "Your champions have fallen, and my world remains mine. Remember this feeling, collector. It is the cost of reaching beyond your power.",
+    "fingerprint": "0ddf6e7ad43e3b44a861fa4d7752afb0986a7a9925836615feeb880f900076df",
+    "audioSha256": "57debadd1b64488303d2ea0931560036395e018d694df4ec56e98d7bc390dd55"
+  },
+  "05-play": {
+    "chapter": 5,
+    "bossId": "c114",
+    "stage": "play",
+    "duration": 6.0,
+    "text": "Your enemies will learn to fear your collection, Gramps. I shall make certain of it.",
+    "fingerprint": "d9c6330d79bd15a4f51573214352617dc5e3ec71526c0f7167c5746203f5d98a",
+    "audioSha256": "b055b3fe2489b1ff610495b7f835e4042e55036055fe18332ed4349f7bcbb47c"
+  },
+  "06-entrance": {
+    "chapter": 6,
+    "bossId": "c029",
+    "stage": "entrance",
+    "duration": 10.3,
+    "text": "Your machines have brought you far, Rick Gramps. They will not protect you here. Stand your ground. I will measure this power you claim to possess.",
+    "fingerprint": "613aab3b36fe11b69475c2c42720802a3f6536b3c5b8072648059a7b4be03570",
+    "audioSha256": "46ab1280e19b175fb05a0bb99a665d50c3160d6cc8e0099dd85a6678d4071ce6"
+  },
+  "06-defeat": {
+    "chapter": 6,
+    "bossId": "c029",
+    "stage": "defeat",
+    "duration": 11.1,
+    "text": "Your power is real. I will serve under your command. Direct it with purpose, Gramps. An empire is wasted on a man who is merely bored.",
+    "fingerprint": "5652821cd8f6bb4450283370f04bc188b1af60fd342be3ae1345241a5fdfe38e",
+    "audioSha256": "6e15ec2666c3ea421b7353c512ec9c083d6999db855a260d1ad5b325a564020c"
+  },
+  "06-loss": {
+    "chapter": 6,
+    "bossId": "c029",
+    "stage": "loss",
+    "duration": 13.1,
+    "text": "Your ambition exceeds your discipline, Gramps. This defeat was inevitable. Return when you can command your strength rather than merely gather it.",
+    "fingerprint": "5c5f461e27b14893b2b84a220db9ceb88ec95c3b32d29dc3b9cb4595eb892ae1",
+    "audioSha256": "8a1c5ed993cab018f09bff41e76f64e0dc8b469e6a80fbfdb50c72fd3d6320dc"
+  },
+  "06-play": {
+    "chapter": 6,
+    "bossId": "c029",
+    "stage": "play",
+    "duration": 4.5,
+    "text": "Your command is acknowledged. I will clear the path.",
+    "fingerprint": "8ae3602c9f18d6fbc41ea68af64138dfba847eda735edff91bb0682748941735",
+    "audioSha256": "21876927203a74a9911ae1aef8055bfd09a1667b26415a2a954195c173475e87"
+  },
+  "07-entrance": {
+    "chapter": 7,
+    "bossId": "c024",
+    "stage": "entrance",
+    "duration": 11.68,
+    "text": "Look at that. A whole collection, arranged for my amusement. I usually have to travel between worlds to find this much resistance. You have saved me the trouble, Gramps.",
+    "fingerprint": "021edd233e91b87b886ed3e1ba3a838acc514d34edf9ad043250cf7b41e2927d",
+    "audioSha256": "d40bed7a67f0f09189ea7657287126ba1b7bd2ef3805b00884a467201761e1ea"
+  },
+  "07-defeat": {
+    "chapter": 7,
+    "bossId": "c024",
+    "stage": "defeat",
+    "duration": 8.9,
+    "text": "Ha! I remember pain now. You have earned my service, old man. Find me another battle like that and I might even enjoy taking orders.",
+    "fingerprint": "f719b46c8d9a3071b8768049e9a86d23bc403b335f40ce1b37790eee1d5eddf2",
+    "audioSha256": "a9bd343f57e22c4a375f3ddb6565a312e172a0063912c5aae30e9009b57e7a84"
+  },
+  "07-loss": {
+    "chapter": 7,
+    "bossId": "c024",
+    "stage": "loss",
+    "duration": 10.9,
+    "text": "Oh, that was disappointing. All those worlds, and this is what you brought me? Go find stronger toys, Gramps. I will be waiting.",
+    "fingerprint": "b31fcdeab061bf2a729ffd618be5c1b18eea0f15244618acde05cab388509e76",
+    "audioSha256": "926647f1f9c8dd2214fec038d3a35941f1ac86ed74c695d4f49108787f68fec6"
+  },
+  "07-play": {
+    "chapter": 7,
+    "bossId": "c024",
+    "stage": "play",
+    "duration": 3.92,
+    "text": "You promised me a fight, Gramps. These had better not disappoint.",
+    "fingerprint": "6de45d78cd5072d3e02615ebc0be34ce8d86b0d4e78c622bea118207f3cf75c6",
+    "audioSha256": "296c4d65df805486cd084770f6c345861c99536fda3119025ededd0543317ce6"
+  },
+  "08-entrance": {
+    "chapter": 8,
+    "bossId": "c096",
+    "stage": "entrance",
+    "duration": 10.2,
+    "text": "You wish to collect DIO? How generous of you to deliver an audience. Watch closely, Rick Gramps. Your grand adventure is about to become a story about me.",
+    "fingerprint": "3c1d6f9b1b532ba0cbed4e41d3a1ac38e2a6696c9201d41aec11987026e59af2",
+    "audioSha256": "867e5eec750d86506d02a17d39a58565179561002a4a31258a6311b862a48fef"
+  },
+  "08-defeat": {
+    "chapter": 8,
+    "bossId": "c096",
+    "stage": "defeat",
+    "duration": 14.4,
+    "text": "Impossible... and yet here you stand. Very well, Gramps. I will lend my power to your collection. Make the victories spectacular. I refuse to serve in obscurity.",
+    "fingerprint": "1d600fef4e14d1215681eb8cb9a9af7cd6d7cbf7979fc6a3dc4f03a2588ef02a",
+    "audioSha256": "486729eb0439551868a22dea6d7c368ad9ba5f1b0bb14340c344b2ac9fbdb4d5"
+  },
+  "08-loss": {
+    "chapter": 8,
+    "bossId": "c096",
+    "stage": "loss",
+    "duration": 12.0,
+    "text": "And so your grand collection becomes an audience for DIO! Do not look so surprised, Gramps. I told you whose story this would be.",
+    "fingerprint": "d92d4cdabe7a2a08c207df33551a86e017224e8d6397b954acf870849ad55982",
+    "audioSha256": "aebd212a59bfbf630bf520bc3759c5a9a524e2f2f481d4f16c275c24311199e9"
+  },
+  "08-play": {
+    "chapter": 8,
+    "bossId": "c096",
+    "stage": "play",
+    "duration": 6.16,
+    "text": "Stand back, Gramps. Your collection is about to acquire a proper sense of theatre.",
+    "fingerprint": "f0eb7699742add33df9dcca4e76f590f222f329d682bb888638426922e6e2a3f",
+    "audioSha256": "921bccd45bc480aa01976a322e6b09237c4baaa67d8741be9c67d52759288612"
+  },
+  "09-entrance": {
+    "chapter": 9,
+    "bossId": "c071",
+    "stage": "entrance",
+    "duration": 12.4,
+    "text": "Such an ambitious little catalogue. I collect useful gifts too. Shall we compare methods, Rick Gramps? One of us is leaving this arena with a remarkable new acquisition.",
+    "fingerprint": "405551398ee9d6f66062e2ca68a9da37b9ff79bb521d1b361c73bbf50cd88b83",
+    "audioSha256": "ee7b5c0957962524cd17280356249c12add7c2ed891bbae3c7b19009c91c3780"
+  },
+  "09-defeat": {
+    "chapter": 9,
+    "bossId": "c071",
+    "stage": "defeat",
+    "duration": 12.0,
+    "text": "So I am the acquisition. An unfamiliar position, but I recognise a superior hand. My gifts will serve you, Gramps. Let us make your rivals regret having talent.",
+    "fingerprint": "788570223115f4ae3299135c8193b08450e1aacdd519b5f73555dc5f2739878e",
+    "audioSha256": "d5d27dfd8f9164d5012f07e327e61acf80b88eb5b73cf42485c2f64e3edd3b54"
+  },
+  "09-loss": {
+    "chapter": 9,
+    "bossId": "c071",
+    "stage": "loss",
+    "duration": 9.9,
+    "text": "A fascinating selection of gifts, wasted on an inexperienced collector. Recover what you can, Gramps. I have learned rather a lot about your methods.",
+    "fingerprint": "39a9b62b644cb4db0212ead01cb5dc191cc27544c21d6a819f71d384c9d2392c",
+    "audioSha256": "7e453e23e428780b622acc14da11c41bbabe797e509d7c91fc81433f1d540b9e"
+  },
+  "09-play": {
+    "chapter": 9,
+    "bossId": "c071",
+    "stage": "play",
+    "duration": 4.5,
+    "text": "A useful opponent, Gramps. Let us see what can be taken from them.",
+    "fingerprint": "fb20a24d8789cb89bb2b91b708cee2c8640e8bed82bf1e52d20e678a7b8b276c",
+    "audioSha256": "7abc04b0a0751d5329dcf1814c1478486039caf8ef69e3055eb59a3bfaab71e2"
+  },
+  "10-entrance": {
+    "chapter": 10,
+    "bossId": "c084",
+    "stage": "entrance",
+    "duration": 11.36,
+    "text": "You measure greatness by the beings you can command. I have ruled by strength. Sit across from me, Rick Gramps. Let us discover whether either of us understands power.",
+    "fingerprint": "798bec98beb09bc484058b14274857fbae5d1f39cc3e36922bd286b7da2f6b5e",
+    "audioSha256": "0154b11064877c976fd24bda8db0ce98c13e5934f1169c18f3c8bfadcb233334"
+  },
+  "10-defeat": {
+    "chapter": 10,
+    "bossId": "c084",
+    "stage": "defeat",
+    "duration": 11.44,
+    "text": "You have shown me something I did not know. I accept your command, Gramps. My kingdom's strength will join your collection. Use it for more than your boredom.",
+    "fingerprint": "8b85c0dbed0b04569f3c387d3f2496c5b3a1b25300626726ccf80534d2855b4d",
+    "audioSha256": "d6207649f4fa09112bc4f4584a42b7886499acbe43c63a2f7bb1303f36484213"
+  },
+  "10-loss": {
+    "chapter": 10,
+    "bossId": "c084",
+    "stage": "loss",
+    "duration": 9.8,
+    "text": "The contest is decided. You gathered strength without understanding its purpose. Consider your defeat carefully, Gramps. It may yet teach you something.",
+    "fingerprint": "c3947bc380b99f24fc924500ba8b06ce33eb34481ace170bf239c0702827f9cd",
+    "audioSha256": "096e7f30be049fcf3c5dbb3df05187eecfa6f44885f3ea4fd9779cb13aa47d05"
+  },
+  "10-play": {
+    "chapter": 10,
+    "bossId": "c084",
+    "stage": "play",
+    "duration": 4.5,
+    "text": "I see the shape of this contest, Gramps. Allow me to change it.",
+    "fingerprint": "2d55667f86eb8fae3a3e7595381094ba00c8bd67ea7daccc08d4a6a10bdb8511",
+    "audioSha256": "cbece12eab63f8d69d8af6bf76e784d35a3bcef58fbb12d821458ee39b38cb9e"
+  },
+  "11-entrance": {
+    "chapter": 11,
+    "bossId": "c023",
+    "stage": "entrance",
+    "duration": 13.5,
+    "text": "You stand before the ruler of Nazarick. Your collection is impressive, Rick Gramps, but you have mistaken an audience for an invitation to conquer. I shall correct that error.",
+    "fingerprint": "b6f994180581a1e0e587483fdf2509a7e90b4705b17b4e578f0e91a4bff73d12",
+    "audioSha256": "7d1d39f5e6b11ba0c4b5926746b1dc728b418db5e412d361ad0a4938e5882d83"
+  },
+  "11-defeat": {
+    "chapter": 11,
+    "bossId": "c023",
+    "stage": "defeat",
+    "duration": 14.5,
+    "text": "A most... unexpected demonstration. The wise ruler recognises when an alliance is necessary. Nazarick will serve your campaign, Gramps. I trust you appreciate the magnitude of this concession.",
+    "fingerprint": "4ba3f55591d7a7b1d6c8cd2675e702d01ac8378ff6cc71cfcfb140e1d51dc6eb",
+    "audioSha256": "8627faf24a8aaaa789583b9caaa719bea10a104d68a9f010903b9ff1768bf8d0"
+  },
+  "11-loss": {
+    "chapter": 11,
+    "bossId": "c023",
+    "stage": "loss",
+    "duration": 11.0,
+    "text": "Precisely as planned. Nazarick remains beyond your reach, Gramps. You may withdraw with your surviving dignity. I recommend leaving promptly.",
+    "fingerprint": "04fb08c5f67aa1c623b071713755739861910c35f847aaceacc753d154636680",
+    "audioSha256": "8b38ab6ef6373792438601a1e4b8d27d67784172c4e78c196ef5711d0820d5a8"
+  },
+  "11-play": {
+    "chapter": 11,
+    "bossId": "c023",
+    "stage": "play",
+    "duration": 5.92,
+    "text": "Your summon was well judged, Gramps. Naturally, I have anticipated everything.",
+    "fingerprint": "2615e6f87e9c990dd44ad84250b912c0c394bac14063e0c64f608dab10b09f20",
+    "audioSha256": "fda6cc6d05e0c71ccc17d6bef5d46b43ebd8254848e8e6b1e5f9943466ec1cba"
+  },
+  "12-entrance": {
+    "chapter": 12,
+    "bossId": "c037",
+    "stage": "entrance",
+    "duration": 15.0,
+    "text": "I see the hunger behind your amusement, collector. World after world, bent to your desire. Come into my sight, Rick Gramps. Let us see whose will endures.",
+    "fingerprint": "4c08a733b7dd0024a5199de30b81ddc5b5558f97cf4632c41d2fa4b6cb4d6f42",
+    "audioSha256": "811c6a2535555a9291e3f60bf3988dffcf81eb1c3c72d817634a03ec99512762"
+  },
+  "12-defeat": {
+    "chapter": 12,
+    "bossId": "c037",
+    "stage": "defeat",
+    "duration": 10.9,
+    "text": "Your will has pierced the shadow. My gaze will turn upon your enemies. Command, Gramps, and they will find no place beyond the reach of your collection.",
+    "fingerprint": "5ab2db0cce819a1df6670fc1df276b792316ecc6abcdc1b7700caf285bbba51d",
+    "audioSha256": "76c1e7f2464ee72b9b844f8ca6e6d4024f662a33e745837cb70c1a74e97b921d"
+  },
+  "12-loss": {
+    "chapter": 12,
+    "bossId": "c037",
+    "stage": "loss",
+    "duration": 10.7,
+    "text": "Your will has broken beneath my gaze. Gather your scattered champions, Gramps. Even across worlds, you cannot hide your fear from me.",
+    "fingerprint": "0e550f21c48a93b167bf7285ec4950def68b505cdecd5f5d1b80176d4eee97a1",
+    "audioSha256": "94c80f1195c2c7bc6da66e8132db0ce93fdb8b4a0ff3203d132daa6b7355eab4"
+  },
+  "12-play": {
+    "chapter": 12,
+    "bossId": "c037",
+    "stage": "play",
+    "duration": 5.565,
+    "text": "I see them, Gramps. Their courage is already beginning to fail.",
+    "fingerprint": "8df61a1290e1e06e8fdeb688c3ab7d718395a4c089e6073087f8b2c6764b58fd",
+    "audioSha256": "b3d2f1af5e96cceb11a42d9507baa2905a3ad02fa300dec2b238a5998aa56dcd"
+  },
+  "13-entrance": {
+    "chapter": 13,
+    "bossId": "c058",
+    "stage": "entrance",
+    "duration": 10.72,
+    "text": "So you are the old man gathering monsters! I like the ambition. Bring them all, Gramps. If your collection can survive me, perhaps it deserves another monster.",
+    "fingerprint": "23d580245ac08278994e39c990a757d33912c055a88c65282ae4419ddf99da8e",
+    "audioSha256": "081ea425170b4ac080bd2feb277aa53184634c200e732a7f00f8b42686020114"
+  },
+  "13-defeat": {
+    "chapter": 13,
+    "bossId": "c058",
+    "stage": "defeat",
+    "duration": 9.28,
+    "text": "Now that was a battle! You beat me, old man. I will sail under your banner. Just do not start collecting weaklings. It would ruin the company.",
+    "fingerprint": "96d8fa1cbed417b11aa81ecc8b4d3df98da9bca5f0250c5b3028299908331abf",
+    "audioSha256": "92788ee1bfa15cb5edffd811666d031254dc8a6f006c79d282d0e25f214ba5f5"
+  },
+  "13-loss": {
+    "chapter": 13,
+    "bossId": "c058",
+    "stage": "loss",
+    "duration": 6.0,
+    "text": "That is it? Come on, Gramps! I thought you were collecting monsters! Go find a few more, then bring me a proper war!",
+    "fingerprint": "8bf89904cd95556a1cab4aaed3ac1cfc96e7fbe9af64a4f28c3c0b35b55b08de",
+    "audioSha256": "4722cb8321e48f7e07c4815ac58433ecec9454105ac68bd65de35a71f60dde8e"
+  },
+  "13-play": {
+    "chapter": 13,
+    "bossId": "c058",
+    "stage": "play",
+    "duration": 3.92,
+    "text": "Another war, Gramps? Finally. I was getting thirsty.",
+    "fingerprint": "f767b2e992e2153408ba9c5df6612e5326b37018a8b22d3de1366900d1f212da",
+    "audioSha256": "2449c9d561881476402967639b721e74bcf0548b55a3e4c2dea71e42395ffa8c"
+  },
+  "14-entrance": {
+    "chapter": 14,
+    "bossId": "c019",
+    "stage": "entrance",
+    "duration": 11.7,
+    "text": "A collector? How quaint. You have mistaken a handful of curiosities for a treasury. Approach, Rick Gramps. I will show you what it means to possess greatness.",
+    "fingerprint": "86f853b27324c6d969ce98f2a939505e63e1bb887f1b23263c26921ecf9adbf9",
+    "audioSha256": "1d819217125158fae096bc3021e76a6cd05ec3f7e3feb452c737b2f31cac2622"
+  },
+  "14-defeat": {
+    "chapter": 14,
+    "bossId": "c019",
+    "stage": "defeat",
+    "duration": 13.0,
+    "text": "You have earned the king's attention... and his service. My treasury will answer your call, Gramps. Treat the privilege with the dignity your wardrobe lacks.",
+    "fingerprint": "a0ab86fdfa34c210581e4467d1cb16b5a12415669ef0f51cb112fbc2073e5c29",
+    "audioSha256": "b8f5f542180c5fc20b0fd36eccfcf52faeb8b548d1934d63a492ddb4aa3aacc1"
+  },
+  "14-loss": {
+    "chapter": 14,
+    "bossId": "c019",
+    "stage": "loss",
+    "duration": 10.0,
+    "text": "You have seen a true treasury, collector. Take your little curiosities and leave. I may permit another audience when you acquire some taste.",
+    "fingerprint": "6076ae411da54027c542eca678505bf8948ce43e263b65a5bd4bf971d43c30ff",
+    "audioSha256": "7d4d57b7e165c9978810ebfa1910de1b492c7b738bef5222961fd3df51df24c0"
+  },
+  "14-play": {
+    "chapter": 14,
+    "bossId": "c019",
+    "stage": "play",
+    "duration": 5.6,
+    "text": "You may admire the treasury later, Gramps. For now, watch your enemies learn their place.",
+    "fingerprint": "dcbf238b6b34514ae78ac080af8d0cc32614ae5ed3da4fea0456e45ff876ce94",
+    "audioSha256": "7e2bcc0ce4d760b0cf764686f6c14dca5c466d4550ffcb1a5acf770a2fe5b82e"
+  },
+  "15-entrance": {
+    "chapter": 15,
+    "bossId": "c022",
+    "stage": "entrance",
+    "duration": 9.2,
+    "text": "Rick Gramps! Nice collection. Bold choice, trying to add me to it. Go on, take your best shot. I would hate for this to be boring for both of us.",
+    "fingerprint": "d709ac3d9e7e3cc16eda2f6b141b280e3dcfbe217c1a6b4a2ed4fcb94938d936",
+    "audioSha256": "0897f9e3a7f9bc2b5efe74328f98af8d3def76c8ff38d8f0fb4477d16aca241a"
+  },
+  "15-defeat": {
+    "chapter": 15,
+    "bossId": "c022",
+    "stage": "defeat",
+    "duration": 9.1,
+    "text": "Okay. That actually got through. You win, Gramps. I am in. Someone has to keep this collection looking good, and you clearly need the help.",
+    "fingerprint": "c9cbd1aa9a07a5e7e9c8428c5b36f706de75ca2d2275f6e26145cc4cbbf2c123",
+    "audioSha256": "60739b370b87b1c496c616da93474ad1c9438a2be63930f4b8266403071cf7e7"
+  },
+  "15-loss": {
+    "chapter": 15,
+    "bossId": "c022",
+    "stage": "loss",
+    "duration": 10.32,
+    "text": "Aw, already? You had a few good ideas, Gramps. They just needed to get past me. Try again. I am happy to give you another lesson.",
+    "fingerprint": "28fe2696291d4b4299965110461f214655885c2b3449ae54c805539f26dddd90",
+    "audioSha256": "bba1a7f3ee2026b6a35ef75011f42f96c8c51fec79a6d8419d7f9a0980c91cf1"
+  },
+  "15-play": {
+    "chapter": 15,
+    "bossId": "c022",
+    "stage": "play",
+    "duration": 4.4,
+    "text": "Hey, Gramps. Want the quick solution or the embarrassing one?",
+    "fingerprint": "f65432bbf7029bd909fa700c8cb8399512e7aacf28ac46d743ba069a902da051",
+    "audioSha256": "d9416bea46f1842d36acd2651dfd97870cf42aa95c73627ffa41ab7d85a678f6"
+  },
+  "16-entrance": {
+    "chapter": 16,
+    "bossId": "c097",
+    "stage": "entrance",
+    "duration": 13.7,
+    "text": "Small wanderer between worlds. You reach for stars and name them possessions. Step into the golden silence, Rick Gramps. Let your will be weighed against eternity.",
+    "fingerprint": "856058a653cfd9fe21acc8e696f2ca66dfa28b2c2ae0d0d08e680ae341653059",
+    "audioSha256": "59d9f40e9940ffda3a88db4c278ee01a88d856e79f9096b9ee7b7d30d3e0cc35"
+  },
+  "16-defeat": {
+    "chapter": 16,
+    "bossId": "c097",
+    "stage": "defeat",
+    "duration": 12.7,
+    "text": "Your will has crossed the golden silence. The stars bend toward your command. Carry this light into the worlds ahead, Gramps. Eternity will walk within your collection.",
+    "fingerprint": "6ede854cc01c9eba420d668531d5d7ca8576f56145357f4cf480c59ff345e1c6",
+    "audioSha256": "95b12613fda2eeeafb1fb2ac91b38b1e12667fb1b1e3f2a499c3cb8156765234"
+  },
+  "16-loss": {
+    "chapter": 16,
+    "bossId": "c097",
+    "stage": "loss",
+    "duration": 10.125,
+    "text": "Your light fades at the edge of eternity. Return to your small worlds, wanderer. The stars remain beyond your grasp.",
+    "fingerprint": "dcb0251dfa6f3785f29dd132ca315dff903c705acb7ac87e71590bdab9733ff5",
+    "audioSha256": "6d52405bd844aec0cd450484297b7ea29a239e0b2d080216ba4d0c024b7a97be"
+  },
+  "16-play": {
+    "chapter": 16,
+    "bossId": "c097",
+    "stage": "play",
+    "duration": 8.6,
+    "text": "Your call reaches the stars, Gramps. Their light answers.",
+    "fingerprint": "bbc6374925631db532fbcbf22e09a56a1508174509c964276a7d8366fd8abd4d",
+    "audioSha256": "65025017e56bfad824240c1523609ec9f3fa0c4510533c666762f5b8eae54b96"
+  },
+  "17-entrance": {
+    "chapter": 17,
+    "bossId": "c051",
+    "stage": "entrance",
+    "duration": 11.6,
+    "text": "You travelled the universes because you were bored? Then we understand each other. Show me everything, Rick Gramps. I have waited far too long for a worthy battle.",
+    "fingerprint": "db65a10921ddf63807036765cc94c9313b959896b570162582908ebdb385c333",
+    "audioSha256": "2345929dccb3621c2e5759a72a644ea952a2c6799371fa84452a906a71e31cdb"
+  },
+  "17-defeat": {
+    "chapter": 17,
+    "bossId": "c051",
+    "stage": "defeat",
+    "duration": 12.2,
+    "text": "At last... a battle that demanded all of me. You have my loyalty, Gramps. Let me stand in your collection, and I will help you find something greater still.",
+    "fingerprint": "ac025e77aab9f79bc96b029ab276f99dfa3a6fc8888d6babb888e49dc13bc9fd",
+    "audioSha256": "a082fc8427737497d2b0f38fec09b33cdc20e292485065f49777907eb50de9c9"
+  },
+  "17-loss": {
+    "chapter": 17,
+    "bossId": "c051",
+    "stage": "loss",
+    "duration": 8.6,
+    "text": "You share my boredom, but not yet my strength. Grow your collection, Gramps. I would rather wait for a worthy battle than settle for this.",
+    "fingerprint": "f9b29e688a9fa6cc1b52463ca35fbc366a4349a2d6937452baceb6f0fa634ffe",
+    "audioSha256": "4cff39420bc3be6f8bd174297e495c80338aec1e7928d585c606a52642f27813"
+  },
+  "17-play": {
+    "chapter": 17,
+    "bossId": "c051",
+    "stage": "play",
+    "duration": 3.841,
+    "text": "A new challenger, Gramps. Let us hope they can make this interesting.",
+    "fingerprint": "d713e2fa78f7b106093b8806f737f66849e86176a30c6bd9dd2afa1ae53cd387",
+    "audioSha256": "7ade25b00ebe05bc414f667814b7850496f7f926bed025cc4b930346eaa2a405"
+  },
+  "18-entrance": {
+    "chapter": 18,
+    "bossId": "c027",
+    "stage": "entrance",
+    "duration": 11.6,
+    "text": "You gather power to escape boredom. I gathered it to reshape existence. There is a difference between a collection and a purpose, Rick Gramps. I will show you.",
+    "fingerprint": "1df1ebad2ca7ddf295d4f9566f3ca1fb3d8f75cbf5bf1ee283a861f1a1c71603",
+    "audioSha256": "57b7cfe49842b9223bdfcc0d6b1a8ecfac38d0b46e67ad2ff4181817e0ed6fdc"
+  },
+  "18-defeat": {
+    "chapter": 18,
+    "bossId": "c027",
+    "stage": "defeat",
+    "duration": 11.5,
+    "text": "You have the strength to impose your will across worlds. I acknowledge it. My power will serve your collection, Gramps. Perhaps purpose will find you along the way.",
+    "fingerprint": "d0d1974c52e18204da27a25ea5e9c211757b736717169d5e31bd13b27c7c716f",
+    "audioSha256": "b2d0fac9dfeafa6b39d65cdce7489670af1a07b47f24a2fd1b4bec131f468b0d"
+  },
+  "18-loss": {
+    "chapter": 18,
+    "bossId": "c027",
+    "stage": "loss",
+    "duration": 9.5,
+    "text": "Power without purpose has brought you here. Remember what it cost, Gramps. The universe will not yield because you need a new hobby.",
+    "fingerprint": "3b1ce748fc6aa79bf7b90ae85a3b4bf957f7c7d68b0d83b2ee1d9bb93dc83b00",
+    "audioSha256": "dce3205fb46b5a95eab2dc0c30f110805c2e3d01e742cdcdf415d477945a3417"
+  },
+  "18-play": {
+    "chapter": 18,
+    "bossId": "c027",
+    "stage": "play",
+    "duration": 4.64,
+    "text": "You have chosen your moment, Gramps. I will make it decisive.",
+    "fingerprint": "0e91f4547ad132fde5eed7061bec2a4b84f8c709f94ed082eaf33bec22e3093a",
+    "audioSha256": "cf3c39188fa918e5c20d842c928a733392bff6dc511901cb6ca467a40c368eb7"
+  },
+  "19-entrance": {
+    "chapter": 19,
+    "bossId": "c044",
+    "stage": "entrance",
+    "duration": 9.3,
+    "text": "So you are Rick Gramps! I heard you have been beating some incredible fighters. Forget the collection for a minute. Let us see how far we can push each other!",
+    "fingerprint": "24aef115bb2a2664466e638abd25789c351477a649328b4346bbda745c75a896",
+    "audioSha256": "b70481548e26479e47544026811cbd44b8fa6b8b08a14515c89d3ce9744cee84"
+  },
+  "19-defeat": {
+    "chapter": 19,
+    "bossId": "c044",
+    "stage": "defeat",
+    "duration": 10.1,
+    "text": "That was amazing! You really got me, Gramps. Sure, I will join your collection. Just promise we will keep finding stronger opponents. This is going to be fun!",
+    "fingerprint": "143b221ef7b211e1dda7dc904e83eb7d19feed475a25418a5388e3c232aac423",
+    "audioSha256": "cafb09b3e3545fdc65487d7b536e9597f0117ab4c567dbf52ef78f6179ad43a5"
+  },
+  "19-loss": {
+    "chapter": 19,
+    "bossId": "c044",
+    "stage": "loss",
+    "duration": 8.4,
+    "text": "That was fun, Gramps! You almost caught me with that last one. Take a breather, train your team, and come back. I want to see what you try next!",
+    "fingerprint": "b85f39b1fbc67c7d7d9e8098024f6c69e853ecb60acb1cc0fa512cf9f931c776",
+    "audioSha256": "bc810f990ca0dd7520ffa7daffcc542b0da54d6c13e378a88c3159dd2b2ffc9b"
+  },
+  "19-play": {
+    "chapter": 19,
+    "bossId": "c044",
+    "stage": "play",
+    "duration": 3.6,
+    "text": "Ready, Gramps! Let us give them a fight worth remembering.",
+    "fingerprint": "16333e6efd9bb1eec83b0aac5449c67f899fd3fc913486877255c8f94c7c2b8f",
+    "audioSha256": "0c825ecd8317b50d8671758624f56be49feb828fe244f23c813105f9ef766b5c"
+  },
+  "20-entrance": {
+    "chapter": 20,
+    "bossId": "c041",
+    "stage": "entrance",
+    "duration": 12.16,
+    "text": "WELL, LOOK WHO COLLECTED HIS WAY TO THE END OF REALITY! Cute arena, Gramps. Cute little army. Let us find out what happens when the final exhibit starts collecting YOU.",
+    "fingerprint": "36141bd0465155cce63ec7ef8ab940ee587b5d1dc5da072bfac1a3f2b59c4cce",
+    "audioSha256": "1176b728e4c9254a2c57f8b27bb650d654e4647437a360c580bc61f7989afd00"
+  },
+  "20-defeat": {
+    "chapter": 20,
+    "bossId": "c041",
+    "stage": "defeat",
+    "duration": 17.12,
+    "text": "YOU ACTUALLY DID IT. Every world, every champion, and now the triangle. Fine, Gramps. I will fight for your collection. But if eternity gets boring, remember whose idea this was.",
+    "fingerprint": "becaf713f7b36a3dddb7db9c67dbbc1e6577c4b84d65322312e00f0da4496ae9",
+    "audioSha256": "778515549b039693521c106f249914181b8bad58d62dd519a9a8b84b298a75f4"
+  },
+  "20-loss": {
+    "chapter": 20,
+    "bossId": "c041",
+    "stage": "loss",
+    "duration": 10.0,
+    "text": "OH, GRAMPS. YOU REACHED THE END OF REALITY AND FORGOT TO READ THE FINE PRINT! Pick up your little army. The final exhibit is still running the museum.",
+    "fingerprint": "977cbf78a93596c0d85c661e29432ee7360647308e4519731d25e23563535547",
+    "audioSha256": "a1d76a3fc0ade3efbd183977fa24e2efa870476d4b61f1f3379c6cba89b9ac53"
+  }
+}

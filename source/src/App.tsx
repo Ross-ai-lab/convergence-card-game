@@ -94,6 +94,7 @@ import { randomDeck, validateDeck } from "./decks";
 import { remainingDeckCount } from "./engine/draw-piles";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
 import { CampaignSpeech, CollectedBossSpeech, type SpeechCue } from "./screens/CampaignSpeech";
+import campaignVoiceManifest from "../data/campaign-voices.json";
 import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
@@ -119,6 +120,12 @@ type Selection =
   | null;
 
 const STAR_CHART_AXES = ["STR", "TUF", "WIL", "MAG", "INT", "AGI"] as const;
+
+function campaignVoiceDuration(key: string): number | undefined {
+  const entries = campaignVoiceManifest as Record<string, { duration?: unknown }>;
+  const entry = entries[key];
+  return typeof entry?.duration === "number" ? entry.duration : undefined;
+}
 
 function heroPowersForDuel(
   mode: GameMode,
@@ -640,6 +647,26 @@ export default function App() {
   useEffect(() => {
     if (screen !== "playing" || game.phase === "gameOver") setBossLines([]);
   }, [screen, game.phase]);
+
+  // One voice request owns the whole speech layer. Changing dialogue, closing
+  // an overlay, leaving the duel, or advancing the collected-boss queue cancels
+  // both the current source and any fetch/decode that is still pending.
+  useEffect(() => {
+    let key: string | null = null;
+    if (chapterSpeech?.stage === "entrance") {
+      key = `${String(chapterSpeech.mode.chapter).padStart(2, "0")}-entrance`;
+    } else if (defeatedChapter) {
+      key = `${String(defeatedChapter.chapter).padStart(2, "0")}-${progress.pendingBossSpeechOutcome === "loss" ? "loss" : "defeat"}`;
+    } else if (screen === "playing" && game.phase !== "gameOver" && bossLines[0]) {
+      key = bossLines[0].voiceKey;
+    }
+    if (!key) {
+      sfx.stopBossSpeech();
+      return;
+    }
+    const cancel = sfx.playBossSpeech(key);
+    return cancel;
+  }, [bossLines[0]?.id, chapterSpeech, defeatedChapter, game.phase, progress.pendingBossSpeechOutcome, screen]);
 
   useEffect(() => {
     if (screen !== "title" || overlay !== null) return;
@@ -1507,7 +1534,8 @@ export default function App() {
           const chapter = CAMPAIGN_CHAPTERS.find(entry => entry.bossId === event.cardId && entry.chapter <= progress.completedChapters);
           const boss = chapter ? library[chapter.bossId] : undefined;
           if (chapter && boss && isMinionCard(boss)) {
-            const cue = {id:fxId.current++,name:boss.name,art:boss.art,text:chapter.story.play,accent:campAccent(boss.camp)};
+            const voiceKey = `${String(chapter.chapter).padStart(2, "0")}-play`;
+            const cue = {id:fxId.current++,name:boss.name,art:boss.art,text:chapter.story.play,accent:campAccent(boss.camp),voiceKey,duration:campaignVoiceDuration(voiceKey)};
             setBossLines(lines => [...lines, cue]);
           }
         }

@@ -11,17 +11,6 @@
     "sha256": "34451e53bd979589345e7c1a160074b468a17f81737eb4faa959f7a68ee2c5e1"
   },
   {
-    "engine": "kokoro",
-    "name": "GLaDOS",
-    "chapter": 1,
-    "stage": "play",
-    "text": "Your assistant has arrived, Gramps. Try not to lower the average intelligence on this side of the arena.",
-    "file": "kokoro/01-glados.mp3",
-    "duration": 6.016,
-    "voice": "af_heart",
-    "sha256": "b2babd084375b1747e76e98696a26cd5d045dc67458a28ee55a3a483063e2603"
-  },
-  {
     "engine": "qwen",
     "name": "Darth Vader",
     "chapter": 6,
@@ -31,17 +20,6 @@
     "duration": 10.205,
     "voice": "Qwen3-TTS VoiceDesign",
     "sha256": "7dd6dbfb0fad49b22b2fba64e50dd99ab78dbb8486d7637e359eab6f7dce23a8"
-  },
-  {
-    "engine": "kokoro",
-    "name": "Darth Vader",
-    "chapter": 6,
-    "stage": "entrance",
-    "text": "Your machines have brought you far, Rick Gramps. They will not protect you here. Stand your ground. I will measure this power you claim to possess.",
-    "file": "kokoro/02-vader.mp3",
-    "duration": 9.237583,
-    "voice": "bm_george",
-    "sha256": "9991244f6be91d7377795e79e95dad6eef2f47eb673848d9e60eb1e1394e116c"
   },
   {
     "engine": "qwen",
@@ -55,17 +33,6 @@
     "sha256": "bda851cc9ee80d54f99d2c1214c834522c814ed1d42c9906977f9d717b5c996b"
   },
   {
-    "engine": "kokoro",
-    "name": "Goku",
-    "chapter": 19,
-    "stage": "defeat",
-    "text": "That was amazing! You really got me, Gramps. Sure, I will join your collection. Just promise we will keep finding stronger opponents. This is going to be fun!",
-    "file": "kokoro/03-goku.mp3",
-    "duration": 8.981333,
-    "voice": "am_puck",
-    "sha256": "a08729afa7ff9919ae3d138fe9dec6492aaa92b53606ff339635bf029757033d"
-  },
-  {
     "engine": "qwen",
     "name": "Bill Cipher",
     "chapter": 20,
@@ -75,27 +42,5 @@
     "duration": 9.92,
     "voice": "Qwen3-TTS VoiceDesign",
     "sha256": "0acacf42d2c70439f3b45f13ec827501059fd2eb1ec2a54bfcd328cfed3445b4"
-  },
-  {
-    "engine": "kokoro",
-    "name": "Bill Cipher",
-    "chapter": 20,
-    "stage": "loss",
-    "text": "OH, GRAMPS. YOU REACHED THE END OF REALITY AND FORGOT TO READ THE FINE PRINT! Pick up your little army. The final exhibit is still running the museum.",
-    "file": "kokoro/04-bill.mp3",
-    "duration": 8.008292,
-    "voice": "am_fenrir",
-    "sha256": "df47096f6bd5ad32fcc771eb53f36a14fc73340eae795a3b4eebd7331a8ddcf7"
-  },
-  {
-    "engine": "kokoro",
-    "name": "Tai Lung",
-    "chapter": 2,
-    "stage": "entrance",
-    "text": "You think greatness can be kept in a collection? I spent my life earning mine. Bring your little army, old man. I will show them what strength looks like.",
-    "file": "kokoro/05-tai-lung.mp3",
-    "duration": 9.407542,
-    "voice": "am_michael",
-    "sha256": "8abf4b69f6657f76e182cd3e9cd0042198ef157ae0de9207747b4aaa749963fa"
   }
 ]

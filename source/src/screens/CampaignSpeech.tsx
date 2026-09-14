@@ -22,6 +22,8 @@ export interface SpeechCue {
   art: string;
   text: string;
   accent: string;
+  voiceKey: string;
+  duration?: number;
 }
 
 export function CampaignSpeech({stage, chapter, name, text, art, accent, onContinue, onCancel}: {
@@ -71,7 +73,7 @@ export function CampaignSpeech({stage, chapter, name, text, art, accent, onConti
 export function CollectedBossSpeech({cue, onDone}: {cue: SpeechCue; onDone: () => void}) {
   const speech = useSpeechText(cue.text);
   useEffect(() => {
-    const timer = window.setTimeout(onDone, Math.max(5500, cue.text.length * 18 + 3500));
+    const timer = window.setTimeout(onDone, Math.max(5500, cue.text.length * 18 + 3500, (cue.duration ?? 0) * 1000 + 1200));
     return () => window.clearTimeout(timer);
   }, [cue.id, cue.text, onDone]);
   return <aside className="collected-boss-speech" role="status" data-boss-speech={cue.name} style={{"--speech-accent":cue.accent} as React.CSSProperties}>

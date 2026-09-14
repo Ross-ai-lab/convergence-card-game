@@ -102,10 +102,9 @@ const TRACK_URL: Record<Track | Cue, string[]> = {
   pack: [`${import.meta.env.BASE_URL}audio/music/pack.ogg`],
 };
 /**
- * Two faders. The per-card voice lines were retired -- summoning a minion fired
- * a rarity fanfare, a spoken line AND the card's music theme, and three at once
- * was noise. The clips are kept in
- * the local production library if they are ever wanted back.
+ * Two faders. Boss dialogue uses the effects bus, while card themes remain on
+ * the music bus. Ordinary cards never speak; the campaign has one line per
+ * boss moment and the line is ducked against both buses.
  *
  * Card themes count as MUSIC, so the music fader governs both the battle loop
  * and the stings; a player who turns music down does not want either.
@@ -127,6 +126,8 @@ const THEME_CACHE_LIMIT = 20;
  * mid-theme.
  */
 const THEME_DUCK_CEILING = 7.0;
+const BOSS_VOICE_CACHE_LIMIT = 16;
+const BOSS_VOICE_KEY = /^\d{2}-(?:entrance|defeat|loss|play)$/;
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -158,6 +159,14 @@ let cueGain: GainNode | null = null;
 let cueToken = 0;
 let openingCueBuffer: AudioBuffer | null = null;
 let openingCueMiss = false;
+const bossVoiceCache = new Map<string, AudioBuffer>();
+const bossVoiceMisses = new Set<string>();
+let bossVoiceSource: AudioBufferSourceNode | null = null;
+let bossVoiceGain: GainNode | null = null;
+let bossVoiceController: AbortController | null = null;
+let bossVoiceToken = 0;
+let bossVoiceKey: string | null = null;
+let bossVoiceDucked = false;
 
 function loadMix(): Mix {
   try {
@@ -191,6 +200,8 @@ const stats = {
    *  a clip that never reaches the bus is caught by the analyser probes. */
   themesPlayed: 0,
   lastTheme: "",
+  bossSpeechPlayed: 0,
+  bossSpeechCancelled: 0,
 };
 
 function loadMuted(): boolean {
@@ -444,11 +455,45 @@ function duck(amount: number, hold: number) {
   const t = ctx.currentTime;
   const g = musicGain.gain;
   const nominal = musicLevel();
+  const effectiveAmount = bossVoiceDucked ? Math.min(amount, 0.06) : amount;
   g.cancelScheduledValues(t);
   g.setValueAtTime(g.value, t);
-  g.linearRampToValueAtTime(nominal * amount, t + 0.05);
-  g.setValueAtTime(nominal * amount, t + hold);
-  g.linearRampToValueAtTime(nominal, t + hold + 0.7);
+  g.linearRampToValueAtTime(nominal * effectiveAmount, t + 0.05);
+  g.setValueAtTime(nominal * effectiveAmount, t + hold);
+  g.linearRampToValueAtTime(bossVoiceDucked ? nominal * 0.06 : nominal, t + hold + 0.7);
+}
+
+/** Hold both the score and any card theme under one campaign voice line. */
+function bossVoiceDuckHold(): void {
+  if (!ctx) return;
+  bossVoiceDucked = true;
+  const now = ctx.currentTime;
+  if (musicGain) {
+    musicGain.gain.cancelScheduledValues(now);
+    musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+    musicGain.gain.linearRampToValueAtTime(musicLevel() * 0.06, now + 0.08);
+  }
+  if (themeBus) {
+    themeBus.gain.cancelScheduledValues(now);
+    themeBus.gain.setValueAtTime(themeBus.gain.value, now);
+    themeBus.gain.linearRampToValueAtTime(mix.music * 0.06, now + 0.08);
+  }
+}
+
+function bossVoiceDuckRelease(): void {
+  if (!ctx || !bossVoiceDucked) return;
+  bossVoiceDucked = false;
+  const now = ctx.currentTime;
+  if (musicGain) {
+    musicGain.gain.cancelScheduledValues(now);
+    musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+    musicGain.gain.linearRampToValueAtTime(musicLevel(), now + 0.45);
+  }
+  if (themeBus) {
+    themeBus.gain.cancelScheduledValues(now);
+    themeBus.gain.setValueAtTime(themeBus.gain.value, now);
+    themeBus.gain.linearRampToValueAtTime(mix.music, now + 0.45);
+  }
 }
 
 // ----------------------------------------------------------------- the kit
@@ -1075,6 +1120,97 @@ export function playCardTheme(cardId: string, delay = 0): void {
   });
 }
 
+// ---------------------------------------------------------- campaign voices
+function campaignVoiceUrl(key: string): string {
+  return `${import.meta.env.BASE_URL}audio/campaign/${key}.ogg`;
+}
+
+function clearBossVoice(token: number): void {
+  if (token !== bossVoiceToken) return;
+  bossVoiceSource = null;
+  bossVoiceGain = null;
+  bossVoiceController = null;
+  bossVoiceKey = null;
+  bossVoiceDuckRelease();
+}
+
+/** Stop the one campaign line and cancel a still-pending fetch or decode. */
+export function stopBossSpeech(): void {
+  bossVoiceToken += 1;
+  bossVoiceController?.abort();
+  bossVoiceController = null;
+  const source = bossVoiceSource;
+  const gain = bossVoiceGain;
+  bossVoiceSource = null;
+  bossVoiceGain = null;
+  bossVoiceKey = null;
+  if (source) {
+    stats.bossSpeechCancelled += 1;
+    try { source.stop(); } catch { /* already ended */ }
+    try { source.disconnect(); gain?.disconnect(); } catch { /* already torn down */ }
+  }
+  bossVoiceDuckRelease();
+}
+
+/**
+ * Play one campaign boss line. The returned function cancels this request.
+ * Only one request/source is allowed to survive at a time.
+ */
+export function playBossSpeech(key: string): () => void {
+  const cancel = () => stopBossSpeech();
+  if (!BOSS_VOICE_KEY.test(key) || muted || mix.effects <= 0) return cancel;
+  unlock();
+  if (!ctx || !sfxBus) return cancel;
+  stopBossSpeech();
+  const token = bossVoiceToken + 1;
+  bossVoiceToken = token;
+  const controller = new AbortController();
+  bossVoiceController = controller;
+  void (async () => {
+    let buffer = bossVoiceCache.get(key) ?? null;
+    if (!buffer) {
+      if (bossVoiceMisses.has(key)) return;
+      try {
+        const response = await fetch(campaignVoiceUrl(key), { signal: controller.signal });
+        if (!response.ok) {
+          bossVoiceMisses.add(key);
+          console.warn(`[audio] missing campaign voice ${key}: HTTP ${response.status}`);
+          return;
+        }
+        buffer = await ctx!.decodeAudioData(await response.arrayBuffer());
+        if (bossVoiceCache.size >= BOSS_VOICE_CACHE_LIMIT) {
+          const oldest = bossVoiceCache.keys().next().value;
+          if (oldest !== undefined) bossVoiceCache.delete(oldest);
+        }
+        bossVoiceCache.set(key, buffer);
+      } catch (error) {
+        if (!controller.signal.aborted) console.warn(`[audio] campaign voice ${key} failed to load`, error);
+        return;
+      }
+    }
+    if (token !== bossVoiceToken || muted || mix.effects <= 0 || !ctx || !sfxBus || !buffer) return;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const gain = ctx.createGain();
+    gain.gain.value = 1.12;
+    source.connect(gain);
+    gain.connect(sfxBus);
+    bossVoiceSource = source;
+    bossVoiceGain = gain;
+    bossVoiceKey = key;
+    stats.bossSpeechPlayed += 1;
+    bossVoiceDuckHold();
+    source.addEventListener("ended", () => {
+      if (bossVoiceSource === source) {
+        try { source.disconnect(); gain.disconnect(); } catch { /* already torn down */ }
+        clearBossVoice(token);
+      }
+    });
+    source.start(ctx.currentTime);
+  })();
+  return cancel;
+}
+
 /**
  * The herald.
  *
@@ -1196,6 +1332,7 @@ export function setMuted(next: boolean): void {
   if (next) {
     stopCardTheme();
     stopCue();
+    stopBossSpeech();
     stopMusic();
   } else {
     unlock();
@@ -1218,6 +1355,9 @@ export function getStats() {
     musicPlaying: musicSource !== null,
     musicGainValue: musicGain ? +musicGain.gain.value.toFixed(4) : null,
     musicGainNominal: MUSIC_GAIN,
+    bossSpeechKey: bossVoiceKey,
+    bossSpeechPlayed: stats.bossSpeechPlayed,
+    bossSpeechCancelled: stats.bossSpeechCancelled,
   };
 }
 
@@ -1240,6 +1380,8 @@ export const sfx = {
   installUnlockListeners,
   summonSoundFor,
   playCardTheme,
+  playBossSpeech,
+  stopBossSpeech,
   playAnnouncer,
   playHeavyLand,
   playOpeningCue,
@@ -1317,6 +1459,17 @@ if (import.meta.env.DEV) {
       const r = await probe(() => playCardTheme(cardId), ms);
       setBusLevel("music", before);
       return { cardId, ...r };
+    },
+    /** A published Qwen boss line: fetch, decode, bus signal, and ducking. */
+    probeBossSpeech: async (key: string, ms = 5000) => {
+      stopMusic();
+      stopBossSpeech();
+      const before = getMix().effects;
+      setBusLevel("effects", 1);
+      const r = await probe(() => playBossSpeech(key), ms);
+      stopBossSpeech();
+      setBusLevel("effects", before);
+      return { key, ...r };
     },
     /**
      * Proves the CROSSFADE, which no other probe can see: every one of them

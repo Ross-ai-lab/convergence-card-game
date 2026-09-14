@@ -834,7 +834,7 @@ export function SettingsPanel({
 
   const faders: Array<{ bus: Bus; label: string; note: string; icon: typeof MusicNotes }> = [
     { bus: "music", label: "Music", note: "Score & card themes", icon: MusicNotes },
-    { bus: "effects", label: "Effects", note: "Impacts & fanfares", icon: Lightning },
+    { bus: "effects", label: "Effects", note: "Impacts, fanfares & boss voices", icon: Lightning },
   ];
 
   return (
