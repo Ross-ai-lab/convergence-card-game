@@ -1522,6 +1522,29 @@ button.duel-trigger:hover:not(:disabled) {
   color: #fff0bd;
 }
 
+.title-bottom-left {
+  position: absolute;
+  left: clamp(14px, 2.6vw, 38px);
+  bottom: clamp(18px, 3vh, 34px);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.title-bottom-left > * {
+  pointer-events: auto;
+}
+
+.title-bottom-left .title-player-count {
+  position: static;
+  right: auto;
+  bottom: auto;
+  left: auto;
+}
+
 .title-fullscreen-trigger {
   position: absolute;
   top: clamp(14px, 2.8vh, 30px);
@@ -1641,13 +1664,6 @@ button.duel-trigger:hover:not(:disabled) {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-variant-numeric: tabular-nums;
-}
-
-.title-actions .hotseat-trigger {
-  position: fixed;
-  left: 8%;
-  bottom: 8.5%;
-  z-index: 7;
 }
 
 .hero-power-trigger svg {
@@ -1854,15 +1870,14 @@ button.duel-trigger:hover:not(:disabled) {
     font-size: 9.5px;
   }
 
-  /* ABOVE the column of doors, not over it. At this width `.title-actions`
-     runs edge to edge, so a pill pinned 62px off the bottom-left corner lands
-     on top of whichever button happens to be there — Hero Powers, as it turned
-     out. The column's own height is what it has to clear, and the column has
-     five buttons at 42px with 8px gaps, so this offset is that plus the
-     column's own bottom inset and a gap. */
-  .title-player-count {
-    bottom: 274px;
+  .title-bottom-left {
     left: 12px;
+    right: 12px;
+    bottom: 12px;
+    gap: 8px;
+  }
+
+  .title-bottom-left .title-player-count {
     padding: 5px 8px;
     font-size: 9px;
   }

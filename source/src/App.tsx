@@ -3149,6 +3149,7 @@ export default function App() {
           library={library}
           tutorial={tutorialActive}
           campaign={mode.kind === "campaign"}
+          campaignLoss={mode.kind === "campaign" && typeof game.winner === "number" && game.winner !== viewerId}
           onRestart={tutorialActive ? beginTutorial : restart}
           onMenu={toTitle}
         />
@@ -6429,6 +6430,7 @@ function GameOver({
   library,
   tutorial = false,
   campaign = false,
+  campaignLoss = false,
   onRestart,
   onMenu,
 }: {
@@ -6437,6 +6439,7 @@ function GameOver({
   library: CardLibrary;
   tutorial?: boolean;
   campaign?: boolean;
+  campaignLoss?: boolean;
   onRestart: () => void;
   onMenu: () => void;
 }) {
@@ -6519,7 +6522,13 @@ function GameOver({
           </div>
         ) : null}
         <div className="gameover-buttons">
-          {winnerId !== null && !tutorial ? <button type="button" className="primary" onClick={campaign ? onRestart : onMenu}>Continue</button> : <><button type="button" className="primary" onClick={onRestart}>{tutorial ? "Play tutorial again" : "Rematch"}</button><button type="button" onClick={onMenu}>Menu</button></>}
+          {campaignLoss ? (
+            <><button type="button" className="primary" onClick={onRestart}>Rematch</button><button type="button" onClick={onMenu}>Return to menu</button></>
+          ) : winnerId !== null && !tutorial ? (
+            <button type="button" className="primary" onClick={campaign ? onRestart : onMenu}>Continue</button>
+          ) : (
+            <><button type="button" className="primary" onClick={onRestart}>{tutorial ? "Play tutorial again" : "Rematch"}</button><button type="button" onClick={onMenu}>Menu</button></>
+          )}
         </div>
       </section>
     </div>

@@ -333,17 +333,6 @@ export function TitleScreen({
 
         <div className="title-links title-actions">
           {campaignCleared && <button type="button" className="campaign-trigger" onClick={onCampaign}>Campaign</button>}
-          <button
-            type="button"
-            className="hotseat-trigger"
-            onClick={() => {
-              sfx.play("button");
-              setHotseatConfirmOpen(true);
-            }}
-          >
-            <UsersThree size={22} weight="fill" aria-hidden="true" />
-            <span>2 players</span>
-          </button>
           {/* The tally rides INSIDE this button, stacked under its label, so the
               door to the gallery and the count of what is behind it are one
               object. Deliberately faint: the full unlock rules live one click
@@ -419,7 +408,20 @@ export function TitleScreen({
             </button>
           </div>
         ) : null}
+      </div>
 
+      <div className="title-bottom-left">
+        <button
+          type="button"
+          className="hotseat-trigger"
+          onClick={() => {
+            sfx.play("button");
+            setHotseatConfirmOpen(true);
+          }}
+        >
+          <UsersThree size={22} weight="fill" aria-hidden="true" />
+          <span>2 players</span>
+        </button>
         {playerCount !== null ? (
           <p className="title-player-count"><b>{playerCount.toLocaleString()}</b> played this game</p>
         ) : null}
