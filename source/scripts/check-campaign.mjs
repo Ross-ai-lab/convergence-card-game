@@ -222,6 +222,9 @@ try {
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByRole('button', { name: 'Play chapter 2', exact: true }).click(); await board(); await finish('Enemy wins',true);
   await page.locator('[data-story-stage="loss"]').waitFor();
+  assert.equal(await page.locator('.gameover-buttons button').count(), 2, 'A campaign loss must offer rematch and menu');
+  assert(await page.getByRole('button', { name: 'Rematch', exact: true }).isVisible());
+  assert(await page.getByRole('button', { name: 'Return to menu', exact: true }).isVisible());
   await page.reload();await page.locator('[data-story-stage="loss"]').waitFor();
   await page.locator('.campaign-speech-text').click();await page.screenshot({path:'../.preview/campaign/boss-loss.png'});
   await skipCampaignDialogue(page);
