@@ -231,7 +231,6 @@ export function TitleScreen({
   developerCheatActive,
   onContinue,
   onStart,
-  onSettings,
   isFullscreen,
   onToggleFullscreen,
   onHeroPowers,
@@ -255,7 +254,6 @@ export function TitleScreen({
   developerCheatActive: boolean;
   onContinue: () => void;
   onStart: (mode: GameMode) => void;
-  onSettings: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   onHeroPowers: () => void;
@@ -371,10 +369,6 @@ export function TitleScreen({
           >
             <Lightning size={22} weight="fill" aria-hidden="true" />
             <span>Hero Powers</span>
-          </button>
-          <button type="button" className="settings-trigger" onClick={onSettings}>
-            <SpeakerHigh className="sound-icon" size={22} weight="fill" aria-hidden="true" />
-            <span>Sound</span>
           </button>
         </div>
 

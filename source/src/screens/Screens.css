@@ -1643,8 +1643,11 @@ button.duel-trigger:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
 }
 
-.settings-trigger {
-  position: static;
+.title-actions .hotseat-trigger {
+  position: fixed;
+  left: 8%;
+  bottom: 8.5%;
+  z-index: 7;
 }
 
 .hero-power-trigger svg {

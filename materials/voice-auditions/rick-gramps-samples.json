@@ -1,0 +1,32 @@
+[
+  {
+    "id": "A",
+    "file": "qwen/rick-gramps/rick-A.mp3",
+    "duration": 10.64,
+    "voice": "Older male light baritone, warm slightly raspy conversational voice, quick agile phrasing, mischievous intelligence, natural American diction; eccentric retired inventor."
+  },
+  {
+    "id": "B",
+    "file": "qwen/rick-gramps/rick-B.mp3",
+    "duration": 11.76,
+    "voice": "Older male gravelly mid-baritone, worn adventurer's texture, relaxed dry sarcasm, warm grandfatherly charm, loose confident cadence."
+  },
+  {
+    "id": "C",
+    "file": "qwen/rick-gramps/rick-C.mp3",
+    "duration": 11.68,
+    "voice": "Older male bright tenor-baritone, animated nasal edge, fast playful rhythm, excitable curiosity, mischievous friendly energy."
+  },
+  {
+    "id": "D",
+    "file": "qwen/rick-gramps/rick-D.mp3",
+    "duration": 10.64,
+    "voice": "Older male smooth mid-baritone, mellow resonant warmth, unhurried dry wit, intimate storyteller diction, calm self-assured cadence."
+  },
+  {
+    "id": "E",
+    "file": "qwen/rick-gramps/rick-E.mp3",
+    "duration": 11.2,
+    "voice": "Older male resonant baritone, weary but vivid chest voice, theatrical storyteller projection, sly humor, dramatic pauses and warm authority."
+  }
+]

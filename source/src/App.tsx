@@ -3207,7 +3207,6 @@ export default function App() {
           completedChapters={progress.completedChapters}
           onCampaign={() => setOverlay("campaign")}
           onDeck={() => openDeck()}
-          onSettings={() => setOverlay("settings")}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
           onHeroPowers={() => setOverlay("heroPowers")}
