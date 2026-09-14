@@ -25,13 +25,12 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
         const next = chapter.chapter === progress.completedChapters + 1;
         return <article key={chapter.chapter} className={`campaign-chapter${cleared ? " cleared" : ""}${next ? " next-chapter" : ""}${available ? "" : " locked"}`} data-chapter={chapter.chapter}>
           <img src={boss.art} alt={boss.name} loading="eager" />
-          <span className="chapter-number">{String(chapter.chapter).padStart(2,"0")}</span>
           <span className="campaign-eyebrow">Chapter {chapter.chapter} · {chapter.universe}</span><h3>{boss.name}</h3>
           {next ? <p className="chapter-reward-preview">{chapter.rewardCardIds.length} cards locked behind this boss</p> : null}
           {cleared ? <details open><summary>Rewards unlocked</summary>
             <p>{chapter.rewardCardIds.map((id) => cardById.get(id)?.name ?? id).join(" · ")}</p></details> : null}
           <button className="primary" disabled={!available || !valid} onClick={() => onPlay(chapter.chapter)}>
-            {!available ? "Locked" : cleared ? "Replay · no rewards" : `Play chapter ${chapter.chapter}`}</button>
+            {!available ? "Locked" : cleared ? "Replay" : `Play chapter ${chapter.chapter}`}</button>
         </article>;
       })}</div>
     </section>
