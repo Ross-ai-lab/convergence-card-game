@@ -4005,6 +4005,8 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
     };
   }, []);
 
+  const manaCurve = Array.from({length:10},(_,i)=>allEntries.filter(entry=>deckIds.has(entry.key) && entry.face.cost===i+1).length);
+  const manaPeak = Math.max(1,...manaCurve);
   return (
     <div
       className={`screen-veil gallery-veil${selectedEntry || help ? " has-detail" : ""}`}
@@ -4085,8 +4087,8 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
                   entryKey={entry.key}
                   onOpen={openEntry}
                   inDeck={deckIds.has(entry.key)}
-                  canAdd={!readOnly && !deckIds.has(entry.key) && deck.length < 30 && collection.unlocked.has(entry.key)}
-                  onAdd={() => onChange([...deck, entry.key])}
+                  canAdd={!readOnly && (deckIds.has(entry.key) || deck.length < 30) && collection.unlocked.has(entry.key)}
+                  onAdd={() => onChange(deckIds.has(entry.key) ? deck.filter(id => id !== entry.key) : [...deck, entry.key])}
                   mark={
                     collection.wonWith.has(entry.key)
                       ? "won"
@@ -4119,10 +4121,10 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
                 aria-label={`Remove ${entry.face.name} from deck`} title={`Remove ${entry.face.name}`}>−</button>
             </div>)}</div>
           <footer className="gallery-deck-footer">
-            <details><summary>Mana curve</summary><div className="gallery-deck-curve" aria-label="Deck mana curve">{Array.from({ length: 10 }, (_, i) => {
-              const count = allEntries.filter((entry) => deckIds.has(entry.key) && entry.face.cost === i + 1).length;
-              return <div key={i}><span style={{ height: `${Math.max(2, count * 6)}px` }}>{count}</span><small>{i + 1}</small></div>;
-            })}</div></details>
+            <div className="gallery-mana-summary"><span className="gallery-mana-title">Mana curve</span><div className="gallery-deck-curve" aria-label="Deck mana curve">{Array.from({ length: 10 }, (_, i) => {
+              const count = manaCurve[i];
+              return <div key={i}><span data-count={count} style={{ height: `${Math.max(2, count / manaPeak * 24)}px` }}>{count}</span><small>{i + 1}</small></div>;
+            })}</div></div>
             {!readOnly && <button onClick={() => onChange([...CAMPAIGN_STARTER_DECK])}>Restore starter</button>}
             {readOnly && <small>Starter deck · 30 cards</small>}
           </footer>
@@ -4447,7 +4449,7 @@ const GalleryCell = memo(function GalleryCell({
       data-mark={mark}
     >
       {near ? locked ? <SealedFace card={face} /> : <CardFace card={face} /> : null}
-      <button type="button" className="gallery-card-add" aria-label={`Add ${face.name}`} aria-pressed={inDeck}
+      <button type="button" className="gallery-card-add" aria-label={`${inDeck ? "Remove" : "Add"} ${face.name}`} aria-pressed={inDeck}
         disabled={!canAdd} onClick={onAdd} />
       <button type="button" className="gallery-card-name" aria-label={`Open Star Chart for ${face.name}`}
         title={`Open ${face.name} lore`} onClick={() => onOpen(entryKey)} />

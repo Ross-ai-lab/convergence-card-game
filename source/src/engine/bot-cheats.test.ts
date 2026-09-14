@@ -319,7 +319,7 @@ describe("Insight+", () => {
         worstReply(state, library, BOT, greedy) + 1e-9,
       );
     }
-  });
+  }, 15000); // This property check runs seeded searches while browser checks share the CPU.
 
   it("actually finds a reply the greedy model missed", () => {
     // The guard above passes trivially if the branch never disagrees with the

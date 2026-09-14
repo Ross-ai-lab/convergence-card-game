@@ -1,0 +1,225 @@
+{
+  "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+  "cast": {
+    "1": {
+      "name": "GLaDOS",
+      "voice": "Adult female contralto, precise cool American diction, smooth synthetic clarity, dry sardonic humour, measured clipped phrasing. A calculating laboratory AI.",
+      "direction": {
+        "entrance": "icy amused threat",
+        "defeat": "reluctant clipped respect with irritation",
+        "loss": "smug deadpan condescension",
+        "play": "dry sarcastic assistance"
+      },
+      "seed": 4201
+    },
+    "2": {
+      "name": "Tai Lung",
+      "voice": "Mature male baritone, textured low growl, disciplined martial artist, crisp forceful consonants, strong controlled breath.",
+      "direction": {
+        "entrance": "wounded pride and threatening confidence",
+        "defeat": "exhausted proud acceptance",
+        "loss": "stern disdain and dismissive confidence",
+        "play": "impatient focused aggression"
+      },
+      "seed": 4202
+    },
+    "3": {
+      "name": "Yujiro",
+      "voice": "Middle-aged male bass-baritone, gravelly powerful chest resonance, predatory amusement, relaxed intimidating confidence.",
+      "direction": {
+        "entrance": "amused challenge with a dangerous grin",
+        "defeat": "satisfied respect after a worthy struggle",
+        "loss": "mocking disappointment",
+        "play": "eager rough amusement"
+      },
+      "seed": 4203
+    },
+    "4": {
+      "name": "Light Yagami",
+      "voice": "Young adult male, clear refined mid-low pitch, analytical, controlled and articulate, polished calm diction.",
+      "direction": {
+        "entrance": "polite calculating menace",
+        "defeat": "restrained disbelief giving way to strategic compliance",
+        "loss": "cold triumphant certainty",
+        "play": "quiet conspiratorial confidence"
+      },
+      "seed": 4204
+    },
+    "5": {
+      "name": "Lord Voldemort",
+      "voice": "Older male, thin breathy high baritone, sibilant incisive diction, elegant British accent, chilling intimate menace.",
+      "direction": {
+        "entrance": "silken contempt and threat",
+        "defeat": "bitter restrained submission",
+        "loss": "quiet cruel satisfaction",
+        "play": "sinister restrained promise"
+      },
+      "seed": 4205
+    },
+    "6": {
+      "name": "Darth Vader",
+      "voice": "Mature male deep resonant bass, slow deliberate cadence, commanding chest voice, crisp authoritative diction and subtle enclosed metallic colour.",
+      "direction": {
+        "entrance": "grave controlled threat",
+        "defeat": "solemn authoritative respect",
+        "loss": "stern disappointed judgment",
+        "play": "clipped disciplined obedience"
+      },
+      "seed": 4206
+    },
+    "7": {
+      "name": "Conquest",
+      "voice": "Older male very rough gravelly bass-baritone, battle-worn chest voice, brutal jovial relish, growling chuckle in the delivery.",
+      "direction": {
+        "entrance": "delighted anticipation of violence",
+        "defeat": "breathless satisfied respect",
+        "loss": "taunting disappointment",
+        "play": "hungry impatient enthusiasm"
+      },
+      "seed": 4207
+    },
+    "8": {
+      "name": "Dio Brando",
+      "voice": "Adult male rich theatrical baritone, flamboyant and arrogant, expansive musical intonation, sharply stressed declarations.",
+      "direction": {
+        "entrance": "grandiose delighted self-importance",
+        "defeat": "wounded theatrical pride",
+        "loss": "gloating triumphant grandeur",
+        "play": "flamboyant showmanship"
+      },
+      "seed": 4208
+    },
+    "9": {
+      "name": "All for One",
+      "voice": "Older male velvety bass-baritone, smooth courteous measured diction, manipulative genial calm with cold undertone.",
+      "direction": {
+        "entrance": "charmingly predatory curiosity",
+        "defeat": "composed calculating concession",
+        "loss": "smug instructive superiority",
+        "play": "quiet acquisitive delight"
+      },
+      "seed": 4209
+    },
+    "10": {
+      "name": "Meruem",
+      "voice": "Young adult male low baritone, regal composed resonant voice, unhurried analytical cadence, clear elegant diction.",
+      "direction": {
+        "entrance": "philosophical commanding curiosity",
+        "defeat": "solemn thoughtful respect",
+        "loss": "calm decisive judgment",
+        "play": "focused strategic confidence"
+      },
+      "seed": 4210
+    },
+    "11": {
+      "name": "Ainz Ooal Gown",
+      "voice": "Mature male cavernous bass, ceremonial precise British diction, regal deliberate phrasing, subtle hesitant pauses beneath imposing authority.",
+      "direction": {
+        "entrance": "imperious formal warning",
+        "defeat": "carefully concealed surprise and dignified reluctant agreement",
+        "loss": "pompous satisfied certainty",
+        "play": "grand formal assurance"
+      },
+      "seed": 4211
+    },
+    "12": {
+      "name": "Eye of Sauron",
+      "voice": "Ancient male dark low bass, resonant and weighty, deliberate supernatural pronouncements, clear consonants despite ominous depth.",
+      "direction": {
+        "entrance": "cosmic oppressive menace",
+        "defeat": "grave reluctant recognition",
+        "loss": "cold crushing triumph",
+        "play": "quiet ominous certainty"
+      },
+      "seed": 4212
+    },
+    "13": {
+      "name": "Kaido",
+      "voice": "Mature male booming rough bass, hearty chest resonance, gruff open vowels, raucous jovial warrior personality.",
+      "direction": {
+        "entrance": "boisterous welcoming challenge",
+        "defeat": "exuberant battle-drunk respect",
+        "loss": "loud impatient disappointment",
+        "play": "eager gruff amusement"
+      },
+      "seed": 4213
+    },
+    "14": {
+      "name": "Gilgamesh",
+      "voice": "Adult male golden resonant baritone, cultivated aristocratic precision, elegant contempt, commanding regal confidence.",
+      "direction": {
+        "entrance": "haughty dismissive superiority",
+        "defeat": "offended pride granting an honour",
+        "loss": "contemptuous leisurely victory",
+        "play": "imperious disdain"
+      },
+      "seed": 4214
+    },
+    "15": {
+      "name": "Gojo",
+      "voice": "Young adult male bright smooth midrange, relaxed airy confidence, playful modern conversational delivery, smiling lightly teasing cadence.",
+      "direction": {
+        "entrance": "cheeky carefree challenge",
+        "defeat": "genuinely surprised then playfully impressed",
+        "loss": "friendly smug teasing",
+        "play": "mischievous easy confidence"
+      },
+      "seed": 4215
+    },
+    "16": {
+      "name": "Elden Beast",
+      "voice": "Androgynous mature low register, ethereal smooth resonant voice, serene ceremonial cadence, long flowing vowels with clear words.",
+      "direction": {
+        "entrance": "solemn distant cosmic authority",
+        "defeat": "serene reverent acknowledgment",
+        "loss": "quiet timeless judgment",
+        "play": "gentle majestic assurance"
+      },
+      "seed": 4216
+    },
+    "17": {
+      "name": "Boros",
+      "voice": "Adult male resonant rough baritone, noble powerful warrior, restrained intensity, direct clear diction and longing beneath confidence.",
+      "direction": {
+        "entrance": "eager intense hope for a worthy rival",
+        "defeat": "exhausted grateful awe",
+        "loss": "disappointed dignified patience",
+        "play": "restrained renewed anticipation"
+      },
+      "seed": 4217
+    },
+    "18": {
+      "name": "Thanos",
+      "voice": "Mature male deep warm textured bass, deliberate philosophical cadence, grave dignified authority, calm resonant statements.",
+      "direction": {
+        "entrance": "patient implacable conviction",
+        "defeat": "measured reluctant respect",
+        "loss": "solemn assured judgment",
+        "play": "quiet decisive confidence"
+      },
+      "seed": 4218
+    },
+    "19": {
+      "name": "Mastered Ultra Instinct Goku",
+      "voice": "Young adult male energetic bright tenor, friendly open American diction, warm innocent enthusiasm, athletic confident delivery.",
+      "direction": {
+        "entrance": "excited friendly invitation",
+        "defeat": "joyful breathless admiration",
+        "loss": "warm encouraging good sportsmanship",
+        "play": "bright eager determination"
+      },
+      "seed": 4219
+    },
+    "20": {
+      "name": "Bill Cipher",
+      "voice": "Male animated high-mid nasal register, buzzy slightly gravelly cartoon showman, fast elastic rhythm, gleeful theatrical menace, clear intelligible words.",
+      "direction": {
+        "entrance": "wild gleeful threatening showmanship",
+        "defeat": "startled indignation then sardonic grudging agreement",
+        "loss": "manic taunting triumph",
+        "play": "mischievous explosive enthusiasm"
+      },
+      "seed": 4220
+    }
+  }
+}

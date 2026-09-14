@@ -5166,7 +5166,7 @@ button:disabled {
 .gallery-cell .gallery-card-add:disabled { cursor: var(--convergence-cursor); }
 .gallery-cell .gallery-card-name { left: 5%; top: 0; width: 82%; height: 6%; z-index: 5; cursor: var(--convergence-cursor); }
 .gallery-cell .gallery-card-add:not(:disabled):hover { box-shadow: inset 0 0 0 2px #e7c67c; }
-.gallery-cell.is-in-deck .gallery-card-add { box-shadow: inset 0 0 0 3px #55dc83; }
+.gallery-cell.is-in-deck .gallery-card-add, .gallery-cell.is-in-deck .gallery-card-add:hover { box-shadow: inset 0 0 0 3px #55dc83; }
 .gallery-cell .gallery-card-name:hover { background: #ffdc7b22; }
 .gallery-cell .gallery-card-add:focus-visible, .gallery-cell .gallery-card-name:focus-visible { outline: 2px solid #ffe5a2; outline-offset: -3px; }
 .gallery-deck { min-height: 0; display: flex; flex-direction: column; background: linear-gradient(160deg, #261e18, #120f12 70%); border-left: 1px solid #74603b; padding: 14px 10px 10px; }
@@ -7168,3 +7168,8 @@ button:disabled {
 }
 
 .gallery-equipped{display:flex;align-items:center;gap:7px;white-space:nowrap;color:#dfcfaa;font-size:12px;cursor:var(--convergence-cursor)}.gallery-equipped input{accent-color:#cba455;width:16px;height:16px;margin:0}.gallery-panel .gallery-search{min-width:170px}@media(max-width:1300px){.gallery-equipped{order:3}.gallery-panel .screen-panel-top{flex-wrap:wrap}}
+
+@media(min-width:901px){.gallery-equipped{margin-left:auto}.gallery-panel .gallery-search{margin-left:0}}
+.gallery-mana-summary{width:100%}.gallery-mana-title{display:block;font-size:10px;letter-spacing:.06em;color:#c3aa74}.gallery-deck-curve{height:48px;padding:3px 0;gap:4px}.gallery-deck-curve span{max-height:28px;min-height:12px;font-size:9px}.gallery-deck-curve small{font-size:9px;margin-top:2px}.gallery-deck-footer{gap:5px;padding-top:7px}
+
+.gallery-deck-curve{height:52px;padding:8px 0 0}.gallery-deck-curve span{position:relative;min-height:2px;max-height:24px;font-size:0;line-height:0}.gallery-deck-curve span::before{content:attr(data-count);position:absolute;left:0;right:0;bottom:calc(100% + 2px);font-size:9px;line-height:10px;color:#f1deab}

@@ -59,6 +59,8 @@ try {
   await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).getByRole('button', { name: 'Close', exact: true }).click();
   await page.locator('.duel-trigger').click();
   assert.equal(await page.locator('.campaign-chapter button:not([disabled])').count(), 1);
+  const desktopMap=await page.locator('.campaign-chapters').evaluate(el=>({height:el.clientHeight,content:el.scrollHeight}));
+  assert(desktopMap.content<=desktopMap.height+1,'All twenty chapters must fit without vertical scrolling');
   const lockedChapterCard = page.locator('[data-chapter="1"]');
   const lockedChapterText = await lockedChapterCard.textContent();
   assert.equal(await page.locator('.campaign-chapter-panel > .campaign-header .campaign-eyebrow').textContent(), "RICK GRAMPS' COLLECTION");
@@ -82,6 +84,7 @@ try {
   await page.getByRole('button', { name: 'Close campaign', exact: true }).click();
   await page.locator('.deck-trigger').click();
   assert.equal(await page.locator('.gallery-deck-row').count(), 30);
+  assert(await page.getByLabel('Deck mana curve').isVisible());
   assert.equal(await page.locator('.deck-trigger').count(), 1, 'One merged title entry');
   assert.deepEqual(await page.locator('.gallery-deck-curve span').allTextContents(), ['3','2','3','6','2','2','4','3','3','2']);
   assert.equal(await page.locator('.gallery-deck-remove:not([disabled])').count(), 30);
@@ -185,8 +188,10 @@ try {
   await page.getByRole('button', { name: 'Close Star Chart', exact: true }).click();
   await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).click();
   assert.equal(await page.locator('.gallery-detail-panel').count(), 0, 'Clicking the card body must not open lore');
-  assert(!(await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).isEnabled()), 'Selected cards cannot be added twice');
-  assert((await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).evaluate(el=>getComputedStyle(el).boxShadow)).includes('85, 220, 131'), 'Adding a card applies its green outline immediately');
+  await page.getByRole('button', { name: 'Remove GLaDOS', exact: true }).click();
+  assert.equal((await progress()).playerDeck.length,29,'A second card-body click removes it');
+  await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).click();
+  assert((await page.getByRole('button', { name: 'Remove GLaDOS', exact: true }).evaluate(el=>getComputedStyle(el).boxShadow)).includes('85, 220, 131'), 'Adding a card applies its green outline immediately');
   record = await progress(); assert.equal(record.playerDeck.length, 30); assert(record.playerDeck.includes('c104')); assert(!record.playerDeck.includes('c001'));
   await page.getByLabel('Search the gallery').fill('');
   await page.getByLabel('Filter by unlocked or locked').selectOption('locked');

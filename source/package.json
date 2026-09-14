@@ -10,6 +10,7 @@
     "build": "tsc -b && vite build",
     "build:lore": "node scripts/build-lore-data.mjs",
     "sync:cards": "node scripts/sync-card-workbook.mjs",
+    "voice:audition": "node scripts/voice-campaign.mjs",
     "publish:pages": "node scripts/publish-pages.mjs",
     "preview": "vite preview",
     "validate:docs": "node scripts/validate-project-docs.mjs",
