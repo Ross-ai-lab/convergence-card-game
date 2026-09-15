@@ -1,0 +1,38 @@
+[
+  {
+    "id": "1",
+    "file": "qwen/rick-gramps-v5/rick-v5-variation-1.mp3",
+    "duration": 13.2,
+    "seed": 6303,
+    "instruction": "A 200-year-old male grandpa with a gravelly, raspy, sharply nasal tenor-baritone voice. Clearly ancient and frail: thin, dry throat; weak breath support; slight tremor; wavering pitch; mild vocal fry; occasional voice cracks. Keep a worn midrange with a pinched nasal edge—not youthful, smooth, bright, booming, or bass-heavy. Weary and very, VERY drunk; intoxicated muttering, lazy half-swallowed slurred words, irregular interrupted tempo, sharp cynical emphasis, stumbling breath, and sudden explosive manic delight. Perform like a frail old alcoholic portal scientist: slur and stumble through the words, pause and lose your train of thought, then snap into manic scientific certainty. Keep every word intelligible.",
+    "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+    "sha256": "493e46460e6894807c2ac8a2f23b283ff9f55a2e6b320a9ea69640274d734a42"
+  },
+  {
+    "id": "2",
+    "file": "qwen/rick-gramps-v5/rick-v5-variation-2.mp3",
+    "duration": 14.64,
+    "seed": 6304,
+    "instruction": "A 200-year-old male grandpa with a gravelly, raspy, sharply nasal tenor-baritone voice. Clearly ancient and frail: thin, dry throat; weak breath support; slight tremor; wavering pitch; mild vocal fry; occasional voice cracks. Keep a worn midrange with a pinched nasal edge—not youthful, smooth, bright, booming, or bass-heavy. Weary and very, VERY drunk; intoxicated muttering, lazy half-swallowed slurred words, irregular interrupted tempo, sharp cynical emphasis, stumbling breath, and sudden explosive manic delight. Perform like a frail old alcoholic portal scientist: slur and stumble through the words, pause and lose your train of thought, then snap into manic scientific certainty. Keep every word intelligible.",
+    "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+    "sha256": "b79e72e0abb87a05f6bcc47bd483a59151a2a8bd63cd8dea52731e18788474e8"
+  },
+  {
+    "id": "3",
+    "file": "qwen/rick-gramps-v5/rick-v5-variation-3.mp3",
+    "duration": 11.44,
+    "seed": 6305,
+    "instruction": "A 200-year-old male grandpa with a gravelly, raspy, sharply nasal tenor-baritone voice. Clearly ancient and frail: thin, dry throat; weak breath support; slight tremor; wavering pitch; mild vocal fry; occasional voice cracks. Keep a worn midrange with a pinched nasal edge—not youthful, smooth, bright, booming, or bass-heavy. Weary and very, VERY drunk; intoxicated muttering, lazy half-swallowed slurred words, irregular interrupted tempo, sharp cynical emphasis, stumbling breath, and sudden explosive manic delight. Perform like a frail old alcoholic portal scientist: slur and stumble through the words, pause and lose your train of thought, then snap into manic scientific certainty. Keep every word intelligible.",
+    "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+    "sha256": "25076b89eb7960d71602b9b46cb5f0e3867645cc9bc3c6c939863519b1036ab6"
+  },
+  {
+    "id": "4",
+    "file": "qwen/rick-gramps-v5/rick-v5-variation-4.mp3",
+    "duration": 13.6,
+    "seed": 6306,
+    "instruction": "A 200-year-old male grandpa with a gravelly, raspy, sharply nasal tenor-baritone voice. Clearly ancient and frail: thin, dry throat; weak breath support; slight tremor; wavering pitch; mild vocal fry; occasional voice cracks. Keep a worn midrange with a pinched nasal edge—not youthful, smooth, bright, booming, or bass-heavy. Weary and very, VERY drunk; intoxicated muttering, lazy half-swallowed slurred words, irregular interrupted tempo, sharp cynical emphasis, stumbling breath, and sudden explosive manic delight. Perform like a frail old alcoholic portal scientist: slur and stumble through the words, pause and lose your train of thought, then snap into manic scientific certainty. Keep every word intelligible.",
+    "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+    "sha256": "b10c40df2927016a3a4e5b830eeee5db571f574a0afaa490eb6ced5e2097f990"
+  }
+]
