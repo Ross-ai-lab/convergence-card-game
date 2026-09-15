@@ -19,7 +19,8 @@ const fingerprint = (chapter, stage) => {
   return createHash("sha256").update(pythonJson).digest("hex");
 };
 const rick = cast.protagonist;
-const rickInstruction = `${rick.voice} Perform with ${rick.direction}. Fluent English, vivid natural acting, clear words, no music or sound effects.`;
+const rickInstruction = rick.instruction;
+assert.equal(typeof rickInstruction, "string", "Rick's exact Qwen instruction must be saved in the voice cast");
 const rickFingerprint = createHash("sha256").update(
   `[${[cast.engine, story.premise, rickInstruction, rick.seed, "mix-v2"].map(pythonString).join(", ")}]`,
 ).digest("hex");
@@ -50,7 +51,7 @@ assert(rickEntry, `Missing voice manifest entry: ${rickKey}`);
 assert.equal(rickEntry.text, story.premise, `Stale dialogue text: ${rickKey}`);
 assert.equal(rickEntry.speaker, rick.name, `Stale speaker: ${rickKey}`);
 assert.equal(rickEntry.stage, "prologue", `Stale stage: ${rickKey}`);
-assert.equal(rickEntry.fingerprint, rickFingerprint, `Stale voice casting/direction: ${rickKey}`);
+assert.equal(rickEntry.fingerprint, rickFingerprint, `Stale Qwen instruction/seed: ${rickKey}`);
 const rickFile = path.join(ROOT, "public/audio/campaign", `${rickKey}.ogg`);
 const rickData = await readFile(rickFile);
 assert.equal(createHash("sha256").update(rickData).digest("hex"), rickEntry.audioSha256, `Changed recording: ${rickKey}`);
