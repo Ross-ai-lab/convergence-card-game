@@ -71,9 +71,8 @@ check(
   "no Relics control rendered",
 );
 check(
-  "Hero Powers menu button stays neutral",
-  (await page.locator(".hero-power-trigger small").count()) === 0 &&
-    (await page.locator(".hero-power-trigger").getByText("Call a Recruit", { exact: true }).count()) === 0,
+  "Hero Powers is merged into My Deck",
+  (await page.locator(".hero-power-trigger").count()) === 0,
   "the equipped power name is not printed on the title menu",
 );
 check(
@@ -103,8 +102,9 @@ check(
     (await page.locator(".unlock-tally").count()) === 0,
   "all cards are unlocked without an inflated tally",
 );
-await page.getByRole("button", { name: "Hero Powers", exact: true }).click();
-const developerPowerDialog = page.locator('[role="dialog"][aria-label="Hero Powers"]');
+await page.locator(".deck-trigger").click();
+await page.getByRole("button", { name: "Choose hero power", exact: true }).click();
+const developerPowerDialog = page.getByRole("dialog",{name:"Choose hero power",exact:true});
 check(
   "developer cheat unlocks every 2-mana Hero Power",
   (await developerPowerDialog.locator(".hero-power-menu-card").count()) === 10 &&
@@ -112,7 +112,8 @@ check(
     (await developerPowerDialog.getByText("Costs 2 mana · once per turn", { exact: true }).count()) === 10,
   "10 powers unlocked and each still costs 2 mana",
 );
-await developerPowerDialog.locator(".screen-x").click();
+await page.getByRole("button",{name:"Close hero power chooser",exact:true}).click();
+await page.getByRole("button",{name:"Close",exact:true}).click();
 await page.getByRole("button", { name: "Reset progress", exact: true }).click();
 const resetProgressDialog = page.locator('[role="dialog"][aria-label="Reset progress?"]');
 check(
@@ -179,12 +180,6 @@ check(
   titleHoverDrifts.map(({ selector, maxDrift }) => `${selector} ${maxDrift.toFixed(1)}px`).join(", "),
 );
 
-const soundIconMarkup = await page.locator(".settings-trigger svg").evaluate((element) => element.outerHTML);
-check(
-  "the main-menu Sound button uses a speaker icon",
-  /sound-icon/i.test(soundIconMarkup),
-  soundIconMarkup.match(/sound-icon[^" ]*/i)?.[0] ?? "sound icon class",
-);
 check(
   "the retired Win Record button is absent",
   (await page.getByRole("button", { name: "Win Record", exact: true }).count()) === 0,
@@ -327,8 +322,7 @@ check(
 await enemyPortrait.click({ timeout: 5000, force: true }).catch(() => {});
 await page.mouse.move(0, 0);
 
-await page.goto(BASE, { waitUntil: "domcontentloaded" });
-await page.locator(".title-links").getByRole("button", { name: "Sound", exact: true }).click();
+await page.locator('button[title="Sound and settings"]').click();
 check(
   "Sound opens the audio panel",
   (await page.getByRole("dialog", { name: "Sound", exact: true }).count()) === 1,

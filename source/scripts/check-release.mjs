@@ -12,6 +12,7 @@ try{
  await page.goto(base,{waitUntil:'domcontentloaded'});
  await page.evaluate(()=>{localStorage.clear();localStorage.setItem('convergence.progress.v2','{"unlocked":216}');localStorage.setItem('convergence.save.v27','{"version":27}');localStorage.setItem('sound-test-preference','preserved');});
  await page.reload();await page.locator('.title-screen').waitFor();
+ assert.equal(await page.locator('.hero-power-trigger').count(),0);
  assert.equal((await progress()).unlockedIds.length,30);assert.equal((await progress()).completedChapters,0);
  assert.equal(await page.locator('.orbit-choice,.daily-pack-trigger').count(),0);
  assert.equal(await page.evaluate(()=>localStorage.getItem('convergence.progress.v2')),null);
@@ -41,6 +42,10 @@ try{
  await page.locator('.deck-trigger').click();await page.getByRole('button',{name:'Remove John Wick from deck',exact:true}).click();
  await page.getByLabel('Search the gallery').fill('GLaDOS');await page.getByRole('button',{name:'Add GLaDOS',exact:true}).click();
  assert.equal((await progress()).playerDeck.length,30);assert((await progress()).playerDeck.includes('c104'));
+ await page.getByRole('button',{name:'Choose hero power',exact:true}).click();
+ assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:not(:disabled)').count(),1);
+ await page.locator('.gallery-power-picker .hero-power-menu-card').filter({hasText:'Mend Core'}).click();
+ assert.equal((await progress()).selectedHeroPower,'core_heal');
  await page.reload();assert((await progress()).playerDeck.includes('c104'));assert.equal((await progress()).pendingRewards.length,0);
  await page.locator('.duel-trigger').click();assert(await page.getByRole('button',{name:'Play chapter 2',exact:true}).isEnabled());
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

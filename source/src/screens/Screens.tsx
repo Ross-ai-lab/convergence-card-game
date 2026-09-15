@@ -233,7 +233,6 @@ export function TitleScreen({
   onStart,
   isFullscreen,
   onToggleFullscreen,
-  onHeroPowers,
   onTutorial,
   onDeveloperTools,
   onDeveloperUnlock,
@@ -256,7 +255,6 @@ export function TitleScreen({
   onStart: (mode: GameMode) => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
-  onHeroPowers: () => void;
   onTutorial: () => void;
   onDeveloperTools: () => void;
   onDeveloperUnlock: () => void;
@@ -350,15 +348,7 @@ export function TitleScreen({
               ) : null}
             </span>
           </button>
-          <button
-            type="button"
-            className="hero-power-trigger"
-            onClick={onHeroPowers}
-            title="Choose an unlocked Hero Power"
-          >
-            <Lightning size={22} weight="fill" aria-hidden="true" />
-            <span>Hero Powers</span>
-          </button>
+
         </div>
 
         {developerCheatRevealed ? (
@@ -495,19 +485,16 @@ export function TitleScreen({
   );
 }
 
-export function HeroPowersScreen({
+export function HeroPowerChoices({
   botWins,
   selectedPower,
   onSelect,
-  onClose,
 }: {
   botWins: number;
   selectedPower: HeroPowerId | null;
   onSelect: (power: HeroPowerId) => void;
-  onClose: () => void;
 }) {
   return (
-    <Overlay title="Hero Powers" onClose={onClose} wide>
       <div className="hero-power-menu">
         <p className="hero-power-menu-intro">
           Clear each of the first ten campaign chapters to unlock a Hero Power. Replays do not count.
@@ -552,7 +539,6 @@ export function HeroPowersScreen({
           <p className="hero-power-menu-note">No Hero Power is selected yet. Win against the bot to claim your first.</p>
         ) : null}
       </div>
-    </Overlay>
   );
 }
 

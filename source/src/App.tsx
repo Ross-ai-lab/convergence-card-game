@@ -105,7 +105,7 @@ import {
   HowToPlay,
   PassScreen,
   SettingsPanel,
-  HeroPowersScreen,
+  HeroPowerChoices,
   TitleScreen,
   type DuelIntroPhase,
   type GameMode,
@@ -592,7 +592,7 @@ export default function App() {
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "heroPowers" | "campaign" | "deck" | "hotseat" | "opponent">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "campaign" | "deck" | "hotseat" | "opponent">(null);
   useEffect(() => {
     if (overlay !== "opponent") return;
     const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOverlay(null); };
@@ -616,7 +616,6 @@ export default function App() {
   const [builderSeat, setBuilderSeat] = useState<0 | 1>(0);
   const [builderReturn, setBuilderReturn] = useState<"title" | "campaign" | "hotseat">("title");
   const selectedHeroPower = progress.selectedHeroPower;
-  const botWinCount = botWins(progress);
   function persistProgress(next: Progress) {
     setProgress(next); const saved = saveProgress(next); setStorageError(!saved); return saved;
   }
@@ -3210,7 +3209,6 @@ export default function App() {
           onDeck={() => openDeck()}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
-          onHeroPowers={() => setOverlay("heroPowers")}
           onTutorial={beginTutorial}
           onDeveloperTools={() => setDeveloperToolsOpen(true)}
           developerCheatRevealed={developerCheatRevealed}
@@ -3226,7 +3224,7 @@ export default function App() {
 
       {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)}
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
-      {overlay === "deck" && <CardGallery progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+      {overlay === "deck" && <CardGallery onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}
@@ -3242,16 +3240,8 @@ export default function App() {
         </section>
       </div>}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "gallery" ? <CardGallery progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
+      {overlay === "gallery" ? <CardGallery onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
-      {overlay === "heroPowers" ? (
-        <HeroPowersScreen
-          botWins={botWinCount}
-          selectedPower={selectedHeroPower}
-          onSelect={(power) => setSelectedHeroPower(power)}
-          onClose={() => setOverlay(null)}
-        />
-      ) : null}
       {overlay === "settings" ? (
         <SettingsPanel
           onClose={() => setOverlay(null)}
@@ -3855,14 +3845,23 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
 type UnlockFilter = "unlocked" | "locked";
 type GalleryEntry = { key: string; card: PlayableCard; face: CardFaceModel };
 
-function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
-  progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onClose: () => void;
+function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onClose }: {
+  progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onHeroPowerChange: (power: HeroPowerId) => void; onClose: () => void;
 }) {
   const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
   const readOnly = !canEditDeck(progress);
   const deckIds = new Set(deck);
   const [query, setQuery] = useState("");
   const [help, setHelp] = useState(false);
+  const [powerOpen, setPowerOpen] = useState(false);
+  const equippedPower = heroPowerDefinition(progress.selectedHeroPower);
+  const powerPicker = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!powerOpen) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    powerPicker.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => previous?.focus();
+  }, [powerOpen]);
   const [showEquipped, setShowEquipped] = useState(true);
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const [status, setStatus] = useState<UnlockFilter>("unlocked");
@@ -3878,11 +3877,17 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") { event.stopImmediatePropagation(); if (powerOpen) setPowerOpen(false); else onClose(); }
+      if (powerOpen && event.key === "Tab") {
+        const buttons = [...(powerPicker.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])];
+        const first=buttons[0], last=buttons.at(-1);
+        if (event.shiftKey && document.activeElement===first) {event.preventDefault();last?.focus();}
+        else if (!event.shiftKey && document.activeElement===last) {event.preventDefault();first?.focus();}
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, powerOpen]);
 
   const needle = query.trim().toLowerCase();
   // Built ONCE and then only filtered. Rebuilding the faces on every keystroke
@@ -4138,6 +4143,9 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
           <header className="gallery-deck-heading"><h3>{seat === 1 ? "Player Two" : "My Deck"}</h3>
             <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
           <p className="gallery-deck-hint">{readOnly ? "Win chapter one to unlock deck editing." : deck.length === 30 ? "Remove a card, then add its replacement." : `Choose ${30 - deck.length} more ${30 - deck.length === 1 ? "card" : "cards"}.`}</p>
+          <button type="button" className="gallery-hero-power" aria-label="Choose hero power" aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
+            <span className="gallery-power-icon" aria-hidden="true">ϟ</span><span><small>Hero power</small><strong>{equippedPower?.name ?? "Choose hero power"}</strong><em>{equippedPower?.text ?? "Win chapter 1 to unlock your first power."}</em></span><b aria-hidden="true">›</b>
+          </button>
           <div className="gallery-deck-list">{allEntries.filter((entry) => deckIds.has(entry.key))
             .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
             .map((entry) => <div className="gallery-deck-row" key={entry.key} data-card-id={entry.key}>
@@ -4159,6 +4167,12 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onClose }: {
         </aside>
         </div>
       </section>
+      {powerOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)setPowerOpen(false);}}>
+        <section ref={powerPicker} className="gallery-power-picker" role="dialog" aria-modal="true" aria-label="Choose hero power">
+          <header><h3>Hero power</h3><button type="button" aria-label="Close hero power chooser" onClick={() => setPowerOpen(false)}>×</button></header>
+          <HeroPowerChoices botWins={botWins(progress)} selectedPower={progress.selectedHeroPower} onSelect={power => {onHeroPowerChange(power);setPowerOpen(false);}} />
+        </section>
+      </div>}
       {selectedEntry ? (
         <GalleryDetailModal
           entry={selectedEntry}

@@ -84,6 +84,13 @@ try {
   await page.getByRole('button', { name: 'Close campaign', exact: true }).click();
   await page.locator('.deck-trigger').click();
   assert.equal(await page.locator('.gallery-deck-row').count(), 30);
+  assert.equal(await page.locator('.hero-power-trigger').count(),0);
+  await page.getByRole('button',{name:'Choose hero power',exact:true}).click();
+  assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:disabled').count(),10);
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.gallery-power-picker').count(),0);
+  assert(await page.getByRole('dialog',{name:'My Deck',exact:true}).isVisible());
+
   assert(await page.getByLabel('Deck mana curve').isVisible());
   assert.equal(await page.locator('.deck-trigger').count(), 1, 'One merged title entry');
   assert.deepEqual(await page.locator('.gallery-deck-curve span').allTextContents(), ['3','2','3','6','2','2','4','3','3','2']);
@@ -258,6 +265,21 @@ try {
   assert.equal((await progress()).hotseatDeck.length, 30);
   await page.getByRole('button', { name: 'Close', exact: true }).click();
   assert(await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).isVisible());
+
+  await seedCampaignProgress(page,5);
+  const deckBeforePower=(await progress()).playerDeck;
+  await page.locator('.deck-trigger').click();
+  await page.getByRole('button',{name:'Choose hero power',exact:true}).click();
+  assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:not(:disabled)').count(),5);
+  await page.locator('.gallery-power-picker .hero-power-menu-card').filter({hasText:'Core Bolt'}).click();
+  assert.equal(await page.locator('.gallery-power-picker').count(),0);
+  assert.equal((await progress()).selectedHeroPower,'enemy_core_damage');
+  assert.deepEqual((await progress()).playerDeck,deckBeforePower);
+  await page.reload();await page.locator('.deck-trigger').click();
+  assert((await page.locator('.gallery-hero-power').textContent()).includes('Core Bolt'));
+  await page.getByRole('button',{name:'Close',exact:true}).click();
+  await page.locator('.duel-trigger').click();await page.getByRole('button',{name:'Play chapter 6',exact:true}).click();await board();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v29')).game.heroPowers[0]),'enemy_core_damage');
   await seedCampaignProgress(page,0);await page.keyboard.type('Ross');
   await page.getByRole('button',{name:'Unlock all chapters',exact:true}).click();
   assert.equal((await progress()).developerChaptersUnlocked,true);assert.equal((await progress()).completedChapters,0);
