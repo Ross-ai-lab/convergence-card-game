@@ -1,29 +1,5 @@
 [
   {
-    "id": "J",
-    "file": "qwen/rick-gramps-v3/rick-J.mp3",
-    "duration": 15.2,
-    "seed": 6303,
-    "direction": "very drunk, sloppy and self-amused; slur and stumble through words, interrupt yourself, then snap into manic scientific certainty; keep the speech intelligible and never sound young, polished or heroic",
-    "voice": "Older male high-mid nasal tenor-baritone, extremely raspy and scratchy, loose drunk drawl, voice sliding unevenly up and down, breathy throat, blurred consonants, wet mouth texture, no youthful brightness; old alcoholic sci-fi genius."
-  },
-  {
-    "id": "K",
-    "file": "qwen/rick-gramps-v3/rick-K.mp3",
-    "duration": 12.5,
-    "seed": 6303,
-    "direction": "very drunk, sloppy and self-amused; slur and stumble through words, interrupt yourself, then snap into manic scientific certainty; keep the speech intelligible and never sound young, polished or heroic",
-    "voice": "Older male thin nasal midrange with cracked vocal fry, very drunk slur, stretched vowels, dropped syllables, delayed consonants, abrupt angry bursts, exhausted smugness; reckless dimension-hopping scientist, clearly an old man."
-  },
-  {
-    "id": "L",
-    "file": "qwen/rick-gramps-v3/rick-L.mp3",
-    "duration": 10.5,
-    "seed": 6303,
-    "direction": "very drunk, sloppy and self-amused; slur and stumble through words, interrupt yourself, then snap into manic scientific certainty; keep the speech intelligible and never sound young, polished or heroic",
-    "voice": "Older male rough nasal baritone, hoarse chest-to-nose placement, unstable pitch wobble, mumbled run-on phrases, sudden manic squeals, heavy sarcasm, stumbling breath, occasional brief belch-like interruption while keeping words clear; old drunk inventor."
-  },
-  {
     "id": "M",
     "file": "qwen/rick-gramps-v3/rick-M.mp3",
     "duration": 13.4,
