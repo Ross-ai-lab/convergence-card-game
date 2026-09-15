@@ -718,5 +718,14 @@
     "text": "OH, GRAMPS. YOU REACHED THE END OF REALITY AND FORGOT TO READ THE FINE PRINT! Pick up your little army. The final exhibit is still running the museum.",
     "fingerprint": "977cbf78a93596c0d85c661e29432ee7360647308e4519731d25e23563535547",
     "audioSha256": "a1d76a3fc0ade3efbd183977fa24e2efa870476d4b61f1f3379c6cba89b9ac53"
+  },
+  "rick-prologue": {
+    "chapter": 0,
+    "speaker": "Rick Gramps",
+    "stage": "prologue",
+    "duration": 30.4,
+    "text": "You are Rick Gramps. Retirement lasted eleven minutes. Then the boredom became unbearable. So you built a pocket-sized arena and started collecting the greatest fighters in every universe.\n\nYour collection is small. For now. Defeat each world's champion, claim their universe's fighters, and earn their reluctant allegiance. Some will serve with honour. Some will complain the entire time. Either way, the next universe is waiting.",
+    "fingerprint": "0b167048b4d34db05a7d820cb1ebb6a39079522ed3c597b5aa131e0fdf7df42a",
+    "audioSha256": "914af5f0d936419121064e43bd1340322f361981a8d3f1dd24791e486a876559"
   }
 }

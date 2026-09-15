@@ -18,6 +18,7 @@ WORKSPACE = ROOT.parents[2]
 SHARED = WORKSPACE / "Pipelines/audio/qwen/voice.py"
 ENGINE = "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
 STAGES = ("entrance", "defeat", "loss", "play")
+RICK_PROLOGUE_KEY = "rick-prologue"
 
 
 def filters_for(chapter: int) -> list[str]:
@@ -43,7 +44,7 @@ def parse_selected(value: str, label: str) -> set[str] | None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--chapters", default="", help="chapter numbers, comma-separated; default is all 20")
-    parser.add_argument("--keys", default="all", help="recording keys, comma-separated; default is all 80")
+    parser.add_argument("--keys", default="all", help="recording keys, comma-separated; an unfiltered default run includes all 80 boss lines and Rick's prologue")
     parser.add_argument("--stages", default=",".join(STAGES), help="stage names, comma-separated")
     parser.add_argument("--force", action="store_true", help="regenerate selected recordings even when current")
     parser.add_argument("--batch-size", type=int, default=4)
@@ -62,6 +63,25 @@ def main() -> int:
     selected_keys = parse_selected(args.keys, "keys")
 
     jobs: list[dict[str, object]] = []
+    include_prologue = (
+        RICK_PROLOGUE_KEY in selected_keys
+        if selected_keys is not None
+        else not chapters and set(stages) == set(STAGES)
+    )
+    if include_prologue:
+        protagonist = cast["protagonist"]
+        text = str(story["premise"])
+        jobs.append({
+            "id": RICK_PROLOGUE_KEY,
+            "text": text,
+            "spoken": text,
+            "voice": str(protagonist["voice"]),
+            "direction": str(protagonist["direction"]),
+            "seed": int(protagonist["seed"]),
+            "engine": ENGINE,
+            "filters": ["highpass=f=65"],
+        })
+
     for chapter in story["chapters"]:
         number = int(chapter["chapter"])
         if chapters and number not in chapters:
@@ -124,6 +144,16 @@ def main() -> int:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     for job in jobs:
         key = str(job["id"])
+        if key == RICK_PROLOGUE_KEY:
+            entry = manifest.get(key, {})
+            entry.update({
+                "chapter": 0,
+                "speaker": cast["protagonist"]["name"],
+                "stage": "prologue",
+                "text": story["premise"],
+            })
+            manifest[key] = entry
+            continue
         number = int(key.split("-", 1)[0])
         stage = key.split("-", 1)[1]
         chapter = next(item for item in story["chapters"] if int(item["chapter"]) == number)

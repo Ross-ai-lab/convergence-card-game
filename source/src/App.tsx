@@ -652,7 +652,9 @@ export default function App() {
   // both the current source and any fetch/decode that is still pending.
   useEffect(() => {
     let key: string | null = null;
-    if (chapterSpeech?.stage === "entrance") {
+    if (chapterSpeech?.stage === "prologue") {
+      key = "rick-prologue";
+    } else if (chapterSpeech?.stage === "entrance") {
       key = `${String(chapterSpeech.mode.chapter).padStart(2, "0")}-entrance`;
     } else if (defeatedChapter) {
       key = `${String(defeatedChapter.chapter).padStart(2, "0")}-${progress.pendingBossSpeechOutcome === "loss" ? "loss" : "defeat"}`;

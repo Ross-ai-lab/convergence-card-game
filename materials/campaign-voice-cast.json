@@ -1,5 +1,11 @@
 {
   "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+  "protagonist": {
+    "name": "Rick Gramps",
+    "voice": "Older male gravelly nasal tenor-baritone, weary intoxicated muttering, lazy half-swallowed words, irregular tempo, sharp cynical emphasis, stumbling breath, sudden explosive manic delight; old alcoholic portal scientist, never a boy.",
+    "direction": "very drunk, sloppy and self-amused; slur and stumble through words, interrupt yourself, then snap into manic scientific certainty; keep the speech intelligible and never sound young, polished or heroic",
+    "seed": 6303
+  },
   "cast": {
     "1": {
       "name": "GLaDOS",
