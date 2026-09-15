@@ -1,0 +1,52 @@
+[
+  {
+    "id": "1",
+    "label": "Grandpa",
+    "file": "qwen/rick-gramps-v4/rick-1-grandpa.mp3",
+    "duration": 11.44,
+    "seed": 6303,
+    "instruction": "A male grandpa, gravelly nasal tenor-baritone, weary and VERY drunk and intoxicated muttering, lazy half-swallowed slurred words, irregular tempo, sharp cynical emphasis, stumbling breath, sudden explosive manic delight.",
+    "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+    "sha256": "b710b07657dc7beeed6c28bc45baf1d6d7aec24fe51f2262f966a11bc68848e5"
+  },
+  {
+    "id": "2",
+    "label": "Age 90",
+    "file": "qwen/rick-gramps-v4/rick-2-age-90.mp3",
+    "duration": 12.48,
+    "seed": 6303,
+    "instruction": "A male aged 90 year old, gravelly nasal tenor-baritone, weary and VERY drunk and intoxicated muttering, lazy half-swallowed slurred words, irregular tempo, sharp cynical emphasis, stumbling breath, sudden explosive manic delight.",
+    "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+    "sha256": "8f893f358ab6d014ab9f27ee85470bcd5a1f87a07f20850c11d5856cee6940cc"
+  },
+  {
+    "id": "3",
+    "label": "Prehistoric",
+    "file": "qwen/rick-gramps-v4/rick-3-prehistoric.mp3",
+    "duration": 12.08,
+    "seed": 6303,
+    "instruction": "A prehistoric male, gravelly nasal tenor-baritone, weary and VERY drunk and intoxicated muttering, lazy half-swallowed slurred words, irregular tempo, sharp cynical emphasis, stumbling breath, sudden explosive manic delight.",
+    "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+    "sha256": "fea278fab79c672c61b81914874012aef9bc99b32af08dc0e26118abe70be979"
+  },
+  {
+    "id": "4",
+    "label": "Age 200",
+    "file": "qwen/rick-gramps-v4/rick-4-age-200.mp3",
+    "duration": 12.56,
+    "seed": 6303,
+    "instruction": "A 200 year old male, gravelly nasal tenor-baritone, weary and VERY drunk and intoxicated muttering, lazy half-swallowed slurred words, irregular and interrupted tempo, sharp cynical emphasis, stumbling breath, sudden explosive manic delight.",
+    "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+    "sha256": "d92c4fa9529f8d3428f6245d23e9a5edadb2d444c3fe2f0a5c6bdbe0b6b82c77"
+  },
+  {
+    "id": "5",
+    "label": "Age 500",
+    "file": "qwen/rick-gramps-v4/rick-5-age-500.mp3",
+    "duration": 12.72,
+    "seed": 6303,
+    "instruction": "A 500 year old male, gravelly nasal tenor-baritone, weary and VERY drunk and intoxicated muttering, lazy half-swallowed slurred words, irregular tempo, sharp cynical emphasis, stumbling breath, sudden explosive manic delight.",
+    "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+    "sha256": "2f2c25f31b8b60eb8756ec3151c18749c9a7dc050a3921a5d21653e0eafb19b7"
+  }
+]
