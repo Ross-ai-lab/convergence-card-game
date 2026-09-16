@@ -92,7 +92,9 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // v28: campaign cutover deliberately resets all pre-campaign duels.
 // v29: hotseat now gives both seats an opening mulligan, so the pending
 // mulligan carries a queue of seats. Older in-progress openings are discarded.
-const SAVE_VERSION = 29;
+// v30: campaign bosses and chapter order changed. Old in-progress duels can
+// contain the removed boss identity and deck, so they must not be resumed.
+const SAVE_VERSION = 30;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
 export interface SavedGame {
   version: number;

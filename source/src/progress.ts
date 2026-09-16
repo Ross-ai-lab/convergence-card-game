@@ -57,8 +57,11 @@ export interface Progress {
   settledDuels: string[];
 }
 
-export const PROGRESS_VERSION = 3;
-export const PROGRESS_KEY = "convergence.progress.v3";
+// v4: the campaign roster changed: Po replaced Tai Lung, Luffy replaced Kaido,
+// Bill moved to chapter 17, and Saitama became the final boss. Rebuild the
+// earned set from the new chapter order instead of preserving stale progress.
+export const PROGRESS_VERSION = 4;
+export const PROGRESS_KEY = "convergence.progress.v4";
 export const RECENT_LIMIT = 10;
 export const CAMPAIGN_CARD_IDS: readonly string[] = Object.freeze([
   ...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.flatMap((chapter) => chapter.rewardCardIds),
@@ -95,7 +98,7 @@ function count(value: unknown): number {
 /** One-time development cutover. Sound/fullscreen preferences are intentionally untouched. */
 export function loadProgress(): Progress {
   try {
-    for (const key of ["convergence.progress.v1", "convergence.progress.v2"]) window.localStorage.removeItem(key);
+    for (let version = 1; version < PROGRESS_VERSION; version++) window.localStorage.removeItem(`convergence.progress.v${version}`);
     const raw = window.localStorage.getItem(PROGRESS_KEY);
     if (!raw) return emptyProgress();
     const saved = JSON.parse(raw) as Partial<Progress>;

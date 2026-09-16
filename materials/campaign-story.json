@@ -13,12 +13,12 @@
     },
     {
       "chapter": 2,
-      "bossId": "c134",
-      "rickIntro": "Po's world gave me plenty of candidates, but Tai Lung is the one I want. He trained himself into a weapon, got locked away, and came out still angry enough to bend a room around him. That kind of discipline is useful. The anger's useful too, if you point it at somebody else.",
-      "entrance": "You think greatness can be kept in a collection? I spent my life earning mine. Bring your little army, old man. I will show them what strength looks like.",
-      "defeat": "I could not break you. That is an answer I cannot ignore. My strength is yours, Rick Gramps. Give it a purpose worthy of me.",
-      "play": "Point me at their strongest fighter, Gramps. I have no patience for the rest.",
-      "loss": "You brought fighters, Gramps. You forgot to bring a challenge. Train them. Then return and show me why I should remember your name."
+      "bossId": "c110",
+      "rickIntro": "Kung-Fu Panda is mostly dumplings, spiritual advice, and a guy who accidentally became a weapon. Po is useful because he keeps getting stronger without losing the part of him that makes people follow. That's rare. Also, he can probably eat through my emergency food supply.",
+      "entrance": "Oh! You're Rick Gramps, right? The guy collecting fighters from different worlds? That's actually kind of amazing. Also kind of alarming. If you're looking for somebody who can handle a little pressure, I'm your panda. Just don't point me at anything with lasers.",
+      "defeat": "Okay, you got me. That was a real fight, and I'm saying that as somebody who has been punched through several walls. I'll join your collection, Gramps. But we train before breakfast, and I'm keeping the dumplings. Those are non-negotiable.",
+      "play": "All right, everybody, stay together! I don't know this battlefield, but I know how to improvise. If things get weird, hit the biggest problem first. If things get delicious, save me some. Both plans can work at once.",
+      "loss": "Wow. That did not go the way I rehearsed it in my head. Your fighters are tough, but tough is not enough yet. Go practice, eat something, and come back. I'll be here. Probably in the kitchen, but still here."
     },
     {
       "chapter": 3,
@@ -112,12 +112,12 @@
     },
     {
       "chapter": 13,
-      "bossId": "c058",
-      "rickIntro": "One Piece is too large to call a roster, so I'm starting with the part that refuses to stay down. Kaido has the useful kind of confidence: the kind that survives being hit by history. He's a disaster with a drinking habit, but disasters are honest about where they're going. I can work with honest.",
-      "entrance": "So you are the old man gathering monsters! I like the ambition. Bring them all, Gramps. If your collection can survive me, perhaps it deserves another monster.",
-      "defeat": "Now that was a battle! You beat me, old man. I will sail under your banner. Just do not start collecting weaklings. It would ruin the company.",
-      "play": "Another war, Gramps? Finally. I was getting thirsty.",
-      "loss": "That is it? Come on, Gramps! I thought you were collecting monsters! Go find a few more, then bring me a proper war!"
+      "bossId": "c060",
+      "rickIntro": "One Piece has too many islands, pirates, and names I don't have time to memorize. Luffy is the useful kind of reckless: he treats impossible odds like an invitation and somehow makes people choose his side. I want that momentum. The hat is not negotiable, apparently.",
+      "entrance": "Whoa! You crossed a bunch of worlds looking for strong people? That sounds like an adventure. I'm Luffy, and I'm not joining anybody who can't protect their crew. Show me what your collection can do, Gramps. Then we'll see which of us gets to call the next move.",
+      "defeat": "That was fun! Your crew hit hard, and you kept standing when you should've been down. Fine, I'll sail with you for now. But I choose the direction, I get first word on the adventure, and somebody better have meat.",
+      "play": "Hey, everybody, don't slow down! Find the strongest one and knock it over. I don't care what this place is supposed to do; we're making our own adventure. Keep your eyes open, your fists ready, and leave room for lunch.",
+      "loss": "That wasn't enough, Gramps. Your fighters tried, but they didn't make me serious. Go find stronger friends and come back. I'll wait right here. Well, maybe not right here. I get hungry when I wait, and there's always another island."
     },
     {
       "chapter": 14,
@@ -148,12 +148,12 @@
     },
     {
       "chapter": 17,
-      "bossId": "c051",
-      "rickIntro": "One-Punch Man has a lot of heroes, monsters, and men who should've stopped after the first cape. Boros is the cleanest specimen: he crossed space looking for one fight that could justify the trip. That's not ambition. That's a medical condition. Still, a fighter who wants the answer badly is worth bringing home.",
-      "entrance": "You travelled the universes because you were bored? Then we understand each other. Show me everything, Rick Gramps. I have waited far too long for a worthy battle.",
-      "defeat": "At last... a battle that demanded all of me. You have my loyalty, Gramps. Let me stand in your collection, and I will help you find something greater still.",
-      "play": "A new challenger, Gramps. Let us hope they can make this interesting.",
-      "loss": "You share my boredom, but not yet my strength. Grow your collection, Gramps. I would rather wait for a worthy battle than settle for this."
+      "bossId": "c041",
+      "rickIntro": "Gravity Falls is where I found the one thing I don't want loose on my ship. Bill isn't strong in the ordinary sense; he's an argument against ordinary. I'm collecting him because every cage needs to be tested by something that hates the idea of cages. Also, if I leave him here, he'll eventually find a way out and make it my problem.",
+      "entrance": "WELL, LOOK WHO COLLECTED HIS WAY TO THE END OF REALITY! Cute arena, Gramps. Cute little army. Let us find out what happens when the final exhibit starts collecting YOU.",
+      "defeat": "YOU ACTUALLY DID IT. Every world, every champion, and now the triangle. Fine, Gramps. I will fight for your collection. But if eternity gets boring, remember whose idea this was.",
+      "play": "MISS ME, GRAMPS? Point me at something that still thinks reality is a rule.",
+      "loss": "OH, GRAMPS. YOU REACHED THE END OF REALITY AND FORGOT TO READ THE FINE PRINT! Pick up your little army. The final exhibit is still running the museum."
     },
     {
       "chapter": 18,
@@ -175,12 +175,12 @@
     },
     {
       "chapter": 20,
-      "bossId": "c041",
-      "rickIntro": "Gravity Falls is where I found the one thing I don't want loose on my ship. Bill isn't strong in the ordinary sense; he's an argument against ordinary. I'm collecting him because every cage needs to be tested by something that hates the idea of cages. Also, if I leave him here, he'll eventually find a way out and make it my problem.",
-      "entrance": "WELL, LOOK WHO COLLECTED HIS WAY TO THE END OF REALITY! Cute arena, Gramps. Cute little army. Let us find out what happens when the final exhibit starts collecting YOU.",
-      "defeat": "YOU ACTUALLY DID IT. Every world, every champion, and now the triangle. Fine, Gramps. I will fight for your collection. But if eternity gets boring, remember whose idea this was.",
-      "play": "MISS ME, GRAMPS? Point me at something that still thinks reality is a rule.",
-      "loss": "OH, GRAMPS. YOU REACHED THE END OF REALITY AND FORGOT TO READ THE FINE PRINT! Pick up your little army. The final exhibit is still running the museum."
+      "bossId": "c025",
+      "rickIntro": "One-Punch Man keeps adding stronger monsters until the joke stops being funny. Saitama is what happens after the joke wins. He ends fights before they start, hates being late for a sale, and somehow still looks bored. I need to know whether boredom survives the last arena.",
+      "entrance": "So you're the collector. You came through all those universes looking for the strongest fighter? That sounds exhausting. You can try me if you want, but make it quick. There's a supermarket sale this afternoon, and missing it would be a bigger problem than this.",
+      "defeat": "You won. Huh. That's unusual. You and your fighters actually made me put in some effort, so I guess I'll come along. Don't make a big ceremony out of it. Just tell me where the next fight is, and whether there's a grocery store nearby.",
+      "play": "Point me at the strongest one. I'll finish this before it gets complicated. After that, I'm going home, unless somebody knows a good discount store nearby. I'm not being rude. I just have errands, and the monsters can wait.",
+      "loss": "You lost. It happens. Your team just wasn't strong enough today, and I'm not going to pretend otherwise. Train them, find somebody tougher, and come back. If you're planning a rematch, try not to schedule it during the supermarket sale."
     }
   ]
 }

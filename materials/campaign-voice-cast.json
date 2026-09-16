@@ -25,13 +25,13 @@
       "seed": 4201
     },
     "2": {
-      "name": "Tai Lung",
-      "voice": "Mature male baritone, textured low growl, disciplined martial artist, crisp forceful consonants, strong controlled breath.",
+      "name": "Po",
+      "voice": "Adult male warm rounded baritone, broad friendly resonance, slightly breathless energy, earnest humor, open-hearted enthusiasm and surprising physical confidence. A kind kung-fu hero who sounds approachable and grounded, never like a booming martial-arts villain.",
       "direction": {
-        "entrance": "wounded pride and threatening confidence",
-        "defeat": "exhausted proud acceptance",
-        "loss": "stern disdain and dismissive confidence",
-        "play": "impatient focused aggression"
+        "entrance": "nervous friendly welcome that turns into an eager challenge",
+        "defeat": "winded delighted respect and generous acceptance",
+        "loss": "embarrassed good-natured encouragement with a firm warning",
+        "play": "supportive team-leader excitement with improvised confidence"
       },
       "seed": 4202
     },
@@ -146,13 +146,13 @@
       "seed": 4212
     },
     "13": {
-      "name": "Kaido",
-      "voice": "Mature male booming rough bass, hearty chest resonance, gruff open vowels, raucous jovial warrior personality.",
+      "name": "Monkey D. Luffy",
+      "voice": "Young adult male bright high-mid tenor, elastic cheerful tone, open laugh in the voice, impulsive fearless optimism, quick buoyant cadence and clear adventurous diction. A reckless pirate captain whose joy and conviction pull people along; energetic and playful, never dark, formal or booming.",
       "direction": {
-        "entrance": "boisterous welcoming challenge",
-        "defeat": "exuberant battle-drunk respect",
-        "loss": "loud impatient disappointment",
-        "play": "eager gruff amusement"
+        "entrance": "bright delighted curiosity turning into a fearless captain's challenge",
+        "defeat": "laughing exhilaration and immediate wholehearted acceptance",
+        "loss": "frustrated but upbeat insistence on a stronger rematch",
+        "play": "reckless infectious battle excitement and crew-leading joy"
       },
       "seed": 4213
     },
@@ -190,15 +190,15 @@
       "seed": 4216
     },
     "17": {
-      "name": "Boros",
-      "voice": "Adult male resonant rough baritone, noble powerful warrior, restrained intensity, direct clear diction and longing beneath confidence.",
+      "name": "Bill Cipher",
+      "voice": "Male animated high-mid nasal register, buzzy slightly gravelly cartoon showman, fast elastic rhythm, gleeful theatrical menace, clear intelligible words.",
       "direction": {
-        "entrance": "eager intense hope for a worthy rival",
-        "defeat": "exhausted grateful awe",
-        "loss": "disappointed dignified patience",
-        "play": "restrained renewed anticipation"
+        "entrance": "wild gleeful threatening showmanship",
+        "defeat": "startled indignation then sardonic grudging agreement",
+        "loss": "manic taunting triumph",
+        "play": "mischievous explosive enthusiasm"
       },
-      "seed": 4217
+      "seed": 4220
     },
     "18": {
       "name": "Thanos",
@@ -223,15 +223,15 @@
       "seed": 4219
     },
     "20": {
-      "name": "Bill Cipher",
-      "voice": "Male animated high-mid nasal register, buzzy slightly gravelly cartoon showman, fast elastic rhythm, gleeful theatrical menace, clear intelligible words.",
+      "name": "Saitama",
+      "voice": "Adult male low-mid baritone with an ordinary, slightly tired speaking voice, flat deadpan delivery, dry understatement, blunt clean diction and little effort. Physically overwhelming but emotionally bored, never booming, theatrical, heroic or melodramatic; occasional dry surprise is the only lift.",
       "direction": {
-        "entrance": "wild gleeful threatening showmanship",
-        "defeat": "startled indignation then sardonic grudging agreement",
-        "loss": "manic taunting triumph",
-        "play": "mischievous explosive enthusiasm"
+        "entrance": "understated bored curiosity with practical impatience",
+        "defeat": "flat surprised respect with quiet acceptance",
+        "loss": "matter-of-fact disappointment and an unhurried warning",
+        "play": "dry efficient readiness with everyday distraction"
       },
-      "seed": 4220
+      "seed": 4221
     }
   }
 }

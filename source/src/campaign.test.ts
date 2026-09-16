@@ -15,12 +15,16 @@ const noCheats = { trueDice: false, readsYourReply: false, clairvoyance: false, 
 const allCheats = { trueDice: true, readsYourReply: true, clairvoyance: true, foresight: true };
 
 describe("campaign definitions", () => {
-  it("contains the approved twenty opponents in sequence, with Meruem and Bill reserved", () => {
+  it("contains the approved twenty opponents in sequence, with Meruem and Saitama reserved", () => {
     expect(CAMPAIGN_CHAPTERS.map(({ chapter }) => chapter)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
     expect(CAMPAIGN_CHAPTERS.map(({ bossId }) => bossId)).toEqual([
-      "c104", "c134", "c033", "c021", "c114", "c029", "c024", "c096", "c071", "c084",
-      "c023", "c037", "c058", "c019", "c022", "c097", "c051", "c027", "c044", "c041",
+      "c104", "c110", "c033", "c021", "c114", "c029", "c024", "c096", "c071", "c084",
+      "c023", "c037", "c060", "c019", "c022", "c097", "c041", "c027", "c044", "c025",
     ]);
+    expect(cards.find(({id}) => id === CAMPAIGN_CHAPTERS[1].bossId)?.name).toBe("Po");
+    expect(cards.find(({id}) => id === CAMPAIGN_CHAPTERS[12].bossId)?.name).toBe("Monkey D. Luffy");
+    expect(cards.find(({id}) => id === CAMPAIGN_CHAPTERS[16].bossId)?.name).toBe("Bill Cipher");
+    expect(cards.find(({id}) => id === CAMPAIGN_CHAPTERS[19].bossId)?.name).toBe("Saitama");
     expect(new Set(CAMPAIGN_CHAPTERS.map(({ universe }) => universe)).size).toBe(20);
   });
 
@@ -42,12 +46,12 @@ describe("campaign definitions", () => {
     expect(CAMPAIGN_ROSTER_SIZE).toBe(roster.length);
     expect(roster.length).toBe(218);
     expect(CAMPAIGN_CHAPTERS.map(({ rewardCardIds }) => rewardCardIds.length))
-      .toEqual([11,9,9,9,9,9,9,9,9,10,10,10,11,10,10,10,11,16,6,1]);
+      .toEqual([11,9,9,9,9,9,9,9,9,10,10,10,11,10,10,10,1,16,6,11]);
     const allocated = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.flatMap(({ rewardCardIds }) => rewardCardIds)];
     expect(allocated).toHaveLength(218);
     expect(new Set(allocated).size).toBe(218);
     expect(allocated.sort()).toEqual([...rosterIds].sort());
-    expect(getCampaignChapter(20)!.rewardCardIds).toEqual(["c041"]);
+    expect(getCampaignChapter(20)!.rewardCardIds).toEqual(["c025", "c039", "c051", "c062", "c066", "c077", "c112", "c119", "c126", "c127", "r011"]);
   });
 
   for (const chapter of CAMPAIGN_CHAPTERS) {

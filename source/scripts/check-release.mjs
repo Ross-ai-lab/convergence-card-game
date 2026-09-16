@@ -6,7 +6,7 @@ import { skipCampaignDialogue } from './story-fixtures.mjs';
 const base=process.argv[2];if(!base)throw new Error('Pass the published /play/ URL');
 const browser=await launch();const page=await browser.newPage({viewport:{width:1440,height:950}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
-const progress=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('convergence.progress.v3')));
+const progress=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('convergence.progress.v4')));
 try{
  await mkdir('../.preview/release',{recursive:true});
  await page.goto(base,{waitUntil:'domcontentloaded'});
@@ -33,7 +33,7 @@ try{
  await page.getByRole('button',{name:'DEV tools',exact:true}).click();
  await page.locator('.developer-search input').fill('John Wick');await page.locator('.developer-card-row').first().click();
  await page.getByRole('button',{name:'I win',exact:true}).click();
- await page.waitForFunction(()=>JSON.parse(localStorage.getItem('convergence.progress.v3')).completedChapters===1);
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('convergence.progress.v4')).completedChapters===1);
  assert.equal((await progress()).unlockedIds.length,41);assert.equal((await progress()).pendingRewards.length,11);
  await page.reload();await page.locator('[data-story-stage="defeat"]').waitFor();await skipCampaignDialogue(page);await page.locator('.pack-veil').waitFor();assert.equal((await progress()).pendingRewards.length,11);
  await settleMotion(page);

@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 215,387 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 215,581 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -179,7 +179,7 @@ No account or installation is required. Progress and live duels are saved locall
 | Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
 | 1 | GLaDOS | Tech fortifications | Recruit | Stand Fast | 11 |
-| 2 | Tai Lung | Martial growth | Recruit | Sharpen | 9 |
+| 2 | Po | Martial growth | Recruit | Sharpen | 9 |
 | 3 | Yujiro | Nature duelists | Recruit | Sharpen | 9 |
 | 4 | Light Yagami | Information and sacrifice | Recruit | Blood Price | 9 |
 | 5 | Lord Voldemort | Protected dark magic | Veteran | Call a Recruit | 9 |
@@ -190,14 +190,14 @@ No account or installation is required. Progress and live duels are saved locall
 | 10 | Meruem | Predators and protection | Veteran | Reforged Chains | 10 |
 | 11 | Ainz Ooal Gown | Undead court | Ascendant (no cheats) | Call a Recruit | 10 |
 | 12 | Eye of Sauron | The siege of Mordor | Ascendant (no cheats) | Stand Fast | 10 |
-| 13 | Kaido | Pirate emperors | Ascendant (no cheats) | Sharpen | 11 |
+| 13 | Monkey D. Luffy | Pirate emperors | Ascendant (no cheats) | Sharpen | 11 |
 | 14 | Gilgamesh | Relic arsenal | Ascendant (no cheats) | Blood Price | 10 |
 | 15 | Gojo | Silence and execution | Ascendant | Dampen | 10 |
 | 16 | Elden Beast | Magic and rebirth | Ascendant | Mend Core | 10 |
-| 17 | Boros | Monsters and heroes | Ascendant | Mend Core | 11 |
+| 17 | Bill Cipher | Reality fracture | Ascendant | Blood Price | 1 |
 | 18 | Thanos | Cosmic convergence | Ascendant | Wither | 16 |
 | 19 | Mastered Ultra Instinct Goku | Champions of light | Ascendant | Vital Spark | 6 |
-| 20 | Bill Cipher | Reality fracture | Ascendant | Blood Price | 1 |
+| 20 | Saitama | Monsters and heroes | Ascendant | Mend Core | 11 |
 
 #### Scope and status
 
@@ -212,7 +212,7 @@ Twenty chapters unlock strictly in order. A first victory clears its chapter, gr
 
 Every player starts with the same thirty-card deck and thirty unlocked cards, including all eleven Basic cards and no Mythics. The deck keeps its chosen cards as costs change. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
 
-Approved reward adjustment: chapter 1 awards 11; chapters 2–9 award 9 each; chapters 10–12, 14–16 award 10 each; chapters 13 and 17 award 11 each; chapter 18 awards 16; chapter 19 awards 6; chapter 20 awards Bill Cipher only. Total: 30 initial cards + 188 rewards = all 218 cards.
+Approved reward adjustment: chapter 1 awards 11; chapters 2–9 award 9 each; chapters 10–12, 14–16 award 10 each; chapter 13 awards 11; chapter 17 awards Bill Cipher only; chapter 18 awards 16; chapter 19 awards 6; chapter 20 awards the final One-Punch Man pack of 11. Total: 30 initial cards + 188 rewards = all 218 cards.
 
 Marvel combines MCU, Marvel and Loki labels: eleven minions and four relics, fifteen cards. Chapter eighteen retains its fixed sixteen-card reward, with The Driller from Transformers as its Tech filler. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
 
@@ -283,7 +283,7 @@ Ascendant Clairvoyance evaluates each seat's next card from that seat's deck. It
 
 Owner policy: never be afraid to reset Convergence progress during development. Prefer a clean reset over fragile migration when progression or save semantics change. Record what resets and apply the reset once through a version change, not repeatedly on every page load.
 
-For campaign implementation, reset existing collections to the curated thirty-card starter, campaign completion to zero, unfinished duels, selected decks, collection marks, records and Hero Power unlocks. Preserve unrelated preferences such as sound volume. The campaign build performs this reset on first load through progress v3 and duel-save v29.
+For campaign implementation, reset existing collections to the curated thirty-card starter, campaign completion to zero, unfinished duels, selected decks, collection marks, records and Hero Power unlocks. Preserve unrelated preferences such as sound volume. The campaign build performs this reset on first load through progress v4 and duel-save v30.
 
 Developer tools remain available from the start. A developer-assisted campaign victory counts as a normal first clear and grants that chapter's reward and Hero Power progress. A victory outside campaign mode does not clear an unnamed chapter. Deliberate developer Unlock All remains an explicit exception to reserved rewards.
 
@@ -306,7 +306,7 @@ Maintain card IDs and the four difficulty profiles in the JSON; do not duplicate
 
 Every draw and deck-search effect passes its controller explicitly, including effects resolving outside that controller's turn. Separate-deck direct draws now incur escalating fatigue for each missing card. Foresight inspects up to two, keeps one, and bottoms the reject in the same pile; having only one card causes no extra fatigue. Empty discoveries have no enemy-deck fallback. Clairvoyance forecasts the two queues separately and returns rejected offers to the same forecast queue.
 
-Save loading validates per-seat piles, cheat flags, queued hotseat mulligans and ownership history. Round-trip tests cover a pending Foresight choice and identical continuation after reload. Both worker and no-worker bot paths preserve the saved cheat profile. The v29 save cutover resets pre-campaign or pre-hotseat-mulligan duels. The scripted tutorial stays on its existing setup path; combining tutorial setup with constructed decks is rejected explicitly.
+Save loading validates per-seat piles, cheat flags, queued hotseat mulligans and ownership history. Round-trip tests cover a pending Foresight choice and identical continuation after reload. Both worker and no-worker bot paths preserve the saved cheat profile. The v30 save cutover resets old campaign and pre-hotseat-mulligan duels. The scripted tutorial stays on its existing setup path; combining tutorial setup with constructed decks is rejected explicitly.
 
 Focused tests cover both seats, overlapping card IDs, independent shuffles and fatigue, mulligans, full-hand burns, sparse decks, discoveries, summoned/equipped cards, Angstrom, Sir Nighteye, stolen-card returns, Reborn/resurrection ownership, cancellation, deterministic replay, worker transport, and malformed saves. No card stats, search-depth limits or reward definitions changed. No balance ladder was run. The feature-browser check now accepts both Batman target paths: automatic selection when one enemy is legal, and a manual choice when several are legal. This repairs a timing-independent test assumption without changing tutorial gameplay. The pack-hover check also moves the pointer away before measuring the resting card, avoiding an already-hovered baseline. Verification: 62 focused engine/save/worker checks passed; all eight project suites passed across the final runs, with UI and features passing isolated reruns after those harness repairs. TypeScript and the production build passed.
 
@@ -316,9 +316,9 @@ The title screen opens Campaign until all twenty chapters are cleared. Only the 
 
 The deck builder displays unlocked cards, artwork, printed stats, rarity and effects, with search and cost/camp/alignment/type filters. Selected-only view and the mana curve follow the draft. Edits persist automatically. Removing a card may save a 29-card draft, but a new duel is blocked until the list contains exactly thirty unique unlocked cards. Rewards never append themselves to the selected deck. Both hotseat decks use the same local collection and are validated independently. A live saved duel retains its original deck snapshot even if a draft changes at the title screen.
 
-Progress v3 stores completed chapters, explicit unlocked IDs, the two deck drafts, selected Hero Power, record/collection marks, settled duel IDs and pending reward cards. The first-clear transaction records the win, unlocks the fixed cards, advances the next chapter, grants the player power and saves the pending pack together. Pack acknowledgment only clears that presentation queue. Reopening during a pack shows the same unviewed reward; retrying an already-settled duel cannot pay twice. Replays, losses, draws, hotseat and free duels grant no cards or additional power unlocks. The daily pack economy and its generation code/styles were removed.
+Progress v4 stores completed chapters, explicit unlocked IDs, the two deck drafts, selected Hero Power, record/collection marks, settled duel IDs and pending reward cards. The first-clear transaction records the win, unlocks the fixed cards, advances the next chapter, grants the player power and saves the pending pack together. Pack acknowledgment only clears that presentation queue. Reopening during a pack shows the same unviewed reward; retrying an already-settled duel cannot pay twice. Replays, losses, draws, hotseat and free duels grant no cards or additional power unlocks. The daily pack economy and its generation code/styles were removed.
 
-Duel save v29 records campaign chapter, skill, duel identity, separate piles, cheat profile and a queued hotseat mulligan. Old progress/save keys are removed once; sound preferences are preserved. Progress-save errors show a retry message instead of silently claiming success. Continue includes the first main turn immediately after mulligan. Active developer-assisted campaign wins count; result previews outside a campaign do not. Leaving a tutorial never records it as a completed duel.
+Duel save v30 records campaign chapter, skill, duel identity, separate piles, cheat profile and a queued hotseat mulligan. The campaign roster reset discards old campaign progress and in-progress duels once; sound preferences are preserved. Progress-save errors show a retry message instead of silently claiming success. Continue includes the first main turn immediately after mulligan. Active developer-assisted campaign wins count; result previews outside a campaign do not. Leaving a tutorial never records it as a completed duel.
 
 `scripts/check-campaign.mjs` runs through the existing `npm run check` entry point. It checks the real first clear, pack reload/acknowledgment, draft blocking, card swap, replay/loss handling, final chapter reward, free-play unlock, random opponent deck and responsive screens. `scripts/campaign-fixtures.mjs` prepares completed progression using the same pure first-clear transactions for existing browser suites. Board fixtures use enough Tech minions and relics to test three-choice discoveries without depending on which cards happened to enter the opening hand. Unit coverage lives in `campaign-progress.test.ts` and the revised record/save tests. Final verification passed: 102 focused unit checks, the full test suite, the campaign browser flow, performance, audio, card layout, feature screens and UI interaction checks across the final runs. TypeScript and the production build passed. Desktop and phone campaign/deck screens were inspected.
 
@@ -381,7 +381,7 @@ Nothing damages a core automatically just because a turn starts; core damage com
 
 ### Campaign story
 
-`materials/campaign-story.json` is the narrative source: Rick Gramps collects the greatest fighters across universes. Every chapter has distinct entrance, player-victory, player-loss and collected-card dialogue. The prologue appears on the first chapter entered after this feature is introduced. Speeches use typewriter panels with a reveal/continue button and no skip control. Rick Gramps uses the generated portrait in source/public/campaign/rick-gramps.webp. No speech audio is added. Victory dialogue is saved alongside rewards and must be acknowledged before the pack appears, including after reload. Playing a collected boss from hand produces a separate non-blocking speech bubble; enemy plays and unearned bosses do not claim allegiance. `CampaignSpeech.tsx` owns presentation, `progress.ts` owns the backward-compatible story and chapter-access fields, and the engine remains independent of dialogue.
+`materials/campaign-story.json` is the narrative source: Rick Gramps collects the greatest fighters across universes. Every chapter has Rick's selection speech plus distinct entrance, player-victory, player-loss and collected-card dialogue. The prologue appears on the first chapter entered after this feature is introduced. Speeches use typewriter panels with a reveal/continue button and no skip control. Rick Gramps uses the generated portrait in source/public/campaign/rick-gramps.webp. Qwen audio follows Rick's selection with the boss entrance and keeps the written dialogue visible if audio fails. Victory dialogue is saved alongside rewards and must be acknowledged before the pack appears, including after reload. Playing a collected boss from hand produces a separate non-blocking speech bubble; enemy plays and unearned bosses do not claim allegiance. `CampaignSpeech.tsx` owns presentation, `progress.ts` owns the backward-compatible story and chapter-access fields, and the engine remains independent of dialogue.
 
 ### Starting and resuming
 
@@ -557,7 +557,7 @@ Thirty-two relics would be
 
 ## Gradual card unlocking
 
-Card unlocking is now campaign-only. The canonical chapter packs are in `materials/campaign-design.json`; `progress.ts` awards only a first clear of the next chapter. Thirty-two initial cards plus 186 chapter rewards cover the current 218-card roster once each. The starting and saved decks still contain thirty selected cards. Refer to [Campaign design — phase one](#campaign-design-phase-one) for the exact chapter table and current implementation status.
+Card unlocking is now campaign-only. The canonical chapter packs are in `materials/campaign-design.json`; `progress.ts` awards only a first clear of the next chapter. Thirty initial cards plus 188 chapter rewards cover the current 218-card roster once each. The starting and saved decks still contain thirty selected cards. Refer to [Campaign design — phase one](#campaign-design-phase-one) for the exact chapter table and current implementation status.
 
 There are no daily cards, loss rewards, draw rewards or repeat-win packs. Completing a chapter changes the collection, not the saved thirty-card deck. The player edits that deck explicitly between duels. Developer Unlock All remains an intentional bypass, but it does not mark chapters complete or reveal free-play difficulty controls.
 
@@ -1375,7 +1375,7 @@ Interaction verification covered Recruit, Veteran, and Ascendant selection; the 
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
 
-**Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 60 Rare cards stop costing anything at the same time, which is what keeps a gallery of 216 affordable.
+**Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 60 Rare cards stop costing anything at the same time, which is what keeps a gallery of 218 affordable.
 
 ### The technique, which is the transferable part
 
