@@ -1,0 +1,13 @@
+{
+  "purpose": "Four seed-control auditions using Sample M's saved voice and direction",
+  "sourceSample": "M",
+  "seed": 6303,
+  "instruction": "Older male gravelly nasal tenor-baritone, weary intoxicated muttering, lazy half-swallowed words, irregular tempo, sharp cynical emphasis, stumbling breath, sudden explosive manic delight; old alcoholic portal scientist, never a boy. Perform with very drunk, sloppy and self-amused; slur and stumble through words, interrupt yourself, then snap into manic scientific certainty; keep the speech intelligible and never sound young, polished or heroic",
+  "text": "The machine is ready, and the blue door is open in the empty laboratory.",
+  "samples": [
+    {"id": "1", "file": "qwen/rick-gramps-m-seed-6303/rick-m-seed-1.mp3", "duration": 3.6, "sha256": "bb87e902c6981c64b17ac5c15008e208cd593ca98d3c9a654c1439bb1be7da24"},
+    {"id": "2", "file": "qwen/rick-gramps-m-seed-6303/rick-m-seed-2.mp3", "duration": 4.56, "sha256": "c4d3a683dcecc1dee1282b2de84210824987d427dfdca7a9814be72b691534ba"},
+    {"id": "3", "file": "qwen/rick-gramps-m-seed-6303/rick-m-seed-3.mp3", "duration": 4.48, "sha256": "3d77f2ef1677b01bf3f5296a5bd4f13d13edfd0450937fdd85ca2837469ed4e4"},
+    {"id": "4", "file": "qwen/rick-gramps-m-seed-6303/rick-m-seed-4.mp3", "duration": 5.36, "sha256": "99eb26303221f3650cd4ffb7526f84b02fe3730fe6f11ad0568faf78e80e74c8"}
+  ]
+}
