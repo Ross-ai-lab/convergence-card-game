@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 215,248 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 215,387 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -2314,6 +2314,6 @@ Convergence is a non-commercial fan project made for personal play and education
 Campaign polish: the starter equips Antimatter Bomb and Carrier Strike Group; T-1000 and Rick Prime are among GLaDOS's 11 rewards. Ross has a separate chapter-unlock switch that opens fights without recording victories. Each boss has entrance, victory, loss and collected-play dialogue. Dialogue has one forward control and no skip option. My Deck can hide equipped cards.
 
 
-Voice auditions: the owner’s comparison approved Qwen overwhelmingly for emotional character dialogue. `materials/voice-auditions/` now contains Qwen samples only; rejected Kokoro comparison files are removed. All 80 Qwen boss recordings live in `source/public/audio/campaign/`, with a casting/text/checksum manifest in `source/data/campaign-voices.json`. The game plays entrance, defeat, loss and collected-boss lines through the effects volume, ducks music and card themes, cancels stale fetches, and keeps written dialogue available. `npm run voice:audition` is now Qwen-only. Reusable generation lives in the workspace `Pipelines/audio/qwen/` front door; Convergence keeps only its story, cast and adapter.
+Voice auditions: the owner’s comparison approved Qwen overwhelmingly for emotional character dialogue. `materials/voice-auditions/` now contains Qwen samples only; rejected Kokoro comparison files are removed. The game ships 101 campaign recordings: 80 boss lines, Rick’s prologue, and 20 cloned Rick selection speeches in `source/public/audio/campaign/`, with a casting/text/checksum manifest in `source/data/campaign-voices.json`. Each campaign entrance now presents Rick’s low-key selection speech, then the boss challenge, then the arena. All speech respects the effects volume, ducks music and card themes, cancels stale fetches, and keeps written dialogue available. `npm run voice:audition` is now Qwen-only. Reusable generation lives in the workspace `Pipelines/audio/qwen/` front door; Convergence keeps only its story, cast and adapter.
 
 Desktop campaign fitting: at widths of at least 1100 CSS pixels and heights of at least 650 pixels, twenty chapters occupy a fixed five-by-four grid without vertical scrolling. Narrower windows retain scrolling. Cleared reward details are bounded overlays inside each tile, keeping chapter controls on screen.

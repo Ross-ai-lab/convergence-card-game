@@ -607,7 +607,7 @@ export default function App() {
   const [tutorialStep, setTutorialStep] = useState(0);
   // Unviewed first-clear rewards survive reload; developer previews are transient.
   const [pack, setPack] = useState<string[] | null>(() => initialProgress.pendingRewards.length ? initialProgress.pendingRewards : null);
-  const [chapterSpeech, setChapterSpeech] = useState<{mode: Extract<GameMode,{kind:"campaign"}>; stage:"prologue"|"entrance"} | null>(null);
+  const [chapterSpeech, setChapterSpeech] = useState<{mode: Extract<GameMode,{kind:"campaign"}>; stage:"prologue"|"rick-intro"|"entrance"} | null>(null);
   const [bossLines, setBossLines] = useState<SpeechCue[]>([]);
   const closeBossLine = useCallback(() => setBossLines(lines => lines.slice(1)), []);
   const defeatedChapter = progress.pendingBossSpeech ? CAMPAIGN_CHAPTERS.find(chapter => chapter.chapter === progress.pendingBossSpeech) : undefined;
@@ -631,7 +631,11 @@ export default function App() {
     if (chapterSpeech.stage === "prologue") {
       const next = {...progress, storyIntroduced:true};
       const saved = saveProgress(next); setStorageError(!saved);
-      if (saved) { setProgress(next); setChapterSpeech({...chapterSpeech,stage:"entrance"}); }
+      if (saved) { setProgress(next); setChapterSpeech({...chapterSpeech,stage:"rick-intro"}); }
+      return;
+    }
+    if (chapterSpeech.stage === "rick-intro") {
+      setChapterSpeech({...chapterSpeech,stage:"entrance"});
       return;
     }
     const next = chapterSpeech.mode;
@@ -654,6 +658,8 @@ export default function App() {
     let key: string | null = null;
     if (chapterSpeech?.stage === "prologue") {
       key = "rick-prologue";
+    } else if (chapterSpeech?.stage === "rick-intro") {
+      key = `${String(chapterSpeech.mode.chapter).padStart(2, "0")}-rick-intro`;
     } else if (chapterSpeech?.stage === "entrance") {
       key = `${String(chapterSpeech.mode.chapter).padStart(2, "0")}-entrance`;
     } else if (defeatedChapter) {
@@ -1663,7 +1669,7 @@ export default function App() {
     if (next.kind === "hotseat" && !validateDeck(progress.hotseatDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) { openDeck(1, "hotseat"); return; }
     if (next.kind === "campaign" && !options.skipStory) {
       setOverlay(null);
-      setChapterSpeech({mode:next,stage:progress.storyIntroduced ? "entrance" : "prologue"});
+      setChapterSpeech({mode:next,stage:progress.storyIntroduced ? "rick-intro" : "prologue"});
       return;
     }
     const seed = createDuelSeed();
@@ -3185,9 +3191,9 @@ export default function App() {
         const chapter = CAMPAIGN_CHAPTERS[chapterSpeech.mode.chapter-1];
         const boss = library[chapter.bossId];
         return <CampaignSpeech key={`${chapterSpeech.stage}-${chapter.chapter}`} stage={chapterSpeech.stage} chapter={chapter.chapter}
-          name={chapterSpeech.stage === "prologue" ? CAMPAIGN_PROTAGONIST : boss.name}
-          text={chapterSpeech.stage === "prologue" ? CAMPAIGN_PREMISE : chapter.story.entrance}
-          art={chapterSpeech.stage === "prologue" ? `${import.meta.env.BASE_URL}campaign/rick-gramps.webp` : boss.art} accent={isMinionCard(boss) ? campAccent(boss.camp) : "#d7b76f"}
+          name={chapterSpeech.stage === "entrance" ? boss.name : CAMPAIGN_PROTAGONIST}
+          text={chapterSpeech.stage === "prologue" ? CAMPAIGN_PREMISE : chapterSpeech.stage === "rick-intro" ? chapter.story.rickIntro : chapter.story.entrance}
+          art={chapterSpeech.stage === "entrance" ? boss.art : `${import.meta.env.BASE_URL}campaign/rick-gramps.webp`} accent={chapterSpeech.stage === "entrance" && isMinionCard(boss) ? campAccent(boss.camp) : "#d7b76f"}
           onContinue={continueChapterSpeech} onCancel={() => {setChapterSpeech(null);setOverlay("campaign");}} />;
       })()}
       {defeatedChapter && defeatedBoss && <CampaignSpeech key={`defeat-${defeatedChapter.chapter}`} stage={progress.pendingBossSpeechOutcome === "loss" ? "loss" : "defeat"} chapter={defeatedChapter.chapter}

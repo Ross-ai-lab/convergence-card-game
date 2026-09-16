@@ -24,12 +24,17 @@ if (!existsSync(python)) {
   );
 }
 
-const model = process.env.QWEN_MODEL_DIR || path.join(root, ".preview/models/qwen-voice-design");
-if (!existsSync(path.join(model, "model.safetensors")) || !existsSync(path.join(model, "speech_tokenizer", "model.safetensors"))) {
-  throw new Error(
-    `Approved Qwen weights are missing at ${model}. ` +
-    "Run `just qwen-voice setup --download`; the resumable downloader will reuse complete files.",
-  );
+const models = [
+  ["VoiceDesign", process.env.QWEN_MODEL_DIR || path.join(root, ".preview/models/qwen-voice-design")],
+  ["Base", process.env.QWEN_BASE_MODEL_DIR || path.join(root, "../../../Pipelines/audio/qwen/models/qwen-base")],
+];
+for (const [label, model] of models) {
+  if (!existsSync(path.join(model, "model.safetensors")) || !existsSync(path.join(model, "speech_tokenizer", "model.safetensors"))) {
+    throw new Error(
+      `Approved Qwen ${label} weights are missing at ${model}. ` +
+      "Run `just qwen-voice setup --model-type all`; the resumable downloader will reuse complete files.",
+    );
+  }
 }
 
 await run(python, ["materials/local-production/asset-tools/voice-campaign.py", ...process.argv.slice(2)]);

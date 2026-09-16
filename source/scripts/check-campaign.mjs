@@ -126,6 +126,13 @@ try {
   await page.locator('.campaign-speech-text').click();
   await page.screenshot({path:'../.preview/campaign/story-prologue.png'});
   await page.locator('[data-story-continue]').click();
+  await page.locator('[data-story-stage="rick-intro"]').waitFor();
+  assert((await page.locator('.campaign-speech-panel h2').textContent()).includes('Rick Gramps'));
+  assert((await page.locator('.campaign-speech-text').textContent()).includes('Portal'));
+  await page.waitForFunction(() => window.__sfx.getStats().bossSpeechKey === '01-rick-intro');
+  await page.locator('.campaign-speech-text').click();
+  await page.screenshot({path:'../.preview/campaign/story-rick-intro.png'});
+  await page.locator('[data-story-continue]').click();
   await page.locator('[data-story-stage="entrance"]').waitFor();
   await page.waitForFunction(() => window.__sfx.getStats().bossSpeechKey === '01-entrance');
   assert((await page.locator('.campaign-speech-panel h2').textContent()).includes('GLaDOS'));

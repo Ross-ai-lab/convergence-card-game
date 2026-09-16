@@ -3,6 +3,13 @@
   "protagonist": {
     "name": "Rick Gramps",
     "instruction": "Old male gravelly nasal tenor-baritone, weary and drunk and intoxicated muttering, lazy half-swallowed words, irregular tempo, sharp cynical emphasis, stumbling breath, sudden explosive manic delight; old alcoholic portal scientist. Perform with very, VERY drunk, sloppy and self-amused; slur and stumble through words, interrupt yourself, then snap into manic scientific certainty.",
+    "clone": {
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+      "referenceAudio": "materials/voice-auditions/qwen/rick-gramps-base-clone/rick-M-reference.wav",
+      "referenceTranscriptFile": "materials/voice-auditions/qwen/rick-gramps-base-clone/rick-M-reference.txt",
+      "referenceTranscript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+      "seed": 6303
+    },
     "seed": 6303
   },
   "cast": {

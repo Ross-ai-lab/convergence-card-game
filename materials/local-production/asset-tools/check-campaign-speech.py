@@ -2,6 +2,7 @@
 from pathlib import Path
 import argparse, difflib, hashlib, json, os, re
 ROOT=Path(__file__).resolve().parents[3]
+EXPECTED_CAMPAIGN_RECORDINGS=101
 parser=argparse.ArgumentParser();parser.add_argument('--partial',action='store_true');args=parser.parse_args()
 import torch
 os.add_dll_directory(str(Path(torch.__file__).parent/'lib'))
@@ -9,7 +10,7 @@ import numpy as np
 import soundfile as sf
 from faster_whisper import WhisperModel
 manifest=json.loads((ROOT/'.preview/voice-full-hold/campaign-voices.json').read_text(encoding='utf-8'))
-if not args.partial and len(manifest)!=80:raise RuntimeError(f'Expected 80 recordings, found {len(manifest)}')
+if not args.partial and len(manifest)!=EXPECTED_CAMPAIGN_RECORDINGS:raise RuntimeError(f'Expected {EXPECTED_CAMPAIGN_RECORDINGS} recordings, found {len(manifest)}')
 report_path=ROOT/'.preview/campaign-voices/transcripts.json'
 report=json.loads(report_path.read_text()) if report_path.exists() else {}
 model=None;failed=[]

@@ -12,6 +12,9 @@ describe('Rick Gramps campaign story',()=>{
     expect(CAMPAIGN_PROTAGONIST).toBe('Rick Gramps');
     expect(CAMPAIGN_PREMISE).toContain('greatest fighters');
     expect(CAMPAIGN_CHAPTERS).toHaveLength(20);
+    const rickLines=CAMPAIGN_CHAPTERS.map(c=>c.story.rickIntro);
+    expect(new Set(rickLines).size).toBe(20);
+    expect(rickLines.every(line=>line.length>220 && line.length<500)).toBe(true);
     const lines=CAMPAIGN_CHAPTERS.flatMap(c=>[c.story.entrance,c.story.defeat,c.story.loss,c.story.play]);
     expect(new Set(lines).size).toBe(80);
     expect(lines.every(line=>line.length>30)).toBe(true);

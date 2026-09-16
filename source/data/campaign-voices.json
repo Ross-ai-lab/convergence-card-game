@@ -2,6 +2,7 @@
   "01-play": {
     "chapter": 1,
     "bossId": "c104",
+    "speaker": "GLaDOS",
     "stage": "play",
     "duration": 7.1,
     "text": "Your assistant has arrived, Gramps. Try not to lower the average intelligence on this side of the arena.",
@@ -11,6 +12,7 @@
   "20-play": {
     "chapter": 20,
     "bossId": "c041",
+    "speaker": "Bill Cipher",
     "stage": "play",
     "duration": 6.8,
     "text": "MISS ME, GRAMPS? Point me at something that still thinks reality is a rule.",
@@ -20,8 +22,9 @@
   "02-entrance": {
     "chapter": 2,
     "bossId": "c134",
+    "speaker": "Tai Lung",
     "stage": "entrance",
-    "duration": 12.0,
+    "duration": 12,
     "text": "You think greatness can be kept in a collection? I spent my life earning mine. Bring your little army, old man. I will show them what strength looks like.",
     "fingerprint": "26ac2f6e56e43231d5a08e239c6b14a2b17d6200d173e1b091fec9221db139c7",
     "audioSha256": "ad5d7c8c1c5f6bdf8c8735a23da54ea1af205f2adae0c091333eaea2942bc5bf"
@@ -29,6 +32,7 @@
   "02-defeat": {
     "chapter": 2,
     "bossId": "c134",
+    "speaker": "Tai Lung",
     "stage": "defeat",
     "duration": 9.2,
     "text": "I could not break you. That is an answer I cannot ignore. My strength is yours, Rick Gramps. Give it a purpose worthy of me.",
@@ -38,6 +42,7 @@
   "02-loss": {
     "chapter": 2,
     "bossId": "c134",
+    "speaker": "Tai Lung",
     "stage": "loss",
     "duration": 7.5,
     "text": "You brought fighters, Gramps. You forgot to bring a challenge. Train them. Then return and show me why I should remember your name.",
@@ -47,6 +52,7 @@
   "02-play": {
     "chapter": 2,
     "bossId": "c134",
+    "speaker": "Tai Lung",
     "stage": "play",
     "duration": 4.24,
     "text": "Point me at their strongest fighter, Gramps. I have no patience for the rest.",
@@ -56,6 +62,7 @@
   "01-entrance": {
     "chapter": 1,
     "bossId": "c104",
+    "speaker": "GLaDOS",
     "stage": "entrance",
     "duration": 12.3,
     "text": "A retired man with a portal gun and a scrapbook. How promising. Step into the arena, Rick Gramps. I have designed a very short test of your remaining life expectancy.",
@@ -65,6 +72,7 @@
   "01-defeat": {
     "chapter": 1,
     "bossId": "c104",
+    "speaker": "GLaDOS",
     "stage": "defeat",
     "duration": 12.4,
     "text": "The results are conclusive. You are considerably more dangerous than you look. Fine. My facility and its assets are at your disposal. Please stop touching the buttons.",
@@ -74,6 +82,7 @@
   "01-loss": {
     "chapter": 1,
     "bossId": "c104",
+    "speaker": "GLaDOS",
     "stage": "loss",
     "duration": 10.2,
     "text": "That was your best attempt? How educational. I will file it under preventable accidents. Try again when your collection has developed basic problem-solving skills.",
@@ -83,6 +92,7 @@
   "03-entrance": {
     "chapter": 3,
     "bossId": "c033",
+    "speaker": "Yujiro",
     "stage": "entrance",
     "duration": 11.2,
     "text": "A grandfather collecting fighters? Good. I was worried retirement had made you sensible. Bring your strongest pet. I need a warm-up.",
@@ -92,6 +102,7 @@
   "03-defeat": {
     "chapter": 3,
     "bossId": "c033",
+    "speaker": "Yujiro",
     "stage": "defeat",
     "duration": 10.5,
     "text": "Heh. You actually made me work for it. All right, old man. I will fight for your collection. Keep finding opponents worth breaking.",
@@ -101,6 +112,7 @@
   "03-loss": {
     "chapter": 3,
     "bossId": "c033",
+    "speaker": "Yujiro",
     "stage": "loss",
     "duration": 10.32,
     "text": "Already done? I was just starting to enjoy myself. Pick up your collection, old man. Bring me something that fights back next time.",
@@ -110,6 +122,7 @@
   "03-play": {
     "chapter": 3,
     "bossId": "c033",
+    "speaker": "Yujiro",
     "stage": "play",
     "duration": 3.361,
     "text": "Gramps. Tell me this one can take a punch.",
@@ -119,6 +132,7 @@
   "04-entrance": {
     "chapter": 4,
     "bossId": "c021",
+    "speaker": "Light Yagami",
     "stage": "entrance",
     "duration": 11.7,
     "text": "Rick Gramps. An alias, I assume. You gather dangerous people and call it a hobby. I prefer a world with order. Let us decide whose vision survives.",
@@ -128,6 +142,7 @@
   "04-defeat": {
     "chapter": 4,
     "bossId": "c021",
+    "speaker": "Light Yagami",
     "stage": "defeat",
     "duration": 11.1,
     "text": "Every route I prepared led back to you. I underestimated your reach. I will serve your collection. A strategist is more useful at your side than beneath your feet.",
@@ -137,6 +152,7 @@
   "04-loss": {
     "chapter": 4,
     "bossId": "c021",
+    "speaker": "Light Yagami",
     "stage": "loss",
     "duration": 9.3,
     "text": "Every move you made led here. You mistook a collection of powerful pieces for a plan, Gramps. I suggest you learn the difference.",
@@ -146,6 +162,7 @@
   "04-play": {
     "chapter": 4,
     "bossId": "c021",
+    "speaker": "Light Yagami",
     "stage": "play",
     "duration": 5.92,
     "text": "Leave the calculations to me, Gramps. They will notice the trap when it is already closed.",
@@ -155,6 +172,7 @@
   "05-entrance": {
     "chapter": 5,
     "bossId": "c114",
+    "speaker": "Lord Voldemort",
     "stage": "entrance",
     "duration": 14.32,
     "text": "You cross into my world carrying borrowed champions and call yourself powerful. Come closer, collector. Let us discover how much courage remains when your servants fall.",
@@ -164,6 +182,7 @@
   "05-defeat": {
     "chapter": 5,
     "bossId": "c114",
+    "speaker": "Lord Voldemort",
     "stage": "defeat",
     "duration": 14.7,
     "text": "You have power I cannot dismiss. Very well. My wand and my followers will serve you. Do not confuse obedience with affection, Gramps.",
@@ -173,6 +192,7 @@
   "05-loss": {
     "chapter": 5,
     "bossId": "c114",
+    "speaker": "Lord Voldemort",
     "stage": "loss",
     "duration": 11.6,
     "text": "Your champions have fallen, and my world remains mine. Remember this feeling, collector. It is the cost of reaching beyond your power.",
@@ -182,8 +202,9 @@
   "05-play": {
     "chapter": 5,
     "bossId": "c114",
+    "speaker": "Lord Voldemort",
     "stage": "play",
-    "duration": 6.0,
+    "duration": 6,
     "text": "Your enemies will learn to fear your collection, Gramps. I shall make certain of it.",
     "fingerprint": "d9c6330d79bd15a4f51573214352617dc5e3ec71526c0f7167c5746203f5d98a",
     "audioSha256": "b055b3fe2489b1ff610495b7f835e4042e55036055fe18332ed4349f7bcbb47c"
@@ -191,6 +212,7 @@
   "06-entrance": {
     "chapter": 6,
     "bossId": "c029",
+    "speaker": "Darth Vader",
     "stage": "entrance",
     "duration": 10.3,
     "text": "Your machines have brought you far, Rick Gramps. They will not protect you here. Stand your ground. I will measure this power you claim to possess.",
@@ -200,6 +222,7 @@
   "06-defeat": {
     "chapter": 6,
     "bossId": "c029",
+    "speaker": "Darth Vader",
     "stage": "defeat",
     "duration": 11.1,
     "text": "Your power is real. I will serve under your command. Direct it with purpose, Gramps. An empire is wasted on a man who is merely bored.",
@@ -209,6 +232,7 @@
   "06-loss": {
     "chapter": 6,
     "bossId": "c029",
+    "speaker": "Darth Vader",
     "stage": "loss",
     "duration": 13.1,
     "text": "Your ambition exceeds your discipline, Gramps. This defeat was inevitable. Return when you can command your strength rather than merely gather it.",
@@ -218,6 +242,7 @@
   "06-play": {
     "chapter": 6,
     "bossId": "c029",
+    "speaker": "Darth Vader",
     "stage": "play",
     "duration": 4.5,
     "text": "Your command is acknowledged. I will clear the path.",
@@ -227,6 +252,7 @@
   "07-entrance": {
     "chapter": 7,
     "bossId": "c024",
+    "speaker": "Conquest",
     "stage": "entrance",
     "duration": 11.68,
     "text": "Look at that. A whole collection, arranged for my amusement. I usually have to travel between worlds to find this much resistance. You have saved me the trouble, Gramps.",
@@ -236,6 +262,7 @@
   "07-defeat": {
     "chapter": 7,
     "bossId": "c024",
+    "speaker": "Conquest",
     "stage": "defeat",
     "duration": 8.9,
     "text": "Ha! I remember pain now. You have earned my service, old man. Find me another battle like that and I might even enjoy taking orders.",
@@ -245,6 +272,7 @@
   "07-loss": {
     "chapter": 7,
     "bossId": "c024",
+    "speaker": "Conquest",
     "stage": "loss",
     "duration": 10.9,
     "text": "Oh, that was disappointing. All those worlds, and this is what you brought me? Go find stronger toys, Gramps. I will be waiting.",
@@ -254,6 +282,7 @@
   "07-play": {
     "chapter": 7,
     "bossId": "c024",
+    "speaker": "Conquest",
     "stage": "play",
     "duration": 3.92,
     "text": "You promised me a fight, Gramps. These had better not disappoint.",
@@ -263,6 +292,7 @@
   "08-entrance": {
     "chapter": 8,
     "bossId": "c096",
+    "speaker": "Dio Brando",
     "stage": "entrance",
     "duration": 10.2,
     "text": "You wish to collect DIO? How generous of you to deliver an audience. Watch closely, Rick Gramps. Your grand adventure is about to become a story about me.",
@@ -272,6 +302,7 @@
   "08-defeat": {
     "chapter": 8,
     "bossId": "c096",
+    "speaker": "Dio Brando",
     "stage": "defeat",
     "duration": 14.4,
     "text": "Impossible... and yet here you stand. Very well, Gramps. I will lend my power to your collection. Make the victories spectacular. I refuse to serve in obscurity.",
@@ -281,8 +312,9 @@
   "08-loss": {
     "chapter": 8,
     "bossId": "c096",
+    "speaker": "Dio Brando",
     "stage": "loss",
-    "duration": 12.0,
+    "duration": 12,
     "text": "And so your grand collection becomes an audience for DIO! Do not look so surprised, Gramps. I told you whose story this would be.",
     "fingerprint": "d92d4cdabe7a2a08c207df33551a86e017224e8d6397b954acf870849ad55982",
     "audioSha256": "aebd212a59bfbf630bf520bc3759c5a9a524e2f2f481d4f16c275c24311199e9"
@@ -290,6 +322,7 @@
   "08-play": {
     "chapter": 8,
     "bossId": "c096",
+    "speaker": "Dio Brando",
     "stage": "play",
     "duration": 6.16,
     "text": "Stand back, Gramps. Your collection is about to acquire a proper sense of theatre.",
@@ -299,6 +332,7 @@
   "09-entrance": {
     "chapter": 9,
     "bossId": "c071",
+    "speaker": "All for One",
     "stage": "entrance",
     "duration": 12.4,
     "text": "Such an ambitious little catalogue. I collect useful gifts too. Shall we compare methods, Rick Gramps? One of us is leaving this arena with a remarkable new acquisition.",
@@ -308,8 +342,9 @@
   "09-defeat": {
     "chapter": 9,
     "bossId": "c071",
+    "speaker": "All for One",
     "stage": "defeat",
-    "duration": 12.0,
+    "duration": 12,
     "text": "So I am the acquisition. An unfamiliar position, but I recognise a superior hand. My gifts will serve you, Gramps. Let us make your rivals regret having talent.",
     "fingerprint": "788570223115f4ae3299135c8193b08450e1aacdd519b5f73555dc5f2739878e",
     "audioSha256": "d5d27dfd8f9164d5012f07e327e61acf80b88eb5b73cf42485c2f64e3edd3b54"
@@ -317,6 +352,7 @@
   "09-loss": {
     "chapter": 9,
     "bossId": "c071",
+    "speaker": "All for One",
     "stage": "loss",
     "duration": 9.9,
     "text": "A fascinating selection of gifts, wasted on an inexperienced collector. Recover what you can, Gramps. I have learned rather a lot about your methods.",
@@ -326,6 +362,7 @@
   "09-play": {
     "chapter": 9,
     "bossId": "c071",
+    "speaker": "All for One",
     "stage": "play",
     "duration": 4.5,
     "text": "A useful opponent, Gramps. Let us see what can be taken from them.",
@@ -335,6 +372,7 @@
   "10-entrance": {
     "chapter": 10,
     "bossId": "c084",
+    "speaker": "Meruem",
     "stage": "entrance",
     "duration": 11.36,
     "text": "You measure greatness by the beings you can command. I have ruled by strength. Sit across from me, Rick Gramps. Let us discover whether either of us understands power.",
@@ -344,6 +382,7 @@
   "10-defeat": {
     "chapter": 10,
     "bossId": "c084",
+    "speaker": "Meruem",
     "stage": "defeat",
     "duration": 11.44,
     "text": "You have shown me something I did not know. I accept your command, Gramps. My kingdom's strength will join your collection. Use it for more than your boredom.",
@@ -353,6 +392,7 @@
   "10-loss": {
     "chapter": 10,
     "bossId": "c084",
+    "speaker": "Meruem",
     "stage": "loss",
     "duration": 9.8,
     "text": "The contest is decided. You gathered strength without understanding its purpose. Consider your defeat carefully, Gramps. It may yet teach you something.",
@@ -362,6 +402,7 @@
   "10-play": {
     "chapter": 10,
     "bossId": "c084",
+    "speaker": "Meruem",
     "stage": "play",
     "duration": 4.5,
     "text": "I see the shape of this contest, Gramps. Allow me to change it.",
@@ -371,6 +412,7 @@
   "11-entrance": {
     "chapter": 11,
     "bossId": "c023",
+    "speaker": "Ainz Ooal Gown",
     "stage": "entrance",
     "duration": 13.5,
     "text": "You stand before the ruler of Nazarick. Your collection is impressive, Rick Gramps, but you have mistaken an audience for an invitation to conquer. I shall correct that error.",
@@ -380,6 +422,7 @@
   "11-defeat": {
     "chapter": 11,
     "bossId": "c023",
+    "speaker": "Ainz Ooal Gown",
     "stage": "defeat",
     "duration": 14.5,
     "text": "A most... unexpected demonstration. The wise ruler recognises when an alliance is necessary. Nazarick will serve your campaign, Gramps. I trust you appreciate the magnitude of this concession.",
@@ -389,8 +432,9 @@
   "11-loss": {
     "chapter": 11,
     "bossId": "c023",
+    "speaker": "Ainz Ooal Gown",
     "stage": "loss",
-    "duration": 11.0,
+    "duration": 11,
     "text": "Precisely as planned. Nazarick remains beyond your reach, Gramps. You may withdraw with your surviving dignity. I recommend leaving promptly.",
     "fingerprint": "04fb08c5f67aa1c623b071713755739861910c35f847aaceacc753d154636680",
     "audioSha256": "8b38ab6ef6373792438601a1e4b8d27d67784172c4e78c196ef5711d0820d5a8"
@@ -398,6 +442,7 @@
   "11-play": {
     "chapter": 11,
     "bossId": "c023",
+    "speaker": "Ainz Ooal Gown",
     "stage": "play",
     "duration": 5.92,
     "text": "Your summon was well judged, Gramps. Naturally, I have anticipated everything.",
@@ -407,8 +452,9 @@
   "12-entrance": {
     "chapter": 12,
     "bossId": "c037",
+    "speaker": "Eye of Sauron",
     "stage": "entrance",
-    "duration": 15.0,
+    "duration": 15,
     "text": "I see the hunger behind your amusement, collector. World after world, bent to your desire. Come into my sight, Rick Gramps. Let us see whose will endures.",
     "fingerprint": "4c08a733b7dd0024a5199de30b81ddc5b5558f97cf4632c41d2fa4b6cb4d6f42",
     "audioSha256": "811c6a2535555a9291e3f60bf3988dffcf81eb1c3c72d817634a03ec99512762"
@@ -416,6 +462,7 @@
   "12-defeat": {
     "chapter": 12,
     "bossId": "c037",
+    "speaker": "Eye of Sauron",
     "stage": "defeat",
     "duration": 10.9,
     "text": "Your will has pierced the shadow. My gaze will turn upon your enemies. Command, Gramps, and they will find no place beyond the reach of your collection.",
@@ -425,6 +472,7 @@
   "12-loss": {
     "chapter": 12,
     "bossId": "c037",
+    "speaker": "Eye of Sauron",
     "stage": "loss",
     "duration": 10.7,
     "text": "Your will has broken beneath my gaze. Gather your scattered champions, Gramps. Even across worlds, you cannot hide your fear from me.",
@@ -434,6 +482,7 @@
   "12-play": {
     "chapter": 12,
     "bossId": "c037",
+    "speaker": "Eye of Sauron",
     "stage": "play",
     "duration": 5.565,
     "text": "I see them, Gramps. Their courage is already beginning to fail.",
@@ -443,6 +492,7 @@
   "13-entrance": {
     "chapter": 13,
     "bossId": "c058",
+    "speaker": "Kaido",
     "stage": "entrance",
     "duration": 10.72,
     "text": "So you are the old man gathering monsters! I like the ambition. Bring them all, Gramps. If your collection can survive me, perhaps it deserves another monster.",
@@ -452,6 +502,7 @@
   "13-defeat": {
     "chapter": 13,
     "bossId": "c058",
+    "speaker": "Kaido",
     "stage": "defeat",
     "duration": 9.28,
     "text": "Now that was a battle! You beat me, old man. I will sail under your banner. Just do not start collecting weaklings. It would ruin the company.",
@@ -461,8 +512,9 @@
   "13-loss": {
     "chapter": 13,
     "bossId": "c058",
+    "speaker": "Kaido",
     "stage": "loss",
-    "duration": 6.0,
+    "duration": 6,
     "text": "That is it? Come on, Gramps! I thought you were collecting monsters! Go find a few more, then bring me a proper war!",
     "fingerprint": "8bf89904cd95556a1cab4aaed3ac1cfc96e7fbe9af64a4f28c3c0b35b55b08de",
     "audioSha256": "4722cb8321e48f7e07c4815ac58433ecec9454105ac68bd65de35a71f60dde8e"
@@ -470,6 +522,7 @@
   "13-play": {
     "chapter": 13,
     "bossId": "c058",
+    "speaker": "Kaido",
     "stage": "play",
     "duration": 3.92,
     "text": "Another war, Gramps? Finally. I was getting thirsty.",
@@ -479,6 +532,7 @@
   "14-entrance": {
     "chapter": 14,
     "bossId": "c019",
+    "speaker": "Gilgamesh",
     "stage": "entrance",
     "duration": 11.7,
     "text": "A collector? How quaint. You have mistaken a handful of curiosities for a treasury. Approach, Rick Gramps. I will show you what it means to possess greatness.",
@@ -488,8 +542,9 @@
   "14-defeat": {
     "chapter": 14,
     "bossId": "c019",
+    "speaker": "Gilgamesh",
     "stage": "defeat",
-    "duration": 13.0,
+    "duration": 13,
     "text": "You have earned the king's attention... and his service. My treasury will answer your call, Gramps. Treat the privilege with the dignity your wardrobe lacks.",
     "fingerprint": "a0ab86fdfa34c210581e4467d1cb16b5a12415669ef0f51cb112fbc2073e5c29",
     "audioSha256": "b8f5f542180c5fc20b0fd36eccfcf52faeb8b548d1934d63a492ddb4aa3aacc1"
@@ -497,8 +552,9 @@
   "14-loss": {
     "chapter": 14,
     "bossId": "c019",
+    "speaker": "Gilgamesh",
     "stage": "loss",
-    "duration": 10.0,
+    "duration": 10,
     "text": "You have seen a true treasury, collector. Take your little curiosities and leave. I may permit another audience when you acquire some taste.",
     "fingerprint": "6076ae411da54027c542eca678505bf8948ce43e263b65a5bd4bf971d43c30ff",
     "audioSha256": "7d4d57b7e165c9978810ebfa1910de1b492c7b738bef5222961fd3df51df24c0"
@@ -506,6 +562,7 @@
   "14-play": {
     "chapter": 14,
     "bossId": "c019",
+    "speaker": "Gilgamesh",
     "stage": "play",
     "duration": 5.6,
     "text": "You may admire the treasury later, Gramps. For now, watch your enemies learn their place.",
@@ -515,6 +572,7 @@
   "15-entrance": {
     "chapter": 15,
     "bossId": "c022",
+    "speaker": "Gojo",
     "stage": "entrance",
     "duration": 9.2,
     "text": "Rick Gramps! Nice collection. Bold choice, trying to add me to it. Go on, take your best shot. I would hate for this to be boring for both of us.",
@@ -524,6 +582,7 @@
   "15-defeat": {
     "chapter": 15,
     "bossId": "c022",
+    "speaker": "Gojo",
     "stage": "defeat",
     "duration": 9.1,
     "text": "Okay. That actually got through. You win, Gramps. I am in. Someone has to keep this collection looking good, and you clearly need the help.",
@@ -533,6 +592,7 @@
   "15-loss": {
     "chapter": 15,
     "bossId": "c022",
+    "speaker": "Gojo",
     "stage": "loss",
     "duration": 10.32,
     "text": "Aw, already? You had a few good ideas, Gramps. They just needed to get past me. Try again. I am happy to give you another lesson.",
@@ -542,6 +602,7 @@
   "15-play": {
     "chapter": 15,
     "bossId": "c022",
+    "speaker": "Gojo",
     "stage": "play",
     "duration": 4.4,
     "text": "Hey, Gramps. Want the quick solution or the embarrassing one?",
@@ -551,6 +612,7 @@
   "16-entrance": {
     "chapter": 16,
     "bossId": "c097",
+    "speaker": "Elden Beast",
     "stage": "entrance",
     "duration": 13.7,
     "text": "Small wanderer between worlds. You reach for stars and name them possessions. Step into the golden silence, Rick Gramps. Let your will be weighed against eternity.",
@@ -560,6 +622,7 @@
   "16-defeat": {
     "chapter": 16,
     "bossId": "c097",
+    "speaker": "Elden Beast",
     "stage": "defeat",
     "duration": 12.7,
     "text": "Your will has crossed the golden silence. The stars bend toward your command. Carry this light into the worlds ahead, Gramps. Eternity will walk within your collection.",
@@ -569,6 +632,7 @@
   "16-loss": {
     "chapter": 16,
     "bossId": "c097",
+    "speaker": "Elden Beast",
     "stage": "loss",
     "duration": 10.125,
     "text": "Your light fades at the edge of eternity. Return to your small worlds, wanderer. The stars remain beyond your grasp.",
@@ -578,6 +642,7 @@
   "16-play": {
     "chapter": 16,
     "bossId": "c097",
+    "speaker": "Elden Beast",
     "stage": "play",
     "duration": 8.6,
     "text": "Your call reaches the stars, Gramps. Their light answers.",
@@ -587,6 +652,7 @@
   "17-entrance": {
     "chapter": 17,
     "bossId": "c051",
+    "speaker": "Boros",
     "stage": "entrance",
     "duration": 11.6,
     "text": "You travelled the universes because you were bored? Then we understand each other. Show me everything, Rick Gramps. I have waited far too long for a worthy battle.",
@@ -596,6 +662,7 @@
   "17-defeat": {
     "chapter": 17,
     "bossId": "c051",
+    "speaker": "Boros",
     "stage": "defeat",
     "duration": 12.2,
     "text": "At last... a battle that demanded all of me. You have my loyalty, Gramps. Let me stand in your collection, and I will help you find something greater still.",
@@ -605,6 +672,7 @@
   "17-loss": {
     "chapter": 17,
     "bossId": "c051",
+    "speaker": "Boros",
     "stage": "loss",
     "duration": 8.6,
     "text": "You share my boredom, but not yet my strength. Grow your collection, Gramps. I would rather wait for a worthy battle than settle for this.",
@@ -614,6 +682,7 @@
   "17-play": {
     "chapter": 17,
     "bossId": "c051",
+    "speaker": "Boros",
     "stage": "play",
     "duration": 3.841,
     "text": "A new challenger, Gramps. Let us hope they can make this interesting.",
@@ -623,6 +692,7 @@
   "18-entrance": {
     "chapter": 18,
     "bossId": "c027",
+    "speaker": "Thanos",
     "stage": "entrance",
     "duration": 11.6,
     "text": "You gather power to escape boredom. I gathered it to reshape existence. There is a difference between a collection and a purpose, Rick Gramps. I will show you.",
@@ -632,6 +702,7 @@
   "18-defeat": {
     "chapter": 18,
     "bossId": "c027",
+    "speaker": "Thanos",
     "stage": "defeat",
     "duration": 11.5,
     "text": "You have the strength to impose your will across worlds. I acknowledge it. My power will serve your collection, Gramps. Perhaps purpose will find you along the way.",
@@ -641,6 +712,7 @@
   "18-loss": {
     "chapter": 18,
     "bossId": "c027",
+    "speaker": "Thanos",
     "stage": "loss",
     "duration": 9.5,
     "text": "Power without purpose has brought you here. Remember what it cost, Gramps. The universe will not yield because you need a new hobby.",
@@ -650,6 +722,7 @@
   "18-play": {
     "chapter": 18,
     "bossId": "c027",
+    "speaker": "Thanos",
     "stage": "play",
     "duration": 4.64,
     "text": "You have chosen your moment, Gramps. I will make it decisive.",
@@ -659,6 +732,7 @@
   "19-entrance": {
     "chapter": 19,
     "bossId": "c044",
+    "speaker": "Mastered Ultra Instinct Goku",
     "stage": "entrance",
     "duration": 9.3,
     "text": "So you are Rick Gramps! I heard you have been beating some incredible fighters. Forget the collection for a minute. Let us see how far we can push each other!",
@@ -668,6 +742,7 @@
   "19-defeat": {
     "chapter": 19,
     "bossId": "c044",
+    "speaker": "Mastered Ultra Instinct Goku",
     "stage": "defeat",
     "duration": 10.1,
     "text": "That was amazing! You really got me, Gramps. Sure, I will join your collection. Just promise we will keep finding stronger opponents. This is going to be fun!",
@@ -677,6 +752,7 @@
   "19-loss": {
     "chapter": 19,
     "bossId": "c044",
+    "speaker": "Mastered Ultra Instinct Goku",
     "stage": "loss",
     "duration": 8.4,
     "text": "That was fun, Gramps! You almost caught me with that last one. Take a breather, train your team, and come back. I want to see what you try next!",
@@ -686,6 +762,7 @@
   "19-play": {
     "chapter": 19,
     "bossId": "c044",
+    "speaker": "Mastered Ultra Instinct Goku",
     "stage": "play",
     "duration": 3.6,
     "text": "Ready, Gramps! Let us give them a fight worth remembering.",
@@ -695,6 +772,7 @@
   "20-entrance": {
     "chapter": 20,
     "bossId": "c041",
+    "speaker": "Bill Cipher",
     "stage": "entrance",
     "duration": 12.16,
     "text": "WELL, LOOK WHO COLLECTED HIS WAY TO THE END OF REALITY! Cute arena, Gramps. Cute little army. Let us find out what happens when the final exhibit starts collecting YOU.",
@@ -704,6 +782,7 @@
   "20-defeat": {
     "chapter": 20,
     "bossId": "c041",
+    "speaker": "Bill Cipher",
     "stage": "defeat",
     "duration": 17.12,
     "text": "YOU ACTUALLY DID IT. Every world, every champion, and now the triangle. Fine, Gramps. I will fight for your collection. But if eternity gets boring, remember whose idea this was.",
@@ -713,8 +792,9 @@
   "20-loss": {
     "chapter": 20,
     "bossId": "c041",
+    "speaker": "Bill Cipher",
     "stage": "loss",
-    "duration": 10.0,
+    "duration": 10,
     "text": "OH, GRAMPS. YOU REACHED THE END OF REALITY AND FORGOT TO READ THE FINE PRINT! Pick up your little army. The final exhibit is still running the museum.",
     "fingerprint": "977cbf78a93596c0d85c661e29432ee7360647308e4519731d25e23563535547",
     "audioSha256": "a1d76a3fc0ade3efbd183977fa24e2efa870476d4b61f1f3379c6cba89b9ac53"
@@ -723,9 +803,335 @@
     "chapter": 0,
     "speaker": "Rick Gramps",
     "stage": "prologue",
-    "duration": 33.0,
+    "duration": 31.8,
     "text": "You are Rick Gramps. Retirement lasted eleven minutes. Then the boredom became unbearable. So you built a pocket-sized arena and started collecting the greatest fighters in every universe.\n\nYour collection is small. For now. Defeat each world's champion, claim their universe's fighters, and earn their reluctant allegiance. Some will serve with honour. Some will complain the entire time. Either way, the next universe is waiting.",
-    "fingerprint": "cfd4d98a5a3c8d9236495f36d0fb1f1e4e265901c86d6253eb20eccf7adf220b",
-    "audioSha256": "9a91c9ec516986abcf204abd95feee9e743410f0a574e1f7bcee19c7590ecfdc"
+    "fingerprint": "8843e9c1f63bed19cee227a899e4c5307252e724049ae9d0419eaed2310b462d",
+    "audioSha256": "589253d4f24cc9730010be0fb8e52a54c4b409adb4800d2114e6287a6893b47f",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "01-rick-intro": {
+    "chapter": 1,
+    "bossId": "c104",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 21.1,
+    "text": "Portal was the obvious first stop. Not because she's pleasant—she isn't—but because a machine that can run a whole facility, lie about it, and keep the lights on while I'm stealing the staff is infrastructure. I need infrastructure. Also, she's smarter than most people I've collected. That's a low bar, but still.",
+    "fingerprint": "3c91b3e79fbeb945846d8a7c9c102f550cc51c8353f4e0f117766266a5a59f02",
+    "audioSha256": "7ac9fbc61d76ba9d31ab913401ee3dc4e14f6b098c1e7ecf6da6da450fef22fa",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "02-rick-intro": {
+    "chapter": 2,
+    "bossId": "c134",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 18.6,
+    "text": "Po's world gave me plenty of candidates, but Tai Lung is the one I want. He trained himself into a weapon, got locked away, and came out still angry enough to bend a room around him. That kind of discipline is useful. The anger's useful too, if you point it at somebody else.",
+    "fingerprint": "a1597141bc92c0ce0e192aa715fa1bf0cb6af819a68c7d60ea3fdd4f6d241140",
+    "audioSha256": "0a32ca8e7d8713b3faa622dfb3d2e5b4e47baa81279891759bf30ab8f1ea5235",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "03-rick-intro": {
+    "chapter": 3,
+    "bossId": "c033",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 19.8,
+    "text": "Baki is basically a laboratory accident where somebody replaced the safety rules with testosterone. Yujiro stays on the list because he knows exactly what he is: a predator, a problem, and occasionally the answer to a worse problem. I don't need him to be agreeable. I need him to make the other monsters reconsider.",
+    "fingerprint": "cb33966987da1f43086066a9264f684ec55b6e35564fada37ee3fe281a90d293",
+    "audioSha256": "70b8f247c81cdd040c8cf653e10e292d6a210473b1064a3ed8b5f2cc2c7ac250",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "04-rick-intro": {
+    "chapter": 4,
+    "bossId": "c021",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 19.6,
+    "text": "Death Note is the kind of universe you visit once and then check your pockets. Light interests me because the weapon is only half the trick. The other half is the boy behind the clean handwriting, the planning, the absolute confidence that he's the smartest person in the room. I've met that disease before.",
+    "fingerprint": "796c467f1842e5d5caefb64eae4d2ef51dd2ecc1dd195bdaaed83da88cd10c25",
+    "audioSha256": "7d0fc5d70ccc8f8fb4b68647c29b8d24c4fcd96300230bea1373ae948430bd6c",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "05-rick-intro": {
+    "chapter": 5,
+    "bossId": "c114",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 19.9,
+    "text": "Harry Potter has magic, relics, and an alarming number of adults who solve problems by waving sticks. Voldemort is different. He turned fear into a system and kept rebuilding himself after it should've been over. I want the system. The resurrection tricks are a bonus. The personality is going in a separate box.",
+    "fingerprint": "559b9fba3d058bd8cd60446e8be1af03fc470557d31c335997a0e8a9176cb112",
+    "audioSha256": "fbc9efa40474030287ec74756ea9513ba219052bf04d56c35ecf22ebfbfa92dd",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "06-rick-intro": {
+    "chapter": 6,
+    "bossId": "c029",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 19.6,
+    "text": "Star Wars is mostly machinery, old grudges, and people standing too close to explosions. Vader earns his place because he kept the discipline after everything human in him got burned out. That's rare. I'm not collecting the armor. I'm collecting the part that still chooses a direction and keeps moving.",
+    "fingerprint": "42576ba3b1dc127acdeb1557633e8180521d221ad1885ed054aa42a122dd7491",
+    "audioSha256": "3af2d423508aeb370d57ed63372da131e8d8fc90207aa0605d34f15a84e3a347",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "07-rick-intro": {
+    "chapter": 7,
+    "bossId": "c024",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 19.3,
+    "text": "Invincible has a lot of strong people, but strength isn't the interesting part. Conquest has the appetite. He walks into a fight expecting the universe to give him something, and when it doesn't, he keeps asking louder. I can use that. Point him at an impossible problem and wait for the problem to become personal.",
+    "fingerprint": "3ecad96589e648c3077958fd2b4c258bfde55def75fa76daadb1e4aaf6260567",
+    "audioSha256": "05bea2ed5b101a32e7f2a155dba86c9d1b5e60954d09403dfe2c5901574dcd97",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "08-rick-intro": {
+    "chapter": 8,
+    "bossId": "c096",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 19.2,
+    "text": "JoJo keeps producing people who dress like they lost a bet with physics. Dio is worth the trouble because he doesn't just want power; he wants the room to acknowledge it. Time stopping, bodies coming back, all that's useful. The real asset is his attention span. He never gets tired of being terrible.",
+    "fingerprint": "299762c6f000e38ad45a7c59e03c752bc4efe042d347b165988edd9596114524",
+    "audioSha256": "f736ddd2305fb41b6247aeb92d1f5380de58d05ac2c99e8a543a455525b0799b",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "09-rick-intro": {
+    "chapter": 9,
+    "bossId": "c071",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 21,
+    "text": "MHA gave me a catalog of abilities and one man who treats it like a shopping list. All for One is coming with me because he understands extraction. He sees a useful trait, takes it apart, and leaves the owner with a lesson. That's ugly, but efficient. Collections need somebody who knows inventory.",
+    "fingerprint": "7511ea10c6b6f04732e7e898929fb6c51975bbaf54992de5a899b0f6fa78bcce",
+    "audioSha256": "ced2b021a56bbb19f1601d85674b5dc0bd85db18cc04706f2787e1d169fb9a3c",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "10-rick-intro": {
+    "chapter": 10,
+    "bossId": "c084",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 21.7,
+    "text": "Hunter x Hunter has the usual problem: everybody's clever until the strongest thing in the room notices. Meruem is useful because he learns faster than the situation can punish him. He doesn't need a speech, a banner, or a reason to feel special. Give him a problem. He'll become the problem's final version.",
+    "fingerprint": "6aa5b7974f37a168fb8bf2aebb6d3cabfec81774274a08d1e7b353fa6f38aba4",
+    "audioSha256": "fa569c58f09c87ef404b22ff6752d26ff05b1c2f61e134dcb97e8ab1fad28782",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "11-rick-intro": {
+    "chapter": 11,
+    "bossId": "c023",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 20.1,
+    "text": "Overlord is a court full of people waiting to be impressed, and Ainz is the only one pretending he already is. Under the skull and the ceremony, there's a ruler who understands preparation. I want that. The undead army is convenient, sure, but planning is what keeps a collection from turning into a pile.",
+    "fingerprint": "522c9528945ab0371a9e12609ac45f59a33d3d01cab49cedc51a880ce5ef4ee7",
+    "audioSha256": "01cce2726a5e9ca9943a00dcabb422da380ac8c37665ae5f22e78602448fcdb2",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "12-rick-intro": {
+    "chapter": 12,
+    "bossId": "c037",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 22.8,
+    "text": "Lord of the Rings has swords, rings, elves, and one extremely persistent walking trip. I'm taking the Eye because surveillance is expensive, and this one already watches everything from a tower. No meetings, no sleep, no opinions about my methods. Just a giant, hostile security camera with a talent for making cowards visible.",
+    "fingerprint": "f483c821d8a05822069682ed81f64751a6c2fe2a880b84bead1952d8c09636c7",
+    "audioSha256": "a7afecf8c990b10bb6a55b6518638d30154de1c4d5a4528bcd2c107c3b561c39",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "13-rick-intro": {
+    "chapter": 13,
+    "bossId": "c058",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 21.5,
+    "text": "One Piece is too large to call a roster, so I'm starting with the part that refuses to stay down. Kaido has the useful kind of confidence: the kind that survives being hit by history. He's a disaster with a drinking habit, but disasters are honest about where they're going. I can work with honest.",
+    "fingerprint": "7f4ddb0daffa72a440abfa0fa70f383c6f82edb69356f7939f771673789e77be",
+    "audioSha256": "271c7e11a95cd0a88ef06bf24c186ea243fca60a9ad1d3f4cdbc99cf9520af5f",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "14-rick-intro": {
+    "chapter": 14,
+    "bossId": "c019",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 21.4,
+    "text": "Fate keeps putting legends in rooms and asking them to behave. Gilgamesh doesn't, which saves time. He has a vault full of answers, the ego to use them, and just enough taste to recognize a rare thing when it appears. I'm not after the gold. I want the key to the vault, preferably attached to him.",
+    "fingerprint": "cd426a94f4399052f6dc7a0ea7872310c7399c34d5f03698eb4aa59afdeee202",
+    "audioSha256": "fcb17ea48f57486983ae7ea2bf018b618c06142ad79952ad880b9dec318cbba1",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "15-rick-intro": {
+    "chapter": 15,
+    "bossId": "c022",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 18.8,
+    "text": "Jujutsu Kaisen has a man who turned distance into a personal boundary and then started making jokes about it. Gojo is coming because useful defense is hard to find, and useful defense that can still move the conversation along is harder. He'll be irritating. Fine. Irritating is cheaper than rebuilding a universe.",
+    "fingerprint": "2d9a83b8bbd465aef7c9fd8f73bff5ec6976a23bd61ff89c38a791738e3541b4",
+    "audioSha256": "549df06b811b19c1dddefa2c32ea94301547086149e0dc2c7310321db4412201",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "16-rick-intro": {
+    "chapter": 16,
+    "bossId": "c097",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 17,
+    "text": "Elden Ring is what happens when somebody leaves the universe running after the warning lights come on. The Beast is less a fighter than a rule that learned how to move. I want that kind of presence in the collection. Something that makes the battlefield remember it has limits, even if nobody can explain them.",
+    "fingerprint": "06cc42c5a3ba1bbf9f77b858e67b82dc3f357ece9de3e96acabe1081cd2c617f",
+    "audioSha256": "c541c811089b8678e5c24a24521ec5f02b1cbd54718ac5bd88134f0d02a05bd5",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "17-rick-intro": {
+    "chapter": 17,
+    "bossId": "c051",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 21.2,
+    "text": "One-Punch Man has a lot of heroes, monsters, and men who should've stopped after the first cape. Boros is the cleanest specimen: he crossed space looking for one fight that could justify the trip. That's not ambition. That's a medical condition. Still, a fighter who wants the answer badly is worth bringing home.",
+    "fingerprint": "7561b9ae3ecfb184c68134c3353e76a8c358df1fe455e0821121d65287fd884e",
+    "audioSha256": "f84aeb65bbcb61daf627364d59aaabc7d183da5cc0eeee6d8e0d315fedba74b3",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "18-rick-intro": {
+    "chapter": 18,
+    "bossId": "c027",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 21.1,
+    "text": "Marvel has no shortage of power, which is exactly why most of it is noisy. Thanos is quiet about the part that matters. He can look at a universe, decide it's inefficient, and keep his hand steady. I want the judgment, not the glove. The glove is just a very expensive way to lose fingers.",
+    "fingerprint": "0eeb7aed51921bfdc1956782d2e81c9be073f778c21558eb3e71e10840a1addc",
+    "audioSha256": "37d752bb34e8628b87e210b88ab0f697a31574fa6eff953c42e976c1d0dc2f15",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "19-rick-intro": {
+    "chapter": 19,
+    "bossId": "c044",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 18.5,
+    "text": "Dragon Ball keeps escalating until somebody has to invent a larger number. Goku is different because he doesn't care about the number. He cares whether the next opponent can teach him something. That's useful, even if he smiles through property damage. Put him in the collection and the ceiling becomes a suggestion.",
+    "fingerprint": "7d2af5316a51ab7c8d2b0d95e154f5993c0418d913d55b943d233a8345ef0bc8",
+    "audioSha256": "69b3de4e1b12a6016752bc8f4f2903b7cb5988362093ec7e63f94bbf80052ee8",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
+  },
+  "20-rick-intro": {
+    "chapter": 20,
+    "bossId": "c041",
+    "speaker": "Rick Gramps",
+    "stage": "rick-intro",
+    "duration": 21.28,
+    "text": "Gravity Falls is where I found the one thing I don't want loose on my ship. Bill isn't strong in the ordinary sense; he's an argument against ordinary. I'm collecting him because every cage needs to be tested by something that hates the idea of cages. Also, if I leave him here, he'll eventually find a way out and make it my problem.",
+    "fingerprint": "9363521864f12c80ea28f1b81cc6542b2bea07ce5a90ec3b592142fa79c880b6",
+    "audioSha256": "7a8d38ea3b1e9a9f025d70a3ee087f9e55a2d299a92129cf94c9cd7f3a740327",
+    "engine": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "model_type": "base",
+    "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "seed": 6303,
+    "reference_audio_sha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+    "reference_transcript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe."
   }
 }

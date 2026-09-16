@@ -27,7 +27,7 @@ export interface SpeechCue {
 }
 
 export function CampaignSpeech({stage, chapter, name, text, art, accent, onContinue, onCancel}: {
-  stage: "prologue" | "entrance" | "defeat" | "loss"; chapter: number; name: string; text: string;
+  stage: "prologue" | "rick-intro" | "entrance" | "defeat" | "loss"; chapter: number; name: string; text: string;
   art?: string; accent: string; onContinue: () => void; onCancel?: () => void;
 }) {
   const speech = useSpeechText(text);
@@ -53,17 +53,17 @@ export function CampaignSpeech({stage, chapter, name, text, art, accent, onConti
   }, [onCancel, onContinue]);
   return <div className="campaign-speech-veil" style={{"--speech-accent":accent} as React.CSSProperties}>
     <section ref={panel} className={`campaign-speech-panel${art ? "" : " is-prologue"}`} role="dialog" aria-modal="true"
-      aria-label={stage === "prologue" ? "Rick Gramps story" : `${name} ${stage} speech`} data-story-key={`${stage}-${chapter}`} data-story-stage={stage}>
+      aria-label={stage === "prologue" || stage === "rick-intro" ? "Rick Gramps story" : `${name} ${stage} speech`} data-story-key={`${stage}-${chapter}`} data-story-stage={stage}>
       {art ? <img className="campaign-speech-portrait" src={art} alt={name} /> : <div className="campaign-speech-sigil" aria-hidden="true">R</div>}
       <div className="campaign-speech-copy">
-        <span className="campaign-speech-kicker">{stage === "prologue" ? "The collection begins" : `Chapter ${chapter} · ${stage === "defeat" ? "Allegiance earned" : stage === "loss" ? "The challenger stands" : "A new challenger"}`}</span>
+        <span className="campaign-speech-kicker">{stage === "prologue" ? "The collection begins" : stage === "rick-intro" ? `Chapter ${chapter} · Rick's selection` : `Chapter ${chapter} · ${stage === "defeat" ? "Allegiance earned" : stage === "loss" ? "The challenger stands" : "A new challenger"}`}</span>
         <h2>{name}</h2>
         <div className="campaign-speech-text" onClick={speech.reveal}>
           <span className="speech-accessible">{text}</span><p aria-hidden="true">{speech.visible}<span className={speech.complete ? "speech-caret complete" : "speech-caret"}>▌</span></p>
         </div>
         <footer>
           {onCancel && <button className="speech-back" onClick={onCancel}>Back</button>}
-          <button className="speech-continue" data-story-continue onClick={forward}>{!speech.complete ? "Show full text" : stage === "entrance" ? "Enter the arena" : (stage === "defeat" || stage === "loss") ? "Continue" : "Begin collecting"}</button>
+          <button className="speech-continue" data-story-continue onClick={forward}>{!speech.complete ? "Show full text" : stage === "entrance" ? "Enter the arena" : (stage === "defeat" || stage === "loss" || stage === "rick-intro") ? "Continue" : "Begin collecting"}</button>
         </footer>
       </div>
     </section>

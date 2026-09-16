@@ -5,6 +5,7 @@
     {
       "chapter": 1,
       "bossId": "c104",
+      "rickIntro": "Portal was the obvious first stop. Not because she's pleasant—she isn't—but because a machine that can run a whole facility, lie about it, and keep the lights on while I'm stealing the staff is infrastructure. I need infrastructure. Also, she's smarter than most people I've collected. That's a low bar, but still.",
       "entrance": "A retired man with a portal gun and a scrapbook. How promising. Step into the arena, Rick Gramps. I have designed a very short test of your remaining life expectancy.",
       "defeat": "The results are conclusive. You are considerably more dangerous than you look. Fine. My facility and its assets are at your disposal. Please stop touching the buttons.",
       "play": "Your assistant has arrived, Gramps. Try not to lower the average intelligence on this side of the arena.",
@@ -13,6 +14,7 @@
     {
       "chapter": 2,
       "bossId": "c134",
+      "rickIntro": "Po's world gave me plenty of candidates, but Tai Lung is the one I want. He trained himself into a weapon, got locked away, and came out still angry enough to bend a room around him. That kind of discipline is useful. The anger's useful too, if you point it at somebody else.",
       "entrance": "You think greatness can be kept in a collection? I spent my life earning mine. Bring your little army, old man. I will show them what strength looks like.",
       "defeat": "I could not break you. That is an answer I cannot ignore. My strength is yours, Rick Gramps. Give it a purpose worthy of me.",
       "play": "Point me at their strongest fighter, Gramps. I have no patience for the rest.",
@@ -21,6 +23,7 @@
     {
       "chapter": 3,
       "bossId": "c033",
+      "rickIntro": "Baki is basically a laboratory accident where somebody replaced the safety rules with testosterone. Yujiro stays on the list because he knows exactly what he is: a predator, a problem, and occasionally the answer to a worse problem. I don't need him to be agreeable. I need him to make the other monsters reconsider.",
       "entrance": "A grandfather collecting fighters? Good. I was worried retirement had made you sensible. Bring your strongest pet. I need a warm-up.",
       "defeat": "Heh. You actually made me work for it. All right, old man. I will fight for your collection. Keep finding opponents worth breaking.",
       "play": "Gramps. Tell me this one can take a punch.",
@@ -29,6 +32,7 @@
     {
       "chapter": 4,
       "bossId": "c021",
+      "rickIntro": "Death Note is the kind of universe you visit once and then check your pockets. Light interests me because the weapon is only half the trick. The other half is the boy behind the clean handwriting, the planning, the absolute confidence that he's the smartest person in the room. I've met that disease before.",
       "entrance": "Rick Gramps. An alias, I assume. You gather dangerous people and call it a hobby. I prefer a world with order. Let us decide whose vision survives.",
       "defeat": "Every route I prepared led back to you. I underestimated your reach. I will serve your collection. A strategist is more useful at your side than beneath your feet.",
       "play": "Leave the calculations to me, Gramps. They will notice the trap when it is already closed.",
@@ -37,6 +41,7 @@
     {
       "chapter": 5,
       "bossId": "c114",
+      "rickIntro": "Harry Potter has magic, relics, and an alarming number of adults who solve problems by waving sticks. Voldemort is different. He turned fear into a system and kept rebuilding himself after it should've been over. I want the system. The resurrection tricks are a bonus. The personality is going in a separate box.",
       "entrance": "You cross into my world carrying borrowed champions and call yourself powerful. Come closer, collector. Let us discover how much courage remains when your servants fall.",
       "defeat": "You have power I cannot dismiss. Very well. My wand and my followers will serve you. Do not confuse obedience with affection, Gramps.",
       "play": "Your enemies will learn to fear your collection, Gramps. I shall make certain of it.",
@@ -45,6 +50,7 @@
     {
       "chapter": 6,
       "bossId": "c029",
+      "rickIntro": "Star Wars is mostly machinery, old grudges, and people standing too close to explosions. Vader earns his place because he kept the discipline after everything human in him got burned out. That's rare. I'm not collecting the armor. I'm collecting the part that still chooses a direction and keeps moving.",
       "entrance": "Your machines have brought you far, Rick Gramps. They will not protect you here. Stand your ground. I will measure this power you claim to possess.",
       "defeat": "Your power is real. I will serve under your command. Direct it with purpose, Gramps. An empire is wasted on a man who is merely bored.",
       "play": "Your command is acknowledged. I will clear the path.",
@@ -53,6 +59,7 @@
     {
       "chapter": 7,
       "bossId": "c024",
+      "rickIntro": "Invincible has a lot of strong people, but strength isn't the interesting part. Conquest has the appetite. He walks into a fight expecting the universe to give him something, and when it doesn't, he keeps asking louder. I can use that. Point him at an impossible problem and wait for the problem to become personal.",
       "entrance": "Look at that. A whole collection, arranged for my amusement. I usually have to travel between worlds to find this much resistance. You have saved me the trouble, Gramps.",
       "defeat": "Ha! I remember pain now. You have earned my service, old man. Find me another battle like that and I might even enjoy taking orders.",
       "play": "You promised me a fight, Gramps. These had better not disappoint.",
@@ -61,6 +68,7 @@
     {
       "chapter": 8,
       "bossId": "c096",
+      "rickIntro": "JoJo keeps producing people who dress like they lost a bet with physics. Dio is worth the trouble because he doesn't just want power; he wants the room to acknowledge it. Time stopping, bodies coming back, all that's useful. The real asset is his attention span. He never gets tired of being terrible.",
       "entrance": "You wish to collect DIO? How generous of you to deliver an audience. Watch closely, Rick Gramps. Your grand adventure is about to become a story about me.",
       "defeat": "Impossible... and yet here you stand. Very well, Gramps. I will lend my power to your collection. Make the victories spectacular. I refuse to serve in obscurity.",
       "play": "Stand back, Gramps. Your collection is about to acquire a proper sense of theatre.",
@@ -69,6 +77,7 @@
     {
       "chapter": 9,
       "bossId": "c071",
+      "rickIntro": "MHA gave me a catalog of abilities and one man who treats it like a shopping list. All for One is coming with me because he understands extraction. He sees a useful trait, takes it apart, and leaves the owner with a lesson. That's ugly, but efficient. Collections need somebody who knows inventory.",
       "entrance": "Such an ambitious little catalogue. I collect useful gifts too. Shall we compare methods, Rick Gramps? One of us is leaving this arena with a remarkable new acquisition.",
       "defeat": "So I am the acquisition. An unfamiliar position, but I recognise a superior hand. My gifts will serve you, Gramps. Let us make your rivals regret having talent.",
       "play": "A useful opponent, Gramps. Let us see what can be taken from them.",
@@ -77,6 +86,7 @@
     {
       "chapter": 10,
       "bossId": "c084",
+      "rickIntro": "Hunter x Hunter has the usual problem: everybody's clever until the strongest thing in the room notices. Meruem is useful because he learns faster than the situation can punish him. He doesn't need a speech, a banner, or a reason to feel special. Give him a problem. He'll become the problem's final version.",
       "entrance": "You measure greatness by the beings you can command. I have ruled by strength. Sit across from me, Rick Gramps. Let us discover whether either of us understands power.",
       "defeat": "You have shown me something I did not know. I accept your command, Gramps. My kingdom's strength will join your collection. Use it for more than your boredom.",
       "play": "I see the shape of this contest, Gramps. Allow me to change it.",
@@ -85,6 +95,7 @@
     {
       "chapter": 11,
       "bossId": "c023",
+      "rickIntro": "Overlord is a court full of people waiting to be impressed, and Ainz is the only one pretending he already is. Under the skull and the ceremony, there's a ruler who understands preparation. I want that. The undead army is convenient, sure, but planning is what keeps a collection from turning into a pile.",
       "entrance": "You stand before the ruler of Nazarick. Your collection is impressive, Rick Gramps, but you have mistaken an audience for an invitation to conquer. I shall correct that error.",
       "defeat": "A most... unexpected demonstration. The wise ruler recognises when an alliance is necessary. Nazarick will serve your campaign, Gramps. I trust you appreciate the magnitude of this concession.",
       "play": "Your summon was well judged, Gramps. Naturally, I have anticipated everything.",
@@ -93,6 +104,7 @@
     {
       "chapter": 12,
       "bossId": "c037",
+      "rickIntro": "Lord of the Rings has swords, rings, elves, and one extremely persistent walking trip. I'm taking the Eye because surveillance is expensive, and this one already watches everything from a tower. No meetings, no sleep, no opinions about my methods. Just a giant, hostile security camera with a talent for making cowards visible.",
       "entrance": "I see the hunger behind your amusement, collector. World after world, bent to your desire. Come into my sight, Rick Gramps. Let us see whose will endures.",
       "defeat": "Your will has pierced the shadow. My gaze will turn upon your enemies. Command, Gramps, and they will find no place beyond the reach of your collection.",
       "play": "I see them, Gramps. Their courage is already beginning to fail.",
@@ -101,6 +113,7 @@
     {
       "chapter": 13,
       "bossId": "c058",
+      "rickIntro": "One Piece is too large to call a roster, so I'm starting with the part that refuses to stay down. Kaido has the useful kind of confidence: the kind that survives being hit by history. He's a disaster with a drinking habit, but disasters are honest about where they're going. I can work with honest.",
       "entrance": "So you are the old man gathering monsters! I like the ambition. Bring them all, Gramps. If your collection can survive me, perhaps it deserves another monster.",
       "defeat": "Now that was a battle! You beat me, old man. I will sail under your banner. Just do not start collecting weaklings. It would ruin the company.",
       "play": "Another war, Gramps? Finally. I was getting thirsty.",
@@ -109,6 +122,7 @@
     {
       "chapter": 14,
       "bossId": "c019",
+      "rickIntro": "Fate keeps putting legends in rooms and asking them to behave. Gilgamesh doesn't, which saves time. He has a vault full of answers, the ego to use them, and just enough taste to recognize a rare thing when it appears. I'm not after the gold. I want the key to the vault, preferably attached to him.",
       "entrance": "A collector? How quaint. You have mistaken a handful of curiosities for a treasury. Approach, Rick Gramps. I will show you what it means to possess greatness.",
       "defeat": "You have earned the king's attention... and his service. My treasury will answer your call, Gramps. Treat the privilege with the dignity your wardrobe lacks.",
       "play": "You may admire the treasury later, Gramps. For now, watch your enemies learn their place.",
@@ -117,6 +131,7 @@
     {
       "chapter": 15,
       "bossId": "c022",
+      "rickIntro": "Jujutsu Kaisen has a man who turned distance into a personal boundary and then started making jokes about it. Gojo is coming because useful defense is hard to find, and useful defense that can still move the conversation along is harder. He'll be irritating. Fine. Irritating is cheaper than rebuilding a universe.",
       "entrance": "Rick Gramps! Nice collection. Bold choice, trying to add me to it. Go on, take your best shot. I would hate for this to be boring for both of us.",
       "defeat": "Okay. That actually got through. You win, Gramps. I am in. Someone has to keep this collection looking good, and you clearly need the help.",
       "play": "Hey, Gramps. Want the quick solution or the embarrassing one?",
@@ -125,6 +140,7 @@
     {
       "chapter": 16,
       "bossId": "c097",
+      "rickIntro": "Elden Ring is what happens when somebody leaves the universe running after the warning lights come on. The Beast is less a fighter than a rule that learned how to move. I want that kind of presence in the collection. Something that makes the battlefield remember it has limits, even if nobody can explain them.",
       "entrance": "Small wanderer between worlds. You reach for stars and name them possessions. Step into the golden silence, Rick Gramps. Let your will be weighed against eternity.",
       "defeat": "Your will has crossed the golden silence. The stars bend toward your command. Carry this light into the worlds ahead, Gramps. Eternity will walk within your collection.",
       "play": "Your call reaches the stars, Gramps. Their light answers.",
@@ -133,6 +149,7 @@
     {
       "chapter": 17,
       "bossId": "c051",
+      "rickIntro": "One-Punch Man has a lot of heroes, monsters, and men who should've stopped after the first cape. Boros is the cleanest specimen: he crossed space looking for one fight that could justify the trip. That's not ambition. That's a medical condition. Still, a fighter who wants the answer badly is worth bringing home.",
       "entrance": "You travelled the universes because you were bored? Then we understand each other. Show me everything, Rick Gramps. I have waited far too long for a worthy battle.",
       "defeat": "At last... a battle that demanded all of me. You have my loyalty, Gramps. Let me stand in your collection, and I will help you find something greater still.",
       "play": "A new challenger, Gramps. Let us hope they can make this interesting.",
@@ -141,6 +158,7 @@
     {
       "chapter": 18,
       "bossId": "c027",
+      "rickIntro": "Marvel has no shortage of power, which is exactly why most of it is noisy. Thanos is quiet about the part that matters. He can look at a universe, decide it's inefficient, and keep his hand steady. I want the judgment, not the glove. The glove is just a very expensive way to lose fingers.",
       "entrance": "You gather power to escape boredom. I gathered it to reshape existence. There is a difference between a collection and a purpose, Rick Gramps. I will show you.",
       "defeat": "You have the strength to impose your will across worlds. I acknowledge it. My power will serve your collection, Gramps. Perhaps purpose will find you along the way.",
       "play": "You have chosen your moment, Gramps. I will make it decisive.",
@@ -149,6 +167,7 @@
     {
       "chapter": 19,
       "bossId": "c044",
+      "rickIntro": "Dragon Ball keeps escalating until somebody has to invent a larger number. Goku is different because he doesn't care about the number. He cares whether the next opponent can teach him something. That's useful, even if he smiles through property damage. Put him in the collection and the ceiling becomes a suggestion.",
       "entrance": "So you are Rick Gramps! I heard you have been beating some incredible fighters. Forget the collection for a minute. Let us see how far we can push each other!",
       "defeat": "That was amazing! You really got me, Gramps. Sure, I will join your collection. Just promise we will keep finding stronger opponents. This is going to be fun!",
       "play": "Ready, Gramps! Let us give them a fight worth remembering.",
@@ -157,6 +176,7 @@
     {
       "chapter": 20,
       "bossId": "c041",
+      "rickIntro": "Gravity Falls is where I found the one thing I don't want loose on my ship. Bill isn't strong in the ordinary sense; he's an argument against ordinary. I'm collecting him because every cage needs to be tested by something that hates the idea of cages. Also, if I leave him here, he'll eventually find a way out and make it my problem.",
       "entrance": "WELL, LOOK WHO COLLECTED HIS WAY TO THE END OF REALITY! Cute arena, Gramps. Cute little army. Let us find out what happens when the final exhibit starts collecting YOU.",
       "defeat": "YOU ACTUALLY DID IT. Every world, every champion, and now the triangle. Fine, Gramps. I will fight for your collection. But if eternity gets boring, remember whose idea this was.",
       "play": "MISS ME, GRAMPS? Point me at something that still thinks reality is a rule.",

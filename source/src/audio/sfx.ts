@@ -127,7 +127,7 @@ const THEME_CACHE_LIMIT = 20;
  */
 const THEME_DUCK_CEILING = 7.0;
 const BOSS_VOICE_CACHE_LIMIT = 16;
-const BOSS_VOICE_KEY = /^(?:rick-prologue|\d{2}-(?:entrance|defeat|loss|play))$/;
+const BOSS_VOICE_KEY = /^(?:rick-prologue|\d{2}-(?:rick-intro|entrance|defeat|loss|play))$/;
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
