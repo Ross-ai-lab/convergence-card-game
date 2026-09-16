@@ -1,0 +1,14 @@
+{
+  "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+  "sourceSample": "M",
+  "sourceAudio": "qwen/rick-gramps-v3/rick-M.mp3",
+  "referenceAudio": "qwen/rick-gramps-base-clone/rick-M-reference.wav",
+  "referenceAudioSha256": "a7832cd449ab3e861723af60b449876cd0480039da1d137f59e431484de0c252",
+  "referenceTranscript": "Retirement lasted 11 minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe.",
+  "cloneSeed": 6303,
+  "text": "Retirement lasted eleven minutes, then the boredom became unbearable. So I built a pocket-sized arena and started collecting the greatest fighters in every universe. Now the champions are lining up, the portals are misbehaving, and somebody keeps pressing the red button. If you're going to challenge me, bring a real strategy, pour me something stronger than water, and try not to scream when the laws of physics fold in half.",
+  "output": "qwen/rick-gramps-base-clone/rick-M-base-long.mp3",
+  "duration": 26.24,
+  "audioSha256": "c821550e8223bb10aa23cea7b8d5f0434015f2ff7e26ad3fa604711fe9d97b05",
+  "transcriptCheck": "Retirement lasted 11 minutes, then the boredom became unbearable, so I built a pocket-sized arena and started collecting the greatest fighters in every universe. Now the champions are lining up, the portals are misbehaving, and somebody keeps pressing the red button. If you're going to challenge me, bring a real strategy, pour me something stronger than water, and try not to scream when the laws of physics fold in half!"
+}
