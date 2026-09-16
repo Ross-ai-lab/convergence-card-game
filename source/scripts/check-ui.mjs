@@ -227,6 +227,13 @@ check(
   (await page.locator(".mulligan-panel").count()) === 0,
   "mulligan hidden during opening animation",
 );
+await page.locator(".duel-intro").dblclick();
+await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 3000 });
+check(
+  "two clicks skip the opening intro",
+  (await page.locator(".duel-intro").count()) === 0 && (await page.locator(".mulligan-card").count()) === 3,
+  "double-click reaches the opening hand without changing the duel state",
+);
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
 check(
   "mulligan appears after the intro",

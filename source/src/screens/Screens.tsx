@@ -15,7 +15,7 @@
  *                  both players can read each other's hand off the same screen.
  */
 
-import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { KEYWORDS, keywordRuns } from "../keywords";
 import {
   ArrowLeft,
@@ -609,10 +609,25 @@ export function RecordScreen({ progress, onClose }: { progress: Progress; onClos
   );
 }
 
-// The opening is a text-free visual ceremony over the live board.
-export function DuelIntro({ phase }: { phase: DuelIntroPhase }) {
+// The opening is a text-free visual ceremony over the live board. Two taps or
+// clicks skip the ceremony on touchscreens and desktop browsers alike.
+export function DuelIntro({ phase, onSkip }: { phase: DuelIntroPhase; onSkip: () => void }) {
+  const lastPointerUp = useRef(0);
+  useEffect(() => {
+    lastPointerUp.current = 0;
+  }, [phase]);
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const now = performance.now();
+    const isDoubleClick = now - lastPointerUp.current <= 500;
+    lastPointerUp.current = isDoubleClick ? 0 : now;
+    if (isDoubleClick) {
+      event.preventDefault();
+      onSkip();
+    }
+  };
   return (
-    <div className={`duel-intro duel-intro-${phase}`} aria-hidden="true">
+    <div className={`duel-intro duel-intro-${phase}`} aria-hidden="true" data-duel-intro-skip-target onPointerUp={handlePointerUp}>
       <div className="duel-intro-rift-stage" aria-hidden="true">
         <div className="duel-intro-rift" aria-hidden="true" />
       </div>

@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 215,581 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 215,954 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -381,7 +381,7 @@ Nothing damages a core automatically just because a turn starts; core damage com
 
 ### Campaign story
 
-`materials/campaign-story.json` is the narrative source: Rick Gramps collects the greatest fighters across universes. Every chapter has Rick's selection speech plus distinct entrance, player-victory, player-loss and collected-card dialogue. The prologue appears on the first chapter entered after this feature is introduced. Speeches use typewriter panels with a reveal/continue button and no skip control. Rick Gramps uses the generated portrait in source/public/campaign/rick-gramps.webp. Qwen audio follows Rick's selection with the boss entrance and keeps the written dialogue visible if audio fails. Victory dialogue is saved alongside rewards and must be acknowledged before the pack appears, including after reload. Playing a collected boss from hand produces a separate non-blocking speech bubble; enemy plays and unearned bosses do not claim allegiance. `CampaignSpeech.tsx` owns presentation, `progress.ts` owns the backward-compatible story and chapter-access fields, and the engine remains independent of dialogue.
+`materials/campaign-story.json` is the narrative source: Rick Gramps collects the greatest fighters across universes. Every chapter has Rick's selection speech plus distinct entrance, player-victory, player-loss and collected-card dialogue. Rick's selection speeches target about 50 words; replacement boss speeches target about 40 words. The prologue appears on the first chapter entered after this feature is introduced. Speeches use typewriter panels with a reveal/continue button and no skip control. Rick Gramps uses the generated portrait in source/public/campaign/rick-gramps.webp. Qwen audio follows Rick's selection with the boss entrance and keeps the written dialogue visible if audio fails. Victory dialogue is saved alongside rewards and must be acknowledged before the pack appears, including after reload. Playing a collected boss from hand produces a separate non-blocking speech bubble; enemy plays and unearned bosses do not claim allegiance. `CampaignSpeech.tsx` owns presentation, `progress.ts` owns the backward-compatible story and chapter-access fields, and the engine remains independent of dialogue.
 
 ### Starting and resuming
 
@@ -389,7 +389,7 @@ The title screen offers **Continue duel** for a saved duel, the campaign, the de
 
 ### Opening duel animation timeline
 
-The opening is driven by one React phase clock plus several CSS animations. The circle's 3.43-second draw window and the `drawMs: 3_430` value in `source/src/App.tsx` must stay aligned. The intro ends after the mana reveal, while pointer-free opening card flights may finish behind the playable board.
+The opening is driven by one React phase clock plus several CSS animations. The circle's 3.43-second draw window and the `drawMs: 3_430` value in `source/src/App.tsx` must stay aligned. The intro ends after the mana reveal, while pointer-free opening card flights may finish behind the playable board. Double-click anywhere on the full-screen intro veil to skip the ceremony and reveal the opening hand immediately; the duel state was already created, so this skips visuals only.
 
 | Relative time | Phase or animation | Length and delay | What it controls |
 |---:|---|---|---|
@@ -417,6 +417,7 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 - Press **Space** or **Enter** to end the turn.
 - Press **Z** to undo the last local action.
 - Press **Escape** to clear a selection.
+- Double-click anywhere during the opening intro to skip its animation and reach the opening hand.
 - **The Coin** appears for the player who goes second and spends for +1 mana that turn.
 - **Restart** begins a fresh duel.
 - **How to play** opens the in-duel rules guide.

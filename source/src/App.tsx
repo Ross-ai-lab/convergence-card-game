@@ -1241,6 +1241,15 @@ export default function App() {
     window.setTimeout(() => setFlights((current) => current.filter((flight) => !ids.has(flight.id))), 6_300);
   }
 
+  function skipDuelIntro() {
+    if (!duelIntro) return;
+    // The engine state and opening hands already exist. Only the visual
+    // ceremony and its queued opening cue are being skipped.
+    sfx.stopCue();
+    setFlights([]);
+    setDuelIntro(null);
+  }
+
   // Diff previous vs next state and spawn all transient FX for this action:
   // floating numbers, death ghosts, per-card impacts and the attacker lunge.
   function spawnFx(prev: GameState, next: GameState, action: GameAction, resultEvents: GameEvent[]) {
@@ -3185,7 +3194,7 @@ export default function App() {
         />
       ) : null}
 
-      {duelIntro ? <DuelIntro phase={duelIntro.phase} /> : null}
+      {duelIntro ? <DuelIntro phase={duelIntro.phase} onSkip={skipDuelIntro} /> : null}
       {bossLines[0] && screen === "playing" && game.phase !== "gameOver" ? <CollectedBossSpeech key={bossLines[0].id} cue={bossLines[0]} onDone={closeBossLine} /> : null}
       {chapterSpeech && (() => {
         const chapter = CAMPAIGN_CHAPTERS[chapterSpeech.mode.chapter-1];

@@ -14,7 +14,7 @@
     {
       "chapter": 2,
       "bossId": "c110",
-      "rickIntro": "Kung-Fu Panda is mostly dumplings, spiritual advice, and a guy who accidentally became a weapon. Po is useful because he keeps getting stronger without losing the part of him that makes people follow. That's rare. Also, he can probably eat through my emergency food supply.",
+      "rickIntro": "Kung Fu Panda's a universe built on dumplings, mysticism, and one enormous idiot who keeps accidentally becoming the answer. I'm taking Po because underneath the fat jokes he's stubborn, adaptable, and—dammit—people actually follow him. That's useful. I need a tank who can think sideways when the plan goes completely to hell.",
       "entrance": "Oh! You're Rick Gramps, right? The guy collecting fighters from different worlds? That's actually kind of amazing. Also kind of alarming. If you're looking for somebody who can handle a little pressure, I'm your panda. Just don't point me at anything with lasers.",
       "defeat": "Okay, you got me. That was a real fight, and I'm saying that as somebody who has been punched through several walls. I'll join your collection, Gramps. But we train before breakfast, and I'm keeping the dumplings. Those are non-negotiable.",
       "play": "All right, everybody, stay together! I don't know this battlefield, but I know how to improvise. If things get weird, hit the biggest problem first. If things get delicious, save me some. Both plans can work at once.",
@@ -176,8 +176,8 @@
     {
       "chapter": 20,
       "bossId": "c025",
-      "rickIntro": "One-Punch Man keeps adding stronger monsters until the joke stops being funny. Saitama is what happens after the joke wins. He ends fights before they start, hates being late for a sale, and somehow still looks bored. I need to know whether boredom survives the last arena.",
-      "entrance": "So you're the collector. You came through all those universes looking for the strongest fighter? That sounds exhausting. You can try me if you want, but make it quick. There's a supermarket sale this afternoon, and missing it would be a bigger problem than this.",
+      "rickIntro": "One-Punch Man is a whole universe screaming for escalation, and then there's Saitama, the bastard who ends it before the opening credits finish. He's not impressive in the interesting way—he's a walking punchline with grocery errands. That's exactly why I want him. Let's see what happens when boredom finally has nowhere left to go.",
+      "entrance": "You're the collector? You crossed the multiverse looking for the strongest guy, and now you're wasting my afternoon. Fine, hit me with whatever you've got. Just make it quick—I have a supermarket sale to catch, and those discounts don't come back.",
       "defeat": "You won. Huh. That's unusual. You and your fighters actually made me put in some effort, so I guess I'll come along. Don't make a big ceremony out of it. Just tell me where the next fight is, and whether there's a grocery store nearby.",
       "play": "Point me at the strongest one. I'll finish this before it gets complicated. After that, I'm going home, unless somebody knows a good discount store nearby. I'm not being rude. I just have errands, and the monsters can wait.",
       "loss": "You lost. It happens. Your team just wasn't strong enough today, and I'm not going to pretend otherwise. Train them, find somebody tougher, and come back. If you're planning a rematch, try not to schedule it during the supermarket sale."
