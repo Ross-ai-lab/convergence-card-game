@@ -46,12 +46,13 @@ describe("campaign definitions", () => {
     expect(CAMPAIGN_ROSTER_SIZE).toBe(roster.length);
     expect(roster.length).toBe(218);
     expect(CAMPAIGN_CHAPTERS.map(({ rewardCardIds }) => rewardCardIds.length))
-      .toEqual([11,9,9,9,9,9,9,9,9,10,10,10,11,10,10,10,1,16,6,11]);
+      .toEqual([11,9,9,9,8,8,8,8,9,10,10,10,11,9,9,9,8,16,6,11]);
     const allocated = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.flatMap(({ rewardCardIds }) => rewardCardIds)];
     expect(allocated).toHaveLength(218);
     expect(new Set(allocated).size).toBe(218);
     expect(allocated.sort()).toEqual([...rosterIds].sort());
     expect(getCampaignChapter(20)!.rewardCardIds).toEqual(["c025", "c039", "c051", "c062", "c066", "c077", "c112", "c119", "c126", "c127", "r011"]);
+    expect(getCampaignChapter(17)!.rewardCardIds).toEqual(["c041", "c061", "c170", "c102", "c161", "c156", "c154", "c002"]);
   });
 
   for (const chapter of CAMPAIGN_CHAPTERS) {
