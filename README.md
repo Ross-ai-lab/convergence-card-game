@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 215,954 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 215,946 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -195,8 +195,8 @@ No account or installation is required. Progress and live duels are saved locall
 | 15 | Gojo | Silence and execution | Ascendant | Dampen | 9 |
 | 16 | Elden Beast | Magic and rebirth | Ascendant | Mend Core | 9 |
 | 17 | Bill Cipher | Reality fracture | Ascendant | Blood Price | 8 |
-| 18 | Thanos | Cosmic convergence | Ascendant | Wither | 16 |
-| 19 | Mastered Ultra Instinct Goku | Champions of light | Ascendant | Vital Spark | 6 |
+| 18 | Thanos | Cosmic convergence | Ascendant | Wither | 15 |
+| 19 | Goku | Champions of light | Ascendant | Vital Spark | 7 |
 | 20 | Saitama | Monsters and heroes | Ascendant | Mend Core | 11 |
 
 #### Scope and status
@@ -212,9 +212,9 @@ Twenty chapters unlock strictly in order. A first victory clears its chapter, gr
 
 Every player starts with the same thirty-card deck and thirty unlocked cards, including all eleven Basic cards and no Mythics. The deck keeps its chosen cards as costs change. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
 
-Approved reward adjustment: chapter 1 awards 10; chapters 2–5 and 9 award 9; chapters 6–8 award 8; chapters 10–12 award 10; chapter 13 awards 11; chapters 14–17 award 9, 9, 9 and 8; chapter 18 awards 16; chapter 19 awards 6; chapter 20 awards the final One-Punch Man pack of 11. Total: 30 initial cards + 188 rewards = all 218 cards.
+Approved reward adjustment: chapter 1 awards 10; chapters 2–5 and 9 award 9; chapters 6–8 award 8; chapters 10–12 award 10; chapter 13 awards 11; chapters 14–17 award 9, 9, 9 and 8; chapter 18 awards 15; chapter 19 awards 7; chapter 20 awards the final One-Punch Man pack of 11. Total: 30 initial cards + 188 rewards = all 218 cards.
 
-Marvel combines MCU, Marvel and Loki labels: eleven minions and four relics, fifteen cards. Chapter eighteen retains its fixed sixteen-card reward, with The Driller from Transformers as its Tech filler. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
+Marvel combines MCU, Marvel and Loki labels: eleven minions and four relics, fifteen cards. Chapter eighteen awards that fifteen-card Marvel set; The Driller from Transformers now joins GLaDOS's Tech fillers. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
 
 Basic remains an explicit reference-card category. Star Destroyer now uses Star Wars origin but remains an exempt starting reference. The starter equips all Basic cards. Untouched earlier starter decks migrate to the new starter; earned custom decks remain intact. Universe aliases are recorded in the design data; generic Myth is not treated as one story universe.
 
@@ -2312,7 +2312,7 @@ Convergence is a non-commercial fan project made for personal play and education
 - [Engine](source/src/engine/)
 - [Local production tools](materials/local-production/asset-tools/)
 
-Campaign polish: the starter equips Antimatter Bomb and Carrier Strike Group; T-1000 and Rick Clone are among GLaDOS's 10 rewards. Ross has a separate chapter-unlock switch that opens fights without recording victories. Each boss has entrance, victory, loss and collected-play dialogue. Dialogue has one forward control and no skip option. My Deck can hide equipped cards.
+Campaign polish: the starter equips Antimatter Bomb and Carrier Strike Group; T-1000, Rick Clone and The Driller are among GLaDOS's 10 rewards. Ross has a separate chapter-unlock switch that opens fights without recording victories. Each boss has entrance, victory, loss and collected-play dialogue. Dialogue has one forward control and no skip option. My Deck can hide equipped cards.
 
 
 Voice auditions: the owner’s comparison approved Qwen overwhelmingly for emotional character dialogue. `materials/voice-auditions/` now contains Qwen samples only; rejected Kokoro comparison files are removed. The game ships 101 campaign recordings: 80 boss lines, Rick’s prologue, and 20 cloned Rick selection speeches in `source/public/audio/campaign/`, with a casting/text/checksum manifest in `source/data/campaign-voices.json`. Each campaign entrance now presents Rick’s low-key selection speech, then the boss challenge, then the arena. All speech respects the effects volume, ducks music and card themes, cancels stale fetches, and keeps written dialogue available. `npm run voice:audition` is now Qwen-only. Reusable generation lives in the workspace `Pipelines/audio/qwen/` front door; Convergence keeps only its story, cast and adapter.

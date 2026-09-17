@@ -3758,7 +3758,7 @@ const FLAVOR_CEILING = 32;
 /* 55, up a fifth from 46. Every name on the roster was measured before this
  * moved: they all sat at 45.5, pinned by this ceiling rather than by their box,
  * so raising it is the only thing that makes a name bigger. The two longest —
- * "Rennala Queen of the Full Moon" and "Mastered Ultra Instinct Goku" — are
+ * "Rennala Queen of the Full Moon" and "Goku" — are
  * box-limited instead and grow less, which is the honest outcome rather than a
  * bug. The BOARD keeps its own 46 cap in CSS: a minion in play has far less
  * room across the top and nothing there was asking to be bigger. */

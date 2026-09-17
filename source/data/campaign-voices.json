@@ -784,7 +784,7 @@
   "19-entrance": {
     "chapter": 19,
     "bossId": "c044",
-    "speaker": "Mastered Ultra Instinct Goku",
+    "speaker": "Goku",
     "stage": "entrance",
     "duration": 9.3,
     "text": "So you are Rick Gramps! I heard you have been beating some incredible fighters. Forget the collection for a minute. Let us see how far we can push each other!",
@@ -794,7 +794,7 @@
   "19-defeat": {
     "chapter": 19,
     "bossId": "c044",
-    "speaker": "Mastered Ultra Instinct Goku",
+    "speaker": "Goku",
     "stage": "defeat",
     "duration": 10.1,
     "text": "That was amazing! You really got me, Gramps. Sure, I will join your collection. Just promise we will keep finding stronger opponents. This is going to be fun!",
@@ -804,7 +804,7 @@
   "19-loss": {
     "chapter": 19,
     "bossId": "c044",
-    "speaker": "Mastered Ultra Instinct Goku",
+    "speaker": "Goku",
     "stage": "loss",
     "duration": 8.4,
     "text": "That was fun, Gramps! You almost caught me with that last one. Take a breather, train your team, and come back. I want to see what you try next!",
@@ -814,7 +814,7 @@
   "19-play": {
     "chapter": 19,
     "bossId": "c044",
-    "speaker": "Mastered Ultra Instinct Goku",
+    "speaker": "Goku",
     "stage": "play",
     "duration": 3.6,
     "text": "Ready, Gramps! Let us give them a fight worth remembering.",

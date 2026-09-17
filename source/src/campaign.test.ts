@@ -46,7 +46,7 @@ describe("campaign definitions", () => {
     expect(CAMPAIGN_ROSTER_SIZE).toBe(roster.length);
     expect(roster.length).toBe(218);
     expect(CAMPAIGN_CHAPTERS.map(({ rewardCardIds }) => rewardCardIds.length))
-      .toEqual([10,9,9,9,9,8,8,8,9,10,10,10,11,9,9,9,8,16,6,11]);
+      .toEqual([10,9,9,9,9,8,8,8,9,10,10,10,11,9,9,9,8,15,7,11]);
     const allocated = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.flatMap(({ rewardCardIds }) => rewardCardIds)];
     expect(allocated).toHaveLength(218);
     expect(new Set(allocated).size).toBe(218);
@@ -118,7 +118,8 @@ describe("campaign definitions", () => {
     expect(CAMPAIGN_UNIVERSE_EXEMPT_IDS).toContain("c068");
     expect(getCampaignChapter(10)!.universeCardIds).toHaveLength(9);
     expect(getCampaignChapter(18)!.universeCardIds).toHaveLength(15);
-    expect(getCampaignChapter(18)!.fillerRewardIds).toContain("c105");
+    expect(getCampaignChapter(1)!.fillerRewardIds).toContain("c105");
+    expect(getCampaignChapter(18)!.fillerRewardIds).toEqual([]);
   });
 
   it("keeps the first campaign boss at Legendary rarity", () => {

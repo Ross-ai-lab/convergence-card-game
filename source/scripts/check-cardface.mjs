@@ -39,7 +39,7 @@ const WORST = [
   // Longest names in the roster — they fight the cost gem for the top corner.
   "Giorno - Gold Experience Requiem",
   "Rennala Queen of the Full Moon",
-  "Mastered Ultra Instinct Goku",
+  "Goku",
   // Wordiest rules text — it fights the plaque and the bottom gems.
   "Morpheus",
   "Dr. Heinz Doofenshmirtz",

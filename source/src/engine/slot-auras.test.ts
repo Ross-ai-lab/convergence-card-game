@@ -117,7 +117,7 @@ describe("slot auras", () => {
 
   it("Goku evades the first attack targeting him each enemy turn", () => {
     const state = mainState();
-    state.players[0].board[0] = makeMinion("Mastered Ultra Instinct Goku", 0, { sleeping: false });
+    state.players[0].board[0] = makeMinion("Goku", 0, { sleeping: false });
     state.players[1].board[0] = dummy("Zoro", 1, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
     state.players[1].board[1] = dummy("Military Fort", 1, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
     state.activePlayer = 1;

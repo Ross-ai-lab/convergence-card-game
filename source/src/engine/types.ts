@@ -451,7 +451,7 @@ export interface MinionInstance {
   protectedByMeleoron?: string | null;
   /** Reversible stat/keyword contributions from live aura sources. */
   auraBonuses?: Array<{ sourceId: string; atk: number; hp: number; keywords: Keyword[]; divineShield?: boolean }>;
-  /** Mastered Ultra Instinct Goku: the turn in which its first attack was evaded. */
+  /** Goku: the turn in which its first attack was evaded. */
   evadedAttackAtTurn?: number | null;
   /** Grand Master Oogway: one rescue per turn. */
   rescueUsedAtTurn?: number | null;
