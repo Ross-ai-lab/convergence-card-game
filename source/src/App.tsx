@@ -89,7 +89,7 @@ import {
 import { STARTING_POOL, revealOrder } from "./unlocks";
 import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES, CAMPAIGN_PREMISE, CAMPAIGN_PROTAGONIST } from "./campaign";
 import { createCampaignDuel } from "./campaign-duel";
-import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeRewards, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeBossSpeech, acknowledgeRewards, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
 import { randomDeck, validateDeck } from "./decks";
 import { remainingDeckCount } from "./engine/draw-piles";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
@@ -1650,6 +1650,9 @@ export default function App() {
   function restart() {
     if (mode.kind === "campaign" && game.winner === viewerId) { toTitle(); setOverlay("campaign"); return; }
     if (mode.kind === "campaign") {
+      if (progress.pendingBossSpeech !== null) persistProgress(acknowledgeBossSpeech(progress));
+      setChapterSpeech(null);
+      sfx.stopBossSpeech();
       beginDuel(mode, { skipStory: true });
       return;
     }
