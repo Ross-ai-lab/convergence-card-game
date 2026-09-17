@@ -227,6 +227,13 @@ check(
   (await page.locator(".mulligan-panel").count()) === 0,
   "mulligan hidden during opening animation",
 );
+await page.keyboard.type("rOsS");
+await page.locator(".developer-tools-trigger").waitFor({ state: "visible", timeout: 2000 });
+check(
+  "Ross reveals developer tools during a duel",
+  (await page.locator(".developer-tools-trigger").count()) === 1,
+  "case-insensitive Ross code works on the live board",
+);
 await page.locator(".duel-intro").dblclick();
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 3000 });
 check(

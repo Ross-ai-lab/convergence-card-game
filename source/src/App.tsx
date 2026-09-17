@@ -676,10 +676,13 @@ export default function App() {
   }, [bossLines[0]?.id, chapterSpeech, defeatedChapter, game.phase, progress.pendingBossSpeechOutcome, screen]);
 
   useEffect(() => {
-    if (screen !== "title" || overlay !== null) return;
+    if (screen !== "title" && screen !== "playing") return;
+    if (screen === "title" && overlay !== null) return;
     let buffer = "";
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
       buffer = `${buffer}${event.key.toLowerCase()}`.slice(-4);
       if (buffer === "ross") {
         setDeveloperCheatRevealed(true);
