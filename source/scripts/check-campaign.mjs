@@ -241,10 +241,13 @@ try {
   assert.equal(await page.locator('.gameover-buttons button').count(), 2, 'A campaign loss must offer rematch and menu');
   assert(await page.getByRole('button', { name: 'Rematch', exact: true }).isVisible());
   assert(await page.getByRole('button', { name: 'Return to menu', exact: true }).isVisible());
-  await page.reload();await page.locator('[data-story-stage="loss"]').waitFor();
   await page.locator('.campaign-speech-text').click();await page.screenshot({path:'../.preview/campaign/boss-loss.png'});
   await skipCampaignDialogue(page);
   assert.equal((await progress()).completedChapters, 1); assert.equal((await progress()).pendingRewards.length, 0);
+  await page.getByRole('button', { name: 'Rematch', exact: true }).click();
+  await page.locator('.duel-intro').waitFor({ state: 'visible', timeout: 4000 });
+  assert.equal(await page.locator('[data-story-key]').count(), 0, 'A campaign rematch skips Rick and boss speeches');
+  await page.evaluate(() => localStorage.removeItem('convergence.save.v30'));
   await page.goto(base); await seedCampaignProgress(page, 19);
   await page.keyboard.type('Ross');
   assert.equal(await page.locator('.orbit-choice-easy').count(), 0);

@@ -1649,6 +1649,10 @@ export default function App() {
 
   function restart() {
     if (mode.kind === "campaign" && game.winner === viewerId) { toTitle(); setOverlay("campaign"); return; }
+    if (mode.kind === "campaign") {
+      beginDuel(mode, { skipStory: true });
+      return;
+    }
     beginDuel(mode);
   }
 
