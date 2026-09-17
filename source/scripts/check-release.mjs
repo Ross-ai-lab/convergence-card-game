@@ -34,8 +34,8 @@ try{
  await page.locator('.developer-search input').fill('John Wick');await page.locator('.developer-card-row').first().click();
  await page.getByRole('button',{name:'I win',exact:true}).click();
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('convergence.progress.v4')).completedChapters===1);
- assert.equal((await progress()).unlockedIds.length,41);assert.equal((await progress()).pendingRewards.length,11);
- await page.reload();await page.locator('[data-story-stage="defeat"]').waitFor();await skipCampaignDialogue(page);await page.locator('.pack-veil').waitFor();assert.equal((await progress()).pendingRewards.length,11);
+ assert.equal((await progress()).unlockedIds.length,40);assert.equal((await progress()).pendingRewards.length,10);
+ await page.reload();await page.locator('[data-story-stage="defeat"]').waitFor();await skipCampaignDialogue(page);await page.locator('.pack-veil').waitFor();assert.equal((await progress()).pendingRewards.length,10);
  await settleMotion(page);
  for(let hit=0;hit<8;hit++){const box=page.locator('.pack-box:not(.is-charged)');if(!await box.isVisible())break;const label=await box.getAttribute('aria-label');await box.click({force:true});await page.waitForFunction(label=>document.querySelector('.pack-box')?.getAttribute('aria-label')!==label,label);}
  await page.locator('.pack-collect:not([disabled])').click({timeout:25000});

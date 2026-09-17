@@ -187,7 +187,7 @@ describe("separate-deck abilities", () => {
     expect(act(initial, action)).toEqual(pending); expect(initial).toEqual(snapshot);
   });
 
-  it("Rick Prime returns a stolen minion to its original owner", () => {
+  it("Rick Clone returns a stolen minion to its original owner", () => {
     let state = main(); state.players[1].board[0] = body("c004", 1);
     state = resolveChoices(play(state, "c048"));
     const stolen = state.players[0].board.find((m) => m?.cardId === "c004")!;

@@ -1543,7 +1543,7 @@ describe("2026 card replacements", () => {
     const returned = mainState("dominion-return");
     returned.players[1].board[0] = minion("Dominion Authority", 1);
     returned.players[1].board[1] = minion("John Wick", 1);
-    const afterReturn = play(returned, 0, "Rick Prime", 0);
+    const afterReturn = play(returned, 0, "Rick Clone", 0);
     expect(afterReturn.players[1].board[1]?.name).toBe("John Wick");
   });
 
@@ -1769,15 +1769,15 @@ describe("2026 card replacements", () => {
     expect(after.players[1].board[1]).toBeNull();
   });
 
-  it("Rick Prime returns all other minions while staying on the board", () => {
+  it("Rick Clone returns all other minions while staying on the board", () => {
     const state = mainState();
     state.players[0].board[1] = minion("Zoro", 0);
     state.players[1].board[0] = minion("John Wick", 1);
-    const after = play(state, 0, "Rick Prime", 0);
-    expect(after.players[0].board[0]?.name).toBe("Rick Prime");
+    const after = play(state, 0, "Rick Clone", 0);
+    expect(after.players[0].board[0]?.name).toBe("Rick Clone");
     expect(after.players[0].board[1]).toBeNull();
     expect(after.players[1].board[0]).toBeNull();
-    expect(after.players[0].hand).not.toContain(cardId("Rick Prime"));
+    expect(after.players[0].hand).not.toContain(cardId("Rick Clone"));
     expect(after.players[0].hand).toContain(cardId("Zoro"));
     expect(after.players[1].hand).toContain(cardId("John Wick"));
   });

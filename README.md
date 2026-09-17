@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 215,957 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 215,954 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -178,11 +178,11 @@ No account or installation is required. Progress and live duels are saved locall
 
 | Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
-| 1 | GLaDOS | Tech fortifications | Recruit | Stand Fast | 11 |
+| 1 | GLaDOS | Tech fortifications | Recruit | Stand Fast | 10 |
 | 2 | Po | Martial growth | Recruit | Sharpen | 9 |
 | 3 | Yujiro | Nature duelists | Recruit | Sharpen | 9 |
 | 4 | Light Yagami | Information and sacrifice | Recruit | Blood Price | 9 |
-| 5 | Lord Voldemort | Protected dark magic | Veteran | Call a Recruit | 8 |
+| 5 | Lord Voldemort | Protected dark magic | Veteran | Call a Recruit | 9 |
 | 6 | Darth Vader | Imperial machinery | Veteran | Core Bolt | 8 |
 | 7 | Conquest | Ruthless combat | Veteran | Sharpen | 8 |
 | 8 | Dio Brando | Frozen battlefield | Veteran | Dampen | 8 |
@@ -212,7 +212,7 @@ Twenty chapters unlock strictly in order. A first victory clears its chapter, gr
 
 Every player starts with the same thirty-card deck and thirty unlocked cards, including all eleven Basic cards and no Mythics. The deck keeps its chosen cards as costs change. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
 
-Approved reward adjustment: chapter 1 awards 11; chapters 2–4 and 9 award 9; chapters 5–8 award 8; chapters 10–12 award 10; chapter 13 awards 11; chapters 14–17 award 9, 9, 9 and 8; chapter 18 awards 16; chapter 19 awards 6; chapter 20 awards the final One-Punch Man pack of 11. Total: 30 initial cards + 188 rewards = all 218 cards.
+Approved reward adjustment: chapter 1 awards 10; chapters 2–5 and 9 award 9; chapters 6–8 award 8; chapters 10–12 award 10; chapter 13 awards 11; chapters 14–17 award 9, 9, 9 and 8; chapter 18 awards 16; chapter 19 awards 6; chapter 20 awards the final One-Punch Man pack of 11. Total: 30 initial cards + 188 rewards = all 218 cards.
 
 Marvel combines MCU, Marvel and Loki labels: eleven minions and four relics, fifteen cards. Chapter eighteen retains its fixed sixteen-card reward, with The Driller from Transformers as its Tech filler. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
 
@@ -274,7 +274,7 @@ Chaos summons from its controller's deck. Existing effects which take or equip r
 
 Angstrom Levy returns the targeted minion to the targeted side's deck bottom and selects its same-cost replacement from that side's remaining deck. Search before returning the target, so it cannot replace itself. No eligible replacement leaves the slot empty. This separate-deck ruling is implemented.
 
-Played minions record their original owner separately from the current controller. Rick Prime returns stolen minions to that original owner. Reborn, transformations and friendly resurrection preserve that ownership. Effects explicitly returning a card to your hand use the current controller; a later play creates a card owned by that recipient. Angstrom uses the targeted side. Combat, buffs and draw effects use the current controller. Resurrection consumes only that controller's death history; the discard list remains a combined event record and never supplies draws.
+Played minions record their original owner separately from the current controller. Rick Clone returns stolen minions to that original owner. Reborn, transformations and friendly resurrection preserve that ownership. Effects explicitly returning a card to your hand use the current controller; a later play creates a card owned by that recipient. Angstrom uses the targeted side. Combat, buffs and draw effects use the current controller. Resurrection consumes only that controller's death history; the discard list remains a combined event record and never supplies draws.
 
 Ascendant Clairvoyance evaluates each seat's next card from that seat's deck. It no longer pretends that taking a card denies the same card to the player. True Dice and reply-reading retain their current meanings. Update bot projections, undo, choice cancellation, save/resume and deck counters together.
 
@@ -2312,7 +2312,7 @@ Convergence is a non-commercial fan project made for personal play and education
 - [Engine](source/src/engine/)
 - [Local production tools](materials/local-production/asset-tools/)
 
-Campaign polish: the starter equips Antimatter Bomb and Carrier Strike Group; T-1000 and Rick Prime are among GLaDOS's 11 rewards. Ross has a separate chapter-unlock switch that opens fights without recording victories. Each boss has entrance, victory, loss and collected-play dialogue. Dialogue has one forward control and no skip option. My Deck can hide equipped cards.
+Campaign polish: the starter equips Antimatter Bomb and Carrier Strike Group; T-1000 and Rick Clone are among GLaDOS's 10 rewards. Ross has a separate chapter-unlock switch that opens fights without recording victories. Each boss has entrance, victory, loss and collected-play dialogue. Dialogue has one forward control and no skip option. My Deck can hide equipped cards.
 
 
 Voice auditions: the owner’s comparison approved Qwen overwhelmingly for emotional character dialogue. `materials/voice-auditions/` now contains Qwen samples only; rejected Kokoro comparison files are removed. The game ships 101 campaign recordings: 80 boss lines, Rick’s prologue, and 20 cloned Rick selection speeches in `source/public/audio/campaign/`, with a casting/text/checksum manifest in `source/data/campaign-voices.json`. Each campaign entrance now presents Rick’s low-key selection speech, then the boss challenge, then the arena. All speech respects the effects volume, ducks music and card themes, cancels stale fetches, and keeps written dialogue available. `npm run voice:audition` is now Qwen-only. Reusable generation lives in the workspace `Pipelines/audio/qwen/` front door; Convergence keeps only its story, cast and adapter.

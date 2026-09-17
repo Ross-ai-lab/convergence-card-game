@@ -87,7 +87,7 @@ describe("campaign persistence and editing", () => {
     memory(); const won = finish(emptyProgress(), 1); expect(saveProgress(won)).toBe(true);
     const loaded = loadProgress(); expect(loaded.pendingRewards).toEqual(CAMPAIGN_CHAPTERS[0].rewardCardIds);
     expect(finish(loaded, 1)).toBe(loaded); saveProgress(acknowledgeRewards(loaded));
-    expect(loadProgress().pendingRewards).toEqual([]); expect(loadProgress().unlockedIds).toHaveLength(41);
+    expect(loadProgress().pendingRewards).toEqual([]); expect(loadProgress().unlockedIds).toHaveLength(40);
   });
   it("allows initial Basic alternatives and persists incomplete drafts", () => {
     memory(); const fresh = emptyProgress();
@@ -113,7 +113,7 @@ describe("campaign persistence and editing", () => {
   it("repairs corrupted ownership without granting a future boss", () => {
     const { values } = memory(); values.set(PROGRESS_KEY, JSON.stringify({ ...emptyProgress(), completedChapters: 1,
       unlockedIds: ["c041"], playerDeck: ["c041", "unknown"], pendingRewards: ["c041", "unknown"] }));
-    const repaired = loadProgress(); expect(repaired.unlockedIds).toHaveLength(41); expect(repaired.unlockedIds).not.toContain("c041");
+    const repaired = loadProgress(); expect(repaired.unlockedIds).toHaveLength(40); expect(repaired.unlockedIds).not.toContain("c041");
     expect(repaired.playerDeck).toEqual([]); expect(repaired.pendingRewards).toEqual([]);
   });
   it("reports a failed save rather than claiming it persisted", () => {

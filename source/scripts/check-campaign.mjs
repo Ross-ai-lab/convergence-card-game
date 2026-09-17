@@ -87,7 +87,7 @@ try {
   assert(!lockedChapterText.includes('first-win'));
   assert.equal(await lockedChapterCard.locator('details').count(), 0);
   assert.equal(await page.locator('.chapter-reward-preview').count(),1);
-  assert((await page.locator('.chapter-reward-preview').textContent()).includes('11 cards'));
+  assert((await page.locator('.chapter-reward-preview').textContent()).includes('10 cards'));
   assert(await page.locator('.campaign-chapter button').evaluateAll(buttons=>buttons.every(button=>{const b=button.getBoundingClientRect(),a=button.closest('article').getBoundingClientRect();return b.bottom<=a.bottom+1})), 'Chapter buttons must fit their tiles');
   assert(!(await page.locator('.campaign-panel').textContent()).includes('cards unlocked'));
   await page.getByRole('button', { name: 'Close campaign', exact: true }).click();
@@ -175,13 +175,13 @@ try {
   assert.equal(await page.locator('.mulligan-panel').count(), 0);
   await finish("I win", true);
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('convergence.progress.v4')).completedChapters === 1);
-  let record = await progress(); assert.equal(record.unlockedIds.length, 41); assert.equal(record.pendingRewards.length, 11);
+  let record = await progress(); assert.equal(record.unlockedIds.length, 40); assert.equal(record.pendingRewards.length, 10);
   assert.equal(record.pendingBossSpeech,1);
   assert.equal(record.playerDeck.length, 30); assert.equal(record.selectedHeroPower, 'core_heal');
   await page.reload(); await page.locator('[data-story-stage="defeat"]').waitFor();
   await page.locator('.campaign-speech-text').click();
   await page.screenshot({path:'../.preview/campaign/story-defeat.png'});
-  await skipCampaignDialogue(page); await page.locator('.pack-stage').waitFor(); assert.equal((await progress()).pendingRewards.length, 11);
+  await skipCampaignDialogue(page); await page.locator('.pack-stage').waitFor(); assert.equal((await progress()).pendingRewards.length, 10);
   await collectPack(); assert.equal((await progress()).pendingRewards.length, 0);
   const resultCampaign = page.getByRole('button', { name: 'Continue', exact: true });
   if (await resultCampaign.isVisible().catch(() => false)) await resultCampaign.click();
@@ -242,7 +242,7 @@ try {
   assert((await page.locator('.collected-boss-speech .speech-accessible').textContent()).includes('Your assistant has arrived'));
   await page.screenshot({path:'../.preview/campaign/collected-boss-speech.png'});
   await finish();
-  assert.equal((await progress()).unlockedIds.length, 41); assert.equal((await progress()).completedChapters, 1);
+  assert.equal((await progress()).unlockedIds.length, 40); assert.equal((await progress()).completedChapters, 1);
   assert.equal(await page.locator('.pack-stage').count(), 0);
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByRole('button', { name: 'Play chapter 2', exact: true }).click(); await board(); await finish('Enemy wins',true);

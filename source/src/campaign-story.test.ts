@@ -41,11 +41,11 @@ describe('Rick Gramps campaign story',()=>{
     const mode={kind:'campaign' as const,chapter:1,skill:'easy' as const,duelId:'story-win'};
     const input={winner:0 as const,viewerId:0 as const,mode,turns:15,at:1};
     const won=finishDuel(emptyProgress(),input,{seen:[],played:[]});
-    expect(won.pendingBossSpeech).toBe(1);expect(won.pendingRewards).toHaveLength(11);
+    expect(won.pendingBossSpeech).toBe(1);expect(won.pendingRewards).toHaveLength(10);
     expect(saveProgress(won)).toBe(true);
     expect(loadProgress().pendingBossSpeech).toBe(1);
     const acknowledged=acknowledgeBossSpeech(loadProgress());
-    expect(acknowledged.pendingRewards).toHaveLength(11);
+    expect(acknowledged.pendingRewards).toHaveLength(10);
     expect(finishDuel(acknowledged,input,{seen:[],played:[]})).toBe(acknowledged);
     const replay=finishDuel(acknowledgeRewards(acknowledged),{...input,mode:{...mode,duelId:'story-replay'}},{seen:[],played:[]});
     expect(replay.pendingBossSpeech).toBe(1);expect(replay.pendingRewards).toEqual([]);
