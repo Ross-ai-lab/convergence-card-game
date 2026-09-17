@@ -13,6 +13,10 @@ const waitForSpeech = async (key) => {
     await page.waitForFunction((value) => window.__sfx.getStats().bossSpeechKey === value, key);
   }
 };
+const revealSpeech = async (label) => {
+  await page.locator('.campaign-speech-text').click();
+  await page.waitForFunction((value) => document.querySelector('[data-story-continue]')?.textContent === value, label);
+};
 async function board() {
   await skipCampaignDialogue(page);
   await page.locator('.duel-intro').waitFor({ state: 'detached', timeout: 20000 });
@@ -128,20 +132,20 @@ try {
   await page.locator('[data-story-stage="prologue"]').waitFor();
   assert((await page.locator('.campaign-speech-text').textContent()).includes('Rick Gramps'));
   await waitForSpeech('rick-prologue');
-  await page.locator('.campaign-speech-text').click();
+  await revealSpeech('Begin collecting');
   await page.screenshot({path:'../.preview/campaign/story-prologue.png'});
   await page.locator('[data-story-continue]').click();
   await page.locator('[data-story-stage="rick-intro"]').waitFor();
   assert((await page.locator('.campaign-speech-panel h2').textContent()).includes('Rick Gramps'));
   assert((await page.locator('.campaign-speech-text').textContent()).includes('Portal'));
   await waitForSpeech('01-rick-intro');
-  await page.locator('.campaign-speech-text').click();
+  await revealSpeech('Continue');
   await page.screenshot({path:'../.preview/campaign/story-rick-intro.png'});
   await page.locator('[data-story-continue]').click();
   await page.locator('[data-story-stage="entrance"]').waitFor();
   await waitForSpeech('01-entrance');
   assert((await page.locator('.campaign-speech-panel h2').textContent()).includes('GLaDOS'));
-  await page.locator('.campaign-speech-text').click();
+  await revealSpeech('Enter the arena');
   await page.screenshot({path:'../.preview/campaign/story-entrance.png'});
   await board();
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v30')));

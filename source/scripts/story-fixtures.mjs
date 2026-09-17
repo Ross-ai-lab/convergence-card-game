@@ -4,6 +4,8 @@ export async function skipCampaignDialogue(page) {
     const speech=page.locator('[data-story-key]');if(!await speech.count())return;
     const key=await speech.getAttribute('data-story-key');
     await speech.locator('.campaign-speech-text').click();
+    const expected = key.includes('prologue') ? 'Begin collecting' : key.includes('entrance') ? 'Enter the arena' : 'Continue';
+    await page.waitForFunction((value) => document.querySelector('[data-story-continue]')?.textContent === value, expected);
     await speech.locator('[data-story-continue]').click();
     await page.waitForFunction(key=>document.querySelector('[data-story-key]')?.getAttribute('data-story-key')!==key,key);
   }
