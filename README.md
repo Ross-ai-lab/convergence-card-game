@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 215,946 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 216,011 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -179,17 +179,17 @@ No account or installation is required. Progress and live duels are saved locall
 | Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
 | 1 | GLaDOS | Tech fortifications | Recruit | Stand Fast | 10 |
-| 2 | Po | Martial growth | Recruit | Sharpen | 9 |
-| 3 | Yujiro | Nature duelists | Recruit | Sharpen | 9 |
-| 4 | Light Yagami | Information and sacrifice | Recruit | Blood Price | 9 |
-| 5 | Lord Voldemort | Protected dark magic | Veteran | Call a Recruit | 9 |
+| 2 | Po | Martial growth | Recruit | Sharpen | 10 |
+| 3 | Yujiro | Nature duelists | Recruit | Sharpen | 10 |
+| 4 | Light Yagami | Information and sacrifice | Recruit | Blood Price | 10 |
+| 5 | Lord Voldemort | Protected dark magic | Veteran | Call a Recruit | 10 |
 | 6 | Darth Vader | Imperial machinery | Veteran | Core Bolt | 8 |
-| 7 | Conquest | Ruthless combat | Veteran | Sharpen | 8 |
+| 7 | Conquest | Ruthless combat | Veteran | Sharpen | 9 |
 | 8 | Dio Brando | Frozen battlefield | Veteran | Dampen | 8 |
 | 9 | All for One | Stolen abilities | Veteran | Wither | 9 |
-| 10 | Meruem | Predators and protection | Veteran | Reforged Chains | 10 |
-| 11 | Ainz Ooal Gown | Undead court | Ascendant (no cheats) | Call a Recruit | 10 |
-| 12 | Eye of Sauron | The siege of Mordor | Ascendant (no cheats) | Stand Fast | 10 |
+| 10 | Meruem | Predators and protection | Veteran | Reforged Chains | 9 |
+| 11 | Ainz Ooal Gown | Undead court | Ascendant (no cheats) | Call a Recruit | 8 |
+| 12 | Eye of Sauron | The siege of Mordor | Ascendant (no cheats) | Stand Fast | 8 |
 | 13 | Monkey D. Luffy | Pirate emperors | Ascendant (no cheats) | Sharpen | 11 |
 | 14 | Gilgamesh | Relic arsenal | Ascendant (no cheats) | Blood Price | 9 |
 | 15 | Gojo | Silence and execution | Ascendant | Dampen | 9 |
@@ -212,7 +212,7 @@ Twenty chapters unlock strictly in order. A first victory clears its chapter, gr
 
 Every player starts with the same thirty-card deck and thirty unlocked cards, including all eleven Basic cards and no Mythics. The deck keeps its chosen cards as costs change. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
 
-Approved reward adjustment: chapter 1 awards 10; chapters 2–5 and 9 award 9; chapters 6–8 award 8; chapters 10–12 award 10; chapter 13 awards 11; chapters 14–17 award 9, 9, 9 and 8; chapter 18 awards 15; chapter 19 awards 7; chapter 20 awards the final One-Punch Man pack of 11. Total: 30 initial cards + 188 rewards = all 218 cards.
+Approved reward adjustment: chapter 1 awards 10; chapters 2–5 award 10 each; chapter 6 awards 8; chapter 7 awards 9; chapter 8 awards 8; chapters 9–10 award 9 each; chapters 11–12 award 8 each; chapter 13 awards 11; chapters 14–17 award 9, 9, 9 and 8; chapter 18 awards 15; chapter 19 awards 7; chapter 20 awards the final One-Punch Man pack of 11. Total: 30 initial cards + 188 rewards = all 218 cards.
 
 Marvel combines MCU, Marvel and Loki labels: eleven minions and four relics, fifteen cards. Chapter eighteen awards that fifteen-card Marvel set; The Driller from Transformers now joins GLaDOS's Tech fillers. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
 

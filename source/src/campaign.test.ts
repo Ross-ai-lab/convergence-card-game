@@ -46,7 +46,7 @@ describe("campaign definitions", () => {
     expect(CAMPAIGN_ROSTER_SIZE).toBe(roster.length);
     expect(roster.length).toBe(218);
     expect(CAMPAIGN_CHAPTERS.map(({ rewardCardIds }) => rewardCardIds.length))
-      .toEqual([10,9,9,9,9,8,8,8,9,10,10,10,11,9,9,9,8,15,7,11]);
+      .toEqual([10,10,10,10,10,8,9,8,9,9,8,8,11,9,9,9,8,15,7,11]);
     const allocated = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.flatMap(({ rewardCardIds }) => rewardCardIds)];
     expect(allocated).toHaveLength(218);
     expect(new Set(allocated).size).toBe(218);
