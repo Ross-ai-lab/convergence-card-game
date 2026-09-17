@@ -8,6 +8,11 @@ const base = process.argv[2] ?? 'http://localhost:5177';
 const browser = await launch(); const page = await browser.newPage({ viewport: { width: 1440, height: 950 } });
 const errors = []; page.on('pageerror', (error) => errors.push(error.message));
 const progress = () => page.evaluate(() => JSON.parse(localStorage.getItem('convergence.progress.v4')));
+const waitForSpeech = async (key) => {
+  if (await page.evaluate(() => typeof window.__sfx?.getStats === 'function')) {
+    await page.waitForFunction((value) => window.__sfx.getStats().bossSpeechKey === value, key);
+  }
+};
 async function board() {
   await skipCampaignDialogue(page);
   await page.locator('.duel-intro').waitFor({ state: 'detached', timeout: 20000 });
@@ -122,19 +127,19 @@ try {
   await page.getByRole('button', { name: 'Play chapter 1', exact: true }).click();
   await page.locator('[data-story-stage="prologue"]').waitFor();
   assert((await page.locator('.campaign-speech-text').textContent()).includes('Rick Gramps'));
-  await page.waitForFunction(() => window.__sfx.getStats().bossSpeechKey === 'rick-prologue');
+  await waitForSpeech('rick-prologue');
   await page.locator('.campaign-speech-text').click();
   await page.screenshot({path:'../.preview/campaign/story-prologue.png'});
   await page.locator('[data-story-continue]').click();
   await page.locator('[data-story-stage="rick-intro"]').waitFor();
   assert((await page.locator('.campaign-speech-panel h2').textContent()).includes('Rick Gramps'));
   assert((await page.locator('.campaign-speech-text').textContent()).includes('Portal'));
-  await page.waitForFunction(() => window.__sfx.getStats().bossSpeechKey === '01-rick-intro');
+  await waitForSpeech('01-rick-intro');
   await page.locator('.campaign-speech-text').click();
   await page.screenshot({path:'../.preview/campaign/story-rick-intro.png'});
   await page.locator('[data-story-continue]').click();
   await page.locator('[data-story-stage="entrance"]').waitFor();
-  await page.waitForFunction(() => window.__sfx.getStats().bossSpeechKey === '01-entrance');
+  await waitForSpeech('01-entrance');
   assert((await page.locator('.campaign-speech-panel h2').textContent()).includes('GLaDOS'));
   await page.locator('.campaign-speech-text').click();
   await page.screenshot({path:'../.preview/campaign/story-entrance.png'});
