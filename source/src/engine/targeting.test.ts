@@ -185,7 +185,9 @@ describe("targeted effects", () => {
   it("Batman chooses a gadget for the enemy minion", () => {
     const freezeState = mainState("batman-freeze");
     freezeState.players[1].board[0] = dummy("John Wick", 1);
-    const freezePrompt = playCardFor(freezeState, 0, "Batman", 1);
+    const freezeTarget = playCardFor(freezeState, 0, "Batman", 1);
+    expect(freezeTarget.pendingTarget?.kind).toBe("board");
+    const freezePrompt = choose(freezeTarget, 0);
     expect(freezePrompt.pendingTarget?.kind).toBe("option");
     expect(freezePrompt.pendingTarget?.labelOptions.map((option) => option.value)).toEqual(["freeze", "silence", "weaken"]);
     const frozen = choose(freezePrompt, 0);
@@ -193,12 +195,12 @@ describe("targeted effects", () => {
 
     const silenceState = mainState("batman-silence");
     silenceState.players[1].board[0] = dummy("John Wick", 1);
-    const silenced = choose(playCardFor(silenceState, 0, "Batman", 1), 1);
+    const silenced = choose(choose(playCardFor(silenceState, 0, "Batman", 1), 0), 1);
     expect(silenced.players[1].board[0]?.silenced).toBe(true);
 
     const weakenState = mainState("batman-weaken");
     weakenState.players[1].board[0] = dummy("John Wick", 1, { atk: 5 });
-    const weakened = choose(playCardFor(weakenState, 0, "Batman", 1), 2);
+    const weakened = choose(choose(playCardFor(weakenState, 0, "Batman", 1), 0), 2);
     expect(weakened.players[1].board[0]?.atk).toBe(2);
   });
 
@@ -257,14 +259,17 @@ describe("targeted effects", () => {
     expect(chosen.players[1].board[0]?.chained).toBe(0);
   });
 
-  it("resolves silently when only one target is legal", () => {
+  it("opens a prompt when only one target is legal", () => {
     const state = mainState();
     state.players[1].board[3] = dummy("John Wick", 1);
 
     const after = playCardFor(state, 0, "Kiritsugu Emiya", 1);
-    expect(after.phase).toBe("main");
-    expect(after.pendingTarget).toBeNull();
-    expect(after.players[1].board[3]?.frozen).toBe(true);
+    expect(after.phase).toBe("targeting");
+    expect(after.pendingTarget?.options).toEqual([{ owner: 1, slot: 3 }]);
+    const chosen = choose(after, 0);
+    expect(chosen.phase).toBe("main");
+    expect(chosen.pendingTarget).toBeNull();
+    expect(chosen.players[1].board[3]?.frozen).toBe(true);
   });
 
   it("fizzles without asking when nothing is legal", () => {
@@ -411,4 +416,3 @@ describe("practice bot", () => {
     expect(action?.type).toBe("choose_target");
   });
 });
-

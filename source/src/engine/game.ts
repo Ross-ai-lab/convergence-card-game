@@ -486,7 +486,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
         if (!hasHeroPower && !opponentHasKratosLockdown) {
           opponentHasKratosLockdown = opponentHasKratosLock(state, player.id);
         }
-        if (!opponentHasKratosLockdown && slot && hasFreeRelicSlot(slot) && canEquipRelicToBearer(card, slot)) {
+        if (!opponentHasKratosLockdown && slot && hasFreeRelicSlot(slot) && (hasInfiniteMana(state, player.id) || canEquipRelicToBearer(card, slot))) {
           actions.push({ type: "play_relic", player: player.id, handIndex, slotIndex });
         }
       }
@@ -944,7 +944,7 @@ function playRelic(
   const cardId = player.hand[handIndex];
   const relic = library[cardId];
   const bearer = player.board[slotIndex];
-  if (!isRelicCard(relic) || !bearer || !hasFreeRelicSlot(bearer) || !canEquipRelicToBearer(relic, bearer)) return;
+  if (!isRelicCard(relic) || !bearer || !hasFreeRelicSlot(bearer) || (!hasInfiniteMana(state, playerId) && !canEquipRelicToBearer(relic, bearer))) return;
   player.hand.splice(handIndex, 1);
   if (!hasInfiniteMana(state, playerId)) player.mana -= effectiveCardCost(state, playerId, relic);
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
@@ -964,7 +964,7 @@ function playRelic(
     cardId: relic.id,
     instanceId: bearer.instanceId,
   });
-  equipRelic(state, bearer, instance, library, events);
+  equipRelic(state, bearer, instance, library, events, hasInfiniteMana(state, playerId));
   triggerRelicDiscoveries(
     state,
     playerId,
@@ -1816,8 +1816,10 @@ function spendCoin(state: GameState, playerId: PlayerId, events: GameEvent[]): v
 //
 // Effects NOT listed here keep auto-targeting on purpose: board-wide effects,
 // "the weakest"/"the costliest" effects whose text already names the victim, and
-// self-only effects. A listed effect with exactly one legal option resolves
-// straight away rather than opening a pointless one-button prompt.
+// self-only effects. A listed board effect still opens its prompt with exactly
+// one legal target, so the player can aim deliberately instead of accepting an
+// invisible automatic choice. Hand and labelled choices may auto-resolve when
+// only one answer exists.
 // ---------------------------------------------------------------------------
 interface TargetSpec {
   /**
@@ -2154,11 +2156,7 @@ function requestChoice(
   const coreOption = kind === "boardOrCore" && spec.coreOption === true;
   const count = boardList.length + handList.length + labelList.length + (coreOption ? 1 : 0);
   if (count === 0) return null;
-  if (count === 1) {
-    if (kind === "board" || kind === "slot" || (kind === "boardOrCore" && boardList.length === 1)) {
-      return { kind: "board", target: boardList[0], step, priorOptions, priorHandOptions, priorLabelOptions };
-    }
-    if (kind === "boardOrCore") return { kind: "core", owner: opponent(source.owner), step, priorOptions, priorHandOptions, priorLabelOptions };
+  if (count === 1 && kind !== "board" && kind !== "slot" && kind !== "boardOrCore") {
     if (kind === "hand") return { kind: "hand", hand: handList[0], step, priorOptions, priorHandOptions, priorLabelOptions };
     return { kind: "option", option: labelList[0], step, priorOptions, priorHandOptions, priorLabelOptions };
   }
@@ -3948,9 +3946,8 @@ function refreshPassiveAuras(state: GameState): void {
     ),
   );
   for (const source of planetaryDefenseGrids) {
-    for (const targetBoard of state.players.map((player) => player.board)) {
-      for (const target of targetBoard) {
-        if (!target || target.silenced || !hasKeyword(target, "Taunt")) continue;
+    for (const target of state.players[source.owner].board) {
+      if (!target || target.silenced || !hasKeyword(target, "Taunt")) continue;
         // "All OTHER Taunt minions". The grid is itself a Taunt, so without this
         // it fed its own buff and read as a 7/11 behind a 4/8's printed stats.
         if (target.instanceId === source.instanceId) continue;
@@ -3959,7 +3956,6 @@ function refreshPassiveAuras(state: GameState): void {
         target.hp += 2;
         target.auraBonuses = target.auraBonuses ?? [];
         target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 2, keywords: [] });
-      }
     }
   }
   copyEnemyPassives(state);
@@ -4146,8 +4142,9 @@ function equipRelic(
   relic: RelicInstance,
   library: CardLibrary,
   events: GameEvent[],
+  bypassBearerRestriction = false,
 ): void {
-  if (!canEquipRelicToBearer(relic, bearer)) return;
+  if (!bypassBearerRestriction && !canEquipRelicToBearer(relic, bearer)) return;
   const slot = bearer.relic === null ? 0 : bearer.relic2 === null || bearer.relic2 === undefined ? 1 : -1;
   if (slot < 0) return;
   setRelicAt(bearer, slot, relic);

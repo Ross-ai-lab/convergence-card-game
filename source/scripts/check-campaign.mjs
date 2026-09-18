@@ -154,12 +154,12 @@ try {
   assert.equal(saved.game.playerDecks[0].deck.length, 27); assert.equal(saved.game.playerDecks[1].deck.length, 27);
   assert.equal(await page.locator('.campaign-hero .boss-portrait').getAttribute('alt'), 'GLaDOS portrait');
   assert((await page.locator('.campaign-hero .boss-chapter').textContent()).includes('Chapter 1'));
-  await page.getByRole('button', { name: 'Inspect GLaDOS', exact: true }).click();
-  assert(await page.getByRole('dialog', { name: 'GLaDOS card details' }).isVisible());
-  assert(!(await page.getByRole('dialog', { name: 'GLaDOS card details' }).textContent()).includes('cards unlocked'));
+  await page.getByRole('button', { name: 'Open Star Chart for GLaDOS', exact: true }).click();
+  assert(await page.getByRole('dialog', { name: 'GLaDOS Star Chart', exact: true }).isVisible());
+  assert.equal(await page.locator('.star-chart').count(), 1);
   assert.equal((await progress()).unlockedIds.length, 30, 'Inspecting a locked boss cannot unlock it');
   await page.keyboard.press('Escape');
-  assert.equal(await page.getByRole('dialog', { name: 'GLaDOS card details' }).count(), 0);
+  assert.equal(await page.getByRole('dialog', { name: 'GLaDOS Star Chart', exact: true }).count(), 0);
   await page.evaluate(() => window.__debug.place('Modern Tank', 'me', 0));
   await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().click();
   await page.locator('.campaign-hero.targetable').waitFor();

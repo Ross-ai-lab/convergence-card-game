@@ -4555,7 +4555,7 @@ button:disabled {
   touch-action: none;
   position: absolute;
   left: 50%;
-  bottom: 4px;
+  bottom: 0;
   transform: translateX(-50%);
   z-index: 5;
   width: 26px;
@@ -4570,8 +4570,8 @@ button:disabled {
 /* One relic is centered. Only when the second badge exists do the two share
    the rail and move left/right to clear the HP gem. */
 .relic-badge-0 { left: 50%; }
-.relic-badge-1 { left: 59%; }
-.minion-wrap:has(.relic-badge-1) .relic-badge-0 { left: 41%; }
+.relic-badge-1 { left: 55%; }
+.minion-wrap:has(.relic-badge-1) .relic-badge-0 { left: 45%; }
 
 /* Hovering the badge swaps the preview to the relic's own full card. */
 .relic-badge.peekable {

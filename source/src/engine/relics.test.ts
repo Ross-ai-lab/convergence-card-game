@@ -55,7 +55,11 @@ function playCardFor(state: GameState, player: PlayerId, name: string, slotIndex
   const next: GameState = { ...state, cheatMode: true, activePlayer: player, phase: "main", drawChoice: null };
   next.players = [...state.players] as GameState["players"];
   next.players[player] = { ...state.players[player], hand: [cardId(name)] };
-  return applyAction(next, { type: "play_card", player, handIndex: 0, slotIndex }, library).state;
+  let result = applyAction(next, { type: "play_card", player, handIndex: 0, slotIndex }, library).state;
+  while (result.phase === "targeting" && result.pendingTarget) {
+    result = applyAction(result, { type: "choose_target", player: result.pendingTarget.player, choiceIndex: 0 }, library).state;
+  }
+  return result;
 }
 
 function mainState(seed = "relic-tests"): GameState {
@@ -385,6 +389,17 @@ describe("relic effects", () => {
     const after = playRelicFor(state, 0, "Excalibur", 0);
     expect(after.players[0].board[0]?.keywords).toContain("Charge");
     expect(after.players[0].board[0]?.sleeping).toBe(false);
+  });
+
+  it("developer infinite mana bypasses Excalibur's bearer restriction for testing", () => {
+    const state = mainState("excalibur-cheat");
+    state.cheatMode = true;
+    state.cheatPlayer = 0;
+    state.players[0].board[0] = makeMinion("John Wick", 0);
+    state.players[0].hand = [relicByName("Excalibur").id];
+    expect(getLegalActions(state, library)).toContainEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 });
+    const after = playRelicFor(state, 0, "Excalibur", 0);
+    expect(after.players[0].board[0]?.relic?.name).toBe("Excalibur");
   });
 
   it("never exposes a manual attached-relic return action", () => {

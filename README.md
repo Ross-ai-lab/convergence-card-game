@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 216,011 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 215,786 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -242,7 +242,7 @@ After the campaign, each bot duel samples thirty unique cards completely randoml
 
 Each opponent is represented by its existing card portrait, character name and chapter number. Replace Player Two across the banner, target labels, introduction, log and results. Keep health, mana, hand count and the named Hero Power visible; the portrait also opens its card details.
 
-The opponent starts at standard 75 Core HP with ordinary mana, hand size and turn rules. Its character card is included once in its deck; the portrait does not create a free board minion, force an opening draw or grant its card passive to the Core.
+Campaign bosses start at 50 Core HP with ordinary mana, hand size and turn rules. Ordinary free-play opponents keep the standard 75 Core HP. A boss character card is included once in its deck; the portrait does not create a free board minion, force an opening draw or grant its card passive to the Core.
 
 Every boss deck is a fixed list of thirty unique cards, including the entire assigned universe. Shuffle that list independently each new attempt. Filler choices favour the listed theme, but required universe cards can mix camps and alignments. Boss fillers may use non-reserved cards whose rewards come later. Earlier defeated universes may also supply fillers; future boss universes remain excluded. Seeing a filler in a boss deck never unlocks it. Only the explicitly listed reward pack grants cards.
 
@@ -308,7 +308,7 @@ Every draw and deck-search effect passes its controller explicitly, including ef
 
 Save loading validates per-seat piles, cheat flags, queued hotseat mulligans and ownership history. Round-trip tests cover a pending Foresight choice and identical continuation after reload. Both worker and no-worker bot paths preserve the saved cheat profile. The v30 save cutover resets old campaign and pre-hotseat-mulligan duels. The scripted tutorial stays on its existing setup path; combining tutorial setup with constructed decks is rejected explicitly.
 
-Focused tests cover both seats, overlapping card IDs, independent shuffles and fatigue, mulligans, full-hand burns, sparse decks, discoveries, summoned/equipped cards, Angstrom, Sir Nighteye, stolen-card returns, Reborn/resurrection ownership, cancellation, deterministic replay, worker transport, and malformed saves. No card stats, search-depth limits or reward definitions changed. No balance ladder was run. The feature-browser check now accepts both Batman target paths: automatic selection when one enemy is legal, and a manual choice when several are legal. This repairs a timing-independent test assumption without changing tutorial gameplay. The pack-hover check also moves the pointer away before measuring the resting card, avoiding an already-hovered baseline. Verification: 62 focused engine/save/worker checks passed; all eight project suites passed across the final runs, with UI and features passing isolated reruns after those harness repairs. TypeScript and the production build passed.
+Focused tests cover both seats, overlapping card IDs, independent shuffles and fatigue, mulligans, full-hand burns, sparse decks, discoveries, summoned/equipped cards, Angstrom, Sir Nighteye, stolen-card returns, Reborn/resurrection ownership, cancellation, deterministic replay, worker transport, and malformed saves. Targeted board effects always let the player aim, even when one legal minion remains; effects with no legal target still fizzle. No balance ladder was run. The pack-hover check moves the pointer away before measuring the resting card, avoiding an already-hovered baseline. Verification: the focused engine/save/worker checks, browser suites, TypeScript and production build must all pass before publication.
 
 #### Chunk 3 menus, progression and saves
 

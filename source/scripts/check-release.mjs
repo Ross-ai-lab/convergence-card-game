@@ -26,9 +26,9 @@ try{
  await page.locator('.boss-portrait').evaluate(img=>img.decode());
  assert.equal(await page.evaluate(()=>typeof window.__debug),'undefined');
  assert((await page.locator('.campaign-hero .hero-name strong').textContent()).includes('GLaDOS'));
- await page.getByRole('button',{name:'Inspect GLaDOS',exact:true}).click();
- assert(await page.getByRole('dialog',{name:'GLaDOS card details'}).isVisible());
- await page.getByLabel('Close opponent details').click();
+ await page.getByRole('button',{name:'Open Star Chart for GLaDOS',exact:true}).click();
+ assert(await page.getByRole('dialog',{name:'GLaDOS Star Chart',exact:true}).isVisible());
+ await page.getByLabel('Close Star Chart').click();
  await page.screenshot({path:'../.preview/release/live-chapter-one.png'});
  await page.getByRole('button',{name:'DEV tools',exact:true}).click();
  await page.locator('.developer-search input').fill('John Wick');await page.locator('.developer-card-row').first().click();

@@ -51,7 +51,8 @@ describe('requested card revision',()=>{
   });
   it('Kuma allows a returned card to be replayed for zero mana exactly once',()=>{
     const s=state('kuma-zero');s.cheatMode=true;s.players[0].hand=['c133'];s.players[0].board[0]=minion('c001',0);
-    const n=applyAction(s,{type:'play_card',player:0,handIndex:0,slotIndex:1},library).state;
+    let n=applyAction(s,{type:'play_card',player:0,handIndex:0,slotIndex:1},library).state;
+    if(n.phase==='targeting'&&n.pendingTarget)n=applyAction(n,{type:'choose_target',player:n.pendingTarget.player,choiceIndex:0},library).state;
     expect(n.players[0].hand).toContain('c001');expect(effectiveCardCost(n,0,card('c001'))).toBe(0);
     n.cheatMode=false;n.players[0].mana=0;
     const played=applyAction(n,{type:'play_card',player:0,handIndex:n.players[0].hand.indexOf('c001'),slotIndex:0},library).state;

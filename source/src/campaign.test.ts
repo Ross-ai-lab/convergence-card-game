@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "./data/cards";
+import { CAMPAIGN_BOSS_HEALTH, createCampaignDuel } from "./campaign-duel";
 import { HERO_POWER_IDS } from "./engine/hero-powers";
 import { isMinionCard } from "./engine/types";
 import { validateDeck } from "./decks";
@@ -127,6 +128,27 @@ describe("campaign definitions", () => {
     expect(glados?.name).toBe("GLaDOS");
     if (!glados || glados.kind !== "minion") throw new Error("GLaDOS must be a minion");
     expect(glados.rarity).toBe("Yellow");
+  });
+
+  it("starts campaign bosses at 50 health while the player keeps 75", () => {
+    const duel = createCampaignDuel({
+      chapter: 1,
+      playerDeck: CAMPAIGN_STARTER_DECK,
+      unlockedCardIds: CAMPAIGN_INITIAL_COLLECTION,
+      cards,
+      relics,
+      seed: "campaign-boss-health",
+    });
+    expect(CAMPAIGN_BOSS_HEALTH).toBe(50);
+    expect(duel.state.players[0].health).toBe(75);
+    expect(duel.state.players[1].health).toBe(CAMPAIGN_BOSS_HEALTH);
+  });
+
+  it("keeps Yubaba only in Bill Cipher's enemy deck", () => {
+    const yubaba = cards.find(({ name }) => name === "Yubaba")?.id;
+    expect(yubaba).toBeTruthy();
+    const owners = CAMPAIGN_CHAPTERS.filter((chapter) => chapter.deckCardIds.includes(yubaba!));
+    expect(owners.map(({ chapter }) => chapter)).toEqual([17]);
   });
 
   it("protects shared definitions from mutation by future consumers", () => {

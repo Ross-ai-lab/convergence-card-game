@@ -2681,10 +2681,9 @@ export default function App() {
         ]
           .filter(Boolean)
           .join(" ")}
-        /* The drop scales with what landed. Keyed on the weight as well, so a
-           second heavy arrival restarts the animation instead of being ignored
-           because the class was already on the element. */
-        key={landing > 0 ? `thud-${landing}` : "steady"}
+        /* The drop animates the frame without remounting the board. Remounting
+           the whole table made every existing minion flicker when a heavy card
+           arrived, especially Divine Shield cards such as UFO and Flash. */
         style={landing > 0 ? ({ "--thud": landing } as CSSProperties) : undefined}
       >
         <header className="top-strip">
@@ -2725,8 +2724,8 @@ export default function App() {
             onBlockedStrike={selection?.kind === "attacker" ? attackCore : undefined}
           />
           {campaignBoss && !coreTargetable && selection?.kind !== "attacker" && <button
-            type="button" className="opponent-portrait-inspect" aria-label={`Inspect ${campaignBoss.name}`}
-            title={`View ${campaignBoss.name}'s card`}
+            type="button" className="opponent-portrait-inspect" aria-label={`Open Star Chart for ${campaignBoss.name}`}
+            title={`View ${campaignBoss.name}'s Star Chart`}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => { event.stopPropagation(); setEnemyPowerOpen(false); setOverlay("opponent"); }}
           />}
@@ -2880,13 +2879,12 @@ export default function App() {
 
           <div
             className={flights.length > 0 ? "deck-pile drawing" : "deck-pile"}
-            title={`Your deck: ${remainingDeckCount(game, viewerId)}. Opponent deck: ${remainingDeckCount(game, viewerId === 0 ? 1 : 0)}.`}
+            title={`Your turn ${viewer.turnsStarted}`}
           >
             <span className="card-back" />
             <span className="card-back" />
             <span className="card-back" />
-            <em aria-label="Cards in your deck">You {remainingDeckCount(game, viewerId)}</em>
-            {game.playerDecks && <strong className="enemy-deck-remaining" aria-label="Cards in opponent deck">Enemy {remainingDeckCount(game, viewerId === 0 ? 1 : 0)}</strong>}
+            <em aria-label="Your turn count">Turn {viewer.turnsStarted}</em>
           </div>
         </section>
 
@@ -3257,15 +3255,12 @@ export default function App() {
         onStart={() => beginDuel({ kind: "hotseat" })} />}
       {storageError && <div className="campaign-storage-error" role="alert">Progress could not be saved. Keep this page open and retry.
         <button onClick={() => { if (persistProgress(progress) && game.phase === "gameOver") { clearSave(); setHasLiveSave(false); } }}>Retry save</button></div>}
-      {overlay === "opponent" && campaignBoss && campaignChapter && <div className="campaign-overlay" role="dialog" aria-modal="true" aria-label={`${campaignBoss.name} card details`}>
-        <section className="campaign-panel campaign-opponent-panel">
-          <header className="campaign-header"><div><span className="campaign-eyebrow">Chapter {campaignChapter.chapter} / 20 · {campaignChapter.universe}</span><h2>{campaignBoss.name}</h2></div>
-            <button onClick={() => setOverlay(null)} aria-label="Close opponent details">Close</button></header>
-          <div className="campaign-opponent-face"><CardFace card={playableFace(campaignBoss)} /></div>
-          <p><strong>{heroPowerDefinition(campaignChapter.heroPowerId)?.name}</strong> · 2 mana<br />{heroPowerDefinition(campaignChapter.heroPowerId)?.text}</p>
-          {progress.completedChapters >= campaignChapter.chapter ? <p>Chapter cleared. Replays grant no additional rewards.</p> : null}
-        </section>
-      </div>}
+      {overlay === "opponent" && campaignBoss && <GalleryDetailModal
+        entry={{ key: campaignBoss.id, card: campaignBoss, face: playableFace(campaignBoss) }}
+        locked={false}
+        onClose={() => setOverlay(null)}
+        onNavigate={() => undefined}
+      />}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
       {overlay === "gallery" ? <CardGallery onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
@@ -6295,7 +6290,7 @@ function DeveloperTools({
     const needle = query.trim().toLowerCase();
     return allCards
       .filter((card) =>
-        !needle || [card.name, card.origin, card.effect].join(" ").toLowerCase().includes(needle),
+        !needle || [card.name, card.origin, card.effect, isRelicCard(card) ? "relic" : ""].join(" ").toLowerCase().includes(needle),
       )
       .sort((left, right) => left.name.localeCompare(right.name));
   }, [allCards, query]);

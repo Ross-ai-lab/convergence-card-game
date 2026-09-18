@@ -658,7 +658,7 @@ function HowToPlayContent() {
       <section className="rules-chapter">
         <h4><span className="rules-step-no">1</span> How you win</h4>
         <p>
-          Both cores start at <b>75 health</b>. Take the enemy core to zero and the duel is yours. Nothing
+          Your core starts at <b>75 health</b>; campaign bosses start at <b>50</b>. Take the enemy core to zero and the duel is yours. Nothing
           damages a core on its own: the damage comes from a minion attacking it, or from an effect that says
           in so many words that it damages a core.
         </p>

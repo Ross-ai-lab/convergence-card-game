@@ -81,7 +81,7 @@ c081,Gordon Freeman,4,1,3,Yellow,Tech,Neutral,Passive,freeman_charge_aura,passiv
 c082,Mahoraga,6,5,6,Yellow,Magic,Neutral,Passive,attack_once_ever,passive,Passive: Can only be attacked by each enemy minion once per game,Adaptation is not survival—it is dominance,Jujutsu Kaisen,/card-art/raw/c082.webp
 c083,Floor Guardians,8,6,6,Purple,Magic,Evil,,slot_growth_1,onPlay,Battlecry: Choose 1 friendly minion board slot. Minions on that board slot gain +1/+1 at the start of your turn,They do not guard the floors—they own them,Overlord,/card-art/raw/c083.webp
 c084,Meruem,7,4,6,Purple,Nature,Neutral,Passive,meruem_kill_copy,passive,"Passive: Whenever Meruem kills a minion, gain +1/+1 and gain its effects",Loyalty,HxH,/card-art/raw/c084.webp
-c085,Sonic,6,6,3,Purple,Nature,Good,Charge,charge,none,Charge,SS,Sonic The Hedgehog,/card-art/raw/c085.webp
+c085,Sonic,6,5,3,Purple,Nature,Good,Charge,charge,none,Charge,SS,Sonic The Hedgehog,/card-art/raw/c085.webp
 c086,Dominion Authority,4,1,4,Black,Magic,Good,Passive,dominion_authority,passive,"Passive: Friendly minions cannot be mind-controlled, returned to hand, or transformed by enemy effects",Loyalty,Overlord,/card-art/raw/c086.webp
 c087,Founding Titan,6,4,5,Black,Nature,Evil,Taunt;Passive,taunt_aura,passive,Taunt. Passive: All friendly minions have Taunt,The walls were never meant to protect,Attack on Titan,/card-art/raw/c087.webp
 c088,Homelander,6,4,4,Black,Nature,Evil,Passive,invuln_if_alone,passive,Passive: This minion is Invulnerable if it is your only minion on the board,Central casting,The Boys,/card-art/raw/c088.webp
@@ -172,7 +172,7 @@ c173,Nezu,1,1,1,Black,Nature,Good,,draw_card,onPlay,Battlecry: Draw 1 card,The s
 c174,Shibukawa,1,1,1,Black,Nature,Neutral,Divine Shield;Passive,shibukawa_defense_damage_2x,passive,Divine Shield. Passive: Do 2x damage when defending against an attack,Strength is the easiest thing to redirect.,Baki,/card-art/raw/c174.webp
 c175,V,1,1,1,Black,Nature,Neutral,Deathrattle,deathrattle_random_evil,deathrattle,"Deathrattle: Destroy a random Evil minion, no matter friendly or not, and deal 4 damage to your own Core",V for Vendetta,V for Vendetta,/card-art/raw/c175.webp
 c176,Meteor,8,4,3,Black,Nature,Neutral,,aoe_all_4,onPlay,Battlecry: Deal 4 damage to all other minions,It was never going to miss.,Basic,/card-art/raw/c176.webp
-c177,Planetary Defense Grid,7,3,7,Black,Tech,Neutral,Taunt;Passive,planetary_defense_grid_taunt_buff,passive,Taunt. Passive: All other Taunt minions have +2/+2,The shield watches from orbit.,Basic,/card-art/raw/planetary-defense-grid.webp
+c177,Planetary Defense Grid,7,3,7,Black,Tech,Neutral,Taunt;Passive,planetary_defense_grid_taunt_buff,passive,Taunt. Passive: All other friendly Taunt minions have +2/+2,The shield watches from orbit.,Basic,/card-art/raw/planetary-defense-grid.webp
 c178,Black Hole,10,7,4,Black,Magic,Neutral,Deathrattle,black_hole_deathrattle,deathrattle,Deathrattle: Silence then destroy all minions,Nothing escapes the singularity.,Basic,/card-art/raw/black-hole.webp
 c179,Rudeus Greyrat,4,2,2,Yellow,Magic,Good,Divine Shield;Passive,rudeus_hero_power_free,passive,"Divine Shield. Passive: Your Hero Power costs 0","Silent casting, overwhelming force.",Mushoku Tensei,/card-art/raw/c179.webp
 c180,Prince Lloyd,6,2,2,Purple,Magic,Good,Divine Shield;Passive,prince_lloyd_damage_ward,passive,"Divine Shield. Passive: Other friendly minions take 1 less damage",Magic is all he ever wanted to perfect.,7th Prince,/card-art/raw/c180.webp

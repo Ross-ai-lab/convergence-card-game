@@ -47,6 +47,12 @@ function choose(state: GameState, choiceIndex: number): GameState {
   return applyAction(state, { type: "choose_target", player: pending.player, choiceIndex }, library).state;
 }
 
+function playResolved(state: GameState, player: PlayerId, name: string, slotIndex: number): GameState {
+  let next = play(state, player, name, slotIndex);
+  while (next.phase === "targeting" && next.pendingTarget) next = choose(next, 0);
+  return next;
+}
+
 function endTurn(state: GameState, player: PlayerId): GameState {
   let next = applyAction(state, { type: "end_turn", player }, library).state;
   while (next.phase === "drawChoice" && next.drawChoice) {
@@ -237,7 +243,7 @@ describe("2026 card replacements", () => {
       Whitebeard: { atk: 4, hp: 3, effectId: "aoe_damage_3", effectTiming: "onPlay" },
       "Dio Brando": { atk: 3, hp: 2, effectId: "freeze_all_enemies", effectTiming: "onPlay" },
       Gilgamesh: { atk: 5, hp: 5, effectId: "equip_random_relic", effectTiming: "onPlay", keywords: [] },
-      Sonic: { atk: 6, hp: 3, effectId: "charge", effectTiming: "none", keywords: ["Charge"] },
+      Sonic: { atk: 5, hp: 3, effectId: "charge", effectTiming: "none", keywords: ["Charge"] },
       "Isaac Netero": { atk: 4, hp: 4, effectId: "deathrattle_aoe_3", effectTiming: "deathrattle" },
       "Death Star": { atk: 7, hp: 6, origin: "Star Wars", effectId: "death_star_mark" },
       "Star Destroyer": {
@@ -517,7 +523,7 @@ describe("2026 card replacements", () => {
         effectId: "planetary_defense_grid_taunt_buff",
         effectTiming: "passive",
         keywords: ["Taunt", "Passive"],
-        effect: "Taunt. Passive: All other Taunt minions have +2/+2",
+        effect: "Taunt. Passive: All other friendly Taunt minions have +2/+2",
         origin: "Basic",
       },
       "Black Hole": {
@@ -785,7 +791,7 @@ describe("2026 card replacements", () => {
     state.players[1].board[0] = minion("John Wick", 1, { camp: "ALL" });
     // A single legal victim resolves without a prompt, which is the engine's
     // normal handling of a forced choice.
-    expect(play(state, 0, "Light Yagami", 0).players[1].board[0]).toBeNull();
+    expect(playResolved(state, 0, "Light Yagami", 0).players[1].board[0]).toBeNull();
   });
 
   it("Light Yagami has no Deathrattle", () => {
@@ -881,7 +887,7 @@ describe("2026 card replacements", () => {
     expect(afterDeath.players[0].board[1]).toMatchObject({ atk: 3, maxHp: 3 });
   });
 
-  it("ALL receives positive camp auras but is excluded from camp-specific debuffs", () => {
+  it("ALL receives positive camp auras and remains targetable by camp-specific effects", () => {
     const natureAura = mainState("all-nature-aura");
     natureAura.players[0].board[1] = minion("Zoro", 0, { camp: "ALL", atk: 3, hp: 3, maxHp: 3 });
     const withTree = play(natureAura, 0, "Giant Tree", 0);
@@ -898,7 +904,7 @@ describe("2026 card replacements", () => {
     const debuff = mainState("all-nature-debuff");
     debuff.players[1].board[0] = minion("Zoro", 1, { camp: "ALL", atk: 3, hp: 4, maxHp: 4 });
     const asking = play(debuff, 0, "Gums", 0);
-    expect(asking.pendingTarget?.options ?? []).not.toEqual(
+    expect(asking.pendingTarget?.options ?? []).toEqual(
       expect.arrayContaining([expect.objectContaining({ owner: 1, slot: 0 })]),
     );
   });
@@ -1112,6 +1118,16 @@ describe("2026 card replacements", () => {
     expect(after.players[1].board[0]?.hp).toBe(2);
   });
 
+  it("Ragnaros takes combat damage and has no healing trigger", () => {
+    const state = mainState("ragnaros-no-heal");
+    state.players[0].board[0] = minion("Ragnaros", 0, { sleeping: false, hp: 4, maxHp: 4 });
+    state.players[1].board[0] = minion("John Wick", 1, { sleeping: false, atk: 1, hp: 10, maxHp: 10 });
+    state.activePlayer = 1;
+    const result = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library);
+    expect(result.state.players[0].board[0]?.hp).toBe(3);
+    expect(result.events.some((event) => /heal/i.test(event.text))).toBe(false);
+  });
+
   it("Avengers is Invulnerable while another Good minion is present", () => {
     const state = mainState();
     state.players[0].board[0] = minion("Avengers", 0, { sleeping: false });
@@ -1310,7 +1326,7 @@ describe("2026 card replacements", () => {
   it("Darth Vader chains a target but cannot target one that is already Chained", () => {
     const state = mainState("vader-chain");
     state.players[1].board[0] = minion("John Wick", 1);
-    const chained = play(state, 0, "Darth Vader", 1);
+    const chained = playResolved(state, 0, "Darth Vader", 1);
     expect(chained.players[1].board[0]).toMatchObject({ atk: 1, chained: 3 });
 
     const alreadyChained = mainState("vader-destroy");
@@ -1348,7 +1364,7 @@ describe("2026 card replacements", () => {
   it("Kiritsugu freezes and silences the chosen enemy", () => {
     const state = mainState("kiritsugu");
     state.players[1].board[0] = minion("John Wick", 1);
-    const after = play(state, 0, "Kiritsugu Emiya", 1);
+    const after = playResolved(state, 0, "Kiritsugu Emiya", 1);
     expect(after.players[1].board[0]).toMatchObject({ frozen: true, silenced: true });
   });
 
@@ -1446,7 +1462,7 @@ describe("2026 card replacements", () => {
     expect(fighters.every((fighter) => fighter.suppressArrivalTheme === true)).toBe(true);
   });
 
-  it("Planetary Defense Grid buffs every Taunt minion and loses the aura when silenced", () => {
+  it("Planetary Defense Grid buffs friendly Taunt minions and loses the aura when silenced", () => {
     const state = mainState("planetary-defense-grid-aura");
     state.players[0].board[1] = minion("Dragon", 0);
     // A plain Taunt body on the far side. Wall of Flesh used to stand here and
@@ -1460,7 +1476,7 @@ describe("2026 card replacements", () => {
     // feeding its own aura, and the buff is +2/+2.
     expect(buffed.players[0].board[0]).toMatchObject({ atk: 3, hp: 7, maxHp: 7 });
     expect(buffed.players[0].board[1]).toMatchObject({ atk: 5, hp: 7, maxHp: 7 });
-    expect(buffed.players[1].board[0]).toMatchObject({ atk: 6, hp: 6, maxHp: 6 });
+    expect(buffed.players[1].board[0]).toMatchObject({ atk: 4, hp: 4, maxHp: 4 });
     expect(buffed.players[1].board[1]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
 
     buffed.players[0].board[0]!.silenced = true;
@@ -1569,7 +1585,7 @@ describe("2026 card replacements", () => {
     const state = mainState("hashira-focus");
     state.players[0].board[0] = minion("Zoro", 0, { sleeping: false, atk: 3, hp: 10, maxHp: 10 });
     state.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", hp: 10, maxHp: 10 });
-    const after = play(state, 0, "Nine Hashira", 1);
+    const after = playResolved(state, 0, "Nine Hashira", 1);
     expect(after.players[1].board[0]?.hp).toBe(4);
     expect(after.players[0].board[0]?.attacksUsed).toBe(1);
     expect(after.players[0].board[1]?.attacksUsed).toBe(1);
@@ -1582,7 +1598,7 @@ describe("2026 card replacements", () => {
     state.players[0].board[2] = minion("Zoro", 0, { sleeping: false, atk: 3, hp: 10, maxHp: 10 });
     state.players[0].board[3] = minion("Kizaru", 0, { sleeping: false, atk: 4, hp: 10, maxHp: 10 });
     state.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 0, hp: 30, maxHp: 30 });
-    const after = play(state, 0, "Nine Hashira", 1);
+    const after = playResolved(state, 0, "Nine Hashira", 1);
     // 3 (Zoro) + 4 (Kizaru) + 3 (Nine Hashira itself) off a 30 HP body.
     expect(after.players[1].board[0]?.hp).toBe(20);
     expect(after.players[0].board[2]?.attacksUsed).toBe(1);
@@ -1594,7 +1610,7 @@ describe("2026 card replacements", () => {
     state.players[0].board[0] = minion("Grand Master Yoda", 0, { sleeping: false });
     state.players[0].board[2] = minion("Zoro", 0, { sleeping: false, atk: 3, hp: 10, maxHp: 10 });
     state.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 0, hp: 30, maxHp: 30 });
-    const after = play(state, 0, "Nine Hashira", 1);
+    const after = playResolved(state, 0, "Nine Hashira", 1);
     expect(after.players[0].board[0]?.attacksUsed).toBe(0);
     expect(after.players[1].board[0]?.hp).toBe(30 - 3 - 3);
   });
@@ -1606,7 +1622,7 @@ describe("2026 card replacements", () => {
     state.players[1].board[0] = minion("John Wick", 1);
 
     // Darth Vader chains the enemy minion, and the Owl is watching.
-    const chained = play(state, 0, "Darth Vader", 1);
+    const chained = playResolved(state, 0, "Darth Vader", 1);
     expect(chained.players[1].board[0]?.chained).toBe(3);
     expect(chained.players[0].board[0]).toMatchObject({ atk: before.atk + 1, maxHp: before.maxHp + 1 });
   });
@@ -1714,6 +1730,15 @@ describe("2026 card replacements", () => {
     const after = choose(asking, index);
     expect(after.players[1].board[0]?.hp).toBe(3);
     expect(after.players[1].board[1]?.hp).toBe(4);
+  });
+
+  it("Modern Tank still asks for aim when only one enemy minion is legal", () => {
+    const state = mainState("modern-tank-single-target");
+    state.players[1].board[0] = minion("John Wick", 1, { hp: 4, maxHp: 4 });
+    const asking = play(state, 0, "Modern Tank", 0);
+    expect(asking.phase).toBe("targeting");
+    expect(asking.pendingTarget?.options).toEqual([{ owner: 1, slot: 0 }]);
+    expect(choose(asking, 0).players[1].board[0]?.hp).toBe(3);
   });
 
   it("An Order of Heavy Knights stands taller behind a Taunt, and shrinks without one", () => {
@@ -1998,7 +2023,7 @@ describe("2026 card replacements", () => {
       art: relicDef.art,
     };
     state.players[1].board[0] = minion("John Wick", 1, { relic: attached });
-    const after = play(state, 0, "Kureo Mado", 1);
+    const after = playResolved(state, 0, "Kureo Mado", 1);
     expect(after.players[1].board[0]?.relic).toBeNull();
     expect(after.players[0].board[1]?.relic).toMatchObject({ id: "r001", name: relicDef.name });
   });
@@ -2008,7 +2033,7 @@ describe("2026 card replacements", () => {
     state.players[1].board[0] = minion("Modern Tank", 1, { hp: 4, maxHp: 4, sleeping: false });
     state.players[1].board[1] = minion("Dragon", 1, { hp: 5, maxHp: 5, sleeping: false });
 
-    const controlled = play(state, 0, "Motoko Kusanagi", 0);
+    const controlled = playResolved(state, 0, "Motoko Kusanagi", 0);
     const victim = controlled.players[0].board[1];
     expect(victim).toMatchObject({ name: "Modern Tank", owner: 0, temporaryControl: { originalOwner: 1, originalSlot: 0 } });
     expect(controlled.players[1].board[0]).toBeNull();
@@ -2314,7 +2339,7 @@ describe("2026 card replacements", () => {
     const state = mainState("big-mom-devour");
     state.players[0].board[2] = minion("John Wick", 0, { atk: 2, hp: 4, maxHp: 4 });
 
-    const after = play(state, 0, "Big Mom", 0);
+    const after = playResolved(state, 0, "Big Mom", 0);
     expect(after.players[0].board[2]).toBeNull();
     expect(after.players[0].board[0]).toMatchObject({ atk: 8, hp: 10, maxHp: 10 });
   });
@@ -2400,7 +2425,7 @@ describe("2026 card replacements", () => {
     const state = mainState("spider-man-freeze-weaken");
     state.players[1].board[0] = minion("John Wick", 1, { atk: 5, hp: 10, maxHp: 10 });
 
-    const after = play(state, 0, "Spider-Man", 0);
+    const after = playResolved(state, 0, "Spider-Man", 0);
     expect(after.players[1].board[0]).toMatchObject({ frozen: true, atk: 3, hp: 10 });
   });
 

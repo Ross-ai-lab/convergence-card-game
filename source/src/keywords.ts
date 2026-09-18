@@ -46,7 +46,7 @@ export const KEYWORDS: KeywordEntry[] = [
     term: "Chained",
     aliases: ["Chain"],
     text:
-      "The minion loses *two* of its turns — always two, and no card prints a different number. Across both it cannot attack, its Passive and Ongoing effects do not fire, and it is untargetable by *both* players: not by an attack, not by removal, not by a buff of your own. It is the price a card pays for being too strong for its cost: a *Freeze* that lasts a turn longer and bites deeper.",
+      "The minion loses *two* of its turns — always two, and no card prints a different number. Across both it cannot attack, its Passive and Ongoing effects do not fire, and it is untargetable by *both* players: not by an attack, not by removal, not by a buff of your own.",
   },
   {
     term: "Divine Shield",

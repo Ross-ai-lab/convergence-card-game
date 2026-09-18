@@ -28,6 +28,14 @@ function playCardFor(state: GameState, player: PlayerId, name: string, slotIndex
   return applyAction(next, { type: "play_card", player, handIndex: 0, slotIndex }, library).state;
 }
 
+function playResolved(state: GameState, player: PlayerId, name: string, slotIndex = 0): GameState {
+  let result = playCardFor(state, player, name, slotIndex);
+  while (result.phase === "targeting" && result.pendingTarget) {
+    result = applyAction(result, { type: "choose_target", player: result.pendingTarget.player, choiceIndex: 0 }, library).state;
+  }
+  return result;
+}
+
 function mainState(): GameState {
   const state = createInitialGame(cards, "effects", relics);
   state.phase = "main";
@@ -310,7 +318,7 @@ describe("full-roster effects", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("John Wick", 1, { divineShield: true });
     state.players[1].board[1] = makeMinion("Avatar Aang", 1);
-    const after = playCardFor(state, 0, "Light Yagami", 0);
+    const after = playResolved(state, 0, "Light Yagami", 0);
     expect(after.players[1].board[0]).toBeNull();
     expect(after.players[1].board[1]?.name).toBe("Avatar Aang");
   });
@@ -329,7 +337,7 @@ describe("full-roster effects", () => {
   it("Battlecry silence (Aizawa silence_enemy) disables an enemy on arrival", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("Death Star", 1);
-    expect(playCardFor(state, 0, "Aizawa", 0).players[1].board[0]?.silenced).toBe(true);
+    expect(playResolved(state, 0, "Aizawa", 0).players[1].board[0]?.silenced).toBe(true);
   });
 
 });
@@ -348,7 +356,7 @@ describe("Silence strips stat buffs", () => {
     // Death Star prints 7/6. This one has been pumped well past that.
     state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 14, hp: 16, maxHp: 16 });
 
-    const after = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    const after = playResolved(state, 0, "Aizawa", 0).players[1].board[0];
     expect(after?.silenced).toBe(true);
     expect(after?.atk).toBe(7);
     expect(after?.maxHp).toBe(6);
@@ -359,7 +367,7 @@ describe("Silence strips stat buffs", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 1, hp: 2, maxHp: 2 });
 
-    const after = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    const after = playResolved(state, 0, "Aizawa", 0).players[1].board[0];
     expect(after?.silenced).toBe(true);
     expect(after?.atk).toBe(1);
     expect(after?.maxHp).toBe(2);
@@ -371,7 +379,7 @@ describe("Silence strips stat buffs", () => {
     // HP at the printed maximum; it must never restore it to full.
     state.players[1].board[0] = makeMinion("Death Star", 1, { atk: 14, hp: 9, maxHp: 16 });
 
-    const after = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    const after = playResolved(state, 0, "Aizawa", 0).players[1].board[0];
     expect(after?.maxHp).toBe(6);
     expect(after?.hp).toBe(6);
   });
@@ -390,7 +398,7 @@ describe("Silence strips stat buffs", () => {
       relic: { ...grail, instanceId: "test-grail" } as never,
     });
 
-    const after = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    const after = playResolved(state, 0, "Aizawa", 0).players[1].board[0];
     expect(after?.silenced).toBe(true);
     expect(after?.atk).toBe(printed.atk);
     expect(after?.maxHp).toBe(printed.maxHp);
@@ -411,7 +419,7 @@ describe("Silence strips stat buffs", () => {
     expect(under?.maxHp).toBe(16);
 
     // An ordinary Silence on the same board still takes the growth.
-    const cut = playCardFor(state, 0, "Aizawa", 0).players[1].board[0];
+    const cut = playResolved(state, 0, "Aizawa", 0).players[1].board[0];
     expect(cut?.atk).toBe(7);
     expect(cut?.maxHp).toBe(6);
   });

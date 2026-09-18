@@ -9346,7 +9346,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Orbital Intercept",
     "sig_desc": "A tracked object meets a guided response beyond the atmosphere.",
     "playstyle": "A patient guardian of a fragile world",
-    "ability": "Taunt. Passive: All other Taunt minions have +2/+2",
+    "ability": "Taunt. Passive: All other friendly Taunt minions have +2/+2",
     "rivals": [
       {
         "who": "An incoming asteroid",

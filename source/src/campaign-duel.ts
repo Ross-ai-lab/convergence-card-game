@@ -3,6 +3,9 @@ import { validateDeck } from "./decks";
 import { createInitialGame } from "./engine/game";
 import type { CardDefinition, HeroPowerId, RelicDefinition } from "./engine/types";
 
+/** Campaign bosses start at 50 Core HP; ordinary duels keep the 75-HP core. */
+export const CAMPAIGN_BOSS_HEALTH = 50;
+
 /** Engine entry point only. Chapter availability and first-clear rewards belong to chunk 3. */
 export function createCampaignDuel(options: {
   chapter: number;
@@ -27,5 +30,6 @@ export function createCampaignDuel(options: {
   const boss = options.cards.find(({ id }) => id === chapter.bossId);
   if (!boss) throw new Error(`Campaign boss is missing from the roster: ${chapter.bossId}`);
   state.players[1].name = boss.name;
+  state.players[1].health = CAMPAIGN_BOSS_HEALTH;
   return { state, chapter: chapter.chapter, difficulty };
 }

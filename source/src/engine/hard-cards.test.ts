@@ -49,6 +49,14 @@ function play(state: GameState, name: string, slotIndex = 0): GameState {
   return applyAction(next, { type: "play_card", player: 0, handIndex: 0, slotIndex }, library).state;
 }
 
+function playResolved(state: GameState, name: string, slotIndex = 0): GameState {
+  let result = play(state, name, slotIndex);
+  while (result.phase === "targeting" && result.pendingTarget) {
+    result = applyAction(result, { type: "choose_target", player: result.pendingTarget.player, choiceIndex: 0 }, library).state;
+  }
+  return result;
+}
+
 const attack = (state: GameState, attackerSlot: number, targetSlot: number) =>
   applyAction(state, { type: "attack_minion", player: 0, attackerSlot, targetSlot }, library).state;
 
@@ -244,7 +252,7 @@ describe("control and theft cards", () => {
     const state = mainState();
     state.players[1].board[0] = dummy("Death Star", 1, { hp: 2, maxHp: 9 });
 
-    const after = play(state, "Illumi", 1);
+    const after = playResolved(state, "Illumi", 1);
     expect(after.players[1].board[0]).toBeNull();
     expect(after.players[0].board.some((minion) => minion?.name === "Death Star")).toBe(true);
   });
@@ -253,7 +261,7 @@ describe("control and theft cards", () => {
     const state = mainState();
     state.players[1].board[0] = dummy("Death Star", 1, { hp: 9, maxHp: 9 });
 
-    const commanded = play(state, "Lelouch Lamperouge", 1);
+    const commanded = playResolved(state, "Lelouch Lamperouge", 1);
     expect(commanded.players[1].board[0]).toBeNull();
     expect(commanded.players[0].board.some((minion) => minion?.name === "Death Star")).toBe(true);
   });
@@ -290,7 +298,7 @@ describe("control and theft cards", () => {
     const attached = { id: relic.id, relicId: relic.relicId, name: relic.name, effect: relic.effect, art: relic.art };
     state.players[1].board[0] = dummy("Death Star", 1, { relic: attached });
 
-    const after = play(state, "Doctor Octopus", 1);
+    const after = playResolved(state, "Doctor Octopus", 1);
     expect(after.players[1].board[0]?.relic).toBeNull();
     expect(after.players[0].board[1]?.relic).toBeNull(); // destroyed, not taken
     expect(after.discard).toContain(relic.id);
@@ -300,7 +308,7 @@ describe("control and theft cards", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("Mahoraga", 1); // passive: attack_once_ever
 
-    const stolen = play(state, "Chrollo", 1);
+    const stolen = playResolved(state, "Chrollo", 1);
     expect(stolen.players[0].board[1]?.effectId).toBe("attack_once_ever");
     expect(stolen.players[1].board[0]?.effectId).toBe("none");
 
@@ -337,7 +345,11 @@ describe("control and theft cards", () => {
 
     const next: GameState = { ...state, cheatMode: true, players: [...state.players] as GameState["players"] };
     next.players[0] = { ...state.players[0], hand: [cardId("Kuma")] };
-    const result = applyAction(next, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library);
+    let result = applyAction(next, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library);
+    if (result.state.phase === "targeting" && result.state.pendingTarget) {
+      const chosen = applyAction(result.state, { type: "choose_target", player: result.state.pendingTarget.player, choiceIndex: 0 }, library);
+      result = { ...result, state: chosen.state, events: [...result.events, ...chosen.events] };
+    }
     const after = result.state;
     expect(after.players[0].hand).toContain(deathStar);
     expect(after.players[0].costReductions[deathStar]).toBe(5);
