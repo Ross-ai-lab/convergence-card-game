@@ -29,7 +29,7 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
           {cleared ? <details open><summary>Rewards unlocked</summary>
             <p>{chapter.rewardCardIds.map((id) => cardById.get(id)?.name ?? id).join(" · ")}</p></details> : null}
           <button className="primary" disabled={!available || !valid} onClick={() => onPlay(chapter.chapter)}>
-            {!available ? "Unavailable" : cleared ? "Replay Universe" : "Conquer the Universe"}</button>
+            {!available ? "Unavailable" : cleared ? "Universe Conquered" : "Conquer the Universe"}</button>
         </article>;
       })}</div>
     </section>
