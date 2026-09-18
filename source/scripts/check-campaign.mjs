@@ -130,7 +130,8 @@ try {
   await page.screenshot({ path: '../.preview/campaign/chapters.png' });
   await page.getByRole('button', { name: 'Play chapter 1', exact: true }).click();
   await page.locator('[data-story-stage="prologue"]').waitFor();
-  assert((await page.locator('.campaign-speech-text').textContent()).includes('Rick Gramps'));
+  const prologueText = await page.locator('.campaign-speech-text').textContent();
+  assert(prologueText.includes('Retirement lasted eleven minutes') && prologueText.includes('insurance is fictional'));
   await waitForSpeech('rick-prologue');
   await revealSpeech('Begin collecting');
   await page.screenshot({path:'../.preview/campaign/story-prologue.png'});

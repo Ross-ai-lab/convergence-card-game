@@ -10,7 +10,10 @@ describe('Rick Gramps campaign story',()=>{
   afterEach(()=>vi.unstubAllGlobals());
   it('supplies four distinct speeches for each of the twenty bosses',()=>{
     expect(CAMPAIGN_PROTAGONIST).toBe('Rick Gramps');
-    expect(CAMPAIGN_PREMISE).toContain('greatest fighters');
+    expect(CAMPAIGN_PREMISE).toContain('dangerous people');
+    expect(CAMPAIGN_PREMISE).toContain('insurance is fictional');
+    expect(CAMPAIGN_PREMISE.trim().split(/\s+/)).toHaveLength(60);
+    expect(CAMPAIGN_PREMISE.split('\n\n')).toHaveLength(2);
     expect(CAMPAIGN_CHAPTERS).toHaveLength(20);
     expect(CAMPAIGN_CHAPTERS.map(c=>c.bossId).slice(0,2)).toEqual(['c104','c110']);
     expect(CAMPAIGN_CHAPTERS.map(c=>c.bossId).slice(12,20)).toEqual(['c060','c019','c022','c097','c041','c027','c044','c025']);
