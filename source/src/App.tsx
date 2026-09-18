@@ -1012,7 +1012,7 @@ export default function App() {
       return;
     }
     // NO "FIRST BLOOD" LINE (owner ruling). It fired the moment either core took
-    // any damage at all, which in a 75-core duel is turn two or three and means
+    // any damage at all, which in a 50-core duel is turn two or three and means
     // nothing — a narrator announcing an event that happens in every single game
     // before anything is at stake. Removed from the sheet and the clip deleted,
     // not just muted. The herald keeps only the moments that are actually rare:
@@ -1647,7 +1647,7 @@ export default function App() {
     const opponentDeck = next.kind === "hotseat" ? progress.hotseatDeck : randomDeck(CAMPAIGN_CARD_IDS, `${seed}:opponent`);
     return createInitialGame(cards, seed, relics, { decks: [playerDeck, opponentDeck],
       foresightFor: foresightSeat(next), heroPowers: heroPowersForDuel(next, selectedHeroPower, seed),
-      mulliganPlayers: next.kind === "hotseat" ? [0, 1] : [0] });
+      mulliganPlayers: next.kind === "hotseat" ? [0, 1] : [0], hasCoin: next.kind === "hotseat" });
   }
 
   function restart() {
@@ -1763,6 +1763,7 @@ export default function App() {
       createInitialGame(cards, seed, relics, {
         heroPowers: ["core_heal", null],
         tutorial: true,
+        hasCoin: false,
       }),
     );
     setHistory([]);
@@ -2247,10 +2248,14 @@ export default function App() {
       // and sends the player rearranging a board that was never the issue.
       const card = library[viewer.hand[handIndex]];
       const relicLock = card && isRelicCard(card) ? relicLockSource(game, viewerId) : null;
+      const noGoodBearer = card && isRelicCard(card) && (card.relicId === "excalibur" || card.relicId === "mjolnir") &&
+        !viewer.board.some((slot) => slot?.alignment === "Good" && hasFreeRelicSlot(slot));
       const boardFull = !viewer.board.some((slot) => !slot);
       showToast(
         relicLock
           ? `${relicLock} is blocking your relics`
+          : noGoodBearer
+            ? "No Good minions"
           : boardFull
             ? "No room on the board"
             : "Not enough mana",
@@ -2729,7 +2734,10 @@ export default function App() {
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => { event.stopPropagation(); setEnemyPowerOpen(false); setOverlay("opponent"); }}
           />}
-          <HeroPowerCard definition={heroPowerDefinition(game.heroPowers[opponentId])} />
+          <HeroPowerCard
+            definition={heroPowerDefinition(game.heroPowers[opponentId])}
+            turnsRemaining={game.heroPowers[opponentId] === "glados_test_protocol" ? Math.max(0, 13 - game.players[viewerId].turnsStarted) : undefined}
+          />
         </div>
         <div className="system-buttons">
           <button type="button" onClick={restart}>Restart</button>
@@ -5315,7 +5323,7 @@ function HeroPlate({
   );
 }
 
-function HeroPowerCard({ definition }: { definition: ReturnType<typeof heroPowerDefinition> }) {
+function HeroPowerCard({ definition, turnsRemaining }: { definition: ReturnType<typeof heroPowerDefinition>; turnsRemaining?: number }) {
   if (!definition) return null;
   const cost = heroPowerCost(definition);
   return (
@@ -5328,6 +5336,9 @@ function HeroPowerCard({ definition }: { definition: ReturnType<typeof heroPower
         </span>
       </div>
       <p>{definition.text}</p>
+      {definition.id === "glados_test_protocol" && turnsRemaining !== undefined ? (
+        <small className="enemy-power-card-count">{turnsRemaining} turns remaining</small>
+      ) : null}
       <small className="enemy-power-card-foot">{definition.passive ? "Always active" : `Costs ${cost} mana · Once per turn`}</small>
     </aside>
   );

@@ -37,7 +37,7 @@ export const KEYWORDS: KeywordEntry[] = [
     term: "Ongoing",
     text: "Happens again at the start of its owner’s turn. An enemy Ongoing waits for the enemy’s turn, not yours.",
   },
-  { term: "Passive", text: "A standing rule that applies for as long as the minion is active. It never “fires”." },
+  { term: "Passive", text: "A standing rule that applies for as long as the minion is active." },
   { term: "Battlecry/Ongoing", text: "Both: once on arrival, then again every owner turn." },
   { term: "Deathrattle", text: "Happens after the minion dies — unless it was Silenced first." },
   { term: "Taunt", text: "The enemy must deal with this minion before attacking your core." },
@@ -50,8 +50,7 @@ export const KEYWORDS: KeywordEntry[] = [
   },
   {
     term: "Divine Shield",
-    text:
-      "Blocks the next instance of damage, whatever its size, then the gold rim goes out. *Silence* switches it off for as long as it lasts.",
+    text: "Blocks the next instance of damage.",
   },
   {
     term: "Freeze",

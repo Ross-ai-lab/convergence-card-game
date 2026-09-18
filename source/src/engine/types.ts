@@ -143,7 +143,13 @@ export type HeroPowerId =
   | "gojo_core_shield"
   | "bill_chaos"
   | "thanos_destroy"
-  | "goku_start_mana";
+  | "goku_start_mana"
+  | "vader_minion_tax"
+  | "dio_freeze"
+  | "meruem_discover"
+  | "luffy_set_one"
+  | "elden_revival"
+  | "saitama_small_guard";
 
 /**
  * Every keyword a card may print.
@@ -507,6 +513,10 @@ export interface PlayerState {
   costReductions: Record<string, number>;
   /** Doctor Strange: mana removed from this player's next turn. */
   manaPenaltyNextTurn: number;
+  /** Darth Vader: extra cost applied to this player's next turn's minion cards. */
+  minionCostPenaltyNextTurn: number;
+  /** Darth Vader: extra minion cost during the current turn only. */
+  minionCostPenaltyThisTurn: number;
   /** Hand-pressure effects: a card this player must play by `dueTurn` or lose. */
   pressured: { cardId: string; dueTurn: number } | null;
   /** Permanent marks on this player's board positions. */

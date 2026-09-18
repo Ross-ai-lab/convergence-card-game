@@ -34,7 +34,7 @@ describe('new Basic cards and latest adjustments',()=>{
     const s=main('antimatter-silenced');s.activePlayer=1;
     s.players[0].board[0]=body('c186',0,{silenced:true});s.players[1].board[0]=body('c001',1,{atk:2,hp:10,maxHp:10,sleeping:false});
     const n=applyAction(s,{type:'attack_minion',player:1,attackerSlot:0,targetSlot:0},library).state;
-    expect(n.players.map(p=>p.health)).toEqual([75,75]);
+    expect(n.players.map(p=>p.health)).toEqual([50,50]);
   });
   it.each(['silence','death'] as const)('Carrier suppresses only enemy Tech attackers until its %s',(removal)=>{
     const s=main(`carrier-${removal}`);s.cheatMode=true;s.players[0].hand=['c187'];

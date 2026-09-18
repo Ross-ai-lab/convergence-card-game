@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cards } from "../data/cards";
-import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "./game";
+import { applyAction, createInitialGame, effectiveCardCost, getLegalActions, makeCardLibrary } from "./game";
 import {
   HERO_POWER_DEFINITIONS,
   HERO_POWER_IDS,
@@ -84,7 +84,7 @@ describe("menu Hero Powers", () => {
   });
 
   it("exposes player powers and the distinct campaign boss powers", () => {
-    expect(HERO_POWER_DEFINITIONS).toHaveLength(22);
+    expect(HERO_POWER_DEFINITIONS).toHaveLength(28);
     for (const power of HERO_POWER_DEFINITIONS) {
       expect(power.text.length).toBeGreaterThan(8);
     }
@@ -156,11 +156,15 @@ describe("menu Hero Powers", () => {
     const afterEnemy = applyAction(goku, { type: "end_turn", player: 0 }, library).state;
     const afterGoku = applyAction(afterEnemy, { type: "end_turn", player: 1 }, library).state;
     expect(afterGoku.players[0].mana).toBe(2);
+    const gokuOpening = createInitialGame(cards, "goku-opening", [], { heroPowers: [null, "goku_start_mana"] });
+    expect(gokuOpening.players[1]).toMatchObject({ mana: 2, maxMana: 2 });
 
     const ainz = createInitialGame(cards, "ainz-power", [], { heroPowers: [null, "ainz_skeleton"] });
     ainz.phase = "main"; ainz.mulligan = null; ainz.activePlayer = 0;
     const afterAinzStart = applyAction(ainz, { type: "end_turn", player: 0 }, library).state;
-    expect(afterAinzStart.players[1].board.some((entry) => entry?.name === "Skeleton")).toBe(true);
+    const afterAinzFirst = applyAction(afterAinzStart, { type: "end_turn", player: 1 }, library).state;
+    const afterAinzSecond = applyAction(afterAinzFirst, { type: "end_turn", player: 0 }, library).state;
+    expect(afterAinzSecond.players[1].board.some((entry) => entry?.name === "Skeleton")).toBe(true);
 
     const glados = createInitialGame(cards, "glados-power", [], { heroPowers: [null, "glados_test_protocol"] });
     glados.phase = "main"; glados.mulligan = null; glados.activePlayer = 1;
@@ -184,6 +188,45 @@ describe("menu Hero Powers", () => {
     state.players[0].board[1] = minion("Modern Tank", 0, { atk: 2 });
     const attacks = getLegalActions(state, library).filter((action) => action.type === "attack_core");
     expect(attacks).toEqual([{ type: "attack_core", player: 0, attackerSlot: 1 }]);
+  });
+
+  it("resolves the remaining campaign powers and the global Saitama guard", () => {
+    const vader = mainState("vader_minion_tax");
+    const taxed = usePower(vader);
+    expect(taxed.players[1].minionCostPenaltyNextTurn).toBe(1);
+    taxed.activePlayer = 1;
+    taxed.turnNumber += 1;
+    taxed.players[1].minionCostPenaltyThisTurn = taxed.players[1].minionCostPenaltyNextTurn;
+    taxed.players[1].minionCostPenaltyNextTurn = 0;
+    expect(effectiveCardCost(taxed, 1, card("John Wick"))).toBe(card("John Wick").cost! + 1);
+
+    const dio = mainState("dio_freeze");
+    dio.players[1].board[0] = minion("John Wick", 1);
+    expect(usePower(dio).players[1].board[0]?.frozen).toBe(true);
+
+    const meruem = mainState("meruem_discover");
+    meruem.deck = [card("John Wick").id];
+    expect(usePower(meruem).players[0].hand).toContain(card("John Wick").id);
+
+    const luffy = mainState("luffy_set_one");
+    luffy.players[1].board[0] = minion("Modern Tank", 1, { atk: 4, hp: 5, maxHp: 5 });
+    expect(usePower(luffy).players[1].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
+
+    const elden = mainState("elden_revival");
+    elden.players[0].deadMinions = [card("John Wick").id];
+    elden.players[0].deadMinionOwners = [0];
+    elden.discard = [card("John Wick").id];
+    expect(usePower(elden).players[0].board[0]).toMatchObject({ name: "John Wick", atk: 1, hp: 1 });
+
+    const saitama = createInitialGame(cards, "saitama-power", [], { heroPowers: [null, "saitama_small_guard"] });
+    saitama.phase = "main"; saitama.mulligan = null; saitama.activePlayer = 0;
+    saitama.players[0].board[0] = minion("John Wick", 0, { atk: 1, sleeping: false });
+    const blocked = applyAction(saitama, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
+    expect(blocked.players[1].health).toBe(50);
+    blocked.players[0].board[0]!.atk = 4;
+    blocked.players[0].board[0]!.attacksUsed = 0;
+    const landed = applyAction(blocked, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
+    expect(landed.players[1].health).toBe(46);
   });
 
   it("refunds a targetable Hero Power when it is cancelled before choosing", () => {
@@ -227,11 +270,11 @@ describe("menu Hero Powers", () => {
     expect(usePower(mend).players[0].health).toBe(22);
 
     const almostFull = mainState("core_heal");
-    almostFull.players[0].health = 74;
-    expect(usePower(almostFull).players[0].health).toBe(75);
+    almostFull.players[0].health = 49;
+    expect(usePower(almostFull).players[0].health).toBe(50);
 
     const full = mainState("core_heal");
-    expect(usePower(full).players[0].health).toBe(75);
+    expect(usePower(full).players[0].health).toBe(50);
 
     const recruit = usePower(mainState("summon_recruit"));
     expect(recruit.players[0].board[0]).toMatchObject({

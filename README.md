@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 217,326 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 217,373 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -242,11 +242,11 @@ After the campaign, each bot duel samples thirty unique cards completely randoml
 
 Each opponent is represented by its existing card portrait, character name and universe. Replace Player Two across the banner, target labels, introduction, log and results. Keep health, mana, hand count and the named Hero Power visible; clicking the boss portrait opens its Star Chart.
 
-Campaign bosses start at 50 Core HP with ordinary mana, hand size and turn rules. Ordinary free-play opponents keep the standard 75 Core HP. A boss character card is included once in its deck; the portrait does not create a free board minion, force an opening draw or grant its card passive to the Core.
+All modes start both cores at 50 Core HP with ordinary mana, hand size and turn rules. A boss character card is included once in its deck; the portrait does not create a free board minion, force an opening draw or grant its card passive to the Core.
 
 Every boss deck is a fixed list of thirty unique cards, including the entire assigned universe. Shuffle that list independently each new attempt. Filler choices favour the listed theme, but required universe cards can mix camps and alignments. Boss fillers may use non-reserved cards whose rewards come later. Earlier defeated universes may also supply fillers; future boss universes remain excluded. Seeing a filler in a boss deck never unlocks it. Only the explicitly listed reward pack grants cards.
 
-The proposed player always takes the current first-player seat in campaign play. Keep the current three-card opening, player mulligan, second-player Coin, standard hand limit and five board slots. Difficulty comes from deck composition and bot decisions; no extra health or exclusive encounter rules are introduced.
+The proposed player always takes the current first-player seat in campaign play. Keep the current three-card opening, player mulligan, standard hand limit and five board slots. Hotseat alone gives its second player The Coin. Difficulty comes from deck composition and bot decisions; no extra health or exclusive encounter rules are introduced.
 
 Use existing character art for the banner redesign. Text story dialogue and universe introductions are implemented. Boss recordings, unique boss powers and special encounter rules are implemented.
 
@@ -257,9 +257,9 @@ First-time universe clears unlock player Hero Powers in the existing order: Mend
 
 Bosses with a listed power use that fixed power from their first attempt. Passive powers are always active; active powers use their printed costs and the usual once-per-turn limit. Eight bosses currently have no power and are intentionally listed for future design consideration. Replays cannot accelerate the player power track.
 
-Implemented boss powers are: GLaDOS — **Test Protocol**, the enemy has twelve of their own turns to win; Yujiro — **Apex Duel**, only the highest-ATK enemy minion may attack his Core; Light Yagami — **Judgment Mark**, 3 mana, mark an enemy minion and kill it at the start of Light's next turn; Lord Voldemort — **Dark Immortality**, he cannot die while controlling a minion; All for One — **Quirk Theft**, 2 mana, copy an enemy minion into his hand; Ainz Ooal Gown — **Skeleton Legion**, summon a 1/1 Skeleton at the start of his turn; Eye of Sauron — **Sauron's Gaze**, 0 mana, give a friendly minion Taunt; Gilgamesh — **Treasury Draw**, 2 mana, gain a random Relic; Gojo — **Limitless Barrier**, 2 mana, give his Core Divine Shield; Bill Cipher — **Chaos**, 0 mana, swap a minion's current ATK and HP; Thanos — **The Snap**, 5 mana, destroy a random enemy minion; Goku — **Ultra Instinct**, start with 2 mana instead of 1.
+Implemented boss powers are: GLaDOS — **Test Protocol**, the enemy has twelve of their own turns to win; Yujiro — **Apex Duel**, only the highest-ATK enemy minion may attack his Core; Light Yagami — **Judgment Mark**, 3 mana, mark an enemy minion and kill it at the start of Light's next turn; Lord Voldemort — **Dark Immortality**, he cannot die while controlling a minion; Darth Vader — **Imperial Tax**, 2 mana, enemy minion cards cost 1 more next turn; Dio Brando — **The World**, 2 mana, freeze an enemy minion for one turn; All for One — **Quirk Theft**, 2 mana, copy an enemy minion into his hand; Meruem — **Royal Appraisal**, 2 mana, discover a random card into his hand; Ainz Ooal Gown — **Skeleton Legion**, summon a 1/1 Skeleton every second turn; Eye of Sauron — **Sauron's Gaze**, 1 mana, give a friendly minion Taunt; Monkey D. Luffy — **Rubber Reality**, 3 mana, set an enemy minion's stats to 1/1; Gilgamesh — **Treasury Draw**, 2 mana, gain a random Relic; Gojo — **Limitless Barrier**, 2 mana, give his Core Divine Shield; Elden Beast — **Remembrance**, 3 mana, revive a random friendly minion that died this game; Bill Cipher — **Chaos**, 1 mana, swap a minion's current ATK and HP; Thanos — **The Snap**, 5 mana, destroy a random enemy minion; Goku — **Ultra Instinct**, start with 2 mana instead of 1; Saitama — **Serious Disinterest**, cannot be damaged by minions with 3 or less ATK.
 
-Bosses without a power are Po, Darth Vader, Conquest, Dio Brando, Meruem, Monkey D. Luffy, Elden Beast and Saitama. Candidate ideas remain intentionally unimplemented until selected: Po could reduce damage from the first enemy attack each turn; Vader could tax the next card drawn by the player; Conquest could gain ATK whenever a friendly minion kills one; Dio could freeze the first minion that targets him; Meruem could adapt after the first minion of each camp dies; Luffy could create a temporary copy of the first minion he plays each turn; Elden Beast could revive its first defeated minion once; Saitama could make the first attack against his Core each game deal exactly 1 damage.
+The only bosses currently without a power are Po and Conquest. Candidate ideas remain intentionally unimplemented: Po could reduce damage from the first enemy attack each turn, while Conquest could gain ATK whenever a friendly minion kills one.
 
 Universes 1–4 use Recruit behaviour. Universes 5–10 use Veteran behaviour. Universes 11–14 use full-turn Ascendant search with all four cheat flags disabled. Universes 15–20 use full Ascendant capabilities: reply-reading, true-dice knowledge, Clairvoyance and Foresight.
 
@@ -358,8 +358,8 @@ Campaign delivery is complete; future additions are story content, unique encoun
 
 ## Rules at a glance
 
-- Both cores begin at **75 health**. Reduce the opposing core to zero to win.
-- Each player draws from their own shuffled thirty-card deck and opens with **3 cards**. In solo and campaign play, Player One may replace any number once during the mulligan. In hotseat, both players may replace cards once, privately and in order. The second player also receives **The Coin**.
+- Both cores begin at **50 health**. Reduce the opposing core to zero to win.
+- Each player draws from their own shuffled thirty-card deck and opens with **3 cards**. In solo and campaign play, Player One may replace any number once during the mulligan. In hotseat, both players may replace cards once, privately and in order. The second hotseat player also receives **The Coin**.
 - Hero Powers are selected inside **My Deck**, above the current deck list. Each first clear of the first ten universes unlocks the next player power permanently, in the order shown in that menu. Collection bosses use fixed powers. Free-play opponents receive one random player power from all ten. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
 - At the start of a turn, draw one card. Mana starts at **1**, refills each turn, and increases by one each turn up to **10**.
 - Your hand holds at most **10 cards**. A card drawn into a full hand burns and is discarded.
@@ -414,7 +414,7 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 
 ### During a duel
 
-- Each player starts with three cards. In solo and campaign play, Player One may select any number to replace once. In hotseat, both players select replacements once before the first turn. The second player also receives **The Coin**, which spends for +1 mana that turn.
+- Each player starts with three cards. In solo and campaign play, Player One may select any number to replace once. In hotseat, both players select replacements once before the first turn. The second hotseat player also receives **The Coin**, which spends for +1 mana that turn.
 - Choose an unlocked Hero Power from My Deck before starting. First clears of chapters 1–10 unlock the ten player powers in order; the selected power appears beside the Core and costs 2 mana once per turn. The bot receives one random power from all ten each duel.
 - Click or drag a hand card onto an empty slot to play it.
 - Click or drag a ready minion onto an enemy minion or the enemy core to attack.
@@ -422,7 +422,7 @@ The opening uses the licensed `opening-jrpg-trailer.ogg` cue instead of the spok
 - Press **Z** to undo the last local action.
 - Press **Escape** to clear a selection.
 - Double-click anywhere during the opening intro to skip its animation and reach the opening hand.
-- **The Coin** appears for the player who goes second and spends for +1 mana that turn.
+- **The Coin** appears only for the hotseat player who goes second and spends for +1 mana that turn.
 - **Restart** begins a fresh duel.
 - **How to play** opens the in-duel rules guide.
 - **Settings** contains sound mute/volume controls and returns to the title screen. Campaign difficulty is fixed by chapter; free-play difficulty is chosen on the title screen after campaign completion.

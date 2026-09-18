@@ -403,7 +403,7 @@
       "theme": "Imperial machinery",
       "preferredCamp": "Tech",
       "preferredAlignment": "Evil",
-      "heroPowerId": null,
+      "heroPowerId": "vader_minion_tax",
       "difficultyId": "veteran",
       "universeCardIds": [
         "c029",
@@ -535,7 +535,7 @@
       "theme": "Frozen battlefield",
       "preferredCamp": "Magic",
       "preferredAlignment": "Evil",
-      "heroPowerId": null,
+      "heroPowerId": "dio_freeze",
       "difficultyId": "veteran",
       "universeCardIds": [
         "c042",
@@ -666,7 +666,7 @@
       "theme": "Predators and protection",
       "preferredCamp": "Nature",
       "preferredAlignment": "Neutral",
-      "heroPowerId": null,
+      "heroPowerId": "meruem_discover",
       "difficultyId": "veteran",
       "universeCardIds": [
         "c069",
@@ -862,7 +862,7 @@
       "theme": "Pirate emperors",
       "preferredCamp": "Magic",
       "preferredAlignment": "Good",
-      "heroPowerId": null,
+      "heroPowerId": "luffy_set_one",
       "difficultyId": "ascendantFair",
       "universeCardIds": [
         "c014",
@@ -1066,7 +1066,7 @@
       "theme": "Magic and rebirth",
       "preferredCamp": "Magic",
       "preferredAlignment": "Neutral",
-      "heroPowerId": null,
+      "heroPowerId": "elden_revival",
       "difficultyId": "ascendant",
       "universeCardIds": [
         "c097",
@@ -1339,7 +1339,7 @@
       "theme": "Monsters and heroes",
       "preferredCamp": "Nature",
       "preferredAlignment": "Good",
-      "heroPowerId": null,
+      "heroPowerId": "saitama_small_guard",
       "difficultyId": "ascendant",
       "universeCardIds": [
         "c025",

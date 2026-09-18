@@ -78,7 +78,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "-",
     flavor: "The dead keep marching.",
     origin: "Hero Power",
-    art: resolvePublicAssetUrl("/card-art/raw/token-knight.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/overlord-skeleton.webp"),
   },
   {
     kind: "minion",

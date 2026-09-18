@@ -74,7 +74,7 @@ describe("Convergence engine", () => {
   });
 
   it("starts a hotseat game with the right hands, coins, and legal moves", () => {
-    const state = createInitialGame(cards);
+    const state = createInitialGame(cards, "hotseat-coins", [], { hasCoin: true });
     const legal = getLegalActions(state, library);
     expect(state.players[0].hand).toHaveLength(3);
     expect(state.players[1].hand).toHaveLength(3); // both start with 3; player two also keeps The Coin

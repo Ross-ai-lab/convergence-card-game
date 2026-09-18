@@ -72,7 +72,7 @@ try {
   assert(desktopMap.content<=desktopMap.height+1,'All twenty universes must fit without vertical scrolling');
   const firstUniverseCard = page.locator('[data-chapter="1"]');
   const firstUniverseText = await firstUniverseCard.textContent();
-  assert.equal(await page.locator('.campaign-chapter-panel > .campaign-header .campaign-eyebrow').textContent(), "RICK GRAMPS' COLLECTION");
+  assert.equal(await page.locator('.campaign-chapter-panel > .campaign-header h2').textContent(), "Rick Gramps Collection");
   assert.equal(await page.locator('.campaign-chapter-panel .campaign-close').textContent(), '×');
   const panelMetrics = await page.locator('.campaign-chapter-panel').evaluate((el) => ({
     overflow: getComputedStyle(el).overflowY,

@@ -44,12 +44,18 @@ export const HERO_POWER_DEFINITIONS: readonly HeroPowerDefinition[] = [
   { id: "voldemort_immortal", name: "Dark Immortality", text: "Cannot die while controlling a minion.", target: "none", cost: 0, passive: true },
   { id: "all_for_one_copy", name: "Quirk Theft", text: "Copy an enemy minion card into your hand.", target: "enemy", cost: 2 },
   { id: "ainz_skeleton", name: "Skeleton Legion", text: "At the start of your turn, summon a 1/1 Skeleton.", target: "none", cost: 0, passive: true },
-  { id: "eye_taunt", name: "Sauron's Gaze", text: "Give a friendly minion Taunt.", target: "friendly", cost: 0 },
+  { id: "eye_taunt", name: "Sauron's Gaze", text: "Give a friendly minion Taunt.", target: "friendly", cost: 1 },
   { id: "gilgamesh_relic", name: "Treasury Draw", text: "Gain a random Relic into your hand.", target: "none", cost: 2 },
   { id: "gojo_core_shield", name: "Limitless Barrier", text: "Your Core gains Divine Shield.", target: "none", cost: 2 },
-  { id: "bill_chaos", name: "Chaos", text: "Swap a minion's current ATK and HP.", target: "any", cost: 0 },
+  { id: "bill_chaos", name: "Chaos", text: "Swap a minion's current ATK and HP.", target: "any", cost: 1 },
   { id: "thanos_destroy", name: "The Snap", text: "Destroy a random enemy minion.", target: "none", cost: 5 },
   { id: "goku_start_mana", name: "Ultra Instinct", text: "Start with 2 mana instead of 1.", target: "none", cost: 0, passive: true },
+  { id: "vader_minion_tax", name: "Imperial Tax", text: "Enemy minion cards cost 1 more next turn.", target: "none", cost: 2 },
+  { id: "dio_freeze", name: "The World", text: "Freeze an enemy minion for 1 turn.", target: "enemy", cost: 2 },
+  { id: "meruem_discover", name: "Royal Appraisal", text: "Discover a random card into your hand.", target: "none", cost: 2 },
+  { id: "luffy_set_one", name: "Rubber Reality", text: "Set an enemy minion's stats to 1/1.", target: "enemy", cost: 3 },
+  { id: "elden_revival", name: "Remembrance", text: "Revive a random friendly minion that died this game.", target: "none", cost: 3 },
+  { id: "saitama_small_guard", name: "Serious Disinterest", text: "Cannot be damaged by minions with 3 or less ATK.", target: "none", cost: 0, passive: true },
 ];
 
 export const HERO_POWER_IDS = HERO_POWER_DEFINITIONS.map(({ id }) => id) as HeroPowerId[];

@@ -65,19 +65,17 @@ const CHAIN_GROWTH_REWARD = 2;
  * Goku, Neo, Doctor Manhattan. A roster whose Greats never arrive is not this
  * game.
  *
- * At 75, with the plain +1 mana ramp below, the median duel runs 22 player-turns
+ * At 50, with the plain +1 mana ramp below, the median duel runs 22 player-turns
  * — eleven each, which is the same shape as Hearthstone — 80% of duels reach 10
  * mana, boards sit at 3.1 of 5 slots, and 6% end as blowouts.
  *
- * The number was 76 until 2026-08-21 and is now 75 by owner preference. One
- * point is inside the noise of every measurement on this page, so nothing above
- * is restated: it is a tidier number on the health bar, not a pacing change.
+ * The shipped game now uses 50 Core HP for every mode.
  *
  * **This number carries ALL of the pacing weirdness on purpose.** A player never
  * feels an unusual health total; they feel an unusual mana curve every single
  * turn. `npm run sim -- --sweep` is the measurement behind it.
  */
-const DEFAULT_STARTING_HEALTH = 75;
+const DEFAULT_STARTING_HEALTH = 50;
 
 /**
  * The same number, for the UI and the rules screen to read. Exported so the
@@ -86,7 +84,7 @@ const DEFAULT_STARTING_HEALTH = 75;
  */
 export const STARTING_CORE = DEFAULT_STARTING_HEALTH;
 
-/** Restore core health without ever exceeding the game's 75-HP maximum. */
+/** Restore core health without ever exceeding the game's 50-HP maximum. */
 function restoreCoreHealth(player: PlayerState, amount: number): number {
   const before = Math.min(STARTING_CORE, Math.max(0, player.health));
   player.health = Math.min(STARTING_CORE, before + Math.max(0, amount));
@@ -110,10 +108,8 @@ function restoreCoreHealth(player: PlayerState, amount: number): number {
  * major card game skips resource values, and players build a per-turn rhythm
  * around "next turn I have one more".
  *
- * The lever that works is the one players never feel: **starting core HP**. At
- * 75 with this plain +1 ramp, 80% of duels reach 10 mana — the same access the
- * clever ramp bought at 48 — with fewer blowouts and fuller boards. Put the odd
- * number in the health bar, never in the mana curve.
+ * The shipped lever is the core health total. Keep the mana ramp plain and let
+ * the 50-HP health bar provide pressure without skipping mana tiers.
  *
  * The field survives only so `npm run sim -- --sweep` can still measure
  * alternatives. The shipped game is 1.
@@ -148,6 +144,8 @@ export interface GameSetup {
   heroPowers?: [HeroPowerId | null, HeroPowerId | null];
   /** Build the deterministic first-duel teaching position instead of a normal deal. */
   tutorial?: boolean;
+  /** Whether the second seat receives The Coin. AI duels omit it; hotseat keeps it. */
+  hasCoin?: boolean;
 }
 
 export function createInitialGame(
@@ -211,12 +209,20 @@ export function createInitialGame(
   };
 
   players[0].turnsStarted = 1;
-  // Both players open with three cards; the second player also keeps The Coin.
+  if (state.heroPowers[0] === "goku_start_mana") {
+    players[0].maxMana = 2;
+    players[0].mana = 2;
+  }
+  if (state.heroPowers[1] === "goku_start_mana") {
+    players[1].maxMana = 2;
+    players[1].mana = 2;
+  }
+  // Both players open with three cards; hotseat keeps The Coin while AI duels do not.
   // The extra card gives the starting player the same room to enact a plan
   // without taking away the second player's tempo tool.
   drawDirect(state, 0, 3, []);
   drawDirect(state, 1, 3, []);
-  players[1].coins = 1;
+  players[1].coins = setup.hasCoin === true ? 1 : 0;
   if (setup.tutorial) configureTutorialState(state, cards);
   return state;
 }
@@ -278,14 +284,14 @@ function configureTutorialState(state: GameState, cards: CardDefinition[]): void
   // A basic body, a targeted Battlecry, and a draw card, in that order: the
   // first is what lesson one plays and the second is what lesson four prompts.
   const playerHand = ["c169", "c005", "c173"].filter((id) => byId.has(id));
-  // The Recruit takes exactly one turn inside the tutorial, on 2 mana and a
-  // Coin, so ONE of these can reach the board and it must be unable to touch
+  // The Recruit takes exactly one turn inside the tutorial, on 2 mana, so ONE
+  // of these can reach the board and it must be unable to touch
   // the 1-HP minion lesson one just taught the player to play. Survivors is a
   // plain 2/2 body that arrives asleep; the other two cost more than the enemy
   // can pay before the fourth lesson is over. Modern Tank used to sit here and
   // its Battlecry deals 1 damage to an enemy minion, which is precisely the
   // player's new minion and the end of lesson three. Nothing declined it on
-  // purpose — the Recruit simply had 2 mana and did not spend the Coin.
+  // purpose — the Recruit simply has 2 mana in this teaching position.
   const enemyHand = ["c118", "c142", "c143"].filter((id) => byId.has(id));
   const target = pickTutorialTarget(cards);
 
@@ -301,7 +307,7 @@ function configureTutorialState(state: GameState, cards: CardDefinition[]): void
   state.players[0].board = [null, null, null, null, null];
   state.players[1].board = [null, null, null, null, null];
   state.players[0].coins = 0;
-  state.players[1].coins = 1;
+  state.players[1].coins = 0;
   state.bottomDeck = [];
   state.discard = [];
 
@@ -486,7 +492,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
         if (!hasHeroPower && !opponentHasKratosLockdown) {
           opponentHasKratosLockdown = opponentHasKratosLock(state, player.id);
         }
-        if (!opponentHasKratosLockdown && slot && hasFreeRelicSlot(slot) && (hasInfiniteMana(state, player.id) || canEquipRelicToBearer(card, slot))) {
+        if (!opponentHasKratosLockdown && slot && hasFreeRelicSlot(slot) && canEquipRelicToBearer(card, slot)) {
           actions.push({ type: "play_relic", player: player.id, handIndex, slotIndex });
         }
       }
@@ -708,6 +714,30 @@ function resolveHeroPower(
   } else if (powerId === "all_for_one_copy" && target) {
     putCardInHand(state, playerId, target.cardId, events);
     events.push({ kind: "effect", text: `${definition.name} copies ${target.name} into ${player.name}'s hand.`, player: playerId, instanceId: target.instanceId, cardId: target.cardId });
+  } else if (powerId === "vader_minion_tax") {
+    const enemy = state.players[opponent(playerId)];
+    enemy.minionCostPenaltyNextTurn += 1;
+    events.push({ kind: "effect", text: `${definition.name} taxes enemy minion cards by 1 next turn.`, player: playerId });
+  } else if (powerId === "dio_freeze" && target) {
+    if (isSlotProtected(state, target) || !canDisable(state, playerId, target, "freeze")) {
+      events.push(effectEvent(`${target.name} resists Freeze.`, target));
+    } else {
+      target.frozen = true;
+      target.attacksUsed = maxAttacks(target);
+      events.push({ kind: "effect", text: `${definition.name} freezes ${target.name} for 1 turn.`, player: playerId, instanceId: target.instanceId });
+    }
+  } else if (powerId === "meruem_discover") {
+    const available = remainingDeckCards(state, playerId);
+    const cardId = available.length > 0 ? available[rollInt(state, available.length)] : undefined;
+    if (cardId && removeCardFromDrawPile(state, playerId, cardId)) {
+      putCardInHand(state, playerId, cardId, events);
+      events.push({ kind: "effect", text: `${definition.name} discovers a card.`, player: playerId, cardId });
+    }
+  } else if (powerId === "luffy_set_one" && target) {
+    target.atk = 1;
+    target.maxHp = 1;
+    target.hp = 1;
+    events.push({ kind: "effect", text: `${definition.name} reduces ${target.name} to 1/1.`, player: playerId, instanceId: target.instanceId });
   } else if (powerId === "bill_chaos" && target) {
     [target.atk, target.hp] = [target.hp, target.atk];
     events.push({ kind: "effect", text: `${definition.name} swaps ${target.name}'s ATK and HP.`, player: playerId, instanceId: target.instanceId });
@@ -779,6 +809,8 @@ function resolveHeroPower(
       const targetSlot = slotOf(state, target);
       if (targetSlot >= 0) destroyAtSlot(state, target.owner, targetSlot, events, `${definition.name} destroys ${target.name}`, null);
     }
+  } else if (powerId === "elden_revival") {
+    reviveRandomFriendlyMinion(state, playerId, library, events, definition.name);
   }
 }
 
@@ -799,7 +831,8 @@ export function effectiveCardCost(state: GameState, playerId: PlayerId, card: Pl
   // tracer normally sees a passive, so this branch has to say so itself.
   if (chilled) traceEffect("deep_sea_discount");
   const chill = chilled ? DEEP_SEA_DISCOUNT : 0;
-  return Math.max(0, (card.cost ?? 0) - (player.costReductions[card.id] ?? 0) - chill + enemyCardTax);
+  const vaderTax = isMinionCard(card) ? player.minionCostPenaltyThisTurn : 0;
+  return Math.max(0, (card.cost ?? 0) - (player.costReductions[card.id] ?? 0) - chill + enemyCardTax + vaderTax);
 }
 
 /** Whether anything on either board is currently Frozen or Chained. */
@@ -884,6 +917,8 @@ function makePlayer(id: PlayerId, name: string, health: number = DEFAULT_STARTIN
     board: Array(boardSize).fill(null),
     costReductions: {},
     manaPenaltyNextTurn: 0,
+    minionCostPenaltyNextTurn: 0,
+    minionCostPenaltyThisTurn: 0,
     pressured: null,
     slotAuras: [],
     randomAttacksFromTurn: null,
@@ -980,7 +1015,7 @@ function playRelic(
   const cardId = player.hand[handIndex];
   const relic = library[cardId];
   const bearer = player.board[slotIndex];
-  if (!isRelicCard(relic) || !bearer || !hasFreeRelicSlot(bearer) || (!hasInfiniteMana(state, playerId) && !canEquipRelicToBearer(relic, bearer))) return;
+  if (!isRelicCard(relic) || !bearer || !hasFreeRelicSlot(bearer) || !canEquipRelicToBearer(relic, bearer)) return;
   player.hand.splice(handIndex, 1);
   if (!hasInfiniteMana(state, playerId)) player.mana -= effectiveCardCost(state, playerId, relic);
   if (player.costReductions[cardId]) delete player.costReductions[cardId];
@@ -1000,7 +1035,7 @@ function playRelic(
     cardId: relic.id,
     instanceId: bearer.instanceId,
   });
-  equipRelic(state, bearer, instance, library, events, hasInfiniteMana(state, playerId));
+  equipRelic(state, bearer, instance, library, events);
   triggerRelicDiscoveries(
     state,
     playerId,
@@ -1133,6 +1168,8 @@ function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, e
   state.turnNumber += 1;
   resolveDueMonkeyPaws(state, events);
   const player = state.players[playerId];
+  player.minionCostPenaltyThisTurn = player.minionCostPenaltyNextTurn;
+  player.minionCostPenaltyNextTurn = 0;
   player.turnsStarted += 1;
   events.push({ kind: "turn", text: `${player.name}'s turn begins.`, player: playerId });
 
@@ -1222,7 +1259,7 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
 
   resolveUpkeep(state, playerId, library, events);
 
-  if (state.heroPowers[playerId] === "ainz_skeleton") summonHeroPowerSkeleton(state, playerId, events);
+  if (state.heroPowers[playerId] === "ainz_skeleton" && player.turnsStarted % 2 === 0) summonHeroPowerSkeleton(state, playerId, events);
 
   const skipOngoing = new Set<string>();
   for (const minion of player.board) {
@@ -1536,6 +1573,10 @@ function dealCoreDamage(
 ): boolean {
   const player = state.players[playerId];
   if (amount <= 0) return false;
+  if (source && source.owner !== playerId && state.heroPowers[playerId] === "saitama_small_guard" && source.atk <= 3) {
+    events.push({ kind: "effect", text: `Serious Disinterest ignores ${source.name}'s Core damage.`, player: playerId, instanceId: source.instanceId });
+    return false;
+  }
   if (player.heroDivineShield) {
     player.heroDivineShield = false;
     events.push({ kind: "combat", text: `${player.name}'s core Divine Shield breaks.`, player: playerId });
@@ -3628,6 +3669,28 @@ function summonHeroPowerSkeleton(state: GameState, playerId: PlayerId, events: G
   events.push({ kind: "effect", text: `${player.name} summons a 1/1 Skeleton.`, player: playerId, instanceId: summoned.instanceId });
 }
 
+function reviveRandomFriendlyMinion(state: GameState, playerId: PlayerId, library: CardLibrary, events: GameEvent[], label: string): void {
+  const player = state.players[playerId];
+  const slot = player.board.findIndex((entry) => !entry);
+  const dead = player.deadMinions ?? [];
+  const candidates = dead.flatMap((cardId, index) => {
+    const card = library[cardId];
+    return isMinionCard(card) ? [{ cardId, index, card }] : [];
+  });
+  if (slot < 0 || candidates.length === 0) return;
+  const chosen = candidates[rollInt(state, candidates.length)];
+  if (!chosen) return;
+  dead.splice(chosen.index, 1);
+  const originalOwner = player.deadMinionOwners?.splice(chosen.index, 1)[0];
+  const discardIndex = state.discard.indexOf(chosen.cardId);
+  if (discardIndex >= 0) state.discard.splice(discardIndex, 1);
+  const revived = createMinion(chosen.card, playerId, state);
+  if (originalOwner !== undefined) revived.originalOwner = originalOwner;
+  revived.suppressArrivalTheme = true;
+  player.board[slot] = revived;
+  events.push({ kind: "effect", text: `${label} revives ${revived.name}.`, player: playerId, instanceId: revived.instanceId, cardId: revived.cardId });
+}
+
 function summonShadowClones(state: GameState, source: MinionInstance, events: GameEvent[]): void {
   const shadowClone = tokenCard("token:shadow-clone");
   const player = state.players[source.owner];
@@ -4208,9 +4271,8 @@ function equipRelic(
   relic: RelicInstance,
   library: CardLibrary,
   events: GameEvent[],
-  bypassBearerRestriction = false,
 ): void {
-  if (!bypassBearerRestriction && !canEquipRelicToBearer(relic, bearer)) return;
+  if (!canEquipRelicToBearer(relic, bearer)) return;
   const slot = bearer.relic === null ? 0 : bearer.relic2 === null || bearer.relic2 === undefined ? 1 : -1;
   if (slot < 0) return;
   setRelicAt(bearer, slot, relic);

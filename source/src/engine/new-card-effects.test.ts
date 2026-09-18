@@ -227,12 +227,12 @@ describe("2026 card replacements", () => {
 
   it("Guts gains and loses a live +2/+2 aura as the Core crosses 20 HP thresholds", () => {
     const state = mainState("guts-missing-core-growth");
-    state.players[0].health = 54;
+    state.players[0].health = 30;
     const grown = play(state, 0, "Guts", 0);
     expect(grown.players[0].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
 
     const healed: GameState = { ...grown, players: [...grown.players] as GameState["players"] };
-    healed.players[0] = { ...grown.players[0], health: 75 };
+    healed.players[0] = { ...grown.players[0], health: 50 };
     const afterHeal = applyAction(healed, { type: "end_turn", player: 0 }, library).state;
     expect(afterHeal.players[0].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
   });
@@ -1010,7 +1010,7 @@ describe("2026 card replacements", () => {
     expect(asking.pendingTarget?.kind).toBe("option");
     expect(asking.pendingTarget?.player).toBe(1);
     const manaChoice = choose(asking, 2);
-    expect(manaChoice.players[0].health).toBe(75);
+    expect(manaChoice.players[0].health).toBe(50);
     expect(manaChoice.players[1].manaPenaltyNextTurn).toBe(5);
     expect(manaChoice.players[0].board[2]?.name).toBe("John Wick");
     const nextOwnTurn = endTurn(endTurn(manaChoice, 0), 1);
@@ -1018,7 +1018,7 @@ describe("2026 card replacements", () => {
     expect(nextOwnTurn.players[1].manaPenaltyNextTurn).toBe(0);
 
     const healthChoice = choose(play(mainState("strange-bargain-health"), 0, "Doctor Strange", 1), 0);
-    expect(healthChoice.players[0].health).toBe(75);
+    expect(healthChoice.players[0].health).toBe(50);
     // The bargain costs the opponent 10 core, read against the untouched caster.
     expect(healthChoice.players[1].health).toBe(healthChoice.players[0].health - 10);
 

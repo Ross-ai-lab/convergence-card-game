@@ -12,7 +12,7 @@ const library = makeCardLibrary(cards, relics);
 const fair = CAMPAIGN_DIFFICULTIES.ascendantFair.cheats;
 const full = CAMPAIGN_DIFFICULTIES.ascendant.cheats;
 function fresh(seed = "separate") {
-  return createInitialGame(cards, seed, relics, { decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK] });
+  return createInitialGame(cards, seed, relics, { decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK], hasCoin: true });
 }
 function main() {
   const state = fresh();
@@ -85,10 +85,10 @@ describe("separate duel piles", () => {
     expect(remainingDeckCards(state, 1)).toEqual(["c004"]);
     state.playerDecks![1].bottomDeck = []; drawPileFor(state, 1).deck = []; state.activePlayer = 0;
     state = act(state, { type: "end_turn", player: 0 });
-    expect(state.players[1].health).toBe(74); expect(state.players[1].fatigue).toBe(1);
+    expect(state.players[1].health).toBe(49); expect(state.players[1].fatigue).toBe(1);
     state.activePlayer = 0; state = act(state, { type: "end_turn", player: 0 });
-    expect(state.players[1].health).toBe(72); expect(state.players[1].fatigue).toBe(2);
-    expect(state.players[0].health).toBe(75); expect(state.playerDecks![0].deck).toEqual(["c001"]);
+    expect(state.players[1].health).toBe(47); expect(state.players[1].fatigue).toBe(2);
+    expect(state.players[0].health).toBe(50); expect(state.playerDecks![0].deck).toEqual(["c001"]);
   });
 
   it("Nezu draws only its controller's copy even when both decks contain that ID", () => {
@@ -99,10 +99,10 @@ describe("separate duel piles", () => {
 
   it("empty direct draws apply fatigue; Blood Price also pays its printed health cost", () => {
     let state = main(); state.playerDecks![1].deck = ["c004"];
-    state = play(state, "c173"); expect(state.players[0].health).toBe(74);
+    state = play(state, "c173"); expect(state.players[0].health).toBe(49);
     state.heroPowers[0] = "core_trade_draw";
     state = act(state, { type: "use_hero_power", player: 0 });
-    expect(state.players[0].health).toBe(70); expect(state.players[0].fatigue).toBe(2);
+    expect(state.players[0].health).toBe(45); expect(state.players[0].fatigue).toBe(2);
     expect(state.playerDecks![1].deck).toEqual(["c004"]);
   });
 

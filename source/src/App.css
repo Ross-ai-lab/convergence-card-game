@@ -2131,6 +2131,16 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.enemy-power-card-count {
+  display: block;
+  margin: 2px 0 7px;
+  color: #ffe19a;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .hero-plate {
   position: relative;
   isolation: isolate;
@@ -2171,16 +2181,16 @@ button:disabled {
 
 .hero-plate.is-shielded {
   overflow: visible;
-  border-color: rgba(111, 224, 255, 0.95);
+  border-color: rgba(255, 214, 108, 0.98);
   box-shadow:
-    0 0 0 2px rgba(111, 224, 255, 0.28),
-    0 0 22px rgba(67, 205, 255, 0.82),
-    0 0 48px rgba(54, 151, 255, 0.42),
+    0 0 0 2px rgba(255, 214, 108, 0.32),
+    0 0 22px rgba(255, 197, 71, 0.86),
+    0 0 48px rgba(255, 142, 28, 0.46),
     0 10px 28px rgba(0, 0, 0, 0.45),
-    inset 0 0 18px rgba(111, 224, 255, 0.16);
+    inset 0 0 18px rgba(255, 222, 128, 0.2);
 }
 
-/* A core Divine Shield is a state of the whole hero, not merely a blue
+/* A core Divine Shield is a state of the whole hero, not merely a gold
    health-gem border. The translucent shell sits outside the plate while the
    plate's contents remain crisp and readable inside it. */
 .hero-plate.is-shielded::before {
@@ -2188,16 +2198,16 @@ button:disabled {
   position: absolute;
   inset: -7px;
   z-index: 0;
-  border: 2px solid rgba(184, 244, 255, 0.96);
+  border: 2px solid rgba(255, 231, 150, 0.98);
   border-radius: 20px;
   background:
-    linear-gradient(145deg, rgba(205, 250, 255, 0.22), transparent 34%, rgba(57, 165, 255, 0.14)),
-    radial-gradient(ellipse at 50% 0%, rgba(237, 255, 255, 0.28), transparent 62%);
+    linear-gradient(145deg, rgba(255, 245, 190, 0.28), transparent 34%, rgba(255, 154, 39, 0.16)),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 224, 0.32), transparent 62%);
   box-shadow:
-    inset 0 0 18px rgba(186, 247, 255, 0.42),
-    0 0 10px rgba(193, 249, 255, 0.92),
-    0 0 30px rgba(64, 190, 255, 0.7),
-    0 0 58px rgba(56, 140, 255, 0.36);
+    inset 0 0 18px rgba(255, 239, 171, 0.5),
+    0 0 10px rgba(255, 246, 194, 0.94),
+    0 0 30px rgba(255, 190, 54, 0.78),
+    0 0 58px rgba(255, 132, 24, 0.4);
   pointer-events: none;
   animation: hero-shield-bubble 2.4s ease-in-out infinite;
 }
@@ -2208,8 +2218,8 @@ button:disabled {
   inset: 1px;
   z-index: 0;
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(157, 235, 255, 0.16), transparent 46%, rgba(38, 137, 235, 0.12));
-  box-shadow: inset 0 0 20px rgba(128, 227, 255, 0.2);
+  background: linear-gradient(180deg, rgba(255, 237, 164, 0.2), transparent 46%, rgba(255, 145, 27, 0.14));
+  box-shadow: inset 0 0 20px rgba(255, 219, 110, 0.24);
   pointer-events: none;
 }
 
@@ -4570,8 +4580,8 @@ button:disabled {
 /* One relic is centered. Only when the second badge exists do the two share
    the rail and move left/right to clear the HP gem. */
 .relic-badge-0 { left: 50%; }
-.relic-badge-1 { left: 55%; }
-.minion-wrap:has(.relic-badge-1) .relic-badge-0 { left: 45%; }
+.relic-badge-1 { left: 60%; }
+.minion-wrap:has(.relic-badge-1) .relic-badge-0 { left: 40%; }
 
 /* Hovering the badge swaps the preview to the relic's own full card. */
 .relic-badge.peekable {

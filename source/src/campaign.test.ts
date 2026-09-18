@@ -130,7 +130,7 @@ describe("campaign definitions", () => {
     expect(glados.rarity).toBe("Yellow");
   });
 
-  it("starts campaign bosses at 50 health while the player keeps 75", () => {
+  it("starts both campaign cores at 50 health", () => {
     const duel = createCampaignDuel({
       chapter: 1,
       playerDeck: CAMPAIGN_STARTER_DECK,
@@ -140,7 +140,7 @@ describe("campaign definitions", () => {
       seed: "campaign-boss-health",
     });
     expect(CAMPAIGN_BOSS_HEALTH).toBe(50);
-    expect(duel.state.players[0].health).toBe(75);
+    expect(duel.state.players[0].health).toBe(50);
     expect(duel.state.players[1].health).toBe(CAMPAIGN_BOSS_HEALTH);
   });
 

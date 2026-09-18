@@ -391,15 +391,15 @@ describe("relic effects", () => {
     expect(after.players[0].board[0]?.sleeping).toBe(false);
   });
 
-  it("developer infinite mana bypasses Excalibur's bearer restriction for testing", () => {
+  it("developer infinite mana does not bypass Excalibur's bearer restriction", () => {
     const state = mainState("excalibur-cheat");
     state.cheatMode = true;
     state.cheatPlayer = 0;
     state.players[0].board[0] = makeMinion("John Wick", 0);
     state.players[0].hand = [relicByName("Excalibur").id];
-    expect(getLegalActions(state, library)).toContainEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 });
+    expect(getLegalActions(state, library)).not.toContainEqual({ type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 });
     const after = playRelicFor(state, 0, "Excalibur", 0);
-    expect(after.players[0].board[0]?.relic?.name).toBe("Excalibur");
+    expect(after.players[0].board[0]?.relic).toBeNull();
   });
 
   it("never exposes a manual attached-relic return action", () => {
