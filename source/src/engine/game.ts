@@ -1259,8 +1259,8 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
   // Derived from the turn count rather than incremented, so the ramp is a single
   // number that a save, an undo and the simulator all agree on. At ramp 1 this is
   // exactly the classic +1 a turn.
-  const startsWithExtraMana = state.heroPowers[playerId] === "goku_start_mana" && player.turnsStarted === 1;
-  const earnedMana = Math.min(10, 1 + (startsWithExtraMana ? 1 : 0) + Math.round((player.turnsStarted - 1) * (state.manaRamp ?? 1)));
+  const startingMana = state.heroPowers[playerId] === "goku_start_mana" ? 2 : 1;
+  const earnedMana = Math.min(10, startingMana + Math.round((player.turnsStarted - 1) * (state.manaRamp ?? 1)));
   const manaPenalty = Math.min(earnedMana, Math.max(0, player.manaPenaltyNextTurn ?? 0));
   player.maxMana = earnedMana - manaPenalty;
   player.mana = player.maxMana;

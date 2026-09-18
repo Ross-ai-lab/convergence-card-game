@@ -2131,6 +2131,14 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.hero-power-counter {
+  margin-left: 7px;
+  color: #ffe4a3;
+  font-size: 0.72em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
 .enemy-power-card-count {
   display: block;
   margin: 2px 0 7px;

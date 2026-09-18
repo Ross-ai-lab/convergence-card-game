@@ -156,6 +156,9 @@ describe("menu Hero Powers", () => {
     const afterEnemy = applyAction(goku, { type: "end_turn", player: 0 }, library).state;
     const afterGoku = applyAction(afterEnemy, { type: "end_turn", player: 1 }, library).state;
     expect(afterGoku.players[0].mana).toBe(2);
+    const afterNextEnemy = applyAction(afterGoku, { type: "end_turn", player: 0 }, library).state;
+    const afterSecondGoku = applyAction(afterNextEnemy, { type: "end_turn", player: 1 }, library).state;
+    expect(afterSecondGoku.players[0].mana).toBe(3);
     const gokuOpening = createInitialGame(cards, "goku-opening", [], { heroPowers: [null, "goku_start_mana"] });
     expect(gokuOpening.players[1]).toMatchObject({ mana: 2, maxMana: 2 });
 

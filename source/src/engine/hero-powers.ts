@@ -43,7 +43,7 @@ export const HERO_POWER_DEFINITIONS: readonly HeroPowerDefinition[] = [
   { id: "light_delayed_mark", name: "Judgment Mark", text: "Mark an enemy minion. It dies at the start of your next turn.", target: "enemy", cost: 3 },
   { id: "voldemort_immortal", name: "Dark Immortality", text: "Cannot die while controlling a minion.", target: "none", cost: 0, passive: true },
   { id: "all_for_one_copy", name: "Quirk Theft", text: "Copy an enemy minion card into your hand.", target: "enemy", cost: 2 },
-  { id: "ainz_skeleton", name: "Skeleton Legion", text: "At the start of your turn, summon a 1/1 Skeleton.", target: "none", cost: 0, passive: true },
+  { id: "ainz_skeleton", name: "Skeleton Legion", text: "At the start of every second turn, summon a 1/1 Skeleton.", target: "none", cost: 0, passive: true },
   { id: "eye_taunt", name: "Sauron's Gaze", text: "Give a friendly minion Taunt.", target: "friendly", cost: 1 },
   { id: "gilgamesh_relic", name: "Treasury Draw", text: "Gain a random Relic into your hand.", target: "none", cost: 2 },
   { id: "gojo_core_shield", name: "Limitless Barrier", text: "Your Core gains Divine Shield.", target: "none", cost: 2 },

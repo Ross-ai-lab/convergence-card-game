@@ -2689,6 +2689,7 @@ export default function App() {
             onCardPreviewEnd={endPreview}
             onStrike={attackCore}
             onBlockedStrike={selection?.kind === "attacker" ? attackCore : undefined}
+            heroPowerCounter={game.heroPowers[opponentId] === "glados_test_protocol" ? `${Math.min(12, game.players[viewerId].turnsStarted)}/12` : undefined}
           />
           {campaignBoss && !coreTargetable && selection?.kind !== "attacker" && <button
             type="button" className="opponent-portrait-inspect" aria-label={`Open Star Chart for ${campaignBoss.name}`}
@@ -5166,6 +5167,7 @@ function HeroPlate({
   onCardPreviewEnd,
   onStrike,
   onBlockedStrike,
+  heroPowerCounter,
 }: {
   player: GameState["players"][number];
   identity?: { card: PlayableCard; chapter: number; universe: string };
@@ -5185,6 +5187,7 @@ function HeroPlate({
   onCardPreviewEnd?: () => void;
   onStrike?: () => void;
   onBlockedStrike?: () => void;
+  heroPowerCounter?: string;
 }) {
   const wasHit = floats.some((f) => f.delta < 0);
   const classes = [
@@ -5227,7 +5230,7 @@ function HeroPlate({
             <i />
           </span>
         </strong>
-        {power ? <small className="hero-power-label">⚡ {power.name}</small> : null}
+        {power ? <small className="hero-power-label">⚡ {power.name}{heroPowerCounter ? <b className="hero-power-counter">{heroPowerCounter}</b> : null}</small> : null}
       </span>
       {enemy && revealedHand && library ? (
         <span className="revealed-hand" aria-label="The Watcher reveals this hand">
