@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 217,338 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 217,310 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -179,12 +179,12 @@ No account or installation is required. Progress and live duels are saved locall
 | Universe | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
 | 1 | GLaDOS | Tech fortifications | Recruit | Test Protocol | 10 |
-| 2 | Po | Martial growth | Recruit | — | 10 |
+| 2 | Po | Martial growth | Recruit | Skadoosh | 10 |
 | 3 | Yujiro | Nature duelists | Recruit | Apex Duel | 10 |
 | 4 | Light Yagami | Information and sacrifice | Recruit | Judgment Mark | 10 |
 | 5 | Lord Voldemort | Protected dark magic | Veteran | Dark Immortality | 10 |
 | 6 | Darth Vader | Imperial machinery | Veteran | — | 8 |
-| 7 | Conquest | Ruthless combat | Veteran | — | 9 |
+| 7 | Conquest | Ruthless combat | Veteran | No Retreat | 9 |
 | 8 | Dio Brando | Frozen battlefield | Veteran | — | 8 |
 | 9 | All for One | Stolen abilities | Veteran | Quirk Theft | 9 |
 | 10 | Meruem | Predators and protection | Veteran | — | 9 |
@@ -257,9 +257,9 @@ First-time universe clears unlock player Hero Powers in the existing order: Mend
 
 Bosses with a listed power use that fixed power from their first attempt. Passive powers are always active; active powers use their printed costs and the usual once-per-turn limit. Eight bosses currently have no power and are intentionally listed for future design consideration. Replays cannot accelerate the player power track.
 
-Implemented boss powers are: GLaDOS — **Test Protocol**, the enemy has twelve of their own turns to win; Yujiro — **Apex Duel**, only the highest-ATK enemy minion may attack his Core; Light Yagami — **Judgment Mark**, 3 mana, mark an enemy minion and kill it at the start of Light's next turn; Lord Voldemort — **Dark Immortality**, he cannot die while controlling a minion; Darth Vader — **Imperial Tax**, 2 mana, enemy minion cards cost 1 more next turn; Dio Brando — **The World**, 2 mana, freeze an enemy minion for one turn; All for One — **Quirk Theft**, 2 mana, copy an enemy minion into his hand; Meruem — **Royal Appraisal**, 2 mana, discover a random card into his hand; Ainz Ooal Gown — **Skeleton Legion**, summon a 1/1 Skeleton every second turn; Eye of Sauron — **Sauron's Gaze**, 1 mana, give a friendly minion Taunt; Monkey D. Luffy — **Rubber Reality**, 3 mana, set an enemy minion's stats to 1/1; Gilgamesh — **Treasury Draw**, 2 mana, gain a random Relic; Gojo — **Limitless Barrier**, 2 mana, give his Core Divine Shield; Elden Beast — **Remembrance**, 3 mana, revive a random friendly minion that died this game; Bill Cipher — **Chaos**, 1 mana, swap a minion's current ATK and HP; Thanos — **The Snap**, 5 mana, destroy a random enemy minion; Goku — **Ultra Instinct**, start with 2 mana instead of 1; Saitama — **Serious Disinterest**, cannot be damaged by minions with 3 or less ATK.
+Implemented boss powers are: GLaDOS — **Test Protocol**, the enemy has twelve of their own turns to win; Po — **Skadoosh**, 2 mana, deal 3 damage to an Evil enemy minion; Yujiro — **Apex Duel**, only the highest-ATK enemy minion may attack his Core; Light Yagami — **Judgment Mark**, 3 mana, mark an enemy minion and kill it at the start of Light's next turn; Lord Voldemort — **Dark Immortality**, he cannot die while controlling a minion; Darth Vader — **Imperial Tax**, 2 mana, enemy minion cards cost 1 more next turn; Conquest — **No Retreat**, friendly minions cannot be Chained, Silenced, or Frozen; Dio Brando — **The World**, 2 mana, freeze an enemy minion for one turn; All for One — **Quirk Theft**, 2 mana, copy an enemy minion into his hand; Meruem — **Royal Appraisal**, 2 mana, discover a random card into his hand; Ainz Ooal Gown — **Skeleton Legion**, summon a 1/1 Skeleton every second turn; Eye of Sauron — **Sauron's Gaze**, 1 mana, give a friendly minion Taunt; Monkey D. Luffy — **Rubber Reality**, 3 mana, set an enemy minion's stats to 1/1; Gilgamesh — **Treasury Draw**, 2 mana, gain a random Relic; Gojo — **Limitless Barrier**, 2 mana, give his Core Divine Shield; Elden Beast — **Remembrance**, 3 mana, revive a random friendly minion that died this game; Bill Cipher — **Chaos**, 1 mana, swap a minion's current ATK and HP; Thanos — **The Snap**, 5 mana, destroy a random enemy minion; Goku — **Ultra Instinct**, start with 2 mana instead of 1; Saitama — **Serious Disinterest**, cannot be damaged by minions with 3 or less ATK.
 
-The only bosses currently without a power are Po and Conquest. Candidate ideas remain intentionally unimplemented: Po could reduce damage from the first enemy attack each turn, while Conquest could gain ATK whenever a friendly minion kills one.
+Every collection boss now has a unique Hero Power.
 
 Universes 1–4 use Recruit behaviour. Universes 5–10 use Veteran behaviour. Universes 11–14 use full-turn Ascendant search with all four cheat flags disabled. Universes 15–20 use full Ascendant capabilities: reply-reading, true-dice knowledge, Clairvoyance and Foresight.
 

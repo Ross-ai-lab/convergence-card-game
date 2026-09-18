@@ -127,7 +127,7 @@
       "theme": "Martial growth",
       "preferredCamp": "Nature",
       "preferredAlignment": "Good",
-      "heroPowerId": null,
+      "heroPowerId": "po_skadoosh",
       "difficultyId": "recruit",
       "universeCardIds": [
         "c094",
@@ -468,7 +468,7 @@
       "theme": "Ruthless combat",
       "preferredCamp": "Nature",
       "preferredAlignment": "Evil",
-      "heroPowerId": null,
+      "heroPowerId": "conquest_no_retreat",
       "difficultyId": "veteran",
       "universeCardIds": [
         "c024",

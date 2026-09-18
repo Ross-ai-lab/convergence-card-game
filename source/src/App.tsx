@@ -54,6 +54,7 @@ import {
   makeCardLibrary,
   relicLockSource,
   opponentHandRevealed,
+  relicRequiredAlignment,
   STARTING_CORE,
   TARGETED_EFFECTS,
   type CardLibrary,
@@ -2208,14 +2209,15 @@ export default function App() {
       // and sends the player rearranging a board that was never the issue.
       const card = library[viewer.hand[handIndex]];
       const relicLock = card && isRelicCard(card) ? relicLockSource(game, viewerId) : null;
-      const noGoodBearer = card && isRelicCard(card) && (card.relicId === "excalibur" || card.relicId === "mjolnir") &&
-        !viewer.board.some((slot) => slot?.alignment === "Good" && hasFreeRelicSlot(slot));
+      const requiredAlignment = card && isRelicCard(card) ? relicRequiredAlignment(card.relicId, card.effect) : null;
+      const noEligibleBearer = requiredAlignment !== null &&
+        !viewer.board.some((slot) => slot?.alignment === requiredAlignment && hasFreeRelicSlot(slot));
       const boardFull = !viewer.board.some((slot) => !slot);
       showToast(
         relicLock
           ? `${relicLock} is blocking your relics`
-          : noGoodBearer
-            ? "No Good minions"
+          : noEligibleBearer
+            ? `No ${requiredAlignment} minions`
           : boardFull
             ? "No room on the board"
             : "Not enough mana",

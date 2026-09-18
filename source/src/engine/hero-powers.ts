@@ -56,6 +56,8 @@ export const HERO_POWER_DEFINITIONS: readonly HeroPowerDefinition[] = [
   { id: "luffy_set_one", name: "Rubber Reality", text: "Set an enemy minion's stats to 1/1.", target: "enemy", cost: 3 },
   { id: "elden_revival", name: "Remembrance", text: "Revive a random friendly minion that died this game.", target: "none", cost: 3 },
   { id: "saitama_small_guard", name: "Serious Disinterest", text: "Cannot be damaged by minions with 3 or less ATK.", target: "none", cost: 0, passive: true },
+  { id: "po_skadoosh", name: "Skadoosh", text: "Deal 3 damage to an Evil enemy minion.", target: "enemy", cost: 2 },
+  { id: "conquest_no_retreat", name: "No Retreat", text: "Friendly minions cannot be Chained, Silenced, or Frozen.", target: "none", cost: 0, passive: true },
 ];
 
 export const HERO_POWER_IDS = HERO_POWER_DEFINITIONS.map(({ id }) => id) as HeroPowerId[];

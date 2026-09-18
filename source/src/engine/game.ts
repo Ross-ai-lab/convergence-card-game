@@ -547,6 +547,7 @@ function heroPowerTargetOptions(state: GameState, playerId: PlayerId, powerId: H
   return owners.flatMap((owner) => state.players[owner].board.flatMap((minion, slot) => {
     if (!minion || isUntargetable(state, minion)) return [];
     if (owner !== playerId && !enemyTargetable(state, minion)) return [];
+    if (powerId === "po_skadoosh" && minion.alignment !== "Evil") return [];
     return [{ owner, slot }];
   }));
 }
@@ -719,6 +720,18 @@ function resolveHeroPower(
     const enemy = state.players[opponent(playerId)];
     enemy.minionCostPenaltyNextTurn += 1;
     events.push({ kind: "effect", text: `${definition.name} taxes enemy minion cards by 1 next turn.`, player: playerId });
+  } else if (powerId === "po_skadoosh" && target) {
+    if (target.divineShield) {
+      target.divineShield = false;
+      events.push({ kind: "combat", text: `${target.name}'s Divine Shield breaks.`, player: playerId, instanceId: target.instanceId });
+    } else {
+      target.hp -= 3;
+      events.push({ kind: "damage", text: `${definition.name} deals 3 damage to ${target.name}.`, player: playerId, instanceId: target.instanceId });
+      if (target.hp <= 0) {
+        const targetSlot = slotOf(state, target);
+        if (targetSlot >= 0) destroyAtSlot(state, target.owner, targetSlot, events, `${target.name} falls to ${definition.name}`, null);
+      }
+    }
   } else if (powerId === "dio_freeze" && target) {
     if (isSlotProtected(state, target) || !canDisable(state, playerId, target, "freeze")) {
       events.push(effectEvent(`${target.name} resists Freeze.`, target));
@@ -4265,9 +4278,16 @@ function cleanseNegativeStatuses(minion: MinionInstance, events: GameEvent[]): s
   return removed;
 }
 
-function canEquipRelicToBearer(relic: Pick<RelicDefinition | RelicInstance, "relicId">, bearer: MinionInstance): boolean {
-  if (relic.relicId === "mjolnir" || relic.relicId === "excalibur") return bearer.alignment === "Good";
-  return true;
+export function relicRequiredAlignment(relicId: string, effect?: string): "Good" | "Evil" | "Neutral" | null {
+  const printed = effect?.match(/Can only be equipped by (Good|Evil|Neutral) minions/i)?.[1];
+  if (printed === "Good" || printed === "Evil" || printed === "Neutral") return printed;
+  if (relicId === "mjolnir" || relicId === "excalibur") return "Good";
+  return null;
+}
+
+function canEquipRelicToBearer(relic: Pick<RelicDefinition | RelicInstance, "relicId"> & { effect?: string }, bearer: MinionInstance): boolean {
+  const required = relicRequiredAlignment(relic.relicId, relic.effect);
+  return required === null || bearer.alignment === required;
 }
 
 function equipRelic(
@@ -5290,6 +5310,7 @@ function applyChain(_state: GameState, target: MinionInstance, _events: GameEven
   // end-of-action diff in `feedAfflictionWatchers`, because the card watches
   // Freeze and Silence as well and those arrive by routes this function never
   // sees.
+  if (_state.heroPowers[target.owner] === "conquest_no_retreat") return;
   target.chained = Math.max(target.chained, turns + 1);
 }
 
@@ -5585,6 +5606,7 @@ function canDisable(
   // no relic has ever carried `immune_disable`, so the check was never true.
   if (kind === "silence" && hasRelic(target, "immune_silence")) return false;
   if ((kind === "freeze" || kind === "chain") && hasRelic(target, "immune_freeze_chain")) return false;
+  if (state.heroPowers[target.owner] === "conquest_no_retreat" && (kind === "silence" || kind === "freeze" || kind === "chain")) return false;
   if (hasDumbledoreProtection(state, target)) return false;
   return true;
 }

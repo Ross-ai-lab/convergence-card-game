@@ -84,7 +84,7 @@ describe("menu Hero Powers", () => {
   });
 
   it("exposes player powers and the distinct campaign boss powers", () => {
-    expect(HERO_POWER_DEFINITIONS).toHaveLength(28);
+    expect(HERO_POWER_DEFINITIONS).toHaveLength(30);
     for (const power of HERO_POWER_DEFINITIONS) {
       expect(power.text.length).toBeGreaterThan(8);
     }
@@ -227,6 +227,18 @@ describe("menu Hero Powers", () => {
     blocked.players[0].board[0]!.attacksUsed = 0;
     const landed = applyAction(blocked, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
     expect(landed.players[1].health).toBe(46);
+  });
+
+  it("gives Po a restricted Skadoosh target and protects Conquest's board", () => {
+    const po = mainState("po_skadoosh");
+    po.players[1].board[0] = minion("Joker", 1, { hp: 3, maxHp: 3 });
+    const skadoosh = usePower(po);
+    expect(skadoosh.players[1].board[0]).toBeNull();
+
+    const conquest = mainState("dio_freeze");
+    conquest.heroPowers = ["dio_freeze", "conquest_no_retreat"];
+    conquest.players[1].board[0] = minion("John Wick", 1);
+    expect(usePower(conquest).players[1].board[0]?.frozen).toBe(false);
   });
 
   it("refunds a targetable Hero Power when it is cancelled before choosing", () => {

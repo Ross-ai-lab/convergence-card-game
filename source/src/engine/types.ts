@@ -149,7 +149,9 @@ export type HeroPowerId =
   | "meruem_discover"
   | "luffy_set_one"
   | "elden_revival"
-  | "saitama_small_guard";
+  | "saitama_small_guard"
+  | "po_skadoosh"
+  | "conquest_no_retreat";
 
 /**
  * Every keyword a card may print.
