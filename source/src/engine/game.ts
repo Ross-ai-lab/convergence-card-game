@@ -1191,9 +1191,11 @@ function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, e
   // check happens when turn thirteen opens, so enemy half-turns never shorten
   // the promised window.
   if (playerId === 0 && state.heroPowers[1] === "glados_test_protocol" && player.turnsStarted > 12) {
-    if (dealCoreDamage(state, playerId, Math.max(1, player.health), events)) {
-      events.push({ kind: "effect", text: "Test Protocol expires. GLaDOS ends the experiment.", player: 1 });
-    }
+    player.health = 0;
+    state.winner = 1;
+    state.phase = "gameOver";
+    events.push({ kind: "effect", text: "Test Protocol expires. GLaDOS ends the experiment.", player: 1 });
+    return;
   }
 
   // Hearthstone's draw: one card, no choice. The pick-1-of-2 that used to happen
