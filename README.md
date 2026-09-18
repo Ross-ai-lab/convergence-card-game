@@ -852,10 +852,10 @@ asking for both. The test that should have caught it asserted the target's NAME
 and nothing else, so it passed the whole way through.
 
 The enemy hand is chosen the same way and for the same reason: the Recruit takes
-exactly one turn inside the tutorial, on 2 mana and a Coin, so nothing it can
-afford may be able to remove the player's new minion. Modern Tank used to sit
-there printing "Deal 1 damage to an enemy minion", and nothing declined it on
-purpose — the bot simply had 2 mana and did not spend the Coin.
+exactly one turn inside the tutorial, on 2 mana, so nothing it can afford may be
+able to remove the player's new minion. Modern Tank used to sit there printing
+"Deal 1 damage to an enemy minion", and nothing declined it on purpose — the
+tutorial opponent has no Coin.
 
 Two tests hold it now, both in `game.test.ts`: one asserts the position's rules
 rather than its names, and one plays the opening turn and the Recruit's reply and
