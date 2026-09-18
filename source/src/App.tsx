@@ -1855,17 +1855,6 @@ export default function App() {
     );
   }
 
-  function developerSetMana() {
-    setDeveloperDuelActive(true);
-    setGame((current) => {
-      const players = [...current.players] as GameState["players"];
-      const player = players[viewerId];
-      players[viewerId] = { ...player, mana: player.maxMana };
-      return { ...current, players };
-    });
-    setEvents((items) => [...items, { kind: "info" as const, text: "Developer mode filled your mana." }].slice(-80));
-  }
-
   function developerSetCore(owner: PlayerId, value: number) {
     setDeveloperDuelActive(true);
     setGame((current) => {
@@ -1876,6 +1865,16 @@ export default function App() {
     setEvents((items) =>
       [...items, { kind: "info" as const, text: `Developer mode set ${owner === viewerId ? "your" : "the opponent's"} Core to ${value}.` }].slice(-80),
     );
+  }
+
+  function developerMakeCoreInvincible(owner: PlayerId) {
+    setDeveloperDuelActive(true);
+    setGame((current) => {
+      const coreInvincible: [boolean, boolean] = [...(current.coreInvincible ?? [false, false])] as [boolean, boolean];
+      coreInvincible[owner] = true;
+      return { ...current, coreInvincible };
+    });
+    setEvents((items) => [...items, { kind: "info" as const, text: `Developer mode made ${owner === viewerId ? "your" : "the opponent's"} Core invincible.` }].slice(-80));
   }
 
   function developerGiveCard(cardId: string, owner: PlayerId) {
@@ -1935,45 +1934,6 @@ export default function App() {
           kind: "info" as const,
           text: `Developer mode equipped ${relicDef.name} on ${owner === viewerId ? "your" : "the enemy's"} first available minion.`,
         },
-      ].slice(-EVENT_LOG_LIMIT),
-    );
-  }
-
-  /**
-   * Opens a pack of `size` cards, for looking at the pack itself.
-   *
-   * It does NOT touch the record. The pack screen is a piece of theatre with a
-   * lot of moving parts — five hits, a held beat, a burst, a staggered deal, a
-   * reveal order that saves the best card for last — and every one of them used
-   * to be reachable only by finishing a duel and winning enough to earn that
-   * many cards. Fifteen was effectively unreachable.
-   *
-   * The cards are drawn from the whole roster at random rather than from the
-   * unlock order, precisely because nothing is being unlocked. What it shows is
-   * how the screen behaves at that size, which is the only question it exists to
-   * answer.
-   */
-  function developerOpenPack(size: number) {
-    const pool = Object.values(library)
-      .filter((card) => !isTokenCardId(card.id))
-      .map((card) => card.id);
-    if (pool.length === 0) return;
-    const picked: string[] = [];
-    const taken = new Set<string>();
-    // Sampling without replacement: a pack showing the same card twice would
-    // look like a bug in the reveal order rather than a dev shortcut.
-    while (picked.length < Math.min(size, pool.length)) {
-      const id = pool[Math.floor(Math.random() * pool.length)];
-      if (taken.has(id)) continue;
-      taken.add(id);
-      picked.push(id);
-    }
-    setDeveloperToolsOpen(false);
-    setPack(picked);
-    setEvents((items) =>
-      [
-        ...items,
-        { kind: "info" as const, text: `Developer mode opened a ${picked.length}-card pack. Nothing was unlocked.` },
       ].slice(-EVENT_LOG_LIMIT),
     );
   }
@@ -3289,15 +3249,13 @@ export default function App() {
           viewerId={viewerId}
           onClose={() => setDeveloperToolsOpen(false)}
           onToggleCheat={toggleCheatMode}
-          onSetMana={developerSetMana}
           onSetCore={developerSetCore}
+          onMakeCoreInvincible={developerMakeCoreInvincible}
           onGiveCard={developerGiveCard}
           onPlaceCard={developerPlaceCard}
           onEquipRelic={developerEquipRelic}
           onClearBoard={developerClearBoard}
-          onOpenPack={developerOpenPack}
           onShowResult={developerShowResult}
-          onRestart={restart}
           onTestCard={(cardId) => beginDuel({ kind: "bot", skill: "easy" }, { testCardId: cardId })}
         />
       ) : null}
@@ -6268,15 +6226,13 @@ function DeveloperTools({
   viewerId,
   onClose,
   onToggleCheat,
-  onSetMana,
   onSetCore,
-  onOpenPack,
+  onMakeCoreInvincible,
   onShowResult,
   onGiveCard,
   onPlaceCard,
   onEquipRelic,
   onClearBoard,
-  onRestart,
   onTestCard,
 }: {
   screen: "title" | "playing";
@@ -6285,15 +6241,13 @@ function DeveloperTools({
   viewerId: PlayerId;
   onClose: () => void;
   onToggleCheat: () => void;
-  onSetMana: () => void;
   onSetCore: (owner: PlayerId, value: number) => void;
-  onOpenPack: (size: number) => void;
+  onMakeCoreInvincible: (owner: PlayerId) => void;
   onShowResult: (winner: PlayerId | "draw", cardId: string) => void;
   onGiveCard: (cardId: string, owner: PlayerId) => void;
   onPlaceCard: (cardId: string, owner: PlayerId) => void;
   onEquipRelic: (cardId: string, owner: PlayerId) => void;
   onClearBoard: (owner: PlayerId) => void;
-  onRestart: () => void;
   onTestCard: (cardId: string) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -6342,30 +6296,15 @@ function DeveloperTools({
               <button type="button" className={hasInfiniteMana(game, viewerId) ? "developer-action active" : "developer-action"} onClick={onToggleCheat}>
                 {hasInfiniteMana(game, viewerId) ? "Infinite mana: ON" : "Infinite mana: OFF"}
               </button>
-              <button type="button" className="developer-action" onClick={onSetMana}>Fill my mana</button>
               <button type="button" className="developer-action" onClick={() => onSetCore(viewerId, 1)}>My Core → 1</button>
               <button type="button" className="developer-action" onClick={() => onSetCore(otherId, 1)}>Enemy Core → 1</button>
-              <button type="button" className="developer-action" onClick={() => onSetCore(viewerId, STARTING_CORE)}>Restore my Core</button>
+              <button type="button" className={game.coreInvincible?.[viewerId] ? "developer-action active" : "developer-action"} onClick={() => onMakeCoreInvincible(viewerId)}>
+                {game.coreInvincible?.[viewerId] ? "Core invincible: ON" : "Make the core invincible"}
+              </button>
               <button type="button" className="developer-action" onClick={() => onClearBoard(viewerId)}>Clear my board</button>
               <button type="button" className="developer-action" onClick={() => onClearBoard(otherId)}>Clear enemy board</button>
-              <button type="button" className="developer-action" onClick={onRestart}>Restart test duel</button>
             </>
           ) : null}
-          {/* OUTSIDE the in-duel block, because the pack screen is not part of a
-              duel. Reaching it normally means finishing one and earning that
-              many cards, which made the fifteen-card layout close to
-              untestable. */}
-          {[5, 10, 15].map((size) => (
-            <button
-              key={size}
-              type="button"
-              className="developer-action"
-              onClick={() => onOpenPack(size)}
-              title="Opens the pack screen only. Nothing is unlocked."
-            >
-              Open {size}-card pack
-            </button>
-          ))}
         </div>
 
         <div className="developer-workbench">

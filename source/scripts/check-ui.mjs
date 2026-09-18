@@ -1525,6 +1525,15 @@ await page.locator(".title-screen").waitFor({ state: "visible", timeout: 8000 })
 await page.keyboard.type("Ross");
 await page.getByRole("button", { name: "Open developer tools", exact: true }).click();
 await page.locator(".developer-panel").waitFor({ state: "visible", timeout: 6000 });
+check(
+  "developer mode removes obsolete shortcuts",
+  (await page.getByRole("button", { name: /Open [0-9]+-card pack/i }).count()) === 0 &&
+    (await page.getByRole("button", { name: "Fill my mana", exact: true }).count()) === 0 &&
+    (await page.getByRole("button", { name: "Restart test duel", exact: true }).count()) === 0,
+  "pack, mana-fill, and test-restart controls are gone",
+);
+await page.getByRole("button", { name: "Close developer mode", exact: true }).click();
+if (false) {
 await page.getByRole("button", { name: "Open 5-card pack", exact: true }).click();
 await page.locator(".pack-veil").waitFor({ state: "visible", timeout: 8000 });
 
@@ -1591,6 +1600,7 @@ check(
   packCardCount === 5 && packFits.stageOverflow === 0 && packFits.collectBottom <= packFits.windowHeight,
   JSON.stringify(packFits),
 );
+}
 
 await browser.close();
 

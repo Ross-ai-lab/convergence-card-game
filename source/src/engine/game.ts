@@ -175,6 +175,7 @@ export function createInitialGame(
     turnNumber: 1,
     cheatMode: false,
     cheatPlayer: null,
+    coreInvincible: [false, false],
     manaRamp: setup.manaRamp ?? DEFAULT_MANA_RAMP,
     nextInstance: 1,
     nextPlayOrder: 1,
@@ -1575,6 +1576,10 @@ function dealCoreDamage(
   if (amount <= 0) return false;
   if (source && source.owner !== playerId && state.heroPowers[playerId] === "saitama_small_guard" && source.atk <= 3) {
     events.push({ kind: "effect", text: `Serious Disinterest ignores ${source.name}'s Core damage.`, player: playerId, instanceId: source.instanceId });
+    return false;
+  }
+  if (state.coreInvincible?.[playerId]) {
+    events.push({ kind: "effect", text: `${player.name}'s Core is invincible.`, player: playerId });
     return false;
   }
   if (player.heroDivineShield) {

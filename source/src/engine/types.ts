@@ -780,6 +780,8 @@ export interface GameState {
   turnNumber: number;
   cheatMode: boolean;
   cheatPlayer?: PlayerId | null;
+  /** Developer-only temporary invulnerability for a selected Core. */
+  coreInvincible?: [boolean, boolean];
   /**
    * How fast max mana climbs, in mana per turn. Lives in the state so a save and
    * an undo carry it, and so the simulator can sweep it without a global.
