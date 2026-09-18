@@ -4133,9 +4133,8 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         <aside className="gallery-deck" aria-label={seat === 1 ? "Player Two deck" : "Current deck"}>
           <header className="gallery-deck-heading"><h3>{seat === 1 ? "Player Two" : "My Deck"}</h3>
             <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
-          <p className="gallery-deck-hint">{readOnly ? "Conquer a universe to unlock deck editing." : deck.length === 30 ? "Remove a card, then add its replacement." : `Choose ${30 - deck.length} more ${30 - deck.length === 1 ? "card" : "cards"}.`}</p>
           <button type="button" className="gallery-hero-power" aria-label="Choose hero power" aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
-            <span className="gallery-power-icon" aria-hidden="true">ϟ</span><span><small>Hero power</small><strong>{equippedPower?.name ?? "Choose hero power"}</strong><em>{equippedPower?.text ?? "Conquer a universe to unlock your first power."}</em></span><b aria-hidden="true">›</b>
+            <span className="gallery-power-icon" aria-hidden="true">ϟ</span><span><strong>Hero Power: {equippedPower?.name ?? "Choose hero power"}</strong></span><b aria-hidden="true">›</b>
           </button>
           <div className="gallery-deck-list">{allEntries.filter((entry) => deckIds.has(entry.key))
             .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
@@ -4152,7 +4151,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
               const count = manaCurve[i];
               return <div key={i}><span data-count={count} style={{ height: `${Math.max(2, count / manaPeak * 24)}px` }}>{count}</span><small>{i + 1}</small></div>;
             })}</div></div>
-            {!readOnly && <button onClick={() => onChange([...CAMPAIGN_STARTER_DECK])}>Restore starter</button>}
+            {!readOnly && <button onClick={() => onChange([...CAMPAIGN_STARTER_DECK])}>Restore starter deck</button>}
             {readOnly && <small>Starter deck · 30 cards</small>}
           </footer>
         </aside>
