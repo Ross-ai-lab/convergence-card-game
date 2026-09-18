@@ -62,7 +62,7 @@ describe("campaign definitions", () => {
       const universeIds = roster.filter((card) => !CAMPAIGN_UNIVERSE_EXEMPT_IDS.includes(card.id) && campaignUniverse(card.origin) === chapter.universe).map(({ id }) => id);
       expect([...chapter.universeCardIds].sort()).toEqual(universeIds.sort());
       expect(chapter.universeCardIds).toContain(chapter.bossId);
-      expect(HERO_POWER_IDS).toContain(chapter.heroPowerId);
+      if (chapter.heroPowerId !== null) expect(HERO_POWER_IDS).toContain(chapter.heroPowerId);
       const previouslyOwned = new Set([...CAMPAIGN_STARTER_DECK, ...CAMPAIGN_CHAPTERS
         .filter((entry) => entry.chapter < chapter.chapter).flatMap((entry) => entry.rewardCardIds)]);
       for (const id of universeIds) {

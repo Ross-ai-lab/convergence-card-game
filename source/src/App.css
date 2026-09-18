@@ -5599,7 +5599,7 @@ button:disabled {
   border-radius: 50%;
   border: 1px solid rgba(255, 236, 190, 0.34);
   background: rgba(18, 14, 26, 0.7);
-  color: rgba(246, 236, 216, 0.82);
+  color: #f4d489;
   font: inherit;
   font-size: 1rem;
   font-weight: 900;
@@ -5612,6 +5612,18 @@ button:disabled {
   border-color: rgba(224, 169, 58, 0.85);
   color: #f4d489;
   background: rgba(52, 36, 16, 0.8);
+}
+
+.gallery-panel > .screen-panel-top > .screen-x {
+  border-color: #d95761;
+  background: #8f2032;
+  color: #ffe9dc;
+}
+
+.gallery-panel > .screen-panel-top > .screen-x:hover {
+  border-color: #ff9b91;
+  background: #b73346;
+  color: #fff7ed;
 }
 
 /* A POPUP over the gallery, not a panel wedged in above the grid. The inline
@@ -5640,7 +5652,7 @@ button:disabled {
   padding: 22px 26px 20px;
   border: 1px solid rgba(224, 169, 58, 0.5);
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(224, 169, 58, 0.12), transparent 55%), #16101e;
+  background: linear-gradient(180deg, #2a1c25, #16101e 55%);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
   color: rgba(246, 236, 216, 0.88);
   font-size: 0.94rem;
@@ -5700,14 +5712,14 @@ button:disabled {
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: rgba(246, 236, 216, 0.6);
+  color: #e1525e;
   font-size: 1.2rem;
   line-height: 1;
   cursor: var(--convergence-cursor);
 }
 
 .help-x:hover {
-  color: #f4d489;
+  color: #ff9b91;
 }
 
 /* ---------------------------------------------------------------------------

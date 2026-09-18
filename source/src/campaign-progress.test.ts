@@ -23,18 +23,18 @@ function memory() {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("campaign progression transactions", () => {
-  it("starts with a thirty-card deck, thirty-two unlocked cards, chapter one and no power", () => {
+  it("starts with a thirty-card deck, thirty-two unlocked cards, all universes open and no power", () => {
     const progress = emptyProgress(); expect(progress.unlockedIds).toEqual(CAMPAIGN_INITIAL_COLLECTION);
     expect(progress.playerDeck).toEqual(CAMPAIGN_STARTER_DECK); expect(progress.hotseatDeck).toEqual(CAMPAIGN_STARTER_DECK);
-    expect(canPlayChapter(progress, 1)).toBe(true); expect(canPlayChapter(progress, 2)).toBe(false);
+    expect(canPlayChapter(progress, 1)).toBe(true); expect(canPlayChapter(progress, 2)).toBe(true); expect(canPlayChapter(progress, 20)).toBe(true);
     expect(campaignComplete(progress)).toBe(false); expect(botWins(progress)).toBe(0); expect(progress.selectedHeroPower).toBeNull();
   });
-  it("atomically clears a chapter, grants its exact reward, opens the next and unlocks a power", () => {
+  it("atomically clears any universe, grants its exact reward and unlocks a power", () => {
     const before = emptyProgress(); const after = finish(before, 1);
     expect(after.completedChapters).toBe(1); expect(after.unlockedIds).toEqual([...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS[0].rewardCardIds]);
     expect(after.pendingRewards).toEqual(CAMPAIGN_CHAPTERS[0].rewardCardIds);
     expect(after.playerDeck).toEqual(before.playerDeck); expect(after.hotseatDeck).toEqual(before.hotseatDeck);
-    expect(after.selectedHeroPower).toBe("core_heal"); expect(canPlayChapter(after, 2)).toBe(true); expect(canPlayChapter(after, 3)).toBe(false);
+    expect(after.selectedHeroPower).toBe("core_heal"); expect(canPlayChapter(after, 2)).toBe(true); expect(canPlayChapter(after, 3)).toBe(true);
     expect(before.completedChapters).toBe(0);
   });
   it.each([1, "draw"] as const)("result %s gives no cards, power or chapter advance", (winner) => {
@@ -42,8 +42,8 @@ describe("campaign progression transactions", () => {
     expect(after.unlockedIds).toEqual(CAMPAIGN_INITIAL_COLLECTION); expect(after.pendingRewards).toEqual([]);
     expect(after.completedChapters).toBe(0); expect(botWins(after)).toBe(0);
   });
-  it("cannot skip a chapter, farm a replay, or process a saved victory twice", () => {
-    expect(finish(emptyProgress(), 2).completedChapters).toBe(0);
+  it("can conquer any universe, but cannot farm a replay or process a saved victory twice", () => {
+    expect(finish(emptyProgress(), 2).completedChapters).toBe(1);
     const won = finish(emptyProgress(), 1); expect(finish(won, 1)).toBe(won);
     const claimed = acknowledgeRewards(won); const replay = finish(claimed, 1, 0, "replay");
     expect(replay.pendingRewards).toEqual([]); expect(replay.unlockedIds).toEqual(won.unlockedIds);
@@ -70,7 +70,7 @@ describe("campaign progression transactions", () => {
     const won = finish(emptyProgress(), 1);
     const unrelated = CAMPAIGN_CHAPTERS[0].deckCardIds.filter((id) => !CAMPAIGN_STARTER_DECK.includes(id) && !CAMPAIGN_CHAPTERS[0].rewardCardIds.includes(id));
     expect(unrelated.length).toBeGreaterThan(0); for (const id of unrelated) expect(won.unlockedIds).not.toContain(id);
-    const developer = unlockAllProgress(emptyProgress()); expect(canPlayChapter(developer, 20)).toBe(false);
+    const developer = unlockAllProgress(emptyProgress()); expect(canPlayChapter(developer, 20)).toBe(true);
     const assisted = finish(developer, 1); expect(assisted.completedChapters).toBe(1); expect(assisted.pendingRewards).toEqual([]);
   });
 });

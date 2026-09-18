@@ -1,7 +1,7 @@
 import { isMinionCard, isRelicCard } from "./types";
 import { drawPileFor, remainingDeckCards } from "./draw-piles";
 import { validateDeck } from "../decks";
-import { HERO_POWER_COST, heroPowerDefinition } from "./hero-powers";
+import { HERO_POWER_COST, heroPowerCost, heroPowerDefinition } from "./hero-powers";
 import { traceEffect } from "./trace";
 import { isTokenCardId, tokenCard, TOKEN_CARDS } from "./tokens";
 import type {
@@ -344,7 +344,7 @@ export function applyAction(
   } else if (action.type === "confirm_mulligan") {
     confirmMulligan(next, action.player, events);
   } else if (action.type === "use_hero_power") {
-    useHeroPower(next, action.player, events);
+    useHeroPower(next, action.player, library, events);
   } else if (action.type === "play_card") {
     playCard(next, action.player, action.handIndex, action.slotIndex, library, events);
   } else if (action.type === "play_relic") {
@@ -523,7 +523,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
     // target force it here. Shinigami Eyes walks
     // past both. (Before this, the core could only be hit with the enemy board
     // completely empty, which made ATK almost meaningless.)
-    if (forced.length === 0 && !hasHighestAttackRestriction(state, minion)) {
+    if (forced.length === 0 && !hasHighestAttackRestriction(state, minion) && !yujiroCoreAttackRestricted(state, minion)) {
       actions.push({ type: "attack_core", player: player.id, attackerSlot });
     }
   });
@@ -534,20 +534,23 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
 function heroPowerTargetOptions(state: GameState, playerId: PlayerId, powerId: HeroPowerId): TargetOption[] {
   const definition = heroPowerDefinition(powerId);
   if (!definition || definition.target === "none") return [];
-  const owner = definition.target === "friendly" ? playerId : opponent(playerId);
-  return state.players[owner].board.flatMap((minion, slot) => {
+  const owners: PlayerId[] = definition.target === "any"
+    ? [playerId, opponent(playerId)]
+    : [definition.target === "friendly" ? playerId : opponent(playerId)];
+  return owners.flatMap((owner) => state.players[owner].board.flatMap((minion, slot) => {
     if (!minion || isUntargetable(state, minion)) return [];
     if (owner !== playerId && !enemyTargetable(state, minion)) return [];
     return [{ owner, slot }];
-  });
+  }));
 }
 
 function heroPowerIsUsable(state: GameState, playerId: PlayerId): boolean {
   const powerId = state.heroPowers[playerId];
   if (!powerId || state.heroPowerUsed[playerId]) return false;
-  if (!hasInfiniteMana(state, playerId) && state.players[playerId].mana < effectiveHeroPowerCost(state, playerId)) return false;
   const definition = heroPowerDefinition(powerId);
   if (!definition) return false;
+  if (definition.passive) return false;
+  if (!hasInfiniteMana(state, playerId) && state.players[playerId].mana < effectiveHeroPowerCost(state, playerId)) return false;
   return definition.target === "none" || heroPowerTargetOptions(state, playerId, powerId).length > 0;
 }
 
@@ -556,7 +559,8 @@ function effectiveHeroPowerCost(state: GameState, playerId: PlayerId): number {
   const free = state.players[playerId].board.some(
     (minion) => minion && hasEffect(minion, "rudeus_hero_power_free"),
   );
-  return free ? 0 : HERO_POWER_COST;
+  const definition = heroPowerDefinition(state.heroPowers[playerId]);
+  return free ? 0 : definition ? heroPowerCost(definition) : HERO_POWER_COST;
 }
 
 function toggleMulligan(state: GameState, playerId: PlayerId, handIndex: number): void {
@@ -644,7 +648,7 @@ function confirmMulligan(state: GameState, playerId: PlayerId, events: GameEvent
   state.phase = "main";
 }
 
-function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
+function useHeroPower(state: GameState, playerId: PlayerId, library: CardLibrary, events: GameEvent[]): void {
   const powerId = state.heroPowers[playerId];
   const definition = heroPowerDefinition(powerId);
   if (!powerId || !definition || !heroPowerIsUsable(state, playerId)) return;
@@ -682,7 +686,7 @@ function useHeroPower(state: GameState, playerId: PlayerId, events: GameEvent[])
     state.phase = "targeting";
     return;
   }
-  resolveHeroPower(state, playerId, powerId, null, events);
+  resolveHeroPower(state, playerId, powerId, null, library, events);
 }
 
 function resolveHeroPower(
@@ -690,13 +694,24 @@ function resolveHeroPower(
   playerId: PlayerId,
   powerId: HeroPowerId,
   answer: ResolvedChoice | null,
+  library: CardLibrary,
   events: GameEvent[],
 ): void {
   const player = state.players[playerId];
   const definition = heroPowerDefinition(powerId);
   if (!definition) return;
   const target = answer?.kind === "board" ? state.players[answer.target.owner].board[answer.target.slot] : null;
-  if (powerId === "minion_hp" && target) {
+  if (powerId === "light_delayed_mark" && target) {
+    target.markedBy = `hero-power:${powerId}`;
+    target.markedForDeathAtTurn = state.turnNumber + 2;
+    events.push({ kind: "effect", text: `${definition.name} marks ${target.name} for death next turn.`, player: playerId, instanceId: target.instanceId });
+  } else if (powerId === "all_for_one_copy" && target) {
+    putCardInHand(state, playerId, target.cardId, events);
+    events.push({ kind: "effect", text: `${definition.name} copies ${target.name} into ${player.name}'s hand.`, player: playerId, instanceId: target.instanceId, cardId: target.cardId });
+  } else if (powerId === "bill_chaos" && target) {
+    [target.atk, target.hp] = [target.hp, target.atk];
+    events.push({ kind: "effect", text: `${definition.name} swaps ${target.name}'s ATK and HP.`, player: playerId, instanceId: target.instanceId });
+  } else if (powerId === "minion_hp" && target) {
     buffMinion(target, 0, 1);
     events.push({ kind: "effect", text: `${definition.name} gives ${target.name} +1 HP.`, player: playerId, instanceId: target.instanceId });
   } else if (powerId === "minion_atk" && target) {
@@ -737,12 +752,33 @@ function resolveHeroPower(
     }
   } else if (powerId === "summon_recruit") {
     summonHeroPowerRecruit(state, playerId, events);
-  } else if (powerId === "give_taunt" && target) {
+  } else if ((powerId === "give_taunt" || powerId === "eye_taunt") && target) {
     if (!target.keywords.includes("Taunt")) target.keywords.push("Taunt");
     if (!target.gainedEffects.some((effect) => effect.text === "Passive: Taunt.")) {
       target.gainedEffects.push({ effectId: "none", timing: "passive", text: "Passive: Taunt." });
     }
     events.push({ kind: "effect", text: `${definition.name} gives ${target.name} Taunt.`, player: playerId, instanceId: target.instanceId });
+  } else if (powerId === "gilgamesh_relic") {
+    const available = relicsInDeck(state, playerId, library);
+    if (available.length > 0) {
+      const relic = available[rollInt(state, available.length)];
+      if (relic && removeCardFromDrawPile(state, playerId, relic.id)) {
+        putCardInHand(state, playerId, relic.id, events);
+        events.push({ kind: "effect", text: `${definition.name} claims ${relic.name} from the treasury.`, player: playerId, cardId: relic.id });
+      }
+    }
+  } else if (powerId === "gojo_core_shield") {
+    player.heroDivineShield = true;
+    events.push({ kind: "effect", text: `${definition.name} gives ${player.name}'s Core Divine Shield.`, player: playerId });
+  } else if (powerId === "thanos_destroy") {
+    const candidates = state.players[opponent(playerId)].board.filter(
+      (minion): minion is MinionInstance => Boolean(minion && enemyTargetable(state, minion)),
+    );
+    const target = candidates.length > 0 ? candidates[rollInt(state, candidates.length)] : null;
+    if (target) {
+      const targetSlot = slotOf(state, target);
+      if (targetSlot >= 0) destroyAtSlot(state, target.owner, targetSlot, events, `${definition.name} destroys ${target.name}`, null);
+    }
   }
 }
 
@@ -1100,6 +1136,15 @@ function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, e
   player.turnsStarted += 1;
   events.push({ kind: "turn", text: `${player.name}'s turn begins.`, player: playerId });
 
+  // GLaDOS's Test Protocol gives the player twelve of their own turns. The
+  // check happens when turn thirteen opens, so enemy half-turns never shorten
+  // the promised window.
+  if (playerId === 0 && state.heroPowers[1] === "glados_test_protocol" && player.turnsStarted > 12) {
+    if (dealCoreDamage(state, playerId, Math.max(1, player.health), events)) {
+      events.push({ kind: "effect", text: "Test Protocol expires. GLaDOS ends the experiment.", player: 1 });
+    }
+  }
+
   // Hearthstone's draw: one card, no choice. The pick-1-of-2 that used to happen
   // every single turn is now a card's privilege — Detective L's Foresight — or
   // the Ascendant opponent's standing cheat, which is the same mechanic granted
@@ -1163,7 +1208,8 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
   // Derived from the turn count rather than incremented, so the ramp is a single
   // number that a save, an undo and the simulator all agree on. At ramp 1 this is
   // exactly the classic +1 a turn.
-  const earnedMana = Math.min(10, 1 + Math.round((player.turnsStarted - 1) * (state.manaRamp ?? 1)));
+  const startsWithExtraMana = state.heroPowers[playerId] === "goku_start_mana" && player.turnsStarted === 1;
+  const earnedMana = Math.min(10, 1 + (startsWithExtraMana ? 1 : 0) + Math.round((player.turnsStarted - 1) * (state.manaRamp ?? 1)));
   const manaPenalty = Math.min(earnedMana, Math.max(0, player.manaPenaltyNextTurn ?? 0));
   player.maxMana = earnedMana - manaPenalty;
   player.mana = player.maxMana;
@@ -1175,6 +1221,8 @@ function finishStartOfTurn(state: GameState, playerId: PlayerId, library: CardLi
   state.phase = "main";
 
   resolveUpkeep(state, playerId, library, events);
+
+  if (state.heroPowers[playerId] === "ainz_skeleton") summonHeroPowerSkeleton(state, playerId, events);
 
   const skipOngoing = new Set<string>();
   for (const minion of player.board) {
@@ -1491,6 +1539,13 @@ function dealCoreDamage(
   if (player.heroDivineShield) {
     player.heroDivineShield = false;
     events.push({ kind: "combat", text: `${player.name}'s core Divine Shield breaks.`, player: playerId });
+    return false;
+  }
+  if (player.health - amount <= 0 && state.heroPowers[playerId] === "voldemort_immortal" && player.board.some(Boolean)) {
+    const taken = Math.max(0, player.health - 1);
+    player.health = 1;
+    if (taken > 0) creditDamage(state, source, taken);
+    events.push({ kind: "effect", text: `Dark Immortality leaves ${player.name}'s Core at 1 HP while a minion remains.`, player: playerId });
     return false;
   }
   player.health -= amount;
@@ -3562,6 +3617,17 @@ function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: Ga
   events.push({ kind: "effect", text: `${player.name} summons a 1/1 Knight.`, player: playerId, instanceId: summoned.instanceId });
 }
 
+function summonHeroPowerSkeleton(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
+  const player = state.players[playerId];
+  const slot = player.board.findIndex((entry) => !entry);
+  if (slot < 0) return;
+  const skeleton = tokenCard("token:skeleton");
+  const summoned = createMinion(skeleton, playerId, state);
+  summoned.suppressArrivalTheme = true;
+  player.board[slot] = summoned;
+  events.push({ kind: "effect", text: `${player.name} summons a 1/1 Skeleton.`, player: playerId, instanceId: summoned.instanceId });
+}
+
 function summonShadowClones(state: GameState, source: MinionInstance, events: GameEvent[]): void {
   const shadowClone = tokenCard("token:shadow-clone");
   const player = state.players[source.owner];
@@ -4515,7 +4581,7 @@ function randomAttackTarget(state: GameState, attacker: MinionInstance): number 
   });
   if (legal.length > 0) return legal[rollInt(state, legal.length)];
   // Nothing on the board it may hit — the core is the only thing left.
-  return hasHighestAttackRestriction(state, attacker) || (!ignoresGuards && !ignoresTaunt && taunts.length > 0) ? null : "core";
+  return hasHighestAttackRestriction(state, attacker) || yujiroCoreAttackRestricted(state, attacker) || (!ignoresGuards && !ignoresTaunt && taunts.length > 0) ? null : "core";
 }
 
 /**
@@ -4645,7 +4711,7 @@ function chooseTarget(state: GameState, choiceIndex: number, library: CardLibrar
   state.phase = "main";
   if (answer) {
     if (pending.heroPowerId) {
-      resolveHeroPower(state, pending.sourceOwner, pending.heroPowerId, answer, events);
+      resolveHeroPower(state, pending.sourceOwner, pending.heroPowerId, answer, library, events);
     } else {
     const slotIndex = state.players[pending.sourceOwner].board.findIndex(
       (minion) => minion?.instanceId === pending.sourceInstanceId,
@@ -4982,6 +5048,14 @@ function canDeclareAttack(state: GameState, attacker: MinionInstance, target: Mi
 
 function hasHighestAttackRestriction(state: GameState, attacker: MinionInstance): boolean {
   return hasEffect(attacker, "highest_atk_only") && !attacker.silenced && highestEnemyAttack(state, attacker.owner) >= 0;
+}
+
+function yujiroCoreAttackRestricted(state: GameState, attacker: MinionInstance): boolean {
+  if (state.heroPowers[opponent(attacker.owner)] !== "yujiro_apex_duel") return false;
+  const highest = state.players[attacker.owner].board
+    .filter((minion): minion is MinionInstance => Boolean(minion))
+    .reduce((max, minion) => Math.max(max, minion.atk), -1);
+  return highest >= 0 && attacker.atk < highest;
 }
 
 function highestEnemyAttack(state: GameState, owner: PlayerId): number {

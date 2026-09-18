@@ -25,7 +25,7 @@ export interface CampaignChapter {
   readonly universe: string;
   readonly theme: string;
   readonly designReason: string;
-  readonly heroPowerId: HeroPowerId;
+  readonly heroPowerId: HeroPowerId | null;
   readonly difficultyId: CampaignDifficultyId;
   readonly universeCardIds: readonly string[];
   readonly rewardCardIds: readonly string[];
@@ -76,7 +76,7 @@ export const CAMPAIGN_CHAPTERS: readonly CampaignChapter[] = Object.freeze(
     universe: raw.universe,
     theme: raw.theme,
     designReason: raw.designReason,
-    heroPowerId: requireValue(raw.heroPowerId, HERO_POWER_IDS, `chapter ${raw.chapter} Hero Power`),
+    heroPowerId: raw.heroPowerId === null ? null : requireValue(raw.heroPowerId, HERO_POWER_IDS, `chapter ${raw.chapter} Hero Power`),
     difficultyId: requireValue(raw.difficultyId, difficultyIds, `chapter ${raw.chapter} difficulty`),
     universeCardIds: freezeIds(raw.universeCardIds),
     rewardCardIds: freezeIds(raw.rewardCardIds),

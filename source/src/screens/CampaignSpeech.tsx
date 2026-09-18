@@ -56,7 +56,7 @@ export function CampaignSpeech({stage, chapter, name, text, art, accent, onConti
       aria-label={stage === "prologue" || stage === "rick-intro" ? "Rick Gramps story" : `${name} ${stage} speech`} data-story-key={`${stage}-${chapter}`} data-story-stage={stage}>
       {art ? <img className="campaign-speech-portrait" src={art} alt={name} /> : <div className="campaign-speech-sigil" aria-hidden="true">R</div>}
       <div className="campaign-speech-copy">
-        <span className="campaign-speech-kicker">{stage === "prologue" ? "The collection begins" : stage === "rick-intro" ? `Chapter ${chapter} · Rick's selection` : `Chapter ${chapter} · ${stage === "defeat" ? "Allegiance earned" : stage === "loss" ? "The challenger stands" : "A new challenger"}`}</span>
+        <span className="campaign-speech-kicker">{stage === "prologue" ? "The collection begins" : stage === "rick-intro" ? "Rick's selection" : stage === "defeat" ? "Allegiance earned" : stage === "loss" ? "The challenger stands" : "A new challenger"}</span>
         <h2>{name}</h2>
         <div className="campaign-speech-text" onClick={speech.reveal}>
           <span className="speech-accessible">{text}</span><p aria-hidden="true">{speech.visible}<span className={speech.complete ? "speech-caret complete" : "speech-caret"}>▌</span></p>

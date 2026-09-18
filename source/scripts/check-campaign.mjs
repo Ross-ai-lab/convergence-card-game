@@ -67,11 +67,11 @@ try {
   assert(await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).isVisible());
   await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).getByRole('button', { name: 'Close', exact: true }).click();
   await page.locator('.duel-trigger').click();
-  assert.equal(await page.locator('.campaign-chapter button:not([disabled])').count(), 1);
+  assert.equal(await page.locator('.campaign-chapter button:not([disabled])').count(), 20);
   const desktopMap=await page.locator('.campaign-chapters').evaluate(el=>({height:el.clientHeight,content:el.scrollHeight}));
-  assert(desktopMap.content<=desktopMap.height+1,'All twenty chapters must fit without vertical scrolling');
-  const lockedChapterCard = page.locator('[data-chapter="1"]');
-  const lockedChapterText = await lockedChapterCard.textContent();
+  assert(desktopMap.content<=desktopMap.height+1,'All twenty universes must fit without vertical scrolling');
+  const firstUniverseCard = page.locator('[data-chapter="1"]');
+  const firstUniverseText = await firstUniverseCard.textContent();
   assert.equal(await page.locator('.campaign-chapter-panel > .campaign-header .campaign-eyebrow').textContent(), "RICK GRAMPS' COLLECTION");
   assert.equal(await page.locator('.campaign-chapter-panel .campaign-close').textContent(), '×');
   const panelMetrics = await page.locator('.campaign-chapter-panel').evaluate((el) => ({
@@ -81,16 +81,16 @@ try {
   }));
   assert.equal(panelMetrics.overflow, 'hidden');
   assert.equal(panelMetrics.scrollHeight, panelMetrics.clientHeight);
-  assert.equal(await page.locator('.campaign-toolbar p').textContent(), 'Defeat each challenger to claim their universe and advance.');
-  assert(!lockedChapterText.includes('Tech fortifications'));
-  assert(!lockedChapterText.includes('Recruit'));
-  assert(!lockedChapterText.includes('first-win'));
-  assert.equal(await lockedChapterCard.locator('details').count(), 0);
-  assert.equal(await page.locator('.chapter-reward-preview').count(),1);
-  assert((await page.locator('.chapter-reward-preview').textContent()).includes('10 cards'));
+  assert.equal(await page.locator('.campaign-toolbar p').textContent(), "Choose any universe. Conquer its champion to claim that universe's cards.");
+  assert(!firstUniverseText.includes('Tech fortifications'));
+  assert(!firstUniverseText.includes('Recruit'));
+  assert(!firstUniverseText.includes('first-win'));
+  assert.equal(await firstUniverseCard.locator('details').count(), 0);
+  assert.equal(await page.locator('.chapter-reward-preview').count(),20);
+  assert((await page.locator('.chapter-reward-preview').first().textContent()).includes('10 cards'));
   assert(await page.locator('.campaign-chapter button').evaluateAll(buttons=>buttons.every(button=>{const b=button.getBoundingClientRect(),a=button.closest('article').getBoundingClientRect();return b.bottom<=a.bottom+1})), 'Chapter buttons must fit their tiles');
   assert(!(await page.locator('.campaign-panel').textContent()).includes('cards unlocked'));
-  await page.getByRole('button', { name: 'Close campaign', exact: true }).click();
+  await page.getByRole('button', { name: 'Close Rick Gramps Collection', exact: true }).click();
   await page.locator('.deck-trigger').click();
   assert.equal(await page.locator('.gallery-deck-row').count(), 30);
   assert.equal(await page.locator('.hero-power-trigger').count(),0);
@@ -128,7 +128,7 @@ try {
   await page.getByRole('button', { name: 'Close', exact: true }).click();
   await page.locator('.duel-trigger').click();
   await page.screenshot({ path: '../.preview/campaign/chapters.png' });
-  await page.getByRole('button', { name: 'Play chapter 1', exact: true }).click();
+  await page.locator('[data-chapter="1"] button').click();
   await page.locator('[data-story-stage="prologue"]').waitFor();
   const prologueText = await page.locator('.campaign-speech-text').textContent();
   assert(prologueText.includes('Retirement lasted eleven minutes') && prologueText.includes('insurance is fictional'));
@@ -153,7 +153,7 @@ try {
   assert.equal(saved.mode.kind, 'campaign'); assert.equal(saved.mode.chapter, 1);
   assert.equal(saved.game.playerDecks[0].deck.length, 27); assert.equal(saved.game.playerDecks[1].deck.length, 27);
   assert.equal(await page.locator('.campaign-hero .boss-portrait').getAttribute('alt'), 'GLaDOS portrait');
-  assert((await page.locator('.campaign-hero .boss-chapter').textContent()).includes('Chapter 1'));
+  assert((await page.locator('.campaign-hero .boss-chapter').textContent()).includes('Universe · Portal'));
   await page.getByRole('button', { name: 'Open Star Chart for GLaDOS', exact: true }).click();
   assert(await page.getByRole('dialog', { name: 'GLaDOS Star Chart', exact: true }).isVisible());
   assert.equal(await page.locator('.star-chart').count(), 1);
@@ -191,7 +191,7 @@ try {
   assert.equal(await clearedChapterCard.locator('details[open]').count(), 1);
   assert((await clearedChapterCard.textContent()).includes('Rewards unlocked'));
   assert((await clearedChapterCard.textContent()).includes('GLaDOS'));
-  await page.getByRole('button', { name: 'Close campaign', exact: true }).click();
+  await page.getByRole('button', { name: 'Close Rick Gramps Collection', exact: true }).click();
   await page.locator('.deck-trigger').click();
   await page.getByRole('button', { name: 'Remove John Wick from deck', exact: true }).click();
   assert.equal((await progress()).playerDeck.length, 29);
@@ -246,7 +246,7 @@ try {
   assert.equal((await progress()).unlockedIds.length, 40); assert.equal((await progress()).completedChapters, 1);
   assert.equal(await page.locator('.pack-stage').count(), 0);
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await page.getByRole('button', { name: 'Play chapter 2', exact: true }).click(); await board(); await finish('Enemy wins',true);
+  await page.locator('[data-chapter="2"] button').click(); await board(); await finish('Enemy wins',true);
   await page.locator('[data-story-stage="loss"]').waitFor();
   assert.equal(await page.locator('.gameover-buttons button').count(), 2, 'A campaign loss must offer rematch and menu');
   assert(await page.getByRole('button', { name: 'Rematch', exact: true }).isVisible());
@@ -266,7 +266,7 @@ try {
   assert((await page.locator('[data-chapter="13"]').textContent()).includes('Monkey D. Luffy'));
   assert((await page.locator('[data-chapter="17"]').textContent()).includes('Bill Cipher'));
   assert((await page.locator('[data-chapter="20"]').textContent()).includes('Saitama'));
-  await page.getByRole('button', { name: 'Play chapter 20', exact: true }).click(); await board();
+  await page.locator('[data-chapter="20"] button').click(); await board();
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v30')));
   assert.equal(saved.game.botCheats[1].foresight, true);
   await finish(); await page.waitForFunction(() => JSON.parse(localStorage.getItem('convergence.progress.v4')).completedChapters === 20);
@@ -274,7 +274,7 @@ try {
   await collectPack();
   assert.equal(await page.locator('.gameover-buttons button').count(),1);
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await page.getByRole('button', { name: 'Close campaign', exact: true }).click();
+  await page.getByRole('button', { name: 'Close Rick Gramps Collection', exact: true }).click();
   assert.equal(await page.locator('.orbit-choice-easy, .orbit-choice-normal, .orbit-choice-hard').count(), 3);
   await page.screenshot({ path: '../.preview/campaign/completed.png' });
   await page.locator('.duel-trigger').click(); await board();
@@ -305,10 +305,10 @@ try {
   await page.reload();await page.locator('.deck-trigger').click();
   assert((await page.locator('.gallery-hero-power').textContent()).includes('Core Bolt'));
   await page.getByRole('button',{name:'Close',exact:true}).click();
-  await page.locator('.duel-trigger').click();await page.getByRole('button',{name:'Play chapter 6',exact:true}).click();await board();
+  await page.locator('.duel-trigger').click();await page.locator('[data-chapter="6"] button').click();await board();
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v30')).game.heroPowers[0]),'enemy_core_damage');
   await seedCampaignProgress(page,0);await page.keyboard.type('Ross');
-  await page.getByRole('button',{name:'Unlock all chapters',exact:true}).click();
+  await page.getByRole('button',{name:'Unlock all universes',exact:true}).click();
   assert.equal((await progress()).developerChaptersUnlocked,true);assert.equal((await progress()).completedChapters,0);
   await page.reload();await page.locator('.duel-trigger').click();
   assert.equal(await page.locator('.campaign-chapter button:not([disabled])').count(),20);

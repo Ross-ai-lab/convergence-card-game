@@ -307,8 +307,8 @@ export function TitleScreen({
         })}
 
         <button type="button" className={campaignCleared ? "duel-trigger" : "duel-trigger campaign-duel-trigger"} onClick={() => campaignCleared ? onStart({ kind: "bot", skill }) : onCampaign()}>
-          <span>{campaignCleared ? "Duel" : "Campaign"}</span>
-          <small>{campaignCleared ? SKILL_BLURB[skill].title : `Chapter ${Math.min(20, completedChapters + 1)} / 20`}</small>
+          <span>{campaignCleared ? "Duel" : "Collection"}</span>
+          <small>{campaignCleared ? SKILL_BLURB[skill].title : `Universes conquered ${completedChapters} / 20`}</small>
         </button>
       </div>
       <div className="title-inner">
@@ -330,7 +330,7 @@ export function TitleScreen({
         ) : null}
 
         <div className="title-links title-actions">
-          {campaignCleared && <button type="button" className="campaign-trigger" onClick={onCampaign}>Campaign</button>}
+          {campaignCleared && <button type="button" className="campaign-trigger" onClick={onCampaign}>Rick Gramps Collection</button>}
           {/* The tally rides INSIDE this button, stacked under its label, so the
               door to the gallery and the count of what is behind it are one
               object. Deliberately faint: the full unlock rules live one click
@@ -385,7 +385,7 @@ export function TitleScreen({
             >
               {developerCheatActive ? "All cards and powers unlocked" : "Unlock all cards + powers"}
             </button>
-            <button type="button" disabled={chaptersUnlocked} onClick={onUnlockChapters}>{chaptersUnlocked ? "All chapters unlocked" : "Unlock all chapters"}</button>
+            <button type="button" disabled={chaptersUnlocked} onClick={onUnlockChapters}>{chaptersUnlocked ? "All universes available" : "Unlock all universes"}</button>
             <button
               type="button"
               className="developer-cheat-reset"
@@ -453,7 +453,7 @@ export function TitleScreen({
           <div className="hotseat-confirm developer-reset-confirm">
             <p className="hotseat-confirm-question">Reset card progress?</p>
             <p className="hotseat-confirm-note">
-              This clears card unlocks, collection marks, and the duel record. Your current duel and campaign progress are also reset.
+              This clears card unlocks, collection marks, and the duel record. Your current duel and collection progress are also reset.
             </p>
             <div className="hotseat-confirm-actions">
               <button
@@ -497,7 +497,7 @@ export function HeroPowerChoices({
   return (
       <div className="hero-power-menu">
         <p className="hero-power-menu-intro">
-          Clear each of the first ten campaign chapters to unlock a Hero Power. Replays do not count.
+              Conquer each of the first ten universes to unlock a Hero Power. Replays do not count.
           <b>{` ${Math.min(botWins, HERO_POWER_UNLOCK_ORDER.length)}/${HERO_POWER_UNLOCK_ORDER.length} unlocked`}</b>
         </p>
         <div className="hero-power-menu-grid">
@@ -526,7 +526,7 @@ export function HeroPowerChoices({
                 }}
               >
                 <span className="hero-power-menu-status">
-                  {unlocked ? (selected ? "Selected" : `Unlocked · chapter ${unlockAt}`) : `Locked · chapter ${unlockAt}`}
+                  {unlocked ? (selected ? "Selected" : `Unlocked · victory ${unlockAt}`) : `Locked · victory ${unlockAt}`}
                 </span>
                 <strong><Lightning size={18} weight="fill" aria-hidden="true" /> {definition.name}</strong>
                 <span>{definition.text}</span>
@@ -683,7 +683,7 @@ function HowToPlayContent() {
           <li><b>End the turn</b> with Space.</li>
         </ol>
         <p className="rules-aside">
-          Hero Powers are chosen from the <b>Hero Powers</b> menu. Clear the first ten campaign chapters to unlock them one at a time,
+          Hero Powers are chosen from the <b>Hero Powers</b> menu. Conquer the first ten collection universes to unlock them one at a time,
           in the order shown there. A selected power costs 2 mana and works once per turn.
         </p>
       </section>

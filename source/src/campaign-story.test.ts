@@ -55,8 +55,8 @@ describe('Rick Gramps campaign story',()=>{
     const loss=finishDuel(acknowledgeBossSpeech(replay),{...input,winner:1,mode:{...mode,duelId:'story-loss'}},{seen:[],played:[]});
     expect(loss.pendingBossSpeech).toBe(1);expect(loss.pendingBossSpeechOutcome).toBe("loss");
   });
-  it('rejects a pending speech for an undefeated future boss',()=>{
+  it('preserves pending speech for any selectable universe',()=>{
     saveProgress({...emptyProgress(),pendingBossSpeech:20});
-    expect(loadProgress().pendingBossSpeech).toBeNull();
+    expect(loadProgress().pendingBossSpeech).toBe(20);
   });
 });

@@ -1522,6 +1522,12 @@ button.duel-trigger:hover:not(:disabled) {
   color: #fff0bd;
 }
 
+.title-actions .campaign-trigger {
+  min-height: 58px;
+  font-size: clamp(14px, 1.2vw, 19px);
+  letter-spacing: 0.08em;
+}
+
 .title-bottom-left {
   position: absolute;
   left: clamp(14px, 2.6vw, 38px);

@@ -49,6 +49,7 @@ export interface Progress {
   played: string[];
   wonWith: string[];
   completedChapters: number;
+  completedBosses: number[];
   unlockedIds: string[];
   playerDeck: string[];
   hotseatDeck: string[];
@@ -74,17 +75,16 @@ export function emptyProgress(): Progress {
     storyIntroduced: false, developerChaptersUnlocked: false, pendingBossSpeechOutcome: "victory", pendingBossSpeech: null,
     version: PROGRESS_VERSION, developerCheat: false,
     ladders: { easy: emptyRecord(), normal: emptyRecord(), hard: emptyRecord(), hotseat: emptyRecord() },
-    recent: [], seen: [], played: [], wonWith: [], completedChapters: 0,
+    recent: [], seen: [], played: [], wonWith: [], completedChapters: 0, completedBosses: [],
     unlockedIds: [...CAMPAIGN_INITIAL_COLLECTION], playerDeck: [...CAMPAIGN_STARTER_DECK],
     hotseatDeck: [...CAMPAIGN_STARTER_DECK], selectedHeroPower: null, pendingRewards: [], settledDuels: [],
   };
 }
 
-export function campaignComplete(progress: Progress): boolean { return progress.completedChapters === CAMPAIGN_CHAPTERS.length; }
-export function canPlayChapter(progress: Progress, chapter: number): boolean {
-  return Boolean(getCampaignChapter(chapter)) && (progress.developerChaptersUnlocked || chapter <= progress.completedChapters + 1);
-}
-/** Player powers advance only on first chapter clears, never replay/free/hotseat wins. */
+export function campaignComplete(progress: Progress): boolean { return progress.completedBosses.length === CAMPAIGN_CHAPTERS.length; }
+/** Every universe is selectable from the collection map; completion is tracked independently. */
+export function canPlayChapter(_progress: Progress, chapter: number): boolean { return Boolean(getCampaignChapter(chapter)); }
+/** Player powers advance only on first universe clears, never replay/free/hotseat wins. */
 export function botWins(progress: Progress): number {
   return progress.developerCheat ? HERO_POWER_UNLOCK_ORDER.length : progress.completedChapters;
 }
@@ -104,14 +104,23 @@ export function loadProgress(): Progress {
     const saved = JSON.parse(raw) as Partial<Progress>;
     if (!saved || saved.version !== PROGRESS_VERSION) return emptyProgress();
     const progress = emptyProgress();
-    progress.completedChapters = Math.min(CAMPAIGN_CHAPTERS.length, count(saved.completedChapters));
+    const legacyCount = Math.min(CAMPAIGN_CHAPTERS.length, count(saved.completedChapters));
+    const explicitBosses = Array.isArray(saved.completedBosses)
+      ? [...new Set(saved.completedBosses.filter((chapter): chapter is number => typeof chapter === "number" && Boolean(getCampaignChapter(chapter))))]
+      : [];
+    const savedBosses = explicitBosses.length > 0 || legacyCount === 0
+      ? explicitBosses
+      : CAMPAIGN_CHAPTERS.slice(0, legacyCount).map((chapter) => chapter.chapter);
+    progress.completedBosses = savedBosses;
+    progress.completedChapters = savedBosses.length;
     progress.storyIntroduced = saved.storyIntroduced === true;
     progress.developerChaptersUnlocked = saved.developerChaptersUnlocked === true;
     progress.pendingBossSpeechOutcome = saved.pendingBossSpeechOutcome === "loss" ? "loss" : "victory";
-    progress.pendingBossSpeech = typeof saved.pendingBossSpeech === "number" && getCampaignChapter(saved.pendingBossSpeech) &&
-      (progress.developerChaptersUnlocked || saved.pendingBossSpeech <= progress.completedChapters + (progress.pendingBossSpeechOutcome === "loss" ? 1 : 0)) ? saved.pendingBossSpeech : null;
+    progress.pendingBossSpeech = typeof saved.pendingBossSpeech === "number" && getCampaignChapter(saved.pendingBossSpeech)
+      ? saved.pendingBossSpeech : null;
     progress.developerCheat = saved.developerCheat === true;
-    const earned = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.slice(0, progress.completedChapters).flatMap((chapter) => chapter.rewardCardIds)];
+    const completed = new Set(progress.completedBosses);
+    const earned = [...CAMPAIGN_INITIAL_COLLECTION, ...CAMPAIGN_CHAPTERS.filter((chapter) => completed.has(chapter.chapter)).flatMap((chapter) => chapter.rewardCardIds)];
     // Reconstruct only legitimate earned IDs. Missing fields cannot unlock future bosses.
     progress.unlockedIds = progress.developerCheat ? [...CAMPAIGN_CARD_IDS] : earned;
     const allowed = new Set(progress.unlockedIds);
@@ -171,13 +180,14 @@ const merge = (left: readonly string[], right: readonly string[]) => [...new Set
 /** A single pure transaction covers first clear, card ownership, powers and pending pack. */
 export function recordDuel(progress: Progress, result: DuelResult, cards: { seen: readonly string[]; played: readonly string[] }): Progress {
   if (result.duelId && progress.settledDuels.includes(result.duelId)) return progress;
-  const firstClear = result.outcome === "won" && result.ladder !== "hotseat" && result.chapter === progress.completedChapters + 1
+  const firstClear = result.outcome === "won" && result.ladder !== "hotseat" && result.chapter && !progress.completedBosses.includes(result.chapter)
     ? getCampaignChapter(result.chapter) : undefined;
   const awarded = firstClear?.rewardCardIds.filter((id) => !progress.unlockedIds.includes(id)) ?? [];
   const old = progress.ladders[result.ladder];
-  const completedChapters = firstClear ? firstClear.chapter : progress.completedChapters;
+  const completedBosses = firstClear ? [...progress.completedBosses, firstClear.chapter] : progress.completedBosses;
+  const completedChapters = completedBosses.length;
   const next: Progress = {
-    ...progress, completedChapters, unlockedIds: merge(progress.unlockedIds, awarded),
+    ...progress, completedChapters, completedBosses, unlockedIds: merge(progress.unlockedIds, awarded),
     pendingBossSpeech: result.outcome !== "drawn" && result.ladder !== "hotseat" && result.chapter && canPlayChapter(progress, result.chapter) ? result.chapter : progress.pendingBossSpeech,
     pendingBossSpeechOutcome: result.outcome === "lost" ? "loss" : "victory",
     pendingRewards: merge(progress.pendingRewards, awarded),

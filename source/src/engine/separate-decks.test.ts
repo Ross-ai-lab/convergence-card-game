@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
-import { CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES } from "../campaign";
+import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES } from "../campaign";
 import { createCampaignDuel } from "../campaign-duel";
 import { applyAction, createInitialGame, getLegalActions, hasForesight, makeCardLibrary } from "./game";
 import { botCheatsFor, chooseBotAction, clairvoyanceEdge } from "./bot";
@@ -237,7 +237,7 @@ describe("campaign difficulty in the engine", () => {
   it.each([1,4,5,10,11,14,15,20])("chapter %i sets the fixed decks, power, identity and saved cheats", (chapter) => {
     const duel = createCampaignDuel({ chapter, cards, relics, playerDeck: CAMPAIGN_STARTER_DECK, unlockedCardIds: CAMPAIGN_STARTER_DECK, seed: "chapter" });
     expect(remainingDeckCount(duel.state, 0)).toBe(27); expect(remainingDeckCount(duel.state, 1)).toBe(27);
-    expect(duel.state.heroPowers[1]).not.toBeNull(); expect(duel.state.players[1].name).not.toBe("Player Two");
+    expect(duel.state.heroPowers[1]).toBe(CAMPAIGN_CHAPTERS[chapter - 1].heroPowerId); expect(duel.state.players[1].name).not.toBe("Player Two");
     expect(botCheatsFor(duel.state, 1, duel.difficulty.botSkill)).toEqual(chapter >= 15 ? full : fair);
     expect(hasForesight(duel.state, 1)).toBe(chapter >= 15);
   });

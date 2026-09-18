@@ -12,25 +12,24 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
   progress: Progress; onPlay: (chapter: number) => void; onClose: () => void;
 }) {
   const valid = validateDeck(progress.playerDeck, rosterIds, progress.unlockedIds).valid;
-  return <div className="campaign-overlay campaign-map" role="dialog" aria-modal="true" aria-label="Campaign">
+  return <div className="campaign-overlay campaign-map" role="dialog" aria-modal="true" aria-label="Rick Gramps Collection">
     <section className="campaign-panel campaign-chapter-panel">
-      <header className="campaign-header"><img className="campaign-collector" src={`${import.meta.env.BASE_URL}campaign/rick-gramps.webp`} alt="Rick Gramps" /><div><span className="campaign-eyebrow">RICK GRAMPS' COLLECTION</span><h2>Campaign</h2>
+      <header className="campaign-header"><img className="campaign-collector" src={`${import.meta.env.BASE_URL}campaign/rick-gramps.webp`} alt="Rick Gramps" /><div><span className="campaign-eyebrow">RICK GRAMPS' COLLECTION</span><h2>Rick Gramps Collection</h2>
         </div>
-        <button className="campaign-close" onClick={onClose} aria-label="Close campaign">×</button></header>
-      <div className="campaign-toolbar"><p>{campaignComplete(progress) ? "Campaign complete. Free duels are available on the title screen." : "Defeat each challenger to claim their universe and advance."}</p></div>
+        <button className="campaign-close" onClick={onClose} aria-label="Close Rick Gramps Collection">×</button></header>
+      <div className="campaign-toolbar"><p>{campaignComplete(progress) ? "Every universe is conquered. Free duels are available on the title screen." : "Choose any universe. Conquer its champion to claim that universe's cards."}</p></div>
       {!valid && <p className="campaign-warning" role="status">Your deck has {progress.playerDeck.length} cards. Choose exactly 30 before starting a duel.</p>}
       <div className="campaign-chapters">{CAMPAIGN_CHAPTERS.map((chapter) => {
-        const boss = cardById.get(chapter.bossId)!; const cleared = chapter.chapter <= progress.completedChapters;
+        const boss = cardById.get(chapter.bossId)!; const cleared = progress.completedBosses.includes(chapter.chapter);
         const available = canPlayChapter(progress, chapter.chapter);
-        const next = chapter.chapter === progress.completedChapters + 1;
-        return <article key={chapter.chapter} className={`campaign-chapter${cleared ? " cleared" : ""}${next ? " next-chapter" : ""}${available ? "" : " locked"}`} data-chapter={chapter.chapter}>
+        return <article key={chapter.chapter} className={`campaign-chapter${cleared ? " cleared" : ""}${available ? "" : " locked"}`} data-chapter={chapter.chapter}>
           <img src={boss.art} alt={boss.name} loading="eager" />
-          <span className="campaign-eyebrow">Chapter {chapter.chapter} · {chapter.universe}</span><h3>{boss.name}</h3>
-          {next ? <p className="chapter-reward-preview">{chapter.rewardCardIds.length} cards locked behind this boss</p> : null}
+          <span className="campaign-eyebrow">Universe · {chapter.universe}</span><h3>{boss.name}</h3>
+          {!cleared ? <p className="chapter-reward-preview">{chapter.rewardCardIds.length} cards in this universe</p> : null}
           {cleared ? <details open><summary>Rewards unlocked</summary>
             <p>{chapter.rewardCardIds.map((id) => cardById.get(id)?.name ?? id).join(" · ")}</p></details> : null}
           <button className="primary" disabled={!available || !valid} onClick={() => onPlay(chapter.chapter)}>
-            {!available ? "Locked" : cleared ? "Replay" : `Play chapter ${chapter.chapter}`}</button>
+            {!available ? "Unavailable" : cleared ? "Replay Universe" : "Conquer the Universe"}</button>
         </article>;
       })}</div>
     </section>

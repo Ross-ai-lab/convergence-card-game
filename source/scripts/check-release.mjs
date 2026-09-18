@@ -19,7 +19,7 @@ try{
  assert.equal(await page.evaluate(()=>localStorage.getItem('sound-test-preference')),'preserved');
  await page.keyboard.type('Ross');await page.locator('.duel-trigger').click();
  assert.equal(await page.locator('.campaign-chapter').count(),20);
- await page.getByRole('button',{name:'Play chapter 1',exact:true}).click();
+ await page.locator('[data-chapter="1"] button').click();
  await page.locator('[data-story-key]').waitFor(); await skipCampaignDialogue(page);
  await page.locator('.duel-intro').waitFor({state:'detached',timeout:25000});
  await page.locator('.mulligan-panel button.primary').click();
@@ -47,7 +47,7 @@ try{
  await page.locator('.gallery-power-picker .hero-power-menu-card').filter({hasText:'Mend Core'}).click();
  assert.equal((await progress()).selectedHeroPower,'core_heal');
  await page.reload();assert((await progress()).playerDeck.includes('c104'));assert.equal((await progress()).pendingRewards.length,0);
- await page.locator('.duel-trigger').click();assert(await page.getByRole('button',{name:'Play chapter 2',exact:true}).isEnabled());
+ await page.locator('.duel-trigger').click();assert(await page.locator('[data-chapter="2"] button').isEnabled());
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.screenshot({path:'../.preview/release/live-campaign-mobile.png'});
  assert.deepEqual(errors,[]);

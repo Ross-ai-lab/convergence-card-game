@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 215,786 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 217,326 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -153,9 +153,9 @@ march toward a finish line that has already been crossed.
 
 ## What Convergence is
 
-Convergence is a browser card duel with 173 named character cards, 11 Basic cards and 34 relics. The current source implements a twenty-chapter campaign and separate 30-card decks. Each player starts with thirty selected deck cards and thirty unlocked cards. Antimatter Bomb and Carrier Strike Group are immediate Basic alternatives; cost changes apply without silently rebuilding saved decks. Campaign first clears add fixed cards to the collection, and the player chooses what to swap into their deck.
+Convergence is a browser card duel with 173 named character cards, 11 Basic cards and 34 relics. The current source implements a twenty-universe collection and separate 30-card decks. Each player starts with thirty selected deck cards and thirty unlocked cards. Antimatter Bomb and Carrier Strike Group are immediate Basic alternatives; cost changes apply without silently rebuilding saved decks. First universe victories add fixed cards to the collection, and the player chooses what to swap into their deck.
 
-The campaign is the only ordinary solo mode until all twenty chapters are cleared. Hotseat is available from the start. Completion opens Recruit, Veteran and Ascendant free duels with completely random thirty-card opponent decks. There is no selectable shared-deck mode.
+The collection is the only ordinary solo mode until all twenty universes are conquered. Every universe is selectable from the start. Hotseat is available from the start. Completion opens Recruit, Veteran and Ascendant free duels with completely random thirty-card opponent decks. There is no selectable shared-deck mode.
 
 No account or installation is required. Progress and live duels are saved locally in the browser. The public site counts visits in aggregate.
 
@@ -174,30 +174,30 @@ No account or installation is required. Progress and live duels are saved locall
 <!-- CAMPAIGN-DESIGN-START -->
 ### Campaign design — phase one
 
-**Campaign implementation complete.** All four chunks are connected: chapter selection, character opponents, custom decks, fixed rewards, difficulty progression and persistence. The release procedure below verifies the generated package and public deployment. Exact card IDs and difficulty configurations live in [the campaign data](materials/campaign-design.json). `source/src/campaign.ts` imports this single source and exposes immutable typed definitions. `source/src/decks.ts` validates thirty unique collectible, unlocked cards. The generated review page is a reading copy of those definitions.
+**Collection implementation complete.** All four chunks are connected: universe selection, character opponents, custom decks, fixed rewards, difficulty progression and persistence. The release procedure below verifies the generated package and public deployment. Exact card IDs and difficulty configurations live in [the campaign data](materials/campaign-design.json). `source/src/campaign.ts` imports this single source and exposes immutable typed definitions. `source/src/decks.ts` validates thirty unique collectible, unlocked cards. The generated review page is a reading copy of those definitions.
 
-| Chapter | Boss | Theme | AI profile | Hero Power | Cards awarded |
+| Universe | Boss | Theme | AI profile | Hero Power | Cards awarded |
 |---:|---|---|---|---|---:|
-| 1 | GLaDOS | Tech fortifications | Recruit | Stand Fast | 10 |
-| 2 | Po | Martial growth | Recruit | Sharpen | 10 |
-| 3 | Yujiro | Nature duelists | Recruit | Sharpen | 10 |
-| 4 | Light Yagami | Information and sacrifice | Recruit | Blood Price | 10 |
-| 5 | Lord Voldemort | Protected dark magic | Veteran | Call a Recruit | 10 |
-| 6 | Darth Vader | Imperial machinery | Veteran | Core Bolt | 8 |
-| 7 | Conquest | Ruthless combat | Veteran | Sharpen | 9 |
-| 8 | Dio Brando | Frozen battlefield | Veteran | Dampen | 8 |
-| 9 | All for One | Stolen abilities | Veteran | Wither | 9 |
-| 10 | Meruem | Predators and protection | Veteran | Reforged Chains | 9 |
-| 11 | Ainz Ooal Gown | Undead court | Ascendant (no cheats) | Call a Recruit | 8 |
-| 12 | Eye of Sauron | The siege of Mordor | Ascendant (no cheats) | Stand Fast | 8 |
-| 13 | Monkey D. Luffy | Pirate emperors | Ascendant (no cheats) | Sharpen | 11 |
-| 14 | Gilgamesh | Relic arsenal | Ascendant (no cheats) | Blood Price | 9 |
-| 15 | Gojo | Silence and execution | Ascendant | Dampen | 9 |
-| 16 | Elden Beast | Magic and rebirth | Ascendant | Mend Core | 9 |
-| 17 | Bill Cipher | Reality fracture | Ascendant | Blood Price | 8 |
-| 18 | Thanos | Cosmic convergence | Ascendant | Wither | 15 |
-| 19 | Goku | Champions of light | Ascendant | Vital Spark | 7 |
-| 20 | Saitama | Monsters and heroes | Ascendant | Mend Core | 11 |
+| 1 | GLaDOS | Tech fortifications | Recruit | Test Protocol | 10 |
+| 2 | Po | Martial growth | Recruit | — | 10 |
+| 3 | Yujiro | Nature duelists | Recruit | Apex Duel | 10 |
+| 4 | Light Yagami | Information and sacrifice | Recruit | Judgment Mark | 10 |
+| 5 | Lord Voldemort | Protected dark magic | Veteran | Dark Immortality | 10 |
+| 6 | Darth Vader | Imperial machinery | Veteran | — | 8 |
+| 7 | Conquest | Ruthless combat | Veteran | — | 9 |
+| 8 | Dio Brando | Frozen battlefield | Veteran | — | 8 |
+| 9 | All for One | Stolen abilities | Veteran | Quirk Theft | 9 |
+| 10 | Meruem | Predators and protection | Veteran | — | 9 |
+| 11 | Ainz Ooal Gown | Undead court | Ascendant (no cheats) | Skeleton Legion | 8 |
+| 12 | Eye of Sauron | The siege of Mordor | Ascendant (no cheats) | Sauron's Gaze | 8 |
+| 13 | Monkey D. Luffy | Pirate emperors | Ascendant (no cheats) | — | 11 |
+| 14 | Gilgamesh | Relic arsenal | Ascendant (no cheats) | Treasury Draw | 9 |
+| 15 | Gojo | Silence and execution | Ascendant | Limitless Barrier | 9 |
+| 16 | Elden Beast | Magic and rebirth | Ascendant | — | 9 |
+| 17 | Bill Cipher | Reality fracture | Ascendant | Chaos | 8 |
+| 18 | Thanos | Cosmic convergence | Ascendant | The Snap | 15 |
+| 19 | Goku | Champions of light | Ascendant | Ultra Instinct | 7 |
+| 20 | Saitama | Monsters and heroes | Ascendant | — | 11 |
 
 #### Scope and status
 
@@ -208,13 +208,13 @@ Campaign progression replaces the old shared-deck economy. Shared decks are reti
 
 #### Campaign and rewards
 
-Twenty chapters unlock strictly in order. A first victory clears its chapter, grants its fixed reward once and opens the next chapter. Defeat, draw, surrender and abandoned attempts grant nothing. Replays of cleared chapters remain available without additional cards or Hero Powers.
+All twenty universes are available immediately. A first victory conquers its universe and grants that universe's fixed reward once. Defeat, draw, surrender and abandoned attempts grant nothing. Replays remain available without additional cards or Hero Powers.
 
 Every player starts with the same thirty-card deck and thirty unlocked cards, including all eleven Basic cards and no Mythics. The deck keeps its chosen cards as costs change. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
 
-Approved reward adjustment: chapter 1 awards 10; chapters 2–5 award 10 each; chapter 6 awards 8; chapter 7 awards 9; chapter 8 awards 8; chapters 9–10 award 9 each; chapters 11–12 award 8 each; chapter 13 awards 11; chapters 14–17 award 9, 9, 9 and 8; chapter 18 awards 15; chapter 19 awards 7; chapter 20 awards the final One-Punch Man pack of 11. Total: 30 initial cards + 188 rewards = all 218 cards.
+Approved reward adjustment: universes 1–5 award 10 each; universe 6 awards 8; universe 7 awards 9; universe 8 awards 8; universes 9–10 award 9 each; universes 11–12 award 8 each; universe 13 awards 11; universes 14–17 award 9, 9, 9 and 8; universe 18 awards 15; universe 19 awards 7; universe 20 awards 11. Total: 30 initial cards + 188 rewards = all 218 cards.
 
-Marvel combines MCU, Marvel and Loki labels: eleven minions and four relics, fifteen cards. Chapter eighteen awards that fifteen-card Marvel set; The Driller from Transformers now joins GLaDOS's Tech fillers. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
+Marvel combines MCU, Marvel and Loki labels: eleven minions and four relics, fifteen cards. Thanos's universe awards that fifteen-card Marvel set; The Driller from Transformers now joins GLaDOS's Tech fillers. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
 
 Basic remains an explicit reference-card category. Star Destroyer now uses Star Wars origin but remains an exempt starting reference. The starter equips all Basic cards. Untouched earlier starter decks migrate to the new starter; earned custom decks remain intact. Universe aliases are recorded in the design data; generic Myth is not treated as one story universe.
 
@@ -231,7 +231,7 @@ The deck builder is available from the start. The initial collection contains th
 
 One personal deck is saved, plus the second hotseat seat's deck. There are no named deck presets. The builder reuses the card gallery faces and search, mana, rarity, camp, alignment and collection filters. A separately scrolling right sidebar lists the saved deck by mana and name, with artwork, inspect and remove controls. My Deck fills the viewport without outer margins. The wider saved-deck sidebar and gallery use matching thin gold scrollbars. Clicking a gallery card toggles its deck selection; clicking its name opens the Star Chart. Equipped cards can always be removed. Locked cards cannot be added, and adding requires room in the deck. Removal stays in the saved-deck sidebar, and no action row occupies space beneath card faces. Selected cards gain an immediate green outline. Card bodies have no hover message or copy-cursor badge; the game uses a gold-and-violet crystal cursor. The sidebar includes the thirty-card count, selected Hero Power, compact always-visible mana curve and Restore Starter. Hero Power selection opens inside My Deck; it saves immediately and preserves the deck cards. The standalone title-screen Hero Powers button is removed. The Show equipped cards checkbox sits beside search on desktop. On phones the compact deck list sits above the gallery to keep card rules readable. An incomplete draft may be saved, but Start Duel requires thirty valid unique cards. Provide a deliberate Restore Starter action.
 
-Editing is available between duels. An ongoing or resumed duel keeps the deck snapshot it started with. The title screen opens My Deck, and completing chapter twenty also reveals Recruit, Veteran and Ascendant.
+Editing is available between duels. An ongoing or resumed duel keeps the deck snapshot it started with. The title screen opens My Deck, and conquering all twenty universes also reveals Recruit, Veteran and Ascendant.
 
 Hotseat is available from the start. Each seat selects a separate thirty-card deck from the same local unlocked collection. Both seats may include the same card; uniqueness applies within each deck. Start with the starter list for both seats, preserve the privacy curtain, and keep hotseat rewards and campaign progress at zero.
 
@@ -240,7 +240,7 @@ After the campaign, each bot duel samples thirty unique cards completely randoml
 
 #### Boss identity and duel rules
 
-Each opponent is represented by its existing card portrait, character name and chapter number. Replace Player Two across the banner, target labels, introduction, log and results. Keep health, mana, hand count and the named Hero Power visible; the portrait also opens its card details.
+Each opponent is represented by its existing card portrait, character name and universe. Replace Player Two across the banner, target labels, introduction, log and results. Keep health, mana, hand count and the named Hero Power visible; clicking the boss portrait opens its Star Chart.
 
 Campaign bosses start at 50 Core HP with ordinary mana, hand size and turn rules. Ordinary free-play opponents keep the standard 75 Core HP. A boss character card is included once in its deck; the portrait does not create a free board minion, force an opening draw or grant its card passive to the Core.
 
@@ -248,16 +248,20 @@ Every boss deck is a fixed list of thirty unique cards, including the entire ass
 
 The proposed player always takes the current first-player seat in campaign play. Keep the current three-card opening, player mulligan, second-player Coin, standard hand limit and five board slots. Difficulty comes from deck composition and bot decisions; no extra health or exclusive encounter rules are introduced.
 
-Use existing character art for the banner redesign. Text story dialogue and chapter introductions are implemented. Custom portraits, new story audio, unique boss powers and special encounter rules remain deferred.
+Use existing character art for the banner redesign. Text story dialogue and universe introductions are implemented. Boss recordings, unique boss powers and special encounter rules are implemented.
 
 
 #### Hero Powers and difficulty
 
-First-time campaign clears unlock player Hero Powers in the existing order: Mend Core, Core Bolt, Stand Fast, Reforged Chains, Call a Recruit, Sharpen, Vital Spark, Blood Price, Dampen, Wither. Chapter one begins without a player Hero Power; the first clear unlocks Mend Core. Chapters 11–20 have no additional power unlock.
+First-time universe clears unlock player Hero Powers in the existing order: Mend Core, Core Bolt, Stand Fast, Reforged Chains, Call a Recruit, Sharpen, Vital Spark, Blood Price, Dampen, Wither. The first clear unlocks Mend Core. Later clears have no additional player-power unlock.
 
-Every boss uses its listed fixed existing Hero Power from its first attempt. Each costs the standard two mana and follows the usual once-per-turn limit. Replays cannot accelerate the player power track.
+Bosses with a listed power use that fixed power from their first attempt. Passive powers are always active; active powers use their printed costs and the usual once-per-turn limit. Eight bosses currently have no power and are intentionally listed for future design consideration. Replays cannot accelerate the player power track.
 
-Chapters 1–4 use Recruit behaviour. Chapters 5–10 use Veteran behaviour. Chapters 11–14 use full-turn Ascendant search with all four cheat flags disabled. Chapters 15–20 use full Ascendant capabilities: reply-reading, true-dice knowledge, Clairvoyance and Foresight.
+Implemented boss powers are: GLaDOS — **Test Protocol**, the enemy has twelve of their own turns to win; Yujiro — **Apex Duel**, only the highest-ATK enemy minion may attack his Core; Light Yagami — **Judgment Mark**, 3 mana, mark an enemy minion and kill it at the start of Light's next turn; Lord Voldemort — **Dark Immortality**, he cannot die while controlling a minion; All for One — **Quirk Theft**, 2 mana, copy an enemy minion into his hand; Ainz Ooal Gown — **Skeleton Legion**, summon a 1/1 Skeleton at the start of his turn; Eye of Sauron — **Sauron's Gaze**, 0 mana, give a friendly minion Taunt; Gilgamesh — **Treasury Draw**, 2 mana, gain a random Relic; Gojo — **Limitless Barrier**, 2 mana, give his Core Divine Shield; Bill Cipher — **Chaos**, 0 mana, swap a minion's current ATK and HP; Thanos — **The Snap**, 5 mana, destroy a random enemy minion; Goku — **Ultra Instinct**, start with 2 mana instead of 1.
+
+Bosses without a power are Po, Darth Vader, Conquest, Dio Brando, Meruem, Monkey D. Luffy, Elden Beast and Saitama. Candidate ideas remain intentionally unimplemented until selected: Po could reduce damage from the first enemy attack each turn; Vader could tax the next card drawn by the player; Conquest could gain ATK whenever a friendly minion kills one; Dio could freeze the first minion that targets him; Meruem could adapt after the first minion of each camp dies; Luffy could create a temporary copy of the first minion he plays each turn; Elden Beast could revive its first defeated minion once; Saitama could make the first attack against his Core each game deal exactly 1 damage.
+
+Universes 1–4 use Recruit behaviour. Universes 5–10 use Veteran behaviour. Universes 11–14 use full-turn Ascendant search with all four cheat flags disabled. Universes 15–20 use full Ascendant capabilities: reply-reading, true-dice knowledge, Clairvoyance and Foresight.
 
 The campaign duel adapter stores the chosen cheat profile in duel state. Bot search, its worker fallback and the actual Foresight draw read that saved profile. A hard-skill call without a saved override retains the existing full-cheat menu default. Keep current search limits. The starter card list stays fixed while its mana curve follows the current card costs. Decks and the difficulty schedule are structurally checked, not balance-tested.
 
@@ -285,7 +289,7 @@ Owner policy: never be afraid to reset Convergence progress during development. 
 
 For campaign implementation, reset existing collections to the curated thirty-card starter, campaign completion to zero, unfinished duels, selected decks, collection marks, records and Hero Power unlocks. Preserve unrelated preferences such as sound volume. The campaign build performs this reset on first load through progress v4 and duel-save v30.
 
-Developer tools remain available from the start. A developer-assisted campaign victory counts as a normal first clear and grants that chapter's reward and Hero Power progress. A victory outside campaign mode does not clear an unnamed chapter. Deliberate developer Unlock All remains an explicit exception to reserved rewards.
+Developer tools remain available from the start. A developer-assisted collection victory counts as a normal first clear and grants that universe's reward and Hero Power progress. A victory outside collection mode does not conquer a universe. Deliberate developer Unlock All remains an explicit exception to reserved rewards.
 
 Persist first-clear progress, exact unlocked IDs, deck selection and unviewed reward presentation together. Reopening the game must never pay the same chapter twice, and closing during pack animation must not lose its cards. Avoid the old count-as-prefix model, which cannot express reserved fixed rewards reliably.
 
@@ -312,11 +316,11 @@ Focused tests cover both seats, overlapping card IDs, independent shuffles and f
 
 #### Chunk 3 menus, progression and saves
 
-The title screen opens Campaign until all twenty chapters are cleared. Only the next unfinished chapter is playable; cleared chapters offer replay without rewards. Hotseat is always available. My Deck is available from the start and contains both card editing and Hero Power selection. The separate Hero Powers title button is removed. Sound remains available through the in-game settings. The campaign page lists only each boss and its chapter before victory. Theme, difficulty and reward details stay hidden until that chapter is cleared; then the reward names appear on the cleared chapter.
+The title screen opens the Rick Gramps Collection. Every universe is playable immediately; conquered universes offer replay without rewards. Hotseat is always available. My Deck is available from the start and contains both card editing and Hero Power selection. The separate Hero Powers title button is removed. Sound remains available through the in-game settings. The collection page lists each boss and its universe, with reward names appearing after that universe is conquered.
 
 The deck builder displays unlocked cards, artwork, printed stats, rarity and effects, with search and cost/camp/alignment/type filters. Selected-only view and the mana curve follow the draft. Edits persist automatically. Removing a card may save a 29-card draft, but a new duel is blocked until the list contains exactly thirty unique unlocked cards. Rewards never append themselves to the selected deck. Both hotseat decks use the same local collection and are validated independently. A live saved duel retains its original deck snapshot even if a draft changes at the title screen.
 
-Progress v4 stores completed chapters, explicit unlocked IDs, the two deck drafts, selected Hero Power, record/collection marks, settled duel IDs and pending reward cards. The first-clear transaction records the win, unlocks the fixed cards, advances the next chapter, grants the player power and saves the pending pack together. Pack acknowledgment only clears that presentation queue. Reopening during a pack shows the same unviewed reward; retrying an already-settled duel cannot pay twice. Replays, losses, draws, hotseat and free duels grant no cards or additional power unlocks. The daily pack economy and its generation code/styles were removed.
+Progress v4 stores conquered-universe IDs, explicit unlocked IDs, the two deck drafts, selected Hero Power, record/collection marks, settled duel IDs and pending reward cards. The first-clear transaction records the win, unlocks the fixed cards, grants the player power and saves the pending pack together. Pack acknowledgment only clears that presentation queue. Reopening during a pack shows the same unviewed reward; retrying an already-settled duel cannot pay twice. Replays, losses, draws, hotseat and free duels grant no cards or additional power unlocks. The daily pack economy and its generation code/styles were removed.
 
 Duel save v30 records campaign chapter, skill, duel identity, separate piles, cheat profile and a queued hotseat mulligan. The campaign roster reset discards old campaign progress and in-progress duels once; sound preferences are preserved. Progress-save errors show a retry message instead of silently claiming success. Continue includes the first main turn immediately after mulligan. Active developer-assisted campaign wins count; result previews outside a campaign do not. Leaving a tutorial never records it as a completed duel.
 
@@ -324,9 +328,9 @@ Duel save v30 records campaign chapter, skill, duel identity, separate piles, ch
 
 #### Chunk 4 character banner and release
 
-Campaign opponents use their existing card portrait, character name, chapter and universe in the enemy banner. Health, mana, hand count, Hero Power, active/thinking feedback and shield/attack states remain intact. The portrait opens a read-only view of the boss card and fixed power without unlocking it. During attack selection, the portrait inspection button is removed so the same area continues to target the enemy Core. Details close through the Close button or Escape.
+Collection opponents use their existing card portrait, character name and universe in the enemy banner. Health, mana, hand count, Hero Power, active/thinking feedback and shield/attack states remain intact. The portrait opens the boss Star Chart and fixed power without unlocking it. During attack selection, the portrait inspection button is removed so the same area continues to target the enemy Core. Details close through the Close button or Escape.
 
-All twenty banners were exercised at 1440×950, 1005×397 and 390×844. The campaign browser suite also checks that portrait inspection does not grant cards and does not intercept a core attack. The landing page and share metadata now describe the twenty-chapter campaign and thirty-card decks; the numeric claims validator checks the new copy against the live roster and chapter definitions.
+All twenty banners were exercised at 1440×950, 1005×397 and 390×844. The collection browser suite also checks that Star Chart inspection does not grant cards and does not intercept a core attack. The landing page and share metadata now describe the twenty-universe collection and thirty-card decks; the numeric claims validator checks the new copy against the live roster and universe definitions.
 
 Release checks use `npm run check -- --all`, `npm run publish:pages`, the Pages workflow result and `node scripts/check-release.mjs <public-play-url>`. The production smoke test uses the actual published interface, with no source imports or development hooks: first-load reset, campaign gating, portrait/details, first victory, reward reload, deck swap, next chapter and phone layout. Test state is confined to a fresh browser context. Publishing includes the intentional old-progress reset; sound preferences are retained. No balance ladder or card-stat tuning was run.
 
@@ -336,7 +340,7 @@ All four campaign chunks are implemented. Story, unique boss rules and additiona
 
 Create focused campaign, deck validation, first-clear and save-reset checks. Verify all 600 boss-deck slots, 218 unique unlock allocations, complete universe inclusion, no future reserved card leakage, exact thirty-card setup, relic counting, per-seat draws, independent fatigue, ownership after theft, hotseat isolation, replay idempotency and developer-assisted completion.
 
-Verify the real campaign start, first reward, first swap, named enemy banner, saved duel resume and chapter-twenty completion in desktop and phone layouts. Test the adapted effects on sparse decks as well as complete decks. Bot matchups are a later validation activity; no balance ladder or card-stat patch was run in phase one.
+Verify the real collection start, first reward, first swap, named enemy banner, saved duel resume and final-universe completion in desktop and phone layouts. Test the adapted effects on sparse decks as well as complete decks. Bot matchups are a later validation activity; no balance ladder or card-stat patch was run in phase one.
 
 Dialogue, new cards, new art, custom boss rules, multiple named deck presets, multiplayer services and shared-deck compatibility remain future work. The campaign release is deployed through the existing Pages workflow; no balance ladder or card-stat tuning was run.
 
@@ -356,7 +360,7 @@ Campaign delivery is complete; future additions are story content, unique encoun
 
 - Both cores begin at **75 health**. Reduce the opposing core to zero to win.
 - Each player draws from their own shuffled thirty-card deck and opens with **3 cards**. In solo and campaign play, Player One may replace any number once during the mulligan. In hotseat, both players may replace cards once, privately and in order. The second player also receives **The Coin**.
-- Hero Powers are selected inside **My Deck**, above the current deck list. Each first clear of chapters 1–10 unlocks the next player power permanently, in the order shown in that menu. Campaign bosses use fixed powers. Free-play opponents receive one random power from all ten. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
+- Hero Powers are selected inside **My Deck**, above the current deck list. Each first clear of the first ten universes unlocks the next player power permanently, in the order shown in that menu. Collection bosses use fixed powers. Free-play opponents receive one random player power from all ten. A selected Hero Power costs **2 mana** and can be used once during its controller's turn.
 - At the start of a turn, draw one card. Mana starts at **1**, refills each turn, and increases by one each turn up to **10**.
 - Your hand holds at most **10 cards**. A card drawn into a full hand burns and is discarded.
 - Play a hand card into one of **five board slots** by paying its cost. Effects that summon minions also need an open slot.
@@ -381,7 +385,7 @@ Nothing damages a core automatically just because a turn starts; core damage com
 
 ### Campaign story
 
-`materials/campaign-story.json` is the narrative source: Rick Gramps collects the greatest fighters across universes. Every chapter has Rick's selection speech plus distinct entrance, player-victory, player-loss and collected-card dialogue. Rick's selection speeches target about 50 words; replacement boss speeches target about 40 words. The prologue appears on the first chapter entered after this feature is introduced. Speeches use typewriter panels with a reveal/continue button and no skip control. Rick Gramps uses the generated portrait in source/public/campaign/rick-gramps.webp. Qwen audio follows Rick's selection with the boss entrance and keeps the written dialogue visible if audio fails. Victory dialogue is saved alongside rewards and must be acknowledged before the pack appears, including after reload. Playing a collected boss from hand produces a separate non-blocking speech bubble; enemy plays and unearned bosses do not claim allegiance. `CampaignSpeech.tsx` owns presentation, `progress.ts` owns the backward-compatible story and chapter-access fields, and the engine remains independent of dialogue.
+`materials/campaign-story.json` is the narrative source: Rick Gramps collects the greatest fighters across universes. Every universe has Rick's selection speech plus distinct entrance, player-victory, player-loss and collected-card dialogue. Rick's selection speeches target about 50 words; boss speeches target about 40 words. The prologue appears on the first universe entered after this feature is introduced. Speeches use typewriter panels with a reveal/continue button and no skip control. Rick Gramps uses the generated portrait in source/public/campaign/rick-gramps.webp. Qwen audio follows Rick's selection with the boss entrance and keeps the written dialogue visible if audio fails. Victory dialogue is saved alongside rewards and must be acknowledged before the pack appears, including after reload. Playing a collected boss from hand produces a separate non-blocking speech bubble; enemy plays and unearned bosses do not claim allegiance. `CampaignSpeech.tsx` owns presentation, `progress.ts` owns the backward-compatible story and universe-access fields, and the engine remains independent of dialogue.
 
 ### Starting and resuming
 

@@ -58,7 +58,7 @@
       "theme": "Tech fortifications",
       "preferredCamp": "Tech",
       "preferredAlignment": "Evil",
-      "heroPowerId": "give_taunt",
+      "heroPowerId": "glados_test_protocol",
       "difficultyId": "recruit",
       "universeCardIds": [
         "c104"
@@ -127,7 +127,7 @@
       "theme": "Martial growth",
       "preferredCamp": "Nature",
       "preferredAlignment": "Good",
-      "heroPowerId": "minion_atk",
+      "heroPowerId": null,
       "difficultyId": "recruit",
       "universeCardIds": [
         "c094",
@@ -196,7 +196,7 @@
       "theme": "Nature duelists",
       "preferredCamp": "Nature",
       "preferredAlignment": "Neutral",
-      "heroPowerId": "minion_atk",
+      "heroPowerId": "yujiro_apex_duel",
       "difficultyId": "recruit",
       "universeCardIds": [
         "c033",
@@ -265,7 +265,7 @@
       "theme": "Information and sacrifice",
       "preferredCamp": "Magic",
       "preferredAlignment": "Evil",
-      "heroPowerId": "core_trade_draw",
+      "heroPowerId": "light_delayed_mark",
       "difficultyId": "recruit",
       "universeCardIds": [
         "c003",
@@ -334,7 +334,7 @@
       "theme": "Protected dark magic",
       "preferredCamp": "Magic",
       "preferredAlignment": "Evil",
-      "heroPowerId": "summon_recruit",
+      "heroPowerId": "voldemort_immortal",
       "difficultyId": "veteran",
       "universeCardIds": [
         "c030",
@@ -403,7 +403,7 @@
       "theme": "Imperial machinery",
       "preferredCamp": "Tech",
       "preferredAlignment": "Evil",
-      "heroPowerId": "enemy_core_damage",
+      "heroPowerId": null,
       "difficultyId": "veteran",
       "universeCardIds": [
         "c029",
@@ -468,7 +468,7 @@
       "theme": "Ruthless combat",
       "preferredCamp": "Nature",
       "preferredAlignment": "Evil",
-      "heroPowerId": "minion_atk",
+      "heroPowerId": null,
       "difficultyId": "veteran",
       "universeCardIds": [
         "c024",
@@ -535,7 +535,7 @@
       "theme": "Frozen battlefield",
       "preferredCamp": "Magic",
       "preferredAlignment": "Evil",
-      "heroPowerId": "minion_atk_down",
+      "heroPowerId": null,
       "difficultyId": "veteran",
       "universeCardIds": [
         "c042",
@@ -600,7 +600,7 @@
       "theme": "Stolen abilities",
       "preferredCamp": "Magic",
       "preferredAlignment": "Evil",
-      "heroPowerId": "minion_hp_down",
+      "heroPowerId": "all_for_one_copy",
       "difficultyId": "veteran",
       "universeCardIds": [
         "c071",
@@ -666,7 +666,7 @@
       "theme": "Predators and protection",
       "preferredCamp": "Nature",
       "preferredAlignment": "Neutral",
-      "heroPowerId": "chain_growth",
+      "heroPowerId": null,
       "difficultyId": "veteran",
       "universeCardIds": [
         "c069",
@@ -732,7 +732,7 @@
       "theme": "Undead court",
       "preferredCamp": "Magic",
       "preferredAlignment": "Evil",
-      "heroPowerId": "summon_recruit",
+      "heroPowerId": "ainz_skeleton",
       "difficultyId": "ascendantFair",
       "universeCardIds": [
         "c007",
@@ -797,7 +797,7 @@
       "theme": "The siege of Mordor",
       "preferredCamp": "Magic",
       "preferredAlignment": "Evil",
-      "heroPowerId": "give_taunt",
+      "heroPowerId": "eye_taunt",
       "difficultyId": "ascendantFair",
       "universeCardIds": [
         "c037",
@@ -862,7 +862,7 @@
       "theme": "Pirate emperors",
       "preferredCamp": "Magic",
       "preferredAlignment": "Good",
-      "heroPowerId": "minion_atk",
+      "heroPowerId": null,
       "difficultyId": "ascendantFair",
       "universeCardIds": [
         "c014",
@@ -932,7 +932,7 @@
       "theme": "Relic arsenal",
       "preferredCamp": "Magic",
       "preferredAlignment": "Neutral",
-      "heroPowerId": "core_trade_draw",
+      "heroPowerId": "gilgamesh_relic",
       "difficultyId": "ascendantFair",
       "universeCardIds": [
         "c019",
@@ -999,7 +999,7 @@
       "theme": "Silence and execution",
       "preferredCamp": "Magic",
       "preferredAlignment": "Good",
-      "heroPowerId": "minion_atk_down",
+      "heroPowerId": "gojo_core_shield",
       "difficultyId": "ascendant",
       "universeCardIds": [
         "c022",
@@ -1066,7 +1066,7 @@
       "theme": "Magic and rebirth",
       "preferredCamp": "Magic",
       "preferredAlignment": "Neutral",
-      "heroPowerId": "core_heal",
+      "heroPowerId": null,
       "difficultyId": "ascendant",
       "universeCardIds": [
         "c097",
@@ -1133,7 +1133,7 @@
       "theme": "Reality fracture",
       "preferredCamp": "Magic",
       "preferredAlignment": "Evil",
-      "heroPowerId": "core_trade_draw",
+      "heroPowerId": "bill_chaos",
       "difficultyId": "ascendant",
       "universeCardIds": [
         "c041"
@@ -1198,7 +1198,7 @@
       "theme": "Cosmic convergence",
       "preferredCamp": "Magic",
       "preferredAlignment": "Good",
-      "heroPowerId": "minion_hp_down",
+      "heroPowerId": "thanos_destroy",
       "difficultyId": "ascendant",
       "universeCardIds": [
         "c009",
@@ -1276,7 +1276,7 @@
       "theme": "Champions of light",
       "preferredCamp": "Magic",
       "preferredAlignment": "Good",
-      "heroPowerId": "minion_hp",
+      "heroPowerId": "goku_start_mana",
       "difficultyId": "ascendant",
       "universeCardIds": [
         "c044",
@@ -1339,7 +1339,7 @@
       "theme": "Monsters and heroes",
       "preferredCamp": "Nature",
       "preferredAlignment": "Good",
-      "heroPowerId": "core_heal",
+      "heroPowerId": null,
       "difficultyId": "ascendant",
       "universeCardIds": [
         "c025",

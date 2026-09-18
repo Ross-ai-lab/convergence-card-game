@@ -120,7 +120,7 @@ export const EFFECT_TIMINGS = [
 
 export type EffectTiming = (typeof EFFECT_TIMINGS)[number];
 
-/** The ten Hero Powers; the player unlocks them while the bot can receive any. */
+/** Ten player Hero Powers plus the fixed powers used by collection bosses. */
 export type HeroPowerId =
   | "minion_hp"
   | "minion_atk"
@@ -131,7 +131,19 @@ export type HeroPowerId =
   | "core_heal"
   | "chain_growth"
   | "summon_recruit"
-  | "give_taunt";
+  | "give_taunt"
+  | "glados_test_protocol"
+  | "yujiro_apex_duel"
+  | "light_delayed_mark"
+  | "voldemort_immortal"
+  | "all_for_one_copy"
+  | "ainz_skeleton"
+  | "eye_taunt"
+  | "gilgamesh_relic"
+  | "gojo_core_shield"
+  | "bill_chaos"
+  | "thanos_destroy"
+  | "goku_start_mana";
 
 /**
  * Every keyword a card may print.

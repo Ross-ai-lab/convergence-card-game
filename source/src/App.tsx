@@ -21,7 +21,7 @@ import { useGalleryVisibility } from "./gallery-visibility";
 import { useFrameState } from "./frame-state";
 
 import {
-  HERO_POWER_COST,
+  heroPowerCost,
   heroPowerDefinition,
   randomHeroPower,
 } from "./engine/hero-powers";
@@ -1550,7 +1550,7 @@ export default function App() {
       if (!tutorialActive && (mode.kind === "hotseat" || action.player === viewerId)) {
         for (const event of result.events) {
           if (event.kind !== "play" || event.player !== action.player || !event.cardId) continue;
-          const chapter = CAMPAIGN_CHAPTERS.find(entry => entry.bossId === event.cardId && entry.chapter <= progress.completedChapters);
+          const chapter = CAMPAIGN_CHAPTERS.find(entry => entry.bossId === event.cardId && progress.completedBosses.includes(entry.chapter));
           const boss = chapter ? library[chapter.bossId] : undefined;
           if (chapter && boss && isMinionCard(boss)) {
             const voiceKey = `${String(chapter.chapter).padStart(2, "0")}-play`;
@@ -4164,9 +4164,9 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         <aside className="gallery-deck" aria-label={seat === 1 ? "Player Two deck" : "Current deck"}>
           <header className="gallery-deck-heading"><h3>{seat === 1 ? "Player Two" : "My Deck"}</h3>
             <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
-          <p className="gallery-deck-hint">{readOnly ? "Win chapter one to unlock deck editing." : deck.length === 30 ? "Remove a card, then add its replacement." : `Choose ${30 - deck.length} more ${30 - deck.length === 1 ? "card" : "cards"}.`}</p>
+          <p className="gallery-deck-hint">{readOnly ? "Conquer a universe to unlock deck editing." : deck.length === 30 ? "Remove a card, then add its replacement." : `Choose ${30 - deck.length} more ${30 - deck.length === 1 ? "card" : "cards"}.`}</p>
           <button type="button" className="gallery-hero-power" aria-label="Choose hero power" aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
-            <span className="gallery-power-icon" aria-hidden="true">ϟ</span><span><small>Hero power</small><strong>{equippedPower?.name ?? "Choose hero power"}</strong><em>{equippedPower?.text ?? "Win chapter 1 to unlock your first power."}</em></span><b aria-hidden="true">›</b>
+            <span className="gallery-power-icon" aria-hidden="true">ϟ</span><span><small>Hero power</small><strong>{equippedPower?.name ?? "Choose hero power"}</strong><em>{equippedPower?.text ?? "Conquer a universe to unlock your first power."}</em></span><b aria-hidden="true">›</b>
           </button>
           <div className="gallery-deck-list">{allEntries.filter((entry) => deckIds.has(entry.key))
             .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
@@ -4630,11 +4630,12 @@ const GalleryCell = memo(function GalleryCell({
  */
 function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => void }) {
   const left = cards.length + relics.length - progress.unlockedIds.length;
-  return <div className="overlay" onClick={onClose}><section className="unlock-help" onClick={(event) => event.stopPropagation()}>
-    <button type="button" className="close-button" onClick={onClose} aria-label="Close">×</button><h3>Unlocking cards</h3>
-    <p>Start with 30 cards. First-time campaign victories unlock the fixed cards listed on each chapter.</p>
+  return <div className="help-veil" onClick={onClose}><section className="help-pop" onClick={(event) => event.stopPropagation()}>
+    <button type="button" className="help-x" onClick={onClose} aria-label="Close unlocking help">×</button><h3>Unlocking cards</h3>
+    <p>Start with 30 cards. First-time victories unlock the fixed cards listed in each universe.</p>
     <p>Your deck always starts a duel with exactly 30 different unlocked cards. Swap cards in the deck builder after your first victory.</p>
-    <p>Losses, draws, replays and hotseat duels grant no cards. There are no daily packs.</p>
+    <p>Losses, draws, replays and hotseat duels grant no cards.</p>
+    <p>Clicking on card title opens their Star Chart.</p>
     <p className="help-state">{progress.unlockedIds.length} cards unlocked{left ? ` · ${left} still to earn` : " · collection complete"}.</p>
   </section></div>;
 }
@@ -5249,7 +5250,7 @@ function HeroPlate({
         {identity ? <img className="boss-portrait" src={identity.card.art} alt={`${identity.card.name} portrait`} draggable={false} /> : <HeroSigil playerId={player.id} />}
       </span>
       <span className="hero-name">
-        {identity && <span className="boss-chapter" title={identity.universe}>Chapter {identity.chapter} · {identity.universe}</span>}
+        {identity && <span className="boss-chapter" title={identity.universe}>Universe · {identity.universe}</span>}
         <strong>
           {player.name}
           <span className="hero-think" aria-hidden="true">
@@ -5316,17 +5317,18 @@ function HeroPlate({
 
 function HeroPowerCard({ definition }: { definition: ReturnType<typeof heroPowerDefinition> }) {
   if (!definition) return null;
+  const cost = heroPowerCost(definition);
   return (
     <aside className="enemy-power-card" id="enemy-hero-power-card" aria-label={`${definition.name}: ${definition.text}`}>
       <div className="enemy-power-card-head">
-        <span className="enemy-power-card-cost">{HERO_POWER_COST}</span>
+        <span className="enemy-power-card-cost">{definition.passive ? "∞" : cost}</span>
         <span className="enemy-power-card-title">
           <small>ENEMY HERO POWER</small>
           <strong>⚡ {definition.name}</strong>
         </span>
       </div>
       <p>{definition.text}</p>
-      <small className="enemy-power-card-foot">Costs {HERO_POWER_COST} mana · Once per turn</small>
+      <small className="enemy-power-card-foot">{definition.passive ? "Always active" : `Costs ${cost} mana · Once per turn`}</small>
     </aside>
   );
 }
@@ -5343,6 +5345,7 @@ function HeroPowerButton({
   onUse: (action: Extract<GameAction, { type: "use_hero_power" }>) => void;
 }) {
   if (!definition) return null;
+  const cost = heroPowerCost(definition);
   const usable = action?.type === "use_hero_power" && !used;
   return (
     <button
@@ -5352,9 +5355,9 @@ function HeroPowerButton({
       onClick={() => {
         if (action?.type === "use_hero_power") onUse(action);
       }}
-      title={`${definition.text} Costs ${HERO_POWER_COST} mana and can be used once per turn.`}
+      title={`${definition.text} ${definition.passive ? "Always active." : `Costs ${cost} mana and can be used once per turn.`}`}
     >
-      <span className="hero-power-cost">{HERO_POWER_COST}</span>
+      <span className="hero-power-cost">{definition.passive ? "∞" : cost}</span>
       <span className="hero-power-copy">
         <strong>⚡ {definition.name}</strong>
         <small>{used ? "Used this turn" : definition.text}</small>

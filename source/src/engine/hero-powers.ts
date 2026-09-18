@@ -2,19 +2,21 @@ import type { HeroPowerId } from "./types";
 
 export const HERO_POWER_COST = 2;
 
-export type HeroPowerTarget = "friendly" | "enemy" | "none";
+export type HeroPowerTarget = "friendly" | "enemy" | "any" | "none";
 
 export interface HeroPowerDefinition {
   id: HeroPowerId;
   name: string;
   text: string;
   target: HeroPowerTarget;
+  cost?: number;
+  passive?: boolean;
 }
 
 /**
- * Every power costs two mana and can be used once per turn. The engine owns the
- * resolution; this table is the shared vocabulary for the hero menu, the
- * in-duel hero button, and tests.
+ * Player powers cost two mana and can be used once per turn. Campaign powers may
+ * be passive or use their own printed cost. The engine owns resolution; this
+ * table is shared by menus, in-duel controls, campaign data and tests.
  */
 export const HERO_POWER_DEFINITIONS: readonly HeroPowerDefinition[] = [
   { id: "minion_hp", name: "Vital Spark", text: "Give a friendly minion +1 HP.", target: "friendly" },
@@ -36,18 +38,34 @@ export const HERO_POWER_DEFINITIONS: readonly HeroPowerDefinition[] = [
   },
   { id: "summon_recruit", name: "Call a Recruit", text: "Summon a 1/1 Knight.", target: "none" },
   { id: "give_taunt", name: "Stand Fast", text: "Give a friendly minion Taunt.", target: "friendly" },
+  { id: "glados_test_protocol", name: "Test Protocol", text: "The enemy has 12 turns to defeat you.", target: "none", cost: 0, passive: true },
+  { id: "yujiro_apex_duel", name: "Apex Duel", text: "Only the enemy's highest-ATK minion may attack your Core.", target: "none", cost: 0, passive: true },
+  { id: "light_delayed_mark", name: "Judgment Mark", text: "Mark an enemy minion. It dies at the start of your next turn.", target: "enemy", cost: 3 },
+  { id: "voldemort_immortal", name: "Dark Immortality", text: "Cannot die while controlling a minion.", target: "none", cost: 0, passive: true },
+  { id: "all_for_one_copy", name: "Quirk Theft", text: "Copy an enemy minion card into your hand.", target: "enemy", cost: 2 },
+  { id: "ainz_skeleton", name: "Skeleton Legion", text: "At the start of your turn, summon a 1/1 Skeleton.", target: "none", cost: 0, passive: true },
+  { id: "eye_taunt", name: "Sauron's Gaze", text: "Give a friendly minion Taunt.", target: "friendly", cost: 0 },
+  { id: "gilgamesh_relic", name: "Treasury Draw", text: "Gain a random Relic into your hand.", target: "none", cost: 2 },
+  { id: "gojo_core_shield", name: "Limitless Barrier", text: "Your Core gains Divine Shield.", target: "none", cost: 2 },
+  { id: "bill_chaos", name: "Chaos", text: "Swap a minion's current ATK and HP.", target: "any", cost: 0 },
+  { id: "thanos_destroy", name: "The Snap", text: "Destroy a random enemy minion.", target: "none", cost: 5 },
+  { id: "goku_start_mana", name: "Ultra Instinct", text: "Start with 2 mana instead of 1.", target: "none", cost: 0, passive: true },
 ];
 
 export const HERO_POWER_IDS = HERO_POWER_DEFINITIONS.map(({ id }) => id) as HeroPowerId[];
 
-/** Pick one of all ten powers from a fresh duel seed for the bot. */
+/** Pick one of the ten player powers from a fresh duel seed for free-play bots. */
 export function randomHeroPower(seed: string): HeroPowerId {
   let hash = 2166136261;
   for (const char of seed) {
     hash ^= char.charCodeAt(0);
     hash = Math.imul(hash, 16777619);
   }
-  return HERO_POWER_IDS[(hash >>> 0) % HERO_POWER_IDS.length];
+  return PLAYER_HERO_POWER_IDS[(hash >>> 0) % PLAYER_HERO_POWER_IDS.length];
+}
+
+export function heroPowerCost(definition: HeroPowerDefinition): number {
+  return definition.cost ?? HERO_POWER_COST;
 }
 
 /** The unlock track shown in the Hero Powers menu, from one win to ten wins. */
@@ -63,6 +81,8 @@ export const HERO_POWER_UNLOCK_ORDER: readonly HeroPowerId[] = [
   "minion_atk_down",
   "minion_hp_down",
 ];
+
+export const PLAYER_HERO_POWER_IDS = HERO_POWER_UNLOCK_ORDER;
 
 export function isHeroPowerUnlocked(id: HeroPowerId, botWins: number): boolean {
   const unlockAt = HERO_POWER_UNLOCK_ORDER.indexOf(id) + 1;

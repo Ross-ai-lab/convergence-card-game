@@ -83,11 +83,14 @@ describe("menu Hero Powers", () => {
     expect(randomHeroPower("bot-duel-seed")).toBe(picked);
   });
 
-  it("keeps every power at two mana and exposes the shared text", () => {
-    expect(HERO_POWER_DEFINITIONS).toHaveLength(10);
+  it("exposes player powers and the distinct campaign boss powers", () => {
+    expect(HERO_POWER_DEFINITIONS).toHaveLength(22);
     for (const power of HERO_POWER_DEFINITIONS) {
       expect(power.text.length).toBeGreaterThan(8);
     }
+    expect(HERO_POWER_DEFINITIONS.find((power) => power.id === "glados_test_protocol")).toMatchObject({ cost: 0, passive: true });
+    expect(HERO_POWER_DEFINITIONS.find((power) => power.id === "light_delayed_mark")).toMatchObject({ cost: 3 });
+    expect(HERO_POWER_DEFINITIONS.find((power) => power.id === "thanos_destroy")).toMatchObject({ cost: 5 });
   });
 
   it("resolves the four friendly and enemy stat powers", () => {
@@ -120,6 +123,67 @@ describe("menu Hero Powers", () => {
     const aimed = applyAction(used, { type: "choose_target", player: 0, choiceIndex: 0 }, library).state;
     expect(aimed.phase).toBe("main");
     expect(aimed.players[1].board[0]).toMatchObject({ hp: 1, maxHp: 1 });
+  });
+
+  it("resolves the targeted campaign powers without changing their printed base stats", () => {
+    const mark = mainState("light_delayed_mark");
+    mark.players[1].board[0] = minion("Modern Tank", 1);
+    const marked = usePower(mark).players[1].board[0]!;
+    expect(marked.markedBy).toBe("hero-power:light_delayed_mark");
+    expect(marked.markedForDeathAtTurn).toBe(mark.turnNumber + 2);
+
+    const theft = mainState("all_for_one_copy");
+    theft.players[1].board[0] = minion("John Wick", 1);
+    const copied = usePower(theft);
+    expect(copied.players[0].hand).toContain(card("John Wick").id);
+
+    const chaos = mainState("bill_chaos");
+    chaos.players[0].board[0] = minion("Modern Tank", 0, { atk: 3, hp: 5, maxHp: 5 });
+    const chaotic = usePower(chaos).players[0].board[0]!;
+    expect(chaotic).toMatchObject({ atk: 5, hp: 3, maxHp: 5 });
+  });
+
+  it("applies the passive and non-targeted campaign powers", () => {
+    const gojo = usePower(mainState("gojo_core_shield"));
+    expect(gojo.players[0].heroDivineShield).toBe(true);
+
+    const thanos = mainState("thanos_destroy");
+    thanos.players[1].board[0] = minion("John Wick", 1);
+    expect(usePower(thanos).players[1].board[0]).toBeNull();
+
+    const goku = mainState("goku_start_mana");
+    goku.players[0].turnsStarted = 0;
+    const afterEnemy = applyAction(goku, { type: "end_turn", player: 0 }, library).state;
+    const afterGoku = applyAction(afterEnemy, { type: "end_turn", player: 1 }, library).state;
+    expect(afterGoku.players[0].mana).toBe(2);
+
+    const ainz = createInitialGame(cards, "ainz-power", [], { heroPowers: [null, "ainz_skeleton"] });
+    ainz.phase = "main"; ainz.mulligan = null; ainz.activePlayer = 0;
+    const afterAinzStart = applyAction(ainz, { type: "end_turn", player: 0 }, library).state;
+    expect(afterAinzStart.players[1].board.some((entry) => entry?.name === "Skeleton")).toBe(true);
+
+    const glados = createInitialGame(cards, "glados-power", [], { heroPowers: [null, "glados_test_protocol"] });
+    glados.phase = "main"; glados.mulligan = null; glados.activePlayer = 1;
+    glados.players[0].turnsStarted = 12; glados.players[0].health = 10;
+    const afterDeadline = applyAction(glados, { type: "end_turn", player: 1 }, library).state;
+    expect(afterDeadline.players[0].health).toBe(0);
+
+    const voldemort = mainState("enemy_core_damage");
+    voldemort.heroPowers = ["enemy_core_damage", "voldemort_immortal"];
+    voldemort.players[1].health = 1;
+    voldemort.players[1].board[0] = minion("John Wick", 1);
+    const protectedCore = usePower(voldemort);
+    expect(protectedCore.players[1].health).toBe(1);
+    expect(protectedCore.winner).toBeNull();
+  });
+
+  it("limits Yujiro's Core attacks to the highest-ATK enemy minion", () => {
+    const state = createInitialGame(cards, "yujiro-power", [], { heroPowers: [null, "yujiro_apex_duel"] });
+    state.phase = "main"; state.mulligan = null; state.activePlayer = 0;
+    state.players[0].board[0] = minion("John Wick", 0, { atk: 1 });
+    state.players[0].board[1] = minion("Modern Tank", 0, { atk: 2 });
+    const attacks = getLegalActions(state, library).filter((action) => action.type === "attack_core");
+    expect(attacks).toEqual([{ type: "attack_core", player: 0, attackerSlot: 1 }]);
   });
 
   it("refunds a targetable Hero Power when it is cancelled before choosing", () => {
