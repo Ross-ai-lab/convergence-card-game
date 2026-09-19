@@ -95,7 +95,17 @@ async function run() {
     const junction = path.join(preview, 'node_modules');
     try { await fs.symlink(packages, junction, process.platform === 'win32' ? 'junction' : 'dir'); } catch (e) { if (e.code !== 'EEXIST') throw e; }
     const require = createRequire(path.join(preview, 'package.json'));
-    const {Workbook, SpreadsheetFile} = await import(pathToFileURL(require.resolve('@oai/artifact-tool')).href);
+    const {FileBlob, Workbook, SpreadsheetFile} = await import(pathToFileURL(require.resolve('@oai/artifact-tool')).href);
+    let preservedLoreRows = null;
+    try {
+      const existing = await SpreadsheetFile.importXlsx(await FileBlob.load(output));
+      let lore;
+      try { lore = existing.worksheets.getItem('Lore Ranking'); } catch { lore = null; }
+      const used = lore?.getUsedRange();
+      if (used) preservedLoreRows = used.values;
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+    }
     const wb = Workbook.create();
     const sheets = Object.fromEntries(['Cards', 'Relics', 'Rules', 'Summary'].map(name => [name, wb.worksheets.add(name)]));
     const {cards, relics, rules, vocab} = data;
@@ -168,6 +178,36 @@ async function run() {
     summary.getRange(`B${rosterHeader+1}:B${rosterHeader+3}`).formulas = [[`=COUNTA(Cards!L2:L${cardEnd})`],[`=COUNTA(Relics!F2:F${relicEnd})`],[`=SUM(B${rosterHeader+1}:B${rosterHeader+2})`]];
     summary.getRange(`D${endSummary}`).values = [['Mana includes relics']]; summary.getRange(`D${endSummary}`).format.font.italic = true;
     summary.getRange(`B2:B${endSummary}`).setNumberFormat('0'); summary.getRange(`E2:E${endSummary}`).setNumberFormat('0'); summary.getRange(`D2:D${manaValues.length+1}`).setNumberFormat('0');
+
+    if (preservedLoreRows?.length) {
+      const lore = wb.worksheets.add('Lore Ranking');
+      const loreEnd = preservedLoreRows.length;
+      lore.getRange(`A1:O${loreEnd}`).values = preservedLoreRows;
+      lore.showGridLines = false;
+      lore.getRange(`A1:O${loreEnd}`).format = {font:{name:'Calibri',size:11,color:'#17202B'},verticalAlignment:'center',wrapText:true};
+      lore.mergeCells('A1:O1');
+      lore.mergeCells('A2:H4');
+      lore.mergeCells('A5:H5');
+      lore.getRange('A1:O1').format = {fill:'#1F4E78',font:{name:'Calibri',size:15,bold:true,color:'#FFFFFF'},horizontalAlignment:'left',verticalAlignment:'center',rowHeight:30};
+      lore.getRange('A2:H4').format = {fill:'#FFF2CC',font:{name:'Calibri',size:11,bold:true,color:'#17202B'},verticalAlignment:'center',wrapText:true,rowHeight:84};
+      lore.getRange('A5:H5').format = {fill:'#EAF2F8',font:{name:'Calibri',size:10,italic:true,color:'#1F2937'},verticalAlignment:'center',wrapText:true,rowHeight:28};
+      const headerIndex = preservedLoreRows.findIndex((row) => row?.[0] === 'Name' && row?.[1] === 'Character Ranking Cost');
+      if (headerIndex >= 0) {
+        const headerRow = headerIndex + 1;
+        const dataStart = headerRow + 1;
+        const dataEnd = loreEnd;
+        lore.getRange(`A${headerRow}:O${headerRow}`).format = {fill:'#1F2937',font:{name:'Calibri',size:11,bold:true,color:'#FFFFFF'},horizontalAlignment:'center',verticalAlignment:'center',wrapText:true,rowHeight:32};
+        lore.getRange(`C${dataStart}:C${dataEnd}`).formulas = Array.from({length:dataEnd-dataStart+1}, (_, index) => [`=IFERROR(INDEX(Cards!$A$2:$A$${cardEnd},MATCH($E${dataStart+index},Cards!$L$2:$L$${cardEnd},0)),"")`]);
+        lore.getRange(`D${dataStart}:D${dataEnd}`).formulas = Array.from({length:dataEnd-dataStart+1}, (_, index) => [`=IF(C${dataStart+index}="","NO PLAYABLE MATCH",IF(C${dataStart+index}=B${dataStart+index},"MATCH","REVIEW"))`]);
+        lore.getRange(`B${dataStart}:E${dataEnd}`).format.horizontalAlignment = 'center';
+        lore.getRange(`D${dataStart}:D${dataEnd}`).conditionalFormats.add('containsText', {text:'MATCH',format:{fill:'#D9EAD3',font:{bold:true,color:'#274E13'}}});
+        lore.getRange(`D${dataStart}:D${dataEnd}`).conditionalFormats.add('containsText', {text:'REVIEW',format:{fill:'#F4CCCC',font:{bold:true,color:'#990000'}}});
+        lore.tables.add(`A${headerRow}:O${dataEnd}`, true, 'LoreRanking');
+        lore.freezePanes.freezeRows(headerRow);
+        lore.freezePanes.freezeColumns(1);
+      }
+      [28,16,15,18,12,28,14,18,34,12,64,64,64,64,60].forEach((width, index) => lore.getRangeByIndexes(0,index,loreEnd,1).format.columnWidth = width);
+    }
 
     wb.recalculate();
     const totals = summary.getRange(`B${rosterHeader+1}:B${rosterHeader+3}`).values.map(row => row[0]);

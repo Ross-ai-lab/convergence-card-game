@@ -48,7 +48,7 @@
     "Tensura": "Tensura",
     "That time I got reincarnated as a Slime": "Tensura"
   },
-  "universeException": "Star Destroyer retains starter ownership despite its Star Wars origin. Antimatter Bomb and Carrier Strike Group replace T-1000 and Rick Clone in the starter deck; the replaced cards are GLaDOS rewards.",
+  "universeException": "Star Destroyer retains starter ownership despite its Star Wars origin. Antimatter Bomb and Carrier Strike Group replace T-1000 and Rick Prime in the starter deck; the replaced cards are GLaDOS rewards.",
   "rewardSelection": "Filler IDs selected once during design. The runtime must read the listed IDs and never reroll them.",
   "chapters": [
     {

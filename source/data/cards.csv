@@ -43,7 +43,7 @@ c041,Bill Cipher,10,6,6,Yellow,Magic,Evil,,slot_random_attacks,onPlay,Battlecry:
 c042,Giorno - Gold Experience Requiem,10,4,8,Yellow,Magic,Neutral,,slot_permanent_chain,onPlay,Battlecry: Choose 1 enemy minion board slot. Enemy minions on that board slot are permanently Chained,Cause and Effect,JoJo,/card-art/raw/c042.webp
 c043,Doctor Manhattan,10,1,1,Purple,Magic,Neutral,,set_stats_choice,onPlay,Battlecry: Choose an enemy minion board slot. Minions on that slot have their stats permanently set to 1/1,Transcended,Watchmen,/card-art/raw/c043.webp
 c044,Goku,10,6,7,Purple,Magic,Good,Passive,evade_first_attack,passive,Passive: Evade the first attack targeting Goku each enemy turn,Activate Universe Breathing Technique,Dragon Ball,/card-art/raw/c044.webp
-c045,Rick Clone,10,1,1,Purple,Tech,Evil,,rick_return_all,onPlay,Battlecry: Return all other minions to their owners' hands,What…,Rick and Morty,/card-art/raw/c045.webp
+c045,Rick Prime,10,1,1,Purple,Tech,Evil,,rick_return_all,onPlay,Battlecry: Return all other minions to their owners' hands,What…,Rick and Morty,/card-art/raw/c045.webp
 c046,The Watcher,10,10,7,Purple,Magic,Neutral,Cannot Attack;Passive,watcher_reveal_hand,passive,Cannot attack. Passive: Your opponent's hand is revealed to you,The Witness,MCU,/card-art/raw/c046.webp
 c047,Escanor,8,8,4,Red,Magic,Good,,double_other_friendly_attack,onPlay,Battlecry: Double your other friendly minions attack,"The Sun, incarnated",Seven Deadly Sins,/card-art/raw/c047.webp
 c048,Lelouch Lamperouge,7,1,1,Yellow,Magic,Neutral,,mind_control_enemy,onPlay,Battlecry: Gain control of an enemy minion,Obey,Code Geass,/card-art/raw/c048.webp

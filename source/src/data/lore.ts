@@ -2353,7 +2353,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c044": {
-    "name": "Mastered Ultra Instinct Goku",
+    "name": "Goku",
     "origin": "Dragon Ball",
     "epithet": "Migatte no Gokui",
     "rar": "Epic",
