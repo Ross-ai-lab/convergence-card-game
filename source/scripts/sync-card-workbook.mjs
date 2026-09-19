@@ -97,12 +97,17 @@ async function run() {
     const require = createRequire(path.join(preview, 'package.json'));
     const {FileBlob, Workbook, SpreadsheetFile} = await import(pathToFileURL(require.resolve('@oai/artifact-tool')).href);
     let preservedLoreRows = null;
+    let preservedLoreRuleRows = null;
     try {
       const existing = await SpreadsheetFile.importXlsx(await FileBlob.load(output));
       let lore;
       try { lore = existing.worksheets.getItem('Lore Ranking'); } catch { lore = null; }
       const used = lore?.getUsedRange();
       if (used) preservedLoreRows = used.values;
+      let loreRules;
+      try { loreRules = existing.worksheets.getItem('Lore Ranking Rules'); } catch { loreRules = null; }
+      const ruleUsed = loreRules?.getUsedRange();
+      if (ruleUsed) preservedLoreRuleRows = ruleUsed.values;
     } catch (error) {
       if (error?.code !== 'ENOENT') throw error;
     }
@@ -205,6 +210,27 @@ async function run() {
         lore.tables.add(`A${headerRow}:O${dataEnd}`, true, 'LoreRanking');
       }
       [28,16,15,18,12,28,14,18,34,12,64,64,64,64,60].forEach((width, index) => lore.getRangeByIndexes(0,index,loreEnd,1).format.columnWidth = width);
+    }
+
+    if (preservedLoreRuleRows?.length) {
+      const loreRules = wb.worksheets.add('Lore Ranking Rules');
+      const ruleEnd = preservedLoreRuleRows.length;
+      loreRules.getRange(`A1:C${ruleEnd}`).values = preservedLoreRuleRows;
+      loreRules.showGridLines = false;
+      loreRules.getRange(`A1:C${ruleEnd}`).format = {font:{name:'Calibri',size:11,color:'#17202B'},verticalAlignment:'center',wrapText:true};
+      loreRules.mergeCells('A1:C1');
+      loreRules.getRange('A1:C1').format = {fill:'#1F4E78',font:{name:'Calibri',size:15,bold:true,color:'#FFFFFF'},horizontalAlignment:'center',verticalAlignment:'center',rowHeight:34};
+      loreRules.getRange('A3:C3').format = {fill:'#D9EAF7',font:{name:'Calibri',size:11,bold:true,color:'#17202B'},horizontalAlignment:'center',verticalAlignment:'center',wrapText:true,rowHeight:28};
+      loreRules.getRange(`A4:A${ruleEnd}`).format.horizontalAlignment = 'center';
+      loreRules.getRange(`B4:B${ruleEnd}`).format.font.bold = true;
+      loreRules.getRange(`A4:C${ruleEnd}`).format.verticalAlignment = 'top';
+      for (let row = 4; row <= ruleEnd; row += 1) {
+        const values = preservedLoreRuleRows[row - 1] ?? [];
+        loreRules.getRange(`A${row}:C${row}`).format.rowHeight = Math.max(34, Math.ceil(String(values[1] ?? '').length / 30) * 17 + 16, Math.ceil(String(values[2] ?? '').length / 112) * 17 + 16);
+      }
+      loreRules.getRangeByIndexes(0,0,ruleEnd,1).format.columnWidth = 7;
+      loreRules.getRangeByIndexes(0,1,ruleEnd,1).format.columnWidth = 34;
+      loreRules.getRangeByIndexes(0,2,ruleEnd,1).format.columnWidth = 122;
     }
 
     wb.recalculate();
