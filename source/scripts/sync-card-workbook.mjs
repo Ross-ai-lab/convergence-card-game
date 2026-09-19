@@ -203,8 +203,6 @@ async function run() {
         lore.getRange(`D${dataStart}:D${dataEnd}`).conditionalFormats.add('containsText', {text:'MATCH',format:{fill:'#D9EAD3',font:{bold:true,color:'#274E13'}}});
         lore.getRange(`D${dataStart}:D${dataEnd}`).conditionalFormats.add('containsText', {text:'REVIEW',format:{fill:'#F4CCCC',font:{bold:true,color:'#990000'}}});
         lore.tables.add(`A${headerRow}:O${dataEnd}`, true, 'LoreRanking');
-        lore.freezePanes.freezeRows(headerRow);
-        lore.freezePanes.freezeColumns(1);
       }
       [28,16,15,18,12,28,14,18,34,12,64,64,64,64,60].forEach((width, index) => lore.getRangeByIndexes(0,index,loreEnd,1).format.columnWidth = width);
     }
