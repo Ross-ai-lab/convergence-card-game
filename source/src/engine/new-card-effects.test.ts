@@ -1126,9 +1126,15 @@ describe("2026 card replacements", () => {
 
   it("Ragnaros does not heal friendly minions when placed", () => {
     const state = mainState("ragnaros-placement-no-heal");
-    state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 3 });
-    const result = play(state, 0, "Ragnaros", 0);
-    expect(result.players[0].board[1]?.hp).toBe(1);
+    const withHub = play(state, 0, "Tech Hub", 0);
+    const withBattleship = play(withHub, 0, "Battleship", 1);
+    const battleship = withBattleship.players[0].board[1];
+    expect(battleship).not.toBeNull();
+    battleship!.hp -= 2;
+    const woundedHp = battleship!.hp;
+
+    const result = play(withBattleship, 0, "Ragnaros", 2);
+    expect(result.players[0].board[1]?.hp).toBe(woundedHp);
   });
 
   it("Avengers is Invulnerable while another Good minion is present", () => {

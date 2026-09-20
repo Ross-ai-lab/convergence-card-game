@@ -3971,9 +3971,13 @@ function refreshPassiveAuras(state: GameState): void {
         // A direct ATK-setting effect (for example Vader's chain) can land
         // while a positive aura is still attached.  Removing that old aura
         // must never leave a live minion below the game's 0-ATK floor.
+        const damageTaken = Math.max(0, target.maxHp - target.hp);
         target.atk = Math.max(0, target.atk - bonus.atk);
         target.maxHp -= bonus.hp;
-        target.hp = Math.min(target.hp, target.maxHp);
+        // Rebuilding an aura must preserve wounds.  Removing a +HP aura and
+        // then adding it again is not a heal, even when the refresh was
+        // triggered by placing an unrelated minion such as Ragnaros.
+        target.hp = Math.max(0, Math.min(target.maxHp, target.maxHp - damageTaken));
         for (const keyword of bonus.keywords) {
           const hasPrintedOrGranted = target.gainedEffects.some((effect) => effect.text.toLowerCase().includes(keyword.toLowerCase())) || target.effect.toLowerCase().includes(keyword.toLowerCase());
           if (!hasPrintedOrGranted) target.keywords = target.keywords.filter((entry) => entry !== keyword);
