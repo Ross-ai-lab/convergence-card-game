@@ -49,7 +49,7 @@ function choose(state: GameState, choiceIndex: number): GameState {
 }
 
 function protectFriendlySlotWithNeo(state: GameState, slot: number): GameState {
-  const asking = playCardFor(state, 1, "Neo", 4);
+  const asking = playCardFor(state, 1, "Neo", 3);
   const choiceIndex = asking.pendingTarget?.options.findIndex((option) => option.owner === 1 && option.slot === slot) ?? -1;
   expect(choiceIndex).toBeGreaterThanOrEqual(0);
   return applyAction(asking, { type: "choose_target", player: 1, choiceIndex }, library).state;
@@ -237,7 +237,7 @@ describe("targeted effects", () => {
     state.players[1].board[1] = makeMinion("Kojiro Sasaki", 1);
     state.players[1].board[2] = dummy("John Wick", 1, { hp: 1, maxHp: 2 });
 
-    const after = playCardFor(state, 0, "Musashi", 4);
+    const after = playCardFor(state, 0, "Musashi", 3);
     expect(after.players[1].board[0]).toBeNull();
     expect(after.players[1].board[1]).not.toBeNull();
     expect(after.players[1].board[2]).toBeNull();

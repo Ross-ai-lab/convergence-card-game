@@ -14,7 +14,7 @@ describe('requested card revision',()=>{
   it.each([
     ['c077',1,0,5],['c007',5,5,5],['c163',4,3,3],['c149',3,3,2],['c164',2,2,2],['c161',3,2,2],
     ['c098',7,6,6],['c083',8,6,6],['c021',6,3,3],['c026',8,6,6],['c101',9,4,4],['c133',5,3,3],
-    ['c084',7,4,6],['c126',4,2,2],['c039',3,3,3],['c127',4,3,1],['c061',5,1,1],['c136',6,6,6],['c006',4,3,3],['c031',4,4,4],
+    ['c084',7,4,6],['c126',4,2,2],['c039',3,3,3],['c127',4,3,1],['c061',5,1,1],['c136',6,6,6],['c006',4,3,3],['c031',4,4,3],
   ] as const)('%s has the requested mana and printed stats',(id,cost,atk,hp)=>expect(card(id)).toMatchObject({cost,atk,hp}));
   it('keeps the requested names, origins and clarified rules',()=>{
     expect(card('c001').origin).toBe('John Wick');expect(card('c043').origin).toBe('Watchmen');expect(card('c002').origin).toBe('DCEU');

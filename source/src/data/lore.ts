@@ -335,7 +335,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "The Maker's Maw",
     "sig_desc": "Engulfs anything that disturbs the open desert sand.",
     "playstyle": "Unkillable taunt wall",
-    "ability": "Taunt. Passive: Cannot be damaged by minions with 3 or less ATK",
+    "ability": "Taunt. Passive: Cannot be damaged by minions with 2 or less ATK",
     "rivals": [
       {
         "who": "the Fremen",
@@ -1659,7 +1659,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Evil",
     "cost": 4,
     "atk": 4,
-    "hp": 4,
+    "hp": 3,
     "cc": "#7a52c8",
     "vals": [
       7,
@@ -4115,7 +4115,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Atomic Breath",
     "sig_desc": "Blue radioactive beam melts armies and levels skylines",
     "playstyle": "Thrives on taking damage",
-    "ability": "Ongoing: If this minion starts the turn damaged, gain +2/+2",
+    "ability": "Passive: Deal 2 damage to all enemy minions each time you take damage",
     "rivals": [
       {
         "who": "King Kong",
@@ -7461,7 +7461,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "",
     "sig_desc": "A nexus that empowers and reinforces nearby machines.",
     "playstyle": "Buffs your Tech minions",
-    "ability": "Divine Shield Ongoing: Give all other friendly Tech minions +2/+1",
+    "ability": "Divine Shield. Passive: Give all other friendly Tech minions +2/+1",
     "rivals": [
       {
         "who": "Giant Crystal",

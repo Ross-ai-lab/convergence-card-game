@@ -32,7 +32,7 @@ import type {
 
 export type CardLibrary = Record<string, PlayableCard>;
 
-const boardSize = 5;
+const boardSize = 4;
 const handLimit = 10;
 /**
  * How many of its own turns a Chained minion loses. TWO, everywhere, always.
@@ -67,7 +67,7 @@ const CHAIN_GROWTH_REWARD = 2;
  *
  * At 50, with the plain +1 mana ramp below, the median duel runs 22 player-turns
  * — eleven each, which is the same shape as Hearthstone — 80% of duels reach 10
- * mana, boards sit at 3.1 of 5 slots, and 6% end as blowouts.
+ * mana, boards sit at 3.1 of 4 slots, and 6% end as blowouts.
  *
  * The shipped game now uses 50 Core HP for every mode.
  *
@@ -1187,10 +1187,10 @@ function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, e
   player.turnsStarted += 1;
   events.push({ kind: "turn", text: `${player.name}'s turn begins.`, player: playerId });
 
-  // GLaDOS's Test Protocol gives the player twelve of their own turns. The
+  // GLaDOS's Test Protocol gives the player fifteen of their own turns. The
   // check happens when turn thirteen opens, so enemy half-turns never shorten
   // the promised window.
-  if (playerId === 0 && state.heroPowers[1] === "glados_test_protocol" && player.turnsStarted > 12) {
+  if (playerId === 0 && state.heroPowers[1] === "glados_test_protocol" && player.turnsStarted > 15) {
     player.health = 0;
     state.winner = 1;
     state.phase = "gameOver";
@@ -4054,6 +4054,17 @@ function refreshPassiveAuras(state: GameState): void {
           target.auraBonuses!.push({ sourceId: source.instanceId, atk: 2, hp: 1, keywords: [] });
         }
       }
+      if (hasEffect(source, "buff_all_tech_2_1")) {
+        // Tech Hub is a standing aura. Rebuild its contribution every refresh
+        // so leaving, silencing, or replacing the Hub removes the bonus cleanly.
+        for (const target of board) {
+          if (!target || target.instanceId === source.instanceId || !receivesCampBuff(target, "Tech")) continue;
+          target.atk += 2;
+          target.maxHp += 1;
+          target.hp += 1;
+          target.auraBonuses!.push({ sourceId: source.instanceId, atk: 2, hp: 1, keywords: [] });
+        }
+      }
       if (hasEffect(source, "taunt_ally_self_buff")) {
         // An aura on itself, so it is taken back the moment the last friendly
         // Taunt leaves the board rather than banking a permanent +1/+1.
@@ -4870,20 +4881,6 @@ function damageAllEnemies(
   }
 }
 
-function damageAllEnemiesAndCore(
-  state: GameState,
-  source: MinionInstance,
-  amount: number,
-  events: GameEvent[],
-  godzillaPath: ReadonlySet<string>,
-): void {
-  damageAllEnemies(state, source, amount, events, godzillaPath);
-  const enemyId = opponent(source.owner);
-  if (dealCoreDamage(state, enemyId, amount, events, source)) {
-    events.push(effectEvent(`${source.name} deals ${amount} damage to all enemies and the enemy core.`, source));
-  }
-}
-
 function dealMinionDamage(
   state: GameState,
   owner: PlayerId,
@@ -4948,7 +4945,7 @@ function dealMinionDamage(
   ) {
     const nextPath = new Set(godzillaPath);
     nextPath.add(target.instanceId);
-    damageAllEnemiesAndCore(state, target, 2, events, nextPath);
+    damageAllEnemies(state, target, 2, events, nextPath);
   }
   if (target.hp > 0 && hasEffect(source, "shigaraki_decay") && !source.silenced) {
     target.markedBy = source.instanceId;
@@ -5075,7 +5072,7 @@ function canDamage(
     events.push(effectEvent(`${target.name} ignores the weak ATK damage.`, target));
     return false;
   }
-  if (!effectDamage && hasEffect(target, "small_attack_ward_3") && source.atk <= 3 && !target.silenced) {
+  if (!effectDamage && hasEffect(target, "small_attack_ward_2") && source.atk <= 2 && !target.silenced) {
     events.push(effectEvent(`${target.name} shrugs off the strike.`, target));
     return false;
   }

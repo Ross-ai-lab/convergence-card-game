@@ -171,8 +171,12 @@ describe("menu Hero Powers", () => {
 
     const glados = createInitialGame(cards, "glados-power", [], { heroPowers: [null, "glados_test_protocol"] });
     glados.phase = "main"; glados.mulligan = null; glados.activePlayer = 1;
-    glados.players[0].turnsStarted = 12; glados.players[0].health = 10;
-    const afterDeadline = applyAction(glados, { type: "end_turn", player: 1 }, library).state;
+    glados.players[0].turnsStarted = 14; glados.players[0].health = 10;
+    const finalTurn = applyAction(glados, { type: "end_turn", player: 1 }, library).state;
+    expect(finalTurn.players[0].turnsStarted).toBe(15);
+    expect(finalTurn.players[0].health).toBe(10);
+    const beforeDeadline = applyAction(finalTurn, { type: "end_turn", player: 0 }, library).state;
+    const afterDeadline = applyAction(beforeDeadline, { type: "end_turn", player: 1 }, library).state;
     expect(afterDeadline.players[0].health).toBe(0);
 
     const voldemort = mainState("enemy_core_damage");

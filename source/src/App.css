@@ -286,6 +286,45 @@ button:disabled {
     0 30px 80px rgba(0, 0, 0, 0.6);
 }
 
+/* The player's Core damage stains the arena itself. The effect stays behind
+   cards and controls, so low health feels dangerous without reducing legibility. */
+.health-damage-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: inherit;
+  mix-blend-mode: multiply;
+  background:
+    radial-gradient(ellipse 38% 30% at 8% 18%, rgba(74, 20, 14, 0.8), transparent 72%),
+    radial-gradient(ellipse 34% 28% at 92% 82%, rgba(62, 14, 12, 0.72), transparent 70%),
+    radial-gradient(ellipse 70% 30% at 50% 100%, rgba(45, 16, 12, 0.58), transparent 76%),
+    linear-gradient(115deg, transparent 25%, rgba(95, 30, 22, 0.22) 48%, transparent 70%);
+  transition: opacity 420ms ease, filter 420ms ease;
+}
+
+.hs-shell.hp-wounded .health-damage-overlay {
+  opacity: 0.18;
+  filter: saturate(1.08) contrast(1.03);
+}
+
+.hs-shell.hp-bloodied .health-damage-overlay {
+  opacity: 0.34;
+  filter: saturate(1.22) contrast(1.08);
+}
+
+.hs-shell.hp-critical .health-damage-overlay {
+  opacity: 0.52;
+  filter: saturate(1.38) contrast(1.14);
+  animation: wounded-arena-pulse 3.8s ease-in-out infinite;
+}
+
+@keyframes wounded-arena-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.62; }
+}
+
 /* Screen shake when a hero takes a hit. */
 .table-frame.shaking {
   animation: screen-shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
@@ -425,7 +464,7 @@ button:disabled {
   grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
   /* THE HEIGHT BUDGET. Everything below is height reclaimed for the cards.
      A board minion is sized by `--u`, which takes the SMALLER of the width fit
-     and the height fit — so once the slot cap went to 224px the binding
+     and the height fit — so once the slot cap went to 244px the binding
      constraint became vertical, and the only way to make the card bigger was to
      stop spending the arena's height on air:
        row gap        8 -> 2   (a card now sits against the rift, as asked)
@@ -459,7 +498,7 @@ button:disabled {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.22 0 0 0 0 0.10 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* The arena has more width than five slots need, and flat parchment out to the
+/* The arena has more width than four slots need, and flat parchment out to the
    frame made the board read as an island in an empty field. This darkens and
    cools the flanks so they read as the far edge of the table, and drops a
    violet/teal breath in from the top and bottom edges so the duel sits in the
@@ -725,20 +764,20 @@ button:disabled {
   position: relative;
   z-index: 1;
   display: grid;
-  /* 224, up from 168 (and 152 before that). Now that a board minion prints its
+  /* 244, up from 168 (and 152 before that). Now that a board minion prints its
      rules text, the card has to carry a paragraph rather than a picture, and the
      size comes entirely out of the DEAD SPACE around the board — see the height
      budget on `.battlefield` below. Nothing inside the card was scaled to get
      here; it simply has a bigger slot to fill.
 
-     The tracks stay wide enough to space five cards across the table, but each
+     The tracks stay wide enough to space four cards across the table, but each
      actual slot is centred inside its track and keeps the card's 5:7 shape. */
-  grid-template-columns: repeat(5, minmax(96px, 224px));
+  grid-template-columns: repeat(4, minmax(112px, 244px));
   /* 12 -> 24 -> 34. The doubling fixed cards reading as one continuous strip;
      34 is what the Taunt barricade needs, because it stands proud of the card
      and at 24 it reached into the neighbouring slot. Costs nothing: the cards
      are limited by the arena's HEIGHT, not by this. */
-  gap: 34px;
+  gap: clamp(22px, 3vw, 44px);
   justify-content: center;
   min-height: 0;
 }
@@ -2467,6 +2506,20 @@ button:disabled {
 
 .hero-plate.hit {
   animation: hero-hit 0.5s ease-out;
+}
+
+.hero-plate.protocol-warning .health-gem {
+  animation: glados-protocol-warning 2s ease-in-out infinite;
+}
+
+@keyframes glados-protocol-warning {
+  0%, 100% {
+    filter: drop-shadow(0 4px 10px rgba(143, 18, 6, 0.55));
+  }
+  18%, 34% {
+    filter: drop-shadow(0 0 14px rgba(255, 40, 30, 0.98)) drop-shadow(0 0 28px rgba(194, 12, 12, 0.72));
+    color: #fff4ed;
+  }
 }
 
 @keyframes hero-hit {
@@ -4207,7 +4260,7 @@ button:disabled {
    NARROW SCREENS — a real portrait layout, not a squeezed desktop one.
 
    The old fallback let the page scroll and wrapped the hand onto several rows.
-   That is not a playable phone layout: five board slots crushed to 84px are
+   That is not a playable phone layout: four board slots crushed to 84px are
    unreadable, a wrapped hand pushes the board off-screen, and the End Turn
    button sat off the right edge of a 390px viewport entirely.
 
@@ -4279,7 +4332,7 @@ button:disabled {
 
   /* Each row is its own horizontal scroller. `grid-auto-flow: column` keeps the
      slots in one line however many there are, and the fixed column width is what
-     stops five slots from being divided into unreadable slivers. */
+     stops four slots from being divided into unreadable slivers. */
   .board-row {
     grid-template-columns: none;
     grid-auto-flow: column;

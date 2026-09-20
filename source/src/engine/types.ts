@@ -189,7 +189,7 @@ export const EFFECT_IDS = [
   "carrier_lock_enemy_tech",
   "draw_card",
   "draw_relic",
-  "small_attack_ward_3",
+  "small_attack_ward_2",
   "aoe_damage_3",
   "time_bomb_destroy_all",
   "godzilla_damage_burst",

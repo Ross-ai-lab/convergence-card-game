@@ -318,7 +318,7 @@ await shoot("05-board-populated");
 // The narrow layout is a completely different arrangement (each board row and
 // the hand scroll sideways on their own, End Turn becomes a fixed thumb button,
 // the fan is flattened), and none of the other 18 shots can see any of it. It
-// went unnoticed for a long time that the small-screen path put five slots at
+// went unnoticed for a long time that the small-screen path put four slots at
 // 84px and pushed End Turn off the right edge of the viewport entirely.
 for (const [label, w, h] of [
   ["21-phone", 390, 844],

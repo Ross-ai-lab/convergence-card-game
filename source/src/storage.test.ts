@@ -24,7 +24,7 @@ function memoryLocalStorage() {
   };
 }
 
-const SAVE_KEY = "convergence.save.v30";
+const SAVE_KEY = "convergence.save.v31";
 const LEGACY_SAVE_KEY = "convergence.save.v28";
 
 function liveDuel(): GameState {

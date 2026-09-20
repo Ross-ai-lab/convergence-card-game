@@ -38,7 +38,7 @@ export const HERO_POWER_DEFINITIONS: readonly HeroPowerDefinition[] = [
   },
   { id: "summon_recruit", name: "Call a Recruit", text: "Summon a 1/1 Knight.", target: "none" },
   { id: "give_taunt", name: "Stand Fast", text: "Give a friendly minion Taunt.", target: "friendly" },
-  { id: "glados_test_protocol", name: "Test Protocol", text: "The enemy has 12 turns to defeat you.", target: "none", cost: 0, passive: true },
+  { id: "glados_test_protocol", name: "Test Protocol", text: "The enemy has 15 turns to defeat you.", target: "none", cost: 0, passive: true },
   { id: "yujiro_apex_duel", name: "Apex Duel", text: "Only the enemy's highest-ATK minion may attack your Core.", target: "none", cost: 0, passive: true },
   { id: "light_delayed_mark", name: "Judgment Mark", text: "Mark an enemy minion. It dies at the start of your next turn.", target: "enemy", cost: 3 },
   { id: "voldemort_immortal", name: "Dark Immortality", text: "Cannot die while controlling a minion.", target: "none", cost: 0, passive: true },

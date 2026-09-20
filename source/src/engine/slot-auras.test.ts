@@ -76,8 +76,8 @@ describe("slot auras", () => {
     const asking = playCardFor(state, 0, "Giorno - Gold Experience Requiem", 0);
     expect(asking.phase).toBe("targeting");
     expect(asking.pendingTarget?.kind).toBe("slot");
-    // All five enemy slots, none of them occupied.
-    expect(asking.pendingTarget?.options).toEqual([0, 1, 2, 3, 4].map((slot) => ({ owner: 1, slot })));
+    // All four enemy slots, none of them occupied.
+    expect(asking.pendingTarget?.options).toEqual([0, 1, 2, 3].map((slot) => ({ owner: 1, slot })));
   });
 
   it("Giorno permanently Chains whoever is standing there, and whoever arrives later", () => {

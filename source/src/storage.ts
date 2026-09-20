@@ -94,7 +94,9 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // mulligan carries a queue of seats. Older in-progress openings are discarded.
 // v30: campaign bosses and chapter order changed. Old in-progress duels can
 // contain the removed boss identity and deck, so they must not be resumed.
-const SAVE_VERSION = 30;
+// v31: the board changed from five minion slots to four. Old in-progress boards
+// have a slot that no longer exists, so they must not be resumed.
+const SAVE_VERSION = 31;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
 export interface SavedGame {
   version: number;
@@ -190,7 +192,7 @@ export function loadGame(): SavedGame | null {
     ) return null;
     const playerShapeOk = (player: SavedGame["game"]["players"][number]) =>
       Array.isArray(player?.board) &&
-      player.board.length === 5 &&
+      player.board.length === 4 &&
       player.board.every(
         (minion) =>
           minion === null ||

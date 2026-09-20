@@ -652,7 +652,7 @@ function HowToPlayContent() {
   return (
     <div className="rules">
       <p className="rules-intro">
-        Two cores, two separate decks, five slots each. Everything below is in the order you meet it.
+        Two cores, two separate decks, four slots each. Everything below is in the order you meet it.
       </p>
 
       <section className="rules-chapter">
@@ -679,7 +679,7 @@ function HowToPlayContent() {
         <ol className="rules-steps">
           <li><b>Draw</b> one card.</li>
           <li>Your <b>mana</b> refills, and its maximum grows by one, up to <b>10</b>.</li>
-          <li>Spend it in any order: play cards into your <b>five slots</b>, fire your Hero Power, attack with ready minions.</li>
+          <li>Spend it in any order: play cards into your <b>four slots</b>, fire your Hero Power, attack with ready minions.</li>
           <li><b>End the turn</b> with Space.</li>
         </ol>
         <p className="rules-aside">

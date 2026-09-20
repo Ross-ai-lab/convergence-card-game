@@ -243,7 +243,7 @@ describe("Convergence engine", () => {
     const state = mainState();
     state.players[0].mana = 10;
     state.players[0].hand = [cardId("John Wick")];
-    state.players[0].board = Array.from({ length: 5 }, (_, index) =>
+    state.players[0].board = Array.from({ length: 4 }, (_, index) =>
       makeMinion("Bigfoot", 0, { instanceId: `full-${index}`, playOrder: index + 1 }),
     );
     const legal = getLegalActions(state, library);

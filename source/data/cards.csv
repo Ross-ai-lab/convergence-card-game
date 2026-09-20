@@ -4,7 +4,7 @@ c002,Joker,1,1,1,Red,Nature,Evil,,copy_minion_to_hand,onPlay,Battlecry: Put a co
 c003,Detective L,1,1,4,Yellow,Nature,Good,Passive,foresight_draw,passive,"Passive: Your draw now shows 2 cards, pick one",Justice works in probabilities.,Death Note,/card-art/raw/c003.webp
 c004,Bigfoot,2,2,2,Black,Nature,Neutral,Passive,dodge_50,passive,Passive: Evades 50% of incoming attacks,The woods answer with silence.,Myth,/card-art/raw/c004.webp
 c005,Batman,2,1,1,Purple,Tech,Good,,batman_gadget_choice,onPlay,Battlecry: Choose an enemy minion. Choose one gadget: Freeze it; Silence it; or give it -3 ATK,Preparation beats power.,DCEU,/card-art/raw/c005.webp
-c006,Sandworm,4,3,3,Black,Nature,Neutral,Taunt;Passive,small_attack_ward_3,passive,Taunt. Passive: Cannot be damaged by minions with 3 or less ATK,The desert itself has teeth.,Dune,/card-art/raw/c006.webp
+c006,Sandworm,4,3,3,Black,Nature,Neutral,Taunt;Passive,small_attack_ward_2,passive,Taunt. Passive: Cannot be damaged by minions with 2 or less ATK,The desert itself has teeth.,Dune,/card-art/raw/c006.webp
 c007,Pandora's Actor,5,5,5,Red,Magic,Evil,,copy_minion_effects,onPlay,Battlecry: Choose another minion. Become it. HP and ATK are not copied,Every role is useful.,Overlord,/card-art/raw/c007.webp
 c008,T-1000,5,3,5,Purple,Tech,Neutral,Ongoing,heal_self_full,ongoing,Ongoing: Fully heal yourself,It remembers its shape.,Terminator,/card-art/raw/c008.webp
 c009,Time Bomb,5,0,9,Yellow,Tech,Neutral,,time_bomb_destroy_all,ongoing,Ongoing: Destroy ALL minions,Timer is T-1.,Loki,/card-art/raw/c009.webp
@@ -29,7 +29,7 @@ c027,Thanos,10,9,10,Yellow,Magic,Evil,,snap_balance,onPlay,Battlecry: Each playe
 c028,Flash,10,4,4,Yellow,Magic,Good,Divine Shield;Passive;Charge,flash_speed,passive,Charge. Divine Shield. Passive: Can attack 2 times each turn,Speed of light. And beyond.,DCU,/card-art/raw/c028.webp
 c029,Darth Vader,5,3,2,Purple,Magic,Evil,,vader_chain_or_destroy,onPlay,"Battlecry: Choose an enemy minion. Set its ATK to 1 and Chain it",Reborn.,Star Wars,/card-art/raw/c029.webp
 c030,Dumbledore,5,2,4,Black,Magic,Good,Passive,dumbledore_cleanse,passive,"Passive: Friendly minions cannot be Silenced, Frozen, or Chained. Undo any such curses",He always asks calmly.,Harry Potter,/card-art/raw/c030.webp
-c031,Ragnaros,4,4,4,Black,Magic,Evil,Cannot Attack;Ongoing,ragnaros_ongoing_burn,ongoing,Cannot attack. Ongoing: Deal 3 damage to a random enemy minion or the enemy core,Summoned. Once again.,Hearthstone,/card-art/raw/c031.webp
+c031,Ragnaros,4,4,3,Black,Magic,Evil,Cannot Attack;Ongoing,ragnaros_ongoing_burn,ongoing,Cannot attack. Ongoing: Deal 3 damage to a random enemy minion or the enemy core,Summoned. Once again.,Hearthstone,/card-art/raw/c031.webp
 c032,Silver Surfer,7,1,1,Purple,Magic,Neutral,Deathrattle,deathrattle_summon_galactus,deathrattle,Deathrattle: Summon Galactus (8/8),The tide brings worlds.,MCU,/card-art/raw/c032.webp
 c033,Yujiro,4,4,4,Red,Nature,Evil,Passive,immune_nature_minions,passive,Passive: Immune to Nature minions,The strongest man alive.,Baki,/card-art/raw/c033.webp
 c034,Yubaba,4,2,2,Red,Magic,Evil,,devolve_enemy_minions,onPlay,"Battlecry: Devolve your enemy minions into random ones that cost 1 less mana",Are you looking for employment?,Spirited Away,/card-art/raw/c034.webp
@@ -74,7 +74,7 @@ c072,Genie,7,5,4,Purple,Magic,Neutral,,aladdin_wish,onPlay,Battlecry: Make a wis
 c073,All Might,7,4,5,Purple,Magic,Good,Passive,all_enemy_atk_down_2,passive,"Passive: While on the board, every enemy minion has -2 ATK",Number One,MHA,/card-art/raw/c073.webp
 c074,Grand Master Yoda,7,5,5,Purple,Magic,Good,Cannot Attack;Ongoing,yoda_lowest_atk_buff,ongoing,Cannot attack. Ongoing: Your lowest-ATK friendly minion gains +2/+2,Nine centuries of learning,Star Wars,/card-art/raw/c074.webp
 c075,Ultron Prime,7,5,3,Purple,Tech,Evil,Taunt;Deathrattle,deathrattle_summon_vision,deathrattle,Taunt. Deathrattle: Summon Vision (5/3) with Taunt,He decided the most efficient protection was elimination,MCU,/card-art/raw/c075.webp
-c076,Godzilla,7,4,5,Black,Nature,Neutral,Passive,godzilla_damage_burst,passive,Passive: Deal 2 damage to all enemies each time you take damage,Laser breathing,Godzilla,/card-art/raw/c076.webp
+c076,Godzilla,7,4,5,Black,Nature,Neutral,Passive,godzilla_damage_burst,passive,Passive: Deal 2 damage to all enemy minions each time you take damage,Laser breathing,Godzilla,/card-art/raw/c076.webp
 c077,King,1,0,5,Black,Nature,Neutral,Taunt,none,none,Taunt,Luckiest man alive,OPM,/card-art/raw/c077.webp
 c080,Gandalf the White,6,2,2,Yellow,Magic,Good,Divine Shield,shield_all_friendly,onPlay,Divine Shield. Battlecry: Give all friendly Good minions Divine Shield,An incarnated angel,Lord of the Rings,/card-art/raw/c080.webp
 c081,Gordon Freeman,4,1,3,Yellow,Tech,Neutral,Passive,freeman_charge_aura,passive,Passive: All friendly minions have Charge,I̵n̷ ̵t̵h̵e̷ ̵f̴l̵e̷s̷h̴…,Half-life,/card-art/raw/c081.webp
@@ -137,7 +137,7 @@ c137,Giant Crystal,3,1,1,Black,Magic,Neutral,Divine Shield,buff_all_magic_2_1,on
 c138,Giant Tree,3,1,1,Black,Nature,Neutral,Passive,buff_all_nature_2_1,passive,Passive: All other friendly Nature minions have +2/+1,Older than the roots it feeds.,Core,/card-art/raw/c138.webp
 c139,Modern Tank,3,2,2,Black,Tech,Neutral,,damage_enemy_1,onPlay,Battlecry: Deal 1 damage to an enemy minion,-,Basic,/card-art/raw/c139.webp
 c140,RoboCop,3,2,4,Black,Tech,Good,Passive,robocop_evil_bonus,passive,Passive: Deal 3x damage against Evil minions,Uphold the law,RoboCop,/card-art/raw/c140.webp
-c141,Tech Hub,3,1,1,Black,Tech,Neutral,Divine Shield,buff_all_tech_2_1,ongoing,Divine Shield. Ongoing: Give all other friendly Tech minions +2/+1,Every machine came from somewhere. This is that somewhere,Core,/card-art/raw/c141.webp
+c141,Tech Hub,3,1,1,Black,Tech,Neutral,Divine Shield;Passive,buff_all_tech_2_1,passive,Divine Shield. Passive: Give all other friendly Tech minions +2/+1,Every machine came from somewhere. This is that somewhere,Core,/card-art/raw/c141.webp
 c142,Zoro,5,4,4,Black,Nature,Good,Passive,on_kill_buff_1,passive,Passive: Gain +1/+1 after killing a minion,Lost again. Still won.,One Piece,/card-art/raw/c142.webp
 c143,Survivors,2,2,2,Red,Nature,Good,Divine Shield,none,none,Divine Shield,They weren't the strongest or the fastest. They were the ones who didn't stop,L4d2,/card-art/raw/c143.webp
 c144,Cecil,2,1,1,Yellow,Tech,Neutral,,bounce_friendly,onPlay,Battlecry: Return a friendly minion to your hand,Nothing personal. Just cleanup.,Invincible,/card-art/raw/c144.webp

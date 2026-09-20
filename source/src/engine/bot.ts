@@ -711,7 +711,7 @@ export function turnsConsidered(
  *
  * WHICH card you play is a decision; which empty slot you drop it into almost
  * never is. Keying the beam's diversity on the full action spent all nine lines
- * on one card in five slots and a second card in four — nine "different"
+ * on one card in four slots and a second card in three — seven "different"
  * openings that were really two, scoring identically to three decimal places,
  * with every other card in hand already discarded. Targets are the opposite case
  * and stay part of the identity: who you attack is the whole decision.
@@ -721,7 +721,7 @@ export function turnsConsidered(
  *
  * Like the reservation it serves, this is evidenced by measurement rather than
  * by a test: keying on the full action was observed filling all nine lines with
- * one card in five slots and a second in four, every line scoring identically.
+ * one card in four slots and a second in three, every line scoring identically.
  * The beam's width itself IS covered — collapsing it to one fails two tests.
  */
 function openingIdentity(action: GameAction): string {

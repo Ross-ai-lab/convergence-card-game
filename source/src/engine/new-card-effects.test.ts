@@ -158,7 +158,7 @@ describe("2026 card replacements", () => {
     const after = play(state, 0, "Naruto", 0);
     const clones = after.players[0].board.filter((entry) => entry?.cardId === "token:shadow-clone");
 
-    expect(clones).toHaveLength(3);
+    expect(clones).toHaveLength(2);
     expect(clones.every((entry) => entry?.name === "Shadow Clone" && entry.atk === 2 && entry.hp === 2)).toBe(true);
     expect(clones.every((entry) => entry?.art.includes("token-shadow-clone.webp"))).toBe(true);
     expect(clones.every((entry) => entry?.suppressArrivalTheme === true)).toBe(true);
@@ -488,7 +488,7 @@ describe("2026 card replacements", () => {
       },
       Sans: { cost: 4, atk: 2, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks" },
       "Doom Slayer": { cost: 8, atk: 3, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
-      Ragnaros: { cost: 4, atk: 4, hp: 4, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
+      Ragnaros: { cost: 4, atk: 4, hp: 3, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
       Musashi: { atk: 2, hp: 1 },
       Illumi: { atk: 1, hp: 1 },
       "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
@@ -867,8 +867,8 @@ describe("2026 card replacements", () => {
   it("Morgott respects a full board and summons for the correct player", () => {
     const full = mainState("morgott-full-board");
     for(let slot=0;slot<4;slot++) full.players[0].board[slot]=minion("John Wick",0);
-    const blocked=play(full,0,"Morgott, the Omen King",4);
-    expect(blocked.players[0].board.filter(Boolean)).toHaveLength(5);
+    const blocked=play(full,0,"Morgott, the Omen King",0);
+    expect(blocked.players[0].board.filter(Boolean)).toHaveLength(4);
     expect(blocked.players[0].board.some(m=>m?.cardId==="token:margit")).toBe(false);
     const second=play(mainState("morgott-second-seat"),1,"Morgott, the Omen King",3);
     expect(second.players[0].board.every(m=>m===null)).toBe(true);
@@ -1090,21 +1090,17 @@ describe("2026 card replacements", () => {
 
   it("Fantastic Four gives its first four slots +1/+1, and takes it back when killed", () => {
     const state = mainState();
-    for (const slot of [0, 1, 2, 3]) state.players[0].board[slot] = minion("John Wick", 0, { effectId: "none", effectTiming: "none", keywords: [] });
-    const placed = play(state, 0, "Fantastic Four", 4);
-    for (const slot of [0, 1, 2, 3]) {
-      expect(placed.players[0].board[slot]?.atk).toBe(2);
-      expect(placed.players[0].board[slot]?.maxHp).toBe(2);
-    }
+    for (const slot of [1, 2, 3]) state.players[0].board[slot] = minion("John Wick", 0, { effectId: "none", effectTiming: "none", keywords: [] });
+    const placed = play(state, 0, "Fantastic Four", 0);
+    expect(placed.players[0].board[0]).toMatchObject({ atk: 3, maxHp: 3 });
+    for (const slot of [1, 2, 3]) expect(placed.players[0].board[slot]).toMatchObject({ atk: 2, maxHp: 2 });
 
     placed.players[1].board[0] = minion("Zoro", 1, { atk: 99, sleeping: false, hp: 99, maxHp: 99 });
     placed.activePlayer = 1;
-    const after = applyAction(placed, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 4 }, library).state;
-    expect(after.players[0].board[4]).toBeNull();
-    for (const slot of [0, 1, 2, 3]) {
-      expect(after.players[0].board[slot]?.atk).toBe(1);
-      expect(after.players[0].board[slot]?.maxHp).toBe(1);
-    }
+    const after = applyAction(placed, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(after.players[0].board[0]).toBeNull();
+    expect(after.players[0].board[0]).toBeNull();
+    for (const slot of [1, 2, 3]) expect(after.players[0].board[slot]).toMatchObject({ atk: 1, maxHp: 1 });
   });
 
   it("Ragnaros burns at the start of its controller's turn and never attacks", () => {
@@ -1120,12 +1116,19 @@ describe("2026 card replacements", () => {
 
   it("Ragnaros takes combat damage and has no healing trigger", () => {
     const state = mainState("ragnaros-no-heal");
-    state.players[0].board[0] = minion("Ragnaros", 0, { sleeping: false, hp: 4, maxHp: 4 });
+    state.players[0].board[0] = minion("Ragnaros", 0, { sleeping: false, hp: 3, maxHp: 3 });
     state.players[1].board[0] = minion("John Wick", 1, { sleeping: false, atk: 1, hp: 10, maxHp: 10 });
     state.activePlayer = 1;
     const result = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 }, library);
-    expect(result.state.players[0].board[0]?.hp).toBe(3);
+    expect(result.state.players[0].board[0]?.hp).toBe(2);
     expect(result.events.some((event) => /heal/i.test(event.text))).toBe(false);
+  });
+
+  it("Ragnaros does not heal friendly minions when placed", () => {
+    const state = mainState("ragnaros-placement-no-heal");
+    state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 3 });
+    const result = play(state, 0, "Ragnaros", 0);
+    expect(result.players[0].board[1]?.hp).toBe(1);
   });
 
   it("Avengers is Invulnerable while another Good minion is present", () => {
@@ -1416,11 +1419,11 @@ describe("2026 card replacements", () => {
   it("Seven Deadly Sins fills the board with unique-keyword Sin tokens and their new art", () => {
     const after = play(mainState("sin-tokens"), 0, "Seven Deadly Sins", 0);
     const sins = after.players[0].board.filter((entry) => entry?.name === "Sin");
-    expect(sins).toHaveLength(4);
+    expect(sins).toHaveLength(3);
     const tokenKeywords = sins.map((entry) => entry?.keywords ?? []);
     expect(tokenKeywords.every((keywords) => keywords.length === 1)).toBe(true);
     expect(tokenKeywords.map(([keyword]) => keyword).sort()).toEqual(
-      ["Taunt", "Divine Shield", "Charge", "Chained"].sort(),
+      ["Divine Shield", "Charge", "Chained"].sort(),
     );
     expect(sins.every((entry) => entry?.atk === 1 && entry?.hp === 1 && entry.art.endsWith("/token-sin.webp"))).toBe(true);
     expect(sins.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
@@ -1868,7 +1871,7 @@ describe("2026 card replacements", () => {
     expect(godrick?.gainedEffects).toEqual([]);
   });
 
-  it("Godzilla retaliates with damage to enemy minions and the enemy core", () => {
+  it("Godzilla retaliates with damage to enemy minions, but not the enemy core", () => {
     const state = mainState();
     const coreBefore = state.players[1].health;
     state.players[0].board[0] = minion("John Wick", 0, { sleeping: false, atk: 1, hp: 10, maxHp: 10 });
@@ -1876,7 +1879,7 @@ describe("2026 card replacements", () => {
     const after = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
     expect(after.players[1].board[0]?.hp).toBe(4);
     expect(after.players[0].board[0]?.hp).toBe(4);
-    expect(after.players[0].health).toBe(coreBefore - 2);
+    expect(after.players[0].health).toBe(coreBefore);
   });
 
   it("Rimuru Tempest keeps its sacrifice Battlecry and gains +1/+1 ongoing", () => {
@@ -2667,10 +2670,10 @@ describe("direct effect reachability", () => {
     expect(landed.players[1].board[0]?.hp).toBe(2);
   });
 
-  it("Sandworm ignores exactly 3 ATK and takes exact damage from 4 ATK", () => {
+  it("Sandworm ignores exactly 2 ATK and takes exact damage from 3 ATK", () => {
     const weak = mainState("sandworm-weak");
     weak.players[0].board[0] = minion("John Wick", 0, {
-      atk: 3,
+      atk: 2,
       hp: 10,
       maxHp: 10,
       sleeping: false,
@@ -2684,7 +2687,7 @@ describe("direct effect reachability", () => {
 
     const strong = mainState("sandworm-strong");
     strong.players[0].board[0] = minion("John Wick", 0, {
-      atk: 4,
+      atk: 3,
       hp: 10,
       maxHp: 10,
       sleeping: false,
@@ -2694,7 +2697,7 @@ describe("direct effect reachability", () => {
     });
     strong.players[1].board[0] = minion("Sandworm", 1, { hp: 5, maxHp: 5 });
     const damaged = applyAction(strong, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(damaged.players[1].board[0]?.hp).toBe(1);
+    expect(damaged.players[1].board[0]?.hp).toBe(2);
   });
 
   it("The Watcher cannot attack while its passive reveals the enemy hand", () => {

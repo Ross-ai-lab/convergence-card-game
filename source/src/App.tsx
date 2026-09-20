@@ -1038,6 +1038,17 @@ export default function App() {
     return () => sfx.stopCue();
   }, [pack]);
   const viewer = game.players[viewerId];
+  const viewerHealthBand = viewer.health <= STARTING_CORE * 0.24
+    ? "hp-critical"
+    : viewer.health <= STARTING_CORE * 0.5
+      ? "hp-bloodied"
+      : viewer.health < STARTING_CORE
+        ? "hp-wounded"
+        : "hp-healthy";
+  const gladosTurnsRemaining = game.heroPowers[otherPlayer(viewerId)] === "glados_test_protocol"
+    ? Math.max(0, 16 - viewer.turnsStarted)
+    : undefined;
+  const gladosProtocolWarning = gladosTurnsRemaining !== undefined && gladosTurnsRemaining > 0 && gladosTurnsRemaining <= 4;
 
   /**
    * The test hook. DEV ONLY.
@@ -1827,6 +1838,17 @@ export default function App() {
     setSelection(null);
     clearFx();
     setEvents((items) => [...items, { kind: "info" as const, text: "Last local action undone." }].slice(-80));
+  }
+
+  function undoTurn() {
+    const boundary = history.findIndex((snapshot) => snapshot.turnNumber < game.turnNumber);
+    if (boundary < 0) return;
+    const previous = history[boundary];
+    setGame(previous);
+    setHistory(history.slice(boundary + 1));
+    setSelection(null);
+    clearFx();
+    setEvents((items) => [...items, { kind: "info" as const, text: "Last turn undone." }].slice(-80));
   }
 
   /** Infinite mana, exposed inside the Ross-only developer workbench. */
@@ -2631,6 +2653,7 @@ export default function App() {
         drag?.active ? "grabbing" : "",
         tutorialActive ? "tutorial-mode" : "",
         developerDuelActive ? "developer-duel" : "",
+        screen === "playing" ? viewerHealthBand : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -2653,6 +2676,7 @@ export default function App() {
            arrived, especially Divine Shield cards such as UFO and Flash. */
         style={landing > 0 ? ({ "--thud": landing } as CSSProperties) : undefined}
       >
+        <div className="health-damage-overlay" aria-hidden="true" />
         <header className="top-strip">
         <div className="brand-mini">
           <span className="brand-mark" />
@@ -2689,7 +2713,8 @@ export default function App() {
             onCardPreviewEnd={endPreview}
             onStrike={attackCore}
             onBlockedStrike={selection?.kind === "attacker" ? attackCore : undefined}
-            heroPowerCounter={game.heroPowers[opponentId] === "glados_test_protocol" ? `${Math.min(12, game.players[viewerId].turnsStarted)}/12` : undefined}
+            heroPowerCounter={game.heroPowers[opponentId] === "glados_test_protocol" ? `${Math.min(15, game.players[viewerId].turnsStarted)}/15` : undefined}
+            protocolWarning={gladosProtocolWarning}
           />
           {campaignBoss && !coreTargetable && selection?.kind !== "attacker" && <button
             type="button" className="opponent-portrait-inspect" aria-label={`Open Star Chart for ${campaignBoss.name}`}
@@ -2699,7 +2724,7 @@ export default function App() {
           />}
           <HeroPowerCard
             definition={heroPowerDefinition(game.heroPowers[opponentId])}
-            turnsRemaining={game.heroPowers[opponentId] === "glados_test_protocol" ? Math.max(0, 13 - game.players[viewerId].turnsStarted) : undefined}
+            turnsRemaining={gladosTurnsRemaining}
           />
         </div>
         <div className="system-buttons">
@@ -3252,6 +3277,8 @@ export default function App() {
           viewerId={viewerId}
           onClose={() => setDeveloperToolsOpen(false)}
           onToggleCheat={toggleCheatMode}
+          onUndoTurn={undoTurn}
+          canUndoTurn={history.some((snapshot) => snapshot.turnNumber < game.turnNumber)}
           onSetCore={developerSetCore}
           onMakeCoreInvincible={developerMakeCoreInvincible}
           onGiveCard={developerGiveCard}
@@ -5167,6 +5194,7 @@ function HeroPlate({
   onStrike,
   onBlockedStrike,
   heroPowerCounter,
+  protocolWarning = false,
 }: {
   player: GameState["players"][number];
   identity?: { card: PlayableCard; chapter: number; universe: string };
@@ -5187,6 +5215,7 @@ function HeroPlate({
   onStrike?: () => void;
   onBlockedStrike?: () => void;
   heroPowerCounter?: string;
+  protocolWarning?: boolean;
 }) {
   const wasHit = floats.some((f) => f.delta < 0);
   const classes = [
@@ -5199,6 +5228,7 @@ function HeroPlate({
     active && !targetable ? "active" : "",
     thinking ? "thinking" : "",
     targetable ? "targetable" : "",
+    protocolWarning ? "protocol-warning" : "",
     player.heroDivineShield ? "is-shielded" : "",
   ]
     .filter(Boolean)
@@ -6230,6 +6260,8 @@ function DeveloperTools({
   viewerId,
   onClose,
   onToggleCheat,
+  onUndoTurn,
+  canUndoTurn,
   onSetCore,
   onMakeCoreInvincible,
   onShowResult,
@@ -6245,6 +6277,8 @@ function DeveloperTools({
   viewerId: PlayerId;
   onClose: () => void;
   onToggleCheat: () => void;
+  onUndoTurn: () => void;
+  canUndoTurn: boolean;
   onSetCore: (owner: PlayerId, value: number) => void;
   onMakeCoreInvincible: (owner: PlayerId) => void;
   onShowResult: (winner: PlayerId | "draw", cardId: string) => void;
@@ -6305,6 +6339,7 @@ function DeveloperTools({
               <button type="button" className={game.coreInvincible?.[viewerId] ? "developer-action active" : "developer-action"} onClick={() => onMakeCoreInvincible(viewerId)}>
                 {game.coreInvincible?.[viewerId] ? "Core invincible: ON" : "Make the core invincible"}
               </button>
+              <button type="button" className="developer-action" onClick={onUndoTurn} disabled={!canUndoTurn}>Undo a turn</button>
               <button type="button" className="developer-action" onClick={() => onClearBoard(viewerId)}>Clear my board</button>
               <button type="button" className="developer-action" onClick={() => onClearBoard(otherId)}>Clear enemy board</button>
             </>
