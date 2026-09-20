@@ -287,7 +287,9 @@ button:disabled {
 }
 
 /* The player's Core damage stains the arena itself. The effect stays behind
-   cards and controls, so low health feels dangerous without reducing legibility. */
+   cards and controls, so low health feels dangerous without reducing legibility.
+   The stains are deliberately off-centre and irregular: a fight leaves marks,
+   not a mirrored vignette. */
 .health-damage-overlay {
   position: absolute;
   inset: 0;
@@ -295,16 +297,66 @@ button:disabled {
   pointer-events: none;
   opacity: 0;
   border-radius: inherit;
-  /* Keep this as a real wash, not a barely visible multiply tint. At 3 HP the
-     arena must look wounded even in the bright centre of the parchment. */
+  /* Keep this as a real wash, not a barely visible multiply tint. */
   mix-blend-mode: normal;
   background:
-    linear-gradient(180deg, rgba(94, 18, 19, 0.42), rgba(32, 6, 10, 0.74)),
-    radial-gradient(ellipse 58% 48% at 50% 52%, rgba(166, 28, 28, 0.3), transparent 78%),
-    radial-gradient(ellipse 40% 34% at 8% 18%, rgba(76, 12, 15, 0.9), transparent 72%),
-    radial-gradient(ellipse 38% 32% at 92% 82%, rgba(62, 8, 12, 0.88), transparent 70%),
-    repeating-linear-gradient(118deg, transparent 0 18px, rgba(25, 2, 6, 0.2) 18px 21px, transparent 21px 42px);
+    linear-gradient(151deg, rgba(91, 16, 20, 0.34), rgba(28, 5, 9, 0.72)),
+    radial-gradient(ellipse 74% 52% at 42% 46%, rgba(153, 24, 29, 0.25), transparent 78%),
+    radial-gradient(ellipse 22% 16% at 7% 76%, rgba(58, 8, 12, 0.9), transparent 74%),
+    radial-gradient(ellipse 18% 12% at 72% 17%, rgba(80, 10, 14, 0.78), transparent 72%),
+    radial-gradient(ellipse 14% 22% at 88% 72%, rgba(48, 6, 11, 0.86), transparent 72%),
+    radial-gradient(ellipse 11% 7% at 34% 12%, rgba(103, 16, 20, 0.68), transparent 70%),
+    radial-gradient(ellipse 16% 9% at 47% 88%, rgba(61, 8, 12, 0.74), transparent 72%);
   transition: opacity 420ms ease, filter 420ms ease;
+}
+
+.health-damage-overlay::before,
+.health-damage-overlay::after {
+  content: "";
+  position: absolute;
+  inset: -4%;
+  pointer-events: none;
+}
+
+/* Uneven droplets and chips. Their positions are intentionally clustered on
+   different parts of the arena, so the damage reads as accumulated combat. */
+.health-damage-overlay::before {
+  opacity: 0.72;
+  background:
+    radial-gradient(circle at 11% 23%, rgba(41, 4, 9, 0.78) 0 3px, transparent 4px),
+    radial-gradient(ellipse 13px 6px at 15% 27%, rgba(84, 9, 14, 0.68) 0 48%, transparent 52%),
+    radial-gradient(circle at 21% 19%, rgba(48, 5, 10, 0.62) 0 2px, transparent 3px),
+    radial-gradient(circle at 64% 13%, rgba(91, 12, 18, 0.6) 0 4px, transparent 5px),
+    radial-gradient(ellipse 18px 7px at 69% 18%, rgba(52, 6, 12, 0.64) 0 46%, transparent 53%),
+    radial-gradient(circle at 79% 24%, rgba(42, 4, 9, 0.72) 0 2px, transparent 3px),
+    radial-gradient(circle at 87% 63%, rgba(95, 13, 19, 0.58) 0 3px, transparent 4px),
+    radial-gradient(ellipse 11px 5px at 82% 68%, rgba(42, 5, 10, 0.7) 0 45%, transparent 53%),
+    radial-gradient(circle at 28% 83%, rgba(42, 5, 10, 0.65) 0 4px, transparent 5px),
+    radial-gradient(ellipse 16px 6px at 34% 79%, rgba(92, 13, 18, 0.55) 0 44%, transparent 53%);
+  transform: rotate(-2.5deg) scale(1.03);
+  animation: battlefield-splatter-drift 9s ease-in-out infinite alternate;
+}
+
+/* Broad smears break up the droplets and keep the result from looking like a
+   repeated pattern. */
+.health-damage-overlay::after {
+  opacity: 0.48;
+  background:
+    radial-gradient(ellipse 19% 4% at 22% 55%, rgba(53, 7, 11, 0.58), transparent 70%),
+    radial-gradient(ellipse 15% 5% at 73% 44%, rgba(86, 11, 16, 0.5), transparent 68%),
+    radial-gradient(ellipse 12% 4% at 56% 76%, rgba(44, 6, 10, 0.54), transparent 70%);
+  transform: rotate(3deg) scale(1.04);
+  animation: battlefield-smear-drift 13s ease-in-out infinite alternate;
+}
+
+@keyframes battlefield-splatter-drift {
+  from { transform: rotate(-2.5deg) translate(-0.6%, 0.4%) scale(1.03); }
+  to { transform: rotate(-1.2deg) translate(0.8%, -0.5%) scale(1.06); }
+}
+
+@keyframes battlefield-smear-drift {
+  from { transform: rotate(3deg) translate(0.4%, -0.3%) scale(1.04); }
+  to { transform: rotate(1.5deg) translate(-0.7%, 0.5%) scale(1.08); }
 }
 
 .hs-shell.hp-wounded .health-damage-overlay {
@@ -324,8 +376,8 @@ button:disabled {
 }
 
 @keyframes wounded-arena-pulse {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.62; }
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 0.92; }
 }
 
 /* Screen shake when a hero takes a hit. */

@@ -1038,11 +1038,13 @@ export default function App() {
     return () => sfx.stopCue();
   }, [pack]);
   const viewer = game.players[viewerId];
-  const viewerHealthBand = viewer.health <= STARTING_CORE * 0.24
+  // The arena stays clean above 20 HP. It wears in three deliberate stages:
+  // 20–11, 10–6, and 5 or less. There is no separate one-HP treatment.
+  const viewerHealthBand = viewer.health <= 5
     ? "hp-critical"
-    : viewer.health <= STARTING_CORE * 0.5
+    : viewer.health <= 10
       ? "hp-bloodied"
-      : viewer.health < STARTING_CORE
+      : viewer.health <= 20
         ? "hp-wounded"
         : "hp-healthy";
   const gladosTurnsRemaining = game.heroPowers[otherPlayer(viewerId)] === "glados_test_protocol"
