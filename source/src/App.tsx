@@ -1359,18 +1359,22 @@ export default function App() {
     else if (resultEvents.some((event) => event.kind === "effect" && /\bequips\b/i.test(event.text))) sfx.play("relicEquip", 0.05);
 
     // An enemy relic is easy to miss because its card vanishes from the hidden
-    // hand. Show the actual relic face beside its bearer for one second, using
-    // the engine's equip event so generated and ordinary relic plays agree.
-    if (action.type === "play_relic" && action.player === opponentId) {
-      const play = resultEvents.find(
-        (event) => event.kind === "play" && event.cardId?.startsWith("r") && event.instanceId,
-      );
-      const relic = play?.cardId ? relicLibrary.get(play.cardId) : undefined;
-      if (play?.instanceId && relic) {
-        const flash = { id: fxId.current++, instanceId: play.instanceId, relic };
-        setRelicFlash(flash);
-        window.setTimeout(() => setRelicFlash((current) => (current?.id === flash.id ? null : current)), 1000);
-      }
+    // hand. Listen to the engine's actual equip event, not only the direct
+    // `play_relic` action: boss effects can grant or equip relics too, and those
+    // were the six placements that previously produced no visual card.
+    const enemyRelicEvent = resultEvents.find(
+      (event) =>
+        event.player === opponentId &&
+        event.cardId?.startsWith("r") &&
+        event.instanceId &&
+        (event.kind === "play" || event.kind === "effect") &&
+        /\b(plays|equips|grants|takes)\b/i.test(event.text),
+    );
+    const relic = enemyRelicEvent?.cardId ? relicLibrary.get(enemyRelicEvent.cardId) : undefined;
+    if (enemyRelicEvent?.instanceId && relic) {
+      const flash = { id: fxId.current++, instanceId: enemyRelicEvent.instanceId, relic };
+      setRelicFlash(flash);
+      window.setTimeout(() => setRelicFlash((current) => (current?.id === flash.id ? null : current)), 1000);
     }
 
     before.forEach((entry, id) => {
