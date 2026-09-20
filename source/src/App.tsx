@@ -314,6 +314,7 @@ const HEAVY_LANDING_MAX_COST = 10;
  * do not understand answers you without a click.
  */
 const HAND_KEYWORD_DELAY_MS = 2000;
+const BOARD_KEYWORD_DELAY_MS = 2000;
 
 /**
  * The made-up damage tally behind the developer result screen.
@@ -412,8 +413,8 @@ type DragState =
 type ScreenPoint = { x: number; y: number };
 
 const DRAG_THRESHOLD = 8;
-/** Board minion previews open only after a deliberate two-second pause. */
-const HOVER_PREVIEW_DELAY_MS = 2000;
+/** The enlarged card keeps its original one-second hover delay. */
+const HOVER_PREVIEW_DELAY_MS = 1000;
 
 /** Hand card width, matching `.hand-card`'s flex-basis in App.css. */
 const HAND_CARD_W = 118;
@@ -753,6 +754,7 @@ export default function App() {
    */
   const [handKeywords, setHandKeywords] = useState<{ entries: KeywordEntry[]; left: number; top: number } | null>(null);
   const handKeywordTimer = useRef<number | null>(null);
+  const boardKeywordTimer = useRef<number | null>(null);
   /** The board minion under the pointer, for the reach highlight. */
   const [reachSource, setReachSource] = useState<string | null>(null);
   /**
@@ -2100,7 +2102,9 @@ export default function App() {
   function clearHoverTimer() {
     hoverRequest.current += 1;
     if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current);
+    if (boardKeywordTimer.current !== null) window.clearTimeout(boardKeywordTimer.current);
     hoverTimer.current = null;
+    boardKeywordTimer.current = null;
   }
 
   function clearHoverPreview() {
@@ -2165,6 +2169,7 @@ export default function App() {
     const def = library[minion.cardId];
     const grantedEffects = minion.gainedEffects.map((effect) => effect.text).filter(Boolean);
     const copiedPassive = minion.stolenPassiveText?.replace(/^Passive:\s*/i, "");
+    const keywordEntries = minionKeywordEntriesFor(minion);
     scheduleHoverPreview(() => {
       if (!el.isConnected) return;
       sfx.hoverTick();
@@ -2183,9 +2188,16 @@ export default function App() {
               ...(grantedEffects.length ? [`Granted effect: ${grantedEffects.join(" • ")}`] : []),
               ...(copiedPassive ? [`Copied passive: ${copiedPassive}`] : []),
             ],
-        keywordEntries: minionKeywordEntriesFor(minion),
+        keywordEntries: [],
         rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
       });
+      if (keywordEntries.length > 0) {
+        boardKeywordTimer.current = window.setTimeout(() => {
+          boardKeywordTimer.current = null;
+          if (!el.isConnected) return;
+          setHover((current) => current ? { ...current, keywordEntries } : current);
+        }, Math.max(0, BOARD_KEYWORD_DELAY_MS - HOVER_PREVIEW_DELAY_MS));
+      }
     });
   }
 
@@ -5656,7 +5668,7 @@ function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
   // Bigger than it used to be, and no text panel underneath: the face prints its
   // own effect and flavour now, so this IS the readable copy of the card.
   const width = 300;
-  const height = (hover.extraEffects.length ? 492 : 440) + (hover.keywordEntries.length ? Math.min(230, 58 + hover.keywordEntries.length * 62) : 0);
+  const height = hover.extraEffects.length ? 492 : 440;
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
   let left = hover.rect.right + 14;
@@ -5664,6 +5676,9 @@ function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
   if (left < 10) left = 10;
   let top = (hover.rect.top + hover.rect.bottom) / 2 - height / 2;
   top = Math.max(10, Math.min(top, viewportH - height - 10));
+  const keywordWidth = 264;
+  const keywordLeft = Math.min(left + width + 12, viewportW - keywordWidth - 10);
+  const keywordOffset = keywordLeft - left;
   return (
     <aside className="hover-preview" style={{ left, top, width }} aria-hidden="true">
       <CardFace
@@ -5677,7 +5692,7 @@ function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
       />
       {hover.extraEffects.length ? <span className="hover-extra-effect">{hover.extraEffects.join(" • ")}</span> : null}
       {hover.keywordEntries.length ? (
-        <div className="hover-keyword-definitions" aria-label="Keyword explanations">
+        <div className="hover-keyword-definitions" style={{ left: keywordOffset, top: 0, width: keywordWidth }} aria-label="Keyword explanations">
           <span className="hover-keyword-heading">Keyword explanations</span>
           {hover.keywordEntries.map((entry) => (
             <span key={entry.term} className="hover-keyword-definition">

@@ -4153,6 +4153,8 @@ button:disabled {
 }
 
 .hover-keyword-definitions {
+  position: absolute;
+  z-index: 2;
   display: grid;
   max-height: 214px;
   gap: 8px;

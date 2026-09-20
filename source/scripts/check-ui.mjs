@@ -600,21 +600,24 @@ if ((await boardPreviewTarget.count()) > 0) {
   await boardPreviewTarget.hover();
   await page.waitForTimeout(400);
   const boardPreviewEarly = await page.locator(".hover-preview").count();
-  await page.waitForTimeout(1700);
+  await page.waitForTimeout(850);
   const boardPreviewLate = await page.locator(".hover-preview").count();
   check(
-    "board card preview waits 2 seconds",
+    "board card preview waits 1 second",
     boardPreviewEarly === 0 && boardPreviewLate === 1,
     `early ${boardPreviewEarly}, late ${boardPreviewLate}`,
   );
+  const keywordEarly = await page.locator(".hover-keyword-definitions").count();
+  await page.waitForTimeout(850);
+  const keywordLate = await page.locator(".hover-keyword-definitions").count();
   check(
-    "board card preview explains its keywords",
-    (await page.locator(".hover-keyword-definitions").count()) === 1,
-    `${await page.locator(".hover-keyword-definition").count()} definition(s) visible`,
+    "board keyword explanations wait 2 seconds",
+    keywordEarly === 0 && keywordLate === 1,
+    `early ${keywordEarly}, late ${keywordLate}`,
   );
   await page.mouse.move(0, 0);
 } else {
-  skip("board card preview waits 2 seconds", "no board minion to hover");
+  skip("board card preview waits 1 second", "no board minion to hover");
 }
 
 // ------------------------------------------------------------- 3. attacking
