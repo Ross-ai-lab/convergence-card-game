@@ -1363,12 +1363,15 @@ export default function App() {
     // `play_relic` action: boss effects can grant or equip relics too, and those
     // were the six placements that previously produced no visual card.
     const enemyRelicEvent = resultEvents.find(
-      (event) =>
-        event.player === opponentId &&
-        event.cardId?.startsWith("r") &&
-        event.instanceId &&
-        (event.kind === "play" || event.kind === "effect") &&
-        /\b(plays|equips|grants|takes)\b/i.test(event.text),
+      (event) => {
+        if (!event.cardId?.startsWith("r") || !event.instanceId) return false;
+        if (event.kind !== "play" && event.kind !== "effect") return false;
+        // The bearer is authoritative. Some generated effects describe the
+        // source that granted the relic in `event.player`, not the seat that
+        // now owns the bearer, so checking only that field misses real boss
+        // relic plays.
+        return next.players[opponentId].board.some((minion) => minion?.instanceId === event.instanceId);
+      },
     );
     const relic = enemyRelicEvent?.cardId ? relicLibrary.get(enemyRelicEvent.cardId) : undefined;
     if (enemyRelicEvent?.instanceId && relic) {
