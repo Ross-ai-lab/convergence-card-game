@@ -932,6 +932,40 @@ button:disabled {
   filter: brightness(1.1);
 }
 
+/* When the opponent straps on a relic, show the exact card beside its bearer.
+   The face is deliberately larger than the badge and lasts only one second:
+   enough time to read the event, short enough not to become a second board. */
+.relic-play-flash {
+  position: absolute;
+  z-index: 24;
+  top: 50%;
+  width: 182px;
+  pointer-events: none;
+  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.72));
+  animation: relic-play-flash-in 1s cubic-bezier(0.18, 0.86, 0.28, 1) both;
+}
+
+.relic-play-flash.to-right {
+  left: calc(100% + 12px);
+  transform-origin: left center;
+}
+
+.relic-play-flash.to-left {
+  right: calc(100% + 12px);
+  transform-origin: right center;
+}
+
+.relic-play-flash .card-face {
+  width: 100%;
+}
+
+@keyframes relic-play-flash-in {
+  0% { opacity: 0; transform: translateY(-50%) scale(0.72) rotate(-3deg); }
+  16% { opacity: 1; transform: translateY(-50%) scale(1.04) rotate(0deg); }
+  78% { opacity: 1; transform: translateY(-50%) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(-50%) scale(0.96) rotate(1deg); }
+}
+
 @keyframes breath-green {
   50% {
     filter: brightness(1.12);
@@ -4116,6 +4150,45 @@ button:disabled {
     #1c130c;
   box-shadow: var(--shadow);
   text-align: center;
+}
+
+.hover-keyword-definitions {
+  display: grid;
+  max-height: 214px;
+  gap: 8px;
+  overflow-y: auto;
+  padding: 9px 11px;
+  border: 1px solid rgba(118, 228, 237, 0.42);
+  border-radius: 8px;
+  background: rgba(10, 31, 35, 0.96);
+  color: #f7eedb;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.hover-keyword-heading {
+  color: #76e4ed;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hover-keyword-definition {
+  display: grid;
+  gap: 2px;
+}
+
+.hover-keyword-definition + .hover-keyword-definition {
+  padding-top: 7px;
+  border-top: 1px solid rgba(118, 228, 237, 0.16);
+}
+
+.hover-keyword-definition strong {
+  color: #ffe19a;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
 }
 
 .draw-panel {

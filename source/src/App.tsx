@@ -275,6 +275,7 @@ type Flight = {
 type DuelIntroState = { id: number; phase: DuelIntroPhase };
 type BoardToast = { id: number; text: string; durationMs: number; tone: "normal" | "bargain" };
 type TauntFlash = { id: number; instanceIds: string[] } | null;
+type RelicFlash = { id: number; instanceId: string; relic: RelicDefinition } | null;
 
 // Keep this schedule aligned with the opening animation table in the project
 // README. The intro ends after the mana reveal; opening card flights continue
@@ -370,6 +371,24 @@ function handKeywordEntriesFor(card: PlayableCard): KeywordEntry[] {
   return found;
 }
 
+function minionKeywordEntriesFor(minion: MinionInstance): KeywordEntry[] {
+  const found: KeywordEntry[] = [];
+  const add = (entry: KeywordEntry) => {
+    if (!found.includes(entry)) found.push(entry);
+  };
+  if (minion.silenced) return found;
+  for (const piece of splitOnKeywords(minion.effect)) {
+    if (piece.entry) add(piece.entry);
+  }
+  for (const effect of minion.gainedEffects) {
+    for (const piece of splitOnKeywords(effect.text)) {
+      if (piece.entry) add(piece.entry);
+    }
+  }
+  for (const entry of keywordEntriesFor(minion.keywords)) add(entry);
+  return found;
+}
+
 /**
  * How hard a minion of this cost lands, from 0 at 6 mana to 1 at 10.
  *
@@ -393,7 +412,8 @@ type DragState =
 type ScreenPoint = { x: number; y: number };
 
 const DRAG_THRESHOLD = 8;
-const HOVER_PREVIEW_DELAY_MS = 1000;
+/** Board minion previews open only after a deliberate two-second pause. */
+const HOVER_PREVIEW_DELAY_MS = 2000;
 
 /** Hand card width, matching `.hand-card`'s flex-basis in App.css. */
 const HAND_CARD_W = 118;
@@ -716,6 +736,7 @@ export default function App() {
   const [impacts, setImpacts] = useState<Impact[]>([]);
   const [lunge, setLunge] = useState<Lunge>(null);
   const [splash, setSplash] = useState<Splash>(null);
+  const [relicFlash, setRelicFlash] = useState<RelicFlash>(null);
   const [toast, setToast] = useState<BoardToast | null>(null);
   const [shaking, setShaking] = useState(false);
   /** Whether the enemy Hero Power card is showing. Opened by a click, not a hover. */
@@ -1204,6 +1225,7 @@ export default function App() {
     setImpacts([]);
     setLunge(null);
     setSplash(null);
+    setRelicFlash(null);
     setToast(null);
     setDrag(null);
     setFlights([]);
@@ -1333,6 +1355,21 @@ export default function App() {
     )?.cardId;
     if (equippedRelicId) sfx.playCardTheme(equippedRelicId, 0.05);
     else if (resultEvents.some((event) => event.kind === "effect" && /\bequips\b/i.test(event.text))) sfx.play("relicEquip", 0.05);
+
+    // An enemy relic is easy to miss because its card vanishes from the hidden
+    // hand. Show the actual relic face beside its bearer for one second, using
+    // the engine's equip event so generated and ordinary relic plays agree.
+    if (action.type === "play_relic" && action.player === opponentId) {
+      const play = resultEvents.find(
+        (event) => event.kind === "play" && event.cardId?.startsWith("r") && event.instanceId,
+      );
+      const relic = play?.cardId ? relicLibrary.get(play.cardId) : undefined;
+      if (play?.instanceId && relic) {
+        const flash = { id: fxId.current++, instanceId: play.instanceId, relic };
+        setRelicFlash(flash);
+        window.setTimeout(() => setRelicFlash((current) => (current?.id === flash.id ? null : current)), 1000);
+      }
+    }
 
     before.forEach((entry, id) => {
       const now = after.get(id);
@@ -2106,6 +2143,7 @@ export default function App() {
         states: [],
         onBoard: false,
         extraEffects: [],
+        keywordEntries: handKeywordEntriesFor(card),
         rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
       });
     };
@@ -2145,6 +2183,7 @@ export default function App() {
               ...(grantedEffects.length ? [`Granted effect: ${grantedEffects.join(" • ")}`] : []),
               ...(copiedPassive ? [`Copied passive: ${copiedPassive}`] : []),
             ],
+        keywordEntries: minionKeywordEntriesFor(minion),
         rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
       });
     });
@@ -2168,6 +2207,7 @@ export default function App() {
       states: [],
       onBoard: false,
       extraEffects: [],
+      keywordEntries: [],
       rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
     });
   }
@@ -2845,6 +2885,7 @@ export default function App() {
             onPreview={previewMinion}
             onPreviewEnd={endPreview}
             reach={reach}
+            relicFlash={relicFlash}
             onRelicPreview={previewRelic}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
@@ -2878,6 +2919,7 @@ export default function App() {
             onPreview={previewMinion}
             onPreviewEnd={endPreview}
             reach={reach}
+            relicFlash={relicFlash}
             onRelicPreview={previewRelic}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
@@ -3326,6 +3368,7 @@ type HoverState = {
   states: string[];
   onBoard: boolean;
   extraEffects: string[];
+  keywordEntries: KeywordEntry[];
   rect: { left: number; right: number; top: number; bottom: number };
 } | null;
 
@@ -3379,6 +3422,7 @@ function BoardRow({
   onPreview,
   onPreviewEnd,
   onRelicPreview,
+  relicFlash,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -3402,6 +3446,7 @@ function BoardRow({
   onPreview: (minion: MinionInstance, el: HTMLElement) => void;
   onPreviewEnd: () => void;
   onRelicPreview: (relic: RelicInstance, el: HTMLElement) => void;
+  relicFlash: RelicFlash;
   onDragStart: (e: React.PointerEvent<HTMLElement>, slotIndex: number, canAttack: boolean) => void;
   onDragMove: (e: React.PointerEvent) => void;
   onDragEnd: (e: React.PointerEvent) => void;
@@ -3495,6 +3540,7 @@ function BoardRow({
             className={classes}
             style={auraStyle}
             data-slot={`${owner}-${slotIndex}`}
+            data-instance={minion?.instanceId}
             onClick={() => onSlot(owner, slotIndex)}
             onPointerDown={(e) => onDragStart(e, slotIndex, Boolean(canAttack))}
             onPointerMove={onDragMove}
@@ -3524,6 +3570,11 @@ function BoardRow({
                       onRelicPreview={onRelicPreview}
                       onRelicPreviewEnd={onPreview}
                     />
+                    {relicFlash?.instanceId === minion.instanceId ? (
+                      <span className={slotIndex < 2 ? "relic-play-flash to-right" : "relic-play-flash to-left"} aria-hidden="true">
+                        <CardFace card={relicFace(relicFlash.relic)} />
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -5605,7 +5656,7 @@ function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
   // Bigger than it used to be, and no text panel underneath: the face prints its
   // own effect and flavour now, so this IS the readable copy of the card.
   const width = 300;
-  const height = hover.extraEffects.length ? 492 : 440;
+  const height = (hover.extraEffects.length ? 492 : 440) + (hover.keywordEntries.length ? Math.min(230, 58 + hover.keywordEntries.length * 62) : 0);
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
   let left = hover.rect.right + 14;
@@ -5625,6 +5676,17 @@ function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
         onBoard={hover.onBoard}
       />
       {hover.extraEffects.length ? <span className="hover-extra-effect">{hover.extraEffects.join(" • ")}</span> : null}
+      {hover.keywordEntries.length ? (
+        <div className="hover-keyword-definitions" aria-label="Keyword explanations">
+          <span className="hover-keyword-heading">Keyword explanations</span>
+          {hover.keywordEntries.map((entry) => (
+            <span key={entry.term} className="hover-keyword-definition">
+              <strong>{entry.term}</strong>
+              <span>{plainKeywordText(entry.text)}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
     </aside>
   );
 }
@@ -6318,16 +6380,32 @@ function DeveloperTools({
 }) {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(allCards[0]?.id ?? "");
+  const [filters, setFilters] = useState({ kind: "all", cost: "all", rarity: "all", camp: "all", alignment: "all" });
   const otherId: PlayerId = viewerId === 0 ? 1 : 0;
   const selected = allCards.find((card) => card.id === selectedId) ?? allCards[0];
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return allCards
-      .filter((card) =>
-        !needle || [card.name, card.origin, card.effect, isRelicCard(card) ? "relic" : ""].join(" ").toLowerCase().includes(needle),
-      )
+      .filter((card) => {
+        const relic = isRelicCard(card);
+        const kind = relic ? "relic" : "minion";
+        const cost = card.cost === undefined ? "" : String(card.cost);
+        const rarity = relic ? RELIC_RARITY : card.rarity;
+        const camp = relic ? RELIC_CAMP_LABEL : card.camp;
+        const alignment = relic ? RELIC_RARITY : card.alignment;
+        return (
+          (!needle || [card.name, card.origin, card.effect, relic ? "relic" : "minion"].join(" ").toLowerCase().includes(needle)) &&
+          (filters.kind === "all" || filters.kind === kind) &&
+          (filters.cost === "all" || filters.cost === cost) &&
+          (filters.rarity === "all" || filters.rarity === rarity) &&
+          (filters.camp === "all" || filters.camp === camp) &&
+          (filters.alignment === "all" || filters.alignment === alignment)
+        );
+      })
       .sort((left, right) => left.name.localeCompare(right.name));
-  }, [allCards, query]);
+  }, [allCards, filters, query]);
+
+  const setFilter = (key: keyof typeof filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
 
   useEffect(() => {
     if (selected && filtered.some((card) => card.id === selected.id)) return;
@@ -6389,6 +6467,49 @@ function DeveloperTools({
                 autoFocus
               />
             </label>
+            <div className="developer-filters" aria-label="Card filters">
+              <label>
+                <span>Type</span>
+                <select aria-label="Filter by type" value={filters.kind} onChange={(event) => setFilter("kind", event.target.value)}>
+                  <option value="all">All types</option>
+                  <option value="minion">Minions</option>
+                  <option value="relic">Relics</option>
+                </select>
+              </label>
+              <label>
+                <span>Cost</span>
+                <select aria-label="Filter by cost" value={filters.cost} onChange={(event) => setFilter("cost", event.target.value)}>
+                  <option value="all">Any cost</option>
+                  {Array.from(new Set(allCards.map((card) => card.cost).filter((cost): cost is number => cost !== undefined))).sort((a, b) => a - b).map((cost) => (
+                    <option key={cost} value={cost}>{cost} mana</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Rarity</span>
+                <select aria-label="Filter by rarity" value={filters.rarity} onChange={(event) => setFilter("rarity", event.target.value)}>
+                  <option value="all">Any rarity</option>
+                  {RARITIES.map((rarity) => <option key={rarity} value={rarity}>{rarityName(rarity)}</option>)}
+                  <option value={RELIC_RARITY}>{RELIC_RARITY}</option>
+                </select>
+              </label>
+              <label>
+                <span>Camp</span>
+                <select aria-label="Filter by camp" value={filters.camp} onChange={(event) => setFilter("camp", event.target.value)}>
+                  <option value="all">Any camp</option>
+                  {CAMPS.map((camp) => <option key={camp} value={camp}>{camp}</option>)}
+                  <option value={RELIC_CAMP_LABEL}>{RELIC_CAMP_LABEL}</option>
+                </select>
+              </label>
+              <label>
+                <span>Alignment</span>
+                <select aria-label="Filter by alignment" value={filters.alignment} onChange={(event) => setFilter("alignment", event.target.value)}>
+                  <option value="all">Any alignment</option>
+                  {ALIGNMENTS.map((alignment) => <option key={alignment} value={alignment}>{alignment}</option>)}
+                  <option value={RELIC_RARITY}>{RELIC_RARITY}</option>
+                </select>
+              </label>
+            </div>
             <div className="developer-card-list">
               {filtered.map((card) => (
                 <button

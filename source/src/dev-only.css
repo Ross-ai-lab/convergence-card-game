@@ -151,6 +151,44 @@
   box-shadow: 0 0 0 2px rgba(67, 205, 189, 0.16);
 }
 
+.developer-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 10px 0 8px;
+}
+
+.developer-filters label {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  color: rgba(213, 235, 224, 0.68);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.developer-filters select {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 7px;
+  border: 1px solid rgba(118, 228, 237, 0.28);
+  border-radius: 7px;
+  background: rgba(7, 17, 24, 0.86);
+  color: #efffff;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: none;
+}
+
+.developer-filters select:focus {
+  outline: 0;
+  border-color: #b9fff0;
+  box-shadow: 0 0 0 2px rgba(67, 205, 189, 0.16);
+}
+
 .developer-card-list {
   display: grid;
   min-height: 0;
@@ -325,6 +363,10 @@
   .developer-inspector {
     grid-template-columns: 96px minmax(0, 1fr);
     gap: 10px;
+  }
+
+  .developer-filters {
+    grid-template-columns: 1fr;
   }
 
   .developer-card-preview {
