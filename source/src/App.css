@@ -295,28 +295,31 @@ button:disabled {
   pointer-events: none;
   opacity: 0;
   border-radius: inherit;
-  mix-blend-mode: multiply;
+  /* Keep this as a real wash, not a barely visible multiply tint. At 3 HP the
+     arena must look wounded even in the bright centre of the parchment. */
+  mix-blend-mode: normal;
   background:
-    radial-gradient(ellipse 38% 30% at 8% 18%, rgba(74, 20, 14, 0.8), transparent 72%),
-    radial-gradient(ellipse 34% 28% at 92% 82%, rgba(62, 14, 12, 0.72), transparent 70%),
-    radial-gradient(ellipse 70% 30% at 50% 100%, rgba(45, 16, 12, 0.58), transparent 76%),
-    linear-gradient(115deg, transparent 25%, rgba(95, 30, 22, 0.22) 48%, transparent 70%);
+    linear-gradient(180deg, rgba(94, 18, 19, 0.42), rgba(32, 6, 10, 0.74)),
+    radial-gradient(ellipse 58% 48% at 50% 52%, rgba(166, 28, 28, 0.3), transparent 78%),
+    radial-gradient(ellipse 40% 34% at 8% 18%, rgba(76, 12, 15, 0.9), transparent 72%),
+    radial-gradient(ellipse 38% 32% at 92% 82%, rgba(62, 8, 12, 0.88), transparent 70%),
+    repeating-linear-gradient(118deg, transparent 0 18px, rgba(25, 2, 6, 0.2) 18px 21px, transparent 21px 42px);
   transition: opacity 420ms ease, filter 420ms ease;
 }
 
 .hs-shell.hp-wounded .health-damage-overlay {
-  opacity: 0.18;
-  filter: saturate(1.08) contrast(1.03);
+  opacity: 0.28;
+  filter: saturate(1.12) contrast(1.04);
 }
 
 .hs-shell.hp-bloodied .health-damage-overlay {
-  opacity: 0.34;
-  filter: saturate(1.22) contrast(1.08);
+  opacity: 0.56;
+  filter: saturate(1.3) contrast(1.1);
 }
 
 .hs-shell.hp-critical .health-damage-overlay {
-  opacity: 0.52;
-  filter: saturate(1.38) contrast(1.14);
+  opacity: 0.86;
+  filter: saturate(1.48) contrast(1.18);
   animation: wounded-arena-pulse 3.8s ease-in-out infinite;
 }
 
@@ -2508,8 +2511,32 @@ button:disabled {
   animation: hero-hit 0.5s ease-out;
 }
 
+.hero-plate.protocol-warning {
+  border-color: rgba(255, 70, 48, 0.98);
+  animation: glados-protocol-warning-box 2s ease-in-out infinite;
+}
+
 .hero-plate.protocol-warning .health-gem {
   animation: glados-protocol-warning 2s ease-in-out infinite;
+}
+
+@keyframes glados-protocol-warning-box {
+  0%, 100% {
+    border-color: rgba(255, 70, 48, 0.72);
+    box-shadow:
+      0 10px 28px rgba(0, 0, 0, 0.45),
+      0 0 10px rgba(190, 22, 18, 0.45),
+      inset 0 0 0 1px rgba(20, 10, 4, 0.7);
+  }
+  18%, 34% {
+    border-color: #fff0e8;
+    box-shadow:
+      0 0 0 3px rgba(255, 42, 30, 0.9),
+      0 0 22px rgba(255, 44, 30, 0.98),
+      0 0 52px rgba(194, 12, 12, 0.86),
+      inset 0 0 26px rgba(180, 14, 14, 0.52),
+      0 10px 28px rgba(0, 0, 0, 0.45);
+  }
 }
 
 @keyframes glados-protocol-warning {

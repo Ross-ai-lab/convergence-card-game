@@ -29,7 +29,7 @@ c027,Thanos,10,9,10,Yellow,Magic,Evil,,snap_balance,onPlay,Battlecry: Each playe
 c028,Flash,10,4,4,Yellow,Magic,Good,Divine Shield;Passive;Charge,flash_speed,passive,Charge. Divine Shield. Passive: Can attack 2 times each turn,Speed of light. And beyond.,DCU,/card-art/raw/c028.webp
 c029,Darth Vader,5,3,2,Purple,Magic,Evil,,vader_chain_or_destroy,onPlay,"Battlecry: Choose an enemy minion. Set its ATK to 1 and Chain it",Reborn.,Star Wars,/card-art/raw/c029.webp
 c030,Dumbledore,5,2,4,Black,Magic,Good,Passive,dumbledore_cleanse,passive,"Passive: Friendly minions cannot be Silenced, Frozen, or Chained. Undo any such curses",He always asks calmly.,Harry Potter,/card-art/raw/c030.webp
-c031,Ragnaros,4,4,3,Black,Magic,Evil,Cannot Attack;Ongoing,ragnaros_ongoing_burn,ongoing,Cannot attack. Ongoing: Deal 3 damage to a random enemy minion or the enemy core,Summoned. Once again.,Hearthstone,/card-art/raw/c031.webp
+c031,Ragnaros,4,3,3,Black,Magic,Evil,Cannot Attack;Ongoing,ragnaros_ongoing_burn,ongoing,Cannot attack. Ongoing: Deal 3 damage to a random enemy minion or the enemy core,Summoned. Once again.,Hearthstone,/card-art/raw/c031.webp
 c032,Silver Surfer,7,1,1,Purple,Magic,Neutral,Deathrattle,deathrattle_summon_galactus,deathrattle,Deathrattle: Summon Galactus (8/8),The tide brings worlds.,MCU,/card-art/raw/c032.webp
 c033,Yujiro,4,4,4,Red,Nature,Evil,Passive,immune_nature_minions,passive,Passive: Immune to Nature minions,The strongest man alive.,Baki,/card-art/raw/c033.webp
 c034,Yubaba,4,2,2,Red,Magic,Evil,,devolve_enemy_minions,onPlay,"Battlecry: Devolve your enemy minions into random ones that cost 1 less mana",Are you looking for employment?,Spirited Away,/card-art/raw/c034.webp

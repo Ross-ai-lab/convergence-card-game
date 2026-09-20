@@ -1900,6 +1900,26 @@ export default function App() {
     setEvents((items) => [...items, { kind: "info" as const, text: `Developer mode made ${owner === viewerId ? "your" : "the opponent's"} Core invincible.` }].slice(-80));
   }
 
+  function developerHealCore(owner: PlayerId) {
+    setDeveloperDuelActive(true);
+    setGame((current) => {
+      const players = [...current.players] as GameState["players"];
+      players[owner] = { ...players[owner], health: STARTING_CORE };
+      return { ...current, players };
+    });
+    setEvents((items) => [...items, { kind: "info" as const, text: `Developer mode fully healed ${owner === viewerId ? "your" : "the opponent's"} Core.` }].slice(-80));
+  }
+
+  function developerClearHand(owner: PlayerId) {
+    setDeveloperDuelActive(true);
+    setGame((current) => {
+      const players = [...current.players] as GameState["players"];
+      players[owner] = { ...players[owner], hand: [], pressured: null };
+      return { ...current, players };
+    });
+    setEvents((items) => [...items, { kind: "info" as const, text: `Developer mode removed all cards from ${owner === viewerId ? "your" : "the opponent's"} hand.` }].slice(-80));
+  }
+
   function developerGiveCard(cardId: string, owner: PlayerId) {
     if (!library[cardId]) return;
     setDeveloperDuelActive(true);
@@ -2030,7 +2050,7 @@ export default function App() {
     setDeveloperDuelActive(true);
     setGame((current) => {
       const players = [...current.players] as GameState["players"];
-      players[owner] = { ...players[owner], board: [null, null, null, null, null] };
+      players[owner] = { ...players[owner], board: Array(players[owner].board.length).fill(null) };
       return { ...current, players };
     });
     setEvents((items) =>
@@ -3281,6 +3301,8 @@ export default function App() {
           canUndoTurn={history.some((snapshot) => snapshot.turnNumber < game.turnNumber)}
           onSetCore={developerSetCore}
           onMakeCoreInvincible={developerMakeCoreInvincible}
+          onHealCore={developerHealCore}
+          onClearHand={developerClearHand}
           onGiveCard={developerGiveCard}
           onPlaceCard={developerPlaceCard}
           onEquipRelic={developerEquipRelic}
@@ -6264,6 +6286,8 @@ function DeveloperTools({
   canUndoTurn,
   onSetCore,
   onMakeCoreInvincible,
+  onHealCore,
+  onClearHand,
   onShowResult,
   onGiveCard,
   onPlaceCard,
@@ -6281,6 +6305,8 @@ function DeveloperTools({
   canUndoTurn: boolean;
   onSetCore: (owner: PlayerId, value: number) => void;
   onMakeCoreInvincible: (owner: PlayerId) => void;
+  onHealCore: (owner: PlayerId) => void;
+  onClearHand: (owner: PlayerId) => void;
   onShowResult: (winner: PlayerId | "draw", cardId: string) => void;
   onGiveCard: (cardId: string, owner: PlayerId) => void;
   onPlaceCard: (cardId: string, owner: PlayerId) => void;
@@ -6336,6 +6362,9 @@ function DeveloperTools({
               </button>
               <button type="button" className="developer-action" onClick={() => onSetCore(viewerId, 1)}>My Core → 1</button>
               <button type="button" className="developer-action" onClick={() => onSetCore(otherId, 1)}>Enemy Core → 1</button>
+              <button type="button" className="developer-action" onClick={() => onHealCore(viewerId)}>Fully heal my core</button>
+              <button type="button" className="developer-action" onClick={() => onHealCore(otherId)}>Fully heal enemy core</button>
+              <button type="button" className="developer-action" onClick={() => onClearHand(otherId)}>Remove all enemy cards</button>
               <button type="button" className={game.coreInvincible?.[viewerId] ? "developer-action active" : "developer-action"} onClick={() => onMakeCoreInvincible(viewerId)}>
                 {game.coreInvincible?.[viewerId] ? "Core invincible: ON" : "Make the core invincible"}
               </button>

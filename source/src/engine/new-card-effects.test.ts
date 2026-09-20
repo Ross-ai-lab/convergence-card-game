@@ -488,7 +488,7 @@ describe("2026 card replacements", () => {
       },
       Sans: { cost: 4, atk: 2, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks" },
       "Doom Slayer": { cost: 8, atk: 3, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
-      Ragnaros: { cost: 4, atk: 4, hp: 3, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
+      Ragnaros: { cost: 4, atk: 3, hp: 3, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
       Musashi: { atk: 2, hp: 1 },
       Illumi: { atk: 1, hp: 1 },
       "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },

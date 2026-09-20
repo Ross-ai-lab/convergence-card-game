@@ -1658,7 +1658,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 4,
-    "atk": 4,
+    "atk": 3,
     "hp": 3,
     "cc": "#7a52c8",
     "vals": [
