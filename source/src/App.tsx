@@ -6307,6 +6307,8 @@ function CardPack({
                   <div
                     className="pack-card"
                     key={`${face.name}-${index}`}
+                    onMouseEnter={(event) => armPackKeywords(rewardCards[index], event.currentTarget)}
+                    onMouseLeave={clearPackKeywords}
                     // A card on the edge of the grid grows INWARD. Enlarging
                     // from the centre pushed the first card 63px off the left of
                     // a 1920 screen, and the grid is deliberately as wide as the
@@ -6337,11 +6339,7 @@ function CardPack({
                         transform on it forever, and an animation's fill beats a
                         plain `:hover` rule in the cascade — the hover would
                         simply never apply. */}
-                    <div
-                      className="pack-card-lift"
-                      onMouseEnter={(event) => armPackKeywords(rewardCards[index], event.currentTarget)}
-                      onMouseLeave={clearPackKeywords}
-                    >
+                    <div className="pack-card-lift">
                       {/* NOT lazy, unlike the gallery. Fifteen images at the
                           most, and each one is the thing the player is here to
                           look at — a card that deals itself onto the table with
