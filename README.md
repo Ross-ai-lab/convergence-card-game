@@ -553,7 +553,7 @@ Thirty-two relics would be
   previews only; there is no separate relic-shelf screen.
 
 Enemy relic equips also show the actual enlarged card beside the exact bearer
-for 1,000 ms. Every equip event joins a queue, including effect-driven equips;
+for 2,000 ms. Every equip event joins a queue, including effect-driven equips;
 multiple relics appear one after another, each for its own second. The bot waits
 until the queue finishes before its next action. The popup renders outside the
 board's transformed layers with an explicit card height, so board-only sizing

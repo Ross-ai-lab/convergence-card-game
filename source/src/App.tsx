@@ -276,6 +276,7 @@ type DuelIntroState = { id: number; phase: DuelIntroPhase };
 type BoardToast = { id: number; text: string; durationMs: number; tone: "normal" | "bargain" };
 type TauntFlash = { id: number; instanceIds: string[] } | null;
 type RelicFlash = { id: number; instanceId: string; relic: RelicDefinition };
+const RELIC_PLAY_FLASH_DURATION_MS = 2000;
 
 // Keep this schedule aligned with the opening animation table in the project
 // README. The intro ends after the mana reveal; opening card flights continue
@@ -741,7 +742,7 @@ export default function App() {
   const relicFlash = relicFlashes[0] ?? null;
   useEffect(() => {
     if (!relicFlash) return;
-    const timer = window.setTimeout(() => setRelicFlashes(items => items.filter(item => item.id !== relicFlash.id)), 1000);
+    const timer = window.setTimeout(() => setRelicFlashes(items => items.filter(item => item.id !== relicFlash.id)), RELIC_PLAY_FLASH_DURATION_MS);
     return () => window.clearTimeout(timer);
   }, [relicFlash]);
   const [toast, setToast] = useState<BoardToast | null>(null);

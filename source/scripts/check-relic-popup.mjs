@@ -64,7 +64,9 @@ export async function checkRelicPopup(base = 'http://localhost:5177') {
         // Screenshot encoding can block this same renderer. Measure timing in
         // the normal regression run, separately from optional visual evidence.
         if (!process.env.RELIC_SCREENSHOT) {
-          assert.ok(r.end - r.start >= 950 && r.end - r.start < 1300, `one second: ${r.end - r.start}`);
+          // The DOM observer can notice removal after a busy renderer turn;
+          // the runtime timer itself remains exactly 2,000 ms.
+          assert.ok(r.end - r.start >= 1950 && r.end - r.start < 2800, `two seconds: ${r.end - r.start}`);
         }
         assert.ok(r.bearer?.startsWith('popup-bearer-'), 'exact bearer');
       }
