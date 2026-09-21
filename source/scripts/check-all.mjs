@@ -106,6 +106,12 @@ const SUITES = [
     reaches: [/^source\/public\/audio\//, /^source\/src\/audio\//, /^source\/data\/announcer\.csv$/, HARNESS],
   },
   {
+    name: "relic-popup",
+    command: ["node", "scripts/check-relic-popup.mjs", BASE],
+    browser: true,
+    reaches: [/^source\/src\/.*\.(tsx|css)$/, HARNESS],
+  },
+  {
     name: "campaign-voices",
     command: ["node", "scripts/check-campaign-voices.mjs", BASE],
     browser: true,

@@ -1,4 +1,4 @@
-import { Fragment, createContext, memo, useContext, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, createContext, memo, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
 import "./gallery-detail.css";
@@ -275,7 +275,7 @@ type Flight = {
 type DuelIntroState = { id: number; phase: DuelIntroPhase };
 type BoardToast = { id: number; text: string; durationMs: number; tone: "normal" | "bargain" };
 type TauntFlash = { id: number; instanceIds: string[] } | null;
-type RelicFlash = { id: number; instanceId: string; relic: RelicDefinition } | null;
+type RelicFlash = { id: number; instanceId: string; relic: RelicDefinition };
 
 // Keep this schedule aligned with the opening animation table in the project
 // README. The intro ends after the mana reveal; opening card flights continue
@@ -737,7 +737,13 @@ export default function App() {
   const [impacts, setImpacts] = useState<Impact[]>([]);
   const [lunge, setLunge] = useState<Lunge>(null);
   const [splash, setSplash] = useState<Splash>(null);
-  const [relicFlash, setRelicFlash] = useState<RelicFlash>(null);
+  const [relicFlashes, setRelicFlashes] = useState<RelicFlash[]>([]);
+  const relicFlash = relicFlashes[0] ?? null;
+  useEffect(() => {
+    if (!relicFlash) return;
+    const timer = window.setTimeout(() => setRelicFlashes(items => items.filter(item => item.id !== relicFlash.id)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [relicFlash]);
   const [toast, setToast] = useState<BoardToast | null>(null);
   const [shaking, setShaking] = useState(false);
   /** Whether the enemy Hero Power card is showing. Opened by a click, not a hover. */
@@ -886,7 +892,7 @@ export default function App() {
   // it walks through draw picks and targeting prompts exactly like a human does
   // and the animations get to play between its moves.
   useEffect(() => {
-    if (mode.kind === "hotseat" || screen !== "playing" || duelIntro) return;
+    if (mode.kind === "hotseat" || screen !== "playing" || duelIntro || relicFlash) return;
     const actor = game.phase === "mulligan" ? game.mulligan?.player
       : game.phase === "drawChoice" ? game.drawChoice?.player
       : game.phase === "targeting" ? game.pendingTarget?.player : game.activePlayer;
@@ -896,7 +902,7 @@ export default function App() {
       if (action) timer = window.setTimeout(() => perform(action), game.phase === "main" ? BOT_DELAY_MS : BOT_FIRST_DELAY_MS);
     });
     return () => { cancel(); window.clearTimeout(timer); };
-  }, [game, mode, screen, library, duelIntro, botSearch]);
+  }, [game, mode, screen, library, duelIntro, botSearch, relicFlash]);
 
   // Hotseat: the moment the active player changes, the seat is stale and the
   // curtain has to come back down. Reading it off the state rather than off the
@@ -1227,7 +1233,7 @@ export default function App() {
     setImpacts([]);
     setLunge(null);
     setSplash(null);
-    setRelicFlash(null);
+    setRelicFlashes([]);
     setToast(null);
     setDrag(null);
     setFlights([]);
@@ -1362,10 +1368,10 @@ export default function App() {
     // hand. Listen to the engine's actual equip event, not only the direct
     // `play_relic` action: boss effects can grant or equip relics too, and those
     // were the six placements that previously produced no visual card.
-    const enemyRelicEvent = resultEvents.find(
+    const enemyRelicEvents = resultEvents.filter(
       (event) => {
         if (!event.cardId?.startsWith("r") || !event.instanceId) return false;
-        if (event.kind !== "play" && event.kind !== "effect") return false;
+        if (event.kind !== "effect" || !/\bequips\b/i.test(event.text)) return false;
         // The bearer is authoritative. Some generated effects describe the
         // source that granted the relic in `event.player`, not the seat that
         // now owns the bearer, so checking only that field misses real boss
@@ -1373,12 +1379,11 @@ export default function App() {
         return next.players[opponentId].board.some((minion) => minion?.instanceId === event.instanceId);
       },
     );
-    const relic = enemyRelicEvent?.cardId ? relicLibrary.get(enemyRelicEvent.cardId) : undefined;
-    if (enemyRelicEvent?.instanceId && relic) {
-      const flash = { id: fxId.current++, instanceId: enemyRelicEvent.instanceId, relic };
-      setRelicFlash(flash);
-      window.setTimeout(() => setRelicFlash((current) => (current?.id === flash.id ? null : current)), 1000);
-    }
+    const flashes = enemyRelicEvents.flatMap(event => {
+      const relic = event.cardId ? relicLibrary.get(event.cardId) : undefined;
+      return relic && event.instanceId ? [{ id: fxId.current++, instanceId: event.instanceId, relic }] : [];
+    });
+    if (flashes.length) setRelicFlashes(items => [...items, ...flashes]);
 
     before.forEach((entry, id) => {
       const now = after.get(id);
@@ -3465,7 +3470,7 @@ function BoardRow({
   onPreview: (minion: MinionInstance, el: HTMLElement) => void;
   onPreviewEnd: () => void;
   onRelicPreview: (relic: RelicInstance, el: HTMLElement) => void;
-  relicFlash: RelicFlash;
+  relicFlash: RelicFlash | null;
   onDragStart: (e: React.PointerEvent<HTMLElement>, slotIndex: number, canAttack: boolean) => void;
   onDragMove: (e: React.PointerEvent) => void;
   onDragEnd: (e: React.PointerEvent) => void;
@@ -3590,9 +3595,7 @@ function BoardRow({
                       onRelicPreviewEnd={onPreview}
                     />
                     {relicFlash?.instanceId === minion.instanceId ? (
-                      <span className={slotIndex < 2 ? "relic-play-flash to-right" : "relic-play-flash to-left"} aria-hidden="true">
-                        <CardFace card={relicFace(relicFlash.relic)} />
-                      </span>
+                      <RelicPopup key={relicFlash.id} flash={relicFlash} />
                     ) : null}
                   </div>
                 </div>
@@ -5140,6 +5143,30 @@ const CardFace = memo(function CardFace({
     </article>
   );
 }, (a, b) => sameFaceValues(a.card, b.card) && sameFaceValues({ ...a, card: null }, { ...b, card: null }));
+
+function RelicPopup({ flash }: { flash: RelicFlash }) {
+  const [position, setPosition] = useState<CSSProperties>({ visibility: "hidden" });
+  useLayoutEffect(() => {
+    const place = () => {
+      const bearer = document.querySelector<HTMLElement>(`[data-instance="${flash.instanceId}"]`);
+      if (!bearer) return;
+      const rect = bearer.getBoundingClientRect();
+      const width = Math.min(240, window.innerWidth - 24, (window.innerHeight - 24) * 5 / 7);
+      const height = width * 7 / 5;
+      const right = rect.right + 12;
+      const left = right + width <= window.innerWidth - 12 ? right : rect.left - width - 12;
+      setPosition({ width, height, left: Math.max(12, Math.min(left, window.innerWidth - width - 12)),
+        top: Math.max(12, Math.min(rect.top + rect.height / 2 - height / 2, window.innerHeight - height - 12)) });
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [flash.instanceId]);
+  // Escape board transforms, stacking contexts and board-only card sizing.
+  return createPortal(<div className="relic-play-flash" data-bearer={flash.instanceId} style={position} aria-hidden="true">
+    <CardFace card={relicFace(flash.relic)} />
+  </div>, document.body);
+}
 
 function MinionFace({
   minion,

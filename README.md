@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 217,310 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 217,869 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -551,6 +551,14 @@ Thirty-two relics would be
   minion arrives. Relics never ride back as an accidental second card.
 - During a duel, attached relic badges show who is carrying each relic. They are
   previews only; there is no separate relic-shelf screen.
+
+Enemy relic equips also show the actual enlarged card beside the exact bearer
+for 1,000 ms. Every equip event joins a queue, including effect-driven equips;
+multiple relics appear one after another, each for its own second. The bot waits
+until the queue finishes before its next action. The popup renders outside the
+board's transformed layers with an explicit card height, so board-only sizing
+cannot collapse it. `npm run check` includes the `relic-popup` browser regression:
+an enemy plays a relic from hand, then The 7 Heroic Spirits equips three bearers.
 
 
 

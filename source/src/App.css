@@ -936,34 +936,15 @@ button:disabled {
    The face is deliberately larger than the badge and lasts only one second:
    enough time to read the event, short enough not to become a second board. */
 .relic-play-flash {
-  position: absolute;
-  z-index: 24;
-  top: 50%;
-  width: 182px;
+  position: fixed;
+  z-index: 10000;
   pointer-events: none;
   filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.72));
-  animation: relic-play-flash-in 1s cubic-bezier(0.18, 0.86, 0.28, 1) both;
-}
-
-.relic-play-flash.to-right {
-  left: calc(100% + 12px);
-  transform-origin: left center;
-}
-
-.relic-play-flash.to-left {
-  right: calc(100% + 12px);
-  transform-origin: right center;
 }
 
 .relic-play-flash .card-face {
   width: 100%;
-}
-
-@keyframes relic-play-flash-in {
-  0% { opacity: 0; transform: translateY(-50%) scale(0.72) rotate(-3deg); }
-  16% { opacity: 1; transform: translateY(-50%) scale(1.04) rotate(0deg); }
-  78% { opacity: 1; transform: translateY(-50%) scale(1) rotate(0deg); }
-  100% { opacity: 0; transform: translateY(-50%) scale(0.96) rotate(1deg); }
+  height: 100%;
 }
 
 @keyframes breath-green {
