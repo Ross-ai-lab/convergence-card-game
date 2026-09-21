@@ -104,12 +104,6 @@ const CHANGES = {
     why:
       "35.2% vs 45.2%. 4 ATK at cost 9 is the lowest clock in the bracket; the 9 HP already survives. Destroying the LOWEST-attack enemy is the weakest removal in the game — it takes the target the opponent cares least about.",
   },
-  "Thirteen Lords of Chaos": {
-    atk: 6,
-    hp: 7,
-    why:
-      "37.1% vs 50.1%. The effect needs a friendly EVIL minion already on the board, so it is dead on curve and dead in half of all decks. A 4/5 at cost 6 does not carry the conditional.",
-  },
   Kizaru: {
     atk: 6,
     hp: 7,

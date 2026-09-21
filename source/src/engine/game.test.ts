@@ -51,7 +51,7 @@ describe("Convergence engine", () => {
       ...relics.filter((relic) => relic.relicId !== "none").map((relic) => relic.id),
     ];
 
-    expect(cards).toHaveLength(184);
+    expect(cards).toHaveLength(183);
     expect(relics).toHaveLength(34);
     expect(drawableIds).toHaveLength(expectedIds.length);
     expect(new Set(drawableIds)).toEqual(new Set(expectedIds));
@@ -402,15 +402,15 @@ describe("Convergence engine", () => {
       .toBeLessThan(effectTexts.indexOf(effectTexts.find((t) => t.includes("Carnage Kabuto"))!));
   });
 
-  it("keeps Light Yagami on the board when there is no Nature enemy to name", () => {
+  it("keeps Light Yagami on the board after destroying the only enemy", () => {
     const state = mainState();
-    // Avatar Aang is not Nature, so the Battlecry has nothing legal to point at
-    // and resolves quietly. He lost the Deathrattle half on 2 September 2026.
+    // Any enemy minion is now a legal victim.
     state.players[1].board[0] = makeMinion("Avatar Aang", 1, { divineShield: true });
-    const resolved = playCardFor(state, 0, "Light Yagami", 0);
+    const asking = playCardFor(state, 0, "Light Yagami", 0);
+    const resolved = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: 0 }, library).state;
     expect(resolved.players[0].board[0]?.name).toBe("Light Yagami");
     expect(resolved.players[0].board[0]?.effectTiming).toBe("onPlay");
-    expect(resolved.players[1].board[0]?.name).toBe("Avatar Aang");
+    expect(resolved.players[1].board[0]?.name).toBe("Awakened");
   });
 });
 

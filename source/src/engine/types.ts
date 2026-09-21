@@ -251,6 +251,7 @@ export const EFFECT_IDS = [
   "invuln_with_good_ally",
   "invuln_if_alone",
   "dodge_50",
+  "dodge_60",
   "immune_magic_minions",
   "immune_tech_minions",
   "immune_nature_minions",
@@ -341,11 +342,11 @@ export const EFFECT_IDS = [
   "reveal_top_deck",
   "free_chained_shield",
   "meruem_kill_copy",
-  "deathrattle_summon_drakath",
   "avatar_aang_awakened",
   "chaos_random_summon",
   "copy_minion_to_hand",
   "discover_random_keyword_minion",
+  "kagaya_bind_slots",
   "double_other_friendly_attack",
   "mind_control_enemy",
   "discover_tech_card",
@@ -575,7 +576,8 @@ export type SlotAuraId =
   | "slot_grow_1" // Floor Guardians — a minion here gains +1/+1 each of your turns
   | "slot_grow_2" // Retired — +2/+2 each of your turns. Nothing lays this now.
   | "slot_protected" // Neo — minions here resist Silence, Freeze, and Chain; removal and attacks still reach them
-  | "slot_stats_one"; // Doctor Manhattan — minions here are permanently 1/1
+  | "slot_stats_one" // Doctor Manhattan — minions here are permanently 1/1
+  | "slot_bound"; // Kagaya — this position can never hold a minion again
 
 export interface SlotAura {
   slot: number;

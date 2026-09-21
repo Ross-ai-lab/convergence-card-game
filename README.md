@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 217,869 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 217,864 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -153,7 +153,7 @@ march toward a finish line that has already been crossed.
 
 ## What Convergence is
 
-Convergence is a browser card duel with 173 named character cards, 11 Basic cards and 34 relics. The current source implements a twenty-universe collection and separate 30-card decks. Each player starts with thirty selected deck cards and thirty unlocked cards. Antimatter Bomb and Carrier Strike Group are immediate Basic alternatives; cost changes apply without silently rebuilding saved decks. First universe victories add fixed cards to the collection, and the player chooses what to swap into their deck.
+Convergence is a browser card duel with 172 named character cards, 11 Basic cards and 34 relics. The current source implements a twenty-universe collection and separate 30-card decks. Each player starts with thirty selected deck cards and thirty unlocked cards. Antimatter Bomb and Carrier Strike Group are immediate Basic alternatives; cost changes apply without silently rebuilding saved decks. First universe victories add fixed cards to the collection, and the player chooses what to swap into their deck.
 
 The collection is the only ordinary solo mode until all twenty universes are conquered. Every universe is selectable from the start. Hotseat is available from the start. Completion opens Recruit, Veteran and Ascendant free duels with completely random thirty-card opponent decks. There is no selectable shared-deck mode.
 
@@ -212,7 +212,7 @@ All twenty universes are available immediately. A first victory conquers its uni
 
 Every player starts with the same thirty-card deck and thirty unlocked cards, including all eleven Basic cards and no Mythics. The deck keeps its chosen cards as costs change. Relics count as cards. Each boss universe is excluded from starters and earlier reward fillers. The complete universe, including its relics, is awarded on that chapter.
 
-Approved reward adjustment: universes 1–5 award 10 each; universe 6 awards 8; universe 7 awards 9; universe 8 awards 8; universes 9–10 award 9 each; universes 11–12 award 8 each; universe 13 awards 11; universes 14–17 award 9, 9, 9 and 8; universe 18 awards 15; universe 19 awards 7; universe 20 awards 11. Total: 30 initial cards + 188 rewards = all 218 cards.
+Approved reward adjustment: universes 1–5 award 10 each; universe 6 awards 8; universe 7 awards 9; universe 8 awards 7; universes 9–10 award 9 each; universes 11–12 award 8 each; universe 13 awards 11; universes 14–17 award 9, 9, 9 and 8; universe 18 awards 15; universe 19 awards 7; universe 20 awards 11. Total: 30 initial cards + 187 rewards = all 217 cards.
 
 Marvel combines MCU, Marvel and Loki labels: eleven minions and four relics, fifteen cards. Thanos's universe awards that fifteen-card Marvel set; The Driller from Transformers now joins GLaDOS's Tech fillers. Hunter x Hunter has eight minions and Queen's Cocoon. One Piece and One-Punch Man each have ten minions and one relic.
 
@@ -338,7 +338,7 @@ Release checks use `npm run check -- --all`, `npm run publish:pages`, the Pages 
 
 All four campaign chunks are implemented. Story, unique boss rules and additional cards remain separate future work.
 
-Create focused campaign, deck validation, first-clear and save-reset checks. Verify all 600 boss-deck slots, 218 unique unlock allocations, complete universe inclusion, no future reserved card leakage, exact thirty-card setup, relic counting, per-seat draws, independent fatigue, ownership after theft, hotseat isolation, replay idempotency and developer-assisted completion.
+Create focused campaign, deck validation, first-clear and save-reset checks. Verify all 600 boss-deck slots, 217 unique unlock allocations, complete universe inclusion, no future reserved card leakage, exact thirty-card setup, relic counting, per-seat draws, independent fatigue, ownership after theft, hotseat isolation, replay idempotency and developer-assisted completion.
 
 Verify the real collection start, first reward, first swap, named enemy banner, saved duel resume and final-universe completion in desktop and phone layouts. Test the adapted effects on sparse decks as well as complete decks. Bot matchups are a later validation activity; no balance ladder or card-stat patch was run in phase one.
 
@@ -452,13 +452,13 @@ The board communicates conditions visually: a wall means Taunt, a gold rim means
 **The last sentence of a printed effect carries NO full stop.** Owner's ruling, 26 August 2026. The
 rules panel is a box of its own on the card face and its edge already ends the sentence, so a closing
 period is a glyph that says nothing and costs a character of the auto-fit budget on the longest cards.
-Internal sentences keep their periods — only the last one goes, across all 184 cards and all 34
+Internal sentences keep their periods — only the last one goes, across all 183 cards and all 34
 relics.
 
 It is a build failure, not a style note. `scripts/validate-cards.mjs` rejects any effect ending in
 `.`, `,`, `;` or `:`, and `npm run publish:pages` runs that validator before it builds, so a card with
 a trailing period cannot reach the public site. The rule it replaced REQUIRED that period; both exist
-for the same reason, which is that 218 cards cannot be kept consistent by hand. A keyword-only card
+for the same reason, which is that 217 cards cannot be kept consistent by hand. A keyword-only card
 now prints `Taunt` rather than `Taunt.`, and the validator's leading-keyword patterns were widened to
 match.
 
@@ -531,9 +531,9 @@ Each mana tier also has a **Basic** reference card that represents the peak powe
 The current relic pool contains **34 relics**. Relics are equipment cards: they count toward a chosen thirty-card deck, drawn into hand, and played onto a friendly minion with an open relic slot. Some character effects can also find or equip a relic directly.
 
 **The relic roster target is about 15% of the full roster.** Count relics against
-all minion cards and relics together. With the current 184 minion cards, the
+all minion cards and relics together. With the current 183 minion cards, the
 first whole-number total that reaches or exceeds 15% is 33 relics in a 215-card
-roster. The current pool has 34 relics in 218 cards, so it exceeds the target.
+roster. The current pool has 34 relics in 217 cards, so it exceeds the target.
 Thirty-two relics would be
 14.95%, which rounds to 15.0% but remains just below the threshold.
 
@@ -570,7 +570,7 @@ an enemy plays a relic from hand, then The 7 Heroic Spirits equips three bearers
 
 ## Gradual card unlocking
 
-Card unlocking is now campaign-only. The canonical chapter packs are in `materials/campaign-design.json`; `progress.ts` awards only a first clear of the next chapter. Thirty initial cards plus 188 chapter rewards cover the current 218-card roster once each. The starting and saved decks still contain thirty selected cards. Refer to [Campaign design — phase one](#campaign-design-phase-one) for the exact chapter table and current implementation status.
+Card unlocking is now campaign-only. The canonical chapter packs are in `materials/campaign-design.json`; `progress.ts` awards only a first clear of the next chapter. Thirty initial cards plus 187 chapter rewards cover the current 217-card roster once each. The starting and saved decks still contain thirty selected cards. Refer to [Campaign design — phase one](#campaign-design-phase-one) for the exact chapter table and current implementation status.
 
 There are no daily cards, loss rewards, draw rewards or repeat-win packs. Completing a chapter changes the collection, not the saved thirty-card deck. The player edits that deck explicitly between duels. Developer Unlock All remains an intentional bypass, but it does not mark chapters complete or reveal free-play difficulty controls.
 
@@ -1388,7 +1388,7 @@ Interaction verification covered Recruit, Veteran, and Ascendant selection; the 
 | Relic | teal | aurora, motes rising, one rare foil sweep | 4 |
 | Rare | — | nothing at all | 0 |
 
-**Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 60 Rare cards stop costing anything at the same time, which is what keeps a gallery of 218 affordable.
+**Rare having none is the load-bearing part.** Give every card a shine and the tiers stop meaning anything, and 60 Rare cards stop costing anything at the same time, which is what keeps a gallery of 217 affordable.
 
 ### The technique, which is the transferable part
 

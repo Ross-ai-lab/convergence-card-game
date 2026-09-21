@@ -14,8 +14,8 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
   const valid = validateDeck(progress.playerDeck, rosterIds, progress.unlockedIds).valid;
   return <div className="campaign-overlay campaign-map" role="dialog" aria-modal="true" aria-label="Rick Gramps Collection">
     <section className="campaign-panel campaign-chapter-panel">
-      <header className="campaign-header"><img className="campaign-collector" src={`${import.meta.env.BASE_URL}campaign/rick-gramps.webp`} alt="Rick Gramps" /><div><h2>Rick Gramps Collection</h2>
-        </div>
+      <header className="campaign-header"><div className="campaign-identity"><img className="campaign-collector" src={`${import.meta.env.BASE_URL}campaign/rick-gramps.webp`} alt="Rick Gramps" /><div><h2>Rick Gramps Collection</h2>
+        </div></div>
         <button className="campaign-close" onClick={onClose} aria-label="Close Rick Gramps Collection">×</button></header>
       <div className="campaign-toolbar"><p>{campaignComplete(progress) ? "Every universe is conquered. Free duels are available on the title screen." : "Choose any universe. Conquer its champion to claim that universe's cards."}</p></div>
       {!valid && <p className="campaign-warning" role="status">Your deck has {progress.playerDeck.length} cards. Choose exactly 30 before starting a duel.</p>}

@@ -64,7 +64,7 @@ describe("campaign progression transactions", () => {
       expect(progress.playerDeck).toHaveLength(30);
     }
     expect([...progress.unlockedIds].sort()).toEqual([...roster].sort());
-    expect(progress.unlockedIds).toHaveLength(218); expect(progress.completedChapters).toBe(20);
+    expect(progress.unlockedIds).toHaveLength(217); expect(progress.completedChapters).toBe(20);
   });
   it("developer-assisted chapter wins count without granting arbitrary deck fillers", () => {
     const won = finish(emptyProgress(), 1);

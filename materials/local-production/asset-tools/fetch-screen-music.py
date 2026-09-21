@@ -59,6 +59,9 @@ _spec.loader.exec_module(card_stings)
 # somebody's recording.
 FULL_FADE_IN = 0.35
 FULL_FADE_OUT = 2.5
+# The pack cue already uses the strongest passage of its source. Add a short
+# pre-roll so it does not begin at the finale's last breath.
+EPIC_PREROLL_SECONDS = 10.0
 
 CUES: dict[str, dict] = {
     "pack": {
@@ -360,7 +363,7 @@ def build_full(src: Path, dst: Path, mode: str = "lead-in") -> tuple[bool, str]:
     seconds = probe_seconds(src)
     if seconds <= 1:
         return False, "unreadable source duration"
-    start = epic_start(src) if mode == "epic" else lead_in_seconds(src)
+    start = max(0.0, epic_start(src) - EPIC_PREROLL_SECONDS) if mode == "epic" else lead_in_seconds(src)
     kept = seconds - start
     fade_out_at = max(0.0, kept - FULL_FADE_OUT)
     filters = (
@@ -395,7 +398,7 @@ def build_full(src: Path, dst: Path, mode: str = "lead-in") -> tuple[bool, str]:
     dst.unlink(missing_ok=True)
     tmp.replace(dst)
     lead = (
-        f", from {start:.1f}s (the strongest passage)"
+        f", from {start:.1f}s (10s before the strongest passage)"
         if mode == "epic"
         else f", {start:.1f}s of lead-in trimmed" if start > 0.05 else ""
     )

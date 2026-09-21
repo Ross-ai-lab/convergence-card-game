@@ -4695,6 +4695,35 @@ button:disabled {
   pointer-events: none;
 }
 
+.board-slot.slot-is-bound.empty::before {
+  content: "🔒";
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255, 82, 111, 0.72);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 82, 111, 0.28), transparent 46%),
+    linear-gradient(145deg, rgba(74, 15, 30, 0.84), rgba(25, 10, 21, 0.92));
+  box-shadow: inset 0 0 24px rgba(255, 34, 76, 0.2), 0 0 18px rgba(255, 34, 76, 0.3);
+  color: #ffd4dc;
+  font-size: clamp(1.4rem, 3vw, 2.4rem);
+  filter: saturate(1.2);
+  animation: bound-slot-lock 2s ease-in-out infinite;
+}
+
+.board-slot.slot-is-bound::after {
+  animation: bound-slot-ring 1.8s ease-in-out infinite;
+}
+
+@keyframes bound-slot-lock {
+  0%, 100% { opacity: 0.82; transform: scale(0.98); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes bound-slot-ring {
+  0%, 100% { opacity: 0.7; box-shadow: var(--slot-aura-rings), 0 0 12px rgba(255, 34, 76, 0.18); }
+  50% { opacity: 1; box-shadow: var(--slot-aura-rings), 0 0 30px rgba(255, 34, 76, 0.62); }
+}
+
 .slot-auras {
   position: absolute;
   top: 3px;
@@ -4751,6 +4780,19 @@ button:disabled {
   color: #ffe0e3;
   border-color: rgba(255, 95, 109, 0.9);
   background: rgba(120, 28, 42, 0.9);
+}
+
+.slot-aura.slot_bound {
+  color: #ffe3e8;
+  border-color: rgba(255, 82, 111, 0.95);
+  background: linear-gradient(135deg, rgba(126, 19, 48, 0.96), rgba(55, 12, 31, 0.96));
+  box-shadow: 0 0 10px rgba(255, 34, 76, 0.34);
+  animation: bound-chip-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes bound-chip-pulse {
+  0%, 100% { filter: brightness(0.94); }
+  50% { filter: brightness(1.35); }
 }
 
 /* The relic strapped to a minion, centered along the bottom so it does not

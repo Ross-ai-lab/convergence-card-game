@@ -124,14 +124,14 @@ describe("separate-deck abilities", () => {
     expect(state.playerDecks![1].deck).toEqual(["r009"]);
   });
 
-  it.each(["c159", "c017", "c160", "c054", "c162", "c167", "c061"])("%s never falls back to an enemy pile", (source) => {
+  it.each(["c159", "c017", "c160", "c054", "c167", "c061"])("%s never falls back to an enemy pile", (source) => {
     let state = main(); state.playerDecks![1].deck = ["r001", "c020", "c139"];
     state = resolveChoices(play(state, source));
     expect(state.players[0].hand).toEqual([]); expect(state.playerDecks![1].deck).toEqual(["r001", "c020", "c139"]);
     expect(state.players[0].board.filter(Boolean)).toHaveLength(1);
   });
 
-  it.each(["c054", "c162", "c167"])("%s discovers and removes only a matching friendly-pile card", (source) => {
+  it.each(["c054", "c167"])("%s discovers and removes only a matching friendly-pile card", (source) => {
     let state = main(); state.playerDecks![0].deck = ["c140", "c103"];
     state.playerDecks![1].deck = ["c020", "c139"];
     state = resolveChoices(play(state, source));

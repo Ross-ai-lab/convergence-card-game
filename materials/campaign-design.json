@@ -1,6 +1,6 @@
 {
   "status": "Campaign release: all four implementation chunks complete",
-  "rosterCount": 218,
+  "rosterCount": 217,
   "starterCardIds": [
     "c169",
     "c001",
@@ -48,7 +48,7 @@
     "Tensura": "Tensura",
     "That time I got reincarnated as a Slime": "Tensura"
   },
-  "universeException": "Star Destroyer retains starter ownership despite its Star Wars origin. Antimatter Bomb and Carrier Strike Group replace T-1000 and Rick Prime in the starter deck; the replaced cards are GLaDOS rewards.",
+  "universeException": "Star Destroyer retains starter ownership despite its Star Wars origin. Antimatter Bomb replaces T-1000 in the starter deck; Rick Prime is reserved for Goku's reward.",
   "rewardSelection": "Filler IDs selected once during design. The runtime must read the listed IDs and never reroll them.",
   "chapters": [
     {
@@ -73,7 +73,7 @@
         "c026",
         "c064",
         "c008",
-        "c045"
+        "c067"
       ],
       "fillerRewardIds": [
         "c093",
@@ -84,7 +84,7 @@
         "c026",
         "c064",
         "c008",
-        "c045"
+        "c067"
       ],
       "deckCardIds": [
         "c002",
@@ -144,7 +144,7 @@
         "c143",
         "c164",
         "c010",
-        "c165",
+        "c099",
         "r016"
       ],
       "fillerRewardIds": [
@@ -152,7 +152,7 @@
         "c143",
         "c164",
         "c010",
-        "c165",
+        "c099",
         "r016"
       ],
       "deckCardIds": [
@@ -214,13 +214,13 @@
         "c151",
         "c174",
         "c116",
-        "c099",
+        "c165",
         "c088",
         "c115"
       ],
       "fillerRewardIds": [
         "c116",
-        "c099",
+        "c165",
         "c088",
         "c115"
       ],
@@ -310,20 +310,20 @@
         "c137",
         "c033",
         "c012",
-        "c067",
+        "c045",
         "c117",
         "c122",
         "c154",
         "c182",
         "c099",
         "c115",
-        "c011",
         "c031",
         "c088",
         "c091",
         "c021",
         "c050",
-        "c045"
+        "c165",
+        "c067"
       ],
       "designReason": "Detective L improves draws; Light removes Nature threats. Sacrificial bodies feed death-based growth."
     },
@@ -385,14 +385,14 @@
         "c182",
         "c030",
         "c099",
-        "c011",
         "c031",
         "c088",
         "c091",
         "c021",
         "c050",
         "c056",
-        "c045"
+        "c045",
+        "c165"
       ],
       "designReason": "Voldemort spends disposable allies to survive; the three Harry Potter relics protect key bearers."
     },
@@ -550,14 +550,12 @@
         "r030",
         "r013",
         "r019",
-        "c181",
-        "c011"
+        "c181"
       ],
       "fillerRewardIds": [
         "r013",
         "r019",
-        "c181",
-        "c011"
+        "c181"
       ],
       "deckCardIds": [
         "c002",
@@ -583,13 +581,13 @@
         "c029",
         "c096",
         "c099",
-        "c011",
         "c031",
         "c091",
         "c021",
         "c050",
         "c057",
-        "c042"
+        "c042",
+        "c165"
       ],
       "designReason": "Dio freezes the opposing board; protected attackers use that window to establish control."
     },
@@ -780,13 +778,13 @@
         "c029",
         "c096",
         "c099",
-        "c011",
         "c083",
         "c086",
         "c071",
         "c021",
         "c023",
-        "c050"
+        "c050",
+        "c165"
       ],
       "designReason": "Ainz weakens the enemy board; small damage finishes it. Floor Guardians strengthens a reusable board slot."
     },
@@ -1285,7 +1283,7 @@
       "rewardCardIds": [
         "c044",
         "r026",
-        "c067",
+        "c045",
         "r006",
         "c070",
         "r034",
@@ -1296,7 +1294,7 @@
         "c070",
         "r034",
         "c162",
-        "c067"
+        "c045"
       ],
       "deckCardIds": [
         "c160",

@@ -347,7 +347,7 @@ for (const [index, card] of cards.entries()) {
   }
 }
 
-if (cards.length !== 184) errors.push(`Expected 184 cards, found ${cards.length}`);
+if (cards.length !== 183) errors.push(`Expected 183 cards, found ${cards.length}`);
 if (relics.length !== 34) errors.push(`Expected 34 relics, found ${relics.length}`);
 for (const [index, relic] of relics.entries()) {
   checkEffectPunctuation(relic.name, index + 2, relic.effect, errors);

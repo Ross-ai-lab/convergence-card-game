@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { cards, resolvePublicAssetUrl } from "../data/cards";
 
 describe("card CSV data", () => {
-  it("loads the full 184-card roster", () => {
-    expect(cards).toHaveLength(184);
-    expect(new Set(cards.map((card) => card.id)).size).toBe(184);
-    expect(new Set(cards.map((card) => card.name)).size).toBe(184);
+  it("loads the full 183-card roster", () => {
+    expect(cards).toHaveLength(183);
+    expect(new Set(cards.map((card) => card.id)).size).toBe(183);
+    expect(new Set(cards.map((card) => card.name)).size).toBe(183);
   });
 
   it("contains the v1 systems needed for engine coverage", () => {
@@ -30,7 +30,7 @@ describe("card CSV data", () => {
     const changed = new Map(cards.map((card) => [card.name, card]));
     expect(changed.get("Kaido")?.keywords).not.toContain("Chained");
     expect(changed.get("Kaido")?.keywords).not.toContain("Taunt");
-    expect(changed.get("King")?.keywords).toEqual(["Taunt"]);
+    expect(changed.get("King")?.keywords).toEqual(["Taunt", "Passive"]);
     expect(changed.get("Kaku Kaioh")?.keywords).not.toContain("Taunt");
     expect(changed.get("Gandalf the White")?.keywords).toContain("Divine Shield");
     expect(changed.get("Gandalf the White")?.effect).toBe("Divine Shield. Battlecry: Give all friendly Good minions Divine Shield");

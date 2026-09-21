@@ -8,7 +8,6 @@ import type { CardDefinition } from "./types";
  */
 export const TOKEN_THEME_IDS = [
   "token:shenron",
-  "token:drakath",
   "token:vision",
   "token:galactus",
   "token:awakened",
@@ -169,24 +168,6 @@ export const TOKEN_CARDS: CardDefinition[] = [
     flavor: "The immovable.",
     origin: "Elden Ring",
     art: resolvePublicAssetUrl("/card-art/raw/c155.webp"),
-  },
-  {
-    kind: "minion",
-    id: "token:drakath",
-    name: "Drakath",
-    cost: 5,
-    atk: 5,
-    hp: 3,
-    rarity: "Black",
-    camp: "Magic",
-    alignment: "Evil",
-    keywords: [],
-    effectId: "none",
-    effectTiming: "none",
-    effect: "-",
-    flavor: "Chaos answers chaos.",
-    origin: "AdventureQuest Worlds",
-    art: resolvePublicAssetUrl("/card-art/raw/token-drakath.webp"),
   },
   {
     kind: "minion",

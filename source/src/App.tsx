@@ -446,6 +446,7 @@ const AURA_LABEL: Record<SlotAuraId, string> = {
   slot_grow_2: "+2/+2",
   slot_protected: "SAFE",
   slot_stats_one: "1/1",
+  slot_bound: "LOCKED",
 };
 const AURA_TEXT: Record<SlotAuraId, string> = {
   random_attacks: "a minion here can only attack at random",
@@ -455,6 +456,7 @@ const AURA_TEXT: Record<SlotAuraId, string> = {
   slot_grow_2: "a minion here gains +2/+2 at the start of your turn",
   slot_protected: "minions here resist Silence, Freeze, and Chain; attacks and ordinary removal can still reach them",
   slot_stats_one: "minions here are permanently set to 1/1",
+  slot_bound: "this slot cannot hold minions for the rest of the game",
 };
 /** Each permanent board-slot effect gets its own visible ring colour. */
 const AURA_COLOR: Record<SlotAuraId, string> = {
@@ -465,6 +467,7 @@ const AURA_COLOR: Record<SlotAuraId, string> = {
   slot_grow_2: "#35d6c2",
   slot_protected: "#52b6ff",
   slot_stats_one: "#ff5f6d",
+  slot_bound: "#ff526f",
 };
 
 const BOT_ID: PlayerId = 1;
@@ -3528,6 +3531,7 @@ function BoardRow({
           "board-slot",
           minion ? "occupied" : "empty",
           auras.length ? "has-slot-aura" : "",
+          auras.some((aura) => aura.auraId === "slot_bound") ? "slot-is-bound" : "",
           canPlace ? "placeable" : "",
           canTarget ? "targetable" : "",
           canAttack ? "ready" : "",
@@ -6053,6 +6057,12 @@ function CardPack({
    */
   const charged = hits >= PACK_HITS;
   const [opened, setOpened] = useState(false);
+  const [packKeywords, setPackKeywords] = useState<{ entries: KeywordEntry[]; left: number; top: number } | null>(null);
+  const packKeywordTimer = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (packKeywordTimer.current !== null) window.clearTimeout(packKeywordTimer.current);
+  }, []);
 
   useEffect(() => {
     if (!charged || opened) return;
@@ -6098,13 +6108,32 @@ function CardPack({
   // Sorted so the rarest and dearest card is the last one to land. What the pack
   // CONTAINS is already settled by the unlock order; this only decides the order
   // they arrive in, so it cannot bias the reward.
-  const faces = useMemo(
-    () =>
-      revealOrder(ids.map((id) => library[id]).filter((card): card is PlayableCard => Boolean(card))).map((card) =>
-        playableFace(card),
-      ),
+  const rewardCards = useMemo(
+    () => revealOrder(ids.map((id) => library[id]).filter((card): card is PlayableCard => Boolean(card))),
     [ids, library],
   );
+  const faces = useMemo(() => rewardCards.map((card) => playableFace(card)), [rewardCards]);
+
+  function clearPackKeywords() {
+    if (packKeywordTimer.current !== null) {
+      window.clearTimeout(packKeywordTimer.current);
+      packKeywordTimer.current = null;
+    }
+    setPackKeywords(null);
+  }
+
+  function armPackKeywords(card: PlayableCard | undefined, el: HTMLElement) {
+    clearPackKeywords();
+    if (!card) return;
+    const entries = handKeywordEntriesFor(card);
+    if (entries.length === 0) return;
+    packKeywordTimer.current = window.setTimeout(() => {
+      packKeywordTimer.current = null;
+      if (!el.isConnected) return;
+      const rect = el.getBoundingClientRect();
+      setPackKeywords({ entries, left: rect.right - 12, top: rect.top });
+    }, 1000);
+  }
   // One roll per mount. `useState` with an initialiser, not `useMemo`: a memo is
   // allowed to be thrown away and recomputed, and a re-rolled firework is a
   // visible glitch rather than a cheap recovery.
@@ -6308,7 +6337,11 @@ function CardPack({
                         transform on it forever, and an animation's fill beats a
                         plain `:hover` rule in the cascade — the hover would
                         simply never apply. */}
-                    <div className="pack-card-lift">
+                    <div
+                      className="pack-card-lift"
+                      onMouseEnter={(event) => armPackKeywords(rewardCards[index], event.currentTarget)}
+                      onMouseLeave={clearPackKeywords}
+                    >
                       {/* NOT lazy, unlike the gallery. Fifteen images at the
                           most, and each one is the thing the player is here to
                           look at — a card that deals itself onto the table with
@@ -6325,6 +6358,7 @@ function CardPack({
             <button type="button" className="primary pack-collect" onClick={onDone} disabled={!allDealt}>
               Collect
             </button>
+            {packKeywords ? <KeywordPopover entries={packKeywords.entries} left={packKeywords.left} top={packKeywords.top} above /> : null}
           </>
         ) : null}
       </section>

@@ -314,7 +314,7 @@ describe("full-roster effects", () => {
     expect(toMyNextTurn(state).players[0].board[0]?.divineShield).toBe(true);
   });
 
-  it("Light Yagami destroys a random Nature enemy on play", () => {
+  it("Light Yagami destroys a chosen enemy on play", () => {
     const state = mainState();
     state.players[1].board[0] = makeMinion("John Wick", 1, { divineShield: true });
     state.players[1].board[1] = makeMinion("Avatar Aang", 1);

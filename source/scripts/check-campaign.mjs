@@ -270,7 +270,7 @@ try {
   saved = await page.evaluate(async () => (await import('/src/storage.ts')).loadGame());
   assert.equal(saved.game.botCheats[1].foresight, true);
   await finish(); await page.waitForFunction(() => JSON.parse(localStorage.getItem('convergence.progress.v4')).completedChapters === 20);
-  assert.equal((await progress()).unlockedIds.length, 218); assert.deepEqual((await progress()).pendingRewards, ['c025','c039','c051','c062','c066','c077','c112','c119','c126','c127','r011']);
+  assert.equal((await progress()).unlockedIds.length, 217); assert.deepEqual((await progress()).pendingRewards, ['c025','c039','c051','c062','c066','c077','c112','c119','c126','c127','r011']);
   await collectPack();
   assert.equal(await page.locator('.gameover-buttons button').count(),1);
   await page.getByRole('button', { name: 'Continue', exact: true }).click();

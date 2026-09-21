@@ -305,8 +305,8 @@ function configureTutorialState(state: GameState, cards: CardDefinition[]): void
   state.phase = "main";
   state.activePlayer = 0;
   state.turnNumber = 1;
-  state.players[0].board = [null, null, null, null, null];
-  state.players[1].board = [null, null, null, null, null];
+  state.players[0].board = Array(boardSize).fill(null);
+  state.players[1].board = Array(boardSize).fill(null);
   state.players[0].coins = 0;
   state.players[1].coins = 0;
   state.bottomDeck = [];
@@ -486,7 +486,7 @@ export function getLegalActions(state: GameState, library: CardLibrary): GameAct
     const card = library[cardId];
     if (!card || (!hasInfiniteMana(state, player.id) && effectiveCardCost(state, player.id, card) > player.mana)) return;
     player.board.forEach((slot, slotIndex) => {
-      if (isMinionCard(card) && !slot) {
+      if (isMinionCard(card) && !slot && !hasSlotAura(state, player.id, slotIndex, "slot_bound")) {
         actions.push({ type: "play_card", player: player.id, handIndex, slotIndex });
       }
       if (isRelicCard(card)) {
@@ -983,7 +983,7 @@ function playCard(
   const player = state.players[playerId];
   const cardId = player.hand[handIndex];
   const card = library[cardId];
-  if (!isMinionCard(card)) return;
+  if (!isMinionCard(card) || hasSlotAura(state, playerId, slotIndex, "slot_bound")) return;
   const previousCostReduction = player.costReductions[cardId];
   const previousPressured = player.pressured?.cardId === cardId ? { ...player.pressured } : null;
   const manaPaid = hasInfiniteMana(state, playerId) ? 0 : effectiveCardCost(state, playerId, card);
@@ -2009,8 +2009,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   // minion is a legal victim.
   light_yagami_nature_kill: {
     side: "enemy",
-    prompt: "Destroy an enemy Nature minion",
-    filter: (m) => campTargetedBy(m, "Nature"),
+    prompt: "Destroy an enemy minion",
   },
   death_star_mark: { kind: "boardOrCore", side: "enemy", prompt: "Mark an enemy minion or the enemy core", coreOption: true },
   stasis_enemy: { side: "enemy", prompt: "Choose an enemy minion to put into stasis" },
@@ -2207,9 +2206,10 @@ function isUntargetable(state: GameState, minion: MinionInstance): boolean {
 }
 
 /** Every position on the chosen side — a slot aura does not need an occupant. */
-function slotOptions(source: MinionInstance, spec: TargetSpec): TargetOption[] {
+function slotOptions(state: GameState, source: MinionInstance, spec: TargetSpec): TargetOption[] {
   const ownerId = spec.side === "enemy" ? opponent(source.owner) : source.owner;
-  return Array.from({ length: boardSize }, (_unused, slot) => ({ owner: ownerId, slot }));
+  return Array.from({ length: boardSize }, (_unused, slot) => ({ owner: ownerId, slot }))
+    .filter(({ slot }) => !hasSlotAura(state, ownerId, slot, "slot_bound"));
 }
 
 /**
@@ -2260,7 +2260,7 @@ function requestChoice(
     kind === "board" || kind === "boardOrCore"
       ? targetOptions(state, source, spec)
       : kind === "slot"
-        ? slotOptions(source, spec)
+        ? slotOptions(state, source, spec)
         : [];
   const handList = kind === "hand" ? handOptions(state, source, spec, library) : [];
   const labelList =
@@ -2421,7 +2421,7 @@ function summonRandomCostFromDeck(
   events: GameEvent[],
 ): void {
   const player = state.players[playerId];
-  const slot = player.board.findIndex((entry) => !entry);
+  const slot = findEmptySlot(state, playerId);
   if (slot < 0) return;
   const candidates = [...drawPileFor(state, playerId).deck, ...drawPileFor(state, playerId).bottomDeck].filter((cardId) => {
     const card = library[cardId];
@@ -2446,10 +2446,7 @@ function summonRandomMinionFromDeck(
   summoner: PlayerId = source.owner,
 ): void {
   const player = state.players[summoner];
-  const slot =
-    preferredSlot !== undefined && preferredSlot >= 0 && preferredSlot < player.board.length && !player.board[preferredSlot]
-      ? preferredSlot
-      : player.board.findIndex((entry) => !entry);
+  const slot = findEmptySlot(state, summoner, preferredSlot);
   if (slot < 0) return;
   const candidates = [...drawPileFor(state, summoner).deck, ...drawPileFor(state, summoner).bottomDeck].filter((cardId) => isMinionCard(library[cardId]));
   if (candidates.length === 0) return;
@@ -2476,7 +2473,7 @@ function summonShenron(
 ): void {
   const owner = dead.owner;
   const player = state.players[owner];
-  const slot = !player.board[deadSlot] ? deadSlot : player.board.findIndex((minion) => !minion);
+  const slot = findEmptySlot(state, owner, deadSlot);
   if (slot < 0) return;
   const shenron = tokenCard("token:shenron", { origin: dead.origin });
   const summoned = createMinion(shenron, owner, state);
@@ -2799,7 +2796,7 @@ function runEffect(
     return false;
   } else if (source.effectId === "rebirth_friendly_dead") {
     const deadMinions = player.deadMinions ?? [];
-    const slot = player.board.findIndex((minion) => minion === null);
+    const slot = findEmptySlot(state, source.owner);
     const candidates = deadMinions.flatMap((cardId, index) => {
       const card = library[cardId];
       return isMinionCard(card) ? [{ cardId, index, card }] : [];
@@ -3025,7 +3022,7 @@ function runEffect(
   } else if (source.effectId === "star_destroyer_tie_fighters") {
     summonTieFighters(state, source, events);
   } else if (source.effectId === "summon_margit") {
-    const slot = player.board.findIndex((minion) => !minion);
+    const slot = findEmptySlot(state, source.owner);
     if (slot >= 0) {
       const summoned = createMinion(tokenCard("token:margit"), source.owner, state);
       summoned.suppressArrivalTheme = true;
@@ -3103,13 +3100,27 @@ function runEffect(
   } else if (source.effectId === "protect_slot") {
     if (pickedSlot) layAura(state, pickedSlot, "slot_protected", source, events);
   } else if (source.effectId === "snap_balance") {
-    // Never himself. "Thanos: balances your board: Thanos." was a real line, and
-    // a 10-mana body that can delete itself on arrival is not a card anybody
-    // would play twice. Owner's ruling, 2 September 2026.
-    destroyRandomMinion(state, source.owner, events, `${label} balances your board`, source.instanceId);
-    destroyRandomMinion(state, enemyId, events, `${label} balances the enemy board`);
-    discardRandom(state, source.owner, events);
-    discardRandom(state, enemyId, events);
+    // Thanos never targets himself. The printed body is one of the eligible
+    // minions on the board, but the source must survive its own Battlecry.
+    const eligible = ([0, 1] as PlayerId[]).flatMap((owner) =>
+      state.players[owner].board
+        .map((minion, slot) => ({ owner, slot, minion }))
+        .filter(({ minion }) => minion && minion.instanceId !== source.instanceId && !isUntargetable(state, minion)),
+    );
+    const destroyCount = Math.floor(eligible.length / 2);
+    for (let i = 0; i < destroyCount; i += 1) {
+      const remaining = ([0, 1] as PlayerId[]).flatMap((owner) =>
+        state.players[owner].board
+          .map((minion, slot) => ({ owner, slot, minion }))
+          .filter(({ minion }) => minion && minion.instanceId !== source.instanceId && !isUntargetable(state, minion)),
+      );
+      if (remaining.length === 0) break;
+      const target = remaining[rollInt(state, remaining.length)];
+      if (target?.minion) {
+        destroyAtSlot(state, target.owner, target.slot, events, `${label} reduces the board: ${target.minion.name}`, source);
+      }
+    }
+    events.push(effectEvent(`${label} destroys ${destroyCount} random minion${destroyCount === 1 ? "" : "s"} to reduce the board by half.`, source));
   } else if (source.effectId === "freeze_and_weaken") {
     const target = picked;
     if (target) {
@@ -3669,7 +3680,7 @@ function transformMinionFromPool(
 
 function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
   const player = state.players[playerId];
-  const slot = player.board.findIndex((entry) => !entry);
+  const slot = findEmptySlot(state, playerId);
   if (slot < 0) return;
   const recruit = tokenCard("token:knight");
   const summoned = createMinion(recruit, playerId, state);
@@ -3680,7 +3691,7 @@ function summonHeroPowerRecruit(state: GameState, playerId: PlayerId, events: Ga
 
 function summonHeroPowerSkeleton(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
   const player = state.players[playerId];
-  const slot = player.board.findIndex((entry) => !entry);
+  const slot = findEmptySlot(state, playerId);
   if (slot < 0) return;
   const skeleton = tokenCard("token:skeleton");
   const summoned = createMinion(skeleton, playerId, state);
@@ -3691,7 +3702,7 @@ function summonHeroPowerSkeleton(state: GameState, playerId: PlayerId, events: G
 
 function reviveRandomFriendlyMinion(state: GameState, playerId: PlayerId, library: CardLibrary, events: GameEvent[], label: string): void {
   const player = state.players[playerId];
-  const slot = player.board.findIndex((entry) => !entry);
+  const slot = findEmptySlot(state, playerId);
   const dead = player.deadMinions ?? [];
   const candidates = dead.flatMap((cardId, index) => {
     const card = library[cardId];
@@ -3716,7 +3727,7 @@ function summonShadowClones(state: GameState, source: MinionInstance, events: Ga
   const player = state.players[source.owner];
   let summoned = 0;
   for (let slot = 0; slot < boardSize; slot += 1) {
-    if (player.board[slot]) continue;
+    if (player.board[slot] || hasSlotAura(state, source.owner, slot, "slot_bound")) continue;
     const tokenMinion = createMinion(shadowClone, source.owner, state);
     tokenMinion.suppressArrivalTheme = true;
     player.board[slot] = tokenMinion;
@@ -3727,7 +3738,7 @@ function summonShadowClones(state: GameState, source: MinionInstance, events: Ga
 
 function summonLarva(state: GameState, source: MinionInstance, dead: MinionInstance, events: GameEvent[]): void {
   const player = state.players[source.owner];
-  const slot = player.board.findIndex((entry) => !entry);
+  const slot = findEmptySlot(state, source.owner);
   if (slot < 0) return;
   const larva = tokenCard("token:larva");
   const summoned = createMinion(larva, source.owner, state);
@@ -3743,7 +3754,9 @@ function summonSins(state: GameState, source: MinionInstance, events: GameEvent[
   }
   const sin = tokenCard("token:sin", { origin: source.origin });
   const player = state.players[source.owner];
-  const emptySlots = player.board.map((minion, slot) => (minion ? -1 : slot)).filter((slot) => slot >= 0);
+  const emptySlots = player.board
+    .map((minion, slot) => (minion || hasSlotAura(state, source.owner, slot, "slot_bound") ? -1 : slot))
+    .filter((slot) => slot >= 0);
   const summonedKeywords = keywordOrder.slice(0, emptySlots.length);
   summonedKeywords.forEach((keyword, index) => {
     const slot = emptySlots[index];
@@ -3761,7 +3774,7 @@ function summonTieFighters(state: GameState, source: MinionInstance, events: Gam
   const player = state.players[source.owner];
   let summoned = 0;
   for (let slot = 0; slot < boardSize && summoned < 2; slot += 1) {
-    if (player.board[slot]) continue;
+    if (player.board[slot] || hasSlotAura(state, source.owner, slot, "slot_bound")) continue;
     const tokenMinion = createMinion(tieFighter, source.owner, state);
     tokenMinion.suppressArrivalTheme = true;
     player.board[slot] = tokenMinion;
@@ -3836,7 +3849,7 @@ function resolvePocketRooms(state: GameState, playerId: PlayerId, events: GameEv
       if (alreadyLive) continue;
       const board = state.players[winner.owner].board;
       const preferred = winner.instanceId === room.friendly.instanceId ? room.friendlySlot : room.enemySlot;
-      const slot = !board[preferred] ? preferred : board.findIndex((entry) => !entry);
+      const slot = findEmptySlot(state, winner.owner, preferred);
       if (slot >= 0) {
         board[slot] = winner;
         placed.add(winner.instanceId);
@@ -3859,7 +3872,7 @@ function resolveStasis(state: GameState, _playerId: PlayerId, events: GameEvent[
   for (const entry of due) {
     const owner = state.players[entry.owner];
     const preferred = Math.max(0, Math.min(boardSize - 1, entry.slot));
-    const slot = !owner.board[preferred] ? preferred : owner.board.findIndex((minion) => !minion);
+    const slot = findEmptySlot(state, entry.owner, preferred);
     entry.minion.owner = entry.owner;
     if (slot >= 0) {
       owner.board[slot] = entry.minion;
@@ -3889,7 +3902,7 @@ function releaseDarkDimensionForSource(state: GameState, sourceInstanceId: strin
   for (const entry of released) {
     const owner = state.players[entry.owner];
     const preferred = Math.max(0, Math.min(boardSize - 1, entry.slot));
-    const slot = !owner.board[preferred] ? preferred : owner.board.findIndex((minion) => !minion);
+    const slot = findEmptySlot(state, entry.owner, preferred);
     entry.minion.owner = entry.owner;
     if (slot >= 0) {
       owner.board[slot] = entry.minion;
@@ -4439,7 +4452,7 @@ function seizeMinion(state: GameState, source: MinionInstance, victim: MinionIns
   }
   const fromSlot = slotOf(state, victim);
   const taker = state.players[source.owner];
-  const freeSlot = taker.board.findIndex((slot) => !slot);
+  const freeSlot = findEmptySlot(state, source.owner);
   if (fromSlot < 0 || freeSlot < 0) {
     events.push(effectEvent(`${source.name} has no room to seize ${victim.name}.`, source));
     return;
@@ -4465,7 +4478,7 @@ function seizeMinionTemporarily(
   }
   const fromSlot = slotOf(state, victim);
   const taker = state.players[source.owner];
-  const freeSlot = taker.board.findIndex((slot) => !slot);
+  const freeSlot = findEmptySlot(state, source.owner);
   if (fromSlot < 0 || freeSlot < 0) {
     events.push(effectEvent(`${source.name} has no room to seize ${victim.name}.`, source));
     return;
@@ -4514,7 +4527,7 @@ function resolveTemporaryControls(state: GameState, playerId: PlayerId, events: 
     victim.attacksUsed = 0;
     const originalBoard = state.players[control.originalOwner].board;
     const preferred = Math.max(0, Math.min(boardSize - 1, control.originalSlot));
-    const returnSlot = !originalBoard[preferred] ? preferred : originalBoard.findIndex((minion) => !minion);
+    const returnSlot = findEmptySlot(state, control.originalOwner, preferred);
     if (returnSlot >= 0) {
       originalBoard[returnSlot] = victim;
       events.push({
@@ -4703,6 +4716,21 @@ export function opponentHandRevealed(state: GameState, playerId: PlayerId): bool
 function slotOf(state: GameState, minion: MinionInstance | null): number {
   if (!minion) return -1;
   return state.players[minion.owner].board.findIndex((entry) => entry?.instanceId === minion.instanceId);
+}
+
+/** Returns an empty position that is still allowed to hold a minion. */
+function findEmptySlot(state: GameState, owner: PlayerId, preferred?: number): number {
+  const board = state.players[owner].board;
+  if (
+    preferred !== undefined &&
+    preferred >= 0 &&
+    preferred < board.length &&
+    !board[preferred] &&
+    !hasSlotAura(state, owner, preferred, "slot_bound")
+  ) {
+    return preferred;
+  }
+  return board.findIndex((minion, slot) => !minion && !hasSlotAura(state, owner, slot, "slot_bound"));
 }
 
 function destroyPicked(
@@ -5090,6 +5118,12 @@ function canDamage(
   }
   if (!cannotBeEvaded && !effectDamage && hasEffect(target, "dodge_50") && !target.silenced) {
     if (coinFlip(state)) {
+      events.push(effectEvent(`${target.name} slips away.`, target));
+      return false;
+    }
+  }
+  if (!cannotBeEvaded && !effectDamage && hasEffect(target, "dodge_60") && !target.silenced) {
+    if (rollInt(state, 100) < 60) {
       events.push(effectEvent(`${target.name} slips away.`, target));
       return false;
     }
@@ -5804,7 +5838,7 @@ function resolveReborn(
   }
 
   const board = state.players[dead.owner].board;
-  const slot = board[deadSlot] ? board.findIndex((minion) => !minion) : deadSlot;
+  const slot = findEmptySlot(state, dead.owner, deadSlot);
   if (slot < 0) return;
 
   const next = REBORN_STAGE[dead.effectId] ?? null;
@@ -5849,7 +5883,22 @@ function resolveCardDeathrattleOnce(
   // The dead minion is already out of its board slot when this function runs,
   // so reactToDeath cannot discover its own effect. Record it at resolution.
   traceEffect(dead.effectId);
-  if (dead.effectId === "deathrattle_damage_both_cores_20") {
+  if (dead.effectId === "kagaya_bind_slots") {
+    // Kagaya's own side is never random: it is exactly the empty position he
+    // left behind. The opposing side chooses from the remaining empty slots.
+    if (!hasSlotAura(state, dead.owner, deadSlot, "slot_bound")) {
+      layAura(state, { owner: dead.owner, slot: deadSlot }, "slot_bound", dead, events);
+    }
+    const enemyOwner = opponent(dead.owner);
+    const enemySlots = state.players[enemyOwner].board
+      .map((minion, slot) => ({ minion, slot }))
+      .filter(({ minion, slot }) => !minion && !hasSlotAura(state, enemyOwner, slot, "slot_bound"));
+    if (enemySlots.length > 0) {
+      const target = enemySlots[rollInt(state, enemySlots.length)];
+      if (target) layAura(state, { owner: enemyOwner, slot: target.slot }, "slot_bound", dead, events);
+    }
+    events.push(effectEvent(`${dead.name}'s Deathrattle binds one empty slot on each side permanently.`, dead));
+  } else if (dead.effectId === "deathrattle_damage_both_cores_20") {
     for (const owner of [0, 1] as PlayerId[]) dealCoreDamage(state, owner, 20, events, dead);
     events.push(effectEvent(`${dead.name}'s Deathrattle deals 20 damage to both cores.`, dead));
   } else if (dead.effectId === "deathrattle_damage_random_enemy") {
@@ -5880,16 +5929,6 @@ function resolveCardDeathrattleOnce(
         }
       }
     }
-  } else if (dead.effectId === "deathrattle_summon_drakath") {
-    const slot = state.players[dead.owner].board[deadSlot]
-      ? state.players[dead.owner].board.findIndex((minion) => !minion)
-      : deadSlot;
-    if (slot >= 0) {
-      const drakath = tokenCard("token:drakath", { origin: dead.origin });
-      const summoned = createMinion(drakath, dead.owner, state);
-      state.players[dead.owner].board[slot] = summoned;
-      events.push(effectEvent(`${dead.name}'s Deathrattle summons Drakath.`, dead));
-    }
   } else if (dead.effectId === "kill_back") {
     // Darkwing's text is a real Deathrattle: the minion that dealt the lethal
     // blow is the killer, regardless of which side initiated combat. Resolve it
@@ -5911,9 +5950,7 @@ function resolveCardDeathrattleOnce(
     // Ultron's whole point is that killing him is not the end of him. The slot
     // rule matches Galactus above: take the slot he died in when it is free,
     // otherwise the first open one, and do nothing at all on a full board.
-    const slot = state.players[dead.owner].board[deadSlot]
-      ? state.players[dead.owner].board.findIndex((minion) => !minion)
-      : deadSlot;
+    const slot = findEmptySlot(state, dead.owner, deadSlot);
     if (slot >= 0) {
       const vision = tokenCard("token:vision");
       const summoned = createMinion(vision, dead.owner, state);
@@ -5921,9 +5958,7 @@ function resolveCardDeathrattleOnce(
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Vision.`, dead));
     }
   } else if (dead.effectId === "deathrattle_summon_galactus") {
-    const slot = state.players[dead.owner].board[deadSlot]
-      ? state.players[dead.owner].board.findIndex((minion) => !minion)
-      : deadSlot;
+    const slot = findEmptySlot(state, dead.owner, deadSlot);
     if (slot >= 0) {
       const galactus = tokenCard("token:galactus");
       const summoned = createMinion(galactus, dead.owner, state);
@@ -5931,9 +5966,7 @@ function resolveCardDeathrattleOnce(
       events.push(effectEvent(`${dead.name}'s Deathrattle summons Galactus.`, dead));
     }
   } else if (dead.effectId === "avatar_aang_awakened") {
-    const slot = state.players[dead.owner].board[deadSlot]
-      ? state.players[dead.owner].board.findIndex((minion) => !minion)
-      : deadSlot;
+    const slot = findEmptySlot(state, dead.owner, deadSlot);
     if (slot >= 0) {
       const awakened = tokenCard("token:awakened", { origin: dead.origin });
       const summoned = createMinion(awakened, dead.owner, state);
@@ -6018,15 +6051,6 @@ function releaseStolenPassive(state: GameState, dead: MinionInstance, events: Ga
       }
     }
   }
-}
-
-function discardRandom(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
-  const player = state.players[playerId];
-  if (player.hand.length === 0) return;
-  const [card] = player.hand.splice(rollInt(state, player.hand.length), 1);
-  if (!card) return;
-  state.discard.push(card);
-  events.push({ kind: "effect", text: `${player.name} discards a card.`, player: playerId, cardId: card });
 }
 
 function checkGameOver(state: GameState, events: GameEvent[]): void {

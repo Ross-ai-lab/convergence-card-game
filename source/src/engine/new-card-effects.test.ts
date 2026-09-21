@@ -277,12 +277,12 @@ describe("2026 card replacements", () => {
       "Ainz Ooal Gown": { cost: 9, atk: 3, hp: 3, effectId: "set_all_enemy_hp_1", effectTiming: "onPlay", keywords: [] },
       "Light Yagami": {
         cost: 6,
-        atk: 3,
-        hp: 3,
+        atk: 2,
+        hp: 2,
         effectId: "light_yagami_nature_kill",
         effectTiming: "onPlay",
         keywords: [],
-        effect: "Battlecry: Destroy an enemy Nature minion",
+        effect: "Battlecry: Destroy an enemy minion",
       },
       "Eye of Sauron": {
         cost: 3,
@@ -392,7 +392,6 @@ describe("2026 card replacements", () => {
       Meruem: { cost: 7, atk: 4, hp: 6, effectId: "meruem_kill_copy", effectTiming: "passive" },
       "The Driller": { cost: 5, atk: 1, hp: 1, effectId: "consume_tech_4_hp", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Consume an enemy Tech minion with 4 HP or lower" },
       Gums: { cost: 4, atk: 2, hp: 2, effectId: "consume_nature_4_hp", effectTiming: "onPlay" },
-      "Thirteen Lords of Chaos": { atk: 4, hp: 2, effectId: "deathrattle_summon_drakath", effectTiming: "deathrattle", keywords: ["Deathrattle"] },
       "Sir Nighteye": { atk: 1, hp: 1, effectId: "reveal_top_deck", effectTiming: "passive", keywords: ["Passive"] },
       "Black Ops": {
         cost: 2,
@@ -449,9 +448,9 @@ describe("2026 card replacements", () => {
         keywords: ["Passive"],
         effect: "Passive: Friendly minions cannot be Silenced, Frozen, or Chained. Undo any such curses",
       },
-      Gojo: { atk: 4, hp: 8, effectId: "yoda_global_silence", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: All enemy minions are temporarily silenced (until Gojo dies)" },
+      Gojo: { atk: 4, hp: 8, effectId: "yoda_global_silence", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: All enemy minions are temporarily silenced" },
       "Rennala Queen of the Full Moon": { atk: 2, hp: 3, effectId: "rebirth_friendly_dead", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Rebirth a random friendly minion that died this game" },
-      "Kagaya Ubuyashiki": { atk: 1, hp: 1, effectId: "discover_random_keyword_minion", effectTiming: "onPlay", keywords: [], effect: "Battlecry: Discover a random Taunt, Divine Shield, and Passive minion in the deck. Draw one" },
+      "Kagaya Ubuyashiki": { atk: 1, hp: 1, effectId: "kagaya_bind_slots", effectTiming: "deathrattle", keywords: ["Deathrattle"], effect: "Deathrattle: Bind two empty slots on the board, one for each side. These slots cannot hold minions for the rest of the game" },
       Cecil: { atk: 1, hp: 1, effectId: "bounce_friendly", effectTiming: "onPlay", keywords: [] },
       "Giorno - Gold Experience Requiem": { cost: 10, atk: 4, hp: 8, effectId: "slot_permanent_chain", effectTiming: "onPlay", keywords: [] },
       Avengers: { atk: 4, hp: 4, effectId: "invuln_with_good_ally", effectTiming: "passive", keywords: ["Passive"] },
@@ -492,7 +491,7 @@ describe("2026 card replacements", () => {
       Musashi: { atk: 2, hp: 1 },
       Illumi: { atk: 1, hp: 1 },
       "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
-      King: { cost: 1, atk: 0, hp: 5, effectId: "none", effectTiming: "none", keywords: ["Taunt"], effect: "Taunt" },
+      King: { cost: 1, atk: 0, hp: 3, effectId: "dodge_60", effectTiming: "passive", keywords: ["Taunt", "Passive"], effect: "Taunt. Passive: Evade 60% of attacks" },
       "Dominion Authority": { atk: 1, hp: 4, effectId: "dominion_authority", effectTiming: "passive", keywords: ["Passive"] },
       Kratos: {
         cost: 6,
@@ -768,20 +767,19 @@ describe("2026 card replacements", () => {
     ).toBe(true);
   });
 
-  it("Light Yagami destroys the Nature enemy he is pointed at, and only Nature", () => {
+  it("Light Yagami destroys any enemy minion he is pointed at", () => {
     const state = mainState("light-yagami-battlecry");
     state.players[1].board[0] = minion("John Wick", 1); // Nature
     state.players[1].board[1] = minion("Modern Tank", 1); // Tech
     state.players[1].board[2] = minion("Zoro", 1); // Nature
     const asking = play(state, 0, "Light Yagami", 0);
-    // Chosen, not random (owner's ruling, 2 September 2026). Only the two
-    // Nature minions are offered, so the Tech one is not a lucky survival.
+    // Chosen, not random. All enemy minions are now legal victims.
     expect(asking.phase).toBe("targeting");
-    expect(asking.pendingTarget?.options).toHaveLength(2);
+    expect(asking.pendingTarget?.options).toHaveLength(3);
     const resolved = choose(asking, 1);
-    expect(resolved.players[1].board[2]).toBeNull();
+    expect(resolved.players[1].board[1]).toBeNull();
     expect(resolved.players[1].board[0]).not.toBeNull();
-    expect(resolved.players[1].board[1]).not.toBeNull();
+    expect(resolved.players[1].board[2]).not.toBeNull();
   });
 
   it("Light Yagami may point at an ALL-camp minion", () => {
@@ -1545,11 +1543,11 @@ describe("2026 card replacements", () => {
     expect(awake.players[1].board[0]?.atk).toBe(3);
   });
 
-  it("King is a 0/5 Taunt minion and no longer locks enemy attacks", () => {
+  it("King is a 0/3 Taunt minion with 60% evasion", () => {
     const state = mainState("king-taunt");
     state.players[0].board[0] = minion("King", 0, {sleeping:false});
     state.players[1].board[0] = minion("John Wick", 1, {sleeping:false});
-    expect(state.players[0].board[0]).toMatchObject({atk:0,hp:5,keywords:["Taunt"],effectId:"none"});
+    expect(state.players[0].board[0]).toMatchObject({atk:0,hp:3,keywords:["Taunt","Passive"],effectId:"dodge_60"});
     expect(getLegalActions(state,library).some(a=>a.type==="attack_minion" && a.attackerSlot===0)).toBe(true);
     const enemyTurn=endTurn(state,0);
     expect(enemyTurn.players[1].board[0]?.attackLocked).toBe(false);
@@ -2092,20 +2090,21 @@ describe("2026 card replacements", () => {
     expect(hit.players[0].board[0]?.hp).toBe(10);
   });
 
-  it("Thanos destroys one random minion per side, and never himself", () => {
+  it("Thanos destroys the rounded-down half of all other minions, and never himself", () => {
     const state = mainState("thanos-snap");
     state.players[0].hand = [cardId("Thanos"), cardId("Zoro")];
-    state.players[1].hand = [cardId("Zoro")];
+    state.players[1].hand = [];
     state.players[0].board[1] = minion("Zoro", 0);
+    state.players[0].board[2] = minion("John Wick", 0);
     state.players[1].board[0] = minion("John Wick", 1);
+    state.players[1].board[1] = minion("Zoro", 1);
 
     const after = applyAction(state, { type: "play_card", player: 0, handIndex: 0, slotIndex: 0 }, library).state;
-    // Owner's ruling, 2 September 2026: "Thanos: balances your board: Thanos."
-    // was a real log line. He survives his own snap; the ally does not.
+    // Four eligible minions means exactly two are destroyed. The source itself
+    // is excluded, and the hand is untouched by the new Battlecry.
     expect(after.players[0].board[0]?.name).toBe("Thanos");
-    expect(after.players[0].board[1]).toBeNull();
-    expect(after.players[1].board.every((entry) => entry === null)).toBe(true);
-    expect(after.players[0].hand).toEqual([]);
+    expect(after.players.flatMap((player) => player.board).filter(Boolean)).toHaveLength(3);
+    expect(after.players[0].hand).toEqual([cardId("Zoro")]);
     expect(after.players[1].hand).toEqual([]);
   });
 
@@ -2325,23 +2324,6 @@ describe("2026 card replacements", () => {
     const after = play(state, 0, "Ultron Prime", 0);
     expect(after.pendingTarget).toBeNull();
     expect(after.players[0].hand).toHaveLength(0);
-  });
-
-  it("Thirteen Lords of Chaos summons Drakath on death", () => {
-    const state = mainState("chaos-drakath");
-    const afterPlay = play(state, 0, "Thirteen Lords of Chaos", 0);
-    afterPlay.players[1].board[0] = minion("Zoro", 1, { atk: 3, hp: 20, maxHp: 20, sleeping: false });
-    afterPlay.activePlayer = 1;
-    const afterDeath = applyAction(
-      afterPlay,
-      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 0 },
-      library,
-    ).state;
-    expect(afterDeath.players[0].board[0]).toMatchObject({ name: "Drakath", atk: 5, hp: 3, maxHp: 3 });
-    expect(afterDeath.players[0].board[0]).toMatchObject({
-      art: "/card-art/raw/token-drakath.webp",
-      suppressArrivalTheme: false,
-    });
   });
 
   it("Big Mom gains exactly the devoured friendly minion's ATK and HP", () => {
@@ -2587,35 +2569,27 @@ describe("2026 card replacements", () => {
     expect(byItself.players[0].board[0]).toMatchObject({ atk: 1, hp: 2 });
   });
 
-  it("Kagaya Ubuyashiki offers one Taunt, one Divine Shield and one Passive minion", () => {
-    const state = mainState("kagaya-keyword-draw");
-    // One card of each kind, so the offer is fully determined and the pick is
-    // the only thing left to check. John Wick is a Passive card that never had
-    // the keyword typed into the CSV, which is why the offer reads the timing.
-    state.deck = [cardId("John Wick"), cardId("The Five Convicts"), cardId("Survivors"), cardId("Nezu")];
-    const asking = play(state, 0, "Kagaya Ubuyashiki", 0);
+  it("Kagaya binds his vacated slot and one empty enemy slot on death", () => {
+    const state = mainState("kagaya-bind-slots");
+    state.players[1].board[0] = minion("John Wick", 1, { atk: 1, hp: 2, maxHp: 2, sleeping: false });
+    const afterPlay = play(state, 0, "Kagaya Ubuyashiki", 1);
+    afterPlay.activePlayer = 1;
+    const afterDeath = applyAction(
+      afterPlay,
+      { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 },
+      library,
+    ).state;
 
-    expect(asking.phase).toBe("targeting");
-    expect(asking.pendingTarget?.kind).toBe("option");
-    expect(asking.pendingTarget?.labelOptions.map((option) => option.value).sort()).toEqual(
-      [cardId("John Wick"), cardId("Survivors"), cardId("The Five Convicts")].sort(),
+    expect(afterDeath.players[0].board[1]).toBeNull();
+    expect(afterDeath.players[0].slotAuras).toContainEqual(expect.objectContaining({ slot: 1, auraId: "slot_bound" }));
+    expect(afterDeath.players[1].slotAuras.filter((aura) => aura.auraId === "slot_bound")).toHaveLength(1);
+    expect(afterDeath.players[1].slotAuras.find((aura) => aura.auraId === "slot_bound")?.slot).not.toBe(0);
+
+    afterDeath.activePlayer = 0;
+    afterDeath.players[0].hand = [cardId("Zoro")];
+    expect(getLegalActions(afterDeath, library)).not.toContainEqual(
+      expect.objectContaining({ type: "play_card", player: 0, slotIndex: 1 }),
     );
-
-    const chosenIndex = asking.pendingTarget!.labelOptions.findIndex((option) => option.value === cardId("John Wick"));
-    const after = applyAction(asking, { type: "choose_target", player: 0, choiceIndex: chosenIndex }, library).state;
-    expect(after.players[0].hand).toEqual([cardId("John Wick")]);
-    expect(after.deck).not.toContain(cardId("John Wick"));
-  });
-
-  it("Kagaya still resolves when only one kind is left in the deck", () => {
-    const state = mainState("kagaya-single-offer");
-    state.deck = [cardId("The Five Convicts")];
-    const after = play(state, 0, "Kagaya Ubuyashiki", 0);
-
-    // One legal offer resolves without a pointless one-button prompt.
-    expect(after.pendingTarget).toBeNull();
-    expect(after.players[0].hand).toEqual([cardId("The Five Convicts")]);
-    expect(after.deck).toEqual([]);
   });
 
   it("Sir Nighteye sees the card left on top of the shared deck", () => {

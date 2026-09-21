@@ -421,6 +421,7 @@ export function TitleScreen({
         <Overlay title="Two-player duel" onClose={() => setHotseatConfirmOpen(false)}>
           <div className="hotseat-confirm">
             <p className="hotseat-confirm-question">Start local 2 player duel?</p>
+            <p className="hotseat-confirm-note">This mode does not award cards</p>
             <div className="hotseat-confirm-actions">
               <button
                 type="button"

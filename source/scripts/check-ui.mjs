@@ -197,8 +197,8 @@ check(
 check(
   "local hotseat confirmation uses the requested wording",
   (await page.locator(".hotseat-confirm-question").textContent())?.trim() === "Start local 2 player duel?" &&
-    (await page.locator(".hotseat-confirm-note").count()) === 0,
-  "the extra shared-screen sentence is removed",
+    (await page.locator(".hotseat-confirm-note").textContent())?.trim() === "This mode does not award cards",
+  "the no-rewards note is visible",
 );
 await page.locator(".hotseat-confirm-cancel").click();
 
