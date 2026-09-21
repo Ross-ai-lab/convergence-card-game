@@ -28,7 +28,7 @@ async function board() {
   })), 'Mulligan labels must retain the normal card-relative font sizes');
   await page.screenshot({path:'../.preview/campaign/mulligan-normal-type.png'});
   await page.locator('.mulligan-panel button.primary').click();
-  await page.waitForFunction(() => window.__debug?.state().phase === 'main' && JSON.parse(localStorage.getItem('convergence.save.v30') ?? '{}').game?.phase === 'main');
+  await page.waitForFunction(async () => window.__debug?.state().phase === 'main' && (await import('/src/storage.ts')).loadGame()?.game.phase === 'main');
 }
 async function finish(label = 'I win', keepSpeech = false) {
   await page.getByRole('button', { name: 'DEV tools', exact: true }).click();
@@ -149,7 +149,7 @@ try {
   await revealSpeech('Enter the arena');
   await page.screenshot({path:'../.preview/campaign/story-entrance.png'});
   await board();
-  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v30')));
+  let saved = await page.evaluate(async () => (await import('/src/storage.ts')).loadGame());
   assert.equal(saved.mode.kind, 'campaign'); assert.equal(saved.mode.chapter, 1);
   assert.equal(saved.game.playerDecks[0].deck.length, 27); assert.equal(saved.game.playerDecks[1].deck.length, 27);
   assert.equal(await page.locator('.campaign-hero .boss-portrait').getAttribute('alt'), 'GLaDOS portrait');
@@ -257,7 +257,7 @@ try {
   await page.getByRole('button', { name: 'Rematch', exact: true }).click();
   await page.locator('.duel-intro').waitFor({ state: 'visible', timeout: 4000 });
   assert.equal(await page.locator('[data-story-key]').count(), 0, 'A campaign rematch skips Rick and boss speeches');
-  await page.evaluate(() => localStorage.removeItem('convergence.save.v30'));
+  await page.evaluate(async () => (await import('/src/storage.ts')).clearSave());
   await page.goto(base); await seedCampaignProgress(page, 19);
   await page.keyboard.type('Ross');
   assert.equal(await page.locator('.orbit-choice-easy').count(), 0);
@@ -267,7 +267,7 @@ try {
   assert((await page.locator('[data-chapter="17"]').textContent()).includes('Bill Cipher'));
   assert((await page.locator('[data-chapter="20"]').textContent()).includes('Saitama'));
   await page.locator('[data-chapter="20"] button').click(); await board();
-  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v30')));
+  saved = await page.evaluate(async () => (await import('/src/storage.ts')).loadGame());
   assert.equal(saved.game.botCheats[1].foresight, true);
   await finish(); await page.waitForFunction(() => JSON.parse(localStorage.getItem('convergence.progress.v4')).completedChapters === 20);
   assert.equal((await progress()).unlockedIds.length, 218); assert.deepEqual((await progress()).pendingRewards, ['c025','c039','c051','c062','c066','c077','c112','c119','c126','c127','r011']);
@@ -278,7 +278,7 @@ try {
   assert.equal(await page.locator('.orbit-choice-easy, .orbit-choice-normal, .orbit-choice-hard').count(), 3);
   await page.screenshot({ path: '../.preview/campaign/completed.png' });
   await page.locator('.duel-trigger').click(); await board();
-  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('convergence.save.v30')));
+  saved = await page.evaluate(async () => (await import('/src/storage.ts')).loadGame());
   assert.equal(saved.mode.kind, 'bot'); assert.equal(saved.game.playerDecks[1].deck.length + saved.game.players[1].hand.length, 30);
   await page.reload(); await page.locator('.title-screen').waitFor();
   const personalDeck = (await progress()).playerDeck;
@@ -288,7 +288,7 @@ try {
   await page.getByRole('button', { name: 'Remove John Wick from deck', exact: true }).click();
   assert.equal((await progress()).hotseatDeck.length, 29);
   assert.deepEqual((await progress()).playerDeck, personalDeck, 'Editing seat two must preserve the personal deck');
-  await page.getByRole('button', { name: 'Restore starter', exact: true }).click();
+  await page.getByRole('button', { name: 'Restore starter deck', exact: true }).click();
   assert.equal((await progress()).hotseatDeck.length, 30);
   await page.getByRole('button', { name: 'Close', exact: true }).click();
   assert(await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).isVisible());
@@ -306,7 +306,7 @@ try {
   assert((await page.locator('.gallery-hero-power').textContent()).includes('Core Bolt'));
   await page.getByRole('button',{name:'Close',exact:true}).click();
   await page.locator('.duel-trigger').click();await page.locator('[data-chapter="6"] button').click();await board();
-  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v30')).game.heroPowers[0]),'enemy_core_damage');
+  assert.equal(await page.evaluate(async () => (await import('/src/storage.ts')).loadGame().game.heroPowers[0]),'enemy_core_damage');
   await seedCampaignProgress(page,0);await page.keyboard.type('Ross');
   await page.getByRole('button',{name:'Unlock all universes',exact:true}).click();
   assert.equal((await progress()).developerChaptersUnlocked,true);assert.equal((await progress()).completedChapters,0);
