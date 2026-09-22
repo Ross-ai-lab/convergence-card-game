@@ -4910,10 +4910,11 @@ function KeywordPopover({
   // Flip above the word when there is no room beneath it. The estimate scales
   // with how many definitions are stacked in one panel.
   const estimatedHeight = 60 + entries.length * 120;
+  const sideGap = 24;
   const beside = side !== undefined;
-  const canFitRight = left + 16 + width <= window.innerWidth - 10;
+  const canFitRight = left + sideGap + width <= window.innerWidth - 10;
   const placement = side === "auto" ? (canFitRight ? "right" : "left") : side;
-  const besideLeft = placement === "right" ? left + 16 : left - width - 16;
+  const besideLeft = placement === "right" ? left + sideGap : left - width - sideGap;
   const clampedLeft = beside
     ? Math.max(10, Math.min(besideLeft, window.innerWidth - width - 10))
     : Math.max(10, Math.min(left - width / 2, window.innerWidth - width - 10));
@@ -6069,7 +6070,12 @@ function CardPack({
    */
   const charged = hits >= PACK_HITS;
   const [opened, setOpened] = useState(false);
-  const [packKeywords, setPackKeywords] = useState<{ entries: KeywordEntry[]; left: number; top: number } | null>(null);
+  const [packKeywords, setPackKeywords] = useState<{
+    entries: KeywordEntry[];
+    left: number;
+    top: number;
+    side: "left" | "right";
+  } | null>(null);
   const packKeywordTimer = useRef<number | null>(null);
 
   useEffect(() => () => {
@@ -6143,7 +6149,8 @@ function CardPack({
       packKeywordTimer.current = null;
       if (!el.isConnected) return;
       const rect = el.getBoundingClientRect();
-      setPackKeywords({ entries, left: rect.right, top: rect.top });
+      const side = window.innerWidth - rect.right >= rect.left ? "right" : "left";
+      setPackKeywords({ entries, left: side === "right" ? rect.right : rect.left, top: rect.top, side });
     }, 1000);
   }
   // One roll per mount. `useState` with an initialiser, not `useMemo`: a memo is
@@ -6368,7 +6375,7 @@ function CardPack({
             <button type="button" className="primary pack-collect" onClick={onDone} disabled={!allDealt}>
               Collect
             </button>
-            {packKeywords ? <KeywordPopover entries={packKeywords.entries} left={packKeywords.left} top={packKeywords.top} side="auto" /> : null}
+            {packKeywords ? <KeywordPopover entries={packKeywords.entries} left={packKeywords.left} top={packKeywords.top} side={packKeywords.side} /> : null}
           </>
         ) : null}
       </section>
