@@ -316,6 +316,7 @@ const HEAVY_LANDING_MAX_COST = 10;
  */
 const HAND_KEYWORD_DELAY_MS = 2000;
 const BOARD_KEYWORD_DELAY_MS = 2000;
+const KEYWORD_POPOVER_GAP = 24;
 
 /**
  * The made-up damage tally behind the developer result screen.
@@ -4906,14 +4907,20 @@ function KeywordPopover({
   /** Place beside an anchored card, keeping the card itself unobstructed. */
   side?: "auto" | "left" | "right";
 }) {
-  const width = 264;
+  const baseWidth = 264;
   // Flip above the word when there is no room beneath it. The estimate scales
   // with how many definitions are stacked in one panel.
-  const estimatedHeight = 60 + entries.length * 120;
-  const sideGap = 24;
+  const sideGap = KEYWORD_POPOVER_GAP;
   const beside = side !== undefined;
-  const canFitRight = left + sideGap + width <= window.innerWidth - 10;
+  const canFitRight = left + sideGap + baseWidth <= window.innerWidth - 10;
   const placement = side === "auto" ? (canFitRight ? "right" : "left") : side;
+  const availableSide = placement === "right"
+    ? window.innerWidth - left - sideGap - 10
+    : left - sideGap - 10;
+  // A narrow screen can leave less room than the full panel. Shrink the panel
+  // inside that side column instead of clamping it back over the card.
+  const width = beside ? Math.max(160, Math.min(baseWidth, availableSide)) : baseWidth;
+  const estimatedHeight = 60 + entries.length * (width < baseWidth ? 150 : 120);
   const besideLeft = placement === "right" ? left + sideGap : left - width - sideGap;
   const clampedLeft = beside
     ? Math.max(10, Math.min(besideLeft, window.innerWidth - width - 10))
@@ -6148,9 +6155,31 @@ function CardPack({
     packKeywordTimer.current = window.setTimeout(() => {
       packKeywordTimer.current = null;
       if (!el.isConnected) return;
+      // The layout wrapper stays small while the inner card grows on hover.
+      // Calculate that intended visual rectangle directly, so the popup never
+      // falls back onto the enlarged face when the transform is in flight.
       const rect = el.getBoundingClientRect();
-      const side = window.innerWidth - rect.right >= rect.left ? "right" : "left";
-      setPackKeywords({ entries, left: side === "right" ? rect.right : rect.left, top: rect.top, side });
+      const origin = getComputedStyle(el).getPropertyValue("--lift-origin").trim().split(/\s+/);
+      const visualWidth = PACK_HOVER_WIDTH;
+      const visualHeight = PACK_CARD_HEIGHT * (visualWidth / PACK_CARD_WIDTH);
+      const visualLeft = origin[0] === "left"
+        ? rect.left
+        : origin[0] === "right"
+          ? rect.right - visualWidth
+          : rect.left + (rect.width - visualWidth) / 2;
+      const visualTop = origin[1] === "top"
+        ? rect.top
+        : origin[1] === "bottom"
+          ? rect.bottom - visualHeight
+          : rect.top + (rect.height - visualHeight) / 2;
+      const visualRight = visualLeft + visualWidth;
+      const side = window.innerWidth - visualRight - KEYWORD_POPOVER_GAP >= visualLeft - KEYWORD_POPOVER_GAP ? "right" : "left";
+      setPackKeywords({
+        entries,
+        left: side === "right" ? visualRight : visualLeft,
+        top: visualTop,
+        side,
+      });
     }, 1000);
   }
   // One roll per mount. `useState` with an initialiser, not `useMemo`: a memo is
