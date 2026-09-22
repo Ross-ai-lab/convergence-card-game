@@ -4896,18 +4896,28 @@ function KeywordPopover({
   left,
   top,
   above = false,
+  side,
 }: {
   entries: KeywordEntry[];
   left: number;
   top: number;
   /** Always sit ABOVE `top`, rather than below it unless there is no room. */
   above?: boolean;
+  /** Place beside an anchored card, keeping the card itself unobstructed. */
+  side?: "auto" | "left" | "right";
 }) {
   const width = 264;
-  const clampedLeft = Math.max(10, Math.min(left - width / 2, window.innerWidth - width - 10));
   // Flip above the word when there is no room beneath it. The estimate scales
   // with how many definitions are stacked in one panel.
   const estimatedHeight = 60 + entries.length * 120;
+  const beside = side !== undefined;
+  const canFitRight = left + 16 + width <= window.innerWidth - 10;
+  const placement = side === "auto" ? (canFitRight ? "right" : "left") : side;
+  const besideLeft = placement === "right" ? left + 16 : left - width - 16;
+  const clampedLeft = beside
+    ? Math.max(10, Math.min(besideLeft, window.innerWidth - width - 10))
+    : Math.max(10, Math.min(left - width / 2, window.innerWidth - width - 10));
+  const clampedTop = Math.max(10, Math.min(top, window.innerHeight - estimatedHeight - 10));
   const flip = above || top + estimatedHeight > window.innerHeight;
   // A PORTAL, and that is the fix for the clipping.
   //
@@ -4922,7 +4932,9 @@ function KeywordPopover({
     <span
       className={flip ? "cf-kw-pop is-above" : "cf-kw-pop"}
       role="note"
-      style={{ left: clampedLeft, top: flip ? undefined : top + 8, bottom: flip ? window.innerHeight - top + 12 : undefined, width }}
+      style={beside
+        ? { left: clampedLeft, top: clampedTop, width }
+        : { left: clampedLeft, top: flip ? undefined : top + 8, bottom: flip ? window.innerHeight - top + 12 : undefined, width }}
       onPointerDown={(event) => event.stopPropagation()}
     >
       {entries.map((entry) => (
@@ -6131,7 +6143,7 @@ function CardPack({
       packKeywordTimer.current = null;
       if (!el.isConnected) return;
       const rect = el.getBoundingClientRect();
-      setPackKeywords({ entries, left: rect.right - 12, top: rect.top });
+      setPackKeywords({ entries, left: rect.right, top: rect.top });
     }, 1000);
   }
   // One roll per mount. `useState` with an initialiser, not `useMemo`: a memo is
@@ -6356,7 +6368,7 @@ function CardPack({
             <button type="button" className="primary pack-collect" onClick={onDone} disabled={!allDealt}>
               Collect
             </button>
-            {packKeywords ? <KeywordPopover entries={packKeywords.entries} left={packKeywords.left} top={packKeywords.top} above /> : null}
+            {packKeywords ? <KeywordPopover entries={packKeywords.entries} left={packKeywords.left} top={packKeywords.top} side="auto" /> : null}
           </>
         ) : null}
       </section>

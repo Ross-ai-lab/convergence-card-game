@@ -4707,21 +4707,6 @@ button:disabled {
   color: #ffd4dc;
   font-size: clamp(1.4rem, 3vw, 2.4rem);
   filter: saturate(1.2);
-  animation: bound-slot-lock 2s ease-in-out infinite;
-}
-
-.board-slot.slot-is-bound::after {
-  animation: bound-slot-ring 1.8s ease-in-out infinite;
-}
-
-@keyframes bound-slot-lock {
-  0%, 100% { opacity: 0.82; transform: scale(0.98); }
-  50% { opacity: 1; transform: scale(1.02); }
-}
-
-@keyframes bound-slot-ring {
-  0%, 100% { opacity: 0.7; box-shadow: var(--slot-aura-rings), 0 0 12px rgba(255, 34, 76, 0.18); }
-  50% { opacity: 1; box-shadow: var(--slot-aura-rings), 0 0 30px rgba(255, 34, 76, 0.62); }
 }
 
 .slot-auras {
@@ -4787,12 +4772,6 @@ button:disabled {
   border-color: rgba(255, 82, 111, 0.95);
   background: linear-gradient(135deg, rgba(126, 19, 48, 0.96), rgba(55, 12, 31, 0.96));
   box-shadow: 0 0 10px rgba(255, 34, 76, 0.34);
-  animation: bound-chip-pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes bound-chip-pulse {
-  0%, 100% { filter: brightness(0.94); }
-  50% { filter: brightness(1.35); }
 }
 
 /* The relic strapped to a minion, centered along the bottom so it does not
@@ -5718,6 +5697,13 @@ button:disabled {
   gap: 8px;
   flex: 0 1 auto;
   flex-wrap: wrap;
+  padding: 7px 8px;
+  border: 1px solid rgba(240, 199, 103, 0.28);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(126, 76, 219, 0.18), transparent 42%),
+    linear-gradient(135deg, rgba(22, 14, 45, 0.92), rgba(7, 23, 34, 0.94));
+  box-shadow: inset 0 0 22px rgba(80, 214, 209, 0.06), 0 8px 22px rgba(0, 0, 0, 0.2);
 }
 
 .gallery-filter {
@@ -5730,32 +5716,38 @@ button:disabled {
   font-size: 0.62rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: rgba(246, 236, 216, 0.42);
+  color: rgba(245, 218, 151, 0.82);
   padding-left: 2px;
 }
 
 .gallery-filter select {
   appearance: none;
-  padding: 5px 26px 5px 9px;
+  padding: 6px 28px 6px 9px;
   border-radius: 8px;
-  border: 1px solid rgba(246, 236, 216, 0.16);
-  background-color: rgba(14, 12, 18, 0.85);
-  background-image: linear-gradient(45deg, transparent 50%, rgba(246, 236, 216, 0.5) 50%),
-    linear-gradient(135deg, rgba(246, 236, 216, 0.5) 50%, transparent 50%);
+  border: 1px solid rgba(233, 194, 111, 0.5);
+  background:
+    linear-gradient(45deg, transparent 50%, #f3d486 50%) calc(100% - 13px) 50% / 5px 5px no-repeat,
+    linear-gradient(135deg, #f3d486 50%, transparent 50%) calc(100% - 9px) 50% / 5px 5px no-repeat,
+    linear-gradient(135deg, rgba(37, 22, 69, 0.98), rgba(10, 40, 50, 0.98));
   background-position: calc(100% - 13px) center, calc(100% - 9px) center;
-  background-size: 4px 4px, 4px 4px;
-  background-repeat: no-repeat;
-  color: rgba(246, 236, 216, 0.9);
+  color: #fff2c7;
   font: inherit;
   font-size: 0.8rem;
+  font-weight: 800;
+  box-shadow: 0 0 0 1px rgba(97, 225, 216, 0.08), inset 0 0 14px rgba(255, 214, 111, 0.05);
   cursor: var(--convergence-cursor);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, filter 160ms ease;
 }
 
 /* An engaged filter has to be obvious, or a player wonders where the cards went. */
 .gallery-filter.is-active select {
   border-color: rgba(240, 199, 103, 0.75);
-  color: #f0c767;
-  background-color: rgba(46, 34, 12, 0.6);
+  color: #ffe39b;
+  background:
+    linear-gradient(45deg, transparent 50%, #ffe39b 50%) calc(100% - 13px) 50% / 5px 5px no-repeat,
+    linear-gradient(135deg, #ffe39b 50%, transparent 50%) calc(100% - 9px) 50% / 5px 5px no-repeat,
+    linear-gradient(135deg, rgba(82, 48, 17, 0.98), rgba(44, 28, 18, 0.98));
+  box-shadow: 0 0 0 1px rgba(255, 224, 154, 0.22), 0 0 18px rgba(240, 199, 103, 0.14);
 }
 
 .gallery-filter.is-active .gallery-filter-label {
@@ -5763,12 +5755,16 @@ button:disabled {
 }
 
 .gallery-filter select:hover {
-  border-color: rgba(240, 199, 103, 0.5);
+  border-color: #ffe09a;
+  filter: brightness(1.14) saturate(1.16);
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(255, 224, 154, 0.28), 0 0 18px rgba(111, 205, 255, 0.16);
 }
 
 .gallery-filter select:focus-visible {
-  outline: 2px solid rgba(240, 199, 103, 0.7);
-  outline-offset: 1px;
+  outline: 0;
+  border-color: #9effef;
+  box-shadow: 0 0 0 2px rgba(67, 205, 189, 0.22), 0 0 24px rgba(125, 92, 255, 0.24);
 }
 
 /* The option list is drawn by the OS, so it needs its own colours or it opens
