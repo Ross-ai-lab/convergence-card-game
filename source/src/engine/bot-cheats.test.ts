@@ -319,7 +319,7 @@ describe("Insight+", () => {
         worstReply(state, library, BOT, greedy) + 1e-9,
       );
     }
-  }, 15000); // This property check runs seeded searches while browser checks share the CPU.
+  }, 15_000); // The 48 seeded positions make this a search-sized check, not a 5 s unit test.
 
   it("actually finds a reply the greedy model missed", () => {
     // The guard above passes trivially if the branch never disagrees with the
@@ -328,7 +328,7 @@ describe("Insight+", () => {
       (state) => worstReply(state, library, BOT, branching) < worstReply(state, library, BOT, greedy) - 1e-6,
     );
     expect(gaps.length).toBeGreaterThan(0);
-  });
+  }, 15_000); // Measured at 8.95 s alone; allow the same budget as the paired property above.
 });
 
 // ---------------------------------------------------------------------------

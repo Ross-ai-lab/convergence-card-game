@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 218,038 bytes, roughly 55k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 223,346 bytes, roughly 56k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~45% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -16,7 +16,7 @@
 
 - [Version 1.0 — complete, 21 August 2026](#version-10-complete-21-august-2026)
 - [What Convergence is](#what-convergence-is)
-- [What the game still needs](#what-the-game-still-needs)
+- [Campaign design and implementation](#campaign-design-and-implementation)
   - [Campaign design — phase one](#campaign-design-phase-one)
 
 **How the game plays**
@@ -170,7 +170,7 @@ No account or installation is required. Progress and live duels are saved locall
 
 
 
-## What the game still needs
+## Campaign design and implementation
 
 <!-- CAMPAIGN-DESIGN-START -->
 ### Campaign design — phase one
@@ -186,7 +186,7 @@ No account or installation is required. Progress and live duels are saved locall
 | 5 | Lord Voldemort | Protected dark magic | Veteran | Dark Immortality | 10 |
 | 6 | Darth Vader | Imperial machinery | Veteran | — | 8 |
 | 7 | Conquest | Ruthless combat | Veteran | No Retreat | 9 |
-| 8 | Dio Brando | Frozen battlefield | Veteran | — | 8 |
+| 8 | Dio Brando | Frozen battlefield | Veteran | — | 7 |
 | 9 | All for One | Stolen abilities | Veteran | Quirk Theft | 9 |
 | 10 | Meruem | Predators and protection | Veteran | — | 9 |
 | 11 | Ainz Ooal Gown | Undead court | Ascendant (no cheats) | Skeleton Legion | 8 |
@@ -559,9 +559,9 @@ Thirty-two relics would be
 
 Enemy relic equips also show the actual enlarged card beside the exact bearer
 for 2,000 ms. Every equip event joins a queue, including effect-driven equips;
-multiple relics appear one after another, each for its own second. The bot waits
-until the queue finishes before its next action. The popup renders outside the
-board's transformed layers with an explicit card height, so board-only sizing
+multiple relics appear one after another, each for its own 2,000 ms. The bot
+waits until the queue finishes before its next action. The popup renders outside
+the board's transformed layers with an explicit card height, so board-only sizing
 cannot collapse it. `npm run check` includes the `relic-popup` browser regression:
 an enemy plays a relic from hand, then The 7 Heroic Spirits equips three bearers.
 
@@ -689,25 +689,30 @@ changed, because seventy seconds is cheap and "small" is the change it catches.
 **A change to `scripts/browser.mjs` or to a check script re-runs every browser
 suite**, or the one edit nobody re-checks is the edit to the checker.
 
-**AND IT RUNS THEM AT THE SAME TIME.** They used to run one after another, each
-starting its own browser. They now share one browser server — `launch()` in
-`browser.mjs` connects to it when `CONVERGENCE_BROWSER_WS` is set, and every
-suite still gets its own context, so their storage and their pages cannot see
-each other. Measured on the first real run: **624 seconds of work finished in
-328**, with all four suites green. Sharing the browser saves seconds; running
-them together is what saves the minutes.
+**CPU-heavy tests finish before browser checks start.** The `tests` and
+`coverage` suites both run Vitest and spend CPU replaying game states. Running
+them beside Chromium made timed duel checks fail and caused browser clicks,
+reloads, and animation checks to miss their deadlines on a correct build. The
+runner completes quick Node checks first, runs those two Vitest suites one at a
+time, then starts Chromium.
 
-**Two browser suites at a time, longest first, and the cap is free.** Four
+The browser suites share one server. `launch()` in `browser.mjs` connects to it
+when `CONVERGENCE_BROWSER_WS` is set, and each suite still gets its own context,
+so its storage and pages stay isolated. They run two at a time. Measured on the
+first real run: **624 seconds of work finished in 328**, with all four suites
+green.
+
+**Two browser suites at a time, longest first.** Four
 Chromium contexts, four React apps and four animation loops on one CPU made the
 UI suites fail on working builds: a click sat through its whole timeout because
 the app had not finished leaving the title screen, and the error reads as a
 z-index bug in the product rather than as a busy machine. One red run in three,
 which is the worst possible rate — often enough to waste a session, rare enough
-to be dismissed. The cap costs nothing because the suites are wildly uneven:
-measured 4 September 2026, **339s unlimited against 818s of work, and 339s capped
-against 767** — the same wall clock, and the work itself got cheaper because
-nothing was fighting. The plain-Node suites are not capped; they are not
-competing for a renderer.
+to be dismissed. The four-suite queue measured on 4 September 2026 took **339s
+both unlimited and capped** (818s versus 767s of work). That result is historical;
+the current browser queue is larger, so it does not estimate today's full-run cost.
+`check-all.mjs` keeps the long browser suite in the first lane and runs the
+remaining browser work in a second lane.
 
 **Longest first is not optional there.** Sorting the browser queue alphabetically
 put the 300-second suite last and took the run from 339s to **451s** — two lanes

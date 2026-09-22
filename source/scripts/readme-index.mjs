@@ -35,7 +35,7 @@ const README = resolve(dirname(fileURLToPath(import.meta.url)), "../../README.md
 const ORDER = [
   [
     "What this is",
-    ["Version 1.0 — complete, 21 August 2026", "What Convergence is", "What the game still needs"],
+    ["Version 1.0 — complete, 21 August 2026", "What Convergence is", "Campaign design and implementation"],
   ],
   [
     "How the game plays",
@@ -167,13 +167,21 @@ function build(text) {
   while (kept.length && kept[kept.length - 1].trim() === "") kept.pop();
 
   const body = ordered.map((block) => block.lines.join("\n").replace(/\n+$/, "")).join("\n\n");
-  // Two passes: the banner quotes the finished file's own size, so the file has
-  // to be assembled once before the number is known and once with it in place.
-  const withoutNav = `${kept.join("\n")}\n\n${body}\n`;
-  const size = Buffer.byteLength(withoutNav, "utf8");
-  const nav = buildNav(ordered, size + 1800);
-  const final = `${kept.join("\n")}\n\n${nav}\n\n${body}\n`;
-  return { final, unlisted };
+  const prefix = `${kept.join("\n")}\n\n`;
+  let size = Buffer.byteLength(`${prefix}${body}\n`, "utf8");
+  let final = "";
+
+  // The banner is part of the page whose size it quotes. Rebuild it until the
+  // number in the banner equals the exact byte length of the finished page.
+  for (let pass = 0; pass < 8; pass += 1) {
+    const nav = buildNav(ordered, size);
+    final = `${prefix}${nav}\n\n${body}\n`;
+    const actualSize = Buffer.byteLength(final, "utf8");
+    if (actualSize === size) return { final, unlisted };
+    size = actualSize;
+  }
+
+  throw new Error("README byte-count banner did not converge to the finished page size.");
 }
 
 const original = readFileSync(README, "utf8");

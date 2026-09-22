@@ -62,7 +62,16 @@ await page.locator(".duel-trigger").click({ timeout: 5000 }).catch(() => {});
 await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 }).catch(() => {});
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
 await completeOpeningMulligan();
-await page.waitForTimeout(2600);
+// The first duel click can request the battle bed while the menu file is still
+// loading. Wait for the actual track and playback state, not a guessed delay.
+await page.waitForFunction(
+  () => {
+    const stats = window.__sfx?.getStats();
+    return stats?.current === "battle" && stats.musicPlaying;
+  },
+  null,
+  { timeout: 15000 },
+).catch(() => {});
 const directDuel = await page.evaluate(() => window.__sfx?.getStats() ?? { error: "SFX probe missing" });
 check(
   "direct Duel starts battle music",

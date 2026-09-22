@@ -209,14 +209,10 @@ console.log(
     : `${changed.length} file(s) changed -> ${wanted.map((s) => s.name).join(", ")}`,
 );
 
-// One browser for every suite that needs one, started before they are, so the
-// three of them do not each pay for a launch.
+// The browser server starts only after CPU-heavy Node checks finish. Keeping
+// Vitest away from Chromium prevents timing deadlines from becoming machine-load
+// tests instead of checks of the game.
 let server = null;
-if (wanted.some((suite) => suite.browser)) {
-  const chromium = await loadChromium();
-  server = await chromium.launchServer();
-  process.env.CONVERGENCE_BROWSER_WS = server.wsEndpoint();
-}
 
 /**
  * TWO BROWSER SUITES AT A TIME, and it costs nothing.
@@ -228,26 +224,42 @@ if (wanted.some((suite) => suite.browser)) {
  * z-index bug in the product rather than as a busy machine. An intermittent red
  * is worse than no check, because the next session learns to read past it.
  *
- * The cap is close to free because the suites are wildly uneven. `ui` alone is
- * about 300s and the other three together are about 290, so with the long one
- * started first the two lanes finish inside the time `ui` already took.
- * Measured 4 September 2026: 339s unlimited against 818s of work, 346s capped
- * against 741 — the work itself got cheaper because nothing was fighting.
+ * On the four-suite queue measured 4 September 2026, `ui` alone was about 300s
+ * and the other three together about 290. Longest-first two-lane scheduling
+ * finished in 339s, the same as the uncapped run. That historical result does
+ * not estimate the cost of today's larger browser queue.
  *
- * The plain-Node suites are not capped. They are not competing for a renderer,
- * and `tests` is the long pole among them.
+ * The Vitest suites are CPU-heavy even though they do not render a browser.
+ * Running them beside Chromium made duel deadlines, browser clicks, reloads,
+ * and animation checks fail on a correct build. Quick Node checks finish first,
+ * then `tests` and `coverage` run one at a time, and only then does Chromium
+ * start. The browser suites still run in two lanes.
  */
 const BROWSER_LANES = 2;
 
 async function runAll(suites) {
   const results = [];
   const plain = suites.filter((suite) => !suite.browser);
+  const cpuHeavyNames = new Set(["tests", "coverage"]);
+  const quick = plain.filter((suite) => !cpuHeavyNames.has(suite.name));
+  const cpuHeavy = plain.filter((suite) => cpuHeavyNames.has(suite.name));
+
+  await Promise.all(quick.map(async (suite) => results.push(await run(suite))));
+  for (const suite of cpuHeavy) results.push(await run(suite));
+
+  const browserSuites = suites.filter((suite) => suite.browser);
+  if (browserSuites.length > 0) {
+    const chromium = await loadChromium();
+    server = await chromium.launchServer();
+    process.env.CONVERGENCE_BROWSER_WS = server.wsEndpoint();
+  }
+
   // LONGEST FIRST. Alphabetical order put the 300-second suite last and the
   // whole run took 451s instead of 339 — two lanes are slower than no lanes if
   // the long pole starts after the short ones. `costs` is a rough ordering hint
   // measured 4 September 2026, not a budget: only the sort uses it.
   const costs = { ui: 300, audio: 145, "campaign-voices": 110, features: 350, cardface: 25 };
-  const queue = [...suites.filter((suite) => suite.browser)].sort(
+  const queue = [...browserSuites].sort(
     (a, b) => (costs[b.name] ?? 0) - (costs[a.name] ?? 0) || a.name.localeCompare(b.name),
   );
   const lane = async () => {
@@ -257,10 +269,7 @@ async function runAll(suites) {
       results.push(await run(suite));
     }
   };
-  await Promise.all([
-    ...plain.map(async (suite) => results.push(await run(suite))),
-    ...Array.from({ length: BROWSER_LANES }, lane),
-  ]);
+  await Promise.all(Array.from({ length: Math.min(BROWSER_LANES, queue.length) }, lane));
   return results;
 }
 

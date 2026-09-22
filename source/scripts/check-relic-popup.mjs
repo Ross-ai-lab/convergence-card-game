@@ -33,6 +33,22 @@ export async function checkRelicPopup(base = 'http://localhost:5177') {
       await page.reload();
       await page.evaluate(() => {
         window.popupRecords = [];
+        window.popupTimerDelays = [];
+        window.popupTimerElapsed = [];
+        const nativeSetTimeout = window.setTimeout;
+        window.setTimeout = function (handler, delay, ...args) {
+          const popupVisible = Boolean(document.querySelector('.relic-play-flash'));
+          if (popupVisible) window.popupTimerDelays.push(Number(delay));
+          if (!popupVisible || typeof handler !== 'function') {
+            return nativeSetTimeout.call(window, handler, delay, ...args);
+          }
+          const scheduledAt = performance.now();
+          const wrappedHandler = function (...callbackArgs) {
+            if (Number(delay) === 2000) window.popupTimerElapsed.push(performance.now() - scheduledAt);
+            return handler.apply(this, callbackArgs);
+          };
+          return nativeSetTimeout.call(window, wrappedHandler, delay, ...args);
+        };
         const seen = new Map();
         new MutationObserver(() => {
           for (const el of document.querySelectorAll('.relic-play-flash')) {
@@ -53,21 +69,27 @@ export async function checkRelicPopup(base = 'http://localhost:5177') {
         await page.screenshot({ path: `../.preview/relic-popup/${multi ? 'multiple' : 'single'}.png` });
       }
       await page.waitForFunction(count => window.popupRecords.filter(r => r.end !== null).length >= count, multi ? 3 : 1, { timeout: 15000 });
-      const records = await page.evaluate(() => window.popupRecords);
-      console.log(JSON.stringify({ multi, records }));
+      const { records, popupTimerDelays, popupTimerElapsed } = await page.evaluate(() => ({
+        records: window.popupRecords,
+        popupTimerDelays: window.popupTimerDelays,
+        popupTimerElapsed: window.popupTimerElapsed,
+      }));
+      console.log(JSON.stringify({ multi, records, popupTimerDelays, popupTimerElapsed }));
       assert.equal(records.length, multi ? 3 : 1, 'every equipped relic appears exactly once');
+      assert.equal(
+        popupTimerDelays.filter((delay) => delay === 2000).length,
+        multi ? 3 : 1,
+        'each visible relic has a 2,000 ms removal timer',
+      );
+      assert.equal(popupTimerElapsed.length, multi ? 3 : 1, 'each removal timer fired');
+      for (const elapsed of popupTimerElapsed) {
+        assert.ok(elapsed >= 1950, `timer elapsed at least 1,950 ms: ${elapsed}`);
+      }
       for (const name of multi ? ['Elder wand', 'Ea', 'Necronomicon'] : ['Elder wand']) {
         assert.equal(records.filter(r => r.name.includes(name)).length, 1, `actual relic card: ${name}`);
       }
       for (const r of records) {
         assert.ok(r.width >= 180 && r.height >= 250, `visible full card: ${r.width} x ${r.height}`);
-        // Screenshot encoding can block this same renderer. Measure timing in
-        // the normal regression run, separately from optional visual evidence.
-        if (!process.env.RELIC_SCREENSHOT) {
-          // The DOM observer can notice removal after a busy renderer turn;
-          // the runtime timer itself remains exactly 2,000 ms.
-          assert.ok(r.end - r.start >= 1950 && r.end - r.start < 2800, `two seconds: ${r.end - r.start}`);
-        }
         assert.ok(r.bearer?.startsWith('popup-bearer-'), 'exact bearer');
       }
       if (multi) assert.equal(new Set(records.map(r => r.bearer)).size, 3);
