@@ -32,16 +32,16 @@ export interface KeywordEntry {
 }
 
 export const KEYWORDS: KeywordEntry[] = [
-  { term: "Battlecry", text: "Happens once, when the minion enters play." },
+  { term: "Battlecry", text: "Happens once when the minion enters play." },
   {
     term: "Ongoing",
-    text: "Happens again at the start of its owner’s turn. An enemy Ongoing waits for the enemy’s turn, not yours.",
+    text: "Happens at the start of each of the owner’s turns.",
   },
-  { term: "Passive", text: "A standing rule that applies for as long as the minion is active." },
+  { term: "Passive", text: "Applies while the minion is alive." },
   { term: "Battlecry/Ongoing", text: "Both: once on arrival, then again every owner turn." },
-  { term: "Deathrattle", text: "Happens after the minion dies — unless it was Silenced first." },
-  { term: "Taunt", text: "The enemy must deal with this minion before attacking your core." },
-  { term: "Charge", text: "May attack the same turn it is summoned, or the turn it changes controller." },
+  { term: "Deathrattle", text: "Happens after the minion dies." },
+  { term: "Taunt", text: "Prevents the enemy from targeting any other minion or core." },
+  { term: "Charge", text: "May attack the same turn it is summoned." },
   {
     term: "Chained",
     aliases: ["Chain"],
@@ -55,89 +55,53 @@ export const KEYWORDS: KeywordEntry[] = [
   {
     term: "Freeze",
     aliases: ["Frozen"],
-    text:
-      "The minion loses *one* turn, then thaws once it has sat that turn out. It keeps its Passive and stays targetable throughout — that, and the extra turn, is what separates it from *Chained*.",
+    text: "Loses one turn.",
   },
   {
     term: "Silence",
     aliases: ["Silenced"],
-    text:
-      "Strips the printed effect and keywords, Divine Shield included, and takes back every stat *buff* the minion is carrying, down to its printed stats. Nerfs it has taken are kept. A Silence that its own card calls temporary only suspends the buffs.",
+    text: "Removes all effects and buffs to stats.",
   },
   {
     term: "Cannot attack",
-    text:
-      "This minion never attacks, whatever its ATK. It still blocks, still takes damage, and still strikes back when attacked. Its ATK gem is grey.",
+    text: "Cannot attack, but still retaliates.",
   },
   {
     term: "Reborn",
-    text:
-      "When the minion dies it comes back where it fell, at *1 HP*, with its printed ATK and nothing else it was carrying: no buffs, no relic, no shield. A full board leaves it nowhere to return to, and *Silence* stops it like any other keyword.",
+    text: "Returns after death at 1 HP with printed ATK and no buffs or relics.",
   },
   {
     term: "Reborn, how many times",
     onCard: false,
-    text:
-      "The card says. Plain *Reborn* is once; *Reborn twice* is two lives; *Reborn infinitely* never runs out. A card that comes back spends a life, so the text you read on the returning body is always what it has left — and when the last one is gone, the text is gone with it.",
+    text: "Plain Reborn gives one life. Reborn twice gives two. Reborn infinitely never runs out.",
   },
   {
     term: "Asleep",
     aliases: ["Sleeping"],
-    text:
-      "The one-turn wait after a minion is played or summoned. Separate from Chained, and skipped by Charge. Drifting z’s show it.",
+    text: "The one-turn wait after being played or summoned.",
   },
-  { term: "Evade", text: "A printed percentage chance to dodge an incoming attack outright." },
-  { term: "Invulnerable", text: "Takes no damage while the condition lasts; a blue-and-white rim shows it." },
-  { term: "Immune", text: "Takes no damage from one named source — a camp, an alignment, a damage type." },
+  { term: "Evade", text: "A percentage chance to dodge an incoming attack." },
+  { term: "Invulnerable", text: "Takes no damage." },
+  { term: "Immune", text: "Takes no damage from one named source." },
   {
     term: "Adapted",
-    text:
-      "The minion has learned the camp that last hit it and shrugs that camp off for a few turns. A purple glow rises from the card, and it fades when the immunity does.",
+    text: "Gains temporary immunity to the camp that last damaged it.",
   },
-  { term: "Untargetable", text: "Attacks and effects cannot choose it while the condition lasts." },
-  { term: "Attack Locked", text: "Cannot attack until the printed lock ends; the attack gem greys out." },
+  { term: "Untargetable", text: "Attacks and effects cannot choose it." },
+  { term: "Attack Locked", text: "Cannot attack until the lock ends." },
   {
     term: "Marked",
-    text:
-      "A delayed effect is waiting on the minion, and a red pulse runs round the card. The card that marked it says when it lands.",
+    text: "A delayed effect is waiting to resolve on the minion.",
   },
-  {
-    term: "Stasis",
-    text:
-      "The minion is lifted off the board for two turns and comes back exactly as it left, in its own slot if that slot is still free.",
-  },
-  { term: "Banished", text: "The minion is put away until the card that banished it dies. Then it returns." },
-  {
-    term: "Pocket room",
-    text:
-      "One friendly and one enemy minion are shut away together for two turns. The higher ATK walks out; the other is gone. Equal ATK and both walk out.",
-  },
-  {
-    term: "Protected slot",
-    text:
-      "A board position that shields whoever stands in it from Silence, Freeze and Chained — but not from damage, targeting or removal.",
-  },
-  { term: "Destroy", text: "Removes a minion outright, dealing no damage. Divine Shield does not stop it." },
-  { term: "Summon", text: "Puts a new minion into an open slot. No open slot, no summon." },
-  {
-    term: "Discover",
-    text:
-      "Offers you three cards from your deck and you keep one. The other two stay in the deck. Your opponent is not shown what you were offered.",
-  },
+  { term: "Destroy", text: "Removes a minion, bypassing Divine Shield." },
+  { term: "Summon", text: "Puts a new minion into an open slot." },
+  { term: "Discover", text: "Offers three choices. Choose one." },
   {
     term: "Transform",
     aliases: ["Devolve"],
-    text:
-      "Replaces a minion with a different one from the roster, usually one mana step up or down. Its relics are lost with it. *Devolve* is the same word pointing downward.",
+    text: "Replaces a minion with another roster minion. Relics are lost.",
   },
-  { term: "Seize", text: "Moves an enemy minion onto your board. It arrives asleep unless it has Charge, and it needs a free slot." },
-  {
-    term: "Return to hand",
-    text:
-      "Takes a minion off the board and puts its card back in its owner’s hand, at full printed stats. Attached relics are discarded.",
-  },
-  { term: "Gain stats", text: "Adds ATK and both maximum and current HP." },
-  { term: "Target", onCard: false, text: "A minion, card or board slot that you choose when the effect resolves." },
+  { term: "Seize", text: "Moves an enemy minion to your board. It arrives asleep unless it has Charge." },
 ];
 
 /**

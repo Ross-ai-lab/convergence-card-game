@@ -3,7 +3,7 @@
 **Use this page when** playing, running, changing, testing, balancing, documenting, or troubleshooting the Convergence browser card game.
 
 <!-- README-NAV-START -->
-> **BIG PAGE — do NOT read this file whole.** It is 217,864 bytes, roughly 54k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
+> **BIG PAGE — do NOT read this file whole.** It is 218,038 bytes, roughly 55k tokens. One whole-file Read truncates at 25,000 tokens and returns only the first ~46% of it, so answering from that view means answering from a fraction of the page. Read one section instead:
 >
 > 1. `rg -n "^## " README.md` — every section is a `##` heading, so this prints a live, never-stale index with current line numbers.
 > 2. `Read` with `offset` = that section's line and `limit` = the gap to the next heading.
@@ -28,6 +28,7 @@
   - [Opening duel animation timeline](#opening-duel-animation-timeline)
   - [During a duel](#during-a-duel)
 - [Cards and card language](#cards-and-card-language)
+  - [Keyword rule](#keyword-rule)
   - [Mana is lore power](#mana-is-lore-power)
   - [Timing words](#timing-words)
   - [Conditions and keywords](#conditions-and-keywords)
@@ -468,6 +469,10 @@ source camps, and it is a legal victim for anything that hunts one of them. Owne
 reversing the rule before it — ALL used to take every camp's buff while ducking every camp's answer, which made it
 the one camp in the game with no counterplay. `campTargetedBy` in `game.ts` is the SELECTION half; camp IMMUNITY
 still asks the attacker's exact camp, or an ALL attacker would bounce off all three immunity relics at once. The three alignments are **Good**, **Evil**, and **Neutral**. Many effects target a camp or alignment, so read both labels before playing a card.
+
+### Keyword rule
+
+Keywords are created for terms that appear repeatedly across the roster. A one-off effect stays as card description text and does not become a keyword popup.
 
 ### Mana is lore power
 
