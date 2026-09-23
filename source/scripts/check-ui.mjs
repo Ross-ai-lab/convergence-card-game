@@ -597,24 +597,44 @@ check(
 
 const boardPreviewTarget = page.locator(".board-slot.occupied .card-face").first();
 if ((await boardPreviewTarget.count()) > 0) {
+  await page.evaluate(() => {
+    const probe = { startedAt: performance.now(), previewAt: null, keywordAt: null };
+    window.__boardHoverProbe = probe;
+    const observer = new MutationObserver(() => {
+      if (probe.previewAt === null && document.querySelector(".hover-preview")) {
+        probe.previewAt = performance.now();
+      }
+      if (probe.keywordAt === null && document.querySelector(".hover-keyword-definitions")) {
+        probe.keywordAt = performance.now();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    window.__boardHoverProbeObserver = observer;
+  });
   await boardPreviewTarget.hover();
-  await page.waitForTimeout(400);
-  const boardPreviewEarly = await page.locator(".hover-preview").count();
-  await page.waitForTimeout(850);
-  const boardPreviewLate = await page.locator(".hover-preview").count();
+  await page.waitForFunction(
+    () => window.__boardHoverProbe?.keywordAt !== null,
+    null,
+    { timeout: 10000 },
+  ).catch(() => {});
+  const boardHoverTiming = await page.evaluate(() => window.__boardHoverProbe);
+  const boardPreviewDelay = boardHoverTiming.previewAt === null
+    ? null
+    : boardHoverTiming.previewAt - boardHoverTiming.startedAt;
+  const boardKeywordDelay = boardHoverTiming.keywordAt === null
+    ? null
+    : boardHoverTiming.keywordAt - boardHoverTiming.startedAt;
   check(
     "board card preview waits 1 second",
-    boardPreviewEarly === 0 && boardPreviewLate === 1,
-    `early ${boardPreviewEarly}, late ${boardPreviewLate}`,
+    boardPreviewDelay !== null && boardPreviewDelay >= 950,
+    `${boardPreviewDelay === null ? "not shown" : `${boardPreviewDelay.toFixed(0)} ms`}`,
   );
-  const keywordEarly = await page.locator(".hover-keyword-definitions").count();
-  await page.waitForTimeout(850);
-  const keywordLate = await page.locator(".hover-keyword-definitions").count();
   check(
     "board keyword explanations wait 2 seconds",
-    keywordEarly === 0 && keywordLate === 1,
-    `early ${keywordEarly}, late ${keywordLate}`,
+    boardKeywordDelay !== null && boardKeywordDelay >= 1950,
+    `${boardKeywordDelay === null ? "not shown" : `${boardKeywordDelay.toFixed(0)} ms`}`,
   );
+  await page.evaluate(() => window.__boardHoverProbeObserver?.disconnect());
   await page.mouse.move(0, 0);
 } else {
   skip("board card preview waits 1 second", "no board minion to hover");
