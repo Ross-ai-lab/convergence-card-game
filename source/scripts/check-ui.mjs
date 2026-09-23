@@ -713,14 +713,21 @@ await newBoard();
       window.__debug.place("Military Fort", "them", 0);
       window.__debug.place("John Wick", "them", 1);
     });
-    await page.waitForTimeout(250);
+    const blocker = page.locator('[data-slot="1-0"] .card-face.kw-taunt');
+    const target = page.locator('[data-slot="1-1"] .card-face');
+    await blocker.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+    await target.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
     const attacker = page.locator('.board-slot[data-slot^="0-"] .card-face').first();
     await attacker.click();
+    const armed = page.locator('.board-slot.armed');
+    await armed.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
     await page.locator('[data-slot="1-1"]').click();
-    await page.waitForTimeout(180);
-    const flashing = await page.locator('[data-slot="1-0"].taunt-flashing .card-face.kw-taunt').count();
-    await page.waitForTimeout(900);
-    const settled = await page.locator('[data-slot="1-0"].taunt-flashing').count();
+    const flash = page.locator('[data-slot="1-0"].taunt-flashing .card-face.kw-taunt');
+    await flash.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+    const flashing = await flash.count();
+    const marker = page.locator('[data-slot="1-0"].taunt-flashing');
+    await marker.waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
+    const settled = await marker.count();
     check(
       "a Taunt blocker flashes red on a blocked attack",
       flashing === 1 && settled === 0,
