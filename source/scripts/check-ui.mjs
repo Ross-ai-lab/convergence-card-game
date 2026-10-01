@@ -914,6 +914,10 @@ await newBoard({ place: false });
 
 // ------------------------------------------------------------------ 7. undo
 await newBoard({ awake: false });
+const normalOccupied = await page.locator('.board-slot.occupied').count();
+await page.keyboard.press('z');
+check('Normal play has no keyboard Undo', await page.locator('.board-slot.occupied').count() === normalOccupied);
+await page.keyboard.type('Ross');
 {
   const occupied = await page.locator(".board-slot.occupied").count();
   await page.keyboard.press("z");

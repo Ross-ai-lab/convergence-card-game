@@ -67,15 +67,17 @@ export function FullscreenButton({
 }) {
   const Icon = active ? CornersIn : CornersOut;
   const label = active ? "Exit full screen" : "Full screen";
+  const supported = active || typeof document.documentElement.requestFullscreen === "function";
 
   return (
     <button
       type="button"
       className={["fullscreen-trigger", className].filter(Boolean).join(" ")}
       onClick={onToggle}
+      disabled={!supported}
       aria-label={label}
       aria-pressed={active}
-      title={label}
+      title={supported ? label : "Your browser does not support fullscreen"}
     >
       <Icon size={22} weight="fill" aria-hidden="true" />
       <span className="fullscreen-label">{label}</span>
@@ -796,7 +798,8 @@ function HowToPlayContent() {
 
       <section className="rules-chapter">
         <h4><span className="rules-step-no">9</span> Shortcuts</h4>
-        <p><b>Space</b> or <b>Enter</b> end turn · <b>Z</b> undo your last action · <b>Esc</b> clear your selection.</p>
+        <p><b>Space</b> or <b>Enter</b> end turn · <b>Esc</b> clear your selection.</p>
+        <p>Phone duels use landscape. Tap to play or attack. Hold a card for one second to read it; swipe to scroll your hand.</p>
       </section>
     </div>
   );

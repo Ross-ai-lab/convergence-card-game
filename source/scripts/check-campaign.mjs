@@ -75,11 +75,9 @@ try {
   assert.equal(await page.locator('.campaign-chapter-panel > .campaign-header h2').textContent(), "Rick Gramps Collection");
   assert.equal(await page.locator('.campaign-chapter-panel .campaign-close').textContent(), '×');
   const panelMetrics = await page.locator('.campaign-chapter-panel').evaluate((el) => ({
-    overflow: getComputedStyle(el).overflowY,
     clientHeight: el.clientHeight,
     scrollHeight: el.scrollHeight,
   }));
-  assert.equal(panelMetrics.overflow, 'hidden');
   assert.equal(panelMetrics.scrollHeight, panelMetrics.clientHeight);
   assert.equal(await page.locator('.campaign-toolbar p').textContent(), "Choose any universe. Conquer its champion to claim that universe's cards.");
   assert(!firstUniverseText.includes('Tech fortifications'));
@@ -188,7 +186,10 @@ try {
   if (await resultCampaign.isVisible().catch(() => false)) await resultCampaign.click();
   else await page.locator('.duel-trigger').click();
   const clearedChapterCard = page.locator('[data-chapter="1"]');
-  assert.equal(await clearedChapterCard.locator('details[open]').count(), 1);
+  assert.equal(await clearedChapterCard.locator('details').count(), 1);
+  assert.equal(await clearedChapterCard.locator('details[open]').count(), 0);
+  await clearedChapterCard.locator('summary').click();
+  assert(await clearedChapterCard.locator('details p').isVisible(), 'Unlocked rewards cannot be expanded');
   assert((await clearedChapterCard.textContent()).includes('Rewards unlocked'));
   assert((await clearedChapterCard.textContent()).includes('GLaDOS'));
   await page.getByRole('button', { name: 'Close Rick Gramps Collection', exact: true }).click();

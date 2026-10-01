@@ -13,7 +13,7 @@ It uses separate 30-card decks, four board slots per player, and a deterministic
 There is no account, download, or installation needed to play.
 
 <p>
-  <img src="materials/screenshots/mobile-duel.png" width="300" alt="A phone duel with all eight board positions visible, named champion, mana, readable attack and health, and separate card readers">
+  <img src="materials/screenshots/mobile-duel.png" width="600" alt="A landscape phone duel with all eight board positions visible, named champion, mana, and long-press card inspection">
   <img src="materials/screenshots/mobile-collection.png" width="300" alt="The phone collection view showing a large card face, search, deck tab, and expandable filters">
 </p>
 
@@ -23,6 +23,7 @@ There is no account, download, or installation needed to play.
 - [Controls](#controls)
 - [Cards and effects](#cards-and-effects)
 - [Campaign and progression](#campaign-and-progression)
+  - [Character voices](#character-voices)
 - [Project structure](#project-structure)
 - [Development](#development)
   - [Generated statistics workbook](#generated-statistics-workbook)
@@ -43,8 +44,10 @@ There is no account, download, or installation needed to play.
 - **Two-player hotseat:** share one device using separate decks. An opaque privacy screen hides hands between turns.
 - **Free duels:** completing the campaign opens Recruit, Veteran, and Ascendant opponents with random thirty-card decks.
 
-The game supports desktop, phone portrait, phone landscape, and tablet layouts.
-On phones, all four slots on both boards stay visible. The hand scrolls independently.
+The game supports desktop, landscape phone duels, and tablet layouts.
+Phone duels require the device to be held sideways. The game requests fullscreen and landscape rotation when supported by the browser.
+If automatic rotation is unavailable, a rotate screen waits until the phone is turned sideways. Menus and deck editing also work upright.
+All four slots on both boards stay visible. The hand scrolls independently.
 The deck editor has separate Collection and Deck views, expandable filters, and full card profiles.
 
 Progress and ongoing duels save in this browser on this device. A private window or cleared browser storage starts a separate collection.
@@ -73,16 +76,16 @@ There is no online multiplayer or account synchronization. The public website di
 |---|---|---|
 | Play a card | Tap the hand card, then a highlighted slot or bearer | Click the card and its destination, or drag it |
 | Attack | Tap a ready minion, then a highlighted enemy or core | Click both, or drag the attacker |
-| Read a hand or board card | Tap its separate **Read** button | Hover a board minion; hover the hand to enlarge it |
+| Read a hand or board card | Hold the card for **one second** | Hover a board minion; hover the hand to enlarge it |
 | Read a character profile | Open My Deck and tap the card's name | Click its name in My Deck |
 | End the turn | Tap **End Turn** | Click **End Turn**, or press **Space** / **Enter** |
 | Clear a choice | Tap the selected card again or the board background | Press **Escape** |
-| Undo a local action | **Menu → Undo last action** | Press **Z** |
 | Rules, sound, and restart | Open **Menu** during the duel | Use the duel toolbar |
 | Duel history | **Menu → Duel log** | Open the **Log** drawer |
 
-Swipe the phone hand to reach later cards. Swiping does not start a card drag.
-Reading a card does not play it, attack with it, or spend mana.
+Swipe the phone hand to reach later cards. Swiping cancels a long press and does not start a card drag.
+Reading a card does not play it, attack with it, or spend mana. Lifting your finger after a long press keeps the reader open.
+Undo is a developer-only tool. Normal duels expose neither an Undo menu option nor the Z shortcut.
 Double-tap the opening ceremony to skip its animation; the opening hand is already determined.
 The title screen's **Continue duel** restores an unfinished game.
 
@@ -138,6 +141,14 @@ All modes retain the ordinary core health, opening hand, mana progression, and f
 The written dialogue remains usable if audio fails. **Show full text** reveals a speech; its forward button then advances it.
 Unacknowledged victory dialogue and reward packs survive a reload.
 
+### Character voices
+
+Character dialogue was generated with **Qwen3-TTS**.
+The project uses **Qwen3-TTS-12Hz-1.7B-VoiceDesign** to cast character voices and **Qwen3-TTS-12Hz-1.7B-Base** to reuse selected reference voices consistently.
+The game ships 101 campaign recordings: Rick Gramps's prologue, twenty Rick introductions, and eighty champion dialogue lines.
+The [voice cast](materials/campaign-voice-cast.json) and [recording manifest](source/data/campaign-voices.json) preserve the dialogue, recording fingerprints, and audio checksums.
+Voice models and generation environments are not required to play.
+
 ## Project structure
 
 | Path | Purpose |
@@ -149,6 +160,8 @@ Unacknowledged victory dialogue and reward packs survive a reload.
 | [source/src/App.tsx](source/src/App.tsx) | Duel interface and deck editor |
 | [source/src/screens/](source/src/screens/) | Title, campaign, dialogue, rules, and settings |
 | [source/src/mobile.css](source/src/mobile.css) | Phone and tablet layout, loaded after desktop styles |
+| [source/src/phone-layout.ts](source/src/phone-layout.ts) | Phone detection, fullscreen request, and landscape rotation |
+| [source/src/card-long-press.ts](source/src/card-long-press.ts) | One-second card inspection with swipe cancellation and release handling |
 | [source/src/gallery-detail.css](source/src/gallery-detail.css) | Character profiles and Star Charts |
 | [source/public/](source/public/) | Runtime artwork, fonts, and audio |
 | [source/scripts/](source/scripts/) | Validation, browser checks, production build, and publishing |
@@ -184,7 +197,8 @@ The check runner executes unit tests before browser suites to avoid timing failu
 Browser suites use this project's Playwright Chromium and need the development server running.
 Install its browser once with `npx playwright install chromium` on a new development machine.
 For Safari engine checks, install Playwright WebKit and run `node scripts/check-mobile.mjs --webkit`.
-That pass covers portrait, landscape, and tablet layouts with touchscreen taps. Native swipe gestures are verified in Chromium; WebKit checks scroll containers programmatically.
+That pass covers upright menus, phone rotation, landscape duels, and tablet layouts with touchscreen taps.
+Chromium checks native holds and swipes. WebKit checks long-press pointer events and scroll containers programmatically.
 
 | Focused command | Checks |
 |---|---|
@@ -279,10 +293,10 @@ An insufficient sample is a skip, never a pass. The difficulty ladder requires a
 ### Interface, art, and audio
 
 Card faces are live DOM, not exported images. Stats and conditions come from actual game state.
-Keep mana, attack, health, name, and artwork visible at every breakpoint. Small board cards have a separate full-size reader.
+Keep mana, attack, health, name, and artwork visible at every breakpoint. Small board cards have a full-size reader opened by a one-second touch hold.
 Mythic, Legendary, Epic, and Relic cards use their own animated shine. Keep the animation and palette coherent with rarity ordering in `types.ts`.
 The desktop hand enlarges as one container. Phone hands scroll without scaling or overlap.
-Phone Read buttons are separate from play and attack controls. Touch scrolling must not capture a pointer as a drag.
+Long pressing a phone card opens its reader and consumes the release click. Movement, scrolling, cancellation, and rotation cancel an unfinished hold.
 Full-size card readers display current stats, conditions, granted powers, and attached relics.
 
 Runtime card art uses WebP under `source/public/card-art/`. Use the existing art-import tools for crop and encoding.
@@ -294,7 +308,7 @@ Reborn minions suppress arrival themes; returning bodies are not fresh plays.
 
 ### Developer tools
 
-Typing `Ross` on the title screen reveals the developer panel.
+Typing `Ross` reveals developer controls. The title screen then shows the developer panel.
 It offers card/power unlocks, chapter access, scripted tutorial, test duels, and reset confirmation.
 Chapter access does not record victories. The scripted tutorial does not grant progression.
 Developer test duels count toward the ordinary record and reward transaction.

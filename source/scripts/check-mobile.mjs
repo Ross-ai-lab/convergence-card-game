@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { launch, settleMotion } from './browser.mjs';
 import { seedCampaignProgress } from './campaign-fixtures.mjs';
 import { skipCampaignDialogue } from './story-fixtures.mjs';
+import { checkCampaignMotion } from './campaign-motion.mjs';
+import { holdCard as hold, rotateForDuel as rotate, resizePhone as resize, manualRotationBrowser } from './phone-fixtures.mjs';
 
 const base = process.argv.find(arg => arg.startsWith('http')) || 'http://localhost:5177';
 const useWebKit = process.argv.includes('--webkit');
@@ -47,10 +49,15 @@ async function clickMenu(page, name) {
   await page.getByRole('button', { name, exact: true }).tap();
 }
 
+const holdCard = (page,locator,name) => hold(page,locator,name,useWebKit);
+const rotateForDuel = (page,width,height) => rotate(page,width,height,useWebKit);
+const resizePhone = (page,width,height) => resize(page,width,height,useWebKit);
+
 try {
   for (const [width, height] of sizes) {
     console.log(`Checking mobile ${width}x${height}`);
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
+    await manualRotationBrowser(context);
     const page = await context.newPage();
     page.on('pageerror', error => errors.push(`${width}x${height}: ${error.message}`));
     await page.goto(base, { waitUntil: 'domcontentloaded' });
@@ -63,6 +70,8 @@ try {
 
     await page.locator('.duel-trigger').tap();
     await page.locator('.campaign-chapter').first().waitFor();
+    if (width === 390 || width === 844) await checkCampaignMotion(page);
+    if (width === 390) await shoot(page, 'phone-boss-collection');
     assert.equal(await page.locator('.campaign-chapter').count(), 20);
     await inside(page, '.campaign-close', 'Collection close');
     await page.locator('[data-chapter="20"] button').scrollIntoViewIfNeeded();
@@ -103,6 +112,7 @@ try {
     await page.locator('.duel-trigger').tap();
     await page.locator('[data-chapter="1"] button').tap();
     await skipCampaignDialogue(page);
+    await rotateForDuel(page,width,height);
     await page.locator('.duel-intro').dblclick();
     await page.locator('.duel-intro').waitFor({ state: 'detached', timeout: 20000 });
     await page.locator('.mulligan-panel button.primary').tap();
@@ -111,12 +121,15 @@ try {
     await inside(page, '.enemy-power-card', 'Boss Hero Power');
     await page.locator('.enemy-hero-wrap').tap();
     await inside(page, '.board-slot,.end-turn,.hero-plate,.mobile-menu-toggle', 'Duel controls');
-    if (width < height) {
+    if (page.viewportSize().width < page.viewportSize().height || page.viewportSize().height <= 600) {
       assert(await page.locator('.end-turn').evaluate(button => {
         const b = button.getBoundingClientRect();
+        const hand = document.querySelector('.hand-fan').getBoundingClientRect();
         return [...document.querySelectorAll('.hand-card,.command-bar .health-gem')].every(el => {
           const r = el.getBoundingClientRect();
-          return r.right <= b.left || r.left >= b.right || r.bottom <= b.top || r.top >= b.bottom;
+          const top = el.matches('.hand-card') ? Math.max(r.top,hand.top) : r.top;
+          const bottom = el.matches('.hand-card') ? Math.min(r.bottom,hand.bottom) : r.bottom;
+          return bottom <= top || r.right <= b.left || r.left >= b.right || bottom <= b.top || top >= b.bottom;
         });
       }), 'End Turn covers a hand card or core health');
     }
@@ -128,8 +141,10 @@ try {
     await page.waitForFunction(count => document.querySelectorAll('.hand-card').length === count + 1, initialHandCount);
     const handCount = await page.locator('.hand-card').count();
     await page.locator('.hand-item').last().scrollIntoViewIfNeeded();
-    await page.getByRole('button', { name: 'Read John Wick', exact: true }).last().tap();
+    assert.equal(await page.locator('.mobile-card-read').count(), 0, 'Read buttons remain on cards');
+    await holdCard(page,page.getByRole('button',{name:'John Wick, 1 mana, playable',exact:true}).last(),'Read John Wick');
     await inside(page, '.mobile-inspection-panel,.mobile-inspection-card', 'Card reader');
+    if (width === 390) await shoot(page, 'landscape-card-reader');
     const readerTurn = await page.locator('.deck-pile em').textContent();
     await page.keyboard.press('z');
     assert.equal(await page.locator('.deck-pile em').textContent(), readerTurn, 'Reader leaked a shortcut to the duel');
@@ -142,11 +157,11 @@ try {
     await page.locator('[data-slot="0-3"]').tap();
     assert.equal(await page.locator('[data-slot="0-3"].occupied').count(), 1, 'Tap-to-play missed the fourth slot');
     assert(await page.locator('.hs-shell').evaluate(el => el.scrollLeft === 0 && el.scrollTop === 0), 'Card focus moved the whole game');
-    await clickMenu(page, 'Undo last action');
-    assert.equal(await page.locator('[data-slot="0-3"].occupied').count(), 0, 'Phone undo did not restore the board');
-    assert.equal(await page.locator('.hand-card').count(), handCount);
-    await page.getByRole('button', { name: 'John Wick, 1 mana, playable', exact: true }).last().tap();
-    await page.locator('[data-slot="0-3"]').tap();
+    await page.getByRole('button',{name:'Duel menu',exact:true}).tap();
+    assert.equal(await page.getByRole('button',{name:'Undo last action',exact:true}).count(),0, 'Normal duels expose Undo');
+    await page.getByRole('button',{name:'Duel menu',exact:true}).tap();
+    await page.keyboard.press('z');
+    assert.equal(await page.locator('[data-slot="0-3"].occupied').count(),1, 'Normal Z shortcut undid a move');
 
     await page.evaluate(() => {
       ['Batman','UFO','Musashi','John Wick'].forEach((name, slot) => window.__debug.place(name, 'me', slot));
@@ -157,7 +172,7 @@ try {
     await inside(page, '.board-slot .card-face', 'All eight populated cards');
     await shoot(page, `${width}x${height}-battlefield`);
     await page.evaluate(() => { for (let i = 0; i < 6; i++) window.__debug.giveCard('John Wick'); });
-    await page.getByRole('button', { name: 'Read Batman on board', exact: true }).tap();
+    await holdCard(page,page.locator('[data-slot="0-0"]'),'Read Batman');
     assert(await page.getByRole('dialog', { name: 'Read Batman', exact: true }).isVisible());
     await page.getByRole('button', { name: 'Close card reader', exact: true }).tap();
     await page.locator('[data-slot="0-3"]').tap();
@@ -168,7 +183,8 @@ try {
     // Chromium exposes native touch gestures through CDP. Mobile WebKit exposes
     // taps only, so its scroll-container checks use programmatic scrolling.
     const hand = await page.locator('.hand-fan').boundingBox();
-    const landscape = width > height && height <= 600;
+    const current = page.viewportSize();
+    const landscape = current.width > current.height && current.height <= 600;
     const from = { x: hand.x + hand.width * .75, y: hand.y + Math.min(hand.height * .6, 90) };
     const before = await page.locator('.hand-fan').evaluate(el => ({ x: el.scrollLeft, y: el.scrollTop }));
     const beforeCount = await page.locator('.hand-card').count();
@@ -182,12 +198,14 @@ try {
         await cd.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: from.x - (landscape ? 0 : 18 * i), y: from.y - (landscape ? 10 * i : 0) }] });
         await page.waitForTimeout(30);
       }
-      await page.waitForTimeout(200);
+      await page.waitForTimeout(1100);
       await cd.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await cd.detach();
     }
     const after = await page.locator('.hand-fan').evaluate(el => ({ x: el.scrollLeft, y: el.scrollTop }));
     assert(landscape ? after.y > before.y : after.x > before.x, 'Touch swipe did not scroll the hand');
     assert.equal(await page.locator('.hand-card').count(), beforeCount, 'Swiping played a card');
+    assert.equal(await page.locator('.mobile-inspection-panel').count(), 0, 'A swipe opened the long-press reader');
     // End the swipe at rest, then wait for scroll snapping to settle.
     let previousPosition = '';
     let stableReads = 0;
@@ -215,11 +233,15 @@ try {
   }
   // Phone hotseat uses the real privacy curtain and both private mulligans.
   const context = await browser.newContext({ viewport: {width:390,height:844}, hasTouch:true, isMobile:true });
+  await manualRotationBrowser(context,{missingApi:true});
   const page = await context.newPage();
+  page.on('pageerror',error=>errors.push(`hotseat: ${error.message}`));
   await page.goto(base, {waitUntil:'domcontentloaded'});
+  assert(await page.getByRole('button',{name:'Full screen',exact:true}).isDisabled(), 'Unsupported fullscreen remains interactive');
   await page.locator('.hotseat-trigger').tap();
   await page.locator('.hotseat-confirm-start').tap();
   await page.getByRole('button',{name:'Start two-player duel',exact:true}).tap();
+  await rotateForDuel(page,390,844);
   await page.locator('.duel-intro').dblclick();
   await page.locator('.duel-intro').waitFor({state:'detached'});
   await page.locator('.mulligan-panel button.primary').tap();
@@ -244,14 +266,14 @@ try {
   await page.locator('.board-slot.ready').first().tap();
   await page.locator('.hero-plate.targetable').tap();
   await page.locator('.result-panel').waitFor();
-  for (const [width,height] of [[390,844],[667,375]]) {
-    await page.setViewportSize({width,height});
+  for (const [width,height] of [[844,390],[667,375],[568,320]]) {
+    await resizePhone(page,width,height);
     await settleMotion(page);
     await inside(page, '.result-panel,.result-mvp-card,.gameover-buttons button', 'Victory screen');
     assert(await page.locator('.result-mvp-card .cf-desc').evaluate(el=>getComputedStyle(el).display!=='none'), 'Champion ability is hidden');
     await shoot(page, `${width}x${height}-victory`);
   }
-  console.log('PASS mobile victory: readable champion and reachable Continue in portrait and landscape');
+  console.log('PASS mobile victory: complete champion and reachable Continue at all three landscape sizes');
   await context.close();
   assert.deepEqual(errors, [], 'Browser errors');
   console.log('All mobile checks passed.');

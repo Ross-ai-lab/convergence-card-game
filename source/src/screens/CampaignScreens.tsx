@@ -26,7 +26,7 @@ export function CampaignScreen({ progress, onPlay, onClose }: {
           <img src={boss.art} alt={boss.name} loading="eager" />
           <span className="campaign-eyebrow">Universe · {chapter.universe}</span><h3>{boss.name}</h3>
           {!cleared ? <p className="chapter-reward-preview">{chapter.rewardCardIds.length} cards in this universe</p> : null}
-          {cleared ? <details open><summary>Rewards unlocked</summary>
+          {cleared ? <details><summary>Rewards unlocked</summary>
             <p>{chapter.rewardCardIds.map((id) => cardById.get(id)?.name ?? id).join(" · ")}</p></details> : null}
           <button className="primary" disabled={!available || !valid} onClick={() => onPlay(chapter.chapter)}>
             {!available ? "Unavailable" : cleared ? "Universe Conquered" : "Conquer the Universe"}</button>

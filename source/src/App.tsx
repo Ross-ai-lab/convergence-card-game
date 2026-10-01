@@ -19,6 +19,8 @@ import { BOT_CHEATS } from "./engine/bot";
 import { BotSearch } from "./engine/bot-search";
 import { useGalleryVisibility } from "./gallery-visibility";
 import { useFrameState } from "./frame-state";
+import { useCardLongPress, type CardLongPress } from './card-long-press';
+import { requestPhoneLandscape, usePhoneLayout } from './phone-layout';
 
 import {
   heroPowerCost,
@@ -139,8 +141,7 @@ function heroPowersForDuel(
 function useFullscreen() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const isFullscreenActive = () =>
-    document.fullscreenElement !== null || document.documentElement.matches(":fullscreen");
+  const isFullscreenActive = () => Boolean(document.fullscreenElement);
 
   useEffect(() => {
     const syncFullscreenState = () => setIsFullscreen(isFullscreenActive());
@@ -157,7 +158,9 @@ function useFullscreen() {
       return;
     }
 
-    void document.documentElement.requestFullscreen().catch((error: unknown) => {
+    const request = document.documentElement.requestFullscreen;
+    if (!request) return;
+    void request.call(document.documentElement).catch((error: unknown) => {
       console.warn("Could not enter full screen.", error);
     });
   }, []);
@@ -618,18 +621,14 @@ export default function App() {
   // The front door. A restored duel still starts here rather than dumping a
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
-  const [compactLayout, setCompactLayout] = useState(false);
-  useLayoutEffect(() => {
-    const sync = () => {
-      const button = document.querySelector('.mobile-menu-toggle');
-      setCompactLayout(Boolean(button && getComputedStyle(button).display !== 'none'));
-    };
-    sync();
-    window.addEventListener('resize', sync);
-    const pointer = window.matchMedia?.('(pointer: coarse)');
-    pointer?.addEventListener('change', sync);
-    return () => { window.removeEventListener('resize', sync); pointer?.removeEventListener('change', sync); };
-  }, []);
+  const phoneLayout = usePhoneLayout();
+  const compactLayout = phoneLayout.compact;
+  const needsLandscape = screen === 'playing' && phoneLayout.portrait;
+  const cardHold = useCardLongPress();
+  useEffect(() => {
+    cardHold.cancel();
+    if (screen !== 'playing') window.screen.orientation?.unlock?.();
+  }, [screen, needsLandscape, cardHold]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileInspection, setMobileInspection] = useState<{ face: CardFaceModel; minion?: MinionInstance; states?: string[] } | null>(null);
   const closeMobileInspection = useCallback(() => setMobileInspection(null), []);
@@ -913,7 +912,7 @@ export default function App() {
   // it walks through draw picks and targeting prompts exactly like a human does
   // and the animations get to play between its moves.
   useEffect(() => {
-    if (mode.kind === "hotseat" || screen !== "playing" || duelIntro || relicFlash) return;
+    if (mode.kind === "hotseat" || screen !== "playing" || needsLandscape || duelIntro || relicFlash) return;
     const actor = game.phase === "mulligan" ? game.mulligan?.player
       : game.phase === "drawChoice" ? game.drawChoice?.player
       : game.phase === "targeting" ? game.pendingTarget?.player : game.activePlayer;
@@ -923,7 +922,7 @@ export default function App() {
       if (action) timer = window.setTimeout(() => perform(action), game.phase === "main" ? BOT_DELAY_MS : BOT_FIRST_DELAY_MS);
     });
     return () => { cancel(); window.clearTimeout(timer); };
-  }, [game, mode, screen, library, duelIntro, botSearch, relicFlash]);
+  }, [game, mode, screen, library, duelIntro, botSearch, relicFlash, needsLandscape]);
 
   // Hotseat: the moment the active player changes, the seat is stale and the
   // curtain has to come back down. Reading it off the state rather than off the
@@ -1246,7 +1245,7 @@ export default function App() {
   const viewerCanAct = (game.phase === "mulligan" && game.mulligan?.player === viewerId) || myTurn;
   // Every affordance and click reads this. Empty while the opponent is thinking,
   // so nothing lights up and nothing can be clicked on their behalf.
-  const uiActions = viewerCanAct && !duelIntro ? legalActions : [];
+  const uiActions = viewerCanAct && !duelIntro && !needsLandscape ? legalActions : [];
 
   function clearFx() {
     setFloats([]);
@@ -1778,6 +1777,7 @@ export default function App() {
       return;
     }
     const seed = createDuelSeed();
+    void requestPhoneLandscape(phoneLayout.phone);
     const nextGame = prepareDuel(next, seed, Boolean(options.testCardId));
     next = { ...next, duelId: seed }; setOverlay(null);
     sfx.play("button");
@@ -1874,6 +1874,9 @@ export default function App() {
     setTutorialStep(0);
     setDeveloperDuelActive(false);
     setDeveloperToolsOpen(false);
+    setMobileMenuOpen(false);
+    setMobileInspection(null);
+    setEnemyPowerOpen(false);
     setScreen("title");
   }
 
@@ -1904,6 +1907,7 @@ export default function App() {
   }
 
   function undo() {
+    if (!developerCheatRevealed) return;
     const [previous, ...rest] = history;
     if (!previous) return;
     sfx.play("button");
@@ -1915,6 +1919,7 @@ export default function App() {
   }
 
   function undoTurn() {
+    if (!developerCheatRevealed) return;
     const boundary = history.findIndex((snapshot) => snapshot.turnNumber < game.turnNumber);
     if (boundary < 0) return;
     const previous = history[boundary];
@@ -2497,8 +2502,14 @@ export default function App() {
   // ------------------------------------------------------------- drag & drop
   function startHandDrag(e: React.PointerEvent<HTMLElement>, handIndex: number, playable: boolean) {
     if (duelIntro) return;
-    // Touch uses tap-to-play and a separate reader. Leave swipes to the browser.
-    if (e.pointerType === "touch") return;
+    if (e.pointerType === "touch" || e.pointerType === "pen") {
+      const card = library[viewer.hand[handIndex]];
+      if (card) cardHold.start(e, () => {
+        clearHoverPreview();
+        setMobileInspection({ face: playableFace(card, effectiveCardCost(game, viewerId, card)) });
+      });
+      return;
+    }
     if (game.phase !== "main" || !playable) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     try {
@@ -2721,7 +2732,7 @@ export default function App() {
    *
    * Ending a turn is the one action taken every single turn and the button for
    * it lives at the far right edge of the screen, which is a long way from where
-   * the hand is. Undo is the other one worth a key. Escape drops whatever is
+   * the hand is. Developer mode also enables Z for Undo. Escape drops whatever is
    * selected, because the alternative — clicking an empty part of the table and
    * hoping — is not discoverable either.
    *
@@ -2738,7 +2749,7 @@ export default function App() {
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
       if (mobileMenuOpen && event.key === "Escape") { setMobileMenuOpen(false); return; }
-      if (overlay || mobileInspection || mobileMenuOpen || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "mulligan") return;
+      if (needsLandscape || overlay || mobileInspection || mobileMenuOpen || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "mulligan") return;
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
 
       if (event.key === " " || event.key === "Enter") {
@@ -2746,7 +2757,7 @@ export default function App() {
         event.preventDefault();
         perform(endTurnAction);
       } else if (event.key === "z" || event.key === "Z") {
-        if (history.length === 0) return;
+        if (!developerCheatRevealed || history.length === 0) return;
         event.preventDefault();
         undo();
       } else if (event.key === "Escape") {
@@ -2755,7 +2766,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, overlay, mobileInspection, mobileMenuOpen, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length]);
+  }, [screen, overlay, mobileInspection, mobileMenuOpen, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length, needsLandscape, developerCheatRevealed]);
 
   const inspectedMinion = mobileInspection?.minion
     ? game.players.flatMap(player => player.board).find(minion => minion?.instanceId === mobileInspection.minion?.instanceId)
@@ -2780,7 +2791,10 @@ export default function App() {
         .filter(Boolean)
         .join(" ")}
       onPointerMove={trackTargetPointer}
-      onClickCapture={event => { if (mobileMenuOpen && !(event.target as Element).closest('.system-buttons,.mobile-menu-toggle')) setMobileMenuOpen(false); }}
+      onClickCapture={event => {
+        if (cardHold.consumeClick()) { event.preventDefault(); event.stopPropagation(); return; }
+        if (mobileMenuOpen && !(event.target as Element).closest('.system-buttons,.mobile-menu-toggle')) setMobileMenuOpen(false);
+      }}
     >
       <div className="table-glow" aria-hidden="true" />
 
@@ -2856,7 +2870,7 @@ export default function App() {
           {game.heroPowers[viewerId] && <p className="mobile-power-description"><strong>{heroPowerDefinition(game.heroPowers[viewerId])?.name}</strong>
             <span>{heroPowerDefinition(game.heroPowers[viewerId])?.text}</span><small>2 mana · Once per turn{game.heroPowerUsed[viewerId] ? " · Used" : ""}</small></p>}
           <button type="button" className="mobile-log-trigger" onClick={() => setLogOpen(open => !open)}>Duel log</button>
-          <button type="button" className="mobile-undo-trigger" disabled={!history.length || botThinking || game.phase !== "main"} onClick={undo}>Undo last action</button>
+          {developerCheatRevealed && <button type="button" className="mobile-undo-trigger" disabled={!history.length || botThinking || game.phase !== "main"} onClick={undo}>Undo last action</button>}
           <button type="button" onClick={restart}>Restart</button>
           <button
             type="button"
@@ -2952,6 +2966,7 @@ export default function App() {
             lunge={lunge}
             onPreview={previewMinion}
             onInspect={inspectMinion}
+            cardHold={cardHold}
             onPreviewEnd={endPreview}
             reach={reach}
             relicFlash={relicFlash}
@@ -2987,6 +3002,7 @@ export default function App() {
             lunge={lunge}
             onPreview={previewMinion}
             onInspect={inspectMinion}
+            cardHold={cardHold}
             onPreviewEnd={endPreview}
             reach={reach}
             relicFlash={relicFlash}
@@ -3131,8 +3147,6 @@ export default function App() {
                 >
                   {card ? <CardFace card={playableFace(card, effectiveCardCost(game, viewerId, card))} /> : null}
                 </button>
-                {card && <button type="button" className="mobile-card-read" aria-label={`Read ${card.name}`}
-                  onClick={() => { clearHoverPreview(); setMobileInspection({ face: playableFace(card, effectiveCardCost(game, viewerId, card)) }); }}>Read</button>}
                 </div>
               );
             })}
@@ -3231,10 +3245,16 @@ export default function App() {
       ) : null}
 
       {hover ? <HoverCard hover={hover} /> : null}
-      {compactLayout && screen === 'playing' && game.phase === 'main' && !overlay && !mobileInspection && !mobileMenuOpen && !enemyPowerOpen && !logOpen && !curtainUp && !duelIntro && !pack && !chapterSpeech && !defeatedChapter && !developerToolsOpen
+      {compactLayout && screen === 'playing' && !needsLandscape && game.phase === 'main' && !overlay && !mobileInspection && !mobileMenuOpen && !enemyPowerOpen && !logOpen && !curtainUp && !duelIntro && !pack && !chapterSpeech && !defeatedChapter && !developerToolsOpen
         ? createPortal(<button type="button" className="end-turn mobile-end-turn" disabled={!endTurnAction}
           onClick={() => endTurnAction && perform(endTurnAction)} title="End your turn (Space)">End Turn</button>, document.body) : null}
       {screen === "playing" && liveInspection && <MobileCardInspector inspection={liveInspection} onClose={closeMobileInspection} leftBoard={Boolean(mobileInspection?.minion && !inspectedMinion)} />}
+      {needsLandscape && <div className="phone-rotate-screen" role="dialog" aria-modal="true" aria-label="Landscape mode required">
+        <section><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="27" y="12" width="46" height="76" rx="8"/><path d="M38 19h24M45 80h10M8 48c0-22 18-40 40-40M8 48l-5-9M8 48l10-3M92 52c0 22-18 40-40 40M92 52l5 9M92 52l-10 3"/></svg>
+          <h2>Turn your phone sideways</h2><p>Duels play in landscape. Hold a card for one second to read it.</p>
+          {typeof document.documentElement.requestFullscreen === 'function' && <button className="primary" onClick={() => { void requestPhoneLandscape(true); }}>Enter landscape fullscreen</button>}
+          <button onClick={toTitle}>Return to menu</button></section>
+      </div>}
       {handKeywords ? (
         // ABOVE the card, never beside it. Beside meant sitting on the card it
         // was explaining, or on its neighbour in the fan; the empty board over
@@ -3361,6 +3381,7 @@ export default function App() {
           canContinue={hasLiveSave && game.phase !== "gameOver"}
           playerCount={playerCount}
           onContinue={() => {
+            void requestPhoneLandscape(phoneLayout.phone);
             sfx.play("button");
             sfx.unlock();
             setDuelIntro(null);
@@ -3500,6 +3521,7 @@ function BoardRow({
   lunge,
   onPreview,
   onInspect,
+  cardHold,
   onPreviewEnd,
   onRelicPreview,
   relicFlash,
@@ -3525,6 +3547,7 @@ function BoardRow({
   lunge: Lunge;
   onPreview: (minion: MinionInstance, el: HTMLElement) => void;
   onInspect: (minion: MinionInstance) => void;
+  cardHold: CardLongPress;
   onPreviewEnd: () => void;
   onRelicPreview: (relic: RelicInstance, el: HTMLElement) => void;
   relicFlash: RelicFlash | null;
@@ -3626,7 +3649,10 @@ function BoardRow({
             data-instance={minion?.instanceId}
             aria-label={minion ? `${minion.name}, ${minion.atk} attack, ${minion.hp} health${canAttack ? ", ready to attack" : ""}` : `Empty slot ${slotIndex + 1}`}
             onClick={() => onSlot(owner, slotIndex)}
-            onPointerDown={(e) => onDragStart(e, slotIndex, Boolean(canAttack))}
+            onPointerDown={(e) => {
+              if (minion) cardHold.start(e, () => onInspect(minion));
+              onDragStart(e, slotIndex, Boolean(canAttack));
+            }}
             onPointerMove={onDragMove}
             onPointerUp={onDragEnd}
             onPointerCancel={onDragCancel}
@@ -3707,8 +3733,6 @@ function BoardRow({
               </span>
             ))}
           </button>
-          {minion && <button type="button" className="mobile-card-read board-card-read" aria-label={`Read ${minion.name} on board`}
-            onClick={() => onInspect(minion)}>Read <strong>{minion.atk}/{minion.hp}</strong></button>}
           </div>
         );
       })}
