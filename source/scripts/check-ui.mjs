@@ -972,7 +972,7 @@ await newBoard({ place: false, cheat: false });
 
     await page.getByRole("button", { name: /Cheat Off|Cheat On/ }).first().click();
     await expensive.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
-    await page.waitForFunction(() => document.querySelector(".hand-card:last-child")?.getAttribute("data-playable") === "true");
+    await page.waitForFunction(() => [...document.querySelectorAll(".hand-card")].at(-1)?.getAttribute("data-playable") === "true");
     const playableAfter = (await expensive.getAttribute("data-playable")) === "true";
     const occupiedBefore = await page.locator(".board-slot.occupied").count();
     await expensive.click();

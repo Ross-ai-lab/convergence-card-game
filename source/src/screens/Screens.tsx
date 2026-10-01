@@ -83,7 +83,6 @@ export function FullscreenButton({
   );
 }
 
-const MINION_COUNT = cards.length;
 const RELIC_COUNT = relics.length;
 
 const SKILL_BLURB: Record<BotSkill, { title: string; note: string }> = {
@@ -320,7 +319,7 @@ export function TitleScreen({
               </span>
             ))}
           </h1>
-          <p className="title-kicker">{MINION_COUNT} worlds. One arena.</p>
+          <p className="title-kicker">Twenty universes. One arena.</p>
         </div>
 
         {canContinue ? (

@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Play Convergence: a 20-chapter browser card campaign with custom 30-card decks, 183 minion cards and 34 Ascension Relics.">
   <title>Convergence | Browser Card Duel</title>
+  <link rel="icon" type="image/svg+xml" href="play/favicon.svg">
+  <meta name="theme-color" content="#140d1e">
+  <meta property="og:title" content="Convergence | Browser Card Duel">
+  <meta property="og:description" content="20 chapters. 217 cards. Build your deck and conquer twenty universes. Play on phone, tablet or desktop.">
+  <meta property="og:image" content="https://ross-ai-lab.github.io/convergence-card-game/play/menu-rift.webp">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -27,7 +32,7 @@
           <a class="button primary" href="play/">Play Convergence</a>
           <a class="button secondary" href="#rules">Read the rules</a>
         </div>
-        <p class="small">Best played in a modern desktop browser with sound on.</p>
+        <p class="small">Play on your phone, tablet or desktop. Sound brings the arena to life.</p>
         <p class="player-count" data-player-count hidden><strong data-player-count-value>0</strong> played this game</p>
       </section>
 
@@ -53,13 +58,14 @@
       <p>The opening screen inside the game has a full guide. This is the short version.</p>
     </div>
     <div class="rule-grid">
-      <article><b>1</b><h3>Protect your core</h3><p>Both players begin at 75 health. Reduce the opposing core to zero to win.</p></article>
-      <article><b>2</b><h3>Build your board</h3><p>Draw one card each turn. Your mana refills and grows by one. Play cards into five board slots.</p></article>
+      <article><b>1</b><h3>Protect your core</h3><p>Both players begin at 50 health. Reduce the opposing core to zero to win.</p></article>
+      <article><b>2</b><h3>Build your board</h3><p>Draw one card each turn. Your mana refills and grows by one. Play cards into four board slots.</p></article>
       <article><b>3</b><h3>Choose your targets</h3><p>Specific Battlecries ask you to point at their victim. Effects that explicitly say random remain random.</p></article>
       <article><b>4</b><h3>Strike together</h3><p>Combat is simultaneous. Defenders hit back even when the incoming attack destroys them.</p></article>
       <article><b>5</b><h3>Respect Taunt</h3><p>A standing Taunt closes the core. Remove it before attacking past it.</p></article>
       <article><b>6</b><h3>Read the colours</h3><p>Green means ready to attack, red marks legal victims, blue means a hand card can be played, and teal means selected.</p></article>
     </div>
+    <p class="touch-controls">On phones: tap a card, then its destination. Use Read for a full-size view. Swipe your hand to see more cards.</p>
     <div class="keys"><span><kbd>Space</kbd> End turn</span><span><kbd>Z</kbd> Undo</span><span><kbd>Esc</kbd> Clear selection</span></div>
   </section>
 
@@ -78,7 +84,7 @@
   </section>
 
   <footer>
-    <p>Convergence is a non-commercial fan project. Character names, franchises, imagery and music belong to their respective rights holders. This project is not affiliated with or endorsed by them.</p>
+    <p>Twenty universes. Your deck. One arena.</p>
     <a href="play/">Enter the game</a>
   </footer>
   <script type="module" src="player-count.js"></script>

@@ -618,6 +618,22 @@ export default function App() {
   // The front door. A restored duel still starts here rather than dumping a
   // returning player straight onto a board they left hours ago.
   const [screen, setScreen] = useState<"title" | "playing">("title");
+  const [compactLayout, setCompactLayout] = useState(false);
+  useLayoutEffect(() => {
+    const sync = () => {
+      const button = document.querySelector('.mobile-menu-toggle');
+      setCompactLayout(Boolean(button && getComputedStyle(button).display !== 'none'));
+    };
+    sync();
+    window.addEventListener('resize', sync);
+    const pointer = window.matchMedia?.('(pointer: coarse)');
+    pointer?.addEventListener('change', sync);
+    return () => { window.removeEventListener('resize', sync); pointer?.removeEventListener('change', sync); };
+  }, []);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileInspection, setMobileInspection] = useState<{ face: CardFaceModel; minion?: MinionInstance; states?: string[] } | null>(null);
+  const closeMobileInspection = useCallback(() => setMobileInspection(null), []);
+  const [logOpen, setLogOpen] = useState(false);
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
   const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "campaign" | "deck" | "hotseat" | "opponent">(null);
   useEffect(() => {
@@ -2221,6 +2237,15 @@ export default function App() {
   // A relic used to be a 26px badge with a tooltip. Hovering it now shows the
   // whole Ascension Relic card, teal frame and all — the live face costs nothing
   // to point at a different card.
+  function inspectMinion(minion: MinionInstance) {
+    clearHoverPreview();
+    setMobileInspection({
+      face: { ...minion, flavor: library[minion.cardId]?.flavor },
+      minion,
+      states: minionStates(minion, game.players[minion.owner].board, game.players.flatMap(player => player.board)),
+    });
+  }
+
   function previewRelic(relic: RelicInstance, el: HTMLElement) {
     if (drag?.active) return;
     const face = relicFace(relic);
@@ -2294,6 +2319,10 @@ export default function App() {
 
   function onHandCard(handIndex: number) {
     if (duelIntro) return;
+    if (game.phase === "main" && selection?.kind === "hand" && selection.handIndex === handIndex) {
+      setSelection(null);
+      return;
+    }
     if (game.phase === "main" && selection?.kind === "attacker") {
       cancelAttackerSelection();
       return;
@@ -2468,16 +2497,8 @@ export default function App() {
   // ------------------------------------------------------------- drag & drop
   function startHandDrag(e: React.PointerEvent<HTMLElement>, handIndex: number, playable: boolean) {
     if (duelIntro) return;
-    // TOUCH HAS NO HOVER, and a hand card does not print its rules text — it is
-    // 96px wide on a phone, where the text would be about five pixels. So the
-    // only way to read a card you are holding was a hover that a finger cannot
-    // produce. Pressing one now opens the same big preview a mouse gets, and
-    // lifting off closes it (see endDrag / cancelDrag). A quick tap still
-    // selects, because selection happens on click, not on pointerdown.
-    if (e.pointerType === "touch") {
-      const card = library[viewer.hand[handIndex]];
-      if (card) previewCard(card, e.currentTarget, viewerId);
-    }
+    // Touch uses tap-to-play and a separate reader. Leave swipes to the browser.
+    if (e.pointerType === "touch") return;
     if (game.phase !== "main" || !playable) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     try {
@@ -2491,6 +2512,7 @@ export default function App() {
 
   function startAttackDrag(e: React.PointerEvent<HTMLElement>, slotIndex: number, canAttack: boolean) {
     if (duelIntro) return;
+    if (e.pointerType === "touch") return;
     if (game.phase !== "main" || !canAttack) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     try {
@@ -2532,7 +2554,6 @@ export default function App() {
   }
 
   function endDrag(e: React.PointerEvent) {
-    // Close the press-and-hold preview a finger opened (see startHandDrag).
     if (e.pointerType === "touch") clearHoverPreview();
     if (!drag) return;
     if (!drag.active) {
@@ -2716,7 +2737,8 @@ export default function App() {
       // the overlays run their own Escape handler.
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
-      if (overlay || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "mulligan") return;
+      if (mobileMenuOpen && event.key === "Escape") { setMobileMenuOpen(false); return; }
+      if (overlay || mobileInspection || mobileMenuOpen || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "mulligan") return;
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
 
       if (event.key === " " || event.key === "Enter") {
@@ -2733,14 +2755,23 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, overlay, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length]);
+  }, [screen, overlay, mobileInspection, mobileMenuOpen, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length]);
+
+  const inspectedMinion = mobileInspection?.minion
+    ? game.players.flatMap(player => player.board).find(minion => minion?.instanceId === mobileInspection.minion?.instanceId)
+    : undefined;
+  const liveInspection = mobileInspection && inspectedMinion ? {
+    face: { ...inspectedMinion, flavor: library[inspectedMinion.cardId]?.flavor },
+    minion: inspectedMinion,
+    states: minionStates(inspectedMinion, game.players[inspectedMinion.owner].board, game.players.flatMap(player => player.board)),
+  } : mobileInspection;
 
   return (
     <FontRevisionContext value={fontRevision}><main
       className={[
         "hs-shell",
         screen === "title" ? "at-title" : "",
-        overlay || developerToolsOpen || pack || chapterSpeech || defeatedChapter ? "has-overlay" : "",
+        overlay || mobileInspection || developerToolsOpen || pack || chapterSpeech || defeatedChapter ? "has-overlay" : "",
         drag?.active ? "grabbing" : "",
         tutorialActive ? "tutorial-mode" : "",
         developerDuelActive ? "developer-duel" : "",
@@ -2749,6 +2780,7 @@ export default function App() {
         .filter(Boolean)
         .join(" ")}
       onPointerMove={trackTargetPointer}
+      onClickCapture={event => { if (mobileMenuOpen && !(event.target as Element).closest('.system-buttons,.mobile-menu-toggle')) setMobileMenuOpen(false); }}
     >
       <div className="table-glow" aria-hidden="true" />
 
@@ -2818,7 +2850,13 @@ export default function App() {
             turnsRemaining={gladosTurnsRemaining}
           />
         </div>
-        <div className="system-buttons">
+        <button className="mobile-menu-toggle" type="button" aria-label="Duel menu" aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen(open => !open)}>☰ Menu</button>
+        <div className={`system-buttons${mobileMenuOpen ? " mobile-open" : ""}`} onClickCapture={() => setMobileMenuOpen(false)}>
+          {game.heroPowers[viewerId] && <p className="mobile-power-description"><strong>{heroPowerDefinition(game.heroPowers[viewerId])?.name}</strong>
+            <span>{heroPowerDefinition(game.heroPowers[viewerId])?.text}</span><small>2 mana · Once per turn{game.heroPowerUsed[viewerId] ? " · Used" : ""}</small></p>}
+          <button type="button" className="mobile-log-trigger" onClick={() => setLogOpen(open => !open)}>Duel log</button>
+          <button type="button" className="mobile-undo-trigger" disabled={!history.length || botThinking || game.phase !== "main"} onClick={undo}>Undo last action</button>
           <button type="button" onClick={restart}>Restart</button>
           <button
             type="button"
@@ -2891,9 +2929,10 @@ export default function App() {
               if (event.target === event.currentTarget) cancelTarget();
               return;
             }
-            if (selection?.kind !== "attacker") return;
             const target = event.target;
             if (target instanceof Element && target.closest(".board-slot, .end-turn, .deck-pile")) return;
+            if (selection?.kind === "hand") { setSelection(null); return; }
+            if (selection?.kind !== "attacker") return;
             cancelAttackerSelection();
           }}
         >
@@ -2912,6 +2951,7 @@ export default function App() {
             impacts={impacts}
             lunge={lunge}
             onPreview={previewMinion}
+            onInspect={inspectMinion}
             onPreviewEnd={endPreview}
             reach={reach}
             relicFlash={relicFlash}
@@ -2946,6 +2986,7 @@ export default function App() {
             impacts={impacts}
             lunge={lunge}
             onPreview={previewMinion}
+            onInspect={inspectMinion}
             onPreviewEnd={endPreview}
             reach={reach}
             relicFlash={relicFlash}
@@ -2956,7 +2997,7 @@ export default function App() {
             onDragCancel={cancelDrag}
           />
 
-          <button
+          {!compactLayout && <button
             type="button"
             className="end-turn"
             onClick={() => endTurnAction && perform(endTurnAction)}
@@ -2964,7 +3005,7 @@ export default function App() {
             title="End your turn (Space)"
           >
             End Turn
-          </button>
+          </button>}
 
           <div
             className={flights.length > 0 ? "deck-pile drawing" : "deck-pile"}
@@ -3062,6 +3103,7 @@ export default function App() {
                 .filter(Boolean)
                 .join(" ");
               return (
+                <div className="hand-item" key={`${cardId}-${handIndex}`}>
                 <button
                   type="button"
                   key={`${cardId}-${handIndex}`}
@@ -3079,6 +3121,7 @@ export default function App() {
                   onMouseEnter={(e) => armHandKeywords(card, e.currentTarget)}
                   onMouseLeave={clearHandKeywords}
                   data-playable={playable}
+                  aria-label={card ? `${card.name}, ${effectiveCardCost(game, viewerId, card)} mana${playable ? ", playable" : ""}` : undefined}
                   /* No `title` here. A native tooltip on a card you are holding
                      covers the neighbouring card a second after the pointer
                      lands, which is exactly when the hover preview is trying to
@@ -3088,6 +3131,9 @@ export default function App() {
                 >
                   {card ? <CardFace card={playableFace(card, effectiveCardCost(game, viewerId, card))} /> : null}
                 </button>
+                {card && <button type="button" className="mobile-card-read" aria-label={`Read ${card.name}`}
+                  onClick={() => { clearHoverPreview(); setMobileInspection({ face: playableFace(card, effectiveCardCost(game, viewerId, card)) }); }}>Read</button>}
+                </div>
               );
             })}
           </div>
@@ -3129,7 +3175,7 @@ export default function App() {
         </section>
       </div>
 
-      <details className="log-drawer">
+      <details className="log-drawer" open={logOpen} onToggle={event => setLogOpen(event.currentTarget.open)}>
         <summary>Log</summary>
         <div className="log-drawer-body">
           <EventLog events={events} />
@@ -3185,6 +3231,10 @@ export default function App() {
       ) : null}
 
       {hover ? <HoverCard hover={hover} /> : null}
+      {compactLayout && screen === 'playing' && game.phase === 'main' && !overlay && !mobileInspection && !mobileMenuOpen && !enemyPowerOpen && !logOpen && !curtainUp && !duelIntro && !pack && !chapterSpeech && !defeatedChapter && !developerToolsOpen
+        ? createPortal(<button type="button" className="end-turn mobile-end-turn" disabled={!endTurnAction}
+          onClick={() => endTurnAction && perform(endTurnAction)} title="End your turn (Space)">End Turn</button>, document.body) : null}
+      {screen === "playing" && liveInspection && <MobileCardInspector inspection={liveInspection} onClose={closeMobileInspection} leftBoard={Boolean(mobileInspection?.minion && !inspectedMinion)} />}
       {handKeywords ? (
         // ABOVE the card, never beside it. Beside meant sitting on the card it
         // was explaining, or on its neighbour in the fan; the empty board over
@@ -3449,6 +3499,7 @@ function BoardRow({
   impacts,
   lunge,
   onPreview,
+  onInspect,
   onPreviewEnd,
   onRelicPreview,
   relicFlash,
@@ -3473,6 +3524,7 @@ function BoardRow({
   impacts: Impact[];
   lunge: Lunge;
   onPreview: (minion: MinionInstance, el: HTMLElement) => void;
+  onInspect: (minion: MinionInstance) => void;
   onPreviewEnd: () => void;
   onRelicPreview: (relic: RelicInstance, el: HTMLElement) => void;
   relicFlash: RelicFlash | null;
@@ -3484,7 +3536,7 @@ function BoardRow({
   reach: ReadonlySet<string>;
 }) {
   return (
-    <div className="board-row" aria-label={label}>
+    <div className="board-row" aria-label={label} data-side={owner === viewerId ? "Your board" : "Opponent's board"}>
       {game.players[owner].board.map((minion, slotIndex) => {
         const canPlace =
           selection?.kind === "hand" &&
@@ -3564,6 +3616,7 @@ function BoardRow({
           .filter(Boolean)
           .join(" ");
         return (
+          <div className="board-cell" key={slotIndex}>
           <button
             type="button"
             key={slotIndex}
@@ -3571,6 +3624,7 @@ function BoardRow({
             style={auraStyle}
             data-slot={`${owner}-${slotIndex}`}
             data-instance={minion?.instanceId}
+            aria-label={minion ? `${minion.name}, ${minion.atk} attack, ${minion.hp} health${canAttack ? ", ready to attack" : ""}` : `Empty slot ${slotIndex + 1}`}
             onClick={() => onSlot(owner, slotIndex)}
             onPointerDown={(e) => onDragStart(e, slotIndex, Boolean(canAttack))}
             onPointerMove={onDragMove}
@@ -3653,6 +3707,9 @@ function BoardRow({
               </span>
             ))}
           </button>
+          {minion && <button type="button" className="mobile-card-read board-card-read" aria-label={`Read ${minion.name} on board`}
+            onClick={() => onInspect(minion)}>Read <strong>{minion.atk}/{minion.hp}</strong></button>}
+          </div>
         );
       })}
     </div>
@@ -3975,6 +4032,8 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   const [query, setQuery] = useState("");
   const [help, setHelp] = useState(false);
   const [powerOpen, setPowerOpen] = useState(false);
+  const [mobileDeckView, setMobileDeckView] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const equippedPower = heroPowerDefinition(progress.selectedHeroPower);
   const powerPicker = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -4170,7 +4229,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
           specificity as anything here can reach, and it is defined in a stylesheet
           that loads later, so it wins on source order and squeezes the grid to
           three columns. Leaving it off means nothing competes. */}
-      <section className="screen-panel gallery-panel" role="dialog" aria-label="My Deck" aria-modal="true">
+      <section className={`screen-panel gallery-panel${mobileDeckView ? " mobile-deck-view" : ""}${mobileFiltersOpen ? " mobile-filters-open" : ""}`} role="dialog" aria-label="My Deck" aria-modal="true">
         <header className="screen-panel-top">
           <h2>My Deck</h2>
           <label className="gallery-equipped"><input type="checkbox" checked={showEquipped} onChange={event => setShowEquipped(event.target.checked)} />Show equipped cards</label>
@@ -4227,6 +4286,11 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
           </button>
         </header>
         {help ? <UnlockHelp progress={progress} onClose={() => setHelp(false)} /> : null}
+        <nav className="mobile-deck-tabs" aria-label="Deck builder view">
+          <button type="button" aria-pressed={!mobileDeckView} onClick={() => setMobileDeckView(false)}>Collection</button>
+          <button type="button" aria-pressed={mobileDeckView} onClick={() => setMobileDeckView(true)}>Deck · {deck.length}/30</button>
+          <button type="button" className="mobile-filter-toggle" aria-expanded={mobileFiltersOpen} onClick={() => setMobileFiltersOpen(open => !open)}>Filters{Object.values(filters).filter(Boolean).length ? ` · ${Object.values(filters).filter(Boolean).length}` : ""}</button>
+        </nav>
         <div className="gallery-workspace">
         <div className="screen-panel-body gallery-body" ref={bodyRef}>
           {sorted.length ? (
@@ -5722,6 +5786,46 @@ const EventLog = memo(function EventLog({ events }: { events: GameEvent[] }) {
     </ol>
   );
 });
+
+function MobileCardInspector({ inspection, onClose, leftBoard }: {
+  inspection: { face: CardFaceModel; minion?: MinionInstance; states?: string[] }; onClose: () => void; leftBoard: boolean;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeRef.current?.focus({ preventScroll: true });
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.stopImmediatePropagation(); onClose(); }
+      if (event.key === "Tab") { event.preventDefault(); closeRef.current?.focus(); }
+    };
+    window.addEventListener("keydown", key);
+    return () => { window.removeEventListener("keydown", key); previous?.focus({ preventScroll: true }); };
+  }, [onClose]);
+  const { face, minion } = inspection;
+  const keywords = minion ? minionKeywordEntriesFor(minion) : [...new Map([
+    ...keywordEntriesFor(face.keywords ?? []),
+    ...KEYWORD_LOOKUP.filter(({ match }) => face.effect.toLowerCase().includes(match.toLowerCase())).map(({ entry }) => entry),
+  ].map(entry => [entry.term, entry])).values()];
+  const extras = minion && !minion.silenced ? [
+    ...minion.gainedEffects.map(effect => effect.text),
+    minion.stolenPassiveText,
+    ...attachedRelics(minion).map(({ relic }) => `${relic.name}: ${relic.effect}`),
+  ].filter(Boolean) : [];
+  return <div className="mobile-inspection-veil" onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
+    <section className="mobile-inspection-panel" role="dialog" aria-modal="true" aria-label={`Read ${face.name}`}>
+      <header><span>{leftBoard ? "Last seen · left the battlefield" : minion ? "On the battlefield" : "In your hand"}</span><button type="button" ref={closeRef} onClick={onClose} aria-label="Close card reader">×</button></header>
+      <div className="mobile-inspection-scroll">
+        <div className="mobile-inspection-card"><CardFace card={face} onBoard={Boolean(minion)}
+          effect={minion?.silenced ? "" : undefined}
+          states={inspection.states ?? []} /></div>
+        <div className="mobile-inspection-rules"><h2>{face.name}</h2><p>{minion?.silenced ? "Printed abilities are inactive while silenced." : face.effect.trim() === '-' || !face.effect ? "No printed ability." : face.effect}</p></div>
+        {minion?.silenced && <p className="mobile-inspection-note">Silenced · printed abilities are inactive.</p>}
+        {extras.length > 0 && <div className="mobile-inspection-extras">{extras.map((text, index) => <p key={index}>{text}</p>)}</div>}
+        {keywords.length > 0 && <dl>{keywords.map(entry => <div key={entry.term}><dt>{entry.term}</dt><dd>{plainKeywordText(entry.text)}</dd></div>)}</dl>}
+      </div>
+    </section>
+  </div>;
+}
 
 function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
   // Bigger than it used to be, and no text panel underneath: the face prints its

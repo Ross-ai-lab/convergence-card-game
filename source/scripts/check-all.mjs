@@ -55,6 +55,12 @@ const HARNESS = /^source\/scripts\/(browser|profile-layout|campaign-fixtures|sto
 
 const SUITES = [
   {
+    name: "mobile",
+    command: ["node", "scripts/check-mobile.mjs", BASE, ...process.argv.filter(arg => arg === "--webkit" || arg.startsWith("--size="))],
+    browser: true,
+    reaches: [/^source\/src\/.*\.(tsx|css)$/, /^source\/index\.html$/, HARNESS],
+  },
+  {
     name: "workbook",
     command: ["node", "scripts/check-card-workbook.mjs"],
     browser: false,
