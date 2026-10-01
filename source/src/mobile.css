@@ -300,9 +300,12 @@
   .mobile-inspection-rules h2 { margin: 0 0 10px; font-size: 21px; color: #f0ce81; }
   .mobile-inspection-rules p { margin: 0; font-size: 15px; line-height: 1.5; color: #f0e9d8; }
   .mobile-inspection-panel dl { margin-top: 0; }
-  .result-panel.grand { display: grid; grid-template-columns: 1fr 190px; gap: 6px 20px; width: min(650px, 100%); }
-  .result-mvp { grid-column: 2; grid-row: 1 / 6; margin: 0; }
-  .result-mvp-card { width: 160px; }
+  .result-panel.grand { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 6px 16px; width: min(650px, 100%); padding: 10px; }
+  .result-mvp { grid-column: 2; grid-row: 1 / 6; margin: 0; gap: 3px; }
+  .result-mvp-card { width: 208px; }
+  .result-mvp-kicker { font-size: 10px; line-height: 12px; }
+  .result-mvp-line { font-size: 10px; line-height: 18px; }
+  .result-mvp-line strong { font-size: 16px; }
   .gameover-buttons { grid-column: 1; flex-wrap: wrap; }
 }
 

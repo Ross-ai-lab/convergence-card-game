@@ -239,6 +239,19 @@ try {
   await page.locator('.pass-screen').waitFor({state:'visible', timeout:10000});
   assert(await page.locator('.pass-screen').isVisible());
   console.log('PASS mobile hotseat: two private mulligans and the turn privacy curtain');
+  await page.locator('.pass-screen .primary').tap();
+  await page.evaluate(() => { window.__debug.place('John Wick', 'me', 0); window.__debug.setCore('them', 1); });
+  await page.locator('.board-slot.ready').first().tap();
+  await page.locator('.hero-plate.targetable').tap();
+  await page.locator('.result-panel').waitFor();
+  for (const [width,height] of [[390,844],[667,375]]) {
+    await page.setViewportSize({width,height});
+    await settleMotion(page);
+    await inside(page, '.result-panel,.result-mvp-card,.gameover-buttons button', 'Victory screen');
+    assert(await page.locator('.result-mvp-card .cf-desc').evaluate(el=>getComputedStyle(el).display!=='none'), 'Champion ability is hidden');
+    await shoot(page, `${width}x${height}-victory`);
+  }
+  console.log('PASS mobile victory: readable champion and reachable Continue in portrait and landscape');
   await context.close();
   assert.deepEqual(errors, [], 'Browser errors');
   console.log('All mobile checks passed.');
