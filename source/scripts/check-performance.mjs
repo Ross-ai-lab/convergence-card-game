@@ -55,8 +55,8 @@ try {
   await page.waitForFunction(() => document.querySelector('.gallery-body')?.scrollTop === 0);
   await page.locator('.gallery-cell .card-face').first().waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('.gallery-card-name').last().press('End');
-  await page.locator('.gallery-card-name').last().click();
+  await page.locator('.gallery-compact-label').last().press('End');
+  await page.locator('.gallery-compact-label').last().click();
   await page.locator('.gallery-detail-panel').waitFor();
   await page.getByLabel('Close Star Chart').click();
   await mkdir('../.preview/performance', { recursive: true });

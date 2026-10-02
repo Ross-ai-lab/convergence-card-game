@@ -21,6 +21,7 @@ import { useGalleryVisibility } from "./gallery-visibility";
 import { useFrameState } from "./frame-state";
 import { useCardLongPress, type CardLongPress } from './card-long-press';
 import { requestPhoneLandscape, usePhoneLayout } from './phone-layout';
+import { useRelicPeek } from './relic-peek';
 
 import {
   heroPowerCost,
@@ -625,6 +626,7 @@ export default function App() {
   const compactLayout = phoneLayout.compact;
   const needsLandscape = screen === 'playing' && phoneLayout.portrait;
   const cardHold = useCardLongPress();
+  const relicPeek = useRelicPeek();
   useEffect(() => {
     cardHold.cancel();
     if (screen !== 'playing') window.screen.orientation?.unlock?.();
@@ -1864,6 +1866,7 @@ export default function App() {
   }
 
   function toTitle() {
+    relicPeek.cancel();
     if (tutorialActive) duelRecorded.current = true;
     sfx.play("button");
     sfx.stopCardTheme();
@@ -2971,6 +2974,7 @@ export default function App() {
             reach={reach}
             relicFlash={relicFlash}
             onRelicPreview={previewRelic}
+            onRelicPress={(event, relic) => { clearHoverPreview(); relicPeek.start(event, relic); }}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
             onDragEnd={endDrag}
@@ -3007,6 +3011,7 @@ export default function App() {
             reach={reach}
             relicFlash={relicFlash}
             onRelicPreview={previewRelic}
+            onRelicPress={(event, relic) => { clearHoverPreview(); relicPeek.start(event, relic); }}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
             onDragEnd={endDrag}
@@ -3245,6 +3250,10 @@ export default function App() {
       ) : null}
 
       {hover ? <HoverCard hover={hover} /> : null}
+      {relicPeek.relic && screen === 'playing' && !needsLandscape && <div className="equipped-relic-peek" role="status" aria-label={`Equipped relic: ${relicPeek.relic.name}`}>
+        <section><div className="equipped-relic-card"><CardFace card={relicFace(relicPeek.relic)} /></div>
+          <div><small>Equipped relic</small><h2>{relicPeek.relic.name}</h2><p>{relicPeek.relic.effect}</p></div></section>
+      </div>}
       {compactLayout && screen === 'playing' && !needsLandscape && game.phase === 'main' && !overlay && !mobileInspection && !mobileMenuOpen && !enemyPowerOpen && !logOpen && !curtainUp && !duelIntro && !pack && !chapterSpeech && !defeatedChapter && !developerToolsOpen
         ? createPortal(<button type="button" className="end-turn mobile-end-turn" disabled={!endTurnAction}
           onClick={() => endTurnAction && perform(endTurnAction)} title="End your turn (Space)">End Turn</button>, document.body) : null}
@@ -3323,7 +3332,8 @@ export default function App() {
       ) : null}
 
       {screen === "playing" && game.phase === "mulligan" && game.mulligan?.player === viewerId && !duelIntro ? (
-        <MulliganOverlay game={game} library={library} onChoose={perform} locked={botThinking} />
+        <MulliganOverlay game={game} library={library} onChoose={perform} locked={botThinking} cardHold={cardHold}
+          onInspect={card => setMobileInspection({face:playableFace(card)})} />
       ) : null}
 
       {screen === "playing" && game.phase === "gameOver" ? (
@@ -3524,6 +3534,7 @@ function BoardRow({
   cardHold,
   onPreviewEnd,
   onRelicPreview,
+  onRelicPress,
   relicFlash,
   onDragStart,
   onDragMove,
@@ -3550,6 +3561,7 @@ function BoardRow({
   cardHold: CardLongPress;
   onPreviewEnd: () => void;
   onRelicPreview: (relic: RelicInstance, el: HTMLElement) => void;
+  onRelicPress: (event: React.PointerEvent<HTMLElement>, relic: RelicInstance) => void;
   relicFlash: RelicFlash | null;
   onDragStart: (e: React.PointerEvent<HTMLElement>, slotIndex: number, canAttack: boolean) => void;
   onDragMove: (e: React.PointerEvent) => void;
@@ -3678,6 +3690,7 @@ function BoardRow({
                       board={game.players[owner].board}
                       allBoard={game.players.flatMap((player) => player.board)}
                       onRelicPreview={onRelicPreview}
+                      onRelicPress={onRelicPress}
                       onRelicPreviewEnd={onPreview}
                     />
                     {relicFlash?.instanceId === minion.instanceId ? (
@@ -4057,9 +4070,16 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   const [help, setHelp] = useState(false);
   const [powerOpen, setPowerOpen] = useState(false);
   const [mobileDeckView, setMobileDeckView] = useState(false);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
   const equippedPower = heroPowerDefinition(progress.selectedHeroPower);
   const powerPicker = useRef<HTMLElement>(null);
+  const restorePicker = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!restoreOpen) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    restorePicker.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    return () => previous?.focus({preventScroll:true});
+  }, [restoreOpen]);
   useEffect(() => {
     if (!powerOpen) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -4081,9 +4101,9 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.stopImmediatePropagation(); if (powerOpen) setPowerOpen(false); else onClose(); }
-      if (powerOpen && event.key === "Tab") {
-        const buttons = [...(powerPicker.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])];
+      if (event.key === "Escape") { event.stopImmediatePropagation(); if (restoreOpen) setRestoreOpen(false); else if (powerOpen) setPowerOpen(false); else onClose(); }
+      if ((powerOpen || restoreOpen) && event.key === "Tab") {
+        const buttons = [...((restoreOpen ? restorePicker : powerPicker).current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])];
         const first=buttons[0], last=buttons.at(-1);
         if (event.shiftKey && document.activeElement===first) {event.preventDefault();last?.focus();}
         else if (!event.shiftKey && document.activeElement===last) {event.preventDefault();first?.focus();}
@@ -4091,7 +4111,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, powerOpen]);
+  }, [onClose, powerOpen, restoreOpen]);
 
   const needle = query.trim().toLowerCase();
   // Built ONCE and then only filtered. Rebuilding the faces on every keystroke
@@ -4212,7 +4232,10 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
     if (selectedEntryKey && !selectedEntry) setSelectedEntryKey(null);
   }, [selectedEntryKey, selectedEntry]);
 
-  useEffect(() => { bodyRef.current?.scrollTo({ top: 0 }); }, [needle, filters, status]);
+  useEffect(() => {
+    const body = bodyRef.current, outer = body?.closest<HTMLElement>('.gallery-mobile-scroll');
+    (outer && getComputedStyle(outer).overflowY === 'auto' ? outer : body)?.scrollTo({ top: 0 });
+  }, [needle, filters, status]);
 
   /**
    * Flags the body while it is being scrolled, so the CSS can park the card
@@ -4235,8 +4258,11 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
       idleTimer = window.setTimeout(() => body.classList.remove("is-scrolling"), 140);
     };
     body.addEventListener("scroll", onScroll, { passive: true });
+    const outer = body.closest('.gallery-mobile-scroll');
+    outer?.addEventListener('scroll', onScroll, {passive:true});
     return () => {
       body.removeEventListener("scroll", onScroll);
+      outer?.removeEventListener('scroll', onScroll);
       window.clearTimeout(idleTimer);
       body.classList.remove("is-scrolling");
     };
@@ -4253,9 +4279,14 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
           specificity as anything here can reach, and it is defined in a stylesheet
           that loads later, so it wins on source order and squeezes the grid to
           three columns. Leaving it off means nothing competes. */}
-      <section className={`screen-panel gallery-panel${mobileDeckView ? " mobile-deck-view" : ""}${mobileFiltersOpen ? " mobile-filters-open" : ""}`} role="dialog" aria-label="My Deck" aria-modal="true">
+      <section className={`screen-panel gallery-panel${mobileDeckView ? " mobile-deck-view" : ""}`} role="dialog" aria-label="My Deck" aria-modal="true">
+        <div className="gallery-mobile-scroll">
         <header className="screen-panel-top">
           <h2>My Deck</h2>
+          <nav className="mobile-deck-tabs" aria-label="Deck builder view">
+            <button type="button" aria-pressed={!mobileDeckView} onClick={() => setMobileDeckView(false)}>Collection</button>
+            <button type="button" aria-pressed={mobileDeckView} onClick={() => setMobileDeckView(true)}>Deck · {deck.length}/30</button>
+          </nav>
           <label className="gallery-equipped"><input type="checkbox" checked={showEquipped} onChange={event => setShowEquipped(event.target.checked)} />Show equipped cards</label>
           <input
             className="gallery-search"
@@ -4310,11 +4341,6 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
           </button>
         </header>
         {help ? <UnlockHelp progress={progress} onClose={() => setHelp(false)} /> : null}
-        <nav className="mobile-deck-tabs" aria-label="Deck builder view">
-          <button type="button" aria-pressed={!mobileDeckView} onClick={() => setMobileDeckView(false)}>Collection</button>
-          <button type="button" aria-pressed={mobileDeckView} onClick={() => setMobileDeckView(true)}>Deck · {deck.length}/30</button>
-          <button type="button" className="mobile-filter-toggle" aria-expanded={mobileFiltersOpen} onClick={() => setMobileFiltersOpen(open => !open)}>Filters{Object.values(filters).filter(Boolean).length ? ` · ${Object.values(filters).filter(Boolean).length}` : ""}</button>
-        </nav>
         <div className="gallery-workspace">
         <div className="screen-panel-body gallery-body" ref={bodyRef}>
           {sorted.length ? (
@@ -4341,6 +4367,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
                           : "unseen"
                   }
                 />
+                <button type="button" className="gallery-compact-label" aria-label={`Open Star Chart for ${entry.face.name}`} onClick={() => openEntry(entry.key)}>{entry.face.name}</button>
                 </div>
               ))}
             </div>
@@ -4351,9 +4378,6 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         <aside className="gallery-deck" aria-label={seat === 1 ? "Player Two deck" : "Current deck"}>
           <header className="gallery-deck-heading"><h3>{seat === 1 ? "Player Two" : "My Deck"}</h3>
             <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
-          <button type="button" className="gallery-hero-power" aria-label="Choose hero power" aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
-            <span className="gallery-power-icon" aria-hidden="true">ϟ</span><span><strong>Hero Power: {equippedPower?.name ?? "Choose hero power"}</strong></span><b aria-hidden="true">›</b>
-          </button>
           <div className="gallery-deck-list">{allEntries.filter((entry) => deckIds.has(entry.key))
             .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
             .map((entry) => <div className="gallery-deck-row" key={entry.key} data-card-id={entry.key}>
@@ -4367,14 +4391,27 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
           <footer className="gallery-deck-footer">
             <div className="gallery-mana-summary"><span className="gallery-mana-title">Mana curve</span><div className="gallery-deck-curve" aria-label="Deck mana curve">{Array.from({ length: 10 }, (_, i) => {
               const count = manaCurve[i];
-              return <div key={i}><span data-count={count} style={{ height: `${Math.max(2, count / manaPeak * 24)}px` }}>{count}</span><small>{i + 1}</small></div>;
+              return <div key={i}><span data-count={count} style={{ height: `${Math.max(2, count / manaPeak * 17)}px` }}>{count}</span><small>{i + 1}</small></div>;
             })}</div></div>
-            {!readOnly && <button onClick={() => onChange([...CAMPAIGN_STARTER_DECK])}>Restore starter deck</button>}
+            <div className="gallery-deck-actions">
+              {!readOnly && <button className="gallery-restore" onClick={() => setRestoreOpen(true)}>Restore starter deck</button>}
+              <button type="button" className="gallery-hero-power" aria-label="Choose hero power" aria-description={equippedPower?.name} aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
+                <span className="gallery-power-icon" aria-hidden="true">ϟ</span><strong>Choose Hero Power</strong>
+              </button>
+            </div>
             {readOnly && <small>Starter deck · 30 cards</small>}
           </footer>
         </aside>
         </div>
+        </div>
       </section>
+      {restoreOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)setRestoreOpen(false);}}>
+        <section ref={restorePicker} className="gallery-restore-dialog" role="dialog" aria-modal="true" aria-label="Restore starter deck?">
+          <h3>Restore starter deck?</h3><p>Are you sure you want to revert your deck back to a starter one?</p>
+          <div><button type="button" onClick={() => setRestoreOpen(false)}>Cancel</button>
+            <button type="button" className="primary" onClick={() => {onChange([...CAMPAIGN_STARTER_DECK]);setRestoreOpen(false);}}>Yes, restore starter deck</button></div>
+        </section>
+      </div>}
       {powerOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)setPowerOpen(false);}}>
         <section ref={powerPicker} className="gallery-power-picker" role="dialog" aria-modal="true" aria-label="Choose hero power">
           <header><h3>Hero power</h3><button type="button" aria-label="Close hero power chooser" onClick={() => setPowerOpen(false)}>×</button></header>
@@ -5286,6 +5323,7 @@ function MinionFace({
   board,
   allBoard,
   onRelicPreview,
+  onRelicPress,
   onRelicPreviewEnd,
 }: {
   minion: MinionInstance;
@@ -5293,6 +5331,7 @@ function MinionFace({
   allBoard?: Array<MinionInstance | null>;
   /** Hovering the relic badge swaps the preview to the relic's own card. */
   onRelicPreview?: (relic: RelicInstance, el: HTMLElement) => void;
+  onRelicPress?: (event: React.PointerEvent<HTMLElement>, relic: RelicInstance) => void;
   /** Leaving it puts the minion back under the pointer, so the preview never
    *  goes blank while the pointer is still inside the slot. */
   onRelicPreviewEnd?: (minion: MinionInstance, el: HTMLElement) => void;
@@ -5312,6 +5351,11 @@ function MinionFace({
       {attachedRelics(minion).map(({ relic, index }) => (
         <span
           key={`${relic.id}-${index}`}
+          role={onRelicPress ? 'button' : undefined}
+          aria-label={`Inspect equipped ${relic.name}`}
+          onPointerDown={onRelicPress ? event => { event.stopPropagation(); event.preventDefault(); onRelicPress(event, relic); } : undefined}
+          onClick={onRelicPress ? event => { event.stopPropagation(); event.preventDefault(); } : undefined}
+          onContextMenu={event => event.preventDefault()}
           className={[
             "relic-badge",
             `relic-badge-${index}`,
@@ -5898,11 +5942,15 @@ function MulliganOverlay({
   library,
   onChoose,
   locked = false,
+  cardHold,
+  onInspect,
 }: {
   game: GameState;
   library: CardLibrary;
   onChoose: (action: GameAction) => void;
   locked?: boolean;
+  cardHold: CardLongPress;
+  onInspect: (card: PlayableCard) => void;
 }) {
   const mulligan = game.mulligan;
   if (!mulligan) return null;
@@ -5924,6 +5972,7 @@ function MulliganOverlay({
                 type="button"
                 key={`${cardId}-${handIndex}`}
                 className={selected ? "mulligan-card selected" : "mulligan-card"}
+                onPointerDown={event => {if (!locked && card) cardHold.start(event, () => onInspect(card));}}
                 aria-pressed={selected}
                 disabled={locked}
                 onClick={() => {

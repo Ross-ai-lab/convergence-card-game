@@ -17,6 +17,8 @@ import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { launch } from "./browser.mjs";
+import { skipCampaignDialogue } from './story-fixtures.mjs';
+import { settleMotion } from './browser.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, ".preview", "screens");
@@ -47,6 +49,57 @@ await page.goto(BASE, { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(1400);
 await shoot("01-title");
 
+if (process.argv.includes('--readme')) {
+  await page.locator('.deck-trigger').click();
+  await page.locator('.gallery-cell img').first().evaluate(img=>img.decode());
+  await shoot('desktop-collection');
+  await page.getByRole('button',{name:'Close',exact:true}).click();
+  await page.locator('.duel-trigger').click();
+  await page.locator('[data-chapter="1"] button').click();
+  await skipCampaignDialogue(page);
+  await page.locator('.duel-intro').dblclick();
+  await page.locator('.duel-intro').waitFor({state:'detached'});
+  await page.locator('.mulligan-panel button.primary').click();
+  await page.waitForFunction(()=>window.__debug?.state().phase==='main');
+  await page.evaluate(()=>{
+    ['Batman','UFO','Musashi','John Wick'].forEach((name,slot)=>window.__debug.place(name,'me',slot));
+    ['Po','Flash','Yujiro','Rennala'].forEach((name,slot)=>window.__debug.place(name,'them',slot));
+  });
+  await page.waitForFunction(()=>window.__debug.state().mine===4&&window.__debug.state().theirs===4);
+  await page.evaluate(()=>window.__debug.equipRelic('Green Lantern Ring','me',0));
+  await settleMotion(page);
+  await shoot('desktop-duel');
+  const release = process.argv.find(arg=>arg.startsWith('--release='))?.slice(10);
+  if (release) {
+    const saved = await page.evaluate(()=>Object.entries(localStorage).filter(([key])=>key.startsWith('convergence.')));
+    const context = await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1});
+    await context.addInitScript(entries=>{for(const [key,value] of entries)localStorage.setItem(key,value);},saved);
+    const published = await context.newPage();
+    await published.goto(release,{waitUntil:'domcontentloaded'});
+    if (await published.evaluate(()=>typeof window.__debug) !== 'undefined') throw new Error('README release screenshots require a production build');
+    await published.locator('.continue-duel').click();
+    await published.locator('.board-slot.occupied').first().waitFor();
+    await published.evaluate(()=>document.fonts.ready);
+    await settleMotion(published);
+    await published.screenshot({path:join(OUT,'desktop-duel.png')});
+    const badge=published.locator('[data-slot="0-0"] .relic-badge').first();
+    const before=await badge.boundingBox();await badge.click();
+    const preview=published.getByRole('status',{name:'Equipped relic: Green Lantern Ring',exact:true});
+    await preview.waitFor();
+    if(Math.abs((await badge.boundingBox()).width-before.width)>.5)throw new Error('Published relic inspection enlarged the badge');
+    if(await published.locator('[data-slot="0-0"].armed').count())throw new Error('Published relic inspection selected the bearer');
+    await preview.waitFor({state:'detached',timeout:2000});
+    await published.reload();
+    await published.locator('.deck-trigger').click();
+    await published.locator('.gallery-cell img').first().evaluate(img=>img.decode());
+    await published.screenshot({path:join(OUT,'desktop-collection.png')});
+    await context.close();
+  }
+  await browser.close();
+  console.log('Desktop README screenshots captured from the rendered game.');
+  process.exit(0);
+}
+
 // --- a real board, against the bot, so minions actually arrive
 //
 // THE DUEL STARTS FIRST, before the overlay shots below, and that ordering is
@@ -62,6 +115,8 @@ await shoot("01-title");
 // earlier title screen and had been silently timing out here — the same stale
 // label check-cardface.mjs already had to correct.
 await page.locator(".duel-trigger").first().click();
+await page.locator('[data-chapter="1"] button').click();
+await skipCampaignDialogue(page);
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
 // The opening mulligan is now revealed after the intro animation. Complete it
 // so the later screenshots capture the ordinary board.

@@ -51,14 +51,14 @@ const ONLY = (process.argv.find((arg) => arg.startsWith("--only")) ?? "").split(
 // The harness itself: editing the shared browser helper or a check script has to
 // re-run the suites that ride on it, or the one change nobody re-checks is the
 // change to the checker.
-const HARNESS = /^source\/scripts\/(browser|profile-layout|campaign-fixtures|campaign-motion|story-fixtures|phone-fixtures|check-)/;
+const HARNESS = /^source\/scripts\/(browser|profile-layout|campaign-fixtures|campaign-motion|story-fixtures|phone-fixtures|deck-fixtures|check-)/;
 
 const SUITES = [
   {
     name: "mobile",
     command: ["node", "scripts/check-mobile.mjs", BASE, ...process.argv.filter(arg => arg === "--webkit" || arg.startsWith("--size="))],
     browser: true,
-    reaches: [/^source\/src\/.*\.(tsx|css)$/, /^source\/src\/(card-long-press|phone-layout)\.ts$/, /^source\/index\.html$/, HARNESS],
+    reaches: [/^source\/src\/.*\.(tsx|css)$/, /^source\/src\/(card-long-press|phone-layout|relic-peek|gallery-visibility)\.ts$/, /^source\/index\.html$/, HARNESS],
   },
   {
     name: "workbook",

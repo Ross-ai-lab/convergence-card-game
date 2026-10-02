@@ -6,6 +6,7 @@ import { launch, settleMotion } from './browser.mjs';
 import { seedCampaignProgress } from './campaign-fixtures.mjs';
 import { skipCampaignDialogue } from './story-fixtures.mjs';
 import { checkCampaignMotion } from './campaign-motion.mjs';
+import { confirmStarterRestore } from './deck-fixtures.mjs';
 import { holdCard as hold, rotateForDuel as rotate, resizePhone as resize, manualRotationBrowser } from './phone-fixtures.mjs';
 
 const base = process.argv.find(arg => arg.startsWith('http')) || 'http://localhost:5177';
@@ -83,23 +84,30 @@ try {
     await page.locator('.gallery-cell img').first().waitFor();
     await page.locator('.gallery-cell img').first().evaluate(img => img.decode());
     const firstCard = await page.locator('.gallery-cell').first().boundingBox();
-    assert(firstCard.width >= 190 && firstCard.height >= 250, 'Collection cards are too small to read');
+    assert(firstCard.width >= 100 && firstCard.height >= 140, 'Collection grid cards are too small');
+    const firstRows = await page.locator('.gallery-deck-card').evaluateAll(items=>items.slice(0,4).map(item=>{const r=item.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};}));
+    assert(firstRows[1].x > firstRows[0].x && Math.abs(firstRows[1].y-firstRows[0].y)<1,'Collection is not a two-column grid');
     assert(await page.locator('.gallery-body').isVisible());
     assert(!(await page.locator('.gallery-deck').isVisible()), 'Deck list consumes collection space');
     await inside(page, '.mobile-deck-tabs button,.gallery-search,.screen-x', 'Builder controls');
     await shoot(page, `${width}x${height}-collection`);
-    await page.getByRole('button', { name: 'Filters', exact: true }).tap();
     assert(await page.getByLabel('Filter by mana', { exact: true }).isVisible());
     await page.getByLabel('Filter by mana', { exact: true }).selectOption('1');
     assert(Number(await page.locator('.gallery-count').textContent()) < 30);
     await page.getByLabel('Filter by mana', { exact: true }).selectOption('');
-    await page.getByRole('button', { name: 'Filters', exact: true }).tap();
+    await page.locator('.gallery-mobile-scroll').evaluate(el=>el.scrollTo({top:350}));
+    assert(await page.locator('.gallery-search').evaluate(el=>el.getBoundingClientRect().bottom<0),'Collection search remains pinned while scrolling');
     await page.getByRole('button', { name: 'Deck · 30/30', exact: true }).tap();
     assert(await page.locator('.gallery-deck').isVisible());
     assert(!(await page.locator('.gallery-body').isVisible()));
     await page.getByRole('button', { name: 'Remove John Wick from deck', exact: true }).tap();
     assert.equal(await page.locator('.gallery-deck-row').count(), 29);
     await page.getByRole('button', { name: 'Restore starter deck', exact: true }).tap();
+    assert.equal(await page.locator('.gallery-deck-row').count(),29,'Reset occurred before confirmation');
+    await page.getByRole('dialog',{name:'Restore starter deck?',exact:true}).getByRole('button',{name:'Cancel',exact:true}).tap();
+    assert.equal(await page.locator('.gallery-deck-row').count(),29,'Cancel changed the deck');
+    await page.getByRole('button', { name: 'Restore starter deck', exact: true }).tap();
+    await confirmStarterRestore(page,true);
     assert.equal(await page.locator('.gallery-deck-row').count(), 30);
     await page.getByRole('button', { name: 'Choose hero power', exact: true }).tap();
     await inside(page, '.gallery-power-picker', 'Hero Power chooser');
@@ -115,6 +123,14 @@ try {
     await rotateForDuel(page,width,height);
     await page.locator('.duel-intro').dblclick();
     await page.locator('.duel-intro').waitFor({ state: 'detached', timeout: 20000 });
+    await inside(page,'.mulligan-panel,.mulligan-card,.mulligan-panel button.primary','Fixed opening hand');
+    assert(await page.locator('.mulligan-panel').evaluate(el=>el.scrollHeight<=el.clientHeight+1),'Opening hand requires scrolling');
+    if (width===390) await shoot(page,'phone-mulligan');
+    const openingCard = page.locator('.mulligan-card').first();
+    const openingName = await openingCard.locator('.cf-name').textContent();
+    await holdCard(page,openingCard,`Read ${openingName}`);
+    await page.getByRole('button',{name:'Close card reader',exact:true}).tap();
+    assert.equal(await page.locator('.mulligan-card.selected').count(),0,'Reading an opening card selected it for replacement');
     await page.locator('.mulligan-panel button.primary').tap();
     await page.waitForFunction(() => window.__debug?.state().phase === 'main');
     await page.locator('.enemy-hero-wrap').tap();
@@ -175,6 +191,27 @@ try {
     await holdCard(page,page.locator('[data-slot="0-0"]'),'Read Batman');
     assert(await page.getByRole('dialog', { name: 'Read Batman', exact: true }).isVisible());
     await page.getByRole('button', { name: 'Close card reader', exact: true }).tap();
+    await page.evaluate(() => window.__debug.equipRelic('Green Lantern Ring','me',0));
+    const relicBadge = page.locator('[data-slot="0-0"] .relic-badge').first();
+    await relicBadge.waitFor();
+    const badgeSize = await relicBadge.boundingBox();
+    await relicBadge.tap();
+    await page.getByRole('status',{name:'Equipped relic: Green Lantern Ring',exact:true}).waitFor();
+    assert((await page.locator('.equipped-relic-peek').textContent()).includes('Green Lantern Ring'));
+    assert(Math.abs((await relicBadge.boundingBox()).width-badgeSize.width)<.5,'Relic tap enlarged its logo');
+    assert.equal(await page.locator('[data-slot="0-0"].armed').count(),0,'Inspecting a relic armed its bearer');
+    await page.getByRole('status',{name:'Equipped relic: Green Lantern Ring',exact:true}).waitFor({state:'detached',timeout:2000});
+    const point = {x:badgeSize.x+badgeSize.width/2,y:badgeSize.y+badgeSize.height/2};
+    let relicSession;
+    if (useWebKit) await relicBadge.dispatchEvent('pointerdown',{pointerId:1,pointerType:'touch',clientX:point.x,clientY:point.y});
+    else {relicSession=await context.newCDPSession(page);await relicSession.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});}
+    await page.waitForTimeout(1500);
+    assert(await page.locator('.equipped-relic-peek').isVisible(),'Held relic preview closed early');
+    await inside(page,'.equipped-relic-peek > section,.equipped-relic-card','Equipped relic preview');
+    if (width===390) await shoot(page,'phone-equipped-relic');
+    if (useWebKit) await relicBadge.dispatchEvent('pointerup',{pointerId:1,pointerType:'touch',clientX:point.x,clientY:point.y});
+    else {await relicSession.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await relicSession.detach();}
+    await page.locator('.equipped-relic-peek').waitFor({state:'detached'});
     await page.locator('[data-slot="0-3"]').tap();
     assert.equal(await page.locator('[data-slot="0-3"].armed').count(), 1);
     await page.locator('[data-slot="1-3"]').tap();
@@ -182,6 +219,8 @@ try {
 
     // Chromium exposes native touch gestures through CDP. Mobile WebKit exposes
     // taps only, so its scroll-container checks use programmatic scrolling.
+    await page.locator('.hand-fan').evaluate(el=>el.scrollTo({top:0,left:0}));
+    await page.waitForTimeout(200);
     const hand = await page.locator('.hand-fan').boundingBox();
     const current = page.viewportSize();
     const landscape = current.width > current.height && current.height <= 600;
@@ -203,7 +242,7 @@ try {
       await cd.detach();
     }
     const after = await page.locator('.hand-fan').evaluate(el => ({ x: el.scrollLeft, y: el.scrollTop }));
-    assert(landscape ? after.y > before.y : after.x > before.x, 'Touch swipe did not scroll the hand');
+    assert(landscape ? after.y > before.y : after.x > before.x, `Touch swipe did not scroll the hand: ${JSON.stringify({before,after,hand,current,from})}`);
     assert.equal(await page.locator('.hand-card').count(), beforeCount, 'Swiping played a card');
     assert.equal(await page.locator('.mobile-inspection-panel').count(), 0, 'A swipe opened the long-press reader');
     // End the swipe at rest, then wait for scroll snapping to settle.
@@ -219,6 +258,8 @@ try {
     await shoot(page, `${width}x${height}-duel`);
     await clickMenu(page, 'Duel log');
     assert(await page.locator('.log-drawer[open]').isVisible());
+    await inside(page,'.log-drawer-body,.event-log li:first-child','Latest log action');
+    if (width===390) await shoot(page,'phone-duel-log');
     await page.locator('.log-drawer > summary').tap();
     await clickMenu(page, '◇ How to play');
     await inside(page, '.screen-panel:not(.gallery-panel)', 'Rules panel');

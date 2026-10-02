@@ -1747,6 +1747,8 @@ button.duel-trigger:hover:not(:disabled) {
 .hotseat-trigger svg {
   color: #77dbe4;
 }
+.hotseat-trigger { background: rgba(20, 12, 30, .48); }
+.hotseat-trigger:hover:not(:disabled) { background: rgba(38, 23, 49, .56); }
 
 .title-player-count {
   position: absolute;

@@ -13,8 +13,10 @@ It uses separate 30-card decks, four board slots per player, and a deterministic
 There is no account, download, or installation needed to play.
 
 <p>
+  <img src="materials/screenshots/desktop-duel.png" width="900" alt="Desktop duel with two populated boards, a full hand, core health, mana and duel controls">
+  <img src="materials/screenshots/desktop-collection.png" width="900" alt="Desktop card collection with filters, full card faces and a separate deck sidebar">
   <img src="materials/screenshots/mobile-duel.png" width="600" alt="A landscape phone duel with all eight board positions visible, named champion, mana, and long-press card inspection">
-  <img src="materials/screenshots/mobile-collection.png" width="300" alt="The phone collection view showing a large card face, search, deck tab, and expandable filters">
+  <img src="materials/screenshots/mobile-collection.png" width="300" alt="Phone collection with a two-column card grid and search and filters that scroll away">
 </p>
 
 <!-- README-NAV-START -->
@@ -48,7 +50,9 @@ The game supports desktop, landscape phone duels, and tablet layouts.
 Phone duels require the device to be held sideways. The game requests fullscreen and landscape rotation when supported by the browser.
 If automatic rotation is unavailable, a rotate screen waits until the phone is turned sideways. Menus and deck editing also work upright.
 All four slots on both boards stay visible. The hand scrolls independently.
-The deck editor has separate Collection and Deck views, expandable filters, and full card profiles.
+The phone deck editor has Collection and Deck tabs in its top row and a two-column collection grid.
+Search and filters remain available and scroll with the collection. Tap a card's name to open its full profile.
+Choose Hero Power sits beside Restore starter deck. Restoring requires confirmation on every platform.
 
 Progress and ongoing duels save in this browser on this device. A private window or cleared browser storage starts a separate collection.
 There is no online multiplayer or account synchronization. The public website displays an aggregate visit count.
@@ -78,6 +82,7 @@ There is no online multiplayer or account synchronization. The public website di
 | Attack | Tap a ready minion, then a highlighted enemy or core | Click both, or drag the attacker |
 | Read a hand or board card | Hold the card for **one second** | Hover a board minion; hover the hand to enlarge it |
 | Read a character profile | Open My Deck and tap the card's name | Click its name in My Deck |
+| Inspect equipped relics | Tap the badge for a one-second preview, or hold it until finished | Hover the badge, or click and hold it |
 | End the turn | Tap **End Turn** | Click **End Turn**, or press **Space** / **Enter** |
 | Clear a choice | Tap the selected card again or the board background | Press **Escape** |
 | Rules, sound, and restart | Open **Menu** during the duel | Use the duel toolbar |
@@ -88,6 +93,7 @@ Reading a card does not play it, attack with it, or spend mana. Lifting your fin
 Undo is a developer-only tool. Normal duels expose neither an Undo menu option nor the Z shortcut.
 Double-tap the opening ceremony to skip its animation; the opening hand is already determined.
 The title screen's **Continue duel** restores an unfinished game.
+Opening-hand choices fit the screen without scrolling. Hold an opening card for one second to inspect it before choosing replacements.
 
 ## Cards and effects
 
@@ -297,6 +303,8 @@ Keep mana, attack, health, name, and artwork visible at every breakpoint. Small 
 Mythic, Legendary, Epic, and Relic cards use their own animated shine. Keep the animation and palette coherent with rarity ordering in `types.ts`.
 The desktop hand enlarges as one container. Phone hands scroll without scaling or overlap.
 Long pressing a phone card opens its reader and consumes the release click. Movement, scrolling, cancellation, and rotation cancel an unfinished hold.
+Equipped relic badges do not grow on hover or tap. Their card preview lasts one second after a tap, or until a held pointer is released.
+The phone collection scrolls as one surface, including its controls. Card visibility tracking follows that scrolling surface when resizing.
 Full-size card readers display current stats, conditions, granted powers, and attached relics.
 
 Runtime card art uses WebP under `source/public/card-art/`. Use the existing art-import tools for crop and encoding.

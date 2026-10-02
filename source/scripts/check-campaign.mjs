@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { launch, settleMotion } from './browser.mjs';
 import { seedCampaignProgress } from './campaign-fixtures.mjs';
 import { skipCampaignDialogue } from './story-fixtures.mjs';
+import { confirmStarterRestore } from './deck-fixtures.mjs';
 import { mkdir } from 'node:fs/promises';
 
 const base = process.argv[2] ?? 'http://localhost:5177';
@@ -290,6 +291,7 @@ try {
   assert.equal((await progress()).hotseatDeck.length, 29);
   assert.deepEqual((await progress()).playerDeck, personalDeck, 'Editing seat two must preserve the personal deck');
   await page.getByRole('button', { name: 'Restore starter deck', exact: true }).click();
+  await confirmStarterRestore(page);
   assert.equal((await progress()).hotseatDeck.length, 30);
   await page.getByRole('button', { name: 'Close', exact: true }).click();
   assert(await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).isVisible());
@@ -304,7 +306,7 @@ try {
   assert.equal((await progress()).selectedHeroPower,'enemy_core_damage');
   assert.deepEqual((await progress()).playerDeck,deckBeforePower);
   await page.reload();await page.locator('.deck-trigger').click();
-  assert((await page.locator('.gallery-hero-power').textContent()).includes('Core Bolt'));
+  assert.equal(await page.locator('.gallery-hero-power').getAttribute('aria-description'),'Core Bolt');
   await page.getByRole('button',{name:'Close',exact:true}).click();
   await page.locator('.duel-trigger').click();await page.locator('[data-chapter="6"] button').click();await board();
   assert.equal(await page.evaluate(async () => (await import('/src/storage.ts')).loadGame().game.heroPowers[0]),'enemy_core_damage');
