@@ -8,26 +8,6 @@
 .phone-rotate-screen h2 { margin: 0; font: 29px Georgia, serif; }
 .phone-rotate-screen p { margin: 0 0 8px; line-height: 1.6; font-size: 16px; }
 .phone-rotate-screen button { min-height: 48px; width: 100%; padding: 10px 14px; }
-.mobile-inspection-veil {
-  position: fixed; inset: 0; z-index: 300; display: grid; place-items: center;
-  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
-  background: #090710e8; backdrop-filter: blur(12px);
-}
-.mobile-inspection-panel {
-  width: min(420px, 100%); max-height: 100%; min-height: 0; display: flex; flex-direction: column;
-  border: 1px solid #ad9059; border-radius: 18px; background: linear-gradient(140deg, #2a2037, #100e17);
-  box-shadow: 0 20px 80px #0009; overflow: hidden;
-}
-.mobile-inspection-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #ad905933; }
-.mobile-inspection-panel > header > span { color: #e0cc9f; font-size: 12px; letter-spacing: .06em; }
-.mobile-inspection-panel > header > button { width: 44px; min-height: 44px; font-size: 26px; }
-.mobile-inspection-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px; }
-.mobile-inspection-card { width: min(300px, 100%); margin: 0 auto; }
-.mobile-inspection-panel dl { margin: 18px 0 0; display: grid; gap: 12px; }
-.mobile-inspection-panel dt { color: #f0ce81; font-size: 14px; font-weight: 800; }
-.mobile-inspection-panel dd { margin: 3px 0 0; color: #e0d9cb; font-size: 14px; line-height: 1.5; }
-.mobile-inspection-extras, .mobile-inspection-note { font-size: 14px; line-height: 1.5; color: #dfd2b3; }
-.mobile-inspection-rules { display: none; }
 .hs-shell.has-overlay .title-screen .floating-card-field img { animation-play-state: paused; }
 
 @media (max-width: 900px), (max-width: 1180px) and (pointer: coarse), (max-width: 1180px) and (max-height: 600px) and (orientation: landscape) {
@@ -241,7 +221,12 @@
   .title-bottom-left .title-player-count { font-size: 10px; }
   .continue-duel, .continue-duel:hover:not(:disabled) { top: auto; bottom: 124px; left: 28%; transform: translateX(-50%); min-height: 44px; padding: 10px 14px; font-size: 11px; }
   .table-frame { grid-template-columns: minmax(0, 1fr) 184px; grid-template-rows: 58px minmax(0, 1fr); gap: 7px; }
+  .mulligan-panel { padding: 10px; gap: 6px; }
+  .mulligan-panel h2 { font-size: 24px; }
+  .mulligan-intro { font-size: 11px; }
+  .mulligan-panel .choice-detail { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; min-height: 54px; }
   .top-strip { grid-column: 1 / -1; }
+  .top-strip { grid-template-columns: minmax(0, 1fr) 90px 64px; grid-template-areas: "enemy turn menu"; }
   .top-strip .enemy-hero-wrap { width: min(420px, 100%); }
   .hero-plate.enemy { min-height: 50px; }
   .battlefield { grid-column: 1; grid-row: 2; padding: 16px 7px 5px; gap: 4px; }
@@ -256,10 +241,10 @@
   .hero-power-cost { width: 23px; height: 23px; }
   .command-bar .mana-tray { width: 54px; padding: 0; }
   .mana-row { display: none; }
-  .hand-fan, .hand-fan.is-open { height: calc(100% - 48px); padding: 6px 0; overflow-x: hidden; overflow-y: auto; flex-wrap: wrap; justify-content: center; gap: 8px; touch-action: pan-y; }
+  .hand-fan, .hand-fan.is-open { height: 100%; padding: 6px 0; overflow-x: hidden; overflow-y: auto; flex-wrap: wrap; justify-content: center; gap: 8px; touch-action: pan-y; }
   .hand-item { flex-basis: 80px; }
   .hand-card { touch-action: pan-y; }
-  .mobile-end-turn { right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); width: 174px; min-height: 42px; }
+  .mobile-end-turn { right: calc(80px + env(safe-area-inset-right)); top: max(14px, env(safe-area-inset-top)); bottom: auto; width: 90px; min-height: 40px; }
   .log-drawer { bottom: max(8px, env(safe-area-inset-bottom)); left: 10px; }
   .gallery-panel .gallery-filters { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .gallery-panel .gallery-equipped { min-height: 24px; }
@@ -270,13 +255,6 @@
   .campaign-speech-text p { font-size: 15px; line-height: 1.5; }
   .campaign-speech-copy h2 { margin: 5px 0 10px; font-size: 25px; }
   .campaign-speech-copy footer { margin-top: 10px; bottom: -16px; }
-  .mobile-inspection-panel { width: min(720px, 100%); }
-  .mobile-inspection-scroll { display: grid; grid-template-columns: minmax(0, 210px) minmax(0, 1fr); gap: 16px; }
-  .mobile-inspection-card { grid-row: 1 / 7; width: min(210px, calc((100dvh - 132px) * .7142857)); position: sticky; top: 0; align-self: start; }
-  .mobile-inspection-rules { display: block; grid-column: 2; }
-  .mobile-inspection-rules h2 { margin: 0 0 10px; font-size: 21px; color: #f0ce81; }
-  .mobile-inspection-rules p { margin: 0; font-size: 15px; line-height: 1.5; color: #f0e9d8; }
-  .mobile-inspection-panel dl { margin-top: 0; }
   .result-panel.grand { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 6px 16px; width: min(650px, 100%); padding: 10px; }
   .result-mvp { grid-column: 2; grid-row: 1 / 6; margin: 0; gap: 3px; }
   .result-mvp-card { width: 208px; }

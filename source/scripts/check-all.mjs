@@ -58,7 +58,7 @@ const SUITES = [
     name: "mobile",
     command: ["node", "scripts/check-mobile.mjs", BASE, ...process.argv.filter(arg => arg === "--webkit" || arg.startsWith("--size="))],
     browser: true,
-    reaches: [/^source\/src\/.*\.(tsx|css)$/, /^source\/src\/(card-long-press|phone-layout|relic-peek|gallery-visibility)\.ts$/, /^source\/index\.html$/, HARNESS],
+    reaches: [/^source\/src\/.*\.(tsx|css)$/, /^source\/src\/(phone-layout|relic-peek|gallery-visibility)\.ts$/, /^source\/index\.html$/, HARNESS],
   },
   {
     name: "workbook",

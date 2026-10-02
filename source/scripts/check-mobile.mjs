@@ -7,7 +7,7 @@ import { seedCampaignProgress } from './campaign-fixtures.mjs';
 import { skipCampaignDialogue } from './story-fixtures.mjs';
 import { checkCampaignMotion } from './campaign-motion.mjs';
 import { confirmStarterRestore } from './deck-fixtures.mjs';
-import { holdCard as hold, rotateForDuel as rotate, resizePhone as resize, manualRotationBrowser } from './phone-fixtures.mjs';
+import { rotateForDuel as rotate, resizePhone as resize, manualRotationBrowser } from './phone-fixtures.mjs';
 
 const base = process.argv.find(arg => arg.startsWith('http')) || 'http://localhost:5177';
 const useWebKit = process.argv.includes('--webkit');
@@ -50,7 +50,6 @@ async function clickMenu(page, name) {
   await page.getByRole('button', { name, exact: true }).tap();
 }
 
-const holdCard = (page,locator,name) => hold(page,locator,name,useWebKit);
 const rotateForDuel = (page,width,height) => rotate(page,width,height,useWebKit);
 const resizePhone = (page,width,height) => resize(page,width,height,useWebKit);
 
@@ -87,6 +86,7 @@ try {
     assert(firstCard.width >= 100 && firstCard.height >= 140, 'Collection grid cards are too small');
     const firstRows = await page.locator('.gallery-deck-card').evaluateAll(items=>items.slice(0,4).map(item=>{const r=item.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};}));
     assert(firstRows[1].x > firstRows[0].x && Math.abs(firstRows[1].y-firstRows[0].y)<1,'Collection is not a two-column grid');
+    assert(await page.locator('.gallery-cell .card-face:not(.cf-blank) .cf-desc').evaluateAll(elements=>elements.length>0&&elements.every(el=>getComputedStyle(el).display!=='none'&&el.textContent.trim().length>0)), 'Collection cards hide their printed descriptions');
     assert(await page.locator('.gallery-body').isVisible());
     assert(!(await page.locator('.gallery-deck').isVisible()), 'Deck list consumes collection space');
     await inside(page, '.mobile-deck-tabs button,.gallery-search,.screen-x', 'Builder controls');
@@ -110,6 +110,8 @@ try {
     await confirmStarterRestore(page,true);
     assert.equal(await page.locator('.gallery-deck-row').count(), 30);
     await page.getByRole('button', { name: 'Choose hero power', exact: true }).tap();
+    assert((await page.locator('.hero-power-menu-intro').textContent()).includes('Conquer any universe'),'Hero Power wording restricts universe order');
+    assert.equal(await page.locator('.hero-power-menu-note').count(),0,'Removed Hero Power footer text remains');
     await inside(page, '.gallery-power-picker', 'Hero Power chooser');
     await page.getByLabel('Close hero power chooser').tap();
     await shoot(page, `${width}x${height}-deck`);
@@ -126,11 +128,7 @@ try {
     await inside(page,'.mulligan-panel,.mulligan-card,.mulligan-panel button.primary','Fixed opening hand');
     assert(await page.locator('.mulligan-panel').evaluate(el=>el.scrollHeight<=el.clientHeight+1),'Opening hand requires scrolling');
     if (width===390) await shoot(page,'phone-mulligan');
-    const openingCard = page.locator('.mulligan-card').first();
-    const openingName = await openingCard.locator('.cf-name').textContent();
-    await holdCard(page,openingCard,`Read ${openingName}`);
-    await page.getByRole('button',{name:'Close card reader',exact:true}).tap();
-    assert.equal(await page.locator('.mulligan-card.selected').count(),0,'Reading an opening card selected it for replacement');
+    assert(await page.locator('.mulligan-card .card-face:not(.cf-blank) .cf-desc').evaluateAll(elements=>elements.every(el=>getComputedStyle(el).display!=='none'&&el.textContent.trim().length>0)), 'Opening cards hide their printed descriptions');
     await page.locator('.mulligan-panel button.primary').tap();
     await page.waitForFunction(() => window.__debug?.state().phase === 'main');
     await page.locator('.enemy-hero-wrap').tap();
@@ -150,6 +148,10 @@ try {
       }), 'End Turn covers a hand card or core health');
     }
     const scrollableBoards = await page.locator('.board-row').evaluateAll(rows => rows.some(row => row.scrollWidth > row.clientWidth + 1));
+    if(page.viewportSize().height<=600) assert(await page.locator('.end-turn').evaluate(button=>{
+      const b=button.getBoundingClientRect();
+      return b.y<70&&b.width<=100&&[...document.querySelectorAll('.enemy-hero-wrap,.mobile-menu-toggle')].every(el=>{const r=el.getBoundingClientRect();return r.right<=b.left||r.left>=b.right||r.bottom<=b.top||r.top>=b.bottom;});
+    }),'Top End Turn overlaps the boss or menu');
     assert(!scrollableBoards, 'A board hides slots behind horizontal scrolling');
 
     const initialHandCount = await page.locator('.hand-card').count();
@@ -158,14 +160,7 @@ try {
     const handCount = await page.locator('.hand-card').count();
     await page.locator('.hand-item').last().scrollIntoViewIfNeeded();
     assert.equal(await page.locator('.mobile-card-read').count(), 0, 'Read buttons remain on cards');
-    await holdCard(page,page.getByRole('button',{name:'John Wick, 1 mana, playable',exact:true}).last(),'Read John Wick');
-    await inside(page, '.mobile-inspection-panel,.mobile-inspection-card', 'Card reader');
-    if (width === 390) await shoot(page, 'landscape-card-reader');
-    const readerTurn = await page.locator('.deck-pile em').textContent();
-    await page.keyboard.press('z');
-    assert.equal(await page.locator('.deck-pile em').textContent(), readerTurn, 'Reader leaked a shortcut to the duel');
-    await page.getByRole('button', { name: 'Close card reader', exact: true }).tap();
-    assert.equal(await page.locator('.hand-card').count(), handCount, 'Reading spent a card');
+    assert(await page.locator('.hand-card .cf-desc').evaluateAll(elements=>elements.every(el=>getComputedStyle(el).display!=='none')), 'Hand card descriptions are hidden');
     await page.getByRole('button', { name: 'John Wick, 1 mana, playable', exact: true }).last().tap();
     await page.getByRole('button', { name: 'John Wick, 1 mana, playable', exact: true }).last().tap();
     assert.equal(await page.locator('.hand-card.selected').count(), 0, 'Tapping a selected card did not deselect');
@@ -188,9 +183,7 @@ try {
     await inside(page, '.board-slot .card-face', 'All eight populated cards');
     await shoot(page, `${width}x${height}-battlefield`);
     await page.evaluate(() => { for (let i = 0; i < 6; i++) window.__debug.giveCard('John Wick'); });
-    await holdCard(page,page.locator('[data-slot="0-0"]'),'Read Batman');
-    assert(await page.getByRole('dialog', { name: 'Read Batman', exact: true }).isVisible());
-    await page.getByRole('button', { name: 'Close card reader', exact: true }).tap();
+    assert(await page.locator('.board-slot .card-face:not(.cf-blank) .cf-desc').evaluateAll(elements=>elements.every(el=>getComputedStyle(el).display!=='none')), 'Board card descriptions are hidden');
     await page.evaluate(() => window.__debug.equipRelic('Green Lantern Ring','me',0));
     const relicBadge = page.locator('[data-slot="0-0"] .relic-badge').first();
     await relicBadge.waitFor();
@@ -198,6 +191,9 @@ try {
     await relicBadge.tap();
     await page.getByRole('status',{name:'Equipped relic: Green Lantern Ring',exact:true}).waitFor();
     assert((await page.locator('.equipped-relic-peek').textContent()).includes('Green Lantern Ring'));
+    assert.equal(await page.locator('.equipped-relic-peek > .card-face').count(),1,'Relic preview is not a standalone card');
+    assert(await page.locator('.equipped-relic-peek .cf-desc').isVisible(),'Relic description is outside or absent from its card');
+    assert.equal(await page.locator('.equipped-relic-peek > section').count(),0,'Relic preview creates a separate popup panel');
     assert(Math.abs((await relicBadge.boundingBox()).width-badgeSize.width)<.5,'Relic tap enlarged its logo');
     assert.equal(await page.locator('[data-slot="0-0"].armed').count(),0,'Inspecting a relic armed its bearer');
     await page.getByRole('status',{name:'Equipped relic: Green Lantern Ring',exact:true}).waitFor({state:'detached',timeout:2000});
@@ -207,7 +203,7 @@ try {
     else {relicSession=await context.newCDPSession(page);await relicSession.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});}
     await page.waitForTimeout(1500);
     assert(await page.locator('.equipped-relic-peek').isVisible(),'Held relic preview closed early');
-    await inside(page,'.equipped-relic-peek > section,.equipped-relic-card','Equipped relic preview');
+    await inside(page,'.equipped-relic-peek,.equipped-relic-peek .card-face','Equipped relic preview');
     if (width===390) await shoot(page,'phone-equipped-relic');
     if (useWebKit) await relicBadge.dispatchEvent('pointerup',{pointerId:1,pointerType:'touch',clientX:point.x,clientY:point.y});
     else {await relicSession.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await relicSession.detach();}
@@ -244,7 +240,7 @@ try {
     const after = await page.locator('.hand-fan').evaluate(el => ({ x: el.scrollLeft, y: el.scrollTop }));
     assert(landscape ? after.y > before.y : after.x > before.x, `Touch swipe did not scroll the hand: ${JSON.stringify({before,after,hand,current,from})}`);
     assert.equal(await page.locator('.hand-card').count(), beforeCount, 'Swiping played a card');
-    assert.equal(await page.locator('.mobile-inspection-panel').count(), 0, 'A swipe opened the long-press reader');
+    assert.equal(await page.locator('.equipped-relic-peek').count(), 0, 'A hand swipe opened a relic preview');
     // End the swipe at rest, then wait for scroll snapping to settle.
     let previousPosition = '';
     let stableReads = 0;
@@ -269,7 +265,7 @@ try {
     // Completed campaign gains difficulty choices without colliding with title actions.
     await seedCampaignProgress(page);
     await inside(page, '.orbit-choice,.duel-trigger,.deck-trigger,.hotseat-trigger,.continue-duel', 'Completed campaign title');
-    console.log(`PASS ${useWebKit ? 'WebKit' : 'Chromium'} mobile ${width}x${height}: campaign, builder, filters, reader, all slots, play, attack, ${useWebKit ? 'scroll containers (native swipe verified in Chromium)' : 'native swipe'}, log, rules, free duels`);
+    console.log(`PASS ${useWebKit ? 'WebKit' : 'Chromium'} mobile ${width}x${height}: campaign, builder, filters, printed descriptions, relic inspection, all slots, play, attack, ${useWebKit ? 'scroll containers (native swipe verified in Chromium)' : 'native swipe'}, log, rules, free duels`);
     await context.close();
   }
   // Phone hotseat uses the real privacy curtain and both private mulligans.

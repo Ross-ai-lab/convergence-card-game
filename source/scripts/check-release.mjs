@@ -3,7 +3,7 @@ import { launch, settleMotion } from './browser.mjs';
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { skipCampaignDialogue } from './story-fixtures.mjs';
-import { holdCard, manualRotationBrowser, resizePhone, rotateForDuel } from './phone-fixtures.mjs';
+import { manualRotationBrowser, resizePhone, rotateForDuel } from './phone-fixtures.mjs';
 import { checkCampaignMotion } from './campaign-motion.mjs';
 import { confirmStarterRestore } from './deck-fixtures.mjs';
 const base=process.argv[2];if(!base)throw new Error('Pass the published /play/ URL');
@@ -46,6 +46,8 @@ try{
  await page.getByLabel('Search the gallery').fill('GLaDOS');await page.getByRole('button',{name:'Add GLaDOS',exact:true}).click();
  assert.equal((await progress()).playerDeck.length,30);assert((await progress()).playerDeck.includes('c104'));
  await page.getByRole('button',{name:'Choose hero power',exact:true}).click();
+ assert((await page.locator('.hero-power-menu-intro').textContent()).includes('Conquer any universe'));
+ assert.equal(await page.locator('.hero-power-menu-note').count(),0);
  assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:not(:disabled)').count(),1);
  await page.locator('.gallery-power-picker .hero-power-menu-card').filter({hasText:'Mend Core'}).click();
  assert.equal((await progress()).selectedHeroPower,'core_heal');
@@ -58,7 +60,9 @@ try{
  const phone=await phoneContext.newPage();phone.on('pageerror',error=>errors.push(error.message));
  await phone.goto(base,{waitUntil:'domcontentloaded'});
  await phone.locator('.deck-trigger').tap();
+ await phone.locator('.gallery-cell .card-face').first().waitFor();
  assert(await phone.getByLabel('Filter by mana',{exact:true}).isVisible(),'Published filters are hidden');
+ assert(await phone.locator('.gallery-cell .card-face:not(.cf-blank) .cf-desc').evaluateAll(elements=>elements.length>0&&elements.every(el=>getComputedStyle(el).display!=='none')), 'Published collection descriptions are hidden');
  const collection=await phone.locator('.gallery-deck-card').evaluateAll(items=>items.slice(0,2).map(item=>{const r=item.getBoundingClientRect();return {x:r.x,y:r.y};}));
  assert(collection[1].x>collection[0].x && Math.abs(collection[1].y-collection[0].y)<1,'Published collection is not a grid');
  await phone.locator('.gallery-mobile-scroll').evaluate(el=>el.scrollTo({top:350}));
@@ -82,12 +86,7 @@ try{
  await phone.locator('.mulligan-panel button.primary').tap();
  assert.equal(await phone.evaluate(()=>typeof window.__debug),'undefined');
  assert.equal(await phone.locator('.mobile-card-read').count(),0);
- const hand=phone.locator('.hand-card').first();const handLabel=await hand.getAttribute('aria-label');
- const cardName=handLabel.split(',')[0];const cardsBefore=await phone.locator('.hand-card').count();
- await holdCard(phone,hand,`Read ${cardName}`);
- await phone.screenshot({path:'../.preview/release/live-phone-reader.png'});
- await phone.getByRole('button',{name:'Close card reader',exact:true}).tap();
- assert.equal(await phone.locator('.hand-card').count(),cardsBefore,'Published reader played its card');
+ assert(await phone.locator('.hand-card .card-face:not(.cf-blank) .cf-desc').evaluateAll(elements=>elements.every(el=>getComputedStyle(el).display!=='none')), 'Published hand cards hide their descriptions');
  await phone.getByRole('button',{name:'Duel menu',exact:true}).tap();
  assert.equal(await phone.getByRole('button',{name:'Undo last action',exact:true}).count(),0);
  await phone.getByRole('button',{name:'Duel menu',exact:true}).tap();
@@ -100,5 +99,5 @@ try{
  await phone.screenshot({path:'../.preview/release/live-phone-duel.png'});
  await phoneContext.close();
  assert.deepEqual(errors,[]);
- console.log('PASS live production: old-save reset, campaign, durable reward, deck persistence, stable boss portraits, landscape gate, native long press, no normal Undo, no debug hook and no page errors.');
+ console.log('PASS live production: old-save reset, campaign, durable reward, deck persistence, stable boss portraits, landscape gate, printed card descriptions, no normal Undo, no debug hook and no page errors.');
 }finally{await browser.close();}

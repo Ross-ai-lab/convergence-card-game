@@ -499,7 +499,7 @@ export function HeroPowerChoices({
   return (
       <div className="hero-power-menu">
         <p className="hero-power-menu-intro">
-              Conquer each of the first ten universes to unlock a Hero Power. Replays do not count.
+              Conquer any universe to unlock the next Hero Power. Replays do not count.
           <b>{` ${Math.min(botWins, HERO_POWER_UNLOCK_ORDER.length)}/${HERO_POWER_UNLOCK_ORDER.length} unlocked`}</b>
         </p>
         <div className="hero-power-menu-grid">
@@ -537,9 +537,6 @@ export function HeroPowerChoices({
             );
           })}
         </div>
-        {selectedPower === null ? (
-          <p className="hero-power-menu-note">No Hero Power is selected yet. Win against the bot to claim your first.</p>
-        ) : null}
       </div>
   );
 }
@@ -685,7 +682,7 @@ function HowToPlayContent() {
           <li><b>End the turn</b> with Space.</li>
         </ol>
         <p className="rules-aside">
-          Hero Powers are chosen from the <b>Hero Powers</b> menu. Conquer the first ten collection universes to unlock them one at a time,
+          Hero Powers are chosen from the <b>Hero Powers</b> menu. Conquer any collection universe to unlock them one at a time,
           in the order shown there. A selected power costs 2 mana and works once per turn.
         </p>
       </section>
@@ -799,7 +796,7 @@ function HowToPlayContent() {
       <section className="rules-chapter">
         <h4><span className="rules-step-no">9</span> Shortcuts</h4>
         <p><b>Space</b> or <b>Enter</b> end turn · <b>Esc</b> clear your selection.</p>
-        <p>Phone duels use landscape. Tap to play or attack. Hold a card for one second to read it; swipe to scroll your hand.</p>
+        <p>Phone duels use landscape. Cards show their rules directly. Tap to play or attack; swipe to scroll your hand.</p>
       </section>
     </div>
   );

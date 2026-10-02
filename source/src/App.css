@@ -3327,109 +3327,8 @@ button:disabled {
     linear-gradient(145deg, #211710, #070606 72%);
 }
 
-/* ============================================================================
-   SIZE TIERS — the thing a baked image could never do.
-   Under 200px the card is a token you glance at, not a card you read: the text
-   would be 4px tall and is noise, so the art takes the space instead and the
-   name and stats grow into something legible. Hover it and the full card below
-   200px-and-up rules apply, text and all.
-   ========================================================================= */
-@container cardface (max-width: 199px) {
-  .cf-desc,
-  .cf-flavor,
-  .cf-origin,
-  .cf-rail {
-    display: none;
-  }
+/* Cards retain their complete printed face at every size. */
 
-  /* art runs from the banner down to just above the gems */
-  .cf-art {
-    height: auto;
-    bottom: calc(96 * var(--u));
-  }
-
-  /* its own fit variable: the compact gems are bigger, so the name has less
-     room before it would slide under the mana number */
-  .cf-name {
-    font-size: calc(min(72, var(--cf-namefitc)) * var(--u));
-  }
-
-  /* THE GEMS ARE THE CARD AT THIS SIZE.
-     Under 200px the description, flavour and rails are already hidden — what is
-     left is a picture, a name and three numbers, and those three numbers are
-     the only thing you actually play off. They were 100-104 design units, which
-     is 16px on a 118px hand card with a 9px digit inside it: present, and
-     unreadable. A board minion is a token you glance at, so the numbers have to
-     survive a glance.
-
-     Sizes are capped by geometry, not by taste:
-       mana  240u — top-right corner; any wider and it eats the name banner
-       atk   250u + hp 240u — 490 of 750u across the bottom, leaving a 250u gap
-                              between them, so the two never touch
-     The mana growth is why NAME_BOX_COMPACT dropped 520 -> 470 in App.tsx: that
-     constant is the width `fitOneLine` is allowed to use, and without moving it
-     a long name slides under the cost number. Change one, change the other. */
-  .cf-mana {
-    width: calc(240 * var(--u));
-    height: calc(240 * var(--u));
-    font-size: calc(132 * var(--u));
-  }
-
-  .cf-atk {
-    width: calc(250 * var(--u));
-    height: calc(250 * var(--u));
-    font-size: calc(128 * var(--u));
-    /* the blade's guard sits high, so the digit has to be pushed below it —
-       scaled with the gem, or the number floats above the blade at this size */
-    padding-top: calc(40 * var(--u));
-  }
-
-  .cf-hp {
-    width: calc(240 * var(--u));
-    height: calc(240 * var(--u));
-    font-size: calc(128 * var(--u));
-    padding-bottom: calc(24 * var(--u));
-  }
-
-  /* THE NAME HAS TO GET OUT OF THE CRYSTAL'S WAY, and NAME_BOX_COMPACT alone
-     cannot do it. That constant caps how WIDE the name may be; it does not move
-     where the name sits, and the name is centred in the banner. At a 240u
-     crystal the two genuinely overlap: a full-width name spans 140u-610u and the
-     crystal starts at 508u, so the longest names in the roster — "Giorno - Gold
-     Experience Requiem", "Rennala Queen of the Full Moon" — slid straight under
-     the cost number. The padding is asymmetric so the centred item's TEXT sits
-     off-centre, clear of the corner the crystal owns. */
-  .cf-name {
-    padding-right: calc(250 * var(--u));
-  }
-
-  /* ...and in hand the crystal is on the LEFT (see .hand-card .cf-mana), so the
-     reserve has to flip with it. */
-  .hand-card .cf-name,
-  .drag-card .cf-name,
-  .prompt-hand-card .cf-name {
-    padding-right: calc(8 * var(--u));
-    padding-left: calc(250 * var(--u));
-  }
-}
-
-/* ============================================================================
-   A MINION ON THE BOARD IS THE PRINTED CARD, NOT A TOKEN (owner ruling)
-
-   The compact tier above was built on "a board minion is a token you glance at":
-   hide the text, grow the art. It is prettier and it is unusable — with three or
-   more minions in play you cannot tell what any of them DO without hovering each
-   one in turn, and that is a mouse trip per minion, every turn.
-
-   So the board opts back out of the compact tier entirely. Scoped on `.on-board`
-   rather than on a size, deliberately: the board card sits within a few pixels of
-   the 200px container breakpoint, so keying this on width would make the whole
-   layout flip between two looks depending on the window height. A class cannot
-   flip-flop.
-
-   Hand cards opt back into the full printed face below. They are small, but the
-   player can see what each card is without hovering it first.
-   ============================================================================ */
 
 /* HAND CARDS ARE FULL FACES, even though their width keeps them under the compact
    container breakpoint. The fan stays narrow; the card's own design stays whole.
@@ -3560,14 +3459,7 @@ button:disabled {
   font-size: calc(min(64, var(--cf-efffitb)) * var(--u));
 }
 
-/* The origin line is attribution, not something you play off, and at board size
-   it computes to four or five pixels — a smudge rather than a word. Hidden by
-   SIZE rather than by `.on-board`, so the 300px hover preview keeps it, where it
-   is readable and belongs.
-   The 280px threshold is NOT the 199px one the compact tier uses: board slots
-   went to 224px, which sails past 199 and would have quietly switched this line
-   back on at four pixels tall. Anything keyed to the old breakpoint has to be
-   re-checked whenever the slot cap moves. */
+/* Keep this card layout consistent at its intended viewing size. */
 @container cardface (max-width: 280px) {
   .card-face.on-board .cf-origin {
     display: none;
@@ -4318,12 +4210,7 @@ button:disabled {
   color: var(--muted);
 }
 
-/* The MVP block: the winner's highest-damage card, printed as a real card.
-
-   Sized off the 200px floor in CardFace and then some — under that width the
-   face silently drops its rules text, which would turn the one thing this
-   screen is FOR into a picture. The frame keeps its own 3:4.2 proportion, so
-   only the width is set here. */
+/* Preserve the complete printed card, including its rules. */
 .result-mvp {
   display: grid;
   justify-items: center;
@@ -4989,9 +4876,7 @@ button:disabled {
   aspect-ratio: 5 / 7;
 }
 
-/* The card face's own banner, rules plaque, rails and origin are the label.
-   These overrides intentionally outrank the under-200px compact tier, which is
-   appropriate for hand tokens but would make a choice prompt art-only. */
+/* Keep this card layout consistent at its intended viewing size. */
 .prompt-card-choice .cf-desc,
 .prompt-card-choice .cf-flavor,
 .prompt-card-choice .cf-rail {
@@ -5549,13 +5434,7 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(118, 228, 237, 0.92), 0 0 24px rgba(67, 205, 189, 0.28);
 }
 
-/* NEVER let a cell fall below the card's compact-layout threshold.
-   `.card-face` switches to the board-minion layout under roughly 200px and DROPS
-   THE RULES TEXT — correct for a minion on a crowded board, and the exact
-   opposite of what a gallery is for. Two 150px columns on a phone produced rows
-   of cards with no text at all and stat gems swollen over the art. One wide
-   column keeps every card fully readable, which is worth more here than fitting
-   two per row. */
+/* Preserve the complete printed card, including its rules. */
 @media (max-width: 620px) {
   .gallery-grid {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -6322,20 +6201,7 @@ button:disabled {
   100% { transform: translate(var(--sx), calc(var(--sy) + 90px)) scale(0.7); opacity: 0; }
 }
 
-/* The revealed cards.
-
-   206px is a FLOOR, not a taste call. `.card-face` switches to the compact
-   board-minion layout below roughly 200px and drops the rules text with it, so
-   the first build's 150px cards showed six freshly unlocked cards with no way to
-   see what any of them did — the one thing this screen exists to tell you. Ten
-   cards therefore wrap to two rows rather than shrinking to fit one.
-
-   The row is laid out at that full width and then SCALED DOWN by a transform
-   when the window is too small for it (`packLayout` in App.tsx does the sums).
-   A transform paints smaller without measuring smaller, so `.card-face` keeps
-   its 206px container and keeps printing its rules text; shrinking the cards
-   themselves would take the text away, which is the one thing this screen
-   exists to show. */
+/* Preserve the complete printed card, including its rules. */
 .pack-reveal {
   position: relative;
   z-index: 2;
@@ -7393,8 +7259,7 @@ button:disabled {
   }
 
   .result-mvp-card {
-    /* Still above the 200px floor in CardFace: under that the face silently
-       drops its rules text, and an unreadable trophy is not a trophy. */
+    /* Keep the champion card legible on shorter screens. */
     width: 208px;
   }
 }
@@ -7449,12 +7314,8 @@ button:disabled {
 .gallery-restore-dialog p { font-size: 16px; line-height: 1.5; }
 .gallery-restore-dialog > div { display: flex; gap: 10px; justify-content: flex-end; }
 .gallery-restore-dialog button { min-height: 44px; padding: 8px 12px; }
-.equipped-relic-peek { position: fixed; inset: 0; z-index: 280; display: grid; place-items: center; padding: 18px; pointer-events: none; background: #0b081259; }
-.equipped-relic-peek > section { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 20px; width: min(620px, 100%); padding: 14px; border: 1px solid #bca16d; border-radius: 14px; background: #1e1727f5; color: #f4e8cc; box-shadow: 0 20px 80px #0009; }
-.equipped-relic-card { width: min(250px, calc((100dvh - 64px) / 1.4)); }
-.equipped-relic-peek small { color: #70e5dc; }
-.equipped-relic-peek h2 { margin: 10px 0; font-size: 22px; }
-.equipped-relic-peek p { font-size: 15px; line-height: 1.5; }
+.equipped-relic-peek { position: fixed; z-index: 280; pointer-events: none; filter: drop-shadow(0 14px 24px #0009); }
+.equipped-relic-peek .card-face { width: 100%; }
 .gallery-power-shade{position:fixed;inset:0;z-index:240;display:flex;align-items:center;justify-content:flex-end;padding:18px;background:#08060d99;backdrop-filter:blur(3px)}
 .gallery-power-picker{width:min(620px,100%);max-height:calc(100dvh - 36px);overflow:auto;border:1px solid #ae9158;border-radius:14px;background:linear-gradient(130deg,#211929,#110e16);padding:18px;color:#efdbaf;box-shadow:0 20px 80px #000a;scrollbar-width:thin;scrollbar-color:#927544 #15101d}
 .gallery-power-picker>header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.gallery-power-picker h3{font:25px Georgia,serif;margin:0}.gallery-power-picker>header>button{border:1px solid #94764d66;background:#312539;color:#efdbaf;border-radius:7px;font-size:24px;padding:0 9px}.gallery-power-picker .hero-power-menu{padding:0}.gallery-power-picker .hero-power-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.gallery-power-picker .hero-power-menu-card{padding:8px;min-height:0;gap:4px;line-height:1.25}.gallery-power-picker .hero-power-menu-card strong{font-size:14px}.gallery-power-picker .hero-power-menu-intro{font-size:12px}.gallery-power-picker .hero-power-menu-card>span:not(.hero-power-menu-status){font-size:12px}

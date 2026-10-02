@@ -27,8 +27,8 @@ export function createRelicPeek<T>(show: (value: T | null) => void) {
 }
 
 export function useRelicPeek() {
-  const [relic, setRelic] = useState<RelicInstance | null>(null);
-  const controller = useMemo(() => createRelicPeek(setRelic), []);
+  const [preview, setPreview] = useState<{relic:RelicInstance;rect:{left:number;right:number;top:number;bottom:number}} | null>(null);
+  const controller = useMemo(() => createRelicPeek(setPreview), []);
   useEffect(() => {
     const up = (event: globalThis.PointerEvent) => controller.end(event);
     document.addEventListener('pointerup', up, true);
@@ -45,7 +45,10 @@ export function useRelicPeek() {
       window.removeEventListener('resize', controller.cancel);
     };
   }, [controller]);
-  return useMemo(() => ({ relic, cancel: controller.cancel,
-    start(event: PointerEvent<HTMLElement>, value: RelicInstance) { controller.start(event, value); },
-  }), [relic, controller]);
+  return useMemo(() => ({ relic:preview?.relic ?? null, rect:preview?.rect ?? null, cancel: controller.cancel,
+    start(event: PointerEvent<HTMLElement>, relic: RelicInstance) {
+      const {left,right,top,bottom}=event.currentTarget.getBoundingClientRect();
+      controller.start(event, {relic,rect:{left,right,top,bottom}});
+    },
+  }), [preview, controller]);
 }

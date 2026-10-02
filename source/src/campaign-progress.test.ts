@@ -37,6 +37,14 @@ describe("campaign progression transactions", () => {
     expect(after.selectedHeroPower).toBe("core_heal"); expect(canPlayChapter(after, 2)).toBe(true); expect(canPlayChapter(after, 3)).toBe(true);
     expect(before.completedChapters).toBe(0);
   });
+  it('unlocks powers from victories in any order, including later universes first', () => {
+    let progress=emptyProgress();
+    for (const [index,chapter] of [20,14,11,3,17,5,19,2,12,7].entries()) {
+      progress=acknowledgeRewards(finish(progress,chapter));
+      expect(botWins(progress)).toBe(index+1);
+      expect(selectHeroPower(progress,HERO_POWER_UNLOCK_ORDER[index]).selectedHeroPower).toBe(HERO_POWER_UNLOCK_ORDER[index]);
+    }
+  });
   it.each([1, "draw"] as const)("result %s gives no cards, power or chapter advance", (winner) => {
     const after = finish(emptyProgress(), 1, winner);
     expect(after.unlockedIds).toEqual(CAMPAIGN_INITIAL_COLLECTION); expect(after.pendingRewards).toEqual([]);

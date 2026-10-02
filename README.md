@@ -15,7 +15,7 @@ There is no account, download, or installation needed to play.
 <p>
   <img src="materials/screenshots/desktop-duel.png" width="900" alt="Desktop duel with two populated boards, a full hand, core health, mana and duel controls">
   <img src="materials/screenshots/desktop-collection.png" width="900" alt="Desktop card collection with filters, full card faces and a separate deck sidebar">
-  <img src="materials/screenshots/mobile-duel.png" width="600" alt="A landscape phone duel with all eight board positions visible, named champion, mana, and long-press card inspection">
+  <img src="materials/screenshots/mobile-duel.png" width="600" alt="A landscape phone duel with all eight board positions visible, printed card descriptions and End Turn beside the menu">
   <img src="materials/screenshots/mobile-collection.png" width="300" alt="Phone collection with a two-column card grid and search and filters that scroll away">
 </p>
 
@@ -80,7 +80,7 @@ There is no online multiplayer or account synchronization. The public website di
 |---|---|---|
 | Play a card | Tap the hand card, then a highlighted slot or bearer | Click the card and its destination, or drag it |
 | Attack | Tap a ready minion, then a highlighted enemy or core | Click both, or drag the attacker |
-| Read a hand or board card | Hold the card for **one second** | Hover a board minion; hover the hand to enlarge it |
+| Read a hand or board card | Read its printed rules on the card | Hover a board minion; hover the hand to enlarge it |
 | Read a character profile | Open My Deck and tap the card's name | Click its name in My Deck |
 | Inspect equipped relics | Tap the badge for a one-second preview, or hold it until finished | Hover the badge, or click and hold it |
 | End the turn | Tap **End Turn** | Click **End Turn**, or press **Space** / **Enter** |
@@ -88,12 +88,12 @@ There is no online multiplayer or account synchronization. The public website di
 | Rules, sound, and restart | Open **Menu** during the duel | Use the duel toolbar |
 | Duel history | **Menu → Duel log** | Open the **Log** drawer |
 
-Swipe the phone hand to reach later cards. Swiping cancels a long press and does not start a card drag.
-Reading a card does not play it, attack with it, or spend mana. Lifting your finger after a long press keeps the reader open.
+Swipe the phone hand to reach later cards. Swiping does not start a card drag.
+Hand, board, opening-hand, and collection cards show their printed descriptions at every size.
 Undo is a developer-only tool. Normal duels expose neither an Undo menu option nor the Z shortcut.
 Double-tap the opening ceremony to skip its animation; the opening hand is already determined.
 The title screen's **Continue duel** restores an unfinished game.
-Opening-hand choices fit the screen without scrolling. Hold an opening card for one second to inspect it before choosing replacements.
+Opening-hand choices fit the screen without scrolling and retain their printed descriptions.
 
 ## Cards and effects
 
@@ -131,7 +131,7 @@ Rewards never silently rebuild the player's deck.
 
 **Total: 30 initial cards + 187 rewards = all 217 cards.**
 
-The first ten universe clears unlock the ten player Hero Powers in order.
+Victories in any new universe unlock the next player Hero Power, until all ten powers are available. Universe order does not matter.
 Each campaign boss has its own named power. The boss portrait identifies the opponent; it does not place a free minion on the board.
 All modes retain the ordinary core health, opening hand, mana progression, and four-slot board.
 
@@ -167,7 +167,7 @@ Voice models and generation environments are not required to play.
 | [source/src/screens/](source/src/screens/) | Title, campaign, dialogue, rules, and settings |
 | [source/src/mobile.css](source/src/mobile.css) | Phone and tablet layout, loaded after desktop styles |
 | [source/src/phone-layout.ts](source/src/phone-layout.ts) | Phone detection, fullscreen request, and landscape rotation |
-| [source/src/card-long-press.ts](source/src/card-long-press.ts) | One-second card inspection with swipe cancellation and release handling |
+| [source/src/relic-peek.ts](source/src/relic-peek.ts) | Tap and hold timing for equipped relic card previews |
 | [source/src/gallery-detail.css](source/src/gallery-detail.css) | Character profiles and Star Charts |
 | [source/public/](source/public/) | Runtime artwork, fonts, and audio |
 | [source/scripts/](source/scripts/) | Validation, browser checks, production build, and publishing |
@@ -299,13 +299,13 @@ An insufficient sample is a skip, never a pass. The difficulty ladder requires a
 ### Interface, art, and audio
 
 Card faces are live DOM, not exported images. Stats and conditions come from actual game state.
-Keep mana, attack, health, name, and artwork visible at every breakpoint. Small board cards have a full-size reader opened by a one-second touch hold.
+Keep mana, attack, health, name, artwork, and printed rules visible at every breakpoint. Small cards retain the same complete card design.
 Mythic, Legendary, Epic, and Relic cards use their own animated shine. Keep the animation and palette coherent with rarity ordering in `types.ts`.
 The desktop hand enlarges as one container. Phone hands scroll without scaling or overlap.
-Long pressing a phone card opens its reader and consumes the release click. Movement, scrolling, cancellation, and rotation cancel an unfinished hold.
+Tap-and-hold inspection applies to equipped relic badges. Their card-only preview includes the printed description, without a modal backdrop or separate text.
 Equipped relic badges do not grow on hover or tap. Their card preview lasts one second after a tap, or until a held pointer is released.
 The phone collection scrolls as one surface, including its controls. Card visibility tracking follows that scrolling surface when resizing.
-Full-size card readers display current stats, conditions, granted powers, and attached relics.
+Board cards display current stats and conditions. Equipped relics expose their own complete card when inspected.
 
 Runtime card art uses WebP under `source/public/card-art/`. Use the existing art-import tools for crop and encoding.
 Gallery art is loaded near the visible area; do not decode the entire collection at title-screen startup.
