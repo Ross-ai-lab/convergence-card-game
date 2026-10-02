@@ -667,7 +667,7 @@ function HowToPlayContent() {
         <h4><span className="rules-step-no">2</span> Your deck</h4>
         <ul className="rules-list">
           <li>Each player draws from their <b>own shuffled deck of {STARTING_POOL} different cards</b>. Campaign victories expand your collection. Swap unlocked cards into your deck between duels; the deck stays at 30 cards.</li>
-          <li>You open with <b>3 cards</b>. In solo and campaign play, Player One may replace any number once. In hotseat, both players replace cards once, privately and in order. Going second in hotseat also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
+          <li>You open with <b>3 cards</b>. In solo and campaign play, Rick Gramps may replace any number once. In hotseat, both players replace cards once, privately and in order. Going second in hotseat also hands you <b>The Coin</b>, worth 1 extra mana on the turn you spend it.</li>
           <li>Your hand holds <b>10 cards</b>. A card drawn into a full hand burns and is gone.</li>
           <li>When the deck runs dry, every further draw costs you core health: <b>1, then 2, then 3</b>, and up from there.</li>
         </ul>

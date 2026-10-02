@@ -30,6 +30,7 @@ export function createCampaignDuel(options: {
   });
   const boss = options.cards.find(({ id }) => id === chapter.bossId);
   if (!boss) throw new Error(`Campaign boss is missing from the roster: ${chapter.bossId}`);
+  state.players[0].name = 'Rick Gramps';
   state.players[1].name = boss.name;
   state.players[1].health = CAMPAIGN_BOSS_HEALTH;
   return { state, chapter: chapter.chapter, difficulty };

@@ -18,6 +18,7 @@ import { LORE_DETAILS, type LoreDetail } from "./data/lore";
 import { BOT_CHEATS } from "./engine/bot";
 import { BotSearch } from "./engine/bot-search";
 import { useGalleryVisibility } from "./gallery-visibility";
+import { useProfileFit } from "./profile-fit";
 import { useFrameState } from "./frame-state";
 
 import { requestPhoneLandscape, usePhoneLayout } from './phone-layout';
@@ -453,6 +454,7 @@ const AURA_LABEL: Record<SlotAuraId, string> = {
   slot_stats_one: "1/1",
   slot_bound: "LOCKED",
 };
+const GalleryPreviewContext = createContext<Record<string,string>>({});
 const AURA_TEXT: Record<SlotAuraId, string> = {
   random_attacks: "a minion here can only attack at random",
   slot_silence: "a minion here is silenced",
@@ -564,12 +566,11 @@ function makeParticles(kind: ImpactKind | "death" | "stasis", camp?: Camp): Part
       push(Math.cos(a) * d, Math.sin(a) * d * 0.72, rand(3, 6), rand(0, 0.18), rand(0, 90), rand(0.65, 0.95));
     }
   } else {
-    // death: a controlled burst of fragments with staggered timing. The card
-    // itself supplies the break; these are the sparks and fragments around it.
-    for (let i = 0; i < 22; i++) {
+    // Small embers dissolve around the card, without oversized tumbling shards.
+    for (let i = 0; i < 16; i++) {
       const a = rand(0, Math.PI * 2);
-      const d = rand(28, 112);
-      push(Math.cos(a) * d, Math.sin(a) * d * 0.78, rand(3, 8), rand(0, 0.16), rand(-320, 320), rand(0.54, 0.86));
+      const d = rand(12, 44);
+      push(Math.cos(a) * d, Math.sin(a) * d * 0.7 - 18, rand(2, 4), rand(0.06, 0.16), rand(-35, 35), rand(0.42, 0.62));
     }
   }
   return out;
@@ -601,6 +602,10 @@ export default function App() {
     const saved = loadGame();
     if (saved?.mode.kind === "bot" && !campaignComplete(initialProgress)) return null;
     if (saved?.mode.kind === "campaign" && !canPlayChapter(initialProgress, saved.mode.chapter)) return null;
+    if (saved && saved.mode.kind !== 'hotseat') {
+      saved.game.players[0].name = 'Rick Gramps';
+      saved.events = saved.events.map(event => ({ ...event, text: event.text.replaceAll('Player One', 'Rick Gramps') }));
+    }
     return saved;
   }, [initialProgress]);
   const [game, setGame] = useState(() => {
@@ -1514,7 +1519,7 @@ export default function App() {
         sfx.play(g.motion === "stasis" ? "freeze" : g.motion === "return" ? "draw" : "death", g.delay + i * 0.07),
       );
       const ids = new Set(newGhosts.map((g) => g.id));
-      window.setTimeout(() => setGhosts((cur) => cur.filter((g) => !ids.has(g.id))), 1020);
+      window.setTimeout(() => setGhosts((cur) => cur.filter((g) => !ids.has(g.id))), 1020 + Math.max(...newGhosts.map(g => g.delay)) * 1000);
     }
     if (newImpacts.length) {
       setImpacts((cur) => [...cur, ...newImpacts]);
@@ -1730,9 +1735,11 @@ export default function App() {
       unlockedCardIds: progress.unlockedIds, cards, relics, seed, heroPower: selectedHeroPower }).state;
     const playerDeck = developer ? CAMPAIGN_STARTER_DECK : progress.playerDeck;
     const opponentDeck = next.kind === "hotseat" ? progress.hotseatDeck : randomDeck(CAMPAIGN_CARD_IDS, `${seed}:opponent`);
-    return createInitialGame(cards, seed, relics, { decks: [playerDeck, opponentDeck],
+    const state = createInitialGame(cards, seed, relics, { decks: [playerDeck, opponentDeck],
       foresightFor: foresightSeat(next), heroPowers: heroPowersForDuel(next, selectedHeroPower, seed),
       mulliganPlayers: next.kind === "hotseat" ? [0, 1] : [0], hasCoin: next.kind === "hotseat" });
+    if (next.kind !== 'hotseat') state.players[0].name = 'Rick Gramps';
+    return state;
   }
 
   function restart() {
@@ -1845,13 +1852,13 @@ export default function App() {
     // Goblins Taunt body stays on the board as the first combat lesson.
     setMode({ kind: "bot", skill: "easy" });
     const seed = createDuelSeed();
-    setGame(
-      createInitialGame(cards, seed, relics, {
+    const tutorialGame = createInitialGame(cards, seed, relics, {
         heroPowers: ["core_heal", null],
         tutorial: true,
         hasCoin: false,
-      }),
-    );
+      });
+    tutorialGame.players[0].name = 'Rick Gramps';
+    setGame(tutorialGame);
     setHistory([]);
     setSelection(null);
     clearFx();
@@ -3747,9 +3754,6 @@ function DeathBurst({ particles }: { particles: Particle[] }) {
     <span className="death-burst" aria-hidden="true">
       <span className="death-flash" />
       <span className="death-ring death-ring-one" />
-      <span className="death-ring death-ring-two" />
-      <span className="death-slice death-slice-one" />
-      <span className="death-slice death-slice-two" />
       {particles.map((p) => (
         <i
           key={p.key}
@@ -4028,6 +4032,9 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   const [powerOpen, setPowerOpen] = useState(false);
   const [mobileDeckView, setMobileDeckView] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [artPreviews, setArtPreviews] = useState<Record<string,string> | null>(null);
+  useEffect(() => { void import('./data/gallery-previews').then(module=>setArtPreviews(module.galleryPreviews)).catch(()=>setArtPreviews({})); }, []);
+  const [deckPreview, setDeckPreview] = useState<{face: CardFaceModel; rect: DOMRect} | null>(null);
   const equippedPower = heroPowerDefinition(progress.selectedHeroPower);
   const powerPicker = useRef<HTMLElement>(null);
   const restorePicker = useRef<HTMLElement>(null);
@@ -4228,7 +4235,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   const manaCurve = Array.from({length:10},(_,i)=>allEntries.filter(entry=>deckIds.has(entry.key) && entry.face.cost===i+1).length);
   const manaPeak = Math.max(1,...manaCurve);
   return (
-    <div
+    <GalleryPreviewContext.Provider value={artPreviews ?? {}}><div
       className={`screen-veil gallery-veil${selectedEntry || help ? " has-detail" : ""}`}
       onPointerDown={(event) => event.target === event.currentTarget && onClose()}
     >
@@ -4300,7 +4307,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         {help ? <UnlockHelp progress={progress} onClose={() => setHelp(false)} /> : null}
         <div className="gallery-workspace">
         <div className="screen-panel-body gallery-body" ref={bodyRef}>
-          {sorted.length ? (
+          {!artPreviews ? <p role="status">Opening collection…</p> : sorted.length ? (
             <div className="gallery-grid">
               {sorted.map((entry) => (
                 <div className="gallery-deck-card" key={entry.key} data-card-id={entry.key}>
@@ -4324,7 +4331,6 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
                           : "unseen"
                   }
                 />
-                <button type="button" className="gallery-compact-label" aria-label={`Open Star Chart for ${entry.face.name}`} onClick={() => openEntry(entry.key)}>{entry.face.name}</button>
                 </div>
               ))}
             </div>
@@ -4335,9 +4341,11 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         <aside className="gallery-deck" aria-label={seat === 1 ? "Player Two deck" : "Current deck"}>
           <header className="gallery-deck-heading"><h3>{seat === 1 ? "Player Two" : "My Deck"}</h3>
             <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
-          <div className="gallery-deck-list">{allEntries.filter((entry) => deckIds.has(entry.key))
+          <div className="gallery-deck-list" onScroll={() => setDeckPreview(null)}>{allEntries.filter((entry) => deckIds.has(entry.key))
             .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
-            .map((entry) => <div className="gallery-deck-row" key={entry.key} data-card-id={entry.key}>
+            .map((entry) => <div className="gallery-deck-row" key={entry.key} data-card-id={entry.key}
+              onPointerEnter={event => { if (event.pointerType === 'mouse' && matchMedia('(hover: hover) and (pointer: fine)').matches) setDeckPreview({face:entry.face,rect:event.currentTarget.getBoundingClientRect()}); }}
+              onPointerLeave={() => setDeckPreview(null)}>
               <img src={entry.card.art} alt="" loading="lazy" />
               <button className="gallery-deck-inspect" onClick={() => { setSelectedEntryKey(entry.key); }} aria-label={`Inspect ${entry.face.name}`}>
                 <span className="gallery-deck-mana">{entry.face.cost}</span><span className="gallery-deck-name">{entry.face.name}</span>
@@ -4362,6 +4370,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         </div>
         </div>
       </section>
+      {deckPreview && !selectedEntry && !powerOpen && !restoreOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
       {restoreOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)setRestoreOpen(false);}}>
         <section ref={restorePicker} className="gallery-restore-dialog" role="dialog" aria-modal="true" aria-label="Restore starter deck?">
           <h3>Restore starter deck?</h3><p>Are you sure you want to revert your deck back to a starter one?</p>
@@ -4388,7 +4397,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
           }}
         />
       ) : null}
-    </div>
+    </div></GalleryPreviewContext.Provider>
   );
 }
 
@@ -4537,6 +4546,7 @@ function GalleryDetailModal({
   const profile = locked ? null : loreFor(entry.card);
   const accent = campAccent(entry.face.camp);
   const isRelic = isRelicCard(entry.card);
+  const {panel, fit} = useProfileFit(entry.key);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -4558,12 +4568,14 @@ function GalleryDetailModal({
 
   return (
     <div className="gallery-detail-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="gallery-detail-fit" style={fit.width ? {width:fit.width*fit.scale,height:fit.height*fit.scale} : undefined}>
       <section
+        ref={panel}
         className={`gallery-detail-panel ${isRelic ? "is-relic" : "is-minion"}`}
         role="dialog"
         aria-modal="true"
         aria-label={`${entry.face.name} Star Chart`}
-        style={{ "--accent": accent } as CSSProperties}
+        style={{ "--accent": accent, transform:`scale(${fit.scale})` } as CSSProperties}
       >
         <button type="button" className="screen-x gallery-detail-close" onClick={onClose} aria-label="Close Star Chart">×</button>
 
@@ -4640,6 +4652,7 @@ function GalleryDetailModal({
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 }
@@ -4662,7 +4675,7 @@ function DetailBox({ title, tone, children }: { title: string; tone?: string; ch
   );
 }
 
-/** A stable, focusable grid shell with a full face only near the viewport. */
+/** Stable faces retain their artwork while offscreen rendering stays deferred. */
 const GalleryCell = memo(function GalleryCell({
   entryKey,
   face,
@@ -4685,14 +4698,34 @@ const GalleryCell = memo(function GalleryCell({
   onAdd: () => void;
 }) {
   const { ref, near, onFocus } = useGalleryVisibility();
+  const hold = useRef<{timer:number; x:number; y:number; id:number} | null>(null);
+  const heldClick = useRef(false);
+  const cancelHold = useCallback(() => { if (hold.current) window.clearTimeout(hold.current.timer); hold.current = null; }, []);
+  useEffect(() => {
+    document.addEventListener('scroll', cancelHold, true);
+    return () => { cancelHold(); document.removeEventListener('scroll', cancelHold, true); };
+  }, [cancelHold]);
   return (
     <div
       ref={ref}
       onFocus={onFocus}
-      className={`gallery-cell mark-${mark}${locked ? " is-locked" : ""}${inDeck ? " is-in-deck" : ""}`}
+      className={`gallery-cell mark-${mark}${near ? " is-near" : ""}${locked ? " is-locked" : ""}${inDeck ? " is-in-deck" : ""}`}
       data-mark={mark}
+      onContextMenu={event => event.preventDefault()}
+      onPointerDown={event => {
+        if (event.pointerType === 'mouse') return;
+        cancelHold(); heldClick.current = false;
+        hold.current = {id:event.pointerId,x:event.clientX,y:event.clientY,timer:window.setTimeout(() => {
+          heldClick.current = true; cancelHold(); onOpen(entryKey);
+        },1000)};
+      }}
+      onPointerMove={event => { const pending=hold.current; if (pending && Math.hypot(event.clientX-pending.x,event.clientY-pending.y)>10) {heldClick.current=true;cancelHold();} }}
+      onPointerUp={cancelHold}
+      onPointerCancel={cancelHold}
+      onClickCapture={event => { if (heldClick.current) {event.preventDefault();event.stopPropagation();heldClick.current=false;} }}
     >
-      {near ? locked ? <SealedFace card={face} /> : <CardFace card={face} /> : null}
+      {locked ? <SealedFace card={face} lazyArt /> : <CardFace card={face} lazyArt />}
+      {inDeck && <span className="gallery-deck-badge" aria-hidden="true">✓ In deck</span>}
       <button type="button" className="gallery-card-add" aria-label={`${inDeck ? "Remove" : "Add"} ${face.name}`} aria-pressed={inDeck}
         disabled={!canAdd} onClick={onAdd} />
       <button type="button" className="gallery-card-name" aria-label={`Open Star Chart for ${face.name}`}
@@ -5345,6 +5378,8 @@ function MinionFace({
 }
 
 function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boolean }) {
+  const previews=useContext(GalleryPreviewContext);
+  const preview=previews[card.art.split('/').pop()?.replace('.webp','') ?? ''];
   // NEVER loading="lazy" here. Cards mount and unmount constantly as they move
   // between hand, board and preview, and a lazy <img> that is re-created during
   // that churn frequently never fires its load at all — it stays
@@ -5359,6 +5394,7 @@ function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boole
   if (!card.art) return <div className="cf-art empty-art" aria-hidden="true" />;
   return (
     <div
+      style={preview ? {backgroundImage:`url("${preview}")`,backgroundSize:'cover',backgroundPosition:`center ${['Yujiro','Conquest','Stand Arrow'].includes(card.name)?'0':'26'}%`} : undefined}
       className={`cf-art ${
         card.name === "Yujiro"
           ? "cf-art-yujiro"
@@ -5369,7 +5405,9 @@ function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boole
               : ""
       }`}
     >
-      <img src={card.art} alt="" draggable={false} loading={lazy ? "lazy" : undefined} decoding={lazy ? "async" : undefined} />
+      <img src={card.art} alt="" draggable={false} loading={lazy ? "lazy" : undefined} decoding={lazy ? "async" : undefined}
+        onError={preview ? event=>{event.currentTarget.style.opacity='0';} : undefined}
+        onLoad={preview ? event=>{event.currentTarget.style.opacity='';} : undefined} />
     </div>
   );
 }
@@ -5812,14 +5850,18 @@ const EventLog = memo(function EventLog({ events }: { events: GameEvent[] }) {
   );
 });
 
-function RelicCardPeek({relic,rect}: {relic:RelicInstance;rect:{left:number;right:number;top:number;bottom:number}}) {
+function CardPeek({face,rect,label}: {face:CardFaceModel;rect:{left:number;right:number;top:number;bottom:number};label:string}) {
   const width=Math.min(300,(innerHeight-16)/1.4,innerWidth-16),height=width*1.4;
   const beside=rect.right+12;
   const left=Math.max(8,Math.min(beside+width<=innerWidth-8?beside:rect.left-width-12,innerWidth-width-8));
   const top=Math.max(8,Math.min((rect.top+rect.bottom-height)/2,innerHeight-height-8));
-  return <aside className="equipped-relic-peek" role="status" aria-label={`Equipped relic: ${relic.name}`} style={{left,top,width}}>
-    <CardFace card={relicFace(relic)} />
+  return <aside className="equipped-relic-peek" role="status" aria-label={label} style={{left,top,width}}>
+    <CardFace card={face} />
   </aside>;
+}
+
+function RelicCardPeek({relic,rect}: {relic:RelicInstance;rect:{left:number;right:number;top:number;bottom:number}}) {
+  return <CardPeek face={relicFace(relic)} rect={rect} label={`Equipped relic: ${relic.name}`} />;
 }
 
 function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
@@ -5881,11 +5923,7 @@ function MulliganOverlay({
   return (
     <div className="overlay">
       <section className={locked ? "draw-panel mulligan-panel locked" : "draw-panel mulligan-panel"}>
-        <span>{game.players[mulligan.player].name}'s Opening Hand</span>
         <h2>{locked ? "Waiting for the opening hand…" : "Choose cards to replace"}</h2>
-        <p className="mulligan-intro">
-          Select any number of cards to mulligan. Replacements come from your deck, then your old cards go to the bottom.
-        </p>
         <div className="mulligan-row">
           {game.players[mulligan.player].hand.map((cardId, handIndex) => {
             const selected = Boolean(mulligan.selected[handIndex]);
@@ -5908,7 +5946,6 @@ function MulliganOverlay({
           })}
         </div>
         <div className="choice-detail">
-          <span>{selectedCount ? `${selectedCount} selected for replacement` : "Keeping all three cards"}</span>
           <button
             type="button"
             className="primary"

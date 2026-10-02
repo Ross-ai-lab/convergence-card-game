@@ -3,10 +3,18 @@ import { useEffect, useRef, useState } from 'react';
 type Watcher = { observer: IntersectionObserver; listeners: Map<Element, (near: boolean) => void> };
 const watchers = new WeakMap<Element, Watcher>();
 
-/** Keep lightweight, focusable grid cells; only nearby cells need full card faces. */
+/** Load nearby artwork eagerly without ever discarding an already decoded image. */
 export function useGalleryVisibility() {
   const ref = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(false);
+  useEffect(() => {
+    if (!near) return;
+    // Promote once. Changing decoding/loading back during a pending decode
+    // can abort WebKit's image request even though the source URL is unchanged.
+    for (const image of ref.current?.querySelectorAll('img') ?? []) {
+      if (image.loading === 'lazy' && !image.complete) image.loading = 'eager';
+    }
+  }, [near]);
   useEffect(() => {
     const element = ref.current;
     const body = element?.closest('.gallery-body');

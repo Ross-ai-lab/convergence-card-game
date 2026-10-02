@@ -910,3 +910,44 @@
     font-size: 1rem;
   }
 }
+
+/* The fit wrapper occupies the scaled footprint, so centering never clips either end. */
+.gallery-detail-fit { position: relative; }
+.gallery-detail-fit > .gallery-detail-panel { width: min(1320px, calc(100dvw - 36px)); max-height: none; transform-origin: top left; animation: none; }
+@media (max-width: 1000px) {
+  .gallery-detail-fit > .gallery-detail-panel { width: calc(100dvw - 16px); }
+}
+.gallery-detail-fit .gallery-detail-body { overflow: visible; flex-shrink: 0; }
+.gallery-detail-fit .gdx-head { flex-shrink: 0; padding-right: 64px; }
+@media (max-width: 560px) and (max-height: 680px) {
+  .gallery-detail-panel { --profile-card-width: min(94px, 27vw); }
+  .gallery-detail-fit .star-chart { width: min(140px, 100%); }
+  .gallery-detail-fit .gdx-head { gap: 3px; padding-block: 5px; }
+  .gallery-detail-fit .gdx-epithet { font-size: .72rem; }
+  .gallery-detail-fit .gdx-rank { font-size: .6rem; margin: 0; }
+  .gallery-detail-fit .gallery-detail-body { padding-block: 6px; gap: 5px 8px; }
+  .gallery-detail-fit .gallery-detail-box { padding: 4px 6px 4px 8px; }
+  .gallery-detail-fit .gallery-detail-chart-caption { font-size: .65rem; }
+  .gallery-detail-fit .gallery-detail-lore blockquote { margin-top: 4px; }
+}
+@media (min-width: 561px) and (max-width: 1180px) and (max-height: 600px) {
+  .gallery-detail-fit .gallery-detail-body { display: flex; gap: 12px; padding: 8px 12px; }
+  .gallery-detail-fit .gdx-rail { display: flex; width: min(160px, 35dvh); gap: 5px; }
+  .gallery-detail-fit .gallery-detail-card { width: 100%; }
+  .gallery-detail-fit .gdx-main { display: flex; gap: 6px; }
+  .gallery-detail-fit .gdx-top { display: flex; gap: 8px; }
+  .gallery-detail-fit .gdx-scope { flex: 0 0 110px; }
+  .gallery-detail-fit .star-chart { width: 110px; }
+  .gallery-detail-fit .gallery-detail-lore p,
+  .gallery-detail-fit .gallery-detail-lore blockquote,
+  .gallery-detail-fit .gallery-detail-box ul,
+  .gallery-detail-fit .gallery-detail-box-copy,
+  .gallery-detail-fit .detail-rival { font-size: 11px; line-height: 1.22; }
+  .gallery-detail-fit .gallery-detail-box h3 { font-size: 11px; margin-bottom: 3px; }
+  .gallery-detail-fit .gallery-detail-box { padding: 4px 7px; }
+  .gallery-detail-fit .detail-rival i { font-size: 10px; }
+  .gallery-detail-fit .gallery-detail-chart-caption { font-size: 9px; }
+  .gallery-detail-fit .gdx-rank { font-size: 10px; }
+  .gallery-detail-fit .gdx-head { padding-block: 7px; }
+  .gallery-detail-fit .gdx-title h2 { font-size: 20px; }
+}

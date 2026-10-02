@@ -1011,18 +1011,18 @@ button:disabled {
 
 .ghost-wrap {
   position: absolute;
-  inset: 4px 2px;
+  inset: 0;
   z-index: 3;
   display: grid;
   pointer-events: none;
 }
 
 .ghost-wrap.dying {
-  animation: ghost-out 0.9s cubic-bezier(0.22, 0.78, 0.25, 1) var(--fd, 0s) both;
+  isolation: isolate;
 }
 
 .ghost-wrap.dying .card-face {
-  animation: death-card-break 0.9s cubic-bezier(0.2, 0.72, 0.24, 1) var(--fd, 0s) both;
+  animation: death-dissolve .64s cubic-bezier(.22,.65,.3,1) var(--fd, 0s) both;
   transform-origin: 50% 52%;
 }
 
@@ -1129,51 +1129,11 @@ button:disabled {
   }
 }
 
-@keyframes ghost-out {
-  0% {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-  /* Impact: a short, readable recoil instead of a white flash. */
-  10% {
-    opacity: 1;
-    transform: scale(1.045) rotate(-1.2deg);
-    filter: brightness(1.5) saturate(1.18) contrast(1.24) drop-shadow(0 0 12px rgba(255, 169, 84, 0.82));
-  }
-  26% {
-    opacity: 1;
-    transform: scale(1.005) rotate(0.7deg);
-    filter: brightness(1.08) saturate(0.9) contrast(1.18) drop-shadow(0 0 18px rgba(201, 91, 43, 0.72));
-  }
-  /* The broken card is carried down and away from the board. */
-  58% {
-    opacity: 0.8;
-    transform: translateY(8px) scale(0.91) rotate(-4deg) skewX(5deg);
-    filter: brightness(0.78) saturate(0.62) contrast(1.18) drop-shadow(0 0 13px rgba(102, 36, 25, 0.66));
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(62px) scale(0.58) rotate(-13deg) skewX(12deg);
-    filter: brightness(0.28) saturate(0.25) contrast(1.28) blur(3px);
-  }
-}
-
-@keyframes death-card-break {
-  0%, 18% {
-    clip-path: inset(0 round 10px);
-  }
-  35% {
-    clip-path: polygon(0 0, 100% 0, 100% 44%, 73% 47%, 100% 53%, 100% 100%, 0 100%, 0 58%, 26% 53%, 0 47%);
-  }
-  62% {
-    clip-path: polygon(0 0, 100% 0, 84% 42%, 100% 100%, 0 100%, 17% 55%);
-    filter: saturate(0.62) contrast(1.18);
-  }
-  100% {
-    clip-path: inset(34% 41% round 16px);
-    filter: saturate(0.2) contrast(1.3) blur(1.6px);
-  }
+@keyframes death-dissolve {
+  0%, 8% { opacity: 1; transform: none; filter: none; }
+  20% { opacity: 1; transform: scale(1.02); filter: brightness(1.3) drop-shadow(0 0 8px #efb36988); }
+  48% { opacity: .72; transform: translateY(3px) scale(.96); filter: saturate(.55) brightness(.85); }
+  100% { opacity: 0; transform: translateY(12px) scale(.86); filter: saturate(0) brightness(.65) blur(2px); }
 }
 
 @keyframes return-to-hand {
@@ -1210,14 +1170,7 @@ button:disabled {
   pointer-events: none;
 }
 
-.ghost-wrap.dying::after {
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba(255, 207, 128, 0.9);
-  border-radius: 9px;
-  box-shadow: 0 0 26px rgba(255, 134, 60, 0.62), inset 0 0 13px rgba(255, 224, 161, 0.44);
-  animation: death-shock 0.72s cubic-bezier(0.16, 0.8, 0.24, 1) var(--fd, 0s) both;
-}
+.ghost-wrap.dying::after { content: none; }
 
 @keyframes death-shock {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
@@ -1419,30 +1372,17 @@ button:disabled {
 }
 
 .p-death {
-  border-radius: 1px;
+  border-radius: 50%;
   background: linear-gradient(150deg, #fff3d4, #e0a24a 55%, #7d2f18);
   box-shadow: 0 0 7px rgba(255, 198, 120, 0.9), 0 0 2px rgba(0, 0, 0, 0.6);
-  animation-name: shard-fly;
+  animation-name: ember-drift;
   animation-timing-function: cubic-bezier(0.15, 0.85, 0.45, 1);
 }
 
-/* Shards blast out, then gravity takes them — the arc is what makes it read as
-   debris instead of a dissolve. */
-@keyframes shard-fly {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.15) rotate(0deg);
-  }
-  55% {
-    opacity: 1;
-    transform: translate(calc(-50% + var(--dx, 0px) * 0.85), calc(-50% + var(--dy, 0px) * 0.7 - 14px))
-      scale(0.9) rotate(calc(var(--pr, 0deg) * 0.6));
-  }
-  100% {
-    opacity: 0;
-    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px) + 42px))
-      scale(0.45) rotate(var(--pr, 0deg));
-  }
+@keyframes ember-drift {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
+  35% { opacity: 1; transform: translate(calc(-50% + var(--dx, 0px) * .4), calc(-50% + var(--dy, 0px) * .4)) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(0); }
 }
 
 .death-burst {
@@ -1456,9 +1396,7 @@ button:disabled {
 }
 
 .death-flash,
-.death-ring,
-.death-slice {
-  --slice-rotation: -24deg;
+.death-ring {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -1485,31 +1423,6 @@ button:disabled {
   animation: death-ring 0.72s cubic-bezier(0.12, 0.8, 0.22, 1) var(--fd, 0s) both;
 }
 
-.death-ring-two {
-  width: 22px;
-  height: 22px;
-  border-color: rgba(255, 241, 194, 0.7);
-  animation-delay: calc(var(--fd, 0s) + 0.1s);
-  animation-duration: 0.58s;
-}
-
-.death-slice {
-  width: 94px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 219, 152, 0.86), transparent);
-  box-shadow: 0 0 7px rgba(255, 134, 60, 0.66);
-  transform: translate(-50%, -50%) rotate(-24deg) scaleX(0.2);
-  animation: death-slice 0.58s cubic-bezier(0.18, 0.82, 0.22, 1) var(--fd, 0s) both;
-}
-
-.death-slice-two {
-  --slice-rotation: 28deg;
-  width: 72px;
-  opacity: 0.7;
-  transform: translate(-50%, -50%) rotate(28deg) scaleX(0.2);
-  animation-delay: calc(var(--fd, 0s) + 0.04s);
-}
-
 @keyframes death-flash {
   0% { opacity: 0; transform: translate(-50%, -50%) scaleX(0.2); }
   22% { opacity: 1; transform: translate(-50%, -50%) scaleX(1); }
@@ -1519,13 +1432,7 @@ button:disabled {
 @keyframes death-ring {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(0deg); }
   18% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(4.5) rotate(28deg); border-width: 0.5px; }
-}
-
-@keyframes death-slice {
-  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--slice-rotation, -24deg)) scaleX(0.15); }
-  24% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--slice-rotation, -24deg)) scaleX(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.4); border-width: 0.5px; }
 }
 
 @keyframes flash-pop {
@@ -4072,24 +3979,29 @@ button:disabled {
 }
 
 .mulligan-panel {
-  width: min(920px, 100%);
+  width: min(1100px, 100%);
+  height: min(760px, calc(100dvh - 36px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  overflow: clip;
 }
-
-.mulligan-intro {
-  max-width: 620px;
-  margin: -8px auto 18px;
-  color: var(--muted);
-  line-height: 1.4;
-}
+.mulligan-panel h2 { margin: 0; }
+.mulligan-panel .choice-detail { justify-content: center; margin: 0; }
 
 .mulligan-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(170px, 240px));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   justify-content: center;
+  min-height: 0;
+  container-type: size;
+  align-items: center;
 }
 
 .mulligan-card {
+  width: min(100%, calc((100cqh - 8px) / 1.4));
+  justify-self: center;
   position: relative;
   min-width: 0;
   display: grid;
@@ -5233,7 +5145,6 @@ button:disabled {
 }
 .screen-veil.gallery-veil { padding: 0; }
 .gallery-mobile-scroll { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
-.gallery-compact-label { display: none; }
 
 .gallery-panel .screen-panel-top {
   gap: 12px;
@@ -5280,10 +5191,10 @@ button:disabled {
 .gallery-deck-card { min-width: 0; }
 .gallery-cell .gallery-card-add, .gallery-cell .gallery-card-name { position: absolute; margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; border-radius: 0; opacity: 1; transform: none; transition: none; }
 .gallery-cell .gallery-card-add { inset: 0; z-index: 4; width: 100%; height: 100%; cursor: var(--convergence-cursor); border-radius: 12px; }
-.gallery-cell .gallery-card-add:disabled { cursor: var(--convergence-cursor); }
+.gallery-cell .gallery-card-add:disabled { cursor: var(--convergence-cursor); pointer-events: none; }
 .gallery-cell .gallery-card-name { left: 5%; top: 0; width: 82%; height: 6%; z-index: 5; cursor: var(--convergence-cursor); }
 .gallery-cell .gallery-card-add:not(:disabled):hover { box-shadow: inset 0 0 0 2px #e7c67c; }
-.gallery-cell.is-in-deck .gallery-card-add, .gallery-cell.is-in-deck .gallery-card-add:hover { box-shadow: inset 0 0 0 3px #55dc83; }
+.gallery-cell.is-in-deck .gallery-card-add, .gallery-cell.is-in-deck .gallery-card-add:hover { box-shadow: inset 0 0 0 2px #e7c67c; }
 .gallery-cell .gallery-card-name:hover { background: #ffdc7b22; }
 .gallery-cell .gallery-card-add:focus-visible, .gallery-cell .gallery-card-name:focus-visible { outline: 2px solid #ffe5a2; outline-offset: -3px; }
 .gallery-deck { min-height: 0; display: flex; flex-direction: column; background: linear-gradient(160deg, #261e18, #120f12 70%); border-left: 1px solid #74603b; padding: 14px 10px 10px; }
@@ -7322,3 +7233,9 @@ button:disabled {
 @media(max-width:700px){.gallery-deck{max-height:270px}.gallery-power-picker{padding:12px}.gallery-power-shade{padding:10px}.gallery-power-picker .hero-power-menu-grid{grid-template-columns:1fr}.gallery-power-picker .hero-power-menu-card{padding:10px}}
 
 .gallery-power-picker .hero-power-menu-card strong{line-height:18px}.gallery-power-picker .hero-power-menu-card>span:not(.hero-power-menu-status){line-height:15px}.gallery-power-picker .hero-power-menu-card small{font-size:9px;line-height:12px}.gallery-power-picker .hero-power-menu-status{font-size:8px;line-height:11px;padding:2px 6px}
+
+/* Stable faces retain decoded artwork; offscreen layout and paint remain deferred. */
+.gallery-cell { -webkit-touch-callout: none; user-select: none; }
+.gallery-cell:not(.is-near) .cf-shine > span { animation-play-state: paused; }
+.gallery-deck-badge { position: absolute; z-index: 6; left: 6%; top: 8%; padding: 3px 8px; border: 1px solid #ffe2a1; border-radius: 5px; background: #18342ff5; color: #fff0c8; font-size: clamp(10px, 1.1vw, 16px); font-weight: 900; box-shadow: 0 2px 8px #0009; pointer-events: none; }
+.gallery-cell.is-in-deck .cf-art { filter: brightness(.76) saturate(.7); }

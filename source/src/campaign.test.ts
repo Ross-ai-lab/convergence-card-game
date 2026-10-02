@@ -141,6 +141,7 @@ describe("campaign definitions", () => {
     });
     expect(CAMPAIGN_BOSS_HEALTH).toBe(50);
     expect(duel.state.players[0].health).toBe(50);
+    expect(duel.state.players[0].name).toBe('Rick Gramps');
     expect(duel.state.players[1].health).toBe(CAMPAIGN_BOSS_HEALTH);
   });
 

@@ -1,6 +1,8 @@
 import { launch } from './browser.mjs';
 import { writeFile, mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import { checkDeckHover, checkFastGalleryScroll, checkGalleryHold, checkPreviewFallback } from './gallery-interactions.mjs';
+import { checkDeathMotion } from './death-motion.mjs';
 
 const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -19,6 +21,7 @@ async function sample(name) {
     elements: document.querySelectorAll('*').length,
     cells: document.querySelectorAll('.gallery-cell').length,
     faces: document.querySelectorAll('.gallery-cell .card-face').length,
+    near: document.querySelectorAll('.gallery-cell.is-near').length,
     runningAnimations: document.getAnimations().filter(a => a.playState === 'running').length,
     scrollHeight: document.querySelector('.gallery-body')?.scrollHeight,
   }));
@@ -36,7 +39,11 @@ try {
   await page.locator('.gallery-trigger').first().click();
   await page.locator('.gallery-cell').first().waitFor();
   await sample('gallery');
-  assert(results.gallery.faces > 0 && results.gallery.faces < results.gallery.cells, 'Only nearby gallery faces should mount');
+  await checkDeckHover(page);
+  await checkFastGalleryScroll(page);
+  assert.equal(results.gallery.faces, results.gallery.cells, 'Every shell retains its full face');
+  assert(results.gallery.near > 0 && results.gallery.near < results.gallery.cells, 'Only nearby artwork is eager');
+  assert(await page.locator('.gallery-cell').evaluateAll(cells => cells.every(cell => getComputedStyle(cell).contentVisibility === 'auto')), 'Offscreen rendering is not deferred');
   const backdropRunning = await page.evaluate(() => document.getAnimations().filter(a =>
     a.playState === 'running' && a.effect?.target?.closest?.('.title-screen')).length);
   assert.equal(backdropRunning, 0, 'Menu animations must pause behind the gallery');
@@ -44,19 +51,24 @@ try {
   await sample('locked');
   await page.evaluate(() => { const body = document.querySelector('.gallery-body'); body.scrollTop = body.scrollHeight; });
   await sample('bottom');
-  assert.equal(results.bottom.scrollHeight, results.locked.scrollHeight, 'Unmounting faces must preserve scroll geometry');
-  assert(results.bottom.faces > 0 && results.bottom.faces < 40, 'Bottom rows must mount without retaining the full roster');
+  await checkFastGalleryScroll(page);
+  assert.equal(results.bottom.scrollHeight, results.locked.scrollHeight, 'Scrolling must preserve gallery geometry');
+  assert(results.bottom.near > 0 && results.bottom.near < 40, 'Eager image range must remain bounded');
   await page.locator('.gallery-card-name').last().click();
   await page.locator('.gallery-detail-panel').waitFor();
   await page.getByLabel('Close Star Chart').click();
+  const lockedName=(await page.locator('.gallery-card-name').first().getAttribute('aria-label')).replace('Open Star Chart for ','');
+  await page.setViewportSize({width:390,height:844});
+  await checkGalleryHold(page,{cardName:lockedName,adding:true});
+  await page.setViewportSize({width:1440,height:900});
   await page.getByLabel('Search the gallery').fill('no-such-card-zzzz');
   await page.locator('.gallery-empty').waitFor();
   await page.getByLabel('Search the gallery').fill('');
   await page.waitForFunction(() => document.querySelector('.gallery-body')?.scrollTop === 0);
   await page.locator('.gallery-cell .card-face').first().waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('.gallery-compact-label').last().press('End');
-  await page.locator('.gallery-compact-label').last().click();
+  await page.getByRole('button', {name:'Deck · 30/30',exact:true}).click();
+  await page.locator('.gallery-deck-inspect').last().click();
   await page.locator('.gallery-detail-panel').waitFor();
   await page.getByLabel('Close Star Chart').click();
   await mkdir('../.preview/performance', { recursive: true });
@@ -89,6 +101,8 @@ try {
   assert(parity.every(Boolean), 'Worker must choose the same moves at every difficulty');
   assert.equal(page.workers().length, 1, 'The reusable search worker must remain alive (no synchronous fallback)');
   await page.evaluate(() => { window.__performanceSearch.dispose(); delete window.__performanceSearch; });
+  await checkDeathMotion(browser,base);
+  await checkPreviewFallback(browser,base);
   console.log('PASS  performance: bounded gallery, scrolling, mobile detail, covered animations, and worker parity');
 } finally {
   await browser.close();

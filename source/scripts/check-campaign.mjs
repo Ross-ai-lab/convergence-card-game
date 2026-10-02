@@ -107,7 +107,8 @@ try {
   assert(!(await page.locator('.gallery-deck-footer').textContent()).includes('Changes save automatically'));
   assert.equal(await page.locator('.gallery-card-add[title], .gallery-cell[title]').count(), 0, 'Card bodies must not show hover messages');
   const selectedStyle = await page.locator('.gallery-cell.is-in-deck .gallery-card-add').first().evaluate(el => ({shadow:getComputedStyle(el).boxShadow,cursor:getComputedStyle(el).cursor}));
-  assert(selectedStyle.shadow.includes('85, 220, 131'), 'Selected cards need a green outline');
+  assert.equal(await page.locator('.gallery-deck-badge').count(),30, 'Saved cards need an explicit In deck badge');
+  assert(selectedStyle.shadow.includes('231, 198, 124'), 'Saved cards retain a visible frame');
   assert(selectedStyle.cursor.startsWith('url(') && !selectedStyle.cursor.includes('copy'), 'Cards use the custom cursor without a copy badge');
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: 950 });
@@ -160,7 +161,7 @@ try {
   await page.keyboard.press('Escape');
   assert.equal(await page.getByRole('dialog', { name: 'GLaDOS Star Chart', exact: true }).count(), 0);
   await page.evaluate(() => window.__debug.place('Modern Tank', 'me', 0));
-  await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().click();
+  await page.locator('[aria-label="Rick Gramps\'s board"] .board-slot.ready').first().click();
   await page.locator('.campaign-hero.targetable').waitFor();
   assert.equal(await page.locator('.opponent-portrait-inspect').count(), 0, 'Portrait details must not intercept a core attack');
   const healthBefore = Number(await page.locator('.campaign-hero .health-gem').textContent());
@@ -219,7 +220,7 @@ try {
   await page.getByRole('button', { name: 'Remove GLaDOS', exact: true }).click();
   assert.equal((await progress()).playerDeck.length,29,'A second card-body click removes it');
   await page.getByRole('button', { name: 'Add GLaDOS', exact: true }).click();
-  assert((await page.getByRole('button', { name: 'Remove GLaDOS', exact: true }).evaluate(el=>getComputedStyle(el).boxShadow)).includes('85, 220, 131'), 'Adding a card applies its green outline immediately');
+  assert.equal(await page.locator('.gallery-cell.is-in-deck').filter({has:page.getByRole('button',{name:'Remove GLaDOS',exact:true})}).locator('.gallery-deck-badge').textContent(),'✓ In deck','Adding a card immediately shows its deck badge');
   record = await progress(); assert.equal(record.playerDeck.length, 30); assert(record.playerDeck.includes('c104')); assert(!record.playerDeck.includes('c001'));
   await page.getByLabel('Search the gallery').fill('');
   await page.getByLabel('Filter by unlocked or locked').selectOption('locked');

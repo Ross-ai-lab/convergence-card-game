@@ -6,6 +6,7 @@ import { skipCampaignDialogue } from './story-fixtures.mjs';
 import { manualRotationBrowser, resizePhone, rotateForDuel } from './phone-fixtures.mjs';
 import { checkCampaignMotion } from './campaign-motion.mjs';
 import { confirmStarterRestore } from './deck-fixtures.mjs';
+import { checkDeckHover, checkGalleryHold, checkFastGalleryScroll, checkPreviewFallback } from './gallery-interactions.mjs';
 const base=process.argv[2];if(!base)throw new Error('Pass the published /play/ URL');
 const browser=await launch();const page=await browser.newPage({viewport:{width:1440,height:950}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -42,7 +43,9 @@ try{
  await settleMotion(page);
  for(let hit=0;hit<8;hit++){const box=page.locator('.pack-box:not(.is-charged)');if(!await box.isVisible())break;const label=await box.getAttribute('aria-label');await box.click({force:true});await page.waitForFunction(label=>document.querySelector('.pack-box')?.getAttribute('aria-label')!==label,label);}
  await page.locator('.pack-collect:not([disabled])').click({timeout:25000});
- await page.locator('.deck-trigger').click();await page.getByRole('button',{name:'Remove John Wick from deck',exact:true}).click();
+ await page.locator('.deck-trigger').click();await checkDeckHover(page);
+ assert.equal(await page.locator('.gallery-deck-badge').count(),30,'Published membership badges are missing');
+ await page.getByRole('button',{name:'Remove John Wick from deck',exact:true}).click();
  await page.getByLabel('Search the gallery').fill('GLaDOS');await page.getByRole('button',{name:'Add GLaDOS',exact:true}).click();
  assert.equal((await progress()).playerDeck.length,30);assert((await progress()).playerDeck.includes('c104'));
  await page.getByRole('button',{name:'Choose hero power',exact:true}).click();
@@ -61,6 +64,8 @@ try{
  await phone.goto(base,{waitUntil:'domcontentloaded'});
  await phone.locator('.deck-trigger').tap();
  await phone.locator('.gallery-cell .card-face').first().waitFor();
+ await checkGalleryHold(phone);
+ await checkFastGalleryScroll(phone);
  assert(await phone.getByLabel('Filter by mana',{exact:true}).isVisible(),'Published filters are hidden');
  assert(await phone.locator('.gallery-cell .card-face:not(.cf-blank) .cf-desc').evaluateAll(elements=>elements.length>0&&elements.every(el=>getComputedStyle(el).display!=='none')), 'Published collection descriptions are hidden');
  const collection=await phone.locator('.gallery-deck-card').evaluateAll(items=>items.slice(0,2).map(item=>{const r=item.getBoundingClientRect();return {x:r.x,y:r.y};}));
@@ -98,6 +103,7 @@ try{
  await resizePhone(phone,844,390);await phone.getByRole('dialog',{name:'Landscape mode required',exact:true}).waitFor({state:'detached'});
  await phone.screenshot({path:'../.preview/release/live-phone-duel.png'});
  await phoneContext.close();
+ await checkPreviewFallback(browser,base);
  assert.deepEqual(errors,[]);
  console.log('PASS live production: old-save reset, campaign, durable reward, deck persistence, stable boss portraits, landscape gate, printed card descriptions, no normal Undo, no debug hook and no page errors.');
 }finally{await browser.close();}

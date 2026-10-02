@@ -51,7 +51,8 @@ Phone duels require the device to be held sideways. The game requests fullscreen
 If automatic rotation is unavailable, a rotate screen waits until the phone is turned sideways. Menus and deck editing also work upright.
 All four slots on both boards stay visible. The hand scrolls independently.
 The phone deck editor has Collection and Deck tabs in its top row and a two-column collection grid.
-Search and filters remain available and scroll with the collection. Tap a card's name to open its full profile.
+Search and filters remain available and scroll with the collection. Hold a collection card for one second to open its full profile.
+On desktop, hovering a deck-list row immediately shows the complete card. A checked In deck badge identifies selected collection cards.
 Choose Hero Power sits beside Restore starter deck. Restoring requires confirmation on every platform.
 
 Progress and ongoing duels save in this browser on this device. A private window or cleared browser storage starts a separate collection.
@@ -81,7 +82,7 @@ There is no online multiplayer or account synchronization. The public website di
 | Play a card | Tap the hand card, then a highlighted slot or bearer | Click the card and its destination, or drag it |
 | Attack | Tap a ready minion, then a highlighted enemy or core | Click both, or drag the attacker |
 | Read a hand or board card | Read its printed rules on the card | Hover a board minion; hover the hand to enlarge it |
-| Read a character profile | Open My Deck and tap the card's name | Click its name in My Deck |
+| Read a character profile | Hold a collection card for one second in My Deck | Click its name in My Deck |
 | Inspect equipped relics | Tap the badge for a one-second preview, or hold it until finished | Hover the badge, or click and hold it |
 | End the turn | Tap **End Turn** | Click **End Turn**, or press **Space** / **Enter** |
 | Clear a choice | Tap the selected card again or the board background | Press **Escape** |
@@ -94,6 +95,8 @@ Undo is a developer-only tool. Normal duels expose neither an Undo menu option n
 Double-tap the opening ceremony to skip its animation; the opening hand is already determined.
 The title screen's **Continue duel** restores an unfinished game.
 Opening-hand choices fit the screen without scrolling and retain their printed descriptions.
+Phone mana and health counters sit in the left corners, leaving the side hand available from top to bottom.
+Solo games call your character Rick Gramps. Two-player duels retain Player One and Player Two.
 
 ## Cards and effects
 
@@ -302,13 +305,18 @@ Card faces are live DOM, not exported images. Stats and conditions come from act
 Keep mana, attack, health, name, artwork, and printed rules visible at every breakpoint. Small cards retain the same complete card design.
 Mythic, Legendary, Epic, and Relic cards use their own animated shine. Keep the animation and palette coherent with rarity ordering in `types.ts`.
 The desktop hand enlarges as one container. Phone hands scroll without scaling or overlap.
-Tap-and-hold inspection applies to equipped relic badges. Their card-only preview includes the printed description, without a modal backdrop or separate text.
+During a duel, tap-and-hold inspection applies to equipped relic badges. Their card-only preview includes the printed description, without a modal backdrop or separate text.
 Equipped relic badges do not grow on hover or tap. Their card preview lasts one second after a tap, or until a held pointer is released.
 The phone collection scrolls as one surface, including its controls. Card visibility tracking follows that scrolling surface when resizing.
+Collection long presses open Star Charts. Movement cancels the hold; releasing a completed hold must not change the deck.
+Profiles fit the visible viewport without scrolling. Check short phone windows as well as full device dimensions.
 Board cards display current stats and conditions. Equipped relics expose their own complete card when inspected.
 
 Runtime card art uses WebP under `source/public/card-art/`. Use the existing art-import tools for crop and encoding.
 Gallery art is loaded near the visible area; do not decode the entire collection at title-screen startup.
+Keep gallery faces and decoded images mounted during scrolling. Use CSS content visibility to defer offscreen rendering.
+Collection artwork has a small embedded preview beneath each full image, so pending requests never leave black artwork panels.
+The preview module loads only when opening My Deck. The build refreshes it automatically from the original artwork using Python and Pillow.
 The title screen should load its backdrop and small menu artwork, not the full roster or dormant campaign recordings.
 Audio follows [sfx.ts](source/src/audio/sfx.ts), respects the sound controls, and cancels stale fetches when changing screens.
 Campaign voice files and their manifest must agree with story text, cast, and checksums.

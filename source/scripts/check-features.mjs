@@ -66,16 +66,16 @@ check("tutorial skips mulligan", await page.locator(".mulligan-panel").count() =
 check("tutorial uses the curated opening", (await page.locator(".hand-card").count()) === 3);
 check("tutorial starts at lesson one", await page.locator(".tutorial-coach-top small").innerText() === "1 / 4");
 await page.locator(".hand-card.playable").first().click();
-await page.locator('[aria-label="Player One\'s board"] .board-slot.empty').first().click();
+await page.locator('[aria-label="Rick Gramps\'s board"] .board-slot.empty').first().click();
 check("tutorial advances after playing a card", await page.locator(".tutorial-coach-top small").innerText() === "2 / 4");
 await page.locator(".end-turn").click();
-await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().waitFor({ state: "visible", timeout: 25000 });
+await page.locator('[aria-label="Rick Gramps\'s board"] .board-slot.ready').first().waitFor({ state: "visible", timeout: 25000 });
 check("tutorial advances after End Turn", await page.locator(".tutorial-coach-top small").innerText() === "3 / 4");
-await page.locator('[aria-label="Player One\'s board"] .board-slot.ready').first().click();
+await page.locator('[aria-label="Rick Gramps\'s board"] .board-slot.ready').first().click();
 await page.locator('[aria-label="Player Two\'s board"] .board-slot.targetable').first().click();
 check("tutorial reaches the fourth lesson after hitting Taunt", await page.locator(".tutorial-coach-top small").innerText() === "4 / 4");
-await page.locator('[aria-label="Player One\'s hand"] .hand-card').filter({ hasText: "Batman" }).first().click();
-await page.locator('[aria-label="Player One\'s board"] .board-slot.empty').first().click();
+await page.locator('[aria-label="Rick Gramps\'s hand"] .hand-card').filter({ hasText: "Batman" }).first().click();
+await page.locator('[aria-label="Rick Gramps\'s board"] .board-slot.empty').first().click();
 // Recruit may play no extra minion. With only the teaching target, the engine
 // auto-selects it and opens Batman's gadget choices directly.
 // Board-only targeting deliberately hides the tip popup, so either the board

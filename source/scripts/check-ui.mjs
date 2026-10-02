@@ -275,7 +275,7 @@ if (await secondMulligan.isVisible().catch(() => false)) {
   await page.locator(".mulligan-panel").waitFor({ state: "visible", timeout: 5000 });
   check(
     "Player Two can replace opening cards",
-    (await page.locator(".mulligan-panel").textContent()).includes("Player Two") &&
+    (await page.locator(".mulligan-panel h2").textContent()) === "Choose cards to replace" &&
       (await page.locator(".mulligan-card").count()) === 3,
     "both hotseat players see their own three-card mulligan",
   );
@@ -399,7 +399,7 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
       await passToTwo.click();
       check(
         "hotseat Player Two mulligan is visible",
-        (await page.locator(".mulligan-panel").textContent()).includes("Player Two") &&
+        (await page.locator(".mulligan-panel h2").textContent()) === "Choose cards to replace" &&
           (await page.locator(".mulligan-card").count()) === 3,
         "Player Two receives a private three-card opening hand",
       );

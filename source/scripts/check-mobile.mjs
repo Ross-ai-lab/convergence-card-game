@@ -7,6 +7,8 @@ import { seedCampaignProgress } from './campaign-fixtures.mjs';
 import { skipCampaignDialogue } from './story-fixtures.mjs';
 import { checkCampaignMotion } from './campaign-motion.mjs';
 import { confirmStarterRestore } from './deck-fixtures.mjs';
+import { checkGalleryHold, checkFastGalleryScroll, checkPreviewFallback } from './gallery-interactions.mjs';
+import { checkDeathMotion } from './death-motion.mjs';
 import { rotateForDuel as rotate, resizePhone as resize, manualRotationBrowser } from './phone-fixtures.mjs';
 
 const base = process.argv.find(arg => arg.startsWith('http')) || 'http://localhost:5177';
@@ -81,6 +83,7 @@ try {
     await page.locator('.deck-trigger').tap();
     assert.equal(await page.locator('.gallery-grid .gallery-deck-card').count(), 30);
     await page.locator('.gallery-cell img').first().waitFor();
+    await page.waitForFunction(()=>{const img=document.querySelector('.gallery-cell img');return img?.complete&&img.naturalWidth>0;});
     await page.locator('.gallery-cell img').first().evaluate(img => img.decode());
     const firstCard = await page.locator('.gallery-cell').first().boundingBox();
     assert(firstCard.width >= 100 && firstCard.height >= 140, 'Collection grid cards are too small');
@@ -91,6 +94,10 @@ try {
     assert(!(await page.locator('.gallery-deck').isVisible()), 'Deck list consumes collection space');
     await inside(page, '.mobile-deck-tabs button,.gallery-search,.screen-x', 'Builder controls');
     await shoot(page, `${width}x${height}-collection`);
+    if (width===390) {
+      await checkGalleryHold(page,{webKit:useWebKit});
+      await checkFastGalleryScroll(page);
+    }
     assert(await page.getByLabel('Filter by mana', { exact: true }).isVisible());
     await page.getByLabel('Filter by mana', { exact: true }).selectOption('1');
     assert(Number(await page.locator('.gallery-count').textContent()) < 30);
@@ -127,6 +134,11 @@ try {
     await page.locator('.duel-intro').waitFor({ state: 'detached', timeout: 20000 });
     await inside(page,'.mulligan-panel,.mulligan-card,.mulligan-panel button.primary','Fixed opening hand');
     assert(await page.locator('.mulligan-panel').evaluate(el=>el.scrollHeight<=el.clientHeight+1),'Opening hand requires scrolling');
+    assert.equal(await page.locator('.mulligan-panel > span,.mulligan-intro,.mulligan-panel .choice-detail > span').count(),0,'Removed opening-hand copy remains');
+    assert(await page.locator('.mulligan-panel button.primary').evaluate(button=>{
+      const b=button.getBoundingClientRect(),p=button.closest('.mulligan-panel').getBoundingClientRect();
+      return Math.abs((b.left+b.right-p.left-p.right)/2)<2;
+    }),'Mulligan confirmation is not centered');
     if (width===390) await shoot(page,'phone-mulligan');
     assert(await page.locator('.mulligan-card .card-face:not(.cf-blank) .cf-desc').evaluateAll(elements=>elements.every(el=>getComputedStyle(el).display!=='none'&&el.textContent.trim().length>0)), 'Opening cards hide their printed descriptions');
     await page.locator('.mulligan-panel button.primary').tap();
@@ -135,6 +147,11 @@ try {
     await inside(page, '.enemy-power-card', 'Boss Hero Power');
     await page.locator('.enemy-hero-wrap').tap();
     await inside(page, '.board-slot,.end-turn,.hero-plate,.mobile-menu-toggle', 'Duel controls');
+    if(page.viewportSize().height<=600) assert(await page.locator('.command-bar').evaluate(command=>{
+      const mana=command.querySelector('.mana-tray').getBoundingClientRect(),health=command.querySelector('.health-gem').getBoundingClientRect();
+      const hand=command.querySelector('.hand-fan').getBoundingClientRect(),sidebar=command.getBoundingClientRect();
+      return mana.x<20&&mana.y<20&&health.x<20&&health.bottom>innerHeight-25&&Math.abs(hand.top-sidebar.top)<8&&getComputedStyle(command.querySelector('.hero-name')).display==='none'&&getComputedStyle(command.querySelector('.mana-tray'),'::before').content!=='none';
+    }),'Phone counters or expanded hand are misplaced');
     if (page.viewportSize().width < page.viewportSize().height || page.viewportSize().height <= 600) {
       assert(await page.locator('.end-turn').evaluate(button => {
         const b = button.getBoundingClientRect();
@@ -287,7 +304,7 @@ try {
   assert(await page.locator('.pass-screen').evaluate(el=>{const r=el.getBoundingClientRect();return r.x===0&&r.y===0&&r.width===innerWidth&&r.height===innerHeight;}), 'Privacy curtain leaves an uncovered edge');
   await shoot(page, '390x844-hotseat');
   await page.locator('.pass-screen .primary').tap();
-  assert((await page.locator('.mulligan-panel').textContent()).includes('Player Two'));
+  assert.equal(await page.locator('.mulligan-card').count(),3);
   await page.locator('.mulligan-panel button.primary').tap();
   await page.locator('.pass-screen .primary').tap();
   const buttonBeforeHover = await page.locator('.end-turn').boundingBox();
@@ -313,5 +330,7 @@ try {
   console.log('PASS mobile victory: complete champion and reachable Continue at all three landscape sizes');
   await context.close();
   assert.deepEqual(errors, [], 'Browser errors');
+  if (useWebKit) await checkDeathMotion(browser,base);
+  if (useWebKit) await checkPreviewFallback(browser,base);
   console.log('All mobile checks passed.');
 } finally { await browser.close(); }
