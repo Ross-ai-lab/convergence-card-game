@@ -1,3 +1,5 @@
+import {checkMenuPolish} from './menu-polish.mjs';
+import {playTutorial,checkTutorialResume} from './tutorial-flow.mjs';
 /**
  * The three screens the duel checks never reach: the tutorial, developer mode,
  * and the gallery's Star Chart profile.
@@ -64,30 +66,10 @@ await waitForBoard();
 check("tutorial opens the coach", await page.locator(".tutorial-coach").isVisible());
 check("tutorial skips mulligan", await page.locator(".mulligan-panel").count() === 0);
 check("tutorial uses the curated opening", (await page.locator(".hand-card").count()) === 3);
-check("tutorial starts at lesson one", await page.locator(".tutorial-coach-top small").innerText() === "1 / 4");
-await page.locator(".hand-card.playable").first().click();
-await page.locator('[aria-label="Rick Gramps\'s board"] .board-slot.empty').first().click();
-check("tutorial advances after playing a card", await page.locator(".tutorial-coach-top small").innerText() === "2 / 4");
-await page.locator(".end-turn").click();
-await page.locator('[aria-label="Rick Gramps\'s board"] .board-slot.ready').first().waitFor({ state: "visible", timeout: 25000 });
-check("tutorial advances after End Turn", await page.locator(".tutorial-coach-top small").innerText() === "3 / 4");
-await page.locator('[aria-label="Rick Gramps\'s board"] .board-slot.ready').first().click();
-await page.locator('[aria-label="Player Two\'s board"] .board-slot.targetable').first().click();
-check("tutorial reaches the fourth lesson after hitting Taunt", await page.locator(".tutorial-coach-top small").innerText() === "4 / 4");
-await page.locator('[aria-label="Rick Gramps\'s hand"] .hand-card').filter({ hasText: "Batman" }).first().click();
-await page.locator('[aria-label="Rick Gramps\'s board"] .board-slot.empty').first().click();
-// Recruit may play no extra minion. With only the teaching target, the engine
-// auto-selects it and opens Batman's gadget choices directly.
-// Board-only targeting deliberately hides the tip popup, so either the board
-// choices or the gadget value buttons are the valid ready signal.
-await page.waitForFunction(() =>
-  [...document.querySelectorAll(".board-slot.choosable, .target-prompt .prompt-value")]
-    .some((element) => element.getClientRects().length > 0));
-const batmanTarget = page.locator('[aria-label="Player Two\'s board"] .board-slot.choosable').first();
-if (await batmanTarget.isVisible()) await batmanTarget.click();
-await page.locator(".target-prompt .prompt-value").first().click();
-check("tutorial marks complete after four lessons", await page.locator(".tutorial-coach").getByText("Tutorial complete", { exact: true }).count() === 1);
-await page.screenshot({ path: path.join(outputDir, "tutorial-after-taunt.png"), fullPage: false });
+await playTutorial(page);
+check('tutorial completes every real interaction',await page.getByRole('button',{name:'Choose a universe',exact:true}).isVisible());
+await page.screenshot({path:path.join(outputDir,'tutorial-complete.png')});
+await checkTutorialResume(page,BASE);
 
 // Developer mode ----------------------------------------------------------
 await fresh();
@@ -285,6 +267,9 @@ for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Gr
 await checkProfileLayouts(page, geometryOf, fitsOnOneScreen, check);
 
 const failed = results.filter((result) => !result.condition);
+await fresh();
+await page.setViewportSize({width:1440,height:900});
+await checkMenuPolish(page);
 await browser.close();
 console.log(failed.length ? `${failed.length} checks failed.` : `All ${results.length} new-feature checks passed.`);
 process.exit(failed.length ? 1 : 0);

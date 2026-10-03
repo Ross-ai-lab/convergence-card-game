@@ -17,7 +17,7 @@ try{
  await page.evaluate(()=>{localStorage.clear();localStorage.setItem('convergence.progress.v2','{"unlocked":216}');localStorage.setItem('convergence.save.v27','{"version":27}');localStorage.setItem('sound-test-preference','preserved');});
  await page.reload();await page.locator('.title-screen').waitFor();
  assert.equal(await page.locator('.hero-power-trigger').count(),0);
- assert.equal((await progress()).unlockedIds.length,30);assert.equal((await progress()).completedChapters,0);
+ assert.equal((await progress()).unlockedIds.length,40);assert.equal((await progress()).completedChapters,0);
  assert.equal(await page.locator('.orbit-choice,.daily-pack-trigger').count(),0);
  assert.equal(await page.evaluate(()=>localStorage.getItem('convergence.progress.v2')),null);
  assert.equal(await page.evaluate(()=>localStorage.getItem('sound-test-preference')),'preserved');
@@ -38,12 +38,15 @@ try{
  await page.locator('.developer-search input').fill('John Wick');await page.locator('.developer-card-row').first().click();
  await page.getByRole('button',{name:'I win',exact:true}).click();
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('convergence.progress.v4')).completedChapters===1);
- assert.equal((await progress()).unlockedIds.length,40);assert.equal((await progress()).pendingRewards.length,10);
- await page.reload();await page.locator('[data-story-stage="defeat"]').waitFor();await skipCampaignDialogue(page);await page.locator('.pack-veil').waitFor();assert.equal((await progress()).pendingRewards.length,10);
+ assert.equal((await progress()).unlockedIds.length,49);assert.equal((await progress()).pendingRewards.length,9);
+ await page.reload();await page.locator('[data-story-stage="defeat"]').waitFor();await skipCampaignDialogue(page);await page.locator('.pack-veil').waitFor();assert.equal((await progress()).pendingRewards.length,9);
  await settleMotion(page);
  for(let hit=0;hit<8;hit++){const box=page.locator('.pack-box:not(.is-charged)');if(!await box.isVisible())break;const label=await box.getAttribute('aria-label');await box.click({force:true});await page.waitForFunction(label=>document.querySelector('.pack-box')?.getAttribute('aria-label')!==label,label);}
  await page.locator('.pack-collect:not([disabled])').click({timeout:25000});
- await page.locator('.deck-trigger').click();await checkDeckHover(page);
+ await page.locator('.deck-trigger').click();await page.locator('.gallery-cell').first().waitFor();await checkDeckHover(page);
+ assert((await page.locator('.gallery-hero-power').textContent()).includes('New hero power available'));
+ await page.getByRole('button',{name:'Choose hero power',exact:true}).click();await page.getByLabel('Close hero power chooser').click();
+ assert.equal(await page.locator('.gallery-hero-power.has-new-power').count(),0);
  assert.equal(await page.locator('.gallery-deck-badge').count(),30,'Published membership badges are missing');
  await page.getByRole('button',{name:'Remove John Wick from deck',exact:true}).click();
  await page.getByLabel('Search the gallery').fill('GLaDOS');await page.getByRole('button',{name:'Add GLaDOS',exact:true}).click();

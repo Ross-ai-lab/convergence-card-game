@@ -22,13 +22,13 @@
 .gallery-detail-veil {
   position: fixed;
   inset: 0;
-  z-index: 98;
+  z-index: 15000;
   display: grid;
   place-items: center;
   padding: 18px;
   background: rgba(4, 2, 9, 0.82);
-  backdrop-filter: blur(7px) saturate(120%);
-  animation: gallery-detail-in 180ms ease both;
+  background: #100b18f5;
+  animation: none;
 }
 
 @keyframes gallery-detail-in {
@@ -44,6 +44,7 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, #6c587b);
   /* Deliberately a tinted dark, never black, and tinted BY the camp colour:
      `color-mix` pulls a few percent of the accent into the ground so a Tech
      profile sits on cold slate and a Magic one on warm violet. */
@@ -66,28 +67,7 @@
    1px ring with `mask-composite: exclude` so it follows the radius exactly —
    a plain border cannot vary its colour around the corner. The brightest arc
    sits at the top, where the panel's own light is coming from. */
-.gallery-detail-panel::before {
-  content: "";
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: conic-gradient(
-    from 210deg,
-    rgba(255, 244, 216, 0.1),
-    color-mix(in srgb, var(--accent) 78%, #fff3d6) 25%,
-    rgba(255, 244, 216, 0.42) 42%,
-    rgba(255, 244, 216, 0.08) 62%,
-    color-mix(in srgb, var(--accent) 40%, transparent) 84%,
-    rgba(255, 244, 216, 0.1)
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
+.gallery-detail-panel::before { content: none; }
 
 .gallery-detail-close {
   position: absolute;
@@ -913,7 +893,7 @@
 
 /* The fit wrapper occupies the scaled footprint, so centering never clips either end. */
 .gallery-detail-fit { position: relative; }
-.gallery-detail-fit > .gallery-detail-panel { width: min(1320px, calc(100dvw - 36px)); max-height: none; transform-origin: top left; animation: none; }
+.gallery-detail-fit > .gallery-detail-panel { width: min(1320px, calc(100dvw - 36px)); max-height: none; transform: none; animation: none; }
 @media (max-width: 1000px) {
   .gallery-detail-fit > .gallery-detail-panel { width: calc(100dvw - 16px); }
 }

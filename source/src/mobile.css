@@ -299,3 +299,17 @@
   .result-mvp-line { grid-column: 1; grid-row: 3; }
   .gameover-buttons { grid-column: 1; grid-row: 4; }
 }
+
+@media(max-width:1180px) and (max-height:600px) and (orientation:landscape) {
+ .command-bar .mana-tray {left:2px;}
+ .command-bar .hero-plate {left:2px;}
+ .top-strip {grid-template-columns:minmax(0,1fr) 90px 43px;}
+ .top-strip .enemy-hero-wrap {width:min(300px,100%);}
+ .hero-plate.enemy,.hero-plate.enemy.campaign-hero {min-height:44px;padding:4px 6px;gap:5px;}
+ .hero-plate.enemy .hero-sigil,.hero-plate.enemy.campaign-hero .hero-sigil {width:32px;height:32px;flex-basis:32px;}
+ .hero-plate.enemy .hero-name strong {font-size:12px;}
+ .hero-plate.enemy .hero-power-label {font-size:8px;}
+ .hero-plate.enemy .boss-chapter {font-size:7px;}
+ .mobile-menu-toggle {width:43px;min-height:35px;font-size:10px;padding:3px;}
+ .mobile-end-turn {right:calc(59px + env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));}
+}

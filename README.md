@@ -42,7 +42,7 @@ There is no account, download, or installation needed to play.
 ## What you can play
 
 - **Collection campaign:** challenge any of twenty champions, from GLaDOS to Saitama. Each first victory unlocks that universe's cards.
-- **My Deck:** choose thirty different unlocked cards and an earned Hero Power. Rewards expand your collection; you decide which cards enter your deck.
+- **My Deck:** start with forty available cards, build a thirty-card deck, and choose an earned Hero Power. Rewards expand your collection; you decide which cards enter your deck.
 - **Two-player hotseat:** share one device using separate decks. An opaque privacy screen hides hands between turns.
 - **Free duels:** completing the campaign opens Recruit, Veteran, and Ascendant opponents with random thirty-card decks.
 
@@ -53,7 +53,9 @@ All four slots on both boards stay visible. The hand scrolls independently.
 The phone deck editor has Collection and Deck tabs in its top row and a two-column collection grid.
 Search and filters remain available and scroll with the collection. Hold a collection card for one second to open its full profile.
 On desktop, hovering a deck-list row immediately shows the complete card. A checked In deck badge identifies selected collection cards.
-Choose Hero Power sits beside Restore starter deck. Restoring requires confirmation on every platform.
+Choose Hero Power sits beside Restore starter deck. A newly earned power makes it glow until the chooser is opened and closed. Restoring requires confirmation on every platform.
+The Lore book opens ten sealed chapters. All chapters are currently locked.
+Developer mode includes a guided training duel covering card play, turns, attacks, targeting, equipment, and Hero Powers.
 
 Progress and ongoing duels save in this browser on this device. A private window or cleared browser storage starts a separate collection.
 There is no online multiplayer or account synchronization. The public website displays an aggregate visit count.
@@ -124,7 +126,7 @@ Repeated concepts become keywords; one-off mechanics remain ordinary card text.
 
 Relics are equipment cards drawn from the same deck as minions.
 They use a teal frame and print **RELIC** in the flavour position, with no camp or alignment rails.
-Their attached badges show the bearer. The phone card reader includes the bearer's attached relic effects.
+Their attached badges show the bearer. Tap or hold a badge to inspect the equipped relic's complete card.
 
 ## Campaign and progression
 
@@ -132,7 +134,7 @@ Every universe is selectable from the start. Defeat, surrender, a draw, or an ab
 Each first victory grants its fixed reward once. Replaying a conquered universe grants no duplicate pack.
 Rewards never silently rebuild the player's deck.
 
-**Total: 30 initial cards + 187 rewards = all 217 cards.**
+**Total: 40 initial cards + 177 rewards = all 217 cards.**
 
 Victories in any new universe unlock the next player Hero Power, until all ten powers are available. Universe order does not matter.
 Each campaign boss has its own named power. The boss portrait identifies the opponent; it does not place a free minion on the board.
@@ -309,12 +311,12 @@ During a duel, tap-and-hold inspection applies to equipped relic badges. Their c
 Equipped relic badges do not grow on hover or tap. Their card preview lasts one second after a tap, or until a held pointer is released.
 The phone collection scrolls as one surface, including its controls. Card visibility tracking follows that scrolling surface when resizing.
 Collection long presses open Star Charts. Movement cancels the hold; releasing a completed hold must not change the deck.
-Profiles fit the visible viewport without scrolling. Check short phone windows as well as full device dimensions.
+Profiles open in a separate, opaque layer above the gallery and fit the visible viewport without scrolling. Check short phone windows as well as full device dimensions.
 Board cards display current stats and conditions. Equipped relics expose their own complete card when inspected.
 
 Runtime card art uses WebP under `source/public/card-art/`. Use the existing art-import tools for crop and encoding.
 Gallery art is loaded near the visible area; do not decode the entire collection at title-screen startup.
-Keep gallery faces and decoded images mounted during scrolling. Use CSS content visibility to defer offscreen rendering.
+Gallery cards share one pixel-sizing measurement and static rarity frames. Avoid paint-skipping containment and animated shine on the card wall. Keep decoded artwork mounted during scrolling.
 Collection artwork has a small embedded preview beneath each full image, so pending requests never leave black artwork panels.
 The preview module loads only when opening My Deck. The build refreshes it automatically from the original artwork using Python and Pillow.
 The title screen should load its backdrop and small menu artwork, not the full roster or dormant campaign recordings.
@@ -325,8 +327,8 @@ Reborn minions suppress arrival themes; returning bodies are not fresh plays.
 ### Developer tools
 
 Typing `Ross` reveals developer controls. The title screen then shows the developer panel.
-It offers card/power unlocks, chapter access, scripted tutorial, test duels, and reset confirmation.
-Chapter access does not record victories. The scripted tutorial does not grant progression.
+It offers card/power unlocks, a guided tutorial, test duels, and reset confirmation.
+All universes are already available. The tutorial does not grant progression.
 Developer test duels count toward the ordinary record and reward transaction.
 Use the workbench to place cards, arm an enemy turn, preview results, or test infinite mana.
 The `window.__debug` browser hook exists only in development; the production build must remove it.

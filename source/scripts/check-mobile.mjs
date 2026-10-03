@@ -81,7 +81,8 @@ try {
     await page.locator('.campaign-close').tap();
 
     await page.locator('.deck-trigger').tap();
-    assert.equal(await page.locator('.gallery-grid .gallery-deck-card').count(), 30);
+    await page.locator('.gallery-cell').first().waitFor();
+    assert.equal(await page.locator('.gallery-grid .gallery-deck-card').count(), 40);
     await page.locator('.gallery-cell img').first().waitFor();
     await page.waitForFunction(()=>{const img=document.querySelector('.gallery-cell img');return img?.complete&&img.naturalWidth>0;});
     await page.locator('.gallery-cell img').first().evaluate(img => img.decode());
@@ -100,7 +101,7 @@ try {
     }
     assert(await page.getByLabel('Filter by mana', { exact: true }).isVisible());
     await page.getByLabel('Filter by mana', { exact: true }).selectOption('1');
-    assert(Number(await page.locator('.gallery-count').textContent()) < 30);
+    assert(Number(await page.locator('.gallery-count').textContent()) < 40);
     await page.getByLabel('Filter by mana', { exact: true }).selectOption('');
     await page.locator('.gallery-mobile-scroll').evaluate(el=>el.scrollTo({top:350}));
     assert(await page.locator('.gallery-search').evaluate(el=>el.getBoundingClientRect().bottom<0),'Collection search remains pinned while scrolling');
@@ -150,7 +151,7 @@ try {
     if(page.viewportSize().height<=600) assert(await page.locator('.command-bar').evaluate(command=>{
       const mana=command.querySelector('.mana-tray').getBoundingClientRect(),health=command.querySelector('.health-gem').getBoundingClientRect();
       const hand=command.querySelector('.hand-fan').getBoundingClientRect(),sidebar=command.getBoundingClientRect();
-      return mana.x<20&&mana.y<20&&health.x<20&&health.bottom>innerHeight-25&&Math.abs(hand.top-sidebar.top)<8&&getComputedStyle(command.querySelector('.hero-name')).display==='none'&&getComputedStyle(command.querySelector('.mana-tray'),'::before').content!=='none';
+      return mana.x<8&&mana.y<20&&health.x<8&&health.bottom>innerHeight-25&&Math.abs(hand.top-sidebar.top)<8&&getComputedStyle(command.querySelector('.hero-name')).display==='none'&&getComputedStyle(command.querySelector('.mana-tray'),'::before').content!=='none';
     }),'Phone counters or expanded hand are misplaced');
     if (page.viewportSize().width < page.viewportSize().height || page.viewportSize().height <= 600) {
       assert(await page.locator('.end-turn').evaluate(button => {

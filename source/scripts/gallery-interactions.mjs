@@ -1,5 +1,18 @@
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+
+/** Compare actual card pixels after scrolling and repeated profile overlays. */
+export async function checkGalleryPaint(page) {
+  const cell=page.locator('.gallery-cell').filter({has:page.getByRole('button',{name:'Remove John Wick',exact:true})});
+  await cell.scrollIntoViewIfNeeded();await cell.locator('img').evaluate(img=>img.decode());
+  await page.evaluate(()=>document.fonts.ready);
+  const hash=async()=>createHash('sha256').update(await cell.screenshot()).digest('hex');
+  const before=await hash();
+  await checkFastGalleryScroll(page);
+  await cell.scrollIntoViewIfNeeded();
+  const after=await hash();assert.equal(after,before,'Fast scrolling changes the painted card surface');
+}
 
 export async function checkPreviewFallback(browser,base) {
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
@@ -23,7 +36,7 @@ export async function checkPreviewFallback(browser,base) {
 
 export async function checkGalleryHold(page, {webKit = false, cardName='John Wick', adding=false} = {}) {
   assert.equal(await page.locator('.gallery-compact-label').count(), 0, 'Duplicate card names remain');
-  const card = page.getByRole('button', {name:`${adding?'Add':'Remove'} ${cardName}`, exact:true});
+  const card = page.getByRole('button', {name:`${adding?'Add':'Remove'} ${cardName}`, exact:true, includeHidden:true});
   await card.scrollIntoViewIfNeeded();
   const box = await card.boundingBox();
   const point = {x:box.x+box.width/2,y:box.y+box.height/2};
@@ -37,10 +50,12 @@ export async function checkGalleryHold(page, {webKit = false, cardName='John Wic
   assert.equal(await card.getAttribute('aria-pressed'),before,'Holding a card changed the deck');
   await page.getByLabel('Close Star Chart').click();
   await card.scrollIntoViewIfNeeded();
+  const swipeBox=await card.boundingBox();
+  const swipePoint={x:swipeBox.x+swipeBox.width/2,y:swipeBox.y+swipeBox.height/2};
   if (session) {
-    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[swipePoint]});
     for (let step=1;step<=4;step++) {
-      await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:point.x,y:point.y-step*18}]});
+      await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:swipePoint.x,y:swipePoint.y-step*18}]});
       await page.waitForTimeout(30);
     }
     await page.waitForTimeout(1100);

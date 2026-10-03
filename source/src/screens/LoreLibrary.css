@@ -1,0 +1,19 @@
+.lore-book-button { position: absolute; z-index: 5; top: 22px; left: 22px; width: 82px; height: 110px; padding: 0; border: 0; background: none; filter: drop-shadow(0 8px 10px #0009); }
+.lore-book-button svg { display: block; width: 100%; height: 100%; }
+.lore-book-button:hover { transform: translateY(-3px) rotate(-3deg); }
+.lore-library-veil { position: fixed; inset: 0; z-index: 16000; display: grid; place-items: center; padding: 16px; background: #0b0817ee; }
+.lore-library { width: min(650px,100%); max-height: calc(100dvh - 32px); padding: 22px; overflow: auto; color: #e9dbbb; background: linear-gradient(145deg,#302036,#161321); border: 1px solid #b89453; border-radius: 15px; }
+.lore-library header { display: flex; justify-content: space-between; align-items: center; }
+.lore-library h2 { margin: 2px 0; font: 32px Georgia,serif; }
+.lore-library header small { color: #c7ac6b; }
+.lore-library header button { width: 44px; height: 44px; padding: 0; font-size: 28px; }
+.lore-chapter-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.lore-chapter { display: flex; align-items: center; gap: 10px; min-height: 65px; padding: 8px; opacity: 1; text-align: left; color: #bfad8b; background: #171320; border: 1px solid #6c573c; }
+.lore-chapter-number { width: 32px; font: 24px Georgia,serif; color: #b68e49; }
+.lore-chapter strong,.lore-chapter small { display: block; }
+.lore-chapter small { margin-top: 4px; color: #918275; }
+.lore-chapter svg { width: 18px; height: 22px; margin-left: auto; }
+@media(max-width:600px) and (orientation:portrait) { .lore-book-button { top:12px;left:12px;width:46px;height:64px; } .title-screen .title-brand { top:88px; } .lore-library {padding:12px;} .lore-chapter {gap:5px;min-height:58px;font-size:12px;} .lore-chapter-number {width:22px;font-size:20px;} }
+@media(max-width:1180px) and (max-height:600px) and (orientation:landscape) { .lore-book-button {top:12px;left:12px;width:36px;height:50px;} .title-screen .title-brand {left:66px;top:14px;} }
+
+.lore-chapter:disabled {opacity:1;}

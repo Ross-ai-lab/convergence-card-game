@@ -403,3 +403,5 @@
     font-size: 18px;
   }
 }
+
+.developer-card-mana {display:grid;place-items:center;width:25px;height:28px;flex:none;background:linear-gradient(135deg,#b9ebff,#258abd 50%,#123d71);border:1px solid #c5f1ff;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:white;font-size:15px;font-weight:900;text-shadow:0 1px 2px #073058;}

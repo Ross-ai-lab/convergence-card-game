@@ -1,7 +1,7 @@
 import { launch } from './browser.mjs';
 import { writeFile, mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import { checkDeckHover, checkFastGalleryScroll, checkGalleryHold, checkPreviewFallback } from './gallery-interactions.mjs';
+import { checkDeckHover, checkFastGalleryScroll, checkGalleryHold, checkPreviewFallback, checkGalleryPaint } from './gallery-interactions.mjs';
 import { checkDeathMotion } from './death-motion.mjs';
 
 const browser = await launch();
@@ -41,9 +41,10 @@ try {
   await sample('gallery');
   await checkDeckHover(page);
   await checkFastGalleryScroll(page);
+  await checkGalleryPaint(page);
   assert.equal(results.gallery.faces, results.gallery.cells, 'Every shell retains its full face');
   assert(results.gallery.near > 0 && results.gallery.near < results.gallery.cells, 'Only nearby artwork is eager');
-  assert(await page.locator('.gallery-cell').evaluateAll(cells => cells.every(cell => getComputedStyle(cell).contentVisibility === 'auto')), 'Offscreen rendering is not deferred');
+  assert(await page.locator('.gallery-cell').evaluateAll(cells => cells.every(cell => getComputedStyle(cell).contentVisibility === 'visible')), 'Gallery still uses paint-skipping containment');
   const backdropRunning = await page.evaluate(() => document.getAnimations().filter(a =>
     a.playState === 'running' && a.effect?.target?.closest?.('.title-screen')).length);
   assert.equal(backdropRunning, 0, 'Menu animations must pause behind the gallery');

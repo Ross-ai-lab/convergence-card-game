@@ -1,3 +1,4 @@
+import { LoreBookButton } from './LoreLibrary';
 /**
  * Everything that is not the board.
  *
@@ -235,10 +236,9 @@ export function TitleScreen({
   isFullscreen,
   onToggleFullscreen,
   onTutorial,
+  onLore,
   onDeveloperTools,
   onDeveloperUnlock,
-  onUnlockChapters,
-  chaptersUnlocked,
   onDeveloperReset,
 }: {
   canContinue: boolean;
@@ -257,10 +257,9 @@ export function TitleScreen({
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   onTutorial: () => void;
+  onLore: () => void;
   onDeveloperTools: () => void;
   onDeveloperUnlock: () => void;
-  onUnlockChapters: () => void;
-  chaptersUnlocked: boolean;
   onDeveloperReset: () => void;
 }) {
   const [skill, setSkill] = useState<BotSkill>("normal");
@@ -284,6 +283,7 @@ export function TitleScreen({
         />
       </div>
       <FloatingCardField />
+      <LoreBookButton onOpen={onLore} />
       <FullscreenButton active={isFullscreen} onToggle={onToggleFullscreen} className="title-fullscreen-trigger" />
 
       <div className="duel-orbit" aria-label="Choose an opponent">
@@ -386,7 +386,6 @@ export function TitleScreen({
             >
               {developerCheatActive ? "All cards and powers unlocked" : "Unlock all cards + powers"}
             </button>
-            <button type="button" disabled={chaptersUnlocked} onClick={onUnlockChapters}>{chaptersUnlocked ? "All universes available" : "Unlock all universes"}</button>
             <button
               type="button"
               className="developer-cheat-reset"

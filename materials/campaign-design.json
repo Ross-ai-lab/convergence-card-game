@@ -7,12 +7,10 @@
     "r031",
     "c153",
     "c006",
-    "r028",
     "c139",
     "c141",
     "c138",
     "c118",
-    "c054",
     "r024",
     "c103",
     "c187",
@@ -21,17 +19,19 @@
     "c085",
     "c031",
     "c068",
-    "c012",
-    "c076",
-    "c176",
     "c016",
     "c020",
     "c177",
-    "c050",
-    "c053",
-    "c178",
-    "c043",
-    "c186"
+    "c172",
+    "c143",
+    "c165",
+    "c147",
+    "c159",
+    "c005",
+    "r035",
+    "c179",
+    "c185",
+    "c149"
   ],
   "universeAliases": {
     "MCU": "Marvel",
@@ -48,8 +48,8 @@
     "Tensura": "Tensura",
     "That time I got reincarnated as a Slime": "Tensura"
   },
-  "universeException": "Star Destroyer retains starter ownership despite its Star Wars origin. Antimatter Bomb replaces T-1000 in the starter deck; Rick Prime is reserved for Goku's reward.",
-  "rewardSelection": "Filler IDs selected once during design. The runtime must read the listed IDs and never reroll them.",
+  "universeException": "The initial collection keeps every previous starter card, including Star Destroyer and Antimatter Bomb. Rick Prime remains a Goku reward.",
+  "rewardSelection": "Ten filler cards move to the initial collection, one from each of ten bosses. All universe cards remain rewards. Reward lists are fixed, never rerolled.",
   "chapters": [
     {
       "chapter": 1,
@@ -66,7 +66,6 @@
       "rewardCardIds": [
         "c104",
         "c093",
-        "c172",
         "c105",
         "c004",
         "c140",
@@ -77,7 +76,6 @@
       ],
       "fillerRewardIds": [
         "c093",
-        "c172",
         "c105",
         "c004",
         "c140",
@@ -141,7 +139,6 @@
         "c121",
         "c134",
         "c091",
-        "c143",
         "c164",
         "c010",
         "c099",
@@ -149,7 +146,6 @@
       ],
       "fillerRewardIds": [
         "c091",
-        "c143",
         "c164",
         "c010",
         "c099",
@@ -214,13 +210,11 @@
         "c151",
         "c174",
         "c116",
-        "c165",
         "c088",
         "c115"
       ],
       "fillerRewardIds": [
         "c116",
-        "c165",
         "c088",
         "c115"
       ],
@@ -279,7 +273,6 @@
         "r012",
         "c089",
         "c168",
-        "c147",
         "c048",
         "c117",
         "c063"
@@ -288,7 +281,6 @@
         "r012",
         "c089",
         "c168",
-        "c147",
         "c048",
         "c117",
         "c063"
@@ -351,14 +343,12 @@
         "r032",
         "r023",
         "c183",
-        "c159",
         "c137",
         "c049"
       ],
       "fillerRewardIds": [
         "r023",
         "c183",
-        "c159",
         "c137",
         "c049"
       ],
@@ -418,13 +408,11 @@
         "c074",
         "c059",
         "c072",
-        "c005",
         "c160"
       ],
       "fillerRewardIds": [
         "c059",
         "c072",
-        "c005",
         "c160"
       ],
       "deckCardIds": [
@@ -481,14 +469,12 @@
         "c123",
         "c144",
         "c163",
-        "r035",
         "r022",
         "c171",
         "r029",
         "c056"
       ],
       "fillerRewardIds": [
-        "r035",
         "r022",
         "c171",
         "r029",
@@ -743,13 +729,11 @@
         "c023",
         "c083",
         "c086",
-        "c179",
         "r002",
         "r014",
         "c184"
       ],
       "fillerRewardIds": [
-        "c179",
         "r002",
         "r014",
         "c184"
@@ -946,14 +930,12 @@
         "r021",
         "c038",
         "r025",
-        "c185",
         "c028"
       ],
       "fillerRewardIds": [
         "r021",
         "c038",
         "r025",
-        "c185",
         "c028"
       ],
       "deckCardIds": [
@@ -1080,15 +1062,13 @@
         "c180",
         "c106",
         "c081",
-        "c136",
-        "c149"
+        "c136"
       ],
       "fillerRewardIds": [
         "c180",
         "c106",
         "c081",
-        "c136",
-        "c149"
+        "c136"
       ],
       "deckCardIds": [
         "c163",
@@ -1474,9 +1454,51 @@
     "c053",
     "c178",
     "c043",
-    "c186"
+    "c186",
+    "c172",
+    "c143",
+    "c165",
+    "c147",
+    "c159",
+    "c005",
+    "r035",
+    "c179",
+    "c185",
+    "c149"
   ],
   "universeExemptCardIds": [
     "c068"
+  ],
+  "previousStarterCardIds": [
+    "c169",
+    "c001",
+    "r031",
+    "c153",
+    "c006",
+    "r028",
+    "c139",
+    "c141",
+    "c138",
+    "c118",
+    "c054",
+    "r024",
+    "c103",
+    "c187",
+    "r001",
+    "c092",
+    "c085",
+    "c031",
+    "c068",
+    "c012",
+    "c076",
+    "c176",
+    "c016",
+    "c020",
+    "c177",
+    "c050",
+    "c053",
+    "c178",
+    "c043",
+    "c186"
   ]
 }

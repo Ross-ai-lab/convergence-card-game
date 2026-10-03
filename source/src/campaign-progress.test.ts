@@ -76,7 +76,7 @@ describe("campaign progression transactions", () => {
   });
   it("developer-assisted chapter wins count without granting arbitrary deck fillers", () => {
     const won = finish(emptyProgress(), 1);
-    const unrelated = CAMPAIGN_CHAPTERS[0].deckCardIds.filter((id) => !CAMPAIGN_STARTER_DECK.includes(id) && !CAMPAIGN_CHAPTERS[0].rewardCardIds.includes(id));
+    const unrelated = CAMPAIGN_CHAPTERS[0].deckCardIds.filter((id) => !emptyProgress().unlockedIds.includes(id) && !CAMPAIGN_CHAPTERS[0].rewardCardIds.includes(id));
     expect(unrelated.length).toBeGreaterThan(0); for (const id of unrelated) expect(won.unlockedIds).not.toContain(id);
     const developer = unlockAllProgress(emptyProgress()); expect(canPlayChapter(developer, 20)).toBe(true);
     const assisted = finish(developer, 1); expect(assisted.completedChapters).toBe(1); expect(assisted.pendingRewards).toEqual([]);
@@ -95,7 +95,7 @@ describe("campaign persistence and editing", () => {
     memory(); const won = finish(emptyProgress(), 1); expect(saveProgress(won)).toBe(true);
     const loaded = loadProgress(); expect(loaded.pendingRewards).toEqual(CAMPAIGN_CHAPTERS[0].rewardCardIds);
     expect(finish(loaded, 1)).toBe(loaded); saveProgress(acknowledgeRewards(loaded));
-    expect(loadProgress().pendingRewards).toEqual([]); expect(loadProgress().unlockedIds).toHaveLength(40);
+    expect(loadProgress().pendingRewards).toEqual([]); expect(loadProgress().unlockedIds).toHaveLength(49);
   });
   it("allows initial Basic alternatives and persists incomplete drafts", () => {
     memory(); const fresh = emptyProgress();
@@ -121,7 +121,7 @@ describe("campaign persistence and editing", () => {
   it("repairs corrupted ownership without granting a future boss", () => {
     const { values } = memory(); values.set(PROGRESS_KEY, JSON.stringify({ ...emptyProgress(), completedChapters: 1,
       unlockedIds: ["c041"], playerDeck: ["c041", "unknown"], pendingRewards: ["c041", "unknown"] }));
-    const repaired = loadProgress(); expect(repaired.unlockedIds).toHaveLength(40); expect(repaired.unlockedIds).not.toContain("c041");
+    const repaired = loadProgress(); expect(repaired.unlockedIds).toHaveLength(49); expect(repaired.unlockedIds).not.toContain("c041");
     expect(repaired.playerDeck).toEqual([]); expect(repaired.pendingRewards).toEqual([]);
   });
   it("reports a failed save rather than claiming it persisted", () => {

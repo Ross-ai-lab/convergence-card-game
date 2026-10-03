@@ -1,3 +1,4 @@
+import { TUTORIAL_LESSONS, tutorialAllowsAction, nextTutorialStep, tutorialOpponentAction } from './tutorial';
 import { Fragment, createContext, memo, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
@@ -88,13 +89,13 @@ import {
   loadProgress,
   saveProgress,
   unlockAllProgress,
-  unlockAllChapters,
   type Progress,
 } from "./progress";
 import { STARTING_POOL, revealOrder } from "./unlocks";
 import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES, CAMPAIGN_PREMISE, CAMPAIGN_PROTAGONIST } from "./campaign";
 import { createCampaignDuel } from "./campaign-duel";
-import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeBossSpeech, acknowledgeRewards, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, hasNewHeroPower, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { LoreLibrary } from './screens/LoreLibrary';
 import { randomDeck, validateDeck } from "./decks";
 import { remainingDeckCount } from "./engine/draw-piles";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
@@ -639,7 +640,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "campaign" | "deck" | "hotseat" | "opponent">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "campaign" | "deck" | "hotseat" | "opponent" | "lore">(null);
   useEffect(() => {
     if (overlay !== "opponent") return;
     const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOverlay(null); };
@@ -652,6 +653,17 @@ export default function App() {
   const [tutorialActive, setTutorialActive] = useState(false);
   const [tutorialCompleted, setTutorialCompleted] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
+  const tutorialReturn = useRef<{
+    game: GameState;
+    events: GameEvent[];
+    mode: GameMode;
+    hasLiveSave: boolean;
+    history: GameState[];
+    seatedPlayer: PlayerId;
+    recorded: boolean;
+    cards: { seen: Set<string>; played: Set<string> };
+    announcements: Set<string>;
+  } | null>(null);
   // Unviewed first-clear rewards survive reload; developer previews are transient.
   const [pack, setPack] = useState<string[] | null>(() => initialProgress.pendingRewards.length ? initialProgress.pendingRewards : null);
   const [chapterSpeech, setChapterSpeech] = useState<{mode: Extract<GameMode,{kind:"campaign"}>; stage:"prologue"|"rick-intro"|"entrance"} | null>(null);
@@ -666,7 +678,7 @@ export default function App() {
   function persistProgress(next: Progress) {
     setProgress(next); const saved = saveProgress(next); setStorageError(!saved); return saved;
   }
-  function setSelectedHeroPower(power: HeroPowerId) { persistProgress(selectHeroPower(progress, power)); }
+  function setSelectedHeroPower(power: HeroPowerId) { persistProgress(acknowledgeHeroPowers(selectHeroPower(progress, power))); }
   function openDeck(seat: 0 | 1 = 0, back: "title" | "campaign" | "hotseat" = "title") {
     setBuilderSeat(seat); setBuilderReturn(back); setOverlay("deck");
   }
@@ -904,7 +916,8 @@ export default function App() {
   // Persist after every change. A finished duel is not worth resuming, so the
   // slot is cleared instead of holding a game-over screen forever.
   useEffect(() => {
-    if (tutorialActive || (developerDuelActive && mode.kind !== "campaign")) {
+    if (tutorialActive) return;
+    if (developerDuelActive && mode.kind !== "campaign") {
       clearSave();
       setHasLiveSave(false);
     } else if (screen === "playing" && game.phase !== "gameOver") {
@@ -923,11 +936,16 @@ export default function App() {
       : game.phase === "targeting" ? game.pendingTarget?.player : game.activePlayer;
     if (game.phase === "gameOver" || actor !== BOT_ID) return;
     let timer = 0;
+    if (tutorialActive) {
+      const action=tutorialOpponentAction(game,legalActions);
+      const timer=window.setTimeout(()=>{if(action)perform(action);},350);
+      return ()=>window.clearTimeout(timer);
+    }
     const cancel = botSearch.search({ game, library, player: BOT_ID, skill: mode.skill }, (action) => {
       if (action) timer = window.setTimeout(() => perform(action), game.phase === "main" ? BOT_DELAY_MS : BOT_FIRST_DELAY_MS);
     });
     return () => { cancel(); window.clearTimeout(timer); };
-  }, [game, mode, screen, library, duelIntro, botSearch, relicFlash, needsLandscape]);
+  }, [game, mode, screen, library, duelIntro, botSearch, relicFlash, needsLandscape, tutorialActive]);
 
   // Hotseat: the moment the active player changes, the seat is stale and the
   // curtain has to come back down. Reading it off the state rather than off the
@@ -1250,7 +1268,7 @@ export default function App() {
   const viewerCanAct = (game.phase === "mulligan" && game.mulligan?.player === viewerId) || myTurn;
   // Every affordance and click reads this. Empty while the opponent is thinking,
   // so nothing lights up and nothing can be clicked on their behalf.
-  const uiActions = viewerCanAct && !duelIntro && !needsLandscape ? legalActions : [];
+  const uiActions = viewerCanAct && !duelIntro && !needsLandscape ? legalActions.filter(action=>!tutorialActive||tutorialCompleted||tutorialAllowsAction(tutorialStep,game,action)) : [];
 
   function clearFx() {
     setFloats([]);
@@ -1615,6 +1633,7 @@ export default function App() {
   }
 
   function perform(action: GameAction) {
+    if(tutorialActive&&!tutorialCompleted&&!tutorialAllowsAction(tutorialStep,game,action)) {showToast('Follow the highlighted lesson, or leave the tutorial.',1800);return;}
     setEnemyPowerOpen(false);
     clearHandKeywords();
     const hiddenEnemyDiscover =
@@ -1674,33 +1693,10 @@ export default function App() {
       setTauntFlash(null);
       if (bargainChoice) showToast(`Doctor Strange's bargain chosen: ${bargainChoice}`, 3000, "bargain");
 
-      // Tutorial lessons advance from the action that just happened, not from
-      // the entire event log. The old event-derived calculation could observe
-      // the bot's automatic response after a Taunt attack and jump from the
-      // attack lesson straight to completion. Keep the guide on the exact
-      // interaction the player completed.
       if (tutorialActive && !tutorialCompleted && action.player === viewerId) {
-        let nextStep: number | null = null;
-        if (result.state.phase === "targeting" && result.state.pendingTarget?.player === viewerId) {
-          nextStep = 3;
-        } else if (action.type === "play_card" || action.type === "play_relic") {
-          nextStep = 1;
-        } else if (action.type === "choose_target") {
-          nextStep = 3;
-        } else if (action.type === "attack_minion" || action.type === "attack_core") {
-          nextStep = 3;
-        }
-        if (action.type === "end_turn") {
-          // The first body is asleep until the next turn. Passing advances to
-          // the combat lesson once the Recruit has finished its turn.
-          setTutorialStep((current) => (current === 1 ? 2 : current));
-        } else if (nextStep !== null) {
-          setTutorialStep((current) => Math.max(current, nextStep));
-        }
-        if (action.type === "choose_target" && tutorialStep === 3 && result.state.phase !== "targeting") {
-          setTutorialStep(3);
-          setTutorialCompleted(true);
-        }
+        const step=nextTutorialStep(tutorialStep,action,result.state);
+        setTutorialStep(step);
+        if(step===TUTORIAL_LESSONS.length)setTutorialCompleted(true);
       }
     }
     const visibleEvents = hiddenEnemyDiscover
@@ -1838,7 +1834,12 @@ export default function App() {
     // An ending piece is 16 seconds long, and leaving the screen it belongs to
     // must take it with you rather than play it over the next one.
     sfx.stopCue();
-    clearSave();
+    if (!tutorialActive) tutorialReturn.current = {
+      game, events, mode, hasLiveSave, history, seatedPlayer,
+      recorded: duelRecorded.current,
+      cards: duelCards.current,
+      announcements: heraldSaid.current,
+    };
     setTutorialActive(true);
     setTutorialCompleted(false);
     setTutorialStep(0);
@@ -1847,17 +1848,17 @@ export default function App() {
     duelCards.current = { seen: new Set(), played: new Set() };
     duelRecorded.current = false;
     setPack(null);
-    setDuelIntro({ id: fxId.current++, phase: "prelude" });
-    // `easy` is the Recruit AI. It keeps the real bot loop while the curated
-    // Goblins Taunt body stays on the board as the first combat lesson.
+    setDuelIntro(null);
+    // The scripted opponent uses ordinary engine actions at each teaching turn.
     setMode({ kind: "bot", skill: "easy" });
     const seed = createDuelSeed();
     const tutorialGame = createInitialGame(cards, seed, relics, {
-        heroPowers: ["core_heal", null],
+        heroPowers: ["minion_hp", null],
         tutorial: true,
         hasCoin: false,
       });
     tutorialGame.players[0].name = 'Rick Gramps';
+    tutorialGame.players[1].name = 'Training Construct';
     setGame(tutorialGame);
     setHistory([]);
     setSelection(null);
@@ -1872,7 +1873,23 @@ export default function App() {
 
   function toTitle() {
     relicPeek.cancel();
-    if (tutorialActive) duelRecorded.current = true;
+    if (tutorialActive) {
+      const previous = tutorialReturn.current;
+      if (previous) {
+        setGame(previous.game);
+        setEvents(previous.events);
+        setMode(previous.mode);
+        setHasLiveSave(previous.hasLiveSave);
+        setHistory(previous.history);
+        setSeatedPlayer(previous.seatedPlayer);
+        duelRecorded.current = previous.recorded;
+        duelCards.current = previous.cards;
+        heraldSaid.current = previous.announcements;
+        tutorialReturn.current = null;
+      }
+      setSelection(null);
+      clearFx();
+    }
     sfx.play("button");
     sfx.stopCardTheme();
     sfx.stopCue();
@@ -3324,6 +3341,8 @@ export default function App() {
           step={tutorialStep}
           completed={tutorialCompleted}
           onSkip={toTitle}
+          onStart={()=>setTutorialStep(1)}
+          onCampaign={()=>{toTitle();setOverlay('campaign');}}
         />
       ) : null}
 
@@ -3376,12 +3395,11 @@ export default function App() {
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
           onTutorial={beginTutorial}
+          onLore={() => setOverlay('lore')}
           onDeveloperTools={() => setDeveloperToolsOpen(true)}
           developerCheatRevealed={developerCheatRevealed}
           developerCheatActive={progress.developerCheat}
           onDeveloperUnlock={activateDeveloperCheat}
-          chaptersUnlocked={progress.developerChaptersUnlocked}
-          onUnlockChapters={() => persistProgress(unlockAllChapters(progress))}
           onDeveloperReset={resetDeveloperProgress}
           unlocked={progress.unlockedIds.length}
           rosterSize={cards.length + relics.length}
@@ -3390,7 +3408,8 @@ export default function App() {
 
       {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)}
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
-      {overlay === "deck" && <CardGallery onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+      {overlay === 'lore' && <LoreLibrary onClose={()=>setOverlay(null)} />}
+      {overlay === "deck" && <CardGallery onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}
@@ -3403,7 +3422,7 @@ export default function App() {
         onNavigate={() => undefined}
       />}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "gallery" ? <CardGallery onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
+      {overlay === "gallery" ? <CardGallery onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel
@@ -3581,7 +3600,7 @@ function BoardRow({
           : undefined;
         const canBeChosen =
           boardPrompt !== null &&
-          boardPrompt.options.some((option) => option.owner === owner && option.slot === slotIndex);
+          boardPrompt.options.some((option,index) => option.owner === owner && option.slot === slotIndex && legalActions.some(action=>action.type==='choose_target'&&action.choiceIndex===index));
         const classes = [
           "board-slot",
           minion ? "occupied" : "empty",
@@ -4021,8 +4040,8 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
 type UnlockFilter = "unlocked" | "locked";
 type GalleryEntry = { key: string; card: PlayableCard; face: CardFaceModel };
 
-function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onClose }: {
-  progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onHeroPowerChange: (power: HeroPowerId) => void; onClose: () => void;
+function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose }: {
+  progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onHeroPowerChange: (power: HeroPowerId) => void; onHeroPowerViewed: () => void; onClose: () => void;
 }) {
   const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
   const readOnly = !canEditDeck(progress);
@@ -4030,6 +4049,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   const [query, setQuery] = useState("");
   const [help, setHelp] = useState(false);
   const [powerOpen, setPowerOpen] = useState(false);
+  const closePowers=()=>{setPowerOpen(false);onHeroPowerViewed();};
   const [mobileDeckView, setMobileDeckView] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [artPreviews, setArtPreviews] = useState<Record<string,string> | null>(null);
@@ -4038,6 +4058,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   const equippedPower = heroPowerDefinition(progress.selectedHeroPower);
   const powerPicker = useRef<HTMLElement>(null);
   const restorePicker = useRef<HTMLElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!restoreOpen) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -4065,7 +4086,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.stopImmediatePropagation(); if (restoreOpen) setRestoreOpen(false); else if (powerOpen) setPowerOpen(false); else onClose(); }
+      if (event.key === "Escape") { event.stopImmediatePropagation(); if (restoreOpen) setRestoreOpen(false); else if (powerOpen) closePowers(); else onClose(); }
       if ((powerOpen || restoreOpen) && event.key === "Tab") {
         const buttons = [...((restoreOpen ? restorePicker : powerPicker).current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])];
         const first=buttons[0], last=buttons.at(-1);
@@ -4234,9 +4255,16 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
 
   const manaCurve = Array.from({length:10},(_,i)=>allEntries.filter(entry=>deckIds.has(entry.key) && entry.face.cost===i+1).length);
   const manaPeak = Math.max(1,...manaCurve);
+  useLayoutEffect(() => {
+    const grid=gridRef.current;
+    if (!grid) return;
+    const size=()=>{const width=grid.firstElementChild?.getBoundingClientRect().width;if(width)grid.style.setProperty('--gallery-unit',`${width/750}px`);};
+    const observer=new ResizeObserver(size);observer.observe(grid);size();
+    return ()=>observer.disconnect();
+  },[artPreviews, mobileDeckView, sorted.length]);
   return (
     <GalleryPreviewContext.Provider value={artPreviews ?? {}}><div
-      className={`screen-veil gallery-veil${selectedEntry || help ? " has-detail" : ""}`}
+      className={`screen-veil gallery-veil${selectedEntry || help ? " has-detail" : ""}${selectedEntry ? " has-profile" : ""}`}
       onPointerDown={(event) => event.target === event.currentTarget && onClose()}
     >
       {/* Deliberately NOT `wide`. That class sets its own 760px width at the same
@@ -4308,7 +4336,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         <div className="gallery-workspace">
         <div className="screen-panel-body gallery-body" ref={bodyRef}>
           {!artPreviews ? <p role="status">Opening collection…</p> : sorted.length ? (
-            <div className="gallery-grid">
+            <div className="gallery-grid" ref={gridRef}>
               {sorted.map((entry) => (
                 <div className="gallery-deck-card" key={entry.key} data-card-id={entry.key}>
                 <GalleryCell
@@ -4356,12 +4384,12 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
           <footer className="gallery-deck-footer">
             <div className="gallery-mana-summary"><span className="gallery-mana-title">Mana curve</span><div className="gallery-deck-curve" aria-label="Deck mana curve">{Array.from({ length: 10 }, (_, i) => {
               const count = manaCurve[i];
-              return <div key={i}><span data-count={count} style={{ height: `${Math.max(2, count / manaPeak * 17)}px` }}>{count}</span><small>{i + 1}</small></div>;
+              return <div key={i}><span data-count={count} style={{ height: `${Math.max(2, count / manaPeak * 13)}px` }}>{count}</span><small>{i + 1}</small></div>;
             })}</div></div>
             <div className="gallery-deck-actions">
               {!readOnly && <button className="gallery-restore" onClick={() => setRestoreOpen(true)}>Restore starter deck</button>}
-              <button type="button" className="gallery-hero-power" aria-label="Choose hero power" aria-description={equippedPower?.name} aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
-                <span className="gallery-power-icon" aria-hidden="true">ϟ</span><strong>Choose Hero Power</strong>
+              <button type="button" className={`gallery-hero-power${hasNewHeroPower(progress)?' has-new-power':''}`} aria-label="Choose hero power" aria-description={equippedPower?.name} aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
+                <span className="gallery-power-icon" aria-hidden="true">ϟ</span><strong aria-live="polite">{hasNewHeroPower(progress)?'New hero power available':'Choose Hero Power'}</strong>
               </button>
             </div>
             {readOnly && <small>Starter deck · 30 cards</small>}
@@ -4378,9 +4406,9 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
             <button type="button" className="primary" onClick={() => {onChange([...CAMPAIGN_STARTER_DECK]);setRestoreOpen(false);}}>Yes, restore starter deck</button></div>
         </section>
       </div>}
-      {powerOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)setPowerOpen(false);}}>
+      {powerOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)closePowers();}}>
         <section ref={powerPicker} className="gallery-power-picker" role="dialog" aria-modal="true" aria-label="Choose hero power">
-          <header><h3>Hero power</h3><button type="button" aria-label="Close hero power chooser" onClick={() => setPowerOpen(false)}>×</button></header>
+          <header><h3>Hero power</h3><button type="button" aria-label="Close hero power chooser" onClick={closePowers}>×</button></header>
           <HeroPowerChoices botWins={botWins(progress)} selectedPower={progress.selectedHeroPower} onSelect={power => {onHeroPowerChange(power);setPowerOpen(false);}} />
         </section>
       </div>}
@@ -4567,7 +4595,7 @@ function GalleryDetailModal({
   }, [locked, onClose, onNavigate]);
 
   return (
-    <div className="gallery-detail-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
+    createPortal(<div className="gallery-detail-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
       <div className="gallery-detail-fit" style={fit.width ? {width:fit.width*fit.scale,height:fit.height*fit.scale} : undefined}>
       <section
         ref={panel}
@@ -4575,7 +4603,7 @@ function GalleryDetailModal({
         role="dialog"
         aria-modal="true"
         aria-label={`${entry.face.name} Star Chart`}
-        style={{ "--accent": accent, transform:`scale(${fit.scale})` } as CSSProperties}
+        style={{ "--accent": accent, zoom:fit.scale } as CSSProperties}
       >
         <button type="button" className="screen-x gallery-detail-close" onClick={onClose} aria-label="Close Star Chart">×</button>
 
@@ -4595,7 +4623,7 @@ function GalleryDetailModal({
         <div className="gallery-detail-body">
           <div className="gdx-rail">
             <div className="gallery-detail-card">
-              {locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} interactiveKeywords />}
+              {locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} interactiveKeywords quiet />}
             </div>
             {locked ? <p className="gallery-detail-sealed-note">Rules remain sealed until this card joins your deck.</p> : null}
             {!locked && profile?.rank ? <p className="gdx-rank">{profile.rank}</p> : null}
@@ -4653,7 +4681,7 @@ function GalleryDetailModal({
         </div>
       </section>
       </div>
-    </div>
+    </div>,document.body)
   );
 }
 
@@ -4724,7 +4752,7 @@ const GalleryCell = memo(function GalleryCell({
       onPointerCancel={cancelHold}
       onClickCapture={event => { if (heldClick.current) {event.preventDefault();event.stopPropagation();heldClick.current=false;} }}
     >
-      {locked ? <SealedFace card={face} lazyArt /> : <CardFace card={face} lazyArt />}
+      {locked ? <SealedFace card={face} lazyArt /> : <CardFace card={face} lazyArt quiet />}
       {inDeck && <span className="gallery-deck-badge" aria-hidden="true">✓ In deck</span>}
       <button type="button" className="gallery-card-add" aria-label={`${inDeck ? "Remove" : "Add"} ${face.name}`} aria-pressed={inDeck}
         disabled={!canAdd} onClick={onAdd} />
@@ -4845,7 +4873,7 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
   const left = cards.length + relics.length - progress.unlockedIds.length;
   return <div className="help-veil" onClick={onClose}><section className="help-pop" onClick={(event) => event.stopPropagation()}>
     <button type="button" className="help-x" onClick={onClose} aria-label="Close unlocking help">×</button><h3>Unlocking cards</h3>
-    <p>Start with 30 cards. First-time victories unlock the fixed cards listed in each universe.</p>
+    <p>Start with 40 available cards and a 30-card deck. First-time victories unlock the fixed cards listed in each universe.</p>
     <p>Your deck always starts a duel with exactly 30 different unlocked cards. Swap cards in the deck builder after your first victory.</p>
     <p>Losses, draws, replays and hotseat duels grant no cards.</p>
     <p>Clicking on card title opens their Star Chart.</p>
@@ -5114,6 +5142,7 @@ function sameFaceValues(a: object, b: object): boolean {
 const CardFace = memo(function CardFace({
   card,
   lazyArt = false,
+  quiet = false,
   states = [],
   onBoard = false,
   atkClass = "",
@@ -5125,6 +5154,7 @@ const CardFace = memo(function CardFace({
   card: CardFaceModel;
   /** Gallery only — see the loading note in `CardArtwork`. */
   lazyArt?: boolean;
+  quiet?: boolean;
   /** Live condition classes for a minion in play (`is-frozen`, `is-shielded`…). */
   states?: readonly string[];
   /** True once the minion is on the table, where live state replaces the
@@ -5187,7 +5217,7 @@ const CardFace = memo(function CardFace({
    * comfortably at the 46 cap comes back as 45.5 and never as 46 — a `>= 46`
    * test is dead code that silently centres nothing. Every name on the roster
    * measures 45.5 for exactly this reason. */
-  const boardNameCentred =
+  const boardNameCentred = onBoard &&
     fitOneLine(card.name, NAME_BOX_BOARD_CENTRED, BOARD_NAME_CAP) >=
     fitOneLine(card.name, NAME_BOX_BOARD, BOARD_NAME_CAP);
   // Only values with a palette BUILT get a lit rail. A relic's camp and
@@ -5265,7 +5295,7 @@ const CardFace = memo(function CardFace({
             element list per rarity — puts the layer count in two places at once
             and lets the markup and the stylesheet disagree silently. Rare gets
             no shine at all: it is the baseline the other tiers escalate from. */}
-        {SHINE_RARITIES.has(rarity) ? (
+        {!quiet && SHINE_RARITIES.has(rarity) ? (
           <div className="cf-shine" aria-hidden="true">
             <span className="sh-field" />
             <span className="sh-veil" />
@@ -5275,7 +5305,7 @@ const CardFace = memo(function CardFace({
             <span className="sh-rim" />
           </div>
         ) : null}
-        <div className="cf-fx" aria-hidden="true" />
+        {!quiet && <div className="cf-fx" aria-hidden="true" />}
         {states.includes("is-sleeping") ? (
           <span className="cf-sleep" aria-hidden="true"><i>z</i><i>z</i></span>
         ) : null}
@@ -5519,6 +5549,7 @@ function HeroPlate({
       aria-disabled={canStrike ? undefined : true}
       aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : undefined}
     >
+      {enemy && <span className="hero-health-fill" aria-hidden="true" style={{width:`${Math.max(0,Math.min(1,player.health/50))*100}%`,'--boss-tint':campAccent(identity && isMinionCard(identity.card) ? identity.card.camp : 'Nature')} as CSSProperties} />}
       <span className="hero-sigil" title={identity ? identity.card.name : `${player.name}'s sigil`}>
         {identity ? <img className="boss-portrait" src={identity.card.art} alt={`${identity.card.name} portrait`} draggable={false} /> : <HeroSigil playerId={player.id} />}
       </span>
@@ -6525,61 +6556,17 @@ function CardPack({
   );
 }
 
-function TutorialCoach({
-  step,
-  completed,
-  onSkip,
-}: {
-  step: number;
-  completed: boolean;
-  onSkip: () => void;
-}) {
-  const lessonList = [
-    {
-      title: "Play a card",
-      body: "Choose a blue-glowing card, then click an empty slot on your side of the board.",
-      hint: "Blue means you can afford the card.",
-    },
-    {
-      title: "End your turn",
-      body: "Your new minion needs a turn to wake up. Press the green End Turn button to pass to the Recruit.",
-      hint: "The Recruit takes its turn, then your minion can act.",
-    },
-    {
-      title: "Take your first swing",
-      body: "When a minion has a green rim, click it, then choose the enemy Taunt minion.",
-      hint: "Combat is simultaneous, so defenders strike back.",
-    },
-    {
-      title: "Answer the prompt",
-      body: "A Battlecry can pause the duel. Click one of the teal-highlighted legal targets. Completing this prompt finishes the tutorial.",
-      hint: "The board lights up only the choices the card allows.",
-    },
-  ];
-  const safeStep = Math.max(0, Math.min(step, lessonList.length - 1));
-  const lesson = completed
-    ? {
-        title: "Tutorial complete",
-        body: "You completed all four guided lessons. Leave the tutorial to keep playing.",
-        hint: "The full duel remains available from developer mode.",
-      }
-    : lessonList[safeStep];
-
-  return (
-    <aside className="tutorial-coach" aria-label="Tutorial">
-      <div className="tutorial-coach-top">
-        <span>Tutorial</span>
-        <small>{completed ? lessonList.length : safeStep + 1} / {lessonList.length}</small>
-      </div>
-      <div className="tutorial-progress" aria-hidden="true">
-        {lessonList.map((_lesson, index) => <i key={index} className={index <= safeStep ? "on" : ""} />)}
-      </div>
-      <strong>{lesson.title}</strong>
-      <p>{lesson.body}</p>
-      <small className="tutorial-coach-hint">{lesson.hint}</small>
-      <button type="button" onClick={onSkip}>Leave tutorial</button>
-    </aside>
-  );
+function TutorialCoach({step,completed,onSkip,onStart,onCampaign}:{step:number;completed:boolean;onSkip:()=>void;onStart:()=>void;onCampaign:()=>void}) {
+  const lesson=TUTORIAL_LESSONS[Math.min(step,TUTORIAL_LESSONS.length-1)];
+  return <aside className={`tutorial-coach${step===0?' is-welcome':''}`} aria-label="Tutorial">
+    <div className="tutorial-coach-top"><span>Rick's field guide</span><small>{completed?'Complete':`${step+1} / ${TUTORIAL_LESSONS.length}`}</small></div>
+    <strong>{completed?'Ready for the Convergence':lesson.title}</strong>
+    <p>{completed?'You played cards, attacked, answered a Battlecry, equipped a relic, and used a Hero Power.':lesson.body}</p>
+    <small className="tutorial-coach-hint">{completed?'First victories unlock cards and powers. Every universe is available.':lesson.hint}</small>
+    {step===0&&!completed&&<button type="button" className="primary" onClick={onStart}>Start lesson</button>}
+    {completed&&<button type="button" className="primary" onClick={onCampaign}>Choose a universe</button>}
+    <button type="button" onClick={onSkip}>Leave tutorial</button>
+  </aside>;
 }
 
 function DeveloperTools({
@@ -6761,7 +6748,7 @@ function DeveloperTools({
                   className={card.id === selected?.id ? "developer-card-row selected" : "developer-card-row"}
                   onClick={() => setSelectedId(card.id)}
                 >
-                  <span className="developer-card-kind">{isRelicCard(card) ? "RELIC" : `${card.cost}M`}</span>
+                  <span className="developer-card-mana" aria-label={`${card.cost} mana`}>{card.cost}</span>
                   <span className="developer-card-name">{card.name}</span>
                   <small>{card.origin}</small>
                 </button>

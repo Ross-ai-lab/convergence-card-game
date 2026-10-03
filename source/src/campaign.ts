@@ -58,6 +58,7 @@ const difficultyIds = Object.keys(CAMPAIGN_DIFFICULTIES) as CampaignDifficultyId
 const freezeIds = (ids: readonly string[]): readonly string[] => Object.freeze([...ids]);
 
 export const CAMPAIGN_STARTER_DECK = freezeIds(definition.starterCardIds);
+export const CAMPAIGN_PREVIOUS_STARTER_DECK = freezeIds(definition.previousStarterCardIds);
 export const CAMPAIGN_INITIAL_COLLECTION = freezeIds(definition.initialUnlockedCardIds);
 export const CAMPAIGN_UNIVERSE_EXEMPT_IDS = freezeIds(definition.universeExemptCardIds);
 export const CAMPAIGN_PROTAGONIST = storyDefinition.protagonist;
