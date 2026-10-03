@@ -4909,7 +4909,7 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
   return <div className="help-veil" onClick={onClose}><section className="help-pop" onClick={(event) => event.stopPropagation()}>
     <button type="button" className="help-x" onClick={onClose} aria-label="Close unlocking help">×</button><h3>Unlocking cards</h3>
     <p>Start with 45 available cards, a 30-card deck, and Mend Core. First-time victories unlock the fixed cards listed in each universe.</p>
-    <p>Your deck always starts a duel with exactly 30 different unlocked cards. Swap cards in the deck builder after your first victory.</p>
+    <p>Your deck always starts a duel with exactly 30 different unlocked cards. Swap cards in the deck builder from the start.</p>
     <p>Losses, draws, replays and hotseat duels grant no cards.</p>
     <p>Clicking on card title opens their Star Chart.</p>
     <p className="help-state">{progress.unlockedIds.length} cards unlocked{left ? ` · ${left} still to earn` : " · collection complete"}.</p>
