@@ -39,15 +39,40 @@ export async function checkTurnAndKeywords(browser,base){
      await duel.screenshot({path:`../.preview/turn-and-keywords/clock-${turns}.png`});
      if(remaining===9500){
       const deadline=await duel.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v32')).turnClock.deadline);
-      const rng=await duel.evaluate(()=>window.__debug.state().rngSeed);
+      const rng=await duel.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v32')).game.rngSeed);
       await duel.locator('.hand-card').click();await duel.locator('[data-slot="0-0"]').click();await duel.locator('.card-choice-prompt').waitFor();
-      assert.notEqual(await duel.evaluate(()=>window.__debug.state().rngSeed),rng,'The test did not exercise a random effect');
+      assert.notEqual(await duel.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v32')).game.rngSeed),rng,'The test did not exercise a random effect');
       assert.equal(await duel.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v32')).turnClock.deadline),deadline,'A random card play reset the human deadline');
      }
      if(remaining<3000){await duel.locator('.turn-countdown.is-critical').waitFor();await duel.waitForFunction(()=>window.__debug.state().activePlayer===1||window.__debug.state().phase==='gameOver',{},{timeout:6000});}
     }
    }finally{await duel.close();}
   }
+  await checkImpactReplay(browser,base);
   assert.deepEqual(errors,[]);console.log('PASS starting collection, Reborn and Relic explanations, final deck removal, hidden clock, urgent countdown, timeout and GLaDOS speech');
  }finally{if(!page.isClosed())await page.close();}
+}
+
+export async function checkImpactReplay(browser,base){
+  const motion=await browser.newPage({viewport:{width:1440,height:900}});
+  try{
+   await motion.goto(base);await motion.evaluate(async()=>{
+    localStorage.clear();const {emptyProgress,saveProgress}=await import('/src/progress.ts');const {createCampaignDuel}=await import('/src/campaign-duel.ts');const {cards,relics}=await import('/src/data/cards.ts');const {applyAction,makeCardLibrary}=await import('/src/engine/game.ts');const {spawnTestMinion}=await import('/src/engine/test-utils.ts');const {saveGame}=await import('/src/storage.ts');
+    const p={...emptyProgress(),storyIntroduced:true};saveProgress(p);const initial=createCampaignDuel({chapter:2,playerDeck:p.playerDeck,unlockedCardIds:p.unlockedIds,cards,relics,heroPower:p.selectedHeroPower,seed:'impact-replay'});
+    const {state}=applyAction(initial.state,{type:'confirm_mulligan',player:0},makeCardLibrary(cards,relics));state.players[0].hand=[];
+    state.players[0].board=[spawnTestMinion(cards.find(c=>c.name==='Flash'),0),null,null,null];
+    state.players[1].board=[spawnTestMinion(cards.find(c=>c.name==='Modern Tank'),1,{hp:50,maxHp:50,atk:0}),null,null,null];
+    saveGame(state,[],{kind:'campaign',chapter:2,skill:'easy',duelId:'impact-replay'},1);
+   });
+   await motion.reload();await motion.locator('.continue-duel').click();await motion.locator('[data-slot="0-0"].ready').waitFor();
+   await motion.evaluate(()=>{window.__strikeCard=document.querySelector('[data-slot="0-0"] .card-face');window.__hitCard=document.querySelector('[data-slot="1-0"] .card-face');});
+   for(let attack=0;attack<2;attack++){
+    await motion.locator('[data-slot="0-0"]').click();await motion.locator('[data-slot="1-0"]').click();
+    assert(await motion.evaluate(()=>window.__strikeCard===document.querySelector('[data-slot="0-0"] .card-face')&&window.__hitCard===document.querySelector('[data-slot="1-0"] .card-face')),'Repeated attacks remounted card artwork');
+    assert(await motion.locator('[data-slot="1-0"] .jolt-wrap').evaluate(el=>el.getAnimations().some(a=>a.playState==='running')),'Repeated damage did not replay its motion');
+    await motion.waitForTimeout(550);
+   }
+   assert.equal(await motion.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v32')).game.players[1].board[0].hp),42);
+  }finally{await motion.close();}
+ console.log('PASS consecutive attacks preserve decoded cards and replay impact motion');
 }

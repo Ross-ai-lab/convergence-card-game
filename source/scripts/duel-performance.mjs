@@ -21,9 +21,10 @@ export async function measureDuelPerformance(browser,base,label='current',seedBa
       state.players[1].board=['Modern Tank','John Wick','Sonic','UFO'].map(name=>spawnTestMinion(cards.find(c=>c.name===name),1,{hp:10,maxHp:10,sleeping:false}));
       saveGame(state,[],{kind:'campaign',chapter:1,skill:'easy',duelId:'frame-probe'},1);
     });
-    if(seedBase!==base){const stored=await page.evaluate(()=>Object.entries(localStorage));await page.addInitScript(({entries,version})=>{for(let [key,value] of entries){if(/^convergence.save.v\d+$/.test(key)){key=`convergence.save.v${version}`;value=JSON.stringify({...JSON.parse(value),version});}localStorage.setItem(key,value);}}, {entries:stored,version:saveVersion});await page.goto(base);}else await page.reload();
+    if(seedBase!==base){const stored=await page.evaluate(()=>Object.entries(localStorage));await page.addInitScript(({entries,version})=>{for(let [key,value] of entries){if(/^convergence.save.v\d+$/.test(key)){key=`convergence.save.v${version}`;value=JSON.stringify({...JSON.parse(value),version}).replaceAll('"/card-art/','"./card-art/');}localStorage.setItem(key,value);}}, {entries:stored,version:saveVersion});await page.goto(base);}else await page.reload();
     await page.locator('.continue-duel').click();await page.locator('.hand-card').first().waitFor();
     await page.evaluate(async()=>{await document.fonts.ready;await Promise.all([...document.images].map(img=>img.decode().catch(()=>{})));});
+    if(!await page.locator('.cf-art img').evaluateAll(images=>images.length>0&&images.every(img=>img.naturalWidth>0)))throw new Error('A benchmark card did not decode its real artwork');
     const session=await page.context().newCDPSession(page);await session.send('Performance.enable');
     await session.send('Profiler.enable');await session.send('Profiler.start');
     const before=Object.fromEntries((await session.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));

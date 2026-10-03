@@ -11,7 +11,6 @@ board_full,en-US-AndrewMultilingualNeural,-4%,-6Hz,herald,The board is full.
 board_wipe,en-US-AndrewMultilingualNeural,-8%,-12Hz,herald,Nothing left standing.
 taunt_blocked,en-US-AndrewMultilingualNeural,-4%,-6Hz,herald,The wall holds.
 taunt_broken,en-US-AndrewMultilingualNeural,-4%,-6Hz,herald,The wall falls. The core is open.
-relic_gained,en-US-AndrewMultilingualNeural,-8%,-8Hz,herald,A relic surfaces.
 relic_stolen,en-US-AndrewMultilingualNeural,-6%,-8Hz,herald,Taken.
 silence,en-US-AndrewMultilingualNeural,-4%,-8Hz,herald,Silenced.
 freeze,en-US-AndrewMultilingualNeural,-6%,-6Hz,herald,Frozen solid.
