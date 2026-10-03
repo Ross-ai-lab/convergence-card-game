@@ -49,7 +49,7 @@
     "That time I got reincarnated as a Slime": "Tensura"
   },
   "universeException": "The initial collection keeps every previous starter card, including Star Destroyer and Antimatter Bomb. Rick Prime remains a Goku reward.",
-  "rewardSelection": "Ten filler cards move to the initial collection, one from each of ten bosses. All universe cards remain rewards. Reward lists are fixed, never rerolled.",
+  "rewardSelection": "Fifteen filler cards move from boss rewards to the initial collection. The five latest additions are RoboCop, Healing Potion, Walter White, Kojiro Sasaki, and Joker, taken from five different bosses. All universe cards remain rewards. Reward lists are fixed, never rerolled.",
   "chapters": [
     {
       "chapter": 1,
@@ -68,7 +68,6 @@
         "c093",
         "c105",
         "c004",
-        "c140",
         "c026",
         "c064",
         "c008",
@@ -78,7 +77,6 @@
         "c093",
         "c105",
         "c004",
-        "c140",
         "c026",
         "c064",
         "c008",
@@ -141,15 +139,13 @@
         "c091",
         "c164",
         "c010",
-        "c099",
-        "r016"
+        "c099"
       ],
       "fillerRewardIds": [
         "c091",
         "c164",
         "c010",
-        "c099",
-        "r016"
+        "c099"
       ],
       "deckCardIds": [
         "c001",
@@ -272,7 +268,6 @@
         "r018",
         "r012",
         "c089",
-        "c168",
         "c048",
         "c117",
         "c063"
@@ -280,7 +275,6 @@
       "fillerRewardIds": [
         "r012",
         "c089",
-        "c168",
         "c048",
         "c117",
         "c063"
@@ -995,14 +989,12 @@
         "c087",
         "c057",
         "c034",
-        "c095",
         "r008"
       ],
       "fillerRewardIds": [
         "c087",
         "c057",
         "c034",
-        "c095",
         "r008"
       ],
       "deckCardIds": [
@@ -1123,8 +1115,7 @@
         "c102",
         "c161",
         "c156",
-        "c154",
-        "c002"
+        "c154"
       ],
       "fillerRewardIds": [
         "c061",
@@ -1132,8 +1123,7 @@
         "c102",
         "c161",
         "c156",
-        "c154",
-        "c002"
+        "c154"
       ],
       "deckCardIds": [
         "c161",
@@ -1464,7 +1454,12 @@
     "r035",
     "c179",
     "c185",
-    "c149"
+    "c149",
+    "c140",
+    "r016",
+    "c168",
+    "c095",
+    "c002"
   ],
   "universeExemptCardIds": [
     "c068"

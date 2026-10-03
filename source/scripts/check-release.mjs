@@ -18,7 +18,7 @@ try{
  await page.evaluate(()=>{localStorage.clear();localStorage.setItem('convergence.progress.v2','{"unlocked":216}');localStorage.setItem('convergence.save.v27','{"version":27}');localStorage.setItem('sound-test-preference','preserved');});
  await page.reload();await page.locator('.title-screen').waitFor();
  assert.equal(await page.locator('.hero-power-trigger').count(),0);
- assert.equal((await progress()).unlockedIds.length,40);assert.equal((await progress()).completedChapters,0);
+ assert.equal((await progress()).unlockedIds.length,45);assert.equal((await progress()).completedChapters,0);
  assert.equal(await page.locator('.orbit-choice,.daily-pack-trigger').count(),0);
  assert.equal(await page.evaluate(()=>localStorage.getItem('convergence.progress.v2')),null);
  assert.equal(await page.evaluate(()=>localStorage.getItem('sound-test-preference')),'preserved');
@@ -42,8 +42,8 @@ try{
  await page.locator('.developer-search input').fill('John Wick');await page.locator('.developer-card-row').first().click();
  await page.getByRole('button',{name:'I win',exact:true}).click();
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('convergence.progress.v4')).completedChapters===1);
- assert.equal((await progress()).unlockedIds.length,49);assert.equal((await progress()).pendingRewards.length,9);
- await page.reload();await page.locator('[data-story-stage="defeat"]').waitFor();await skipCampaignDialogue(page);await page.locator('.pack-veil').waitFor();assert.equal((await progress()).pendingRewards.length,9);
+ assert.equal((await progress()).unlockedIds.length,53);assert.equal((await progress()).pendingRewards.length,8);
+ await page.reload();await page.locator('[data-story-stage="defeat"]').waitFor();await skipCampaignDialogue(page);await page.locator('.pack-veil').waitFor();assert.equal((await progress()).pendingRewards.length,8);
  await settleMotion(page);
  for(let hit=0;hit<8;hit++){const box=page.locator('.pack-box:not(.is-charged)');if(!await box.isVisible())break;const label=await box.getAttribute('aria-label');await box.click({force:true});await page.waitForFunction(label=>document.querySelector('.pack-box')?.getAttribute('aria-label')!==label,label);}
  await page.locator('.pack-collect:not([disabled])').click({timeout:25000});
@@ -63,7 +63,7 @@ try{
  await page.getByRole('button',{name:'Choose hero power',exact:true}).click();
  assert((await page.locator('.hero-power-menu-intro').textContent()).includes('Conquer any universe'));
  assert.equal(await page.locator('.hero-power-menu-note').count(),0);
- assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:not(:disabled)').count(),1);
+ assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:not(:disabled)').count(),2);
  await page.locator('.gallery-power-picker .hero-power-menu-card').filter({hasText:'Mend Core'}).click();
  assert.equal((await progress()).selectedHeroPower,'core_heal');
  await page.reload();assert((await progress()).playerDeck.includes('c104'));assert.equal((await progress()).pendingRewards.length,0);

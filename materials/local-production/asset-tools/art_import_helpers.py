@@ -19,7 +19,7 @@ def _norm(value):
 
 def find_art(card):
     folder = RAW_ROOT / (
-        "Ascension Relics" if card.get("type") == "relic" else f"{card['cost']} mana"
+        "Relics" if card.get("type") == "relic" else f"{card['cost']} mana"
     )
     if not folder.is_dir():
         return None

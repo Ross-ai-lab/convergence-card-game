@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { checkDeckHover, checkFastGalleryScroll, checkGalleryHold, checkPreviewFallback, checkGalleryPaint } from './gallery-interactions.mjs';
 import { checkDeathMotion } from './death-motion.mjs';
+import {measureDuelPerformance} from './duel-performance.mjs';
 
 const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -104,6 +105,7 @@ try {
   await page.evaluate(() => { window.__performanceSearch.dispose(); delete window.__performanceSearch; });
   await checkDeathMotion(browser,base);
   await checkPreviewFallback(browser,base);
+  await measureDuelPerformance(browser,base,label);
   console.log('PASS  performance: bounded gallery, scrolling, mobile detail, covered animations, and worker parity');
 } finally {
   await browser.close();

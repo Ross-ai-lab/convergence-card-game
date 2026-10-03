@@ -135,9 +135,11 @@ Every universe is selectable from the start. Defeat, surrender, a draw, or an ab
 Each first victory grants its fixed reward once. Replaying a conquered universe grants no duplicate pack.
 Rewards never silently rebuild the player's deck.
 
-**Total: 40 initial cards + 177 rewards = all 217 cards.**
+**Total: 45 initial cards + 172 rewards = all 217 cards.**
 
-Victories in any new universe unlock the next player Hero Power, until all ten powers are available. Universe order does not matter.
+Mend Core is available and equipped from the start. Nine first victories unlock the remaining Hero Powers. Universe order does not matter.
+Human turns last 100 seconds. Only the final ten seconds show a countdown. Unfinished cancellable plays return to hand when time expires.
+Committed choices resolve before the turn passes. Training and developer test duels have no deadline.
 Each campaign boss has its own named power. The boss portrait identifies the opponent; it does not place a free minion on the board.
 All modes retain the ordinary core health, opening hand, mana progression, and four-slot board.
 

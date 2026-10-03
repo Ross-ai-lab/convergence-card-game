@@ -221,7 +221,7 @@ describe("full-roster effects", () => {
     expect(after.players[0].board[2]?.name).toBe("Fire Lord Ozai"); // spares itself
   });
 
-  it("Domovoy (draw_relic): puts an Ascension Relic in hand with no prompt", () => {
+  it("Domovoy (draw_relic): puts an Relic in hand with no prompt", () => {
     const state = mainState();
     const relicIds = new Set(relics.map((relic) => relic.id));
 

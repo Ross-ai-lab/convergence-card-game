@@ -20,6 +20,6 @@ describe('new Hero Power notice',()=>{
  it('persists acknowledgement while adding the starter options without erasing a custom deck',()=>{
   const storage=new Map<string,string>();vi.stubGlobal('window',{localStorage:{getItem:(key:string)=>storage.get(key)??null,setItem:(key:string,value:string)=>storage.set(key,value),removeItem:(key:string)=>storage.delete(key)}});
   const p=acknowledgeHeroPowers(win(emptyProgress(),1));p.playerDeck=p.playerDeck.slice(1);saveProgress(p);
-  const loaded=loadProgress();expect(loaded.playerDeck).toEqual(p.playerDeck);expect(loaded.unlockedIds.length).toBe(49);expect(hasNewHeroPower(loaded)).toBe(false);
+  const loaded=loadProgress();expect(loaded.playerDeck).toEqual(p.playerDeck);expect(loaded.unlockedIds.length).toBe(53);expect(hasNewHeroPower(loaded)).toBe(false);
  });
 });

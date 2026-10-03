@@ -95,7 +95,7 @@ export const RELIC_RARITY = "Relic";
  * kept out of `CAMPS` so no card can carry it, and named here because the card
  * face and the gallery's hidden-option list both had it typed out.
  */
-export const RELIC_CAMP_LABEL = "Ascension";
+export const RELIC_CAMP_LABEL = "Relic";
 /**
  * When a card's printed text happens.
  *
@@ -446,9 +446,9 @@ export interface MinionInstance {
   /** Gojo's live aura sources; removed when those passive sources leave play. */
   passiveSilenceSources: string[];
   divineShield: boolean;
-  /** The first Ascension Relic strapped to this minion, if any. Dies with it. */
+  /** The first Relic strapped to this minion, if any. Dies with it. */
   relic: RelicInstance | null;
-  /** The optional second Ascension Relic slot. Older saves may omit it. */
+  /** The optional second Relic slot. Older saves may omit it. */
   relic2?: RelicInstance | null;
   /** Reborn minions arrive without replaying their card's arrival music. */
   suppressArrivalTheme?: boolean;
@@ -471,7 +471,7 @@ export interface MinionInstance {
   /** Meleoron: the friendly minion protected while this source lives. */
   protectedByMeleoron?: string | null;
   /** Reversible stat/keyword contributions from live aura sources. */
-  auraBonuses?: Array<{ sourceId: string; atk: number; hp: number; keywords: Keyword[]; divineShield?: boolean }>;
+  auraBonuses?: Array<{ sourceId: string; atk: number; hp: number; keywords: Keyword[]; divineShield?: boolean; spentAtk?: number; suppressedHp?: number }>;
   /** Goku: the turn in which its first attack was evaded. */
   evadedAttackAtTurn?: number | null;
   /** Grand Master Oogway: one rescue per turn. */
@@ -676,12 +676,12 @@ export type ResolvedChoiceWithProgress = ResolvedChoice & {
 };
 
 // --------------------------------------------------------------------------
-// Ascension Relics. Every relic's printed text is about "the bearer", so they
+// Relics. Every relic's printed text is about "the bearer", so they
 // are minion equipment, not hero trinkets. The card stays in deck/hand until
 // the player explicitly pays its cost and straps it to a chosen friendly minion.
 // --------------------------------------------------------------------------
 /**
- * Every Ascension Relic hook the engine knows how to resolve.
+ * Every Relic hook the engine knows how to resolve.
  *
  * The array is the single source of truth: the type is derived from it, and
  * `csv.ts` validates incoming data against the same array. A value can

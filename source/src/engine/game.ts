@@ -15,6 +15,7 @@ import type {
   GameAction,
   GameEvent,
   GameState,
+  Keyword,
   HandOption,
   HeroPowerId,
   LabelOption,
@@ -674,9 +675,8 @@ function resolveHeroPower(
       events.push({ kind: "effect", text: `${definition.name} discovers a card.`, player: playerId, cardId });
     }
   } else if (powerId === "luffy_set_one" && target) {
-    target.atk = 1;
-    target.maxHp = 1;
-    target.hp = 1;
+    setMinionAttack(target,1);
+    setMinionHealth(target,1,1);
     events.push({ kind: "effect", text: `${definition.name} reduces ${target.name} to 1/1.`, player: playerId, instanceId: target.instanceId });
   } else if (powerId === "bill_chaos" && target) {
     [target.atk, target.hp] = [target.hp, target.atk];
@@ -688,11 +688,10 @@ function resolveHeroPower(
     target.atk += 1;
     events.push({ kind: "effect", text: `${definition.name} gives ${target.name} +1 ATK.`, player: playerId, instanceId: target.instanceId });
   } else if (powerId === "minion_hp_down" && target) {
-    target.maxHp = Math.max(1, target.maxHp - 1);
-    target.hp -= 1;
+    reduceMinionHealth(target,1);
     events.push({ kind: "effect", text: `${definition.name} gives ${target.name} -1 HP.`, player: playerId, instanceId: target.instanceId });
   } else if (powerId === "minion_atk_down" && target) {
-    target.atk = Math.max(0, target.atk - 1);
+    setMinionAttack(target,target.atk-1);
     events.push({ kind: "effect", text: `${definition.name} gives ${target.name} -1 ATK.`, player: playerId, instanceId: target.instanceId });
   } else if (powerId === "core_trade_draw") {
     player.health -= 2;
@@ -1997,7 +1996,7 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
     values: [
       { label: "Give your hero Divine Shield", value: "hero_shield" },
       { label: "Summon a random 3-mana minion", value: "summon_3" },
-      { label: "Gain a random Ascension Relic", value: "random_relic" },
+      { label: "Gain a random Relic", value: "random_relic" },
     ],
   },
   discover_tech_card: {
@@ -2020,17 +2019,17 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   knov_pocket_room: { side: "friendly", prompt: "Choose a friendly minion for the pocket room", includeSelf: false },
   steal_and_equip_relic: {
     side: "enemy",
-    prompt: "Take an enemy minion's Ascension Relic",
+    prompt: "Take an enemy minion's Relic",
     filter: (m, source) => hasAnyRelic(m) && attachedRelics(m).some((relic) => canEquipRelicToBearer(relic, source)),
     enabled: (_state, source) => hasFreeRelicSlot(source),
   },
   steal_hand_relic: {
     kind: "hand",
     side: "enemy",
-    prompt: "Choose an Ascension Relic in the enemy hand to steal",
+    prompt: "Choose an Relic in the enemy hand to steal",
     handFilter: (card) => isRelicCard(card),
   },
-  destroy_relic: { side: "enemy", prompt: "Destroy an enemy minion's Ascension Relic", filter: (m) => hasAnyRelic(m) },
+  destroy_relic: { side: "enemy", prompt: "Destroy an enemy minion's Relic", filter: (m) => hasAnyRelic(m) },
   mind_control_2: { side: "enemy", prompt: "Seize an enemy minion with 2 or less HP", filter: (m) => m.hp <= 2 },
   mind_control_enemy: { side: "enemy", prompt: "Gain control of an enemy minion" },
   motoko_kusanagi: {
@@ -2330,13 +2329,13 @@ function grantRandomRelic(
 ): void {
   const available = relicsInDeck(state, playerId, library);
   if (available.length === 0) {
-    events.push(effectEvent(`${source.name} finds no Ascension Relic.`, source));
+    events.push(effectEvent(`${source.name} finds no Relic.`, source));
     return;
   }
   const relic = available[rollInt(state, available.length)];
   if (!relic || !removeCardFromDrawPile(state, playerId, relic.id)) return;
   putCardInHand(state, playerId, relic.id, events);
-  events.push(effectEvent(`${source.name} grants a random Ascension Relic: ${relic.name}.`, source));
+  events.push(effectEvent(`${source.name} grants a random Relic: ${relic.name}.`, source));
 }
 
 function summonRandomCostFromDeck(
@@ -2511,7 +2510,7 @@ function runEffect(
         {
           kind: "option",
           side: "friendly",
-          prompt: source.effectId === "discover_relic_self" ? "Discover 1 of 3 Ascension Relics" : "Choose 1 of 3 Ascension Relics",
+          prompt: source.effectId === "discover_relic_self" ? "Discover 1 of 3 Relics" : "Choose 1 of 3 Relics",
           values: discoverThree(state, relicsInDeck(state, source.owner, library)).map((relic) => ({ label: relic.name, value: relic.id })),
         },
         library,
@@ -2536,7 +2535,7 @@ function runEffect(
         {
           kind: "option",
           side: "friendly",
-          prompt: "Discover 1 of 3 Ascension Relics",
+          prompt: "Discover 1 of 3 Relics",
           values: discoverThree(state, relicsInDeck(state, source.owner, library)).map((relic) => ({ label: relic.name, value: relic.id })),
         },
         library,
@@ -2608,7 +2607,7 @@ function runEffect(
           events.push(effectEvent(`${label} silences ${target.name}.`, source));
         }
       } else if (chosen.option.value === "weaken") {
-        target.atk = Math.max(0, target.atk - 2);
+        setMinionAttack(target,target.atk-2);
         events.push(effectEvent(`${label} gives ${target.name} -2 ATK.`, source));
       }
       return false;
@@ -2709,7 +2708,7 @@ function runEffect(
         ? "a shield for the core"
         : pickedValue === "summon_3"
           ? "a 3-mana ally"
-          : "an Ascension Relic";
+          : "an Relic";
     events.push(effectEvent(`${label} wishes for ${wish}.`, source));
     if (pickedValue === "hero_shield") {
       player.heroDivineShield = true;
@@ -2796,7 +2795,7 @@ function runEffect(
       if (hasDumbledoreProtection(state, picked)) {
         events.push(effectEvent(`${picked.name} resists Darth Vader's chain.`, picked));
       } else if (!isSlotProtected(state, picked) && canDisable(state, source.owner, picked, "chain")) {
-        picked.atk = 1;
+        setMinionAttack(picked,1);
         applyChain(state, picked, events);
         events.push(effectEvent(`${label} sets ${picked.name}'s ATK to 1 and chains it.`, source));
       } else {
@@ -2834,8 +2833,7 @@ function runEffect(
   } else if (source.effectId === "neutral_double_atk_hp_1") {
     if (picked) {
       picked.atk *= 2;
-      picked.maxHp = 1;
-      picked.hp = 1;
+      setMinionHealth(picked,1,1);
       events.push(effectEvent(`${label} doubles ${picked.name}'s ATK and leaves it at 1 HP.`, source));
     }
   } else if (source.effectId === "strange_bargain") {
@@ -2980,8 +2978,8 @@ function runEffect(
       events.push(effectEvent(`${label} finds no relic left.`, source));
     }
   } else if (source.effectId === "wall_of_flesh_grind") {
-    damageAllOther(state, source, 1, events);
-    events.push(effectEvent(`${label} grinds every other minion for 1.`, source));
+    damageAllEnemies(state, source, 1, events);
+    events.push(effectEvent(`${label} grinds all enemy minions for 1.`, source));
   } else if (source.effectId === "ragnaros_ongoing_burn") {
     const target = randomEnemyMinion(state, source);
     const targetSlot = target ? slotOf(state, target) : -1;
@@ -3051,7 +3049,7 @@ function runEffect(
     const target = picked;
     if (target) {
       applyFreeze(state, source, target, events);
-      target.atk = Math.ceil(target.atk / 2);
+      setMinionAttack(target,Math.ceil(target.atk/2));
       events.push(effectEvent(`${label} halves ${target.name}'s ATK.`, source));
     }
   } else if (source.effectId === "set_hp_1") {
@@ -3740,13 +3738,13 @@ function grantRandomRelicsToBoard(state: GameState, source: MinionInstance, libr
     equipRelic(state, bearer, createRelicInstance(relic), library, events);
     granted += 1;
   }
-  events.push(effectEvent(`${source.name} grants Ascension Relics to ${granted} friendly minion${granted === 1 ? "" : "s"}.`, source));
+  events.push(effectEvent(`${source.name} grants Relics to ${granted} friendly minion${granted === 1 ? "" : "s"}.`, source));
 }
 
 function equipRandomRelic(state: GameState, source: MinionInstance, library: CardLibrary, events: GameEvent[]): void {
   const available = relicsInDeck(state, source.owner, library).filter((relic) => canEquipRelicToBearer(relic, source));
   if (available.length === 0) {
-    events.push(effectEvent(`${source.name} finds no Ascension Relic.`, source));
+    events.push(effectEvent(`${source.name} finds no Relic.`, source));
     return;
   }
   const relic = available[rollInt(state, available.length)];
@@ -3895,7 +3893,48 @@ function resolveEndOfTurn(state: GameState, playerId: PlayerId, _library: CardLi
   resolveTemporaryControls(state, playerId, events);
 }
 
+/** Reductions consume the temporary attack contribution before the underlying stat. */
+function setMinionAttack(target: MinionInstance, value: number): void {
+  let reduction = Math.max(0,target.atk-Math.max(0,value));
+  for (const bonus of target.auraBonuses ?? []) {
+    const consumed=Math.min(reduction,Math.max(0,bonus.atk));
+    bonus.atk-=consumed;bonus.spentAtk=(bonus.spentAtk??0)+consumed;reduction-=consumed;
+  }
+  target.atk=Math.max(0,value);
+}
+
+function setMinionHealth(target: MinionInstance, maximum: number, current: number): void {
+  let reduction=Math.max(0,target.maxHp-maximum);
+  for(const bonus of target.auraBonuses??[]) {
+    const consumed=Math.min(reduction,Math.max(0,bonus.hp-(bonus.suppressedHp??0)));
+    bonus.suppressedHp=(bonus.suppressedHp??0)+consumed;reduction-=consumed;
+  }
+  target.maxHp=Math.max(1,maximum);target.hp=current;
+}
+
+function reduceMinionHealth(target: MinionInstance, amount: number): void {
+  let reduction=amount, wounds=Math.max(0,target.maxHp-target.hp), currentLoss=amount;
+  for(const bonus of target.auraBonuses??[]) {
+    const capacity=Math.max(0,bonus.hp-(bonus.suppressedHp??0));
+    const spent=Math.min(wounds,capacity);wounds-=spent;
+    const consumed=Math.min(reduction,capacity);
+    currentLoss-=Math.min(spent,consumed);bonus.suppressedHp=(bonus.suppressedHp??0)+consumed;reduction-=consumed;
+  }
+  target.maxHp=Math.max(1,target.maxHp-amount);target.hp-=currentLoss;
+}
+
 function refreshPassiveAuras(state: GameState): void {
+  const previous=new Map<string,Map<string,{hp:number;atk:number;suppressedHp:number}>>();
+  const grantAura=(target:MinionInstance,sourceId:string,atk:number,hp:number,keywords:Keyword[]=[])=>{
+    const budget=previous.get(target.instanceId)?.get(sourceId);
+    const spentAtk=Math.min(Math.max(0,atk),budget?.atk??0);
+    const suppressedHp=Math.min(hp,budget?.suppressedHp??0);
+    const spentHp=Math.min(hp-suppressedHp,budget?.hp??0);
+    if(budget){budget.atk-=spentAtk;budget.hp-=spentHp;budget.suppressedHp-=suppressedHp;}
+    if(target.silenced){target.auraBonuses!.push({sourceId,atk:0,hp:0,keywords});return;}
+    target.atk+=atk-spentAtk;target.maxHp+=hp-suppressedHp;target.hp+=hp-suppressedHp-spentHp;
+    target.auraBonuses!.push({sourceId,atk:atk-spentAtk,hp,keywords,spentAtk,suppressedHp});
+  };
   for (const owner of [0, 1] as PlayerId[]) {
     const board = state.players[owner].board;
     const liveFantasticSources = new Set(
@@ -3906,17 +3945,25 @@ function refreshPassiveAuras(state: GameState): void {
     for (const target of board) {
       if (!target) continue;
       const old = target.auraBonuses ?? [];
+      const budgets=new Map<string,{hp:number;atk:number;suppressedHp:number}>();previous.set(target.instanceId,budgets);
+      let wounds=Math.max(0,target.maxHp-target.hp);
+      let overwritten=Math.max(0,old.reduce((sum,bonus)=>sum+Math.max(0,bonus.hp-(bonus.suppressedHp??0)),0)-Math.max(0,target.maxHp-1));
       for (const bonus of old) {
         // A direct ATK-setting effect (for example Vader's chain) can land
         // while a positive aura is still attached.  Removing that old aura
         // must never leave a live minion below the game's 0-ATK floor.
-        const damageTaken = Math.max(0, target.maxHp - target.hp);
+        const extraSuppression=Math.min(overwritten,Math.max(0,bonus.hp-(bonus.suppressedHp??0)));overwritten-=extraSuppression;
+        const suppressedHp=(bonus.suppressedHp??0)+extraSuppression;
+        const capacity=Math.max(0,bonus.hp-suppressedHp);
+        const spentHp=Math.min(wounds,capacity);wounds-=spentHp;
+        const budget=budgets.get(bonus.sourceId)??{hp:0,atk:0,suppressedHp:0};
+        budget.hp+=spentHp;budget.atk+=bonus.spentAtk??0;budget.suppressedHp+=suppressedHp;budgets.set(bonus.sourceId,budget);
         target.atk = Math.max(0, target.atk - bonus.atk);
-        target.maxHp -= bonus.hp;
+        target.maxHp = Math.max(1,target.maxHp-capacity);
         // Rebuilding an aura must preserve wounds.  Removing a +HP aura and
         // then adding it again is not a heal, even when the refresh was
         // triggered by placing an unrelated minion such as Ragnaros.
-        target.hp = Math.max(0, Math.min(target.maxHp, target.maxHp - damageTaken));
+        target.hp = Math.min(target.maxHp,target.hp-(capacity-spentHp));
         for (const keyword of bonus.keywords) {
           const hasPrintedOrGranted = target.gainedEffects.some((effect) => effect.text.toLowerCase().includes(keyword.toLowerCase())) || target.effect.toLowerCase().includes(keyword.toLowerCase());
           if (!hasPrintedOrGranted) target.keywords = target.keywords.filter((entry) => entry !== keyword);
@@ -3979,10 +4026,7 @@ function refreshPassiveAuras(state: GameState): void {
         for (const targetSlot of [0, 1, 2, 3]) {
           const target = board[targetSlot];
           if (!target) continue;
-          target.atk += 1;
-          target.maxHp += 1;
-          target.hp += 1;
-          target.auraBonuses!.push({ sourceId: source.instanceId, atk: 1, hp: 1, keywords: [] });
+          grantAura(target,source.instanceId,1,1);
         }
       }
       if (hasEffect(source, "buff_all_nature_2_1")) {
@@ -3991,10 +4035,7 @@ function refreshPassiveAuras(state: GameState): void {
         // Tree leaves play or is silenced.
         for (const target of board) {
           if (!target || target.instanceId === source.instanceId || !receivesCampBuff(target, "Nature")) continue;
-          target.atk += 2;
-          target.maxHp += 1;
-          target.hp += 1;
-          target.auraBonuses!.push({ sourceId: source.instanceId, atk: 2, hp: 1, keywords: [] });
+          grantAura(target,source.instanceId,2,1);
         }
       }
       if (hasEffect(source, "buff_all_tech_2_1")) {
@@ -4002,10 +4043,7 @@ function refreshPassiveAuras(state: GameState): void {
         // so leaving, silencing, or replacing the Hub removes the bonus cleanly.
         for (const target of board) {
           if (!target || target.instanceId === source.instanceId || !receivesCampBuff(target, "Tech")) continue;
-          target.atk += 2;
-          target.maxHp += 1;
-          target.hp += 1;
-          target.auraBonuses!.push({ sourceId: source.instanceId, atk: 2, hp: 1, keywords: [] });
+          grantAura(target,source.instanceId,2,1);
         }
       }
       if (hasEffect(source, "taunt_ally_self_buff")) {
@@ -4015,19 +4053,13 @@ function refreshPassiveAuras(state: GameState): void {
           (ally) => ally && ally.instanceId !== source.instanceId && !ally.silenced && hasKeyword(ally, "Taunt"),
         );
         if (behindAWall) {
-          source.atk += 1;
-          source.maxHp += 1;
-          source.hp += 1;
-          source.auraBonuses!.push({ sourceId: source.instanceId, atk: 1, hp: 1, keywords: [] });
+          grantAura(source,source.instanceId,1,1);
         }
       }
       if (hasEffect(source, "guts_missing_core_growth")) {
         const missingCore = Math.floor(Math.max(0, STARTING_CORE - state.players[source.owner].health) / 20);
         if (missingCore > 0) {
-          source.atk += missingCore * 2;
-          source.maxHp += missingCore * 2;
-          source.hp += missingCore * 2;
-          source.auraBonuses!.push({ sourceId: source.instanceId, atk: missingCore * 2, hp: missingCore * 2, keywords: [] });
+          grantAura(source,source.instanceId,missingCore*2,missingCore*2);
         }
       }
       if (!hasEffect(source, "glados_adjacent_tech")) continue;
@@ -4035,11 +4067,8 @@ function refreshPassiveAuras(state: GameState): void {
       for (const targetSlot of [sourceSlot - 1, sourceSlot + 1]) {
         const target = board[targetSlot];
         if (!target || !receivesCampBuff(target, "Tech")) continue;
-        target.atk += 2;
-        target.maxHp += 2;
-        target.hp += 2;
         if (!hasKeyword(target, "Taunt")) target.keywords.push("Taunt");
-        target.auraBonuses!.push({ sourceId: source.instanceId, atk: 2, hp: 2, keywords: ["Taunt"] });
+        grantAura(target,source.instanceId,2,2,["Taunt"]);
       }
     }
   }
@@ -4054,11 +4083,8 @@ function refreshPassiveAuras(state: GameState): void {
         // "All OTHER Taunt minions". The grid is itself a Taunt, so without this
         // it fed its own buff and read as a 7/11 behind a 4/8's printed stats.
         if (target.instanceId === source.instanceId) continue;
-        target.atk += 2;
-        target.maxHp += 2;
-        target.hp += 2;
         target.auraBonuses = target.auraBonuses ?? [];
-        target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 2, keywords: [] });
+        grantAura(target,source.instanceId,2,2);
     }
   }
   copyEnemyPassives(state);
@@ -4070,11 +4096,8 @@ function refreshPassiveAuras(state: GameState): void {
   for (const source of battleships) {
     for (const target of state.players[source.owner].board) {
       if (!target || !receivesCampBuff(target, "Tech")) continue;
-      target.atk += 2;
-      target.maxHp += 1;
-      target.hp += 1;
       target.auraBonuses = target.auraBonuses ?? [];
-      target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 1, keywords: [] });
+      grantAura(target,source.instanceId,2,1);
     }
   }
   const eldenBeasts = ([0, 1] as PlayerId[]).flatMap((owner) =>
@@ -4089,9 +4112,8 @@ function refreshPassiveAuras(state: GameState): void {
       // screen). Battleship and the Giant Tree already read it this way; this
       // aura was the one that did not, so an ALL minion silently missed it.
       if (!target || (target.alignment !== "Neutral" && !receivesCampBuff(target, "Magic"))) continue;
-      target.atk += 2;
       target.auraBonuses = target.auraBonuses ?? [];
-      target.auraBonuses.push({ sourceId: source.instanceId, atk: 2, hp: 0, keywords: [] });
+      grantAura(target,source.instanceId,2,0);
     }
   }
   const allMightSources = ([0, 1] as PlayerId[]).flatMap((owner) =>
@@ -4545,9 +4567,8 @@ function enforceSlotAuras(state: GameState, events: GameEvent[]): void {
     for (const aura of player.slotAuras) {
       const minion = player.board[aura.slot];
       if (aura.auraId === "slot_stats_one" && minion) {
-        minion.atk = 1;
-        minion.maxHp = 1;
-        minion.hp = 1;
+        setMinionAttack(minion,1);
+        setMinionHealth(minion,1,1);
       }
       if (aura.auraId === "slot_chain") {
         if (
@@ -5353,7 +5374,7 @@ function resolveChainGrowth(minion: MinionInstance, events: GameEvent[]): void {
 }
 
 /**
- * Minions have two independent Ascension Relic straps. `relic` remains the
+ * Minions have two independent Relic straps. `relic` remains the
  * first slot for save and test compatibility; `relic2` is the new second slot.
  */
 function attachedRelics(minion: MinionInstance): RelicInstance[] {
@@ -5381,7 +5402,7 @@ function hasAnyRelic(minion: MinionInstance | null | undefined): boolean {
   return Boolean(minion && (minion.relic || minion.relic2));
 }
 
-/** Whether a minion still has room for another Ascension Relic. */
+/** Whether a minion still has room for another Relic. */
 export function hasFreeRelicSlot(minion: MinionInstance): boolean {
   return minion.relic === null || minion.relic2 === null || minion.relic2 === undefined;
 }
@@ -5450,7 +5471,7 @@ type DisableKind = "other" | "silence" | "freeze" | "chain";
  */
 function stripStatBuffs(minion: MinionInstance): void {
   const auraAtk = (minion.auraBonuses ?? []).reduce((total, bonus) => total + bonus.atk, 0);
-  const auraHp = (minion.auraBonuses ?? []).reduce((total, bonus) => total + bonus.hp, 0);
+  const auraHp = (minion.auraBonuses ?? []).reduce((total, bonus) => total + bonus.hp - (bonus.suppressedHp ?? 0), 0);
 
   const grantedAtk = minion.atk - auraAtk - minion.baseAtk;
   if (grantedAtk > 0) minion.atk = Math.max(0, minion.atk - grantedAtk);
@@ -5547,7 +5568,7 @@ function suppressAuraBuffsOnSilenced(state: GameState): void {
         const hp = Math.min(0, bonus.hp);
         if (bonus.atk > 0) target.atk = Math.max(0, target.atk - bonus.atk);
         if (bonus.hp > 0) {
-          target.maxHp -= bonus.hp;
+          target.maxHp = Math.max(1,target.maxHp-Math.max(0,bonus.hp-(bonus.suppressedHp??0)));
           target.hp = Math.min(target.hp, target.maxHp);
         }
         kept.push({ ...bonus, atk, hp });

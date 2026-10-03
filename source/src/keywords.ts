@@ -96,6 +96,7 @@ export const KEYWORDS: KeywordEntry[] = [
   { term: "Destroy", text: "Removes a minion, bypassing Divine Shield." },
   { term: "Summon", text: "Puts a new minion into an open slot." },
   { term: "Discover", text: "Offers three choices. Choose one." },
+  { term: "Relic", aliases: ["Relics"], text: "An equipment card played onto a minion. A minion can carry up to two relics. Its printed effect applies to the bearer." },
   {
     term: "Transform",
     aliases: ["Devolve"],

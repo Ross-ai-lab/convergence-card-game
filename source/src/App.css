@@ -382,6 +382,7 @@ button:disabled {
 
 /* Screen shake when a hero takes a hit. */
 .table-frame.shaking {
+  will-change: transform;
   animation: screen-shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
@@ -403,6 +404,7 @@ button:disabled {
    drop with one small rebound, and it starts 0.16s late to sit under the rarity
    fanfare's own transient. Same delay as the `heavyLand` cue in App.tsx. */
 .table-frame.heavy-landing {
+  will-change: transform;
   /* `--thud` runs 0.28 at 6 mana to 1 at 10, set by App.tsx. Every number in
      the keyframes is scaled by it, so a 6-mana body nudges the table and a
      10-mana body drops it. The duration scales too: a heavier thing settles
@@ -695,6 +697,7 @@ button:disabled {
    glow at all — which is what the first close-up caught. Keyframes now animate
    opacity and scale only, and the glow is present for the whole life of it. */
 .rift-flare {
+  will-change: transform, opacity;
   position: absolute;
   left: 0;
   right: 0;
@@ -723,7 +726,6 @@ button:disabled {
   100% {
     opacity: 0;
     transform: translateY(-50%) scaleX(1) scaleY(4);
-    filter: blur(7px);
   }
 }
 
@@ -2819,7 +2821,7 @@ button:disabled {
   --badge-light: #e0c2f4; --badge-mid: #8b46c0; --badge-dark: #3f1a5e;
 }
 
-.card-face.rarity-relic {            /* Ascension Relics — radiant teal */
+.card-face.rarity-relic {            /* Relics — radiant teal */
   --metal-light: #bdeffb; --metal-mid: #2f9fbe; --metal-dark: #0f4c63;
   --rail-light: #1f5466; --rail-dark: #0d2c38;
   --banner-light: #1b6c83; --banner-dark: #0c3947;
@@ -4621,7 +4623,7 @@ button:disabled {
 
 .relic-badge::before { content: ''; position: absolute; inset: -6px; }
 
-/* --- Re-strapping an Ascension Relic -------------------------------------
+/* --- Re-strapping an Relic -------------------------------------
    Relics arrive by luck; passing one is the single decision the player gets
    over them, capped at once a turn. The badge is the handle, and it says so by
    how it looks rather than with a label — no chips or pills on a card, ever.  */
@@ -4884,119 +4886,6 @@ button:disabled {
 .draw-panel.locked .choice-card {
   cursor: var(--convergence-cursor);
   opacity: 0.75;
-}
-
-/* --- Mythic arrival ----------------------------------------------------- */
-
-.mythic-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  background: radial-gradient(circle at 50% 45%, rgba(60, 12, 6, 0.55), rgba(6, 4, 8, 0.92) 68%);
-  pointer-events: none;
-  animation: mythic-veil 1.9s ease-out forwards;
-}
-
-@keyframes mythic-veil {
-  0% { opacity: 0; }
-  10% { opacity: 1; }
-  74% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-.mythic-rays {
-  position: absolute;
-  inset: -55%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg 7deg,
-    rgba(255, 138, 106, 0.24) 7deg 12deg,
-    transparent 12deg 25deg,
-    rgba(240, 199, 103, 0.16) 25deg 29deg,
-    transparent 29deg 46deg
-  );
-  animation: mythic-spin 9s linear infinite;
-}
-
-@keyframes mythic-spin {
-  to { transform: rotate(360deg); }
-}
-
-.mythic-body {
-  position: relative;
-  display: flex;
-  gap: 30px;
-  align-items: center;
-  max-width: min(820px, calc(100vw - 40px));
-  padding: 0 20px;
-}
-
-.mythic-art {
-  width: clamp(150px, 22vw, 240px);
-  flex: 0 0 auto;
-  overflow: hidden;
-  border: 3px solid var(--gold);
-  border-radius: 16px;
-  box-shadow: 0 0 0 2px #2a0d06, 0 26px 70px rgba(0, 0, 0, 0.75), 0 0 90px rgba(255, 120, 80, 0.55);
-  animation: mythic-card-in 0.75s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.mythic-art img {
-  width: 100%;
-  aspect-ratio: 5 / 7;
-  object-fit: cover;
-  display: block;
-}
-
-@keyframes mythic-card-in {
-  0% { opacity: 0; transform: scale(1.35) rotate(-7deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0); }
-}
-
-.mythic-text {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  text-align: left;
-  animation: mythic-text-in 0.6s 0.14s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-
-@keyframes mythic-text-in {
-  0% { opacity: 0; transform: translateY(24px); }
-  100% { opacity: 1; transform: none; }
-}
-
-.mythic-text .mythic-tier {
-  color: #ff9d80;
-  font-size: 0.82rem;
-  font-weight: 950;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-}
-
-.mythic-text strong {
-  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  font-size: clamp(1.9rem, 5vw, 3.4rem);
-  line-height: 1.02;
-  color: #fff3dd;
-  text-shadow: 0 4px 40px rgba(255, 120, 80, 0.7);
-}
-
-.mythic-text em {
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-style: normal;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-@media (max-width: 620px) {
-  .mythic-body { flex-direction: column; gap: 16px; text-align: center; }
-  .mythic-text { text-align: center; justify-items: center; }
 }
 
 /* --- victory screen ----------------------------------------------------- */
@@ -7019,7 +6908,7 @@ button:disabled {
      rather than against whatever stacking context a card face happened to make.
      Rendered inside the card it was showing the flavour text through itself and
      being painted over by the ATK gem. */
-  z-index: 120;
+  z-index: 20010;
   display: grid;
   gap: 12px;
   padding: 12px 14px;
@@ -7253,6 +7142,14 @@ button:disabled {
 .tutorial-coach {animation:none;}
 .tutorial-coach.is-welcome {box-shadow:0 0 0 150vmax #090813cc;}
 .tutorial-mode .hand-keyword-popover,.tutorial-mode .keyword-popover {display:none !important;}
+.turn-countdown {position:fixed;z-index:20000;bottom:max(12px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:7px 12px;border:1px solid #ffd079;border-radius:9px;background:#392015f2;color:#ffe4aa;box-shadow:0 0 18px #ffb34d55;pointer-events:none;}
+.turn-countdown small {font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;}
+.turn-countdown strong {font-size:23px;line-height:1;font-variant-numeric:tabular-nums;}
+.turn-countdown.is-critical {background:#691f2af5;border-color:#ff9b8a;color:#fff0dc;animation:clock-danger 700ms ease-in-out infinite alternate;}
+@keyframes clock-danger {to{box-shadow:0 0 28px #ff443477;}}
+.protocol-speech {position:absolute;z-index:90;top:calc(100% + 7px);left:50%;transform:translateX(-50%);display:grid;gap:3px;width:250px;padding:9px 12px;border:1px solid #70cfe4;border-radius:9px;background:#162737f5;color:#e7f6fa;box-shadow:0 7px 20px #07101a88;font-size:12px;line-height:1.35;text-align:left;pointer-events:none;}
+.protocol-speech::before {content:'';position:absolute;top:-6px;left:50%;width:10px;height:10px;transform:rotate(45deg);background:#162737;border-left:1px solid #70cfe4;border-top:1px solid #70cfe4;}
+.protocol-speech b {color:#83e1ed;font-size:9px;text-transform:uppercase;letter-spacing:.12em;}
 
 /* Discover has a real height budget; its complete cards share the remaining row. */
 .target-prompt.card-choice-prompt {
@@ -7272,3 +7169,4 @@ button:disabled {
  .card-choice-prompt .target-prompt-art {width:32px;height:32px;}
  .card-choice-prompt .prompt-cancel {font-size:10px;min-height:30px;}
 }
+

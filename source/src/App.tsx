@@ -1,9 +1,11 @@
 import { TUTORIAL_LESSONS, tutorialAllowsAction, nextTutorialStep, tutorialOpponentAction } from './tutorial';
+import {TurnClock,TurnClockWarning,humanTurnKey} from './turn-clock';
+import {expirePlayerTurn} from './engine/turn-timeout';
 import { Fragment, createContext, memo, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
 import "./gallery-detail.css";
-// Board effects (camp signatures, the Mythic entrance, the killing blow). Loaded
+// Board effects (camp signatures and the killing blow). Loaded
 // HERE, immediately after App.css, on purpose: that is the exact cascade slot
 // they occupied when they lived in screens/Screens.css, so moving the file could
 // not change which rule wins anything.
@@ -176,7 +178,7 @@ function useFullscreen() {
 // whole printed card. CardDefinition and MinionInstance both satisfy it
 // structurally; relics satisfy it too via relicFace() below, which is why the
 // fields are widened rather than Pick'ed — a relic has no ATK/HP, and its rails
-// read ASCENSION / RELIC instead of a camp and an alignment.
+// read RELIC instead of a camp and an alignment.
 type CardFaceModel = {
   name: string;
   art: string;
@@ -198,7 +200,7 @@ type CardFaceModel = {
  *  full card has to be read back out of the library to be shown. */
 const relicLibrary = new Map(relics.map((relic) => [relic.id, relic]));
 
-/** An Ascension Relic as a drawable card: teal frame, no stat gems, and the
+/** A relic as a drawable card: teal frame, no stat gems, and the
  *  side rails the printed relics use. */
 function relicFace(relic: RelicInstance | RelicDefinition): CardFaceModel {
   const def = relicLibrary.get(relic.id);
@@ -297,8 +299,6 @@ const DUEL_INTRO_TIMINGS = {
 /** Which crystals just changed, and in which direction. */
 type ManaFx = { id: number; kind: "spend" | "refill"; from: number; to: number } | null;
 // A Mythic landing is the loudest moment in a duel, so it takes the whole screen.
-type Splash = { id: number; minion: MinionInstance } | null;
-const SPLASH_MS = 1900;
 /** Core at or under this swaps the music to the tense bed. Roughly a quarter. */
 const TENSION_CORE = 12;
 /**
@@ -373,7 +373,7 @@ function handKeywordEntriesFor(card: PlayableCard): KeywordEntry[] {
   const add = (entry: KeywordEntry) => {
     if (!found.includes(entry)) found.push(entry);
   };
-  for (const piece of splitOnKeywords(card.effect ?? "")) {
+  for (const piece of splitOnKeywords(card.effect ?? "", isMinionCard(card))) {
     if (piece.entry) add(piece.entry);
   }
   for (const entry of keywordEntriesFor(isMinionCard(card) ? card.keywords : [])) add(entry);
@@ -609,6 +609,7 @@ export default function App() {
     }
     return saved;
   }, [initialProgress]);
+  const turnClock=useMemo(()=>new TurnClock(restored?.turnClock),[restored]);
   const [game, setGame] = useState(() => {
     if (!restored) return createInitialGame(cards, createDuelSeed(), relics, { decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK] });
     if (restored.mode.kind === "hotseat" || restored.game.heroPowers[1]) return restored.game;
@@ -773,7 +774,6 @@ export default function App() {
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
   const [impacts, setImpacts] = useState<Impact[]>([]);
   const [lunge, setLunge] = useState<Lunge>(null);
-  const [splash, setSplash] = useState<Splash>(null);
   const [relicFlashes, setRelicFlashes] = useState<RelicFlash[]>([]);
   const relicFlash = relicFlashes[0] ?? null;
   useEffect(() => {
@@ -921,7 +921,7 @@ export default function App() {
       clearSave();
       setHasLiveSave(false);
     } else if (screen === "playing" && game.phase !== "gameOver") {
-      saveGame(game, events, mode, Date.now());
+      saveGame(game, events, mode, Date.now(),turnClock.getSnapshot());
       setHasLiveSave(true);
     }
   }, [game, events, mode, screen, tutorialActive, developerDuelActive]);
@@ -1267,13 +1267,36 @@ export default function App() {
   // Every affordance and click reads this. Empty while the opponent is thinking,
   // so nothing lights up and nothing can be clicked on their behalf.
   const uiActions = viewerCanAct && !duelIntro && !needsLandscape && !(tutorialActive && tutorialCompleted) ? legalActions.filter(action=>!tutorialActive||tutorialAllowsAction(tutorialStep,game,action)) : [];
+  const clockActor:PlayerId|null=tutorialActive||game.phase==='mulligan'||game.phase==='gameOver'||mode.kind!=='hotseat'&&game.activePlayer===1?null:game.activePlayer;
+  const clockKey=clockActor===null?null:humanTurnKey(mode.duelId,clockActor,game.players[clockActor].turnsStarted);
+  const choiceActor=game.phase==='targeting'?game.pendingTarget?.player:game.phase==='drawChoice'?game.drawChoice?.player:game.activePlayer;
+  const clockRunning=clockKey!==null&&screen==='playing'&&!duelIntro&&!curtainUp&&!needsLandscape&&!developerToolsOpen&&!developerDuelActive&&choiceActor===clockActor;
+  const clockLatest=useRef({game,events,mode,tutorialActive,hasLiveSave,developerDuelActive});
+  clockLatest.current={game,events,mode,tutorialActive,hasLiveSave,developerDuelActive};
+  useLayoutEffect(()=>turnClock.update(clockKey,clockRunning,Date.now()),[turnClock,clockKey,clockRunning]);
+  useEffect(()=>{
+    const persist=()=>{const current=clockLatest.current;if(current.hasLiveSave&&!current.tutorialActive&&!current.developerDuelActive&&current.game.phase!=='gameOver')saveGame(current.game,current.events,current.mode,Date.now(),turnClock.getSnapshot());};
+    persist();return turnClock.subscribe(persist);
+  },[turnClock]);
+  useEffect(()=>{
+    const clock=turnClock.getSnapshot();
+    if(!clockRunning||clockActor===null||clock?.deadline===null||clock?.deadline===undefined)return;
+    const timer=window.setTimeout(()=>{
+      if(turnClock.getSnapshot()?.key!==clockKey||turnClock.getSnapshot()?.deadline!==clock.deadline)return;
+      const current=clockLatest.current;
+      const result=expirePlayerTurn(current.game,clockActor,library);
+      if(result.state===current.game)return;
+      spawnFx(current.game,result.state,{type:'end_turn',player:clockActor},result.events);setGame(result.state);setSelection(null);
+      setEvents(items=>[...items,{kind:'info',text:"Time is up. The turn ends.",player:clockActor} as GameEvent,...result.events].slice(-EVENT_LOG_LIMIT));
+    },Math.max(0,clock.deadline-Date.now()));
+    return()=>window.clearTimeout(timer);
+  },[turnClock,clockKey,clockRunning,clockActor,library]);
 
   function clearFx() {
     setFloats([]);
     setGhosts([]);
     setImpacts([]);
     setLunge(null);
-    setSplash(null);
     setRelicFlashes([]);
     setToast(null);
     setDrag(null);
@@ -1396,7 +1419,7 @@ export default function App() {
       }
       if (event.motion === "stasis" && event.instanceId) stasisIds.add(event.instanceId);
     });
-    // Equipping an Ascension Relic is a deliberate power-spike moment, not a
+    // Equipping a relic is a deliberate power-spike moment, not a
     // normal card-play click. The relic's own universe theme replaces the old
     // one-size-fits-all fanfare; generated/effect-driven equips carry cardId too.
     const equippedRelicId = resultEvents.find(
@@ -1460,8 +1483,7 @@ export default function App() {
     // A minion arriving plays the fanfare for its rarity — Rare through Mythic —
     // and then SPEAKS. The voice is the whole point of the moment, so it waits
     // for the fanfare's transient instead of starting on the same frame and
-    // smearing into it, and a Mythic waits longer still because its splash owns
-    // the screen first.
+    // smearing into it.
     //
     // Exactly one arrival speaks per action: a board-filling effect that summons
     // three bodies should sound like an army landing, not three people talking
@@ -1486,11 +1508,6 @@ export default function App() {
           heavyLanding = Math.max(heavyLanding, weight);
         }
         arrivals.push(entry.minion);
-        if (entry.minion.rarity === TOP_RARITY) {
-          const marker: Splash = { id: fxId.current++, minion: entry.minion };
-          setSplash(marker);
-          window.setTimeout(() => setSplash((cur) => (cur && cur.id === marker.id ? null : cur)), SPLASH_MS);
-        }
       }
     });
 
@@ -2270,7 +2287,7 @@ export default function App() {
   }
 
   // A relic used to be a 26px badge with a tooltip. Hovering it now shows the
-  // whole Ascension Relic card, teal frame and all — the live face costs nothing
+  // whole Relic card, teal frame and all — the live face costs nothing
   // to point at a different card.
   function previewRelic(relic: RelicInstance, el: HTMLElement) {
     if (drag?.active) return;
@@ -2869,6 +2886,7 @@ export default function App() {
             definition={heroPowerDefinition(game.heroPowers[opponentId])}
             turnsRemaining={gladosTurnsRemaining}
           />
+          {gladosProtocolWarning&&screen==='playing'&&<ProtocolWarningBubble turns={gladosTurnsRemaining!}/>}
         </div>
         <button className="mobile-menu-toggle" type="button" aria-label="Duel menu" aria-expanded={mobileMenuOpen}
           onClick={() => setMobileMenuOpen(open => !open)}>☰ Menu</button>
@@ -3268,7 +3286,6 @@ export default function App() {
         <KeywordPopover entries={handKeywords.entries} left={handKeywords.left + 96} top={handKeywords.top} above />
       ) : null}
 
-      {splash ? <MythicSplash key={splash.id} minion={splash.minion} /> : null}
 
       {/* The blow that ends the duel. Fires on the action that sets a winner, so
           the hit is seen before the victory curtain drops over it. */}
@@ -3284,6 +3301,7 @@ export default function App() {
           {toast.text}
         </div>
       ) : null}
+      {screen==='playing'&&!tutorialActive&&<TurnClockWarning clock={turnClock}/>}
 
       {drag?.active && drag.kind === "hand" ? (
         <div className="drag-layer" style={{ transform: `translate(${drag.x - 64}px, ${drag.y - 104}px)` }} aria-hidden="true">
@@ -3510,6 +3528,18 @@ function reachOf(game: GameState, source: MinionInstance): Set<string> {
   return reached;
 }
 
+/** Replay a wrapper's motion without rebuilding its decoded card and observers. */
+function ReplayMotion({sequence,className,style,children}:{sequence?:number;className:string;style?:CSSProperties;children:ReactNode}) {
+  const node=useRef<HTMLDivElement>(null),previous=useRef<Animation[]>([]);
+  useLayoutEffect(()=>{
+    if(sequence===undefined){previous.current=[];return;}
+    const live=node.current?.getAnimations({subtree:false})??[];
+    if(live.length)previous.current=live;
+    for(const animation of previous.current){animation.currentTime=0;animation.play();}
+  },[sequence]);
+  return <div ref={node} className={className} style={style}>{children}</div>;
+}
+
 function BoardRow({
   owner,
   label,
@@ -3631,7 +3661,7 @@ function BoardRow({
         const slotGhosts = ghosts.filter((g) => g.owner === owner && g.slot === slotIndex);
         const slotFloats = floats.filter((f) => f.owner === owner && f.slot === slotIndex);
         const slotImpacts = impacts.filter((fx) => fx.owner === owner && fx.slot === slotIndex);
-        // Hit shake / freeze tint retrigger by remounting the jolt wrap per impact.
+        // Motion replays on the wrapper; the card stays mounted through impacts.
         const kinetic = slotImpacts.filter((fx) => fx.kind === "hit" || fx.kind === "freeze");
         const lastKinetic = kinetic.length ? kinetic[kinetic.length - 1] : null;
         const joltClasses = [
@@ -3661,16 +3691,16 @@ function BoardRow({
           >
             {minion ? (
               <div className="minion-wrap" key={tauntFlashing ? `${minion.instanceId}-taunt-${tauntFlash?.id}` : minion.instanceId}>
-                <div
+                <ReplayMotion
+                  sequence={isLunging&&lunge?lunge.id:undefined}
                   className={isLunging ? "lunge-wrap lunging" : "lunge-wrap"}
-                  key={isLunging && lunge ? `lunge-${lunge.id}` : "idle"}
                   style={
                     isLunging && lunge ? ({ "--lx": `${lunge.dx}px`, "--ly": `${lunge.dy}px` } as CSSProperties) : undefined
                   }
                 >
-                  <div
+                  <ReplayMotion
+                    sequence={lastKinetic?.id}
                     className={joltClasses}
-                    key={lastKinetic ? `kin-${lastKinetic.id}` : "steady"}
                     style={lastKinetic ? ({ "--fd": `${lastKinetic.delay}s` } as CSSProperties) : undefined}
                   >
                     <MinionFace
@@ -3684,8 +3714,8 @@ function BoardRow({
                     {relicFlash?.instanceId === minion.instanceId ? (
                       <RelicPopup key={relicFlash.id} flash={relicFlash} />
                     ) : null}
-                  </div>
-                </div>
+                  </ReplayMotion>
+                </ReplayMotion>
               </div>
             ) : null}
             {auras.length ? (
@@ -3961,7 +3991,7 @@ const NAME_CEILING_COMPACT = 72;
  * clicks.
  *
  * The option lists are derived from the roster rather than typed out, so relics
- * (rarity "Relic", camp "Ascension") appear on their own without a special case,
+ * (rarity "Relic", camp "Relic") appear on their own without a special case,
  * and a new camp or rarity would appear the moment a card used one.
  */
 type FilterKey = "cost" | "rarity" | "camp" | "alignment";
@@ -4001,7 +4031,7 @@ const VALUE_ORDER: Record<FilterKey, string[]> = {
  * Values that exist in the data but must not be offered as a filter.
  *
  * A relic is not a camp and it is not an alignment — it carries the placeholder
- * strings "Ascension" and "Relic" so the card face has something to print on its
+ * strings "Relic" and "Relic" so the card face has something to print on its
  * rails. Deriving the option lists from the roster is what surfaced them, and
  * they read as real choices next to Magic and Evil, which they are not. Rarity
  * keeps "Relic" because there it IS the answer: it is what those cards are.
@@ -4059,7 +4089,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [artPreviews, setArtPreviews] = useState<Record<string,string> | null>(null);
   useEffect(() => { void import('./data/gallery-previews').then(module=>setArtPreviews(module.galleryPreviews)).catch(()=>setArtPreviews({})); }, []);
-  const [deckPreview, setDeckPreview] = useState<{face: CardFaceModel; rect: DOMRect} | null>(null);
+  const [deckPreview, setDeckPreview] = useState<{key:string; face: CardFaceModel; rect: DOMRect} | null>(null);
   const equippedPower = heroPowerDefinition(progress.selectedHeroPower);
   const powerPicker = useRef<HTMLElement>(null);
   const restorePicker = useRef<HTMLElement>(null);
@@ -4377,13 +4407,13 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
           <div className="gallery-deck-list" onScroll={() => setDeckPreview(null)}>{allEntries.filter((entry) => deckIds.has(entry.key))
             .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
             .map((entry) => <div className="gallery-deck-row" key={entry.key} data-card-id={entry.key}
-              onPointerEnter={event => { if (event.pointerType === 'mouse' && matchMedia('(hover: hover) and (pointer: fine)').matches) setDeckPreview({face:entry.face,rect:event.currentTarget.getBoundingClientRect()}); }}
+              onPointerEnter={event => { if (event.pointerType === 'mouse' && matchMedia('(hover: hover) and (pointer: fine)').matches) setDeckPreview({key:entry.key,face:entry.face,rect:event.currentTarget.getBoundingClientRect()}); }}
               onPointerLeave={() => setDeckPreview(null)}>
               <img src={entry.card.art} alt="" loading="lazy" />
               <button className="gallery-deck-inspect" onClick={() => { setSelectedEntryKey(entry.key); }} aria-label={`Inspect ${entry.face.name}`}>
                 <span className="gallery-deck-mana">{entry.face.cost}</span><span className="gallery-deck-name">{entry.face.name}</span>
               </button>
-              <button className="gallery-deck-remove" disabled={readOnly} onClick={() => onChange(deck.filter((id) => id !== entry.key))}
+              <button className="gallery-deck-remove" disabled={readOnly} onClick={() => {setDeckPreview(null);onChange(deck.filter((id) => id !== entry.key));}}
                 aria-label={`Remove ${entry.face.name} from deck`} title={`Remove ${entry.face.name}`}>−</button>
             </div>)}</div>
           <footer className="gallery-deck-footer">
@@ -4403,7 +4433,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         </div>
         </div>
       </section>
-      {deckPreview && !selectedEntry && !powerOpen && !restoreOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
+      {deckPreview && deckIds.has(deckPreview.key) && !selectedEntry && !powerOpen && !restoreOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
       {restoreOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)setRestoreOpen(false);}}>
         <section ref={restorePicker} className="gallery-restore-dialog" role="dialog" aria-modal="true" aria-label="Restore starter deck?">
           <h3>Restore starter deck?</h3><p>Are you sure you want to revert your deck back to a starter one?</p>
@@ -4527,7 +4557,7 @@ function campAccent(camp: string): string {
   if (camp === "Nature") return "#79c66a";
   if (camp === "Tech") return "#70c9ff";
   if (camp === "ALL") return "#f0c767";
-  // Relics print "Ascension" where a character prints its camp, and fell
+  // Relics print "Relic" where a character prints its camp, and fell
   // through to the Magic purple, so every relic wore another class's colour.
   // Teal is what their own card frame is printed in.
   if (camp === RELIC_CAMP_LABEL) return "#56d8cd";
@@ -4878,7 +4908,7 @@ function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => 
   const left = cards.length + relics.length - progress.unlockedIds.length;
   return <div className="help-veil" onClick={onClose}><section className="help-pop" onClick={(event) => event.stopPropagation()}>
     <button type="button" className="help-x" onClick={onClose} aria-label="Close unlocking help">×</button><h3>Unlocking cards</h3>
-    <p>Start with 40 available cards and a 30-card deck. First-time victories unlock the fixed cards listed in each universe.</p>
+    <p>Start with 45 available cards, a 30-card deck, and Mend Core. First-time victories unlock the fixed cards listed in each universe.</p>
     <p>Your deck always starts a duel with exactly 30 different unlocked cards. Swap cards in the deck builder after your first victory.</p>
     <p>Losses, draws, replays and hotseat duels grant no cards.</p>
     <p>Clicking on card title opens their Star Chart.</p>
@@ -4976,9 +5006,17 @@ function SealedFace({ card, lazyArt = false }: { card: CardFaceModel; lazyArt?: 
  * is small, it belongs to the sentence it interrupts, and every surface that
  * switches this on is already a modal with room around the card.
  */
-function KeywordText({ text }: { text: string }) {
+function ProtocolWarningBubble({turns}:{turns:number}) {
+  const [visible,setVisible]=useState(true);
+  useEffect(()=>{setVisible(true);const timer=setTimeout(()=>setVisible(false),6000);return()=>clearTimeout(timer);},[turns]);
+  if(!visible)return null;
+  const lines:Record<number,string>={4:'4 turns left. Failure is still an option.',3:'3 turns left. Your odds are not improving.',2:'2 turns left. Do try something intelligent.',1:'1 turn left. This is the part where you disappoint me.'};
+  return <span className="protocol-speech" role="status" aria-label={`GLaDOS: ${lines[turns]}`}><b>GLaDOS</b>{lines[turns]}</span>;
+}
+
+function KeywordText({ text, allowRelic = true }: { text: string; allowRelic?: boolean }) {
   const [open, setOpen] = useState<{ index: number; left: number; top: number } | null>(null);
-  const pieces = useMemo(() => splitOnKeywords(text), [text]);
+  const pieces = useMemo(() => splitOnKeywords(text,allowRelic), [text,allowRelic]);
 
   // Anything that moves the word out from under the panel closes it: a scroll,
   // a resize, Escape, or a click anywhere else. A definition pinned to a
@@ -5105,7 +5143,7 @@ function KeywordPopover({
 }
 
 /** One left-to-right pass, longest match wins, word boundaries respected. */
-function splitOnKeywords(text: string): Array<{ text: string; entry?: KeywordEntry }> {
+function splitOnKeywords(text: string,allowRelic=true): Array<{ text: string; entry?: KeywordEntry }> {
   const pieces: Array<{ text: string; entry?: KeywordEntry }> = [];
   const isWord = (ch: string | undefined) => ch !== undefined && /[A-Za-z0-9]/.test(ch);
   let plain = "";
@@ -5113,6 +5151,7 @@ function splitOnKeywords(text: string): Array<{ text: string; entry?: KeywordEnt
   while (i < text.length) {
     const hit = KEYWORD_LOOKUP.find(
       ({ match }) =>
+        (allowRelic || match.toLowerCase() !== 'relic' && match.toLowerCase() !== 'relics') &&
         text.slice(i, i + match.length).toLowerCase() === match.toLowerCase() &&
         !isWord(text[i - 1]) &&
         !isWord(text[i + match.length]),
@@ -5226,7 +5265,7 @@ const CardFace = memo(function CardFace({
     fitOneLine(card.name, NAME_BOX_BOARD_CENTRED, BOARD_NAME_CAP) >=
     fitOneLine(card.name, NAME_BOX_BOARD, BOARD_NAME_CAP);
   // Only values with a palette BUILT get a lit rail. A relic's camp and
-  // alignment are the placeholders "Ascension" and "Relic", and relics print no
+  // alignment are the placeholders "Relic" and "Relic", and relics print no
   // rails at all; naming the built sets explicitly is what stops a future camp
   // or alignment silently rendering a class nothing styles.
   const campMark = RAIL_CAMPS.has((card.camp ?? "").toLowerCase()) ? (card.camp ?? "").toLowerCase() : null;
@@ -5253,9 +5292,9 @@ const CardFace = memo(function CardFace({
         <div className="cf-frame" aria-hidden="true" />
         <div className="cf-well" aria-hidden="true" />
         <CardArtwork card={card} lazy={lazyArt} />
-        <div className="cf-desc"><p>{interactiveKeywords ? <KeywordText text={text} /> : text}</p></div>
+        <div className="cf-desc"><p>{interactiveKeywords ? <KeywordText text={text} allowRelic={!isRelicFace}/> : text}</p></div>
         {/* A relic has no camp and no alignment. It carried the placeholders
-            "Ascension" and "Relic" purely so the rails had something to print,
+            "Relic" and "Relic" purely so the rails had something to print,
             and two rails naming a thing that is not a property of the card is
             worse than empty rails — the frame colour and the gem already say
             "relic" without help. Characters keep both. */}
@@ -5786,41 +5825,6 @@ function TargetPrompt({
           ))}
         </div>
       ) : null}
-    </div>
-  );
-}
-
-/**
- * The full-screen moment when a Mythic hits the board. Deliberately
- * `pointer-events: none` and self-clearing on a timer — a celebration must never
- * be able to swallow a click or wedge a turn.
- */
-function MythicSplash({ minion }: { minion: MinionInstance }) {
-  return (
-    <div className="mythic-splash" aria-hidden="true">
-      <span className="mythic-rays" />
-      {/* The entrance, upgraded: the screen tears open, a shockwave leaves the
-          card, and the name arrives letter by letter. This is the loudest moment
-          in a duel and it now takes as much room as it deserves. */}
-      <span className="mythic-tear" />
-      <span className="mythic-shock" />
-      <span className="mythic-shock mythic-shock-2" />
-      <div className="mythic-body">
-        <div className="mythic-art">
-          <img src={minion.art} alt="" draggable={false} />
-        </div>
-        <div className="mythic-text">
-          <span className="mythic-tier">Mythic</span>
-          <strong>
-            {minion.name.split("").map((letter, index) => (
-              <span key={index} style={{ animationDelay: `${180 + index * 34}ms` } as CSSProperties}>
-                {letter === " " ? " " : letter}
-              </span>
-            ))}
-          </strong>
-          <em>{minion.origin}</em>
-        </div>
-      </div>
     </div>
   );
 }

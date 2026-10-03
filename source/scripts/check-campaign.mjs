@@ -59,7 +59,7 @@ try {
   await mkdir('../.preview/campaign', { recursive: true });
   await page.goto(base); await page.evaluate(() => { localStorage.clear(); localStorage.setItem('convergence.progress.v2', '{"unlocked":216}'); localStorage.setItem('sound-test-preference', 'preserve'); }); await page.reload();
   await page.locator('.title-screen').waitFor();
-  assert.equal((await progress()).unlockedIds.length, 40);
+  assert.equal((await progress()).unlockedIds.length, 45);
   assert.equal(await page.locator('.orbit-choice-easy, .orbit-choice-normal, .orbit-choice-hard, .daily-pack-trigger').count(), 0);
   assert.equal(await page.evaluate(() => localStorage.getItem('sound-test-preference')), 'preserve');
   await page.screenshot({ path: '../.preview/campaign/title.png' });
@@ -86,7 +86,7 @@ try {
   assert(!firstUniverseText.includes('first-win'));
   assert.equal(await firstUniverseCard.locator('details').count(), 0);
   assert.equal(await page.locator('.chapter-reward-preview').count(),20);
-  assert((await page.locator('.chapter-reward-preview').first().textContent()).includes('9 cards'));
+  assert((await page.locator('.chapter-reward-preview').first().textContent()).includes('8 cards'));
   assert(await page.locator('.campaign-chapter button').evaluateAll(buttons=>buttons.every(button=>{const b=button.getBoundingClientRect(),a=button.closest('article').getBoundingClientRect();return b.bottom<=a.bottom+1})), 'Chapter buttons must fit their tiles');
   assert(!(await page.locator('.campaign-panel').textContent()).includes('cards unlocked'));
   await page.getByRole('button', { name: 'Close Rick Gramps Collection', exact: true }).click();
@@ -94,7 +94,7 @@ try {
   assert.equal(await page.locator('.gallery-deck-row').count(), 30);
   assert.equal(await page.locator('.hero-power-trigger').count(),0);
   await page.getByRole('button',{name:'Choose hero power',exact:true}).click();
-  assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:disabled').count(),10);
+  assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:disabled').count(),9);
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('.gallery-power-picker').count(),0);
   assert(await page.getByRole('dialog',{name:'My Deck',exact:true}).isVisible());
@@ -157,7 +157,7 @@ try {
   await page.getByRole('button', { name: 'Open Star Chart for GLaDOS', exact: true }).click();
   assert(await page.getByRole('dialog', { name: 'GLaDOS Star Chart', exact: true }).isVisible());
   assert.equal(await page.locator('.star-chart').count(), 1);
-  assert.equal((await progress()).unlockedIds.length, 40, 'Inspecting a locked boss cannot unlock it');
+  assert.equal((await progress()).unlockedIds.length, 45, 'Inspecting a locked boss cannot unlock it');
   await page.keyboard.press('Escape');
   assert.equal(await page.getByRole('dialog', { name: 'GLaDOS Star Chart', exact: true }).count(), 0);
   await page.evaluate(() => window.__debug.place('Modern Tank', 'me', 0));
@@ -176,13 +176,13 @@ try {
   assert.equal(await page.locator('.mulligan-panel').count(), 0);
   await finish("I win", true);
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('convergence.progress.v4')).completedChapters === 1);
-  let record = await progress(); assert.equal(record.unlockedIds.length, 49); assert.equal(record.pendingRewards.length, 9);
+  let record = await progress(); assert.equal(record.unlockedIds.length, 53); assert.equal(record.pendingRewards.length, 8);
   assert.equal(record.pendingBossSpeech,1);
   assert.equal(record.playerDeck.length, 30); assert.equal(record.selectedHeroPower, 'core_heal');
   await page.reload(); await page.locator('[data-story-stage="defeat"]').waitFor();
   await page.locator('.campaign-speech-text').click();
   await page.screenshot({path:'../.preview/campaign/story-defeat.png'});
-  await skipCampaignDialogue(page); await page.locator('.pack-stage').waitFor(); assert.equal((await progress()).pendingRewards.length, 9);
+  await skipCampaignDialogue(page); await page.locator('.pack-stage').waitFor(); assert.equal((await progress()).pendingRewards.length, 8);
   await collectPack(); assert.equal((await progress()).pendingRewards.length, 0);
   const resultCampaign = page.getByRole('button', { name: 'Continue', exact: true });
   if (await resultCampaign.isVisible().catch(() => false)) await resultCampaign.click();
@@ -246,7 +246,7 @@ try {
   assert((await page.locator('.collected-boss-speech .speech-accessible').textContent()).includes('Your assistant has arrived'));
   await page.screenshot({path:'../.preview/campaign/collected-boss-speech.png'});
   await finish();
-  assert.equal((await progress()).unlockedIds.length, 49); assert.equal((await progress()).completedChapters, 1);
+  assert.equal((await progress()).unlockedIds.length, 53); assert.equal((await progress()).completedChapters, 1);
   assert.equal(await page.locator('.pack-stage').count(), 0);
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.locator('[data-chapter="2"] button').click(); await board(); await finish('Enemy wins',true);
@@ -301,7 +301,7 @@ try {
   const deckBeforePower=(await progress()).playerDeck;
   await page.locator('.deck-trigger').click();
   await page.getByRole('button',{name:'Choose hero power',exact:true}).click();
-  assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:not(:disabled)').count(),5);
+  assert.equal(await page.locator('.gallery-power-picker .hero-power-menu-card:not(:disabled)').count(),6);
   await page.locator('.gallery-power-picker .hero-power-menu-card').filter({hasText:'Core Bolt'}).click();
   assert.equal(await page.locator('.gallery-power-picker').count(),0);
   assert.equal((await progress()).selectedHeroPower,'enemy_core_damage');

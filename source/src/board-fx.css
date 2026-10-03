@@ -1,5 +1,5 @@
 /* ============================================================================
-   BOARD FX — the camp signatures, the Mythic entrance, and the killing blow.
+   BOARD FX — the camp signatures and the killing blow.
 
    These are BOARD effects and they used to live in `screens/Screens.css`, whose
    stated job is "everything that is NOT the board". They were filed there
@@ -17,7 +17,7 @@
    ============================================================================ */
 
 /* ============================================================================
-   CAMP SIGNATURES, THE MYTHIC ENTRANCE, AND THE KILLING BLOW
+   CAMP SIGNATURES AND THE KILLING BLOW
 
    Four summon looks rather than 172: a player learns them in one duel, and the
    board reads far richer for a fraction of the work. Colour alone is not a
@@ -247,61 +247,6 @@
   0% { opacity: 0; scale: 0.35; rotate: -45deg; }
   24% { opacity: 1; }
   100% { opacity: 0; scale: 1.5; rotate: 45deg; }
-}
-
-/* ------------------------------------------------- the Mythic entrance */
-
-.mythic-tear {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  width: 140vw;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #fff5e3 22%, #fff 50%, #fff5e3 78%, transparent);
-  box-shadow: 0 0 40px 10px rgba(255, 245, 227, 0.75);
-  animation: tear-open 0.62s cubic-bezier(0.16, 0.9, 0.2, 1) both;
-}
-
-@keyframes tear-open {
-  0% { opacity: 0; scale: 0 1; }
-  26% { opacity: 1; scale: 1 1; }
-  60% { opacity: 1; scale: 1 26; filter: blur(9px); }
-  100% { opacity: 0; scale: 1 40; filter: blur(20px); }
-}
-
-.mythic-shock {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  border: 3px solid rgba(240, 199, 103, 0.85);
-  animation: shock-out 1s cubic-bezier(0.1, 0.75, 0.2, 1) 0.16s both;
-}
-
-.mythic-shock-2 {
-  border-color: rgba(223, 103, 84, 0.6);
-  animation-delay: 0.32s;
-}
-
-@keyframes shock-out {
-  0% { opacity: 0; scale: 0.1; }
-  18% { opacity: 1; }
-  100% { opacity: 0; scale: 5.2; border-width: 1px; }
-}
-
-.mythic-text strong span {
-  display: inline-block;
-  white-space: pre;
-  animation: mythic-letter 0.44s cubic-bezier(0.2, 0.9, 0.2, 1) both;
-}
-
-@keyframes mythic-letter {
-  from { opacity: 0; transform: translateY(-18px) scale(1.5); filter: blur(5px); }
-  to { opacity: 1; transform: none; filter: none; }
 }
 
 /* ------------------------------------------------------ the killing blow */

@@ -2,6 +2,7 @@ import type { GameEvent, GameState } from "./engine/types";
 import type { BotSkill } from "./engine/bot";
 import { CAMPAIGN_DIFFICULTIES, getCampaignChapter } from "./campaign";
 import { cards } from './data/cards';
+import type {SavedTurnClock} from './turn-clock';
 
 /** How the duel is being played. Mirrors GameMode in screens/Screens.tsx. */
 export type SavedMode = ({ kind: "hotseat" } | { kind: "bot"; skill: BotSkill } | { kind: "campaign"; chapter: number; skill: BotSkill }) & { duelId?: string };
@@ -43,7 +44,7 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // it rather than restoring black cards from stale minion instances.
 // v10: MinionInstance gained `gainedEffects`. A v9 save can therefore reach
 // `hasEffect()` with no array to search, which blanks the game before it draws.
-// v11: Ascension Relics became ordinary shared-deck cards. Legacy satchels are
+// v11: Relics became ordinary shared-deck cards. Legacy satchels are
 // migrated into hand and the old rift pool is returned to the shared deck.
 // v12: MinionInstance gained temporary transformation state for Rennala's
 // Lunar Slime effect.
@@ -97,7 +98,8 @@ const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 // contain the removed boss identity and deck, so they must not be resumed.
 // v31: the board changed from five minion slots to four. Old in-progress boards
 // have a slot that no longer exists, so they must not be resumed.
-const SAVE_VERSION = 31;
+// v32: aura consumption metadata and the optional human-turn clock; v31 migrates in place.
+const SAVE_VERSION = 32;
 const SAVE_KEY = `convergence.save.v${SAVE_VERSION}`;
 export interface SavedGame {
   version: number;
@@ -105,6 +107,7 @@ export interface SavedGame {
   events: GameEvent[];
   mode: SavedMode;
   savedAt: number;
+  turnClock?:SavedTurnClock;
 }
 
 /**
@@ -122,7 +125,7 @@ export interface SavedGame {
  */
 export const EVENT_LOG_LIMIT = 300;
 
-export function saveGame(game: GameState, events: GameEvent[], mode: SavedMode, now: number): void {
+export function saveGame(game: GameState, events: GameEvent[], mode: SavedMode, now: number,turnClock?:SavedTurnClock|null): void {
   try {
     const payload: SavedGame = {
       version: SAVE_VERSION,
@@ -130,6 +133,7 @@ export function saveGame(game: GameState, events: GameEvent[], mode: SavedMode, 
       events: events.slice(-EVENT_LOG_LIMIT),
       mode,
       savedAt: now,
+      ...(turnClock?{turnClock}:{}),
     };
     window.localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
   } catch {
@@ -146,14 +150,15 @@ export function saveGame(game: GameState, events: GameEvent[], mode: SavedMode, 
  */
 export function loadGame(): SavedGame | null {
   try {
-    const retired = Object.keys(window.localStorage).filter((key) => /^convergence\.save\.v\d+$/.test(key) && Number(key.split("v").at(-1)) < SAVE_VERSION);
+    const legacy=window.localStorage.getItem('convergence.save.v31');
+    const retired = Object.keys(window.localStorage).filter((key) => /^convergence\.save\.v\d+$/.test(key) && Number(key.split("v").at(-1)) < 31);
     for (const key of retired) window.localStorage.removeItem(key);
     // Also remove known keys in minimal storage adapters without enumerable keys.
-    for (let version = 1; version < SAVE_VERSION; version++) window.localStorage.removeItem(`convergence.save.v${version}`);
-    const raw = window.localStorage.getItem(SAVE_KEY);
+    for (let version = 1; version < 31; version++) window.localStorage.removeItem(`convergence.save.v${version}`);
+    const raw = window.localStorage.getItem(SAVE_KEY)??legacy;
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<SavedGame>;
-    if (!parsed || parsed.version !== SAVE_VERSION) return null;
+    if (!parsed || parsed.version !== SAVE_VERSION&&parsed.version!==31) return null;
     const game = parsed.game as GameState | undefined;
     if (!game || typeof game !== "object") return null;
     if (!Array.isArray(game.players) || game.players.length !== 2) return null;
@@ -228,6 +233,9 @@ export function loadGame(): SavedGame | null {
     const refreshBatman = (value: unknown): void => {
       if (!value || typeof value !== 'object') return;
       const object = value as Record<string, unknown>;
+      if(object.cardId==='c012')object.camp='Tech';
+      if(object.cardId==='c122'&&object.effectId==='wall_of_flesh_grind')object.effect=cards.find(card=>card.id==='c122')?.effect??object.effect;
+      for(const [key,child] of Object.entries(object))if(typeof child==='string')object[key]=child.replace(/Ascension Relics/gi,'Relics').replace(/Ascension Relic/gi,'Relic');
       if (object.cardId === 'c005' && batman) {
         if (object.rarity === 'Purple') object.rarity = batman.rarity;
         if (object.effectId === 'batman_gadget_choice') object.effect = batman.effect;
@@ -241,13 +249,19 @@ export function loadGame(): SavedGame | null {
       for (const child of Object.values(object)) refreshBatman(child);
     };
     refreshBatman(game);
-    return {
+    const migrated:SavedGame={
       version: SAVE_VERSION,
       game,
       events: Array.isArray(parsed.events) ? parsed.events : [],
       mode,
       savedAt: typeof parsed.savedAt === "number" ? parsed.savedAt : 0,
+      ...(parsed.turnClock&&typeof parsed.turnClock.key==='string'&&Number.isFinite(parsed.turnClock.remainingMs)&&(parsed.turnClock.deadline===null||Number.isFinite(parsed.turnClock.deadline))?{turnClock:parsed.turnClock}:{}),
     };
+    try {
+      if(parsed.version===31)window.localStorage.setItem(SAVE_KEY,JSON.stringify(migrated));
+      window.localStorage.removeItem('convergence.save.v31');
+    } catch { /* Keep the older duel available when the new save cannot be written. */ }
+    return migrated;
   } catch {
     return null;
   }

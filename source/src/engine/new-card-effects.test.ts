@@ -178,7 +178,7 @@ describe("2026 card replacements", () => {
       library,
     ).state;
     expect(asking.phase).toBe("targeting");
-    expect(asking.pendingTarget?.prompt).toBe("Discover 1 of 3 Ascension Relics");
+    expect(asking.pendingTarget?.prompt).toBe("Discover 1 of 3 Relics");
     expect(asking.pendingTarget?.labelOptions).toHaveLength(3);
     expect(asking.pendingTarget?.queuedRelicSources).toHaveLength(1);
 
@@ -500,7 +500,7 @@ describe("2026 card replacements", () => {
         effectId: "kratos_lockdown",
         effectTiming: "passive",
         keywords: ["Passive"],
-        effect: "Passive: Your opponent cannot play Ascension Relics or use Hero power",
+        effect: "Passive: Your opponent cannot play Relics or use Hero power",
       },
       "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: The first enemy minion to attack each turn is Chained" },
       "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
@@ -1570,7 +1570,7 @@ describe("2026 card replacements", () => {
     expect(afterReturn.players[1].board[1]?.name).toBe("John Wick");
   });
 
-  it("Kratos locks the opponent's Ascension Relics and Hero Power while active", () => {
+  it("Kratos locks the opponent's Relics and Hero Power while active", () => {
     const state = mainState("kratos-lockdown");
     state.players[0].board[0] = minion("Kratos", 0);
     state.players[1].board[0] = minion("John Wick", 1);
@@ -1661,7 +1661,7 @@ describe("2026 card replacements", () => {
     expect(unpaid.players[0].board[0]).toMatchObject({ atk: printed.atk, maxHp: printed.maxHp });
   });
 
-  it("Wall of Flesh grinds every other minion at the start of its owner's turn", () => {
+  it("Wall of Flesh grinds every enemy minion at the start of its owner's turn", () => {
     const state = mainState("wall-of-flesh");
     state.players[0].board[0] = minion("Wall of Flesh", 0);
     state.players[0].board[1] = minion("John Wick", 0, { hp: 4, maxHp: 4 });
@@ -1670,7 +1670,7 @@ describe("2026 card replacements", () => {
     // Round trip to the same seat, because an Ongoing fires on its owner's turn.
     const after = endTurn(endTurn(state, 0), 1);
     expect(after.players[0].board[0]?.hp).toBe(5); // itself, untouched
-    expect(after.players[0].board[1]?.hp).toBe(3);
+    expect(after.players[0].board[1]?.hp).toBe(4);
     expect(after.players[1].board[0]?.hp).toBe(3);
   });
 

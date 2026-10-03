@@ -87,7 +87,7 @@ function endTurnAndDraw(state: GameState, player: PlayerId): GameState {
 const toMyNextTurn = (state: GameState): GameState => endTurnAndDraw(endTurnAndDraw(state, 0), 1);
 
 describe("relic cards in the shared deck", () => {
-  it("Gilgamesh equips one random Ascension Relic on arrival", () => {
+  it("Gilgamesh equips one random Relic on arrival", () => {
     const state = mainState("gilgamesh-equip");
     const available = new Set(state.deck.filter((cardId) => relics.some((relic) => relic.id === cardId)));
     const after = playCardFor(state, 0, "Gilgamesh");
@@ -136,7 +136,7 @@ describe("relic effects", () => {
     expect(after.players[0].board[1]?.relic).toBeNull();
   });
 
-  it("allows two Ascension Relics on one minion, but no third", () => {
+  it("allows two Relics on one minion, but no third", () => {
     const state = mainState("two-relic-slots");
     state.players[0].board[0] = makeMinion("Mob Psycho", 0);
 

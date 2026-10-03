@@ -127,7 +127,7 @@ const resetTally = (await page.locator(".unlock-tally").textContent())?.trim() ?
 check(
   "developer reset restores normal progression",
   (await page.locator(".developer-cheat-panel").count()) === 0 &&
-    /^40 \/ \d+$/.test(resetTally),
+    /^45 \/ \d+$/.test(resetTally),
   "developer controls hide and the starting pool returns",
 );
 
@@ -582,7 +582,7 @@ check(
     check(
       "enemy Hero Power display matches the selected unlock",
       true,
-      "no power selected before the first bot win",
+      "this opponent has no visible power card",
     );
   }
   await page.mouse.move(0, 0);

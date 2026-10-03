@@ -78,7 +78,7 @@ export function emptyProgress(): Progress {
     ladders: { easy: emptyRecord(), normal: emptyRecord(), hard: emptyRecord(), hotseat: emptyRecord() },
     recent: [], seen: [], played: [], wonWith: [], completedChapters: 0, completedBosses: [],
     unlockedIds: [...CAMPAIGN_INITIAL_COLLECTION], playerDeck: [...CAMPAIGN_STARTER_DECK],
-    hotseatDeck: [...CAMPAIGN_STARTER_DECK], selectedHeroPower: null, heroPowerSeenWins: 0, pendingRewards: [], settledDuels: [],
+    hotseatDeck: [...CAMPAIGN_STARTER_DECK], selectedHeroPower: firstUnlockedHeroPower(0), heroPowerSeenWins: 0, pendingRewards: [], settledDuels: [],
   };
 }
 
@@ -115,7 +115,7 @@ export function loadProgress(): Progress {
     progress.completedBosses = savedBosses;
     progress.completedChapters = savedBosses.length;
     // Older saves predate notices; only the next newly earned power should glow.
-    progress.heroPowerSeenWins = Math.min(progress.completedChapters, HERO_POWER_UNLOCK_ORDER.length,
+    progress.heroPowerSeenWins = Math.min(progress.completedChapters, HERO_POWER_UNLOCK_ORDER.length-1,
       typeof saved.heroPowerSeenWins === "number" ? count(saved.heroPowerSeenWins) : progress.completedChapters);
     progress.storyIntroduced = saved.storyIntroduced === true;
     progress.developerChaptersUnlocked = saved.developerChaptersUnlocked === true;
@@ -169,8 +169,8 @@ export function unlockAllProgress(progress: Progress): Progress {
 export function unlockAllChapters(progress: Progress): Progress { return {...progress, developerChaptersUnlocked: true}; }
 export function acknowledgeRewards(progress: Progress): Progress { return { ...progress, pendingRewards: [] }; }
 export function acknowledgeBossSpeech(progress: Progress): Progress { return {...progress, pendingBossSpeech: null}; }
-export function hasNewHeroPower(progress: Progress): boolean { return Math.min(progress.completedChapters,HERO_POWER_UNLOCK_ORDER.length)>progress.heroPowerSeenWins; }
-export function acknowledgeHeroPowers(progress: Progress): Progress { return {...progress, heroPowerSeenWins: Math.min(progress.completedChapters,HERO_POWER_UNLOCK_ORDER.length)}; }
+export function hasNewHeroPower(progress: Progress): boolean { return Math.min(progress.completedChapters,HERO_POWER_UNLOCK_ORDER.length-1)>progress.heroPowerSeenWins; }
+export function acknowledgeHeroPowers(progress: Progress): Progress { return {...progress, heroPowerSeenWins: Math.min(progress.completedChapters,HERO_POWER_UNLOCK_ORDER.length-1)}; }
 export function canEditDeck(_progress: Progress): boolean { return true; }
 export function selectHeroPower(progress: Progress, power: HeroPowerId): Progress {
   return isHeroPowerUnlocked(power, botWins(progress)) ? { ...progress, selectedHeroPower: power } : progress;

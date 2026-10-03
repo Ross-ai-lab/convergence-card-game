@@ -57,7 +57,7 @@ describe("menu Hero Powers", () => {
     expect(afterMulligan.heroPowers).toEqual(["minion_atk", null]);
   });
 
-  it("orders unlocks by the menu's one-win-through-ten-win track", () => {
+  it("orders unlocks by the menu's starter power and nine first victories", () => {
     expect(HERO_POWER_UNLOCK_ORDER).toEqual([
       "core_heal",
       "enemy_core_damage",
@@ -70,10 +70,10 @@ describe("menu Hero Powers", () => {
       "minion_atk_down",
       "minion_hp_down",
     ]);
-    expect(firstUnlockedHeroPower(0)).toBeNull();
-    expect(firstUnlockedHeroPower(1)).toBe(HERO_POWER_UNLOCK_ORDER[0]);
+    expect(firstUnlockedHeroPower(0)).toBe(HERO_POWER_UNLOCK_ORDER[0]);
+    expect(firstUnlockedHeroPower(1)).toBe(HERO_POWER_UNLOCK_ORDER[1]);
     expect(isHeroPowerUnlocked(HERO_POWER_UNLOCK_ORDER[0], 1)).toBe(true);
-    expect(isHeroPowerUnlocked(HERO_POWER_UNLOCK_ORDER[1], 1)).toBe(false);
+    expect(isHeroPowerUnlocked(HERO_POWER_UNLOCK_ORDER[1], 1)).toBe(true);
     expect(firstUnlockedHeroPower(10)).toBe(HERO_POWER_UNLOCK_ORDER[9]);
   });
 

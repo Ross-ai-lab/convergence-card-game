@@ -93,13 +93,12 @@ export const HERO_POWER_UNLOCK_ORDER: readonly HeroPowerId[] = [
 export const PLAYER_HERO_POWER_IDS = HERO_POWER_UNLOCK_ORDER;
 
 export function isHeroPowerUnlocked(id: HeroPowerId, botWins: number): boolean {
-  const unlockAt = HERO_POWER_UNLOCK_ORDER.indexOf(id) + 1;
-  return unlockAt > 0 && botWins >= unlockAt;
+  const unlockAt = HERO_POWER_UNLOCK_ORDER.indexOf(id);
+  return unlockAt >= 0 && botWins >= unlockAt;
 }
 
 export function firstUnlockedHeroPower(botWins: number): HeroPowerId | null {
-  if (botWins <= 0) return null;
-  const index = Math.min(botWins - 1, HERO_POWER_UNLOCK_ORDER.length - 1);
+  const index = Math.max(0,Math.min(botWins, HERO_POWER_UNLOCK_ORDER.length - 1));
   return HERO_POWER_UNLOCK_ORDER[index];
 }
 

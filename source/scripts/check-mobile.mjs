@@ -82,7 +82,7 @@ try {
 
     await page.locator('.deck-trigger').tap();
     await page.locator('.gallery-cell').first().waitFor();
-    assert.equal(await page.locator('.gallery-grid .gallery-deck-card').count(), 40);
+    assert.equal(await page.locator('.gallery-grid .gallery-deck-card').count(), 45);
     await page.locator('.gallery-cell img').first().waitFor();
     await page.waitForFunction(()=>{const img=document.querySelector('.gallery-cell img');return img?.complete&&img.naturalWidth>0;});
     await page.locator('.gallery-cell img').first().evaluate(img => img.decode());

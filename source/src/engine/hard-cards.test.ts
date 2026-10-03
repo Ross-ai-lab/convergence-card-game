@@ -222,7 +222,7 @@ describe("combat-reaction cards", () => {
 });
 
 describe("hand-targeting cards", () => {
-  it("Davy Jones steals exactly one Ascension Relic from the enemy hand", () => {
+  it("Davy Jones steals exactly one Relic from the enemy hand", () => {
     const state = mainState();
     const relicId = relics[0].id;
     const secondRelicId = relics[1].id;

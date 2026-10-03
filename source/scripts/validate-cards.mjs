@@ -376,7 +376,7 @@ const COUNT_CLAIMS = [
   {
     file: ["..", "index.html"],
     what: "landing-page description",
-    pattern: /(\d+) minion cards and (\d+) Ascension Relics/,
+    pattern: /(\d+) minion cards and (\d+) Relics/,
     expect: () => [cards.length, relics.length],
   },
   {

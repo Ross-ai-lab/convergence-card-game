@@ -496,13 +496,13 @@ export function HeroPowerChoices({
       <div className="hero-power-menu">
         <p className="hero-power-menu-intro">
               Conquer any universe to unlock the next Hero Power. Replays do not count.
-          <b>{` ${Math.min(botWins, HERO_POWER_UNLOCK_ORDER.length)}/${HERO_POWER_UNLOCK_ORDER.length} unlocked`}</b>
+          <b>{` ${Math.min(botWins+1, HERO_POWER_UNLOCK_ORDER.length)}/${HERO_POWER_UNLOCK_ORDER.length} unlocked`}</b>
         </p>
         <div className="hero-power-menu-grid">
           {HERO_POWER_UNLOCK_ORDER.map((powerId, index) => {
             const definition = heroPowerDefinition(powerId);
             if (!definition) return null;
-            const unlockAt = index + 1;
+            const unlockAt = index;
             const unlocked = isHeroPowerUnlocked(powerId, botWins);
             const selected = selectedPower === powerId;
             return (
@@ -524,7 +524,7 @@ export function HeroPowerChoices({
                 }}
               >
                 <span className="hero-power-menu-status">
-                  {unlocked ? (selected ? "Selected" : `Unlocked · victory ${unlockAt}`) : `Locked · victory ${unlockAt}`}
+                  {unlocked ? (selected ? "Selected" : unlockAt===0 ? 'Starter power' : `Unlocked · victory ${unlockAt}`) : `Locked · victory ${unlockAt}`}
                 </span>
                 <strong><Lightning size={18} weight="fill" aria-hidden="true" /> {definition.name}</strong>
                 <span>{definition.text}</span>
@@ -729,7 +729,7 @@ function HowToPlayContent() {
       </section>
 
       <section className="rules-chapter">
-        <h4><span className="rules-step-no">7</span> Ascension Relics</h4>
+        <h4><span className="rules-step-no">7</span> Relics</h4>
         <ul className="rules-list">
           <li>The <b>{RELIC_COUNT} relics</b> count toward your 30-card deck and arrive in hand like any other card.</li>
           <li>Play one onto a friendly minion to equip it. A minion carries up to <b>two</b>, in independent slots.</li>

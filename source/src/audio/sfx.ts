@@ -697,7 +697,7 @@ function render(name: SfxName, t: number): void {
       metal({ t: t + 0.03, dur: 0.6, gain: 0.035, carrier: 1980, ratio: 3.02, index: 3, pan: -0.15, send: 0.6 });
       break;
 
-    // Ascension Relics are a goal moment: a low stadium thump, then a bright
+    // Relics are a goal moment: a low stadium thump, then a bright
     // four-note climb and a short shimmer as the equipment locks into place.
     case "relicEquip": {
       duck(0.5, 0.7);
@@ -787,20 +787,32 @@ export function hoverTick(): void {
  * Generated tracks never loop cleanly, so fold the tail back over the head with
  * an equal-power crossfade and loop the shortened buffer instead.
  */
-function makeSeamlessLoop(src: AudioBuffer, fade = 2): AudioBuffer {
+async function makeSeamlessLoop(src: AudioBuffer, fade = 2): Promise<AudioBuffer> {
   const c = ctx!;
   const fadeLen = Math.min(Math.floor(fade * src.sampleRate), Math.floor(src.length / 3));
   const outLen = src.length - fadeLen;
   const out = c.createBuffer(src.numberOfChannels, outLen, src.sampleRate);
+  // Calculate the crossfade once for every channel. Yield between small blocks
+  // so decoding a new battle bed cannot monopolize a card's landing frame.
+  const headWeights = new Float32Array(fadeLen);
+  const tailWeights = new Float32Array(fadeLen);
+  const yieldToUI = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+  for (let start = 0; start < fadeLen; start += 8192) {
+    for (let i = start; i < Math.min(start + 8192, fadeLen); i++) {
+      const angle = i / fadeLen * Math.PI / 2;
+      headWeights[i] = Math.sin(angle); tailWeights[i] = Math.cos(angle);
+    }
+    await yieldToUI();
+  }
   for (let ch = 0; ch < src.numberOfChannels; ch++) {
     const inD = src.getChannelData(ch);
     const outD = out.getChannelData(ch);
     outD.set(inD.subarray(0, outLen));
-    for (let i = 0; i < fadeLen; i++) {
-      const x = i / fadeLen;
-      const head = Math.sin((x * Math.PI) / 2);
-      const tail = Math.cos((x * Math.PI) / 2);
-      outD[i] = inD[i] * head + inD[outLen + i] * tail;
+    for (let start = 0; start < fadeLen; start += 8192) {
+      for (let i = start; i < Math.min(start + 8192, fadeLen); i++) {
+        outD[i] = inD[i] * headWeights[i] + inD[outLen + i] * tailWeights[i];
+      }
+      await yieldToUI();
     }
   }
   return out;
@@ -818,7 +830,7 @@ async function fetchTrack(urls: string[], loop: boolean): Promise<AudioBuffer | 
       const decoded = await ctx.decodeAudioData(await response.arrayBuffer());
       // A generated track never loops cleanly, so fold its tail back over its
       // head with an equal-power crossfade and loop the shortened buffer.
-      const ready = loop ? makeSeamlessLoop(decoded, 2) : decoded;
+      const ready = loop ? await makeSeamlessLoop(decoded, 2) : decoded;
       // Kept for the DEV loop-seam probe, which compares the folded buffer
       // against the untouched one. Dropping it silently disarms that check.
       if (loop) musicRaw = decoded;

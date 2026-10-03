@@ -24,7 +24,7 @@ function memoryLocalStorage() {
   };
 }
 
-const SAVE_KEY = "convergence.save.v31";
+const SAVE_KEY = "convergence.save.v32";
 const LEGACY_SAVE_KEY = "convergence.save.v28";
 
 function liveDuel(): GameState {
@@ -37,6 +37,14 @@ afterEach(() => {
 });
 
 describe("the save slot", () => {
+  it('migrates a v31 duel once and keeps its deadline on a second reload',()=>{
+    const storage=memoryLocalStorage();vi.stubGlobal('window',{localStorage:storage});
+    const game=liveDuel(),clock={key:'current-turn',remainingMs:9000,deadline:20000};
+    storage.values.set('convergence.save.v31',JSON.stringify({version:31,game,events:[],mode:{kind:'hotseat'},savedAt:1000,turnClock:clock}));
+    expect(loadGame()).toMatchObject({version:32,game,turnClock:clock});
+    expect(storage.values.has('convergence.save.v31')).toBe(false);
+    expect(loadGame()).toMatchObject({version:32,game,turnClock:clock});
+  });
   it('updates an older Batman face without losing its current combat stats',()=>{
     vi.stubGlobal('window',{localStorage:memoryLocalStorage()});
     const game=liveDuel();
@@ -46,6 +54,12 @@ describe("the save slot", () => {
     const restored=loadGame()!.game.players[0].board[0]!;
     expect(restored.rarity).toBe('Red');expect(restored.effect).toContain('-2 ATK');
     expect(restored.atk).toBe(4);expect(restored.hp).toBe(3);
+  });
+  it('keeps the previous duel recoverable if migration cannot write the new slot',()=>{
+    const storage=memoryLocalStorage();vi.stubGlobal('window',{localStorage:storage});const game=liveDuel();
+    storage.values.set('convergence.save.v31',JSON.stringify({version:31,game,events:[],mode:{kind:'hotseat'},savedAt:1000}));
+    vi.spyOn(storage,'setItem').mockImplementation(()=>{throw new Error('quota');});
+    expect(loadGame()?.game).toEqual(game);expect(storage.values.has('convergence.save.v31')).toBe(true);
   });
   it('updates an unfinished Batman gadget choice to the new attack reduction',()=>{
     vi.stubGlobal('window',{localStorage:memoryLocalStorage()});
