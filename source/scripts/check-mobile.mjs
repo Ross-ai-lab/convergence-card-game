@@ -151,7 +151,7 @@ try {
     if(page.viewportSize().height<=600) assert(await page.locator('.command-bar').evaluate(command=>{
       const mana=command.querySelector('.mana-tray').getBoundingClientRect(),health=command.querySelector('.health-gem').getBoundingClientRect();
       const hand=command.querySelector('.hand-fan').getBoundingClientRect(),sidebar=command.getBoundingClientRect();
-      return mana.x<8&&mana.y<20&&health.x<8&&health.bottom>innerHeight-25&&Math.abs(hand.top-sidebar.top)<8&&getComputedStyle(command.querySelector('.hero-name')).display==='none'&&getComputedStyle(command.querySelector('.mana-tray'),'::before').content!=='none';
+      return mana.x<8&&mana.y<20&&health.x<8&&health.bottom>innerHeight-25&&hand.top<=70&&sidebar.top<=10&&sidebar.width>=180&&getComputedStyle(command.querySelector('.hero-name')).display==='none'&&getComputedStyle(command.querySelector('.mana-tray'),'::before').content!=='none';
     }),'Phone counters or expanded hand are misplaced');
     if (page.viewportSize().width < page.viewportSize().height || page.viewportSize().height <= 600) {
       assert(await page.locator('.end-turn').evaluate(button => {

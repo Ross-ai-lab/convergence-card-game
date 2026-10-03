@@ -37,6 +37,27 @@ afterEach(() => {
 });
 
 describe("the save slot", () => {
+  it('updates an older Batman face without losing its current combat stats',()=>{
+    vi.stubGlobal('window',{localStorage:memoryLocalStorage()});
+    const game=liveDuel();
+    const batman=cards.find(card=>card.id==='c005')!;
+    game.players[0].board[0]=spawnTestMinion(batman,0,{rarity:'Purple',effect:batman.effect.replace('-2 ATK','-3 ATK'),atk:4,hp:3});
+    saveGame(game,[],{kind:'bot',skill:'normal'},1000);
+    const restored=loadGame()!.game.players[0].board[0]!;
+    expect(restored.rarity).toBe('Red');expect(restored.effect).toContain('-2 ATK');
+    expect(restored.atk).toBe(4);expect(restored.hp).toBe(3);
+  });
+  it('updates an unfinished Batman gadget choice to the new attack reduction',()=>{
+    vi.stubGlobal('window',{localStorage:memoryLocalStorage()});
+    const game=liveDuel(),library=makeCardLibrary(cards,relics);
+    game.players[0].hand=['c005'];game.players[0].mana=10;
+    game.players[1].board[0]=spawnTestMinion(cards.find(card=>card.id==='c001')!,1);
+    const victim=applyAction(game,{type:'play_card',player:0,handIndex:0,slotIndex:0},library).state;
+    const gadget=applyAction(victim,{type:'choose_target',player:0,choiceIndex:0},library).state;
+    gadget.pendingTarget!.labelOptions[2].label='Give it -3 ATK';
+    saveGame(gadget,[],{kind:'bot',skill:'normal'},1000);
+    expect(loadGame()!.game.pendingTarget!.labelOptions[2].label).toBe('Give it -2 ATK');
+  });
   it("round-trips separate piles, pending Foresight, ownership and campaign cheat flags", () => {
     vi.stubGlobal("window", { localStorage: memoryLocalStorage() });
     const game = createInitialGame(cards, "separate-save", relics, {

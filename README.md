@@ -54,8 +54,8 @@ The phone deck editor has Collection and Deck tabs in its top row and a two-colu
 Search and filters remain available and scroll with the collection. Hold a collection card for one second to open its full profile.
 On desktop, hovering a deck-list row immediately shows the complete card. A checked In deck badge identifies selected collection cards.
 Choose Hero Power sits beside Restore starter deck. A newly earned power makes it glow until the chooser is opened and closed. Restoring requires confirmation on every platform.
-The Lore book opens ten sealed chapters. All chapters are currently locked.
-Developer mode includes a guided training duel covering card play, turns, attacks, targeting, equipment, and Hero Powers.
+The Lore book holds ten chapters. A first victory against any champion opens **The Empty Chair**, a six-panel comic. Chapters II–X remain sealed.
+The title screen offers Tutorial beside two-player play. Its guided duel covers card play, turns, attacks, targeting, equipment, and Hero Powers, then ends automatically.
 
 Progress and ongoing duels save in this browser on this device. A private window or cleared browser storage starts a separate collection.
 There is no online multiplayer or account synchronization. The public website displays an aggregate visit count.
@@ -98,6 +98,7 @@ Double-tap the opening ceremony to skip its animation; the opening hand is alrea
 The title screen's **Continue duel** restores an unfinished game.
 Opening-hand choices fit the screen without scrolling and retain their printed descriptions.
 Phone mana and health counters sit in the left corners, leaving the side hand available from top to bottom.
+Landscape phone layouts devote more height to the board and show larger hand cards. Discover choices fit all three complete cards and their printed rules without scrolling.
 Solo games call your character Rick Gramps. Two-player duels retain Player One and Player Two.
 
 ## Cards and effects
@@ -327,7 +328,7 @@ Reborn minions suppress arrival themes; returning bodies are not fresh plays.
 ### Developer tools
 
 Typing `Ross` reveals developer controls. The title screen then shows the developer panel.
-It offers card/power unlocks, a guided tutorial, test duels, and reset confirmation.
+It offers card/power unlocks, test duels, and reset confirmation. Tutorial is available directly on the ordinary title screen.
 All universes are already available. The tutorial does not grant progression.
 Developer test duels count toward the ordinary record and reward transaction.
 Use the workbench to place cards, arm an enemy turn, preview results, or test infinite mana.

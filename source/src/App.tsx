@@ -930,7 +930,7 @@ export default function App() {
   // it walks through draw picks and targeting prompts exactly like a human does
   // and the animations get to play between its moves.
   useEffect(() => {
-    if (mode.kind === "hotseat" || screen !== "playing" || needsLandscape || duelIntro || relicFlash) return;
+    if (mode.kind === "hotseat" || screen !== "playing" || needsLandscape || duelIntro || relicFlash || (tutorialActive && tutorialCompleted)) return;
     const actor = game.phase === "mulligan" ? game.mulligan?.player
       : game.phase === "drawChoice" ? game.drawChoice?.player
       : game.phase === "targeting" ? game.pendingTarget?.player : game.activePlayer;
@@ -945,7 +945,7 @@ export default function App() {
       if (action) timer = window.setTimeout(() => perform(action), game.phase === "main" ? BOT_DELAY_MS : BOT_FIRST_DELAY_MS);
     });
     return () => { cancel(); window.clearTimeout(timer); };
-  }, [game, mode, screen, library, duelIntro, botSearch, relicFlash, needsLandscape, tutorialActive]);
+  }, [game, mode, screen, library, duelIntro, botSearch, relicFlash, needsLandscape, tutorialActive, tutorialCompleted]);
 
   // Hotseat: the moment the active player changes, the seat is stale and the
   // curtain has to come back down. Reading it off the state rather than off the
@@ -1091,8 +1091,6 @@ export default function App() {
     // not just muted. The herald keeps only the moments that are actually rare:
     // the opening, a core in real danger, and the ending.
     const mine = game.players[viewerId].health;
-    const theirs = game.players[otherPlayer(viewerId)].health;
-    if (theirs <= STARTING_CORE * 0.25) say("core_low_them", 0.6);
     if (mine <= STARTING_CORE * 0.25) say("core_low_you", 0.6);
   }, [game, screen, viewerId, vsBot, pack]);
 
@@ -1268,7 +1266,7 @@ export default function App() {
   const viewerCanAct = (game.phase === "mulligan" && game.mulligan?.player === viewerId) || myTurn;
   // Every affordance and click reads this. Empty while the opponent is thinking,
   // so nothing lights up and nothing can be clicked on their behalf.
-  const uiActions = viewerCanAct && !duelIntro && !needsLandscape ? legalActions.filter(action=>!tutorialActive||tutorialCompleted||tutorialAllowsAction(tutorialStep,game,action)) : [];
+  const uiActions = viewerCanAct && !duelIntro && !needsLandscape && !(tutorialActive && tutorialCompleted) ? legalActions.filter(action=>!tutorialActive||tutorialAllowsAction(tutorialStep,game,action)) : [];
 
   function clearFx() {
     setFloats([]);
@@ -1633,6 +1631,7 @@ export default function App() {
   }
 
   function perform(action: GameAction) {
+    if (tutorialActive && tutorialCompleted) return;
     if(tutorialActive&&!tutorialCompleted&&!tutorialAllowsAction(tutorialStep,game,action)) {showToast('Follow the highlighted lesson, or leave the tutorial.',1800);return;}
     setEnemyPowerOpen(false);
     clearHandKeywords();
@@ -1830,6 +1829,7 @@ export default function App() {
   function beginTutorial() {
     sfx.play("button");
     sfx.unlock();
+    void requestPhoneLandscape(phoneLayout.phone);
     sfx.stopCardTheme();
     // An ending piece is 16 seconds long, and leaving the screen it belongs to
     // must take it with you rather than play it over the next one.
@@ -1903,6 +1903,12 @@ export default function App() {
     setEnemyPowerOpen(false);
     setScreen("title");
   }
+
+  useEffect(() => {
+    if (!tutorialActive || !tutorialCompleted) return;
+    const timer = window.setTimeout(toTitle, 1500);
+    return () => window.clearTimeout(timer);
+  }, [tutorialActive, tutorialCompleted]);
 
   /** Answers an open targeting prompt by naming a minion on the board. */
   function chooseTargetAt(owner: PlayerId, slotIndex: number): boolean {
@@ -3342,7 +3348,6 @@ export default function App() {
           completed={tutorialCompleted}
           onSkip={toTitle}
           onStart={()=>setTutorialStep(1)}
-          onCampaign={()=>{toTitle();setOverlay('campaign');}}
         />
       ) : null}
 
@@ -3408,7 +3413,7 @@ export default function App() {
 
       {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)}
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
-      {overlay === 'lore' && <LoreLibrary onClose={()=>setOverlay(null)} />}
+      {overlay === 'lore' && <LoreLibrary completedBosses={progress.completedBosses} onClose={()=>setOverlay(null)} />}
       {overlay === "deck" && <CardGallery onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
@@ -5693,6 +5698,7 @@ function TargetPrompt({
 }) {
   const card = library[pending.sourceCardId];
   const canCancel = Boolean((pending.cancelPlay || pending.cancelHeroPower) && !botControlled);
+  const hasCardChoices = pending.kind === 'option' && pending.labelOptions.some(option => Boolean(library[option.value]));
   const cancelLabel = pending.cancelHeroPower ? "Cancel Hero Power" : "Return to hand";
   const hint = botControlled
     ? "The practice bot is choosing…"
@@ -5710,7 +5716,7 @@ function TargetPrompt({
       className={[
         "target-prompt",
         pending.kind === "board" && !canCancel ? "" : "interactive",
-        pending.kind === "option" ? "card-choice-prompt" : "",
+        hasCardChoices ? "card-choice-prompt" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -6556,15 +6562,14 @@ function CardPack({
   );
 }
 
-function TutorialCoach({step,completed,onSkip,onStart,onCampaign}:{step:number;completed:boolean;onSkip:()=>void;onStart:()=>void;onCampaign:()=>void}) {
+function TutorialCoach({step,completed,onSkip,onStart}:{step:number;completed:boolean;onSkip:()=>void;onStart:()=>void}) {
   const lesson=TUTORIAL_LESSONS[Math.min(step,TUTORIAL_LESSONS.length-1)];
   return <aside className={`tutorial-coach${step===0?' is-welcome':''}`} aria-label="Tutorial">
     <div className="tutorial-coach-top"><span>Rick's field guide</span><small>{completed?'Complete':`${step+1} / ${TUTORIAL_LESSONS.length}`}</small></div>
     <strong>{completed?'Ready for the Convergence':lesson.title}</strong>
-    <p>{completed?'You played cards, attacked, answered a Battlecry, equipped a relic, and used a Hero Power.':lesson.body}</p>
-    <small className="tutorial-coach-hint">{completed?'First victories unlock cards and powers. Every universe is available.':lesson.hint}</small>
+    <p>{completed?'Training complete. Returning to the menu…':lesson.body}</p>
+    <small className="tutorial-coach-hint">{completed?'Choose any universe when you are ready.':lesson.hint}</small>
     {step===0&&!completed&&<button type="button" className="primary" onClick={onStart}>Start lesson</button>}
-    {completed&&<button type="button" className="primary" onClick={onCampaign}>Choose a universe</button>}
     <button type="button" onClick={onSkip}>Leave tutorial</button>
   </aside>;
 }

@@ -201,7 +201,8 @@ describe("targeted effects", () => {
     const weakenState = mainState("batman-weaken");
     weakenState.players[1].board[0] = dummy("John Wick", 1, { atk: 5 });
     const weakened = choose(choose(playCardFor(weakenState, 0, "Batman", 1), 0), 2);
-    expect(weakened.players[1].board[0]?.atk).toBe(2);
+    expect(weakened.players[1].board[0]?.atk).toBe(3);
+    expect(cards.find(card => card.name === 'Batman')?.rarity).toBe('Red');
   });
 
   it("does not offer a refund after a multi-step effect accepts its first target", () => {

@@ -1,0 +1,19 @@
+Use case: illustration-story. Create final production comic artwork for an original fantasy card game chapter called The Empty Chair. This is ONE square atlas containing exactly SIX equal rectangular comic panels, in a perfectly aligned 3-column by 2-row grid, read left-to-right then top-to-bottom. Every cell is portrait 2:3. Request a crisp 2048 by 2048 square image. No outer margin. No text anywhere, no letters, speech balloons, captions, watermarks or logos; the game adds readable dialogue itself. Use narrow straight dark gutters only on the exact one-third and two-third vertical boundaries and the halfway horizontal boundary. Each cell must be a complete self-contained illustration, no elements crossing a gutter.
+
+Art direction: exceptional professional graphic novel illustration, expressive hand-inked contours, rich hand-painted gouache shading, fine paper texture, deep violet shadows, antique gold highlights, celestial teal light, strong cinematic compositions. Avoid photorealism, generic 3D, flat icon art and excessive details that obscure the action on phones.
+
+Original protagonist in every appropriate panel: Rick Gramps, a sturdy elderly man with swept-back silver hair, short white beard, bushy brows, round brass goggles pushed up on his forehead, weathered olive long coat, wine-red scarf, fingerless gloves, one small brass cuff on his left wrist. He is wry and determined, never a caricature. Consistent face and clothing across panels. Supporting character in panels 3, 4, 5: a mysterious young archivist in an oversized midnight-blue hooded coat, short copper hair, carrying a small ring of gold keys; her facial expression is calm and knowing.
+
+Panel 1 upper left: wide dramatic composition within the portrait panel, Rick stands alone in an emptied circular duel arena at dusk, one defeated blank ornate card on the cracked floor glows faint gold, fractured star-shaped light through high arches, contemplative victory.
+
+Panel 2 upper middle: close-up Rick's gloved open palm, the ornate blank card visibly unfolding itself into a luminous golden origami bird, Rick's curious face behind, bird heads toward a tiny black keyhole-shaped tear floating in purple air.
+
+Panel 3 upper right: Rick follows the bird into an impossible vaulted waiting room between universes, tall windows contain floating miniature planets, many empty chairs, the copper-haired archivist waits by an open arched doorway with gold keys.
+
+Panel 4 lower left: the archivist points upward at a constellation of oversized floating playing cards, each card is actually an open doorway into a vivid tiny world with sunlight, ocean, mountains or a city; Rick looks upward in awe, visually clear these worlds are imprisoned behind card frames, hanging golden lock threads.
+
+Panel 5 lower middle: an imposing EMPTY chair at the head of an immense ancient card table, on the chair's seat a single card shows the SAME elderly Rick's portrait, Rick recoils slightly and then smiles, archivist is behind him. Mysterious violet-gold light, powerful composition, portrait card inside this illustration stays recognisable.
+
+Panel 6 lower right: triumphant low-angle view Rick sits in that chair, leans forward and fans an ornate deck in his gloved hands, cards and miniature worlds spiral around him as if obeying him, far above a gigantic shadowy hand has stopped in the middle of shuffling a deck; ominous luminous fingers silhouette at the upper edge. The archivist watches at the side. Each panel has clear visual storytelling and large subjects. The last image feels like an unexpected challenge to the unseen dealer.
+
+Keep important faces and action below the top 12 percent of each panel and above the bottom 12 percent, leaving calm shaded areas there for later UI captions.

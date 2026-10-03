@@ -1,6 +1,7 @@
 import type { GameEvent, GameState } from "./engine/types";
 import type { BotSkill } from "./engine/bot";
 import { CAMPAIGN_DIFFICULTIES, getCampaignChapter } from "./campaign";
+import { cards } from './data/cards';
 
 /** How the duel is being played. Mirrors GameMode in screens/Screens.tsx. */
 export type SavedMode = ({ kind: "hotseat" } | { kind: "bot"; skill: BotSkill } | { kind: "campaign"; chapter: number; skill: BotSkill }) & { duelId?: string };
@@ -222,6 +223,24 @@ export function loadGame(): SavedGame | null {
       if (!SKILLS.includes(saved.skill)) return null;
       mode = { kind: "bot", skill: saved.skill, ...identity };
     } else mode = { kind: "hotseat", ...identity };
+    // Existing bodies keep their combat stats, but Batman's printed face follows the current roster.
+    const batman = cards.find(card => card.id === 'c005');
+    const refreshBatman = (value: unknown): void => {
+      if (!value || typeof value !== 'object') return;
+      const object = value as Record<string, unknown>;
+      if (object.cardId === 'c005' && batman) {
+        if (object.rarity === 'Purple') object.rarity = batman.rarity;
+        if (object.effectId === 'batman_gadget_choice') object.effect = batman.effect;
+      }
+      if (object.sourceCardId === 'c005' && object.kind === 'option' && Array.isArray(object.labelOptions) && batman) {
+        const reduction = batman.effect.match(/give it (-\d+ ATK)/i)?.[1];
+        for (const option of object.labelOptions) {
+          if (option?.value === 'weaken' && reduction) option.label = `Give it ${reduction}`;
+        }
+      }
+      for (const child of Object.values(object)) refreshBatman(child);
+    };
+    refreshBatman(game);
     return {
       version: SAVE_VERSION,
       game,

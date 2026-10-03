@@ -171,7 +171,7 @@ for (const tokenId of genericTokenIds) {
 // from the build: the herald no longer narrates the end of a duel (owner's
 // ruling, 3 September 2026) and each ending has a piece of music instead, probed
 // with the cues below.
-for (const clip of ["duel_begin", "core_low_them", "turn_you"]) {
+for (const clip of ["duel_begin", "core_low_you", "turn_you"]) {
   const result = await page.evaluate(async (name) => {
     const api = window.__sfx;
     api.stopMusic();

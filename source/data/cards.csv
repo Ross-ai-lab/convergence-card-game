@@ -3,7 +3,7 @@ c001,John Wick,1,1,1,Black,Nature,Neutral,Passive,friendly_death_buff_1_1,passiv
 c002,Joker,1,1,1,Black,Nature,Evil,,copy_minion_to_hand,onPlay,Battlecry: Put a copy of a minion in your hand,The punchline was already loaded.,DCEU,/card-art/raw/c002.webp
 c003,Detective L,1,1,4,Yellow,Nature,Good,Passive,foresight_draw,passive,"Passive: Your draw now shows 2 cards, pick one",Justice works in probabilities.,Death Note,/card-art/raw/c003.webp
 c004,Bigfoot,2,2,2,Black,Nature,Neutral,Passive,dodge_50,passive,Passive: Evades 50% of incoming attacks,The woods answer with silence.,Myth,/card-art/raw/c004.webp
-c005,Batman,2,1,1,Purple,Tech,Good,,batman_gadget_choice,onPlay,Battlecry: Choose an enemy minion. Choose one gadget: Freeze it; Silence it; or give it -3 ATK,Preparation beats power.,DCEU,/card-art/raw/c005.webp
+c005,Batman,2,1,1,Red,Tech,Good,,batman_gadget_choice,onPlay,Battlecry: Choose an enemy minion. Choose one gadget: Freeze it; Silence it; or give it -2 ATK,Preparation beats power.,DCEU,/card-art/raw/c005.webp
 c006,Sandworm,4,3,3,Black,Nature,Neutral,Taunt;Passive,small_attack_ward_2,passive,Taunt. Passive: Cannot be damaged by minions with 2 or less ATK,The desert itself has teeth.,Dune,/card-art/raw/c006.webp
 c007,Pandora's Actor,5,5,5,Purple,Magic,Evil,,copy_minion_effects,onPlay,Battlecry: Choose another minion. Become it. HP and ATK are not copied,Every role is useful.,Overlord,/card-art/raw/c007.webp
 c008,T-1000,5,3,5,Purple,Tech,Neutral,Ongoing,heal_self_full,ongoing,Ongoing: Fully heal yourself,It remembers its shape.,Terminator,/card-art/raw/c008.webp

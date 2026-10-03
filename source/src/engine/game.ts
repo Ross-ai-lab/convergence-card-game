@@ -2608,8 +2608,8 @@ function runEffect(
           events.push(effectEvent(`${label} silences ${target.name}.`, source));
         }
       } else if (chosen.option.value === "weaken") {
-        target.atk = Math.max(0, target.atk - 3);
-        events.push(effectEvent(`${label} gives ${target.name} -3 ATK.`, source));
+        target.atk = Math.max(0, target.atk - 2);
+        events.push(effectEvent(`${label} gives ${target.name} -2 ATK.`, source));
       }
       return false;
     }
@@ -2628,7 +2628,7 @@ function runEffect(
         values: [
           { label: "Freeze it", value: "freeze" },
           { label: "Silence it", value: "silence" },
-          { label: "Give it -3 ATK", value: "weaken" },
+          { label: "Give it -2 ATK", value: "weaken" },
         ],
       },
       library,

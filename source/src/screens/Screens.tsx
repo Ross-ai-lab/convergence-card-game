@@ -20,7 +20,6 @@ import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNo
 import { KEYWORDS, keywordRuns } from "../keywords";
 import {
   ArrowLeft,
-  Cards,
   CornersIn,
   CornersOut,
   Crown,
@@ -339,7 +338,11 @@ export function TitleScreen({
               passing, not an announcement. Once the roster is complete it
               disappears rather than reading the whole roster forever. */}
           <button type="button" className="gallery-trigger deck-trigger" onClick={onDeck}>
-            <Cards size={22} weight="fill" aria-hidden="true" />
+            <span className="deck-stack-art" aria-hidden="true">
+              <span className="deck-stack-card deck-stack-back" />
+              <span className="deck-stack-card deck-stack-middle" />
+              <span className="deck-stack-card deck-stack-front"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="28"/><circle cx="40" cy="40" r="20"/><path d="M40 8L47 33L72 40L47 47L40 72L33 47L8 40L33 33Z"/><path d="M21 21L59 59M21 59L59 21"/></svg></span>
+            </span>
             <span className="gallery-trigger-stack">
               <span>My Deck</span>
               {unlocked < rosterSize ? (
@@ -367,16 +370,6 @@ export function TitleScreen({
             </button>
             <button
               type="button"
-              className="developer-tools-open"
-              onClick={() => {
-                sfx.play("button");
-                onTutorial();
-              }}
-            >
-              Run tutorial
-            </button>
-            <button
-              type="button"
               className="developer-cheat-unlock"
               onClick={() => {
                 sfx.play("button");
@@ -401,6 +394,10 @@ export function TitleScreen({
       </div>
 
       <div className="title-bottom-left">
+        <button type="button" className="tutorial-trigger" onClick={()=>{sfx.play('button');onTutorial();}}>
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 2L18 10L26 14L18 18L14 26L10 18L2 14L10 10Z"/><circle cx="14" cy="14" r="5"/></svg>
+          <span>Tutorial</span>
+        </button>
         <button
           type="button"
           className="hotseat-trigger"

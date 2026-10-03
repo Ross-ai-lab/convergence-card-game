@@ -46,7 +46,7 @@ describe("thirty-card deck construction", () => {
   });
 
   it("does not impose starter rarity restrictions on later custom decks", () => {
-    const mythic = cards.find(({ rarity }) => rarity === "Red")!;
+    const mythic = cards.find(({ id, rarity }) => rarity === "Red" && !CAMPAIGN_STARTER_DECK.slice(0,29).includes(id))!;
     const deck = [...CAMPAIGN_STARTER_DECK.slice(0, 29), mythic.id];
     expect(validateDeck(deck, roster, roster).valid).toBe(true);
   });

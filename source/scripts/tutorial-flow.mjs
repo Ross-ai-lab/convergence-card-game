@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 export async function playTutorial(page) {
   await page.getByRole('button',{name:'Start lesson',exact:true}).click();
   await page.locator('.hand-card.playable').first().click();await page.locator('[data-slot="0-0"]').click();
-  const pass=async()=>{await page.locator('.end-turn').click();await page.waitForFunction(()=>window.__debug.state().activePlayer===0);};
+  const pass=async()=>{await page.locator('.end-turn').click();await page.locator('.hero-plate.me.active').waitFor();};
   await pass();await page.locator('[data-slot="0-0"]').click();await page.locator('.hero-plate.enemy.targetable').click();
   await pass();await page.locator('.hand-card').filter({hasText:'Batman'}).first().click();await page.locator('[data-slot="0-1"]').click();
   if(await page.locator('.board-slot.choosable').count())await page.locator('.board-slot.choosable').first().click();
@@ -12,8 +12,8 @@ export async function playTutorial(page) {
   await page.locator('.hand-card').filter({hasText:'Green Lantern Ring'}).first().click();await page.locator('[data-slot="0-1"]').click();
   await pass();await page.locator('.hero-power-button').click();await page.locator('[data-slot="0-1"]').click();
   await page.locator('[data-slot="0-1"]').click();await page.locator('.board-slot.targetable').first().click();
-  await page.getByRole('button',{name:'Choose a universe',exact:true}).waitFor();
-  assert((await page.locator('.tutorial-coach').textContent()).includes('Ready for the Convergence'));
+  await page.locator('.title-screen').waitFor({timeout:5000});
+  assert.equal(await page.locator('.tutorial-coach').count(),0,'Tutorial did not end automatically');
 }
 
 /** Training must neither overwrite an unfinished duel nor suppress its later reward. */
@@ -35,7 +35,7 @@ export async function checkTutorialResume(page, base) {
   await page.reload({waitUntil:'domcontentloaded'});
   const saved=await page.evaluate(()=>localStorage.getItem('convergence.save.v31'));
   await page.keyboard.type('Ross');
-  await page.getByRole('button',{name:'Run tutorial',exact:true}).click();
+  await page.getByRole('button',{name:'Tutorial',exact:true}).click();
   await page.getByRole('button',{name:'Start lesson',exact:true}).click();
   await page.locator('.hand-card.playable').first().click();
   await page.locator('[data-slot="0-0"]').click();

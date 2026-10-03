@@ -7253,3 +7253,22 @@ button:disabled {
 .tutorial-coach {animation:none;}
 .tutorial-coach.is-welcome {box-shadow:0 0 0 150vmax #090813cc;}
 .tutorial-mode .hand-keyword-popover,.tutorial-mode .keyword-popover {display:none !important;}
+
+/* Discover has a real height budget; its complete cards share the remaining row. */
+.target-prompt.card-choice-prompt {
+  top:50%; height:min(610px,calc(100dvh - 24px)); max-height:calc(100dvh - 24px);
+  display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto minmax(0,1fr);
+  gap:10px; padding:12px; transform:translate(-50%,-50%); animation:none; overflow:hidden;
+}
+.card-choice-prompt .target-prompt-head {grid-column:1;min-width:0;gap:8px;}
+.card-choice-prompt .target-prompt-text small {display:none;}
+.card-choice-prompt .prompt-cancel {grid-column:2;grid-row:1;align-self:center;margin:0;min-height:34px;padding:5px 9px;font-size:12px;}
+.target-prompt.card-choice-prompt .prompt-values {grid-column:1/-1;grid-row:2;min-height:0;margin:0;width:100%;height:100%;align-self:stretch;container-type:size;align-items:center;justify-items:center;gap:10px;}
+.target-prompt.card-choice-prompt .prompt-card-choice {width:min(100%,calc((100cqh - 12px)*5/7 + 10px));padding:3px;max-height:100%;}
+@media(max-height:600px) {
+ .target-prompt.card-choice-prompt {padding:8px;gap:6px;}
+ .card-choice-prompt .target-prompt-text strong {font-size:12px;}
+ .card-choice-prompt .target-prompt-text span {font-size:11px;line-height:1.25;}
+ .card-choice-prompt .target-prompt-art {width:32px;height:32px;}
+ .card-choice-prompt .prompt-cancel {font-size:10px;min-height:30px;}
+}

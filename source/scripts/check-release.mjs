@@ -7,6 +7,7 @@ import { manualRotationBrowser, resizePhone, rotateForDuel } from './phone-fixtu
 import { checkCampaignMotion } from './campaign-motion.mjs';
 import { confirmStarterRestore } from './deck-fixtures.mjs';
 import { checkDeckHover, checkGalleryHold, checkFastGalleryScroll, checkPreviewFallback } from './gallery-interactions.mjs';
+import {playTutorial} from './tutorial-flow.mjs';
 const base=process.argv[2];if(!base)throw new Error('Pass the published /play/ URL');
 const browser=await launch();const page=await browser.newPage({viewport:{width:1440,height:950}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -21,6 +22,9 @@ try{
  assert.equal(await page.locator('.orbit-choice,.daily-pack-trigger').count(),0);
  assert.equal(await page.evaluate(()=>localStorage.getItem('convergence.progress.v2')),null);
  assert.equal(await page.evaluate(()=>localStorage.getItem('sound-test-preference')),'preserved');
+ assert.equal(await page.getByRole('button',{name:'Tutorial',exact:true}).count(),1);
+ await page.getByRole('button',{name:'Tutorial',exact:true}).click();await playTutorial(page);
+ assert.equal((await progress()).completedChapters,0,'Training granted a real victory');
  await page.keyboard.type('Ross');await page.locator('.duel-trigger').click();
  assert.equal(await page.locator('.campaign-chapter').count(),20);
  await page.locator('[data-chapter="1"] button').click();
@@ -43,6 +47,11 @@ try{
  await settleMotion(page);
  for(let hit=0;hit<8;hit++){const box=page.locator('.pack-box:not(.is-charged)');if(!await box.isVisible())break;const label=await box.getAttribute('aria-label');await box.click({force:true});await page.waitForFunction(label=>document.querySelector('.pack-box')?.getAttribute('aria-label')!==label,label);}
  await page.locator('.pack-collect:not([disabled])').click({timeout:25000});
+ await page.getByRole('button',{name:'Lore',exact:true}).click();assert.equal(await page.locator('.lore-chapter:disabled').count(),9);
+ await page.getByRole('button',{name:'Lore chapter 1, The Empty Chair',exact:true}).click();await page.locator('.comic-frame.is-loaded').first().waitFor();
+ await page.getByLabel('Next comic page').click();await page.getByLabel('Next comic page').click();
+ assert.equal(await page.getByRole('button',{name:'Finish chapter',exact:true}).count(),1);
+ await page.screenshot({path:'../.preview/release/live-comic.png'});await page.getByLabel('Close comic').click();
  await page.locator('.deck-trigger').click();await page.locator('.gallery-cell').first().waitFor();await checkDeckHover(page);
  assert((await page.locator('.gallery-hero-power').textContent()).includes('New hero power available'));
  await page.getByRole('button',{name:'Choose hero power',exact:true}).click();await page.getByLabel('Close hero power chooser').click();

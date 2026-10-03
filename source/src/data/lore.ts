@@ -250,7 +250,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "name": "Batman",
     "origin": "DCEU",
     "epithet": "the Dark Knight",
-    "rar": "Epic",
+    "rar": "Mythic",
     "camp": "Tech",
     "align": "Good",
     "cost": 2,
@@ -281,7 +281,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Batarang",
     "sig_desc": "Signature bat-shaped throwing weapon that never misses.",
     "playstyle": "Flexible single-target crowd control",
-    "ability": "Battlecry: Choose an enemy minion. Choose one gadget: Freeze it; Silence it; or give it -3 ATK",
+    "ability": "Battlecry: Choose an enemy minion. Choose one gadget: Freeze it; Silence it; or give it -2 ATK",
     "rivals": [
       {
         "who": "Joker",

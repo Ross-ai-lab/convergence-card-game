@@ -1,5 +1,6 @@
 import {checkMenuPolish} from './menu-polish.mjs';
 import {playTutorial,checkTutorialResume} from './tutorial-flow.mjs';
+import {checkDiscoverAndPhoneSpace,checkFirstComic,checkTouchTutorialEntry} from './interface-followup.mjs';
 /**
  * The three screens the duel checks never reach: the tutorial, developer mode,
  * and the gallery's Star Chart profile.
@@ -57,19 +58,22 @@ function check(name, condition, detail = "") {
 
 // Tutorial first duel ------------------------------------------------------
 await fresh();
-check("normal menu has no Tutorial button", await page.getByRole("button", { name: "Tutorial", exact: true }).count() === 0);
+check("normal menu offers Tutorial", await page.getByRole("button", { name: "Tutorial", exact: true }).count() === 1);
 await page.keyboard.type("Ross");
-const runTutorialButton = page.locator(".developer-cheat-panel").getByRole("button", { name: "Run tutorial", exact: true });
-check("developer panel shows Run tutorial", await runTutorialButton.isVisible());
+const runTutorialButton = page.getByRole("button", { name: "Tutorial", exact: true });
+check("developer panel no longer duplicates Tutorial", await page.locator('.developer-cheat-panel').getByRole('button',{name:'Run tutorial',exact:true}).count() === 0);
 await runTutorialButton.click();
 await waitForBoard();
 check("tutorial opens the coach", await page.locator(".tutorial-coach").isVisible());
 check("tutorial skips mulligan", await page.locator(".mulligan-panel").count() === 0);
 check("tutorial uses the curated opening", (await page.locator(".hand-card").count()) === 3);
 await playTutorial(page);
-check('tutorial completes every real interaction',await page.getByRole('button',{name:'Choose a universe',exact:true}).isVisible());
+check('tutorial completes every interaction and returns to the menu',await page.locator('.title-screen').isVisible());
 await page.screenshot({path:path.join(outputDir,'tutorial-complete.png')});
 await checkTutorialResume(page,BASE);
+await checkTouchTutorialEntry(browser,BASE);
+await checkDiscoverAndPhoneSpace(browser,BASE);
+await checkFirstComic(page,BASE);
 
 // Developer mode ----------------------------------------------------------
 await fresh();
