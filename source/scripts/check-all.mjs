@@ -77,7 +77,7 @@ const SUITES = [
     name: "performance",
     command: ["node", "scripts/check-performance.mjs", BASE],
     browser: true,
-    reaches: [/^source\/src\//, HARNESS],
+    reaches: [/^source\/src\//, /^source\/scripts\/duel-performance\.mjs$/, HARNESS],
   },
   {
     name: "tests",
@@ -152,6 +152,7 @@ const SUITES = [
       /^source\/src\/engine\/game\.ts$/,
       /^source\/src\/data\/lore/,
       /^source\/src\/unlocks\.ts$/,
+      /^source\/scripts\/turn-and-keyword-checks\.mjs$/,
       HARNESS,
     ],
   },
