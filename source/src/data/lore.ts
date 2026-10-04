@@ -5684,10 +5684,10 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "str": [
       "Nine unique Breathing Styles",
       "Elite demon-slaying swordsmanship",
-      "Invulnerable alongside allies"
+      "Protects others through teamwork"
     ],
     "wk": [
-      "Needs three-plus Good allies",
+      "Less effective when separated",
       "Heavy losses to Upper Moons",
       "No Blood Demon Arts"
     ],
