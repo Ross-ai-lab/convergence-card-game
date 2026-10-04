@@ -37,6 +37,25 @@ afterEach(() => {
 });
 
 describe("the save slot", () => {
+  it('resolves an old Nine Hashira targeting save with its new volley', () => {
+    const storage = memoryLocalStorage();
+    vi.stubGlobal('window', {localStorage:storage});
+    const game=liveDuel();game.activePlayer=0;
+    game.players[0].board[0]=spawnTestMinion(cards.find(card=>card.id==='c109')!,0);
+    game.players[1].board[0]=spawnTestMinion(cards.find(card=>card.id==='c001')!,1,{alignment:'Evil',hp:10,maxHp:10});
+    saveGame(game,[],{kind:'bot',skill:'normal'},1000);
+    const legacy=JSON.parse(storage.getItem(SAVE_KEY)!);
+    const source=legacy.game.players[0].board[0];
+    source.effectId='hashira_focus_attack';
+    legacy.game.phase='targeting';
+    legacy.game.pendingTarget={kind:'board',player:0,sourceOwner:0,sourceInstanceId:source.instanceId,sourceCardId:'c109',sourceName:'Nine Hashira',effectId:'hashira_focus_attack',prompt:'Choose an Evil enemy',options:[{owner:1,slot:0}],handOptions:[],labelOptions:[],step:0,priorOptions:[],priorHandOptions:[],priorLabelOptions:[]};
+    storage.setItem(SAVE_KEY,JSON.stringify(legacy));
+    const loaded=loadGame()!.game;
+    expect(loaded.phase).toBe('main');expect(loaded.pendingTarget).toBeNull();
+    expect(loaded.players[1].board[0]?.hp).toBe(9);
+    expect(loaded.players[0].board[0]).toMatchObject({effectId:'hashira_good_volley',attacksUsed:0});
+  });
+
   it('caps legacy cores without resetting a damaged duel and refreshes replaced artwork', () => {
     vi.stubGlobal('window', { localStorage: memoryLocalStorage() });
     const game = liveDuel();

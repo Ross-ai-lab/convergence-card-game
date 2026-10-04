@@ -113,8 +113,8 @@ describe("combat-reaction cards", () => {
     });
   });
 
-  it("RoboCop triples its damage on the counter-blow, not only on its own swing", () => {
-    // "Deal 3x damage against Evil minions" has no attacking clause, and combat
+  it("RoboCop doubles its damage on the counter-blow, not only on its own swing", () => {
+    // "Deal double damage against Evil minions" has no attacking clause, and combat
     // here is simultaneous, so the rule has to hold on both blows. The
     // retaliation used to be plain ATK.
     const state = mainState("robocop-retaliation");
@@ -122,10 +122,10 @@ describe("combat-reaction cards", () => {
     state.players[1].board[0] = makeMinion("RoboCop", 1, { atk: 4, hp: 99, maxHp: 99 });
 
     const after = attack(state, 0, 0);
-    expect(after.players[0].board[0]?.hp).toBe(99 - 12);
+    expect(after.players[0].board[0]?.hp).toBe(99 - 8);
   });
 
-  it("Doom Slayer triples and heals when it kills an Evil attacker on the counter-blow", () => {
+  it("Doom Slayer doubles and heals when it kills an Evil attacker on the counter-blow", () => {
     const state = mainState("doom-retaliation");
     state.players[0].board[0] = dummy("John Wick", 0, { alignment: "Evil", atk: 3, hp: 3, maxHp: 3 });
     state.players[1].board[0] = makeMinion("Doom Slayer", 1, { atk: 2, hp: 20, maxHp: 20 });

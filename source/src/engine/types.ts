@@ -334,7 +334,7 @@ export const EFFECT_IDS = [
   "dominion_authority",
   "kratos_lockdown",
   "ten_commandments_first_attack",
-  "hashira_focus_attack",
+  "hashira_good_volley",
   "freeze_and_silence_enemy",
   "dumbledore_cleanse",
   "dark_dimension_banish",

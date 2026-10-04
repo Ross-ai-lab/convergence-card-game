@@ -1,8 +1,8 @@
 import type { GameEvent, GameState } from "./engine/types";
-import { STARTING_CORE } from "./engine/game";
+import { STARTING_CORE, applyAction, makeCardLibrary } from "./engine/game";
 import type { BotSkill } from "./engine/bot";
 import { CAMPAIGN_DIFFICULTIES, getCampaignChapter } from "./campaign";
-import { cards } from './data/cards';
+import { cards, relics } from './data/cards';
 import type {SavedTurnClock} from './turn-clock';
 
 /** How the duel is being played. Mirrors GameMode in screens/Screens.tsx. */
@@ -231,12 +231,16 @@ export function loadGame(): SavedGame | null {
     } else mode = { kind: "hotseat", ...identity };
     for (const player of game.players) player.health = Math.min(STARTING_CORE, player.health);
     // Existing bodies keep their combat stats, but Batman's printed face follows the current roster.
+    const oldHashiraChoice = game.pendingTarget?.effectId as string === 'hashira_focus_attack';
     const batman = cards.find(card => card.id === 'c005');
     const refreshBatman = (value: unknown): void => {
       if (!value || typeof value !== 'object') return;
       const object = value as Record<string, unknown>;
       if(typeof object.cardId==='string'&&'rarity' in object&&['c088','c076','c127','c148','c163','c149','c145','c151','c126','c181','c160','c159','c045','c035','c065','c020','c184','c085'].includes(object.cardId))object.rarity=cards.find(card=>card.id===object.cardId)?.rarity??object.rarity;
       if(object.effectId==='mob_ascend'){if(typeof object.effect==='string')object.effect=cards.find(card=>card.id==='c053')!.effect;if(typeof object.text==='string')object.text=cards.find(card=>card.id==='c053')!.effect;}
+      if(object.effectId==='hashira_focus_attack')object.effectId='hashira_good_volley';
+      if(['c016','c140','c169','c185','c109'].includes(String(object.cardId))){const current=cards.find(card=>card.id===object.cardId);if(current&&typeof object.effect==='string')object.effect=current.effect;}
+      if(object.effectId==='hashira_good_volley'&&typeof object.text==='string')object.text=cards.find(card=>card.id==='c109')!.effect;
       if(object.cardId==='c126'||object.cardId==='c127')object.art=cards.find(card=>card.id===object.cardId)?.art??object.art;
       if(typeof object.savedCoreHealth==='number')object.savedCoreHealth=Math.min(STARTING_CORE,object.savedCoreHealth);
       if(object.cardId==='c012')object.camp='Tech';
@@ -255,9 +259,15 @@ export function loadGame(): SavedGame | null {
       for (const child of Object.values(object)) refreshBatman(child);
     };
     refreshBatman(game);
+    let migratedGame = game;
+    if (oldHashiraChoice && game.pendingTarget?.options.length) {
+      const resolved = applyAction(game, {type:'choose_target',player:game.pendingTarget.player,choiceIndex:0}, makeCardLibrary(cards,relics));
+      migratedGame = resolved.state;
+      parsed.events = [...(parsed.events ?? []), ...resolved.events];
+    }
     const migrated:SavedGame={
       version: SAVE_VERSION,
-      game,
+      game: migratedGame,
       events: Array.isArray(parsed.events) ? parsed.events : [],
       mode,
       savedAt: typeof parsed.savedAt === "number" ? parsed.savedAt : 0,

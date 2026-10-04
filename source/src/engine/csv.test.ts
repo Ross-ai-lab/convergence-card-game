@@ -60,7 +60,7 @@ describe("card CSV data", () => {
     expect(changed.get("Meteor")).toMatchObject({
       cost: 8,
       atk: 4,
-      hp: 3,
+      hp: 4,
       origin: "Basic",
       effectId: "aoe_all_4",
       effect: "Battlecry: Deal 4 damage to all other minions",

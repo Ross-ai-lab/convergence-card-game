@@ -80,7 +80,7 @@ export const KEYWORDS: KeywordEntry[] = [
     aliases: ["Sleeping"],
     text: "The one-turn wait after being played or summoned.",
   },
-  { term: "Evade", text: "A percentage chance to dodge an incoming attack." },
+  { term: "Evade", aliases: ["Evades"], text: "A percentage chance to dodge an incoming attack." },
   { term: "Invulnerable", text: "Takes no damage." },
   { term: "Immune", text: "Takes no damage from one named source." },
   {
@@ -94,6 +94,8 @@ export const KEYWORDS: KeywordEntry[] = [
     text: "A delayed effect is waiting to resolve on the minion.",
   },
   { term: "Destroy", text: "Removes a minion, bypassing Divine Shield." },
+  { term: "Rebirth", aliases: ["Rebirths"], text: "Summons a previously destroyed friendly minion with its printed stats, without its old buffs or relics. Its Battlecry does not activate." },
+  { term: "Bearer", text: "The minion carrying this relic. The relic’s effect applies to that minion." },
   { term: "Summon", text: "Puts a new minion into an open slot." },
   { term: "Discover", text: "Offers three choices. Choose one." },
   { term: "Relic", aliases: ["Relics"], text: "An equipment card played onto a minion. A minion can carry up to two relics. Its printed effect applies to the bearer." },

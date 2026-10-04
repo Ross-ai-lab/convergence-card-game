@@ -1539,8 +1539,8 @@ function applyFatigue(state: GameState, playerId: PlayerId, events: GameEvent[])
  */
 function strikeDamage(striker: MinionInstance, victim: MinionInstance): number {
   let damage = striker.atk;
-  if (hasEffect(striker, "robocop_evil_bonus") && victim.alignment === "Evil") damage *= 3;
-  if (hasEffect(striker, "doom_evil_slayer") && victim.alignment === "Evil") damage *= 3;
+  if (hasEffect(striker, "robocop_evil_bonus") && victim.alignment === "Evil") damage *= 2;
+  if (hasEffect(striker, "doom_evil_slayer") && victim.alignment === "Evil") damage *= 2;
   return damage;
 }
 
@@ -1927,11 +1927,6 @@ export const TARGETED_EFFECTS: Partial<Record<EffectId, TargetSpec>> = {
   silence_enemy: { side: "enemy", prompt: "Silence an enemy minion", filter: (m) => !m.silenced },
   batman_gadget_choice: { side: "enemy", prompt: "Choose an enemy minion for Batman" },
   freeze_and_silence_enemy: { side: "enemy", prompt: "Freeze and silence an enemy minion" },
-  hashira_focus_attack: {
-    side: "enemy",
-    prompt: "Choose an Evil enemy for the Hashira to attack",
-    filter: (m) => m.alignment === "Evil",
-  },
   destroy_enemy_taunt: { side: "enemy", prompt: "Destroy an enemy Taunt minion", filter: (m) => hasKeyword(m, "Taunt") },
   godrick_graft: { side: "friendly", prompt: "Kill a friendly minion and gain its stats and effects" },
   destroy_damaged_enemy: { side: "enemy", prompt: "Destroy a wounded enemy", filter: (m) => m.hp < m.maxHp },
@@ -3305,23 +3300,10 @@ function runEffect(
       }
     }
     events.push(effectEvent(`${label} purifies the board: all minions are Good and lose their negative statuses.`, source));
-  } else if (source.effectId === "hashira_focus_attack") {
-    if (picked && pickedSlot) {
-      const victimSlot = pickedSlot.slot;
-      for (let slot = 0; slot < boardSize; slot += 1) {
-        // The VICTIM leaving the board ends the order; an empty friendly slot
-        // only skips that slot. These were one `break` before, so a gap
-        // anywhere on the board silenced every minion standing behind it —
-        // with slot 0 empty the card did nothing at all.
-        if (!state.players[picked.owner].board[victimSlot]) break;
-        const attacker = state.players[source.owner].board[slot];
-        if (!attacker) continue;
-        if (attacker.frozen || attacker.chained > 0) continue;
-        if (attackForbidden(attacker, state)) continue;
-        attackMinion(state, source.owner, slot, victimSlot, events);
-      }
-      events.push(effectEvent(`${label} orders every able friendly minion to attack ${picked.name}.`, source));
-    }
+  } else if (source.effectId === "hashira_good_volley") {
+    const damage = player.board.filter(minion => minion?.alignment === "Good").length;
+    damageAllEnemies(state, source, damage, events);
+    events.push(effectEvent(`${label} unleashes a coordinated strike for ${damage} damage to every enemy minion.`, source));
   } else if (source.effectId === "steal_and_equip_relic") {
     if (picked && hasAnyRelic(picked) && hasFreeRelicSlot(source)) {
       const relicIndex = firstRelicIndex(picked);
@@ -4024,20 +4006,13 @@ function refreshPassiveAuras(state: GameState): void {
         }
       }
       if (hasEffect(source, "taunt_ally_self_buff")) {
-        // An aura on itself, so it is taken back the moment the last friendly
-        // Taunt leaves the board rather than banking a permanent +1/+1.
-        const behindAWall = board.some(
-          (ally) => ally && ally.instanceId !== source.instanceId && !ally.silenced && hasKeyword(ally, "Taunt"),
-        );
-        if (behindAWall) {
-          grantAura(source,source.instanceId,1,1);
-        }
+        const defenders = board.filter(ally => ally && !ally.silenced
+          && (hasKeyword(ally, "Taunt") || ally.divineShield)).length;
+        if (defenders > 0) grantAura(source, source.instanceId, defenders, defenders);
       }
       if (hasEffect(source, "guts_missing_core_growth")) {
-        const missingCore = Math.floor(Math.max(0, STARTING_CORE - state.players[source.owner].health) / 20);
-        if (missingCore > 0) {
-          grantAura(source,source.instanceId,missingCore*2,missingCore*2);
-        }
+        const missingCore = Math.floor(Math.max(0, STARTING_CORE - state.players[source.owner].health) / 5);
+        if (missingCore > 0) grantAura(source, source.instanceId, missingCore, missingCore);
       }
       if (!hasEffect(source, "glados_adjacent_tech")) continue;
       const sourceSlot = board.findIndex((entry) => entry?.instanceId === source.instanceId);

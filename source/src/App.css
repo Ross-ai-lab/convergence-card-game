@@ -2911,10 +2911,9 @@ button:disabled {
   object-position: center 0%;
 }
 
-/* Stand Arrow's source is a tall portrait. Anchor it to the top so the
-   complete spear tip survives the wide card-art crop. */
+/* Raise the arrow inside the wide crop so its shaft is also visible. */
 .cf-art-stand-arrow img {
-  object-position: center 0%;
+  object-position: center 40%;
 }
 
 /* the soft glass sheen the old baked face had, kept so cards still read as objects */
@@ -7164,3 +7163,5 @@ button:disabled {
   .gallery-filter select option {padding:5px 10px;}
  }
 }
+
+.cf-art-walter img {object-position:center 60%;}

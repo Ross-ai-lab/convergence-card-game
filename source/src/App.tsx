@@ -5453,13 +5453,15 @@ function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boole
   if (!card.art) return <div className="cf-art empty-art" aria-hidden="true" />;
   return (
     <div
-      style={preview ? {backgroundImage:`url("${preview}")`,backgroundSize:'cover',backgroundPosition:`center ${card.name === 'Mob Psycho' ? '70' : ['Yujiro','Conquest','Stand Arrow'].includes(card.name)?'0':'26'}%`} : undefined}
+      style={preview ? {backgroundImage:`url("${preview}")`,backgroundSize:'cover',backgroundPosition:`center ${card.name === 'Walter White' ? '60' : card.name === 'Mob Psycho' ? '70' : card.name === 'Stand Arrow' ? '40' : ['Yujiro','Conquest'].includes(card.name)?'0':'26'}%`} : undefined}
       className={`cf-art ${
         card.name === "Yujiro"
           ? "cf-art-yujiro"
           : card.name === "Conquest"
             ? "cf-art-conquest"
-            : card.name === "Mob Psycho"
+            : card.name === "Walter White"
+              ? "cf-art-walter"
+              : card.name === "Mob Psycho"
               ? "cf-art-mob"
               : card.name === "Stand Arrow"
               ? "cf-art-stand-arrow"

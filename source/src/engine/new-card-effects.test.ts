@@ -105,7 +105,7 @@ describe("2026 card replacements", () => {
       rarity: "Black",
       effectId: "guts_missing_core_growth",
       effectTiming: "passive",
-      effect: "Passive: Gains +2/+2 for each 20 HP your Core is missing",
+      effect: "Passive: Gains +1/+1 for each 5 HP your Core is missing",
     });
   });
 
@@ -225,14 +225,14 @@ describe("2026 card replacements", () => {
     expect(nextAfter.players[0].hand).toHaveLength(2);
   });
 
-  it("Guts gains and loses a live +2/+2 aura as the Core crosses 20 HP thresholds", () => {
+  it("Guts gains and loses a live +1/+1 aura at each missing 5 HP", () => {
     const state = mainState("guts-missing-core-growth");
-    state.players[0].health = 30;
+    state.players[0].health = 20;
     const grown = play(state, 0, "Guts", 0);
     expect(grown.players[0].board[0]).toMatchObject({ atk: 3, hp: 3, maxHp: 3 });
 
     const healed: GameState = { ...grown, players: [...grown.players] as GameState["players"] };
-    healed.players[0] = { ...grown.players[0], health: 50 };
+    healed.players[0] = { ...grown.players[0], health: 30 };
     const afterHeal = applyAction(healed, { type: "end_turn", player: 0 }, library).state;
     expect(afterHeal.players[0].board[0]).toMatchObject({ atk: 1, hp: 1, maxHp: 1 });
   });
@@ -486,7 +486,7 @@ describe("2026 card replacements", () => {
         effect: "Divine Shield. Passive: Do 2x damage when defending against an attack",
       },
       Sans: { cost: 4, atk: 2, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks" },
-      "Doom Slayer": { cost: 8, atk: 3, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
+      "Doom Slayer": { cost: 8, atk: 4, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
       Ragnaros: { cost: 4, atk: 3, hp: 3, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
       Musashi: { atk: 2, hp: 1 },
       Illumi: { atk: 1, hp: 1 },
@@ -503,12 +503,12 @@ describe("2026 card replacements", () => {
         effect: "Passive: Your opponent cannot play Relics or use Hero power",
       },
       "Ten Commandments": { atk: 3, hp: 5, effectId: "ten_commandments_first_attack", effectTiming: "passive", keywords: ["Passive"], effect: "Passive: The first enemy minion to attack each turn is Chained" },
-      "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_focus_attack", effectTiming: "onPlay", keywords: [] },
+      "Nine Hashira": { atk: 3, hp: 3, effectId: "hashira_good_volley", effectTiming: "onPlay", keywords: [] },
       "Kiritsugu Emiya": { atk: 1, hp: 1, effectId: "freeze_and_silence_enemy", effectTiming: "onPlay", keywords: [] },
       Meteor: {
         cost: 8,
         atk: 4,
-        hp: 3,
+        hp: 4,
         effectId: "aoe_all_4",
         effectTiming: "onPlay",
         keywords: [],
@@ -1588,38 +1588,37 @@ describe("2026 card replacements", () => {
     expect(released).toContainEqual({ type: "play_relic", player: 1, handIndex: 0, slotIndex: 0 });
   });
 
-  it("Nine Hashira makes every able friendly minion attack the chosen Evil target", () => {
-    const state = mainState("hashira-focus");
-    state.players[0].board[0] = minion("Zoro", 0, { sleeping: false, atk: 3, hp: 10, maxHp: 10 });
-    state.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", hp: 10, maxHp: 10 });
-    const after = playResolved(state, 0, "Nine Hashira", 1);
+  it("Nine Hashira hits every enemy for the friendly Good count without forcing attacks", () => {
+    const state = mainState("hashira-good-volley");
+    state.players[0].board[0] = minion("Zoro", 0, { alignment:"Good", sleeping:true, hp:10,maxHp:10 });
+    state.players[0].board[3] = minion("John Wick", 0, { alignment:"Neutral", hp:10,maxHp:10 });
+    state.players[1].board[0] = minion("John Wick", 1, { alignment:"Evil",hp:10,maxHp:10 });
+    state.players[1].board[2] = minion("John Wick", 1, { alignment:"Good",hp:10,maxHp:10 });
+    const after = play(state, 0, "Nine Hashira", 1);
+    expect(after.phase).toBe("main");
+    expect(after.pendingTarget).toBeNull();
+    expect(after.players[1].board[0]?.hp).toBe(8);
+    expect(after.players[1].board[2]?.hp).toBe(8);
+    expect(after.players[0].board[0]).toMatchObject({hp:10,attacksUsed:0});
+    expect(after.players[0].board[3]?.hp).toBe(10);
+    expect(after.players[1].health).toBe(30);
+  });
+
+  it("Nine Hashira counts itself and respects Divine Shield", () => {
+    const state = mainState("hashira-shield");
+    state.players[1].board[0] = minion("John Wick",1,{hp:5,maxHp:5});
+    state.players[1].board[1] = minion("John Wick",1,{hp:5,maxHp:5,divineShield:true});
+    const after = play(state,0,"Nine Hashira",1);
     expect(after.players[1].board[0]?.hp).toBe(4);
-    expect(after.players[0].board[0]?.attacksUsed).toBe(1);
-    expect(after.players[0].board[1]?.attacksUsed).toBe(1);
+    expect(after.players[1].board[1]).toMatchObject({hp:5,divineShield:false});
   });
 
-  it("Nine Hashira reaches minions standing behind an empty slot", () => {
-    const state = mainState("hashira-gap");
-    // Slot 0 empty on purpose: the loop used to `break` on it and the card did
-    // nothing at all, however many minions were standing further along.
-    state.players[0].board[2] = minion("Zoro", 0, { sleeping: false, atk: 3, hp: 10, maxHp: 10 });
-    state.players[0].board[3] = minion("Kizaru", 0, { sleeping: false, atk: 4, hp: 10, maxHp: 10 });
-    state.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 0, hp: 30, maxHp: 30 });
-    const after = playResolved(state, 0, "Nine Hashira", 1);
-    // 3 (Zoro) + 4 (Kizaru) + 3 (Nine Hashira itself) off a 30 HP body.
-    expect(after.players[1].board[0]?.hp).toBe(20);
-    expect(after.players[0].board[2]?.attacksUsed).toBe(1);
-    expect(after.players[0].board[3]?.attacksUsed).toBe(1);
-  });
-
-  it("Nine Hashira never orders a minion that can never attack", () => {
-    const state = mainState("hashira-locked");
-    state.players[0].board[0] = minion("Grand Master Yoda", 0, { sleeping: false });
-    state.players[0].board[2] = minion("Zoro", 0, { sleeping: false, atk: 3, hp: 10, maxHp: 10 });
-    state.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 0, hp: 30, maxHp: 30 });
-    const after = playResolved(state, 0, "Nine Hashira", 1);
-    expect(after.players[0].board[0]?.attacksUsed).toBe(0);
-    expect(after.players[1].board[0]?.hp).toBe(30 - 3 - 3);
+  it("Nine Hashira scales to four friendly Good minions, including allies behind gaps", () => {
+    const state = mainState("hashira-full-team");
+    for(const slot of [0,2,3]) state.players[0].board[slot]=minion("John Wick",0,{alignment:"Good",hp:10,maxHp:10});
+    state.players[1].board[0]=minion("John Wick",1,{hp:8,maxHp:8});
+    const after=play(state,0,"Nine Hashira",1);
+    expect(after.players[1].board[0]?.hp).toBe(4);
   });
 
   it("One-Eyed Owl grows every time a minion becomes Chained, on either board", () => {
@@ -1746,6 +1745,19 @@ describe("2026 card replacements", () => {
     expect(asking.phase).toBe("targeting");
     expect(asking.pendingTarget?.options).toEqual([{ owner: 1, slot: 0 }]);
     expect(choose(asking, 0).players[1].board[0]?.hp).toBe(3);
+  });
+
+  it("An Order of Heavy Knights counts each protected ally once and loses a spent Shield bonus", () => {
+    const state=mainState("knights-protected-count");
+    state.players[0].board[0]=minion("An Order of Heavy Knights",0);
+    state.players[0].board[1]=minion("John Wick",0,{keywords:["Taunt","Divine Shield"],divineShield:true});
+    state.players[0].board[2]=minion("John Wick",0,{keywords:["Divine Shield"],divineShield:true});
+    state.players[0].board[3]=minion("John Wick",0,{keywords:["Taunt"]});
+    const grown=applyAction(state,{type:"end_turn",player:0},library).state;
+    expect(grown.players[0].board[0]).toMatchObject({atk:4,maxHp:4});
+    grown.players[0].board[2]!.divineShield=false;
+    const shrunk=applyAction(grown,{type:"end_turn",player:1},library).state;
+    expect(shrunk.players[0].board[0]).toMatchObject({atk:3,maxHp:3});
   });
 
   it("An Order of Heavy Knights stands taller behind a Taunt, and shrinks without one", () => {
@@ -2108,13 +2120,13 @@ describe("2026 card replacements", () => {
     expect(after.players[1].hand).toEqual([]);
   });
 
-  it("Doom Slayer deals exactly triple damage to Evil minions and heals 3 after a kill", () => {
-    const wounded = mainState("doom-triple");
+  it("Doom Slayer deals exactly double damage to Evil minions and heals 3 after a kill", () => {
+    const wounded = mainState("doom-double");
     wounded.players[0].board[0] = minion("Doom Slayer", 0, { sleeping: false });
     wounded.players[1].board[0] = minion("John Wick", 1, { alignment: "Evil", atk: 1, hp: 10, maxHp: 10 });
-    const nineDamage = applyAction(wounded, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
-    expect(nineDamage.players[1].board[0]?.hp).toBe(1);
-    expect(nineDamage.players[0].board[0]?.hp).toBe(7);
+    const eightDamage = applyAction(wounded, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library).state;
+    expect(eightDamage.players[1].board[0]?.hp).toBe(2);
+    expect(eightDamage.players[0].board[0]?.hp).toBe(7);
 
     const kill = mainState("doom-kill-heal");
     kill.players[0].board[0] = minion("Doom Slayer", 0, { sleeping: false, hp: 2, maxHp: 8 });
@@ -2797,7 +2809,7 @@ describe("direct effect reachability", () => {
     expect(after.players[0].board[0]?.hp).toBe(5);
     expect(after.players[1].board[0]?.hp).toBe(5);
     // "All OTHER minions" — the meteor does not hit itself.
-    expect(after.players[0].board[2]?.hp).toBe(3);
+    expect(after.players[0].board[2]?.hp).toBe(4);
   });
 
   it("Gandalf the White gives Divine Shield to every friendly Good minion only", () => {

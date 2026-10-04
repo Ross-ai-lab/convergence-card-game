@@ -12,7 +12,7 @@ function main(seed:string):GameState {const s=createInitialGame(cards,seed,relic
 describe('new Basic cards and latest adjustments',()=>{
   it.each([
     ['c086',4,1,4],['c024',8,6,6],['c009',5,0,9],['c185',3,1,1],['c048',7,1,1],['c037',3,0,4],
-    ['c177',7,3,7],['c103',4,4,4],['c186',9,1,1],['c187',5,1,5],
+    ['c177',7,3,7],['c103',4,4,4],['c186',9,1,1],['c187',5,2,5],
   ] as const)('%s has its requested values',(id,cost,atk,hp)=>expect(card(id)).toMatchObject({cost,atk,hp}));
   it('keeps the requested origins and new Basic card traits',()=>{
     expect(card('c068').origin).toBe('Star Wars');

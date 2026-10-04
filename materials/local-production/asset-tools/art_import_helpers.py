@@ -1,8 +1,7 @@
-"""Shared helpers for importing raw art into the browser game.
+"""Shared helpers for the maintained WebP artwork collection.
 
-These helpers used to live inside the physical-card renderer. The browser game
-does not need the renderer, but its raw-art import still needs the same fuzzy
-name matching and conservative movie-letterbox trimming.
+Roster paths identify each image directly. Conservative movie-letterbox
+trimming remains available for future artwork imports.
 """
 
 from pathlib import Path

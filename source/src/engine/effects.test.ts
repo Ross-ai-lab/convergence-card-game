@@ -188,13 +188,13 @@ describe("full-roster effects", () => {
     expect(zoro?.maxHp).toBe(5);
   });
 
-  it("RoboCop (robocop_evil_bonus): triples damage into Evil", () => {
+  it("RoboCop (robocop_evil_bonus): doubles damage into Evil", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("RoboCop", 0, { atk: 2, hp: 20, maxHp: 20 });
     state.players[1].board[0] = makeMinion("Wall of Flesh", 1); // 3/5 Evil
     const result = applyAction(state, { type: "attack_minion", player: 0, attackerSlot: 0, targetSlot: 0 }, library);
-    expect(result.state.players[1].board[0]).toBeNull(); // 2 * 3 = 6 > 5
-    expect(result.events).toContainEqual(expect.objectContaining({ text: "Wall of Flesh takes 6 damage." }));
+    expect(result.state.players[1].board[0]?.hp).toBe(1); // 2 * 2 = 4
+    expect(result.events).toContainEqual(expect.objectContaining({ text: "Wall of Flesh takes 4 damage." }));
   });
 
   it("Kaku Kaioh (kaku_evade_counter): evades and reflects the attacker's ATK", () => {
