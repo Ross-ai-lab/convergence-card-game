@@ -229,11 +229,11 @@ describe("menu Hero Powers", () => {
     saitama.phase = "main"; saitama.mulligan = null; saitama.activePlayer = 0;
     saitama.players[0].board[0] = minion("John Wick", 0, { atk: 1, sleeping: false });
     const blocked = applyAction(saitama, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
-    expect(blocked.players[1].health).toBe(50);
+    expect(blocked.players[1].health).toBe(30);
     blocked.players[0].board[0]!.atk = 4;
     blocked.players[0].board[0]!.attacksUsed = 0;
     const landed = applyAction(blocked, { type: "attack_core", player: 0, attackerSlot: 0 }, library).state;
-    expect(landed.players[1].health).toBe(46);
+    expect(landed.players[1].health).toBe(26);
   });
 
   it("gives Po a restricted Skadoosh target and protects Conquest's board", () => {
@@ -289,11 +289,11 @@ describe("menu Hero Powers", () => {
     expect(usePower(mend).players[0].health).toBe(22);
 
     const almostFull = mainState("core_heal");
-    almostFull.players[0].health = 49;
-    expect(usePower(almostFull).players[0].health).toBe(50);
+    almostFull.players[0].health = 29;
+    expect(usePower(almostFull).players[0].health).toBe(30);
 
     const full = mainState("core_heal");
-    expect(usePower(full).players[0].health).toBe(50);
+    expect(usePower(full).players[0].health).toBe(30);
 
     const recruit = usePower(mainState("summon_recruit"));
     expect(recruit.players[0].board[0]).toMatchObject({

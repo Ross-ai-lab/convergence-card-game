@@ -1008,7 +1008,7 @@ describe("2026 card replacements", () => {
     expect(asking.pendingTarget?.kind).toBe("option");
     expect(asking.pendingTarget?.player).toBe(1);
     const manaChoice = choose(asking, 2);
-    expect(manaChoice.players[0].health).toBe(50);
+    expect(manaChoice.players[0].health).toBe(30);
     expect(manaChoice.players[1].manaPenaltyNextTurn).toBe(5);
     expect(manaChoice.players[0].board[2]?.name).toBe("John Wick");
     const nextOwnTurn = endTurn(endTurn(manaChoice, 0), 1);
@@ -1016,7 +1016,7 @@ describe("2026 card replacements", () => {
     expect(nextOwnTurn.players[1].manaPenaltyNextTurn).toBe(0);
 
     const healthChoice = choose(play(mainState("strange-bargain-health"), 0, "Doctor Strange", 1), 0);
-    expect(healthChoice.players[0].health).toBe(50);
+    expect(healthChoice.players[0].health).toBe(30);
     // The bargain costs the opponent 10 core, read against the untouched caster.
     expect(healthChoice.players[1].health).toBe(healthChoice.players[0].health - 10);
 

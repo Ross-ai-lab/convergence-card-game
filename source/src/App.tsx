@@ -95,7 +95,7 @@ import {
   unlockAllProgress,
   type Progress,
 } from "./progress";
-import { STARTING_POOL, revealOrder } from "./unlocks";
+import { revealOrder } from "./unlocks";
 import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES, CAMPAIGN_PREMISE, CAMPAIGN_PROTAGONIST } from "./campaign";
 import { createCampaignDuel } from "./campaign-duel";
 import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, hasNewHeroPower, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
@@ -129,7 +129,7 @@ type Selection =
   | { kind: "attacker"; slotIndex: number }
   | null;
 
-const STAR_CHART_AXES = ["STR", "TUF", "WIL", "MAG", "INT", "AGI"] as const;
+const STAR_CHART_AXES = ["STR", "VIT", "WIL", "MAG", "INT", "AGI"] as const;
 
 function campaignVoiceDuration(key: string): number | undefined {
   const entries = campaignVoiceManifest as Record<string, { duration?: unknown }>;
@@ -1087,7 +1087,7 @@ export default function App() {
       return;
     }
     // NO "FIRST BLOOD" LINE (owner ruling). It fired the moment either core took
-    // any damage at all, which in a 50-core duel is turn two or three and means
+    // any damage at all, which in a duel is turn two or three and means
     // nothing — a narrator announcing an event that happens in every single game
     // before anything is at stake. Removed from the sheet and the clip deleted,
     // not just muted. The herald keeps only the moments that are actually rare:
@@ -4125,7 +4125,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if(event.key==='Escape'&&event.target instanceof HTMLSelectElement&&CSS.supports('selector(select:open)')&&event.target.matches(':open'))return;
+      if (event.key === 'Escape' && (event.target instanceof HTMLElement && !!event.target.closest('select'))) { event.stopImmediatePropagation(); return; }
       if (event.key === "Escape") { event.stopImmediatePropagation(); if (restoreOpen) setRestoreOpen(false); else if (powerOpen) closePowers(); else onClose(); }
       if ((powerOpen || restoreOpen) && event.key === "Tab") {
         const buttons = [...((restoreOpen ? restorePicker : powerPicker).current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])];
@@ -4160,16 +4160,6 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
     }),
     [progress],
   );
-  /**
-   * Where each card sits in the unlock order, which is also the order they
-   * arrived in. Built once per record change; the alternative is an `indexOf`
-   * per card per sort, which is the whole roster scanned 216 times.
-   */
-  const unlockRank = useMemo(() => {
-    const rank = new Map<string, number>();
-    progress.unlockedIds.forEach((id, index) => rank.set(id, index));
-    return rank;
-  }, [progress.unlockedIds]);
   const entries = useMemo(() => {
     const all = allEntries;
     if (!needle) return all;
@@ -4220,36 +4210,14 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
       : entries;
     const wantUnlocked = status === "unlocked";
     kept = kept.filter((entry) => collection.unlocked.has(entry.key) === wantUnlocked && (showEquipped || !deck.includes(entry.key)));
-    // Mana then name, which is the order the roster reads in and the one a
-    // filtered list needs to stay scannable. It removes the need for a separate
-    // ordering control.
-    const byCard = (a: GalleryEntry, b: GalleryEntry) =>
-      (a.face.cost ?? 99) - (b.face.cost ?? 99) || a.face.name.localeCompare(b.face.name);
-    if (!wantUnlocked) return [...kept].sort(byCard);
-    /**
-     * The unlocked view puts NEWLY EARNED cards at the top, newest first.
-     *
-     * A pack deals five cards and then hands the player a gallery of two
-     * hundred sorted by mana, which is the one order that guarantees those five
-     * are scattered and none of them is on the first screen. The unlock order
-     * already records when each card arrived, so recency costs a lookup.
-     *
-     * The OPENING POOL is exempt and keeps mana order. Those cards were never
-     * "earned" — they were there before the first duel — so ranking them by
-     * their position in a shuffled order would be sorting by nothing, and it
-     * would leave a brand-new player looking at a list with no shape at all.
-     * That is why the gallery reads normally until the first pack lands.
-     */
-    return [...kept].sort((a, b) => {
-      const ra = unlockRank.get(a.key) ?? -1;
-      const rb = unlockRank.get(b.key) ?? -1;
-      const earnedA = ra >= STARTING_POOL;
-      const earnedB = rb >= STARTING_POOL;
-      if (earnedA !== earnedB) return earnedA ? -1 : 1;
-      if (earnedA && earnedB) return rb - ra;
-      return byCard(a, b);
-    });
-  }, [entries, filters, status, collection, unlockRank, showEquipped, deck]);
+    const rarityRank = (entry: GalleryEntry) => {
+      const index = VALUE_ORDER.rarity.indexOf(entry.face.rarity);
+      return index < 0 ? VALUE_ORDER.rarity.length : index;
+    };
+    return [...kept].sort((a, b) =>
+      (filters.cost ? rarityRank(a) - rarityRank(b) : (a.face.cost ?? 99) - (b.face.cost ?? 99))
+      || a.face.name.localeCompare(b.face.name));
+  }, [entries, filters, status, collection, showEquipped, deck]);
 
   const selectedEntry = selectedEntryKey ? allEntries.find((entry) => entry.key === selectedEntryKey) ?? null : null;
 
@@ -4668,7 +4636,7 @@ function GalleryDetailModal({
             <div className="gallery-detail-card">
               {locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} interactiveKeywords quiet />}
             </div>
-            {locked ? <p className="gallery-detail-sealed-note">Rules remain sealed until this card joins your deck.</p> : null}
+            {locked ? <p className="gallery-detail-sealed-note">Lore remains sealed until this card is unlocked.</p> : null}
             {!locked && profile?.rank ? <p className="gdx-rank">{profile.rank}</p> : null}
           </div>
 
@@ -4677,7 +4645,7 @@ function GalleryDetailModal({
               <div className="gallery-detail-locked">
                 <span className="gallery-detail-kicker">The Rift is holding this profile</span>
                 <h3>Unlock this card to read its Star Chart</h3>
-                <p>The artwork, name, and cost remain visible. Its lore profile stays sealed until the card is unlocked.</p>
+                <p>The full card remains visible. Its lore profile stays sealed until the card is unlocked.</p>
               </div>
             ) : profile ? (
               <>
@@ -5159,6 +5127,7 @@ const TOKEN_REFERENCE_LOOKUP=TOKEN_CARDS.flatMap(card=>[card.name,`${card.name}s
 function splitOnKeywords(text: string,allowRelic=true): Array<{ text: string; entry?: KeywordEntry;token?:string }> {
   const pieces: Array<{ text: string; entry?: KeywordEntry;token?:string }> = [];
   const isWord = (ch: string | undefined) => ch !== undefined && /[A-Za-z0-9]/.test(ch);
+  const highlighted = new Set<KeywordEntry>();
   let plain = "";
   let i = 0;
   while (i < text.length) {
@@ -5176,7 +5145,8 @@ function splitOnKeywords(text: string,allowRelic=true): Array<{ text: string; en
         pieces.push({ text: plain });
         plain = "";
       }
-      pieces.push({ text: text.slice(i, i + hit.match.length), entry: hit.entry });
+      pieces.push({ text: text.slice(i, i + hit.match.length), entry: highlighted.has(hit.entry) ? undefined : hit.entry });
+      highlighted.add(hit.entry);
       i += hit.match.length;
       continue;
     }
@@ -5483,13 +5453,15 @@ function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boole
   if (!card.art) return <div className="cf-art empty-art" aria-hidden="true" />;
   return (
     <div
-      style={preview ? {backgroundImage:`url("${preview}")`,backgroundSize:'cover',backgroundPosition:`center ${['Yujiro','Conquest','Stand Arrow'].includes(card.name)?'0':'26'}%`} : undefined}
+      style={preview ? {backgroundImage:`url("${preview}")`,backgroundSize:'cover',backgroundPosition:`center ${card.name === 'Mob Psycho' ? '70' : ['Yujiro','Conquest','Stand Arrow'].includes(card.name)?'0':'26'}%`} : undefined}
       className={`cf-art ${
         card.name === "Yujiro"
           ? "cf-art-yujiro"
           : card.name === "Conquest"
             ? "cf-art-conquest"
-            : card.name === "Stand Arrow"
+            : card.name === "Mob Psycho"
+              ? "cf-art-mob"
+              : card.name === "Stand Arrow"
               ? "cf-art-stand-arrow"
               : ""
       }`}
@@ -5608,7 +5580,7 @@ function HeroPlate({
       aria-disabled={canStrike ? undefined : true}
       aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : undefined}
     >
-      {enemy && <span className="hero-health-fill" aria-hidden="true" style={{width:`${Math.max(0,Math.min(1,player.health/50))*100}%`,'--boss-tint':campAccent(identity && isMinionCard(identity.card) ? identity.card.camp : 'Nature')} as CSSProperties} />}
+      {enemy && <span className="hero-health-fill" aria-hidden="true" style={{width:`${Math.max(0,Math.min(1,player.health/STARTING_CORE))*100}%`,'--boss-tint':campAccent(identity && isMinionCard(identity.card) ? identity.card.camp : 'Nature')} as CSSProperties} />}
       <span className="hero-sigil" title={identity ? identity.card.name : `${player.name}'s sigil`}>
         {identity ? <img className="boss-portrait" src={identity.card.art} alt={`${identity.card.name} portrait`} draggable={false} /> : <HeroSigil playerId={player.id} />}
       </span>

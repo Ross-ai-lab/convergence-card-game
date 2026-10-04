@@ -37,6 +37,18 @@ afterEach(() => {
 });
 
 describe("the save slot", () => {
+  it('caps legacy cores without resetting a damaged duel and refreshes replaced artwork', () => {
+    vi.stubGlobal('window', { localStorage: memoryLocalStorage() });
+    const game = liveDuel();
+    game.players[0].health = 48;
+    game.players[1].health = 12;
+    game.players[0].board[0] = spawnTestMinion(cards.find(card => card.id === 'c126')!, 0, {art:'/card-art/raw/c126.webp',hp:1});
+    saveGame(game, [], {kind:'bot',skill:'normal'}, 1000);
+    const loaded = loadGame()!.game;
+    expect(loaded.players.map(player => player.health)).toEqual([30,12]);
+    expect(loaded.players[0].board[0]).toMatchObject({art:cards.find(card => card.id === 'c126')!.art,hp:1});
+  });
+
   it('refreshes requested tiers and Mob text while retaining live combat stats',()=>{
     vi.stubGlobal('window',{localStorage:memoryLocalStorage()});const game=liveDuel();
     game.players[0].board[0]=spawnTestMinion(cards.find(card=>card.id==='c159')!,0,{rarity:'Red',atk:4,hp:3});

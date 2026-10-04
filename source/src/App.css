@@ -7156,3 +7156,11 @@ button:disabled {
  .turn-countdown {top:8px;right:165px;}
  .turn-countdown small {display:none;}
 }
+
+.cf-art-mob img {object-position:center 70%;}
+@supports (appearance:base-select) {
+ @media (pointer:fine) {
+  .gallery-filter select::picker(select) {max-block-size:none;overflow:visible;}
+  .gallery-filter select option {padding:5px 10px;}
+ }
+}

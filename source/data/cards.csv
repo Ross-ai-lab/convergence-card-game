@@ -121,8 +121,8 @@ c122,Wall of Flesh,4,2,5,Black,Nature,Evil,Taunt;Ongoing,wall_of_flesh_grind,ong
 c123,Darkwing,3,2,2,Red,Tech,Good,Deathrattle,kill_back,deathrattle,Deathrattle: The minion which kills this minion also dies right after,He knew the cost,Invincible,/card-art/raw/c123.webp
 c124,Knov,3,1,1,Black,Magic,Good,,knov_pocket_room,onPlay,"Battlecry: Choose a friendly and an enemy minion to place in the pocket room, removing them from the board. After 2 turns, return the minion with the higher ATK",The Room,HxH,/card-art/raw/c124.webp
 c125,Aizawa,3,2,2,Purple,Magic,Good,,silence_enemy,onPlay,Battlecry: Silence an enemy minion of your choice,All it takes is one look,MHA,/card-art/raw/c125.webp
-c126,Gums,4,2,2,Purple,Nature,Evil,,consume_nature_4_hp,onPlay,Battlecry: Consume an enemy Nature minion with 4 HP or lower,Insatiable hunger,OPM,/card-art/raw/c126.webp
-c127,Nyan,4,3,1,Black,Nature,Evil,Charge;Passive,nyan_unerring_attacks,passive,Charge. Passive: Attacks ignore Taunt and cannot be evaded,Cat King,OPM,/card-art/raw/c127.webp
+c126,Gums,4,2,2,Purple,Nature,Evil,,consume_nature_4_hp,onPlay,Battlecry: Consume an enemy Nature minion with 4 HP or lower,Insatiable hunger,OPM,/card-art/raw/c126-new.webp
+c127,Nyan,4,3,1,Black,Nature,Evil,Charge;Passive,nyan_unerring_attacks,passive,Charge. Passive: Attacks ignore Taunt and cannot be evaded,Cat King,OPM,/card-art/raw/c127-new.webp
 c128,The Five Convicts,3,5,1,Black,Nature,Evil,Taunt,none,none,Taunt,death sentence,Baki,/card-art/raw/c128.webp
 c129,Dabi,3,3,3,Purple,Magic,Evil,,aoe_all_1,onPlay,Battlecry: Deal 1 damage to all other minions,He burns with anger,MHA,/card-art/raw/c129.webp
 c130,Godrick the Grafted,3,2,2,Purple,Magic,Evil,,godrick_graft,onPlay,Battlecry: Destroy a friendly minion to gain its stats and effects,Grafted,Elden Ring,/card-art/raw/c130.webp

@@ -1,10 +1,10 @@
 import { CAMPAIGN_DIFFICULTIES, getCampaignChapter } from "./campaign";
 import { validateDeck } from "./decks";
-import { createInitialGame } from "./engine/game";
+import { createInitialGame, STARTING_CORE } from "./engine/game";
 import type { CardDefinition, HeroPowerId, RelicDefinition } from "./engine/types";
 
-/** Campaign bosses and players both start at 50 Core HP. */
-export const CAMPAIGN_BOSS_HEALTH = 50;
+/** Campaign bosses and players both use the shared Core health maximum. */
+export const CAMPAIGN_BOSS_HEALTH = STARTING_CORE;
 
 /** Engine entry point only. Chapter availability and first-clear rewards belong to chunk 3. */
 export function createCampaignDuel(options: {

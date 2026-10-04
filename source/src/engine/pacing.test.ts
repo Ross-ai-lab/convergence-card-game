@@ -117,13 +117,13 @@ describe("pacing", () => {
   });
 
   it("honours an explicit setup, so the simulator can sweep the dials", () => {
-    const slow = createInitialGame(cards, "s", relics, { startingHealth: 30, manaRamp: 1.35 });
-    expect(slow.players[0].health).toBe(30);
-    expect(slow.players[1].health).toBe(30);
+    const slow = createInitialGame(cards, "s", relics, { startingHealth: 42, manaRamp: 1.35 });
+    expect(slow.players[0].health).toBe(42);
+    expect(slow.players[1].health).toBe(42);
     expect(slow.manaRamp).toBe(1.35);
-    // The shipped game keeps the plain ramp and pays for pacing in core HP.
+    // The shipped game uses thirty health and a plain mana ramp.
     const normal = createInitialGame(cards, "s", relics);
-    expect(normal.players[0].health).toBeGreaterThan(30);
+    expect(normal.players[0].health).toBe(30);
     expect(normal.manaRamp).toBe(1);
   });
 

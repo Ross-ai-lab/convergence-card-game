@@ -21,7 +21,7 @@ describe('guided training duel',()=>{
         step=nextTutorialStep(step,action!,result.state);state=result.state;
       }
       expect(step).toBe(TUTORIAL_LESSONS.length);
-      expect(state.players[1].health).toBe(49);
+      expect(state.players[1].health).toBe(29);
       const batman=state.players[0].board.find(minion=>minion?.cardId==='c005');
       expect(batman?.relic?.id==='r035').toBe(true);
       expect(batman?.hp).toBeGreaterThan(0);

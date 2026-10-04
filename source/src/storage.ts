@@ -1,4 +1,5 @@
 import type { GameEvent, GameState } from "./engine/types";
+import { STARTING_CORE } from "./engine/game";
 import type { BotSkill } from "./engine/bot";
 import { CAMPAIGN_DIFFICULTIES, getCampaignChapter } from "./campaign";
 import { cards } from './data/cards';
@@ -228,6 +229,7 @@ export function loadGame(): SavedGame | null {
       if (!SKILLS.includes(saved.skill)) return null;
       mode = { kind: "bot", skill: saved.skill, ...identity };
     } else mode = { kind: "hotseat", ...identity };
+    for (const player of game.players) player.health = Math.min(STARTING_CORE, player.health);
     // Existing bodies keep their combat stats, but Batman's printed face follows the current roster.
     const batman = cards.find(card => card.id === 'c005');
     const refreshBatman = (value: unknown): void => {
@@ -235,6 +237,8 @@ export function loadGame(): SavedGame | null {
       const object = value as Record<string, unknown>;
       if(typeof object.cardId==='string'&&'rarity' in object&&['c088','c076','c127','c148','c163','c149','c145','c151','c126','c181','c160','c159','c045','c035','c065','c020','c184','c085'].includes(object.cardId))object.rarity=cards.find(card=>card.id===object.cardId)?.rarity??object.rarity;
       if(object.effectId==='mob_ascend'){if(typeof object.effect==='string')object.effect=cards.find(card=>card.id==='c053')!.effect;if(typeof object.text==='string')object.text=cards.find(card=>card.id==='c053')!.effect;}
+      if(object.cardId==='c126'||object.cardId==='c127')object.art=cards.find(card=>card.id===object.cardId)?.art??object.art;
+      if(typeof object.savedCoreHealth==='number')object.savedCoreHealth=Math.min(STARTING_CORE,object.savedCoreHealth);
       if(object.cardId==='c012')object.camp='Tech';
       if(object.cardId==='c122'&&object.effectId==='wall_of_flesh_grind')object.effect=cards.find(card=>card.id==='c122')?.effect??object.effect;
       for(const [key,child] of Object.entries(object))if(typeof child==='string')object[key]=child.replace(/Ascension Relics/gi,'Relics').replace(/Ascension Relic/gi,'Relic');

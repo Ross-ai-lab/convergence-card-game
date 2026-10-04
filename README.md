@@ -62,7 +62,7 @@ There is no online multiplayer or account synchronization. The public website di
 
 ## Rules at a glance
 
-- Both cores begin at **50 health**. Reduce the opposing core to zero to win.
+- Both cores begin at **30 health**. Reduce the opposing core to zero to win.
 - Each player draws from their own shuffled **30-card deck** and opens with **3 cards**. Solo play offers one opening mulligan; hotseat offers one private mulligan per player. The second hotseat player receives **The Coin**.
 - At the start of a turn, draw one card. Mana begins at **1**, refills each turn, and increases by one up to **10**.
 - Your hand holds at most **10 cards**. A card drawn into a full hand burns.
@@ -228,7 +228,9 @@ Chromium checks native holds and swipes. WebKit checks long-press pointer events
 
 `npm run check` also covers campaign progression, performance, relic popups, and the card workbook.
 Balance simulations are separate and do not run implicitly.
-Always run unit tests and the relevant browser checks before publishing interface changes.
+When completing work, run only checks you judge necessary for the actual changes. Do not run all suites by default.
+Use focused unit tests and relevant browser checks; skip unrelated phone/tablet matrices and simulations.
+Run the full suite only when the change genuinely needs it or the owner requests it.
 Inspect real populated screens at their intended sizes; geometry assertions complement visual review.
 
 ### Generated statistics workbook
@@ -344,7 +346,7 @@ The `window.__debug` browser hook exists only in development; the production bui
 - [Card statistics workbook](materials/Convergence%20card%20stat%20excel%20sheet.xlsx)
 - [Campaign definitions](materials/campaign-design.json)
 - [Campaign story](materials/campaign-story.json)
-- [Raw card artwork](materials/raw-card-art/)
+- [WebP card artwork](source/public/card-art/raw/)
 - [Optional asset-production tools](materials/local-production/asset-tools/)
 - [Audio-track collection](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z)
 - [Rendered card-production library](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Card-Production.7z)

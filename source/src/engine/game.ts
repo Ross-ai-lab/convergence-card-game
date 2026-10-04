@@ -51,32 +51,8 @@ const handLimit = 10;
 const CHAIN_TURNS = 2;
 /** What Reforged Chains pays for those two turns. Printed in `hero-powers.ts`. */
 const CHAIN_GROWTH_REWARD = 2;
-/**
- * How much core a duel starts with.
- *
- * This is the ONE global pacing dial in the game, because mana cost is frozen —
- * a card's cost states how powerful that being is in its own fiction and is
- * never a balance lever (see README). So the length of a duel is what decides
- * which half of the roster is real.
- *
- * It is not Hearthstone's 30 any more. At 30 the machine playtest ended the
- * median duel on player-turn 15, which is 7–8 turns each, which caps mana at 8 —
- * and every card costing 9 or 10 was drawn hundreds of times and played almost
- * never. That is 25 cards, and they are the marquee ones: Saitama, Thanos,
- * Goku, Neo, Doctor Manhattan. A roster whose Greats never arrive is not this
- * game.
- *
- * At 50, with the plain +1 mana ramp below, the median duel runs 22 player-turns
- * — eleven each, which is the same shape as Hearthstone — 80% of duels reach 10
- * mana, boards sit at 3.1 of 4 slots, and 6% end as blowouts.
- *
- * The shipped game now uses 50 Core HP for every mode.
- *
- * **This number carries ALL of the pacing weirdness on purpose.** A player never
- * feels an unusual health total; they feel an unusual mana curve every single
- * turn. `npm run sim -- --sweep` is the measurement behind it.
- */
-const DEFAULT_STARTING_HEALTH = 50;
+/** Shared starting and maximum Core health for every game mode. */
+const DEFAULT_STARTING_HEALTH = 30;
 
 /**
  * The same number, for the UI and the rules screen to read. Exported so the
@@ -85,7 +61,7 @@ const DEFAULT_STARTING_HEALTH = 50;
  */
 export const STARTING_CORE = DEFAULT_STARTING_HEALTH;
 
-/** Restore core health without ever exceeding the game's 50-HP maximum. */
+/** Restore core health without ever exceeding the game's maximum Core health. */
 function restoreCoreHealth(player: PlayerState, amount: number): number {
   const before = Math.min(STARTING_CORE, Math.max(0, player.health));
   player.health = Math.min(STARTING_CORE, before + Math.max(0, amount));
@@ -110,7 +86,7 @@ function restoreCoreHealth(player: PlayerState, amount: number): number {
  * around "next turn I have one more".
  *
  * The shipped lever is the core health total. Keep the mana ramp plain and let
- * the 50-HP health bar provide pressure without skipping mana tiers.
+ * the health bar provide pressure without skipping mana tiers.
  *
  * The field survives only so `npm run sim -- --sweep` can still measure
  * alternatives. The shipped game is 1.

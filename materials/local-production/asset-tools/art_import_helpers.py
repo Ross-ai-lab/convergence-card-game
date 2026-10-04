@@ -5,42 +5,20 @@ does not need the renderer, but its raw-art import still needs the same fuzzy
 name matching and conservative movie-letterbox trimming.
 """
 
-import re
 from pathlib import Path
 
 
 MATERIALS = Path(__file__).resolve().parents[2]
-RAW_ROOT = MATERIALS / "raw-card-art"
-
-
-def _norm(value):
-    return re.sub(r"[^a-z0-9]+", " ", str(value).lower()).strip()
+RAW_ROOT = MATERIALS.parent / "source" / "public" / "card-art" / "raw"
 
 
 def find_art(card):
-    folder = RAW_ROOT / (
-        "Relics" if card.get("type") == "relic" else f"{card['cost']} mana"
-    )
-    if not folder.is_dir():
-        return None
-
-    card_name = _norm(card["name"])
-    best = None
-    best_score = 0
-    for candidate in folder.iterdir():
-        if candidate.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp", ".avif"):
-            continue
-        filename = _norm(candidate.stem)
-        if filename == card_name:
-            return candidate
-        if card_name.startswith(filename) or filename.startswith(card_name):
-            score = len(filename)
-        else:
-            score = len(set(card_name.split()) & set(filename.split()))
-        if score > best_score:
-            best = candidate
-            best_score = score
-    return best
+    art = card.get("art", "")
+    if art:
+        candidate = MATERIALS.parent / "source" / "public" / art.lstrip("/")
+        return candidate if candidate.is_file() else None
+    candidate = RAW_ROOT / f"{card['id']}.webp"
+    return candidate if candidate.is_file() else None
 
 
 def trim_letterbox(image, threshold=24, max_fraction=0.35):

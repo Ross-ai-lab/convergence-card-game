@@ -1,3 +1,4 @@
+import { STARTING_CORE } from "../engine/game";
 import { LoreBookButton } from './LoreLibrary';
 /**
  * Everything that is not the board.
@@ -653,7 +654,7 @@ function HowToPlayContent() {
       <section className="rules-chapter">
         <h4><span className="rules-step-no">1</span> How you win</h4>
         <p>
-          Both cores start at <b>50 health</b>. Take the enemy core to zero and the duel is yours. Nothing
+          Both cores start at <b>{STARTING_CORE} health</b>. Take the enemy core to zero and the duel is yours. Nothing
           damages a core on its own: the damage comes from a minion attacking it, or from an effect that says
           in so many words that it damages a core.
         </p>

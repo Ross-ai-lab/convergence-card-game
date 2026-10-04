@@ -1,26 +1,7 @@
-"""
-Import RAW character art into the browser game.
+"""Check the single maintained WebP artwork collection against both rosters.
 
-The game draws its own card frames now (banner, gems, rails, description are all
-live DOM in App.tsx), so what it needs from the master materials folder is the
-bare character art -- NOT the baked 1500x2100 print faces.
-
-What it does:
-  1. Reads source/data/cards.csv + source/data/relics.csv for every card.
-  2. Locates each card's source image in
-     "materials/raw-card-art/<N> mana/"
-     using the SAME fuzzy name match the print pipeline uses, so the game and the
-     printed cards can never end up showing different artwork for one card.
-  3. Trims baked-in letterbox bars (movie-screenshot sources) with the pipeline's
-     own conservative trimmer.
-  4. Writes a web-sized WebP to source/public/card-art/raw/<id>.webp.
-
-Sizing: each image is scaled to *cover* the card's art window at 2x device pixel
-ratio and never upscaled, so nothing is blurry and nothing is wastefully large.
-
-Run:
-  py -3.14 materials/local-production/asset-tools/import-raw-art.py
-  py -3.14 materials/local-production/asset-tools/import-raw-art.py --force
+The former materials/raw-card-art duplicate was consolidated into
+source/public/card-art/raw. Existing assets are never re-encoded in place.
 """
 import argparse
 import csv
@@ -53,6 +34,7 @@ def read_rows(path, kind):
             "name": row["name"],
             "cost": int(row["cost"]) if str(row.get("cost", "")).strip().isdigit() else None,
             "type": kind,
+            "art": row.get("art", ""),
         }
         for row in rows
     ]
@@ -87,7 +69,7 @@ def main():
 
     missing, done, skipped, total_bytes = [], 0, 0, 0
     for card in cards:
-        dest = OUT_DIR / f"{card['id']}.webp"
+        dest = PROJECT / "public" / card["art"].lstrip("/")
         if dest.exists() and not args.force:
             skipped += 1
             total_bytes += dest.stat().st_size
@@ -95,6 +77,10 @@ def main():
         src = find_art(card)
         if not src:
             missing.append(card)
+            continue
+        if src.resolve() == dest.resolve():
+            skipped += 1
+            total_bytes += dest.stat().st_size
             continue
         try:
             total_bytes += convert(src, dest)
