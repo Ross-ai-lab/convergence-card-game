@@ -322,25 +322,17 @@ for (const [index, card] of cards.entries()) {
   } else {
     const artPath = path.join(projectRoot, "public", card.art.replace(/^\//, ""));
     if (!fs.existsSync(artPath)) errors.push(`Line ${line}: art file does not exist: ${card.art}`);
-    // EVERY minion wears a real photograph, saved as WebP. Owner ruling: a card
-    // carrying hand-drawn vector art next to 181 photographs looks like a
-    // mistake, because it is one. WebP is the format because this is
-    // photographic art displayed at roughly 730x490 — see the README, which
-    // scopes the rule rather than claiming WebP beats PNG everywhere.
+    // Full raster artwork uses WebP; encoding guidance lives in CONTRIBUTING.md.
     if (!/\.webp$/i.test(card.art)) {
       errors.push(
         `Line ${line}: ${card.name}'s art is not WebP (${card.art}). ` +
-          `Every card carries a real photograph saved as .webp.`,
+          `Every card carries full raster artwork saved as .webp.`,
       );
     }
   }
 
-  // EVERY minion card has a theme. A card whose sting is missing is silent when it
-  // lands, which is not a small blemish: the sound IS the arrival, and the
-  // silence reads as a broken build rather than as a card without music. Three
-  // cards shipped that way (Mothership, Planetary Defense Grid, Black Hole)
-  // simply because nothing counted, so this counts. Relics have their own
-  // direct r### check below.
+  // Keep each stored theme available for future rarity changes. Playback follows
+  // audio/card-theme-policy.ts; lower-tier minion music is intentionally disabled.
   const stingPath = path.join(projectRoot, "public", "audio", "stings", `${card.id}.ogg`);
   if (!fs.existsSync(stingPath)) {
     errors.push(`Line ${line}: ${card.name} has no theme — expected public/audio/stings/${card.id}.ogg`);
