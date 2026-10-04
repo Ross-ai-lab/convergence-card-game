@@ -46,7 +46,7 @@ export const KEYWORDS: KeywordEntry[] = [
     term: "Chained",
     aliases: ["Chain"],
     text:
-      "The minion loses *two* of its turns — always two, and no card prints a different number. Across both it cannot attack, its Passive and Ongoing effects do not fire, and it is untargetable by *both* players: not by an attack, not by removal, not by a buff of your own.",
+      "Skips two of its turns. It cannot attack, use Passive or Ongoing effects, or be targeted by either player.",
   },
   {
     term: "Divine Shield",

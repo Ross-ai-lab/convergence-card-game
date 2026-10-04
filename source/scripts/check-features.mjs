@@ -2,6 +2,7 @@ import {checkMenuPolish} from './menu-polish.mjs';
 import {playTutorial,checkTutorialResume} from './tutorial-flow.mjs';
 import {checkDiscoverAndPhoneSpace,checkFirstComic,checkTouchTutorialEntry} from './interface-followup.mjs';
 import {checkTurnAndKeywords} from './turn-and-keyword-checks.mjs';
+import {checkGalleryRequest} from './gallery-request-checks.mjs';
 /**
  * The three screens the duel checks never reach: the tutorial, developer mode,
  * and the gallery's Star Chart profile.
@@ -276,6 +277,7 @@ await fresh();
 await page.setViewportSize({width:1440,height:900});
 await checkMenuPolish(page);
 await checkTurnAndKeywords(browser,BASE);
+await checkGalleryRequest(browser,BASE);
 await browser.close();
 console.log(failed.length ? `${failed.length} checks failed.` : `All ${results.length} new-feature checks passed.`);
 process.exit(failed.length ? 1 : 0);

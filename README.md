@@ -42,7 +42,7 @@ There is no account, download, or installation needed to play.
 ## What you can play
 
 - **Collection campaign:** challenge any of twenty champions, from GLaDOS to Saitama. Each first victory unlocks that universe's cards.
-- **My Deck:** start with forty available cards, build a thirty-card deck, and choose an earned Hero Power. Rewards expand your collection; you decide which cards enter your deck.
+- **My Deck:** start with forty-five available cards, build a thirty-card deck, and choose an earned Hero Power. Rewards expand your collection; you decide which cards enter your deck.
 - **Two-player hotseat:** share one device using separate decks. An opaque privacy screen hides hands between turns.
 - **Free duels:** completing the campaign opens Recruit, Veteran, and Ascendant opponents with random thirty-card decks.
 
@@ -138,7 +138,7 @@ Rewards never silently rebuild the player's deck.
 **Total: 45 initial cards + 172 rewards = all 217 cards.**
 
 Mend Core is available and equipped from the start. Nine first victories unlock the remaining Hero Powers. Universe order does not matter.
-Human turns last 100 seconds. Only the final ten seconds show a countdown. Unfinished cancellable plays return to hand when time expires.
+Human turns last 100 seconds. Only the final fifteen seconds show a countdown. Unfinished cancellable plays return to hand when time expires.
 Committed choices resolve before the turn passes. Training and developer test duels have no deadline.
 Each campaign boss has its own named power. The boss portrait identifies the opponent; it does not place a free minion on the board.
 All modes retain the ordinary core health, opening hand, mana progression, and four-slot board.
@@ -326,6 +326,8 @@ The title screen should load its backdrop and small menu artwork, not the full r
 Audio follows [sfx.ts](source/src/audio/sfx.ts), respects the sound controls, and cancels stale fetches when changing screens.
 Campaign voice files and their manifest must agree with story text, cast, and checksums.
 Reborn minions suppress arrival themes; returning bodies are not fresh plays.
+Only Legendary and Mythic minions play their card music. Rare and Epic tracks remain stored and turn on automatically if their tier changes.
+Relic music, battle music, and ordinary summon effects remain active.
 
 ### Developer tools
 

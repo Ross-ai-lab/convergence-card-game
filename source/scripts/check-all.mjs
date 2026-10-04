@@ -153,6 +153,7 @@ const SUITES = [
       /^source\/src\/data\/lore/,
       /^source\/src\/unlocks\.ts$/,
       /^source\/scripts\/turn-and-keyword-checks\.mjs$/,
+      /^source\/scripts\/gallery-request-checks\.mjs$/,
       HARNESS,
     ],
   },

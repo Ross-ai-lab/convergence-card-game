@@ -37,6 +37,14 @@ afterEach(() => {
 });
 
 describe("the save slot", () => {
+  it('refreshes requested tiers and Mob text while retaining live combat stats',()=>{
+    vi.stubGlobal('window',{localStorage:memoryLocalStorage()});const game=liveDuel();
+    game.players[0].board[0]=spawnTestMinion(cards.find(card=>card.id==='c159')!,0,{rarity:'Red',atk:4,hp:3});
+    game.players[0].board[1]=spawnTestMinion(cards.find(card=>card.id==='c053')!,0,{effect:'Battlecry: If 3 or more friendly minions are on the board, return them to your hand and set Mob\'s stats to 12/12',atk:12,hp:12,maxHp:12});
+    saveGame(game,[],{kind:'bot',skill:'normal'},1000);const restored=loadGame()!.game;
+    expect(restored.players[0].board[0]).toMatchObject({rarity:'Yellow',atk:4,hp:3});
+    expect(restored.players[0].board[1]).toMatchObject({atk:12,hp:12,maxHp:12});expect(restored.players[0].board[1]?.effect).toContain('2 or more');expect(restored.players[0].board[1]?.effect).toContain('10/10');
+  });
   it('migrates a v31 duel once and keeps its deadline on a second reload',()=>{
     const storage=memoryLocalStorage();vi.stubGlobal('window',{localStorage:storage});
     const game=liveDuel(),clock={key:'current-turn',remainingMs:9000,deadline:20000};

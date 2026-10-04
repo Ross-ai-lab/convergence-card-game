@@ -82,6 +82,8 @@ import type {
   SlotAuraId,
 } from "./engine/types";
 import { KEYWORD_LOOKUP, plainKeywordText, type KeywordEntry } from "./keywords";
+import {TOKEN_CARDS,tokenCard} from './engine/tokens';
+import {shouldPlayCardTheme} from './audio/card-theme-policy';
 import { clearSave, EVENT_LOG_LIMIT, loadGame, saveGame } from "./storage";
 import {
   botWins,
@@ -1514,6 +1516,7 @@ export default function App() {
     const thematicArrivals = arrivals.filter(
       (minion) =>
         !minion.suppressArrivalTheme &&
+        shouldPlayCardTheme(minion.cardId) &&
         (!minion.cardId.startsWith("token:") || isThemedTokenId(minion.cardId)),
     );
     if (thematicArrivals.length > 0) {
@@ -4090,6 +4093,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   const [artPreviews, setArtPreviews] = useState<Record<string,string> | null>(null);
   useEffect(() => { void import('./data/gallery-previews').then(module=>setArtPreviews(module.galleryPreviews)).catch(()=>setArtPreviews({})); }, []);
   const [deckPreview, setDeckPreview] = useState<{key:string; face: CardFaceModel; rect: DOMRect} | null>(null);
+  const [lockedInfo,setLockedInfo]=useState<{key:string;rect:DOMRect}|null>(null);
   const equippedPower = heroPowerDefinition(progress.selectedHeroPower);
   const powerPicker = useRef<HTMLElement>(null);
   const restorePicker = useRef<HTMLElement>(null);
@@ -4121,6 +4125,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if(event.key==='Escape'&&event.target instanceof HTMLSelectElement&&CSS.supports('selector(select:open)')&&event.target.matches(':open'))return;
       if (event.key === "Escape") { event.stopImmediatePropagation(); if (restoreOpen) setRestoreOpen(false); else if (powerOpen) closePowers(); else onClose(); }
       if ((powerOpen || restoreOpen) && event.key === "Tab") {
         const buttons = [...((restoreOpen ? restorePicker : powerPicker).current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])];
@@ -4381,6 +4386,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
                   locked={!collection.unlocked.has(entry.key)}
                   entryKey={entry.key}
                   onOpen={openEntry}
+                  onLocked={(key,rect)=>{setDeckPreview(null);setLockedInfo({key,rect});}}
                   inDeck={deckIds.has(entry.key)}
                   canAdd={!readOnly && (deckIds.has(entry.key) || deck.length < 30) && collection.unlocked.has(entry.key)}
                   onAdd={() => onChange(deckIds.has(entry.key) ? deck.filter(id => id !== entry.key) : [...deck, entry.key])}
@@ -4434,6 +4440,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         </div>
       </section>
       {deckPreview && deckIds.has(deckPreview.key) && !selectedEntry && !powerOpen && !restoreOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
+      {lockedInfo&&!selectedEntry&&<LockedCardInfo cardId={lockedInfo.key} rect={lockedInfo.rect} onClose={()=>setLockedInfo(null)}/>}
       {restoreOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)setRestoreOpen(false);}}>
         <section ref={restorePicker} className="gallery-restore-dialog" role="dialog" aria-modal="true" aria-label="Restore starter deck?">
           <h3>Restore starter deck?</h3><p>Are you sure you want to revert your deck back to a starter one?</p>
@@ -4613,6 +4620,7 @@ function GalleryDetailModal({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if(document.querySelector('.cf-kw-pop,.equipped-relic-peek[aria-label^="Token card:"]'))return;
         event.stopPropagation();
         onClose();
       } else if (!locked && event.key === "ArrowLeft") {
@@ -4748,6 +4756,7 @@ const GalleryCell = memo(function GalleryCell({
   inDeck,
   canAdd,
   onAdd,
+  onLocked,
 }: {
   entryKey: string;
   face: CardFaceModel;
@@ -4759,6 +4768,7 @@ const GalleryCell = memo(function GalleryCell({
   inDeck: boolean;
   canAdd: boolean;
   onAdd: () => void;
+  onLocked: (entryKey:string,rect:DOMRect)=>void;
 }) {
   const { ref, near, onFocus } = useGalleryVisibility();
   const hold = useRef<{timer:number; x:number; y:number; id:number} | null>(null);
@@ -4787,10 +4797,10 @@ const GalleryCell = memo(function GalleryCell({
       onPointerCancel={cancelHold}
       onClickCapture={event => { if (heldClick.current) {event.preventDefault();event.stopPropagation();heldClick.current=false;} }}
     >
-      {locked ? <SealedFace card={face} lazyArt /> : <CardFace card={face} lazyArt quiet />}
+      <CardFace card={face} lazyArt quiet interactiveKeywords />
       {inDeck && <span className="gallery-deck-badge" aria-hidden="true">✓ In deck</span>}
-      <button type="button" className="gallery-card-add" aria-label={`${inDeck ? "Remove" : "Add"} ${face.name}`} aria-pressed={inDeck}
-        disabled={!canAdd} onClick={onAdd} />
+      <button type="button" className="gallery-card-add" aria-label={locked?`Unlock requirements for ${face.name}`:`${inDeck ? "Remove" : "Add"} ${face.name}`} aria-pressed={inDeck}
+        disabled={!canAdd&&!locked} onClick={event=>locked?onLocked(entryKey,event.currentTarget.getBoundingClientRect()):onAdd()} />
       <button type="button" className="gallery-card-name" aria-label={`Open Star Chart for ${face.name}`}
         title={`Open ${face.name} lore`} onClick={() => onOpen(entryKey)} />
       {near && locked ? (
@@ -4971,27 +4981,25 @@ type CollectionMark = "unseen" | "seen" | "played" | "won";
  * itself — lands on it unchanged.
  */
 function SealedFace({ card, lazyArt = false }: { card: CardFaceModel; lazyArt?: boolean }) {
-  const fit = {
-    // Both one-line name fits, because the compact one is what a narrow
-    // container query switches to and an unset variable would silently fall
-    // back to the uncapped default rather than to a fitted size.
-    "--cf-namefit": fitOneLine(card.name, NAME_BOX, NAME_CEILING),
-    "--cf-namefitc": fitOneLine(card.name, NAME_BOX_COMPACT, NAME_CEILING_COMPACT),
-  } as CSSProperties;
-  const rarity = (card.rarity ?? "Black").toLowerCase();
-  return (
-    <article className={`card-face cf-sealed rarity-${rarity}`} style={fit}>
-      <div className="cf-stage">
-        <div className="cf-frame" aria-hidden="true" />
-        <div className="cf-well" aria-hidden="true" />
-        <CardArtwork card={card} lazy={lazyArt} />
-        <div className="cf-banner">
-          <span className="cf-name">{card.name}</span>
-        </div>
-        <div className="cf-gem cf-mana">{card.cost}</div>
-      </div>
-    </article>
-  );
+  return <CardFace card={card} lazyArt={lazyArt} quiet interactiveKeywords/>;
+}
+
+function LockedCardInfo({cardId,rect,onClose}:{cardId:string;rect:DOMRect;onClose:()=>void}) {
+  const node=useRef<HTMLElement>(null);
+  const chapter=CAMPAIGN_CHAPTERS.find(chapter=>chapter.rewardCardIds.includes(cardId));
+  const boss=cards.find(card=>card.id===chapter?.bossId),card=[...cards,...relics].find(card=>card.id===cardId);
+  useEffect(()=>{
+    const outside=(event:PointerEvent)=>{if(!node.current?.contains(event.target as Node))onClose();};
+    const key=(event:KeyboardEvent)=>{if(event.key==='Escape'){event.stopImmediatePropagation();onClose();}};
+    window.addEventListener('pointerdown',outside,true);window.addEventListener('keydown',key,true);window.addEventListener('scroll',onClose,true);window.addEventListener('resize',onClose);
+    return()=>{window.removeEventListener('pointerdown',outside,true);window.removeEventListener('keydown',key,true);window.removeEventListener('scroll',onClose,true);window.removeEventListener('resize',onClose);};
+  },[onClose]);
+  const width=Math.min(280,innerWidth-20),left=Math.max(10,Math.min(rect.right+12+width<=innerWidth?rect.right+12:rect.left-width-12,innerWidth-width-10));
+  const top=Math.max(10,Math.min(rect.top+rect.height*.2,innerHeight-150));
+  return createPortal(<section ref={node} className="locked-card-info" role="dialog" aria-label={`Unlock ${card?.name}`} style={{left,top,width}}>
+    <button type="button" onClick={onClose} aria-label="Close unlock requirements">×</button><small>Locked card</small><strong>{card?.name}</strong>
+    <p>{boss?<>Defeat <b>{boss.name}</b> in {chapter?.universe} to unlock this card.</>:'This card is available from the start.'}</p>
+  </section>,document.body);
 }
 
 /**
@@ -5015,8 +5023,10 @@ function ProtocolWarningBubble({turns}:{turns:number}) {
 }
 
 function KeywordText({ text, allowRelic = true }: { text: string; allowRelic?: boolean }) {
-  const [open, setOpen] = useState<{ index: number; left: number; top: number } | null>(null);
+  const [open, setOpen] = useState<{ index: number; left: number; top: number;rect:DOMRect } | null>(null);
   const pieces = useMemo(() => splitOnKeywords(text,allowRelic), [text,allowRelic]);
+  const root=useRef<HTMLSpanElement>(null);
+  useEffect(()=>setOpen(null),[text]);
 
   // Anything that moves the word out from under the panel closes it: a scroll,
   // a resize, Escape, or a click anywhere else. A definition pinned to a
@@ -5024,28 +5034,29 @@ function KeywordText({ text, allowRelic = true }: { text: string; allowRelic?: b
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(null);
+    const outside=(event:PointerEvent)=>{if(!root.current?.contains(event.target as Node))close();};
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        event.stopPropagation();
+        event.stopImmediatePropagation();
         close();
       }
     };
     window.addEventListener("scroll", close, true);
     window.addEventListener("resize", close);
-    window.addEventListener("pointerdown", close);
+    window.addEventListener("pointerdown", outside,true);
     window.addEventListener("keydown", onKey, true);
     return () => {
       window.removeEventListener("scroll", close, true);
       window.removeEventListener("resize", close);
-      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("pointerdown", outside,true);
       window.removeEventListener("keydown", onKey, true);
     };
   }, [open]);
 
   return (
-    <>
+    <span ref={root}>
       {pieces.map((piece, index) =>
-        piece.entry ? (
+        piece.entry||piece.token ? (
           <button
             key={index}
             type="button"
@@ -5060,7 +5071,7 @@ function KeywordText({ text, allowRelic = true }: { text: string; allowRelic?: b
                 return;
               }
               const rect = event.currentTarget.getBoundingClientRect();
-              setOpen({ index, left: (rect.left + rect.right) / 2, top: rect.bottom });
+              setOpen({ index, left: (rect.left + rect.right) / 2, top: rect.bottom,rect });
             }}
             aria-expanded={open?.index === index}
           >
@@ -5073,7 +5084,8 @@ function KeywordText({ text, allowRelic = true }: { text: string; allowRelic?: b
       {open && pieces[open.index]?.entry ? (
         <KeywordPopover entries={[pieces[open.index].entry!]} left={open.left} top={open.top} />
       ) : null}
-    </>
+      {open&&pieces[open.index]?.token&&<CardPeek face={playableFace(tokenCard(pieces[open.index].token!,pieces[open.index].token==='token:sin'?{effect:'Gets one random keyword when summoned: Taunt, Divine Shield, Charge, or Chained.'}:{}))} rect={open.rect} label={`Token card: ${tokenCard(pieces[open.index].token!).name}`}/>}
+    </span>
   );
 }
 
@@ -5143,12 +5155,15 @@ function KeywordPopover({
 }
 
 /** One left-to-right pass, longest match wins, word boundaries respected. */
-function splitOnKeywords(text: string,allowRelic=true): Array<{ text: string; entry?: KeywordEntry }> {
-  const pieces: Array<{ text: string; entry?: KeywordEntry }> = [];
+const TOKEN_REFERENCE_LOOKUP=TOKEN_CARDS.flatMap(card=>[card.name,`${card.name}s`,...(card.id==='token:margit'?['Margit']:card.id==='token:larva'?['Larvae']:[])].map(match=>({match,token:card.id}))).sort((a,b)=>b.match.length-a.match.length);
+function splitOnKeywords(text: string,allowRelic=true): Array<{ text: string; entry?: KeywordEntry;token?:string }> {
+  const pieces: Array<{ text: string; entry?: KeywordEntry;token?:string }> = [];
   const isWord = (ch: string | undefined) => ch !== undefined && /[A-Za-z0-9]/.test(ch);
   let plain = "";
   let i = 0;
   while (i < text.length) {
+    const tokenHit=TOKEN_REFERENCE_LOOKUP.find(({match})=>text.slice(i,i+match.length).toLowerCase()===match.toLowerCase()&&!isWord(text[i-1])&&!isWord(text[i+match.length]));
+    if(tokenHit){if(plain){pieces.push({text:plain});plain='';}pieces.push({text:text.slice(i,i+tokenHit.match.length),token:tokenHit.token});i+=tokenHit.match.length;continue;}
     const hit = KEYWORD_LOOKUP.find(
       ({ match }) =>
         (allowRelic || match.toLowerCase() !== 'relic' && match.toLowerCase() !== 'relics') &&
@@ -5896,9 +5911,9 @@ function CardPeek({face,rect,label}: {face:CardFaceModel;rect:{left:number;right
   const beside=rect.right+12;
   const left=Math.max(8,Math.min(beside+width<=innerWidth-8?beside:rect.left-width-12,innerWidth-width-8));
   const top=Math.max(8,Math.min((rect.top+rect.bottom-height)/2,innerHeight-height-8));
-  return <aside className="equipped-relic-peek" role="status" aria-label={label} style={{left,top,width}}>
+  return createPortal(<aside className="equipped-relic-peek" role="status" aria-label={label} style={{left,top,width}}>
     <CardFace card={face} />
-  </aside>;
+  </aside>,document.body);
 }
 
 function RelicCardPeek({relic,rect}: {relic:RelicInstance;rect:{left:number;right:number;top:number;bottom:number}}) {

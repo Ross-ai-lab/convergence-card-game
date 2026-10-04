@@ -5252,23 +5252,6 @@ button:disabled {
   box-shadow: 0 0 0 2px rgba(246, 236, 216, 0.32);
 }
 
-/* A SEALED CARD SPENDS ITS WHOLE FACE ON THE PICTURE.
-
-   The printed art window stops at 560 of the card's 1050 units, and the 490
-   below it belong to the rules plaque, the flavour line, the origin and the two
-   stat gems — none of which a sealed card draws. Left as it was, a locked card
-   was a picture in the top half and a flat dark slab in the bottom half, which
-   reads as a card that failed to load rather than a card that is sealed.
-
-   The same rule the rest of the face already follows: the artwork is the card,
-   and when nothing else is claiming the space the artwork takes it. It runs to
-   the frame's own inset, matching the 9 units the left and right edges use, so
-   the picture is inset by the same amount on all four sides. */
-.card-face.cf-sealed .cf-art {
-  bottom: calc(9 * var(--u));
-  height: auto;
-}
-
 .gallery-cell.mark-played {
   box-shadow: 0 0 0 2px rgba(67, 205, 189, 0.85);
 }
@@ -5378,6 +5361,7 @@ button:disabled {
 }
 
 .gallery-filter select {
+  color-scheme: dark;
   appearance: none;
   padding: 6px 28px 6px 9px;
   border-radius: 8px;
@@ -5465,33 +5449,7 @@ button:disabled {
   box-shadow: 0 0 0 1px rgba(246, 236, 216, 0.14);
 }
 
-/* A SEAL, not a badge — and it is meant to be in the way.
 
-   This was briefly shrunk to a small disc so the rules text underneath stayed
-   readable, and that was the wrong goal: a locked card the player can read is a
-   card already spent. Owner's ruling, and it is the right one — the padlock
-   covers the middle of the face so a locked card shows its name, its frame
-   colour and a shape behind the glass, and nothing that tells you what it does.
-   What arrives in a pack should still be news. Keep it large. */
-.gallery-lock {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  color: rgba(246, 236, 216, 0.86);
-}
-
-/* 68% of the card width. Twice what it was, and the size is the point: at a
-   third of the width it was still possible to read most of the rules text
-   around it, which is exactly the thing a seal is supposed to prevent. */
-.gallery-lock svg {
-  width: 68%;
-  height: auto;
-  /* px, not `--u`: the lock is a SIBLING of `.card-face`, so the card's design
-     unit does not resolve here and the whole filter would be dropped. */
-  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.92));
-}
 
 .gallery-help {
   width: 30px;
@@ -7142,7 +7100,7 @@ button:disabled {
 .tutorial-coach {animation:none;}
 .tutorial-coach.is-welcome {box-shadow:0 0 0 150vmax #090813cc;}
 .tutorial-mode .hand-keyword-popover,.tutorial-mode .keyword-popover {display:none !important;}
-.turn-countdown {position:fixed;z-index:20000;bottom:max(12px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:7px 12px;border:1px solid #ffd079;border-radius:9px;background:#392015f2;color:#ffe4aa;box-shadow:0 0 18px #ffb34d55;pointer-events:none;}
+.turn-countdown {position:fixed;z-index:20000;right:12px;top:30%;transform:scale(.7);transform-origin:right center;display:flex;align-items:center;gap:10px;padding:7px 12px;border:1px solid #ffd079;border-radius:9px;background:#392015f2;color:#ffe4aa;box-shadow:0 0 18px #ffb34d55;pointer-events:none;}
 .turn-countdown small {font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;}
 .turn-countdown strong {font-size:23px;line-height:1;font-variant-numeric:tabular-nums;}
 .turn-countdown.is-critical {background:#691f2af5;border-color:#ff9b8a;color:#fff0dc;animation:clock-danger 700ms ease-in-out infinite alternate;}
@@ -7170,3 +7128,31 @@ button:disabled {
  .card-choice-prompt .prompt-cancel {font-size:10px;min-height:30px;}
 }
 
+/* Printed locked faces remain readable. The mark stays inside the art window. */
+.gallery-cell > .card-face {position:relative;z-index:5;pointer-events:none;}
+.gallery-cell .cf-kw {pointer-events:auto;}
+.gallery-cell .gallery-card-name {z-index:6;}
+.gallery-cell.is-in-deck {box-shadow:0 0 0 2px #e7c67c;}
+.gallery-cell.is-locked .card-face {filter:grayscale(.65) brightness(.9);opacity:1;}
+.gallery-cell.is-locked:hover .card-face {filter:grayscale(.4) brightness(1);opacity:1;}
+.gallery-cell.is-locked .cf-rail {opacity:.7;}
+.gallery-lock {position:absolute;top:8%;left:4%;width:12%;z-index:6;pointer-events:none;color:#f0d398;}
+.gallery-lock svg {width:100%;height:auto;filter:drop-shadow(0 2px 3px #000);}
+.gallery-deck-badge {z-index:6;}
+.locked-card-info {position:fixed;z-index:20030;box-sizing:border-box;padding:16px;border:1px solid #d9b868;border-radius:10px;background:#18111f;color:#f6ecd8;box-shadow:0 12px 35px #000b;}
+.locked-card-info small {display:block;color:#d9b868;font-size:11px;text-transform:uppercase;letter-spacing:.08em;}
+.locked-card-info strong {display:block;padding-right:22px;font-size:18px;}
+.locked-card-info p {font-size:14px;line-height:1.5;margin:10px 0 0;}
+.locked-card-info button {position:absolute;right:8px;top:8px;padding:2px 7px;}
+.equipped-relic-peek {z-index:20025;}
+@supports (appearance:base-select) {
+ .gallery-filter select,.gallery-filter select::picker(select) {appearance:base-select;}
+ .gallery-filter select::picker-icon {display:none;}
+ .gallery-filter select::picker(select) {background:#14121a;color:#f6ecd8;border:1px solid #d9b868;border-radius:8px;padding:4px;box-shadow:0 12px 30px #0009;max-block-size:min(360px,70dvh);overflow-y:auto;}
+ .gallery-filter select option {padding:7px 10px;border-radius:4px;font-size:14px;}
+ .gallery-filter select option:checked,.gallery-filter select option:hover {background:#3d2c53;}
+}
+@media (max-height:600px) and (max-width:1100px) {
+ .turn-countdown {top:8px;right:165px;}
+ .turn-countdown small {display:none;}
+}

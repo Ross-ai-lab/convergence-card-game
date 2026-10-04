@@ -224,7 +224,7 @@ try {
   record = await progress(); assert.equal(record.playerDeck.length, 30); assert(record.playerDeck.includes('c104')); assert(!record.playerDeck.includes('c001'));
   await page.getByLabel('Search the gallery').fill('');
   await page.getByLabel('Filter by unlocked or locked').selectOption('locked');
-  assert.equal(await page.locator('.gallery-card-add:not(:disabled)').count(), 0, 'Locked cards cannot be added');
+  assert.equal(await page.locator('.gallery-card-add[aria-label^="Add "]:not(:disabled)').count(), 0, 'Locked cards cannot be added');
   await page.getByRole('button', { name: 'Inspect GLaDOS', exact: true }).click();
   assert(await page.locator('.gallery-detail-panel').isVisible(), 'Deck inspection works independently of collection filters');
   await page.getByRole('button', { name: 'Close Star Chart', exact: true }).click();

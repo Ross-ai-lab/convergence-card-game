@@ -1,4 +1,5 @@
 import { isThemedTokenId } from "../engine/tokens";
+import {shouldPlayCardTheme} from './card-theme-policy';
 
 /* ============================================================================
    CONVERGENCE — anime battle sound engine
@@ -1090,6 +1091,12 @@ export function stopCardTheme(): void {
  * two do not start on the same frame and smear into each other.
  */
 export function playCardTheme(cardId: string, delay = 0): void {
+  if(!shouldPlayCardTheme(cardId))return;
+  playThemeClip(cardId,delay);
+}
+
+/** Ungated asset playback is private and used only by the development audio probe. */
+function playThemeClip(cardId: string, delay = 0): void {
   if (!isCardThemeId(cardId)) return;
   if (muted || mix.music <= 0) return;
   unlock();
@@ -1308,7 +1315,7 @@ export function playOpeningCue(delay = 0): void {
 /** Warms the cache for cards the player is about to be able to play. */
 export function prefetchCardThemes(cardIds: string[]): void {
   if (muted || !ctx) return;
-  for (const cardId of cardIds.filter(isCardThemeId).slice(0, 6)) {
+  for (const cardId of cardIds.filter(id=>isCardThemeId(id)&&shouldPlayCardTheme(id)).slice(0, 6)) {
     if (!themeCache.has(cardId) && !themeMisses.has(cardId)) void loadTheme(cardId);
   }
 }
@@ -1468,7 +1475,7 @@ if (import.meta.env.DEV) {
       stopMusic();
       const before = getMix().music;
       setBusLevel("music", 1);
-      const r = await probe(() => playCardTheme(cardId), ms);
+      const r = await probe(() => playThemeClip(cardId), ms);
       setBusLevel("music", before);
       return { cardId, ...r };
     },

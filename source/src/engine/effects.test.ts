@@ -323,15 +323,19 @@ describe("full-roster effects", () => {
     expect(after.players[1].board[1]?.name).toBe("Avatar Aang");
   });
 
-  it("Mob Psycho ascends after returning three friendly minions", () => {
+  it("Mob Psycho ascends to 10/10 after returning two friendly minions", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("John Wick", 0);
     state.players[0].board[1] = makeMinion("Joker", 0);
-    state.players[0].board[2] = makeMinion("Zoro", 0);
     const after = playCardFor(state, 0, "Mob Psycho", 3);
-    expect(after.players[0].board[3]?.atk).toBe(12);
-    expect(after.players[0].board[3]?.maxHp).toBe(12);
-    expect(after.players[0].hand).toEqual(expect.arrayContaining([cardId("John Wick"), cardId("Joker"), cardId("Zoro")]));
+    expect(after.players[0].board[3]).toMatchObject({atk:10,hp:10,maxHp:10});
+    expect(after.players[0].hand).toEqual(expect.arrayContaining([cardId("John Wick"), cardId("Joker")]));
+  });
+
+  it('Mob Psycho keeps its printed stats with only one friendly minion',()=>{
+    const state=mainState();state.players[0].board[0]=makeMinion('John Wick',0);
+    const after=playCardFor(state,0,'Mob Psycho',3);
+    expect(after.players[0].board[3]).toMatchObject({atk:5,hp:5,maxHp:5});expect(after.players[0].board[0]?.name).toBe('John Wick');
   });
 
   it("Battlecry silence (Aizawa silence_enemy) disables an enemy on arrival", () => {

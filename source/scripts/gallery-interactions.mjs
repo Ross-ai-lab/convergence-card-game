@@ -36,7 +36,8 @@ export async function checkPreviewFallback(browser,base) {
 
 export async function checkGalleryHold(page, {webKit = false, cardName='John Wick', adding=false} = {}) {
   assert.equal(await page.locator('.gallery-compact-label').count(), 0, 'Duplicate card names remain');
-  const card = page.getByRole('button', {name:`${adding?'Add':'Remove'} ${cardName}`, exact:true, includeHidden:true});
+  const locked=page.getByRole('button',{name:`Unlock requirements for ${cardName}`,exact:true,includeHidden:true});
+  const card = adding&&await locked.count()?locked:page.getByRole('button', {name:`${adding?'Add':'Remove'} ${cardName}`, exact:true, includeHidden:true});
   await card.scrollIntoViewIfNeeded();
   const box = await card.boundingBox();
   const point = {x:box.x+box.width/2,y:box.y+box.height/2};

@@ -258,13 +258,13 @@
     "name": "Motoko Kusanagi",
     "origin": "Ghost in the Shell",
     "epithet": "The Major",
-    "rar": "Legendary",
+    "rar": "Epic",
     "camp": "Tech",
     "align": "Good",
     "cost": 4,
     "atk": 2,
     "hp": 1,
-    "cc": "#70c9ff",
+    "cc": "#7a52c8",
     "vals": [
       8,
       7,
@@ -289,7 +289,7 @@
     "sig_name": "Ghost Dive",
     "sig_desc": "A conscious descent into a network where information and identity share one space.",
     "playstyle": "A disciplined investigator of the human-machine boundary",
-    "ability": "Motoko's signature capabilities come from her cyberbrain, prosthetic body, and network infiltration skills.",
+    "ability": "Battlecry: Take control of an enemy Tech minion with 4 HP or less until the end of your next turn",
     "rivals": [
       {
         "who": "Batou",
@@ -420,13 +420,13 @@
     "name": "Frieren",
     "origin": "Frieren: Beyond Journey's End",
     "epithet": "The Mage Who Outlives Time",
-    "rar": "Epic",
+    "rar": "Legendary",
     "camp": "Magic",
     "align": "Good",
     "cost": 6,
     "atk": 2,
     "hp": 5,
-    "cc": "#b996ff",
+    "cc": "#2f9c63",
     "vals": [
       4,
       8,
@@ -451,7 +451,7 @@
     "sig_name": "Zoltraak",
     "sig_desc": "A once-lethal demon spell becomes a familiar tool through patient analysis and mastery.",
     "playstyle": "A patient archivist whose power grows through knowledge",
-    "ability": "Frieren's magic combines immense experience, precise analysis, and a collection of spells gathered over a long life.",
+    "ability": "Passive: The first time you cast a relic each turn, discover another relic",
     "rivals": [
       {
         "who": "Himmel",

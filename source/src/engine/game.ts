@@ -2923,12 +2923,13 @@ function runEffect(
     }
   } else if (source.effectId === "mob_ascend") {
     const allies = friendlyOthers(player, source);
-    if (allies.length >= 3) {
+    if (allies.length >= 2) {
       returnMinionsToHand(state, player.id, allies, events);
-      source.atk = 12;
-      source.maxHp = 12;
-      source.hp = 12;
-      events.push(effectEvent(`${label} releases its power and ascends to 12/12.`, source));
+      for(const bonus of source.auraBonuses??[]){bonus.atk=0;bonus.hp=0;bonus.spentAtk=0;bonus.suppressedHp=0;}
+      source.atk = 10;
+      source.maxHp = 10;
+      source.hp = 10;
+      events.push(effectEvent(`${label} releases its power and ascends to 10/10.`, source));
     }
   } else if (source.effectId === "random_attacks_next_turn") {
     for (const side of state.players) {

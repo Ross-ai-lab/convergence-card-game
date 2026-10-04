@@ -271,8 +271,8 @@ const before = await page.evaluate(() => window.__sfx.getStats().themesPlayed);
 // Inject a plain minion so the trigger check cannot become a random test of
 // whether the opening hand happened to contain a board-playable card or a
 // relic that needs a bearer.
-await page.evaluate(() => window.__debug?.giveCard("Modern Tank"));
-const hand = page.locator(".hand-card").filter({hasText:"Modern Tank"}).last();
+await page.evaluate(() => window.__debug?.giveCard("Superman"));
+const hand = page.locator(".hand-card").filter({hasText:"Superman"}).last();
 let placed = false;
 if (await hand.count()) {
   await hand.click({ timeout: 10000 });

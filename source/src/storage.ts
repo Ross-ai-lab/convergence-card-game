@@ -233,6 +233,8 @@ export function loadGame(): SavedGame | null {
     const refreshBatman = (value: unknown): void => {
       if (!value || typeof value !== 'object') return;
       const object = value as Record<string, unknown>;
+      if(typeof object.cardId==='string'&&'rarity' in object&&['c088','c076','c127','c148','c163','c149','c145','c151','c126','c181','c160','c159','c045','c035','c065','c020','c184','c085'].includes(object.cardId))object.rarity=cards.find(card=>card.id===object.cardId)?.rarity??object.rarity;
+      if(object.effectId==='mob_ascend'){if(typeof object.effect==='string')object.effect=cards.find(card=>card.id==='c053')!.effect;if(typeof object.text==='string')object.text=cards.find(card=>card.id==='c053')!.effect;}
       if(object.cardId==='c012')object.camp='Tech';
       if(object.cardId==='c122'&&object.effectId==='wall_of_flesh_grind')object.effect=cards.find(card=>card.id==='c122')?.effect??object.effect;
       for(const [key,child] of Object.entries(object))if(typeof child==='string')object[key]=child.replace(/Ascension Relics/gi,'Relics').replace(/Ascension Relic/gi,'Relic');

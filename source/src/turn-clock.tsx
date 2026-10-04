@@ -24,16 +24,16 @@ export class TurnClock {
   }
 }
 
-/** Only this small component ticks, and only during the final ten seconds. */
+/** Only this small component ticks, and only during the final fifteen seconds. */
 export function TurnClockWarning({clock}:{clock:TurnClock}) {
   const value=useSyncExternalStore(clock.subscribe,clock.getSnapshot,clock.getSnapshot);
   const [seconds,setSeconds]=useState<number|null>(null);
   useEffect(()=>{
     if(!value?.deadline){setSeconds(null);return;}
     let ticker:ReturnType<typeof setInterval>|undefined;
-    const update=()=>{const left=Math.max(0,Math.ceil((value.deadline!-Date.now())/1000));setSeconds(left<=10?left:null);};
+    const update=()=>{const left=Math.max(0,Math.ceil((value.deadline!-Date.now())/1000));setSeconds(left<=15?left:null);};
     update();
-    const start=setTimeout(()=>{update();ticker=setInterval(update,200);},Math.max(0,value.deadline-Date.now()-10_000));
+    const start=setTimeout(()=>{update();ticker=setInterval(update,200);},Math.max(0,value.deadline-Date.now()-15_000));
     return()=>{clearTimeout(start);if(ticker)clearInterval(ticker);};
   },[value]);
   if(seconds===null||value?.deadline===null)return null;
