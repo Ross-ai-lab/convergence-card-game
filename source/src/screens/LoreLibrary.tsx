@@ -42,7 +42,7 @@ function ComicReader({onBack,onClose}:{onBack:()=>void;onClose:()=>void}) {
   const [spread,setSpread] = useState(()=>matchMedia('(min-width:650px)').matches);
   const [loaded,setLoaded] = useState(false);
   const [failed,setFailed] = useState(false);
-  const art = resolvePublicAssetUrl('lore/the-empty-chair.webp');
+  const art = resolvePublicAssetUrl('lore/the-empty-chair.webp?v=chapter-one-2026');
   const count = spread ? 2 : 1;
   const last = LORE_CHAPTER_ONE.panels.length;
   const advance = (direction:number) => setPanel(current=>Math.max(0,Math.min(last-count,current+direction*count)));
