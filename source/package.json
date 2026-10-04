@@ -6,7 +6,7 @@
   "description": "Editable source for the Convergence browser card game",
   "scripts": {
     "dev": "vite",
-    "predev": "npm run build:lore && npm run sync:cards && npm run build:gallery-art",
+    "predev": "npm run prepare:assets",
     "build": "tsc -b && vite build",
     "build:lore": "node scripts/build-lore-data.mjs",
     "sync:cards": "node scripts/sync-card-workbook.mjs",
@@ -29,13 +29,14 @@
     "shoot:card": "node scripts/shoot-card.mjs",
     "shoot:rules": "node scripts/shoot-rules.mjs",
     "validate:data": "npm run validate:docs && node scripts/validate-cards.mjs && npm run sync:cards",
-    "prebuild": "npm run validate:docs && npm run readme:index && npm run build:lore && npm run sync:cards && npm run check:campaign-voices && npm run build:gallery-art",
+    "prebuild": "npm run validate:docs && npm run readme:index && npm run prepare:assets",
     "check": "node scripts/check-all.mjs",
     "check:ui": "node scripts/check-ui.mjs",
     "check:cardface": "node scripts/check-cardface.mjs",
     "check:coverage": "node scripts/check-effect-coverage.mjs",
     "check:features": "node scripts/check-features.mjs",
-    "build:gallery-art": "node scripts/build-gallery-previews.mjs"
+    "build:gallery-art": "node scripts/build-gallery-previews.mjs",
+    "prepare:assets": "npm run build:lore && npm run sync:cards && npm run build:gallery-art"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

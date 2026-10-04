@@ -37,6 +37,24 @@ afterEach(() => {
 });
 
 describe("the save slot", () => {
+  it('refreshes copied passive text without replacing live combat stats', () => {
+    vi.stubGlobal('window', {localStorage:memoryLocalStorage()});
+    const game=liveDuel();
+    const body=spawnTestMinion(cards.find(card=>card.id==='c001')!,0,{atk:7,hp:2,maxHp:9});
+    body.gainedEffects=[{effectId:'robocop_evil_bonus',timing:'passive',text:'Passive: Deal 3x damage against Evil minions'}];
+    game.players[0].board[0]=body;
+    saveGame(game,[],{kind:'bot',skill:'normal'},1000);
+    const loaded=loadGame()!.game.players[0].board[0]!;
+    expect(loaded).toMatchObject({atk:7,hp:2,maxHp:9});
+    expect(loaded.gainedEffects[0].text).toBe('Passive: Deal double damage against Evil minions');
+  });
+  it('rejects nonnumeric core health before it can corrupt a resumed duel', () => {
+    const storage=memoryLocalStorage();vi.stubGlobal('window',{localStorage:storage});
+    saveGame(liveDuel(),[],{kind:'bot',skill:'normal'},1000);
+    const saved=JSON.parse(storage.getItem(SAVE_KEY)!);saved.game.players[0].health=null;
+    storage.setItem(SAVE_KEY,JSON.stringify(saved));expect(loadGame()).toBeNull();
+  });
+
   it('resolves an old Nine Hashira targeting save with its new volley', () => {
     const storage = memoryLocalStorage();
     vi.stubGlobal('window', {localStorage:storage});

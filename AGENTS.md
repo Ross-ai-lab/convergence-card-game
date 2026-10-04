@@ -16,11 +16,11 @@ Follow the current user request and applicable workspace instructions. Read only
 | Task | Source | Focused verification |
 |---|---|---|
 | Card text, stats or rarity | [cards.csv](source/data/cards.csv), [relics.csv](source/data/relics.csv), [game.ts](source/src/engine/game.ts) | Relevant engine test and `validate:data` |
-| Keywords and token inspection | [keywords.ts](source/src/keywords.ts), [App.tsx](source/src/App.tsx), [tokens.ts](source/src/engine/tokens.ts) | The affected card and popup in the gallery |
+| Keywords and token inspection | [keywords.ts](source/src/keywords.ts), [card-presentation.ts](source/src/card-presentation.ts), [App.tsx](source/src/App.tsx), [tokens.ts](source/src/engine/tokens.ts) | The affected card and popup in the gallery |
 | Duel, deck editor or profiles | [App.tsx](source/src/App.tsx), [App.css](source/src/App.css), [gallery-detail.css](source/src/gallery-detail.css) | The actual affected screen and interaction |
 | Phone layout | [mobile.css](source/src/mobile.css), [phone-layout.ts](source/src/phone-layout.ts) | Only the relevant size and orientation |
 | Campaign and rewards | [campaign-design.json](materials/campaign-design.json), [campaign.ts](source/src/campaign.ts), [progress.ts](source/src/progress.ts) | Relevant campaign/progression tests |
-| Saves and turn expiry | [storage.ts](source/src/storage.ts), [turn-clock.tsx](source/src/turn-clock.tsx) | Existing-save migration or timeout tests |
+| Saves and turn expiry | [storage.ts](source/src/storage.ts), [save-migrations.ts](source/src/save-migrations.ts), [turn-clock.tsx](source/src/turn-clock.tsx) | Existing-save migration or timeout tests |
 | Art or audio | [art library](source/public/card-art/raw/), [sfx.ts](source/src/audio/sfx.ts), [card-theme-policy.ts](source/src/audio/card-theme-policy.ts) | Changed asset, routing or playback |
 | Documentation | [README](README.md), [CONTRIBUTING](CONTRIBUTING.md), [DESIGN-DECISIONS](DESIGN-DECISIONS.md) | Documentation links and affected source claims |
 
@@ -28,6 +28,8 @@ Follow the current user request and applicable workspace instructions. Read only
 
 The CSV rosters, campaign JSON and engine are the game authorities.
 Edit source files and regenerate their derived outputs; do not hand-edit [play/](play/), [lore.ts](source/src/data/lore.ts), [gallery-previews.ts](source/src/data/gallery-previews.ts) or the statistics workbook.
+
+For cache cleanup, follow [Local production data](CONTRIBUTING.md#local-production-data); the review folder also holds active voice tools.
 
 Keep each documentation rule in its appropriate page. README explains the game, CONTRIBUTING explains the workflow, and DESIGN-DECISIONS records accepted choices.
 [CLAUDE.md](CLAUDE.md) only redirects here. Markdown is allowed throughout this project.

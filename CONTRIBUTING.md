@@ -45,7 +45,8 @@ npm run dev
 
 The development address is **http://localhost:5177**. The port is fixed; an occupied port produces an error.
 Use the server address rather than opening the game through `file://`.
-The first run prepares the lore module and checks the card workbook.
+`npm run prepare:assets` prepares the lore module, checks the workbook and refreshes gallery previews. Both development and production builds use it.
+Campaign voice checks run explicitly when voice or story assets change.
 
 ```sh
 npx vitest run src/engine/game.test.ts -t "Divine Shield"
@@ -57,6 +58,8 @@ Choose the specific file, test name or suite that matches the change. The comman
 
 ### Choosing checks
 
+`npm run check -- --only docs,cardface` runs explicitly selected suites. `--list` reviews the selection; `--all` is an explicit full run.
+Without `--only`, the runner infers checks from changed files. It does not force unit or workbook suites on unrelated changes.
 The check runner executes unit tests before browser suites to avoid timing failures under CPU load.
 Browser suites use this project's Playwright Chromium and need the development server running.
 Install its browser once with `npx playwright install chromium` on a new development machine.
@@ -110,7 +113,7 @@ An unchanged workbook can be verified with Node alone. The generator refuses a m
 
 Effect text has no final period, comma, semicolon, or colon. Internal sentences retain punctuation.
 Use the existing wording for repeated mechanics, such as Freeze, Silence, Chained, and Reborn.
-Every new vocabulary value belongs in [types.ts](source/src/engine/types.ts); validators derive their lists from it.
+Every new engine vocabulary value belongs in [types.ts](source/src/engine/types.ts); validators derive their lists from it.
 
 Mana is the subject's lore power tier. Assign it from canon capabilities and the Basic reference ladder, independently of card stats or gameplay results.
 Do not change mana as an incidental balance adjustment. Routine interface work must preserve card costs, effects, bot strength, and pacing.
@@ -119,7 +122,7 @@ Run `sim` or `check:balance` only when the current request explicitly asks for s
 An insufficient sample is a skip, never a pass. The difficulty ladder requires a separately requested run.
 
 Engine contracts are recorded in [the design decisions](DESIGN-DECISIONS.md#engine-contracts).
-Clickable concept definitions and aliases live in [keywords.ts](source/src/keywords.ts). Engine vocabulary and effect IDs belong in [types.ts](source/src/engine/types.ts).
+Clickable definitions and aliases live in [keywords.ts](source/src/keywords.ts). Their scanner and shared artwork positions live in [card-presentation.ts](source/src/card-presentation.ts). Engine vocabulary and effect IDs belong in [types.ts](source/src/engine/types.ts).
 A repeated keyword is highlighted only on its first occurrence in a card description.
 
 ## Interface, art and audio
@@ -137,7 +140,7 @@ Board cards display current stats and conditions. Equipped relics expose their o
 
 The maintained artwork library is [source/public/card-art/raw/](source/public/card-art/raw/), entirely WebP. Keep one authored image collection; the published copy is generated.
 Encode replacements directly into that folder, update the CSV path and rebuild gallery previews. Use a new filename for changed art so browser caches cannot retain the previous image.
-The [artwork audit](materials/local-production/asset-tools/import-raw-art.py) checks that both rosters resolve to the retained files.
+The existing [card validator](source/scripts/validate-cards.mjs) checks that both rosters resolve to the retained artwork.
 Card-specific crops must agree between the full image and its embedded preview.
 Gallery art is loaded near the visible area; do not decode the entire collection at title-screen startup.
 Gallery cards share one pixel-sizing measurement and static rarity frames. Avoid paint-skipping containment and animated shine on the card wall. Keep decoded artwork mounted during scrolling.
@@ -149,6 +152,13 @@ Campaign voice files and their manifest must agree with story text, cast, and ch
 Reborn minions suppress arrival themes; returning bodies are not fresh plays.
 Only Legendary and Mythic minions play their card music. Rare and Epic tracks remain stored and turn on automatically if their tier changes.
 Relic music, battle music, and ordinary summon effects remain active.
+
+### Local production data
+
+The ignored `.preview/voice-runtime` and `.preview/models` folders are active voice-generation dependencies, not disposable screenshots.
+Voice jobs and recordings also use `.preview/voice-full-hold` and `.preview/campaign-voices`. Preserve them during routine cleanup.
+The workbook preview's `node_modules` is a junction to the shared dependency runtime. Remove the junction itself before clearing that preview; never traverse and delete its target.
+Generated `source/dist` can be removed after publishing. The release in `play/` and authored assets stay available.
 
 ### Campaign voice production
 

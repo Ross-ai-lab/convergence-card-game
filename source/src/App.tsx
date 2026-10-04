@@ -81,8 +81,9 @@ import type {
   RelicInstance,
   SlotAuraId,
 } from "./engine/types";
+import { cardArtPosition, splitCardText } from "./card-presentation";
 import { KEYWORD_LOOKUP, plainKeywordText, type KeywordEntry } from "./keywords";
-import {TOKEN_CARDS,tokenCard} from './engine/tokens';
+import { tokenCard } from './engine/tokens';
 import {shouldPlayCardTheme} from './audio/card-theme-policy';
 import { clearSave, EVENT_LOG_LIMIT, loadGame, saveGame } from "./storage";
 import {
@@ -363,7 +364,7 @@ function keywordEntriesFor(keywords: readonly string[]): KeywordEntry[] {
  * explained it. Relics printed no column at all and so armed nothing, while
  * their whole card is rules text.
  *
- * `splitOnKeywords` is the scan — the same pass the gallery's clickable words
+ * `splitCardText` is the scan — the same pass the gallery's clickable words
  * use, longest match first and word boundaries respected — so a definition can
  * never be offered by one surface and missed by the other. The text comes first
  * because it is the card's own order; a keyword carried only in the column, with
@@ -375,7 +376,7 @@ function handKeywordEntriesFor(card: PlayableCard): KeywordEntry[] {
   const add = (entry: KeywordEntry) => {
     if (!found.includes(entry)) found.push(entry);
   };
-  for (const piece of splitOnKeywords(card.effect ?? "", isMinionCard(card))) {
+  for (const piece of splitCardText(card.effect ?? "", isMinionCard(card))) {
     if (piece.entry) add(piece.entry);
   }
   for (const entry of keywordEntriesFor(isMinionCard(card) ? card.keywords : [])) add(entry);
@@ -388,11 +389,11 @@ function minionKeywordEntriesFor(minion: MinionInstance): KeywordEntry[] {
     if (!found.includes(entry)) found.push(entry);
   };
   if (minion.silenced) return found;
-  for (const piece of splitOnKeywords(minion.effect)) {
+  for (const piece of splitCardText(minion.effect)) {
     if (piece.entry) add(piece.entry);
   }
   for (const effect of minion.gainedEffects) {
-    for (const piece of splitOnKeywords(effect.text)) {
+    for (const piece of splitCardText(effect.text)) {
       if (piece.entry) add(piece.entry);
     }
   }
@@ -4992,7 +4993,7 @@ function ProtocolWarningBubble({turns}:{turns:number}) {
 
 function KeywordText({ text, allowRelic = true }: { text: string; allowRelic?: boolean }) {
   const [open, setOpen] = useState<{ index: number; left: number; top: number;rect:DOMRect } | null>(null);
-  const pieces = useMemo(() => splitOnKeywords(text,allowRelic), [text,allowRelic]);
+  const pieces = useMemo(() => splitCardText(text,allowRelic), [text,allowRelic]);
   const root=useRef<HTMLSpanElement>(null);
   useEffect(()=>setOpen(null),[text]);
 
@@ -5122,40 +5123,6 @@ function KeywordPopover({
   );
 }
 
-/** One left-to-right pass, longest match wins, word boundaries respected. */
-const TOKEN_REFERENCE_LOOKUP=TOKEN_CARDS.flatMap(card=>[card.name,`${card.name}s`,...(card.id==='token:margit'?['Margit']:card.id==='token:larva'?['Larvae']:[])].map(match=>({match,token:card.id}))).sort((a,b)=>b.match.length-a.match.length);
-function splitOnKeywords(text: string,allowRelic=true): Array<{ text: string; entry?: KeywordEntry;token?:string }> {
-  const pieces: Array<{ text: string; entry?: KeywordEntry;token?:string }> = [];
-  const isWord = (ch: string | undefined) => ch !== undefined && /[A-Za-z0-9]/.test(ch);
-  const highlighted = new Set<KeywordEntry>();
-  let plain = "";
-  let i = 0;
-  while (i < text.length) {
-    const tokenHit=TOKEN_REFERENCE_LOOKUP.find(({match})=>text.slice(i,i+match.length).toLowerCase()===match.toLowerCase()&&!isWord(text[i-1])&&!isWord(text[i+match.length]));
-    if(tokenHit){if(plain){pieces.push({text:plain});plain='';}pieces.push({text:text.slice(i,i+tokenHit.match.length),token:tokenHit.token});i+=tokenHit.match.length;continue;}
-    const hit = KEYWORD_LOOKUP.find(
-      ({ match }) =>
-        (allowRelic || match.toLowerCase() !== 'relic' && match.toLowerCase() !== 'relics') &&
-        text.slice(i, i + match.length).toLowerCase() === match.toLowerCase() &&
-        !isWord(text[i - 1]) &&
-        !isWord(text[i + match.length]),
-    );
-    if (hit) {
-      if (plain) {
-        pieces.push({ text: plain });
-        plain = "";
-      }
-      pieces.push({ text: text.slice(i, i + hit.match.length), entry: highlighted.has(hit.entry) ? undefined : hit.entry });
-      highlighted.add(hit.entry);
-      i += hit.match.length;
-      continue;
-    }
-    plain += text[i];
-    i += 1;
-  }
-  if (plain) pieces.push({ text: plain });
-  return pieces;
-}
 
 function sameFaceValues(a: object, b: object): boolean {
   if (a === b) return true;
@@ -5439,6 +5406,7 @@ function MinionFace({
 function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boolean }) {
   const previews=useContext(GalleryPreviewContext);
   const preview=previews[card.art.split('/').pop()?.replace('.webp','') ?? ''];
+  const position = cardArtPosition(card.name);
   // NEVER loading="lazy" here. Cards mount and unmount constantly as they move
   // between hand, board and preview, and a lazy <img> that is re-created during
   // that churn frequently never fires its load at all — it stays
@@ -5453,20 +5421,11 @@ function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boole
   if (!card.art) return <div className="cf-art empty-art" aria-hidden="true" />;
   return (
     <div
-      style={preview ? {backgroundImage:`url("${preview}")`,backgroundSize:'cover',backgroundPosition:`center ${card.name === 'Walter White' ? '60' : card.name === 'Mob Psycho' ? '70' : card.name === 'Stand Arrow' ? '40' : ['Yujiro','Conquest'].includes(card.name)?'0':'26'}%`} : undefined}
-      className={`cf-art ${
-        card.name === "Yujiro"
-          ? "cf-art-yujiro"
-          : card.name === "Conquest"
-            ? "cf-art-conquest"
-            : card.name === "Walter White"
-              ? "cf-art-walter"
-              : card.name === "Mob Psycho"
-              ? "cf-art-mob"
-              : card.name === "Stand Arrow"
-              ? "cf-art-stand-arrow"
-              : ""
-      }`}
+      className="cf-art"
+      style={{
+        "--card-art-position": position,
+        ...(preview ? { backgroundImage: `url("${preview}")`, backgroundSize: "cover", backgroundPosition: position } : {}),
+      } as CSSProperties}
     >
       <img src={card.art} alt="" draggable={false} loading={lazy ? "lazy" : undefined} decoding={lazy ? "async" : undefined}
         onError={preview ? event=>{event.currentTarget.style.opacity='0';} : undefined}

@@ -2897,23 +2897,7 @@ button:disabled {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 26%;
-}
-
-/* Yujiro's source art is a tall portrait. The normal art crop centres on the
-   torso, which cuts off his head in the card's wide picture window. Keep this
-   card anchored to the top so the face remains part of the read. */
-.cf-art-yujiro img {
-  object-position: center 0%;
-}
-
-.cf-art-conquest img {
-  object-position: center 0%;
-}
-
-/* Raise the arrow inside the wide crop so its shaft is also visible. */
-.cf-art-stand-arrow img {
-  object-position: center 40%;
+  object-position: var(--card-art-position, center 26%);
 }
 
 /* the soft glass sheen the old baked face had, kept so cards still read as objects */
@@ -7156,12 +7140,9 @@ button:disabled {
  .turn-countdown small {display:none;}
 }
 
-.cf-art-mob img {object-position:center 70%;}
 @supports (appearance:base-select) {
  @media (pointer:fine) {
   .gallery-filter select::picker(select) {max-block-size:none;overflow:visible;}
   .gallery-filter select option {padding:5px 10px;}
  }
 }
-
-.cf-art-walter img {object-position:center 60%;}

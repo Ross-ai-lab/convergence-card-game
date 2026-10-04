@@ -1,46 +1,19 @@
 /**
- * THE ONE CHECK COMMAND. It decides what to run, and runs it all at once.
- *
- *   npm run check              # only what the current changes could break
- *   npm run check -- --all     # every suite, whatever changed
- *   npm run check -- --list    # say what it would run, run nothing
- *
- * WHY THIS EXISTS
- * ---------------
- * There were six commands and a table in the README saying which to run when,
- * and the picking was done from memory every time. That is a memory problem, and
- * a wrong pick is exactly how something ships broken — the owner's words on
- * 4 September 2026: "do you think we need bazillion checks?" The answer was that
- * the checks are ordinary and the ORCHESTRATION was the problem.
- *
- * Two things it fixes:
- *
- * 1. IT CHOOSES. `git status` says what changed, the table below says what each
- *    kind of change can reach, and only those suites run. Nothing is skipped by
- *    judgement any more.
- * 2. IT RUNS THEM TOGETHER. The three browser suites used to run one after
- *    another, each starting its own browser: about eleven minutes of waiting for
- *    eleven minutes of work. They now share one browser server and run at the
- *    same time, so the wait is the slowest suite rather than the sum of all of
- *    them. Sharing the browser is worth seconds; running them together is worth
- *    minutes.
- *
- * The balance harness is deliberately absent. It is banned unless the owner asks
- * for it in the message being answered — see the README.
+ * One check runner, with explicit focus or change-based suggestions.
+ * --only docs,cardface selects checks; --list reviews the plan; --all opts into everything.
+ * Unit checks finish before browser work, which runs in two shared-browser lanes.
  */
 
 import { execFileSync, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { loadChromium } from "./browser.mjs";
+import { readCheckOptions, selectChecks, changedPaths } from "./check-selection.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BASE = process.argv.find((arg) => arg.startsWith("http")) ?? "http://localhost:5177";
-const ALL = process.argv.includes("--all");
-const LIST = process.argv.includes("--list");
-/** `--only tests` runs one suite by name, for working on the checks themselves. */
-const ONLY = (process.argv.find((arg) => arg.startsWith("--only")) ?? "").split(/[= ]/)[1]
-  ?? (process.argv.includes("--only") ? process.argv[process.argv.indexOf("--only") + 1] : null);
+const options = readCheckOptions(process.argv.slice(2));
+const ALL = options.all, LIST = options.list;
 
 /**
  * What each suite covers, and what kind of change can reach it.
@@ -51,9 +24,13 @@ const ONLY = (process.argv.find((arg) => arg.startsWith("--only")) ?? "").split(
 // The harness itself: editing the shared browser helper or a check script has to
 // re-run the suites that ride on it, or the one change nobody re-checks is the
 // change to the checker.
-const HARNESS = /^source\/scripts\/(browser|profile-layout|campaign-fixtures|campaign-motion|story-fixtures|phone-fixtures|deck-fixtures|gallery-interactions|death-motion|tutorial-flow|menu-polish|interface-followup|build-gallery-previews|check-)/;
+const HARNESS = /^source\/scripts\/(browser|profile-layout|campaign-fixtures|campaign-motion|story-fixtures|phone-fixtures|deck-fixtures|gallery-interactions|death-motion|tutorial-flow|menu-polish|interface-followup|build-gallery-previews)\.(mjs|py)$/;
 
 const SUITES = [
+  { name: "docs", command: ["node", "scripts/validate-project-docs.mjs"], browser: false,
+    reaches: [/\.md$/i, /^source\/scripts\/(validate-project-docs|readme-index)\.mjs$/] },
+  { name: "selection", command: ["node", "--test", "scripts/check-selection.test.mjs"], browser: false,
+    reaches: [/^source\/scripts\/check-(all|selection(?:\.test)?)\.mjs$/] },
   {
     name: "mobile",
     command: ["node", "scripts/check-mobile.mjs", BASE, ...process.argv.filter(arg => arg === "--webkit" || arg.startsWith("--size="))],
@@ -62,10 +39,9 @@ const SUITES = [
   },
   {
     name: "workbook",
-    command: ["node", "scripts/check-card-workbook.mjs"],
+    command: ["node", "scripts/sync-card-workbook.mjs", "--check"],
     browser: false,
-    always: true,
-    reaches: [/^source\/data\//, /^source\/scripts\/sync-card-workbook/, /^materials\/.*\.xlsx/],
+    reaches: [/^README\.md$/, /^source\/data\//, /^source\/scripts\/sync-card-workbook/, /^materials\/.*\.xlsx/],
   },
   {
     name: "campaign",
@@ -83,15 +59,13 @@ const SUITES = [
     name: "tests",
     command: ["npm", "test"],
     browser: false,
-    // ALWAYS. It is 90 seconds, it covers the engine, the saves and the
-    // unlocks, and "the change was small" is precisely the change it catches.
-    always: true,
+    reaches: [/^source\/src\/.*\.tsx?$/, /^source\/scripts\/.*\.test\.ts$/, /^source\/vitest\.config/],
   },
   {
     name: "data",
     command: ["npm", "run", "validate:data"],
     browser: false,
-    reaches: [/^source\/data\//, /^source\/scripts\/validate/, /^source\/src\/engine\//],
+    reaches: [/^source\/data\//, /^source\/scripts\/validate-cards\.mjs$/, /^source\/src\/engine\//],
   },
   {
     name: "ui",
@@ -159,20 +133,16 @@ const SUITES = [
   },
 ];
 
-/** Everything git knows has changed, tracked or not, as repo-relative paths. */
+// Editing a suite checks that suite; shared fixtures may affect several.
+for (const suite of SUITES) {
+  suite.reaches.push(new RegExp(`^source/scripts/check-${suite.name}\\.mjs$`));
+}
+
 function changedFiles() {
-  const out = execFileSync("git", ["status", "--porcelain=1", "--untracked-files=all"], {
-    cwd: path.join(HERE, "..", ".."),
-    encoding: "utf8",
-    maxBuffer: 32 * 1024 * 1024,
+  const output = execFileSync("git", ["status", "--porcelain=1", "-z", "--untracked-files=all"], {
+    cwd: path.join(HERE, "..", ".."), encoding: "utf8", maxBuffer: 32 * 1024 * 1024,
   });
-  return out
-    .split("\n")
-    .map((line) => line.slice(3).trim())
-    .filter(Boolean)
-    // A rename prints "old -> new"; the new name is the one that matters.
-    .map((name) => (name.includes(" -> ") ? name.split(" -> ")[1] : name))
-    .map((name) => name.replace(/^"|"$/g, ""));
+  return changedPaths(output);
 }
 
 function run(suite) {
@@ -190,34 +160,33 @@ function run(suite) {
     let output = "";
     child.stdout.on("data", (chunk) => (output += chunk));
     child.stderr.on("data", (chunk) => (output += chunk));
-    child.on("close", (code) => {
+    let finished = false;
+    const finish = (ok) => {
+      if (finished) return;
+      finished = true;
       const seconds = Math.round((Date.now() - started) / 1000);
-      console.log(`${code === 0 ? "PASS" : "FAIL"}  ${suite.name} (${seconds}s)`);
-      resolve({ suite: suite.name, ok: code === 0, seconds, output });
-    });
+      console.log(`${ok ? "PASS" : "FAIL"}  ${suite.name} (${seconds}s)`);
+      resolve({ suite: suite.name, ok, seconds, output });
+    };
+    child.on("error", error => { output += `Cannot start ${suite.name}: ${error.message}\n`; finish(false); });
+    child.on("close", code => finish(code === 0));
   });
 }
 
-if (ONLY && !SUITES.some(suite => suite.name === ONLY)) {
-  throw new Error(`Unknown suite '${ONLY}'. Use one of: ${SUITES.map(suite => suite.name).join(', ')}. --only accepts one suite.`);
-}
-const changed = ALL ? null : changedFiles();
-const wanted = SUITES.filter((suite) =>
-  ONLY
-    ? suite.name === ONLY
-    : ALL || suite.always || changed.some((file) => (suite.reaches ?? []).some((rule) => rule.test(file))),
-);
+const changed = ALL || options.only.length ? [] : changedFiles();
+const wanted = selectChecks(SUITES, options, changed);
 
 if (LIST) {
   console.log(`Would run: ${wanted.map((s) => s.name).join(", ") || "nothing"}`);
-  console.log(changed ? `From ${changed.length} changed file(s).` : "Everything, by --all.");
+  console.log(ALL ? "Everything, by --all." : options.only.length ? "Explicitly selected checks." : `From ${changed.length} changed file(s).`);
   process.exit(0);
 }
 
 console.log(
   ALL
     ? `Running every suite: ${wanted.map((s) => s.name).join(", ")}`
-    : `${changed.length} file(s) changed -> ${wanted.map((s) => s.name).join(", ")}`,
+    : options.only.length ? `Running selected checks: ${wanted.map(s => s.name).join(", ")}`
+      : `${changed.length} file(s) changed -> ${wanted.map((s) => s.name).join(", ") || "nothing"}`,
 );
 
 // The browser server starts only after CPU-heavy Node checks finish. Keeping
@@ -225,27 +194,7 @@ console.log(
 // tests instead of checks of the game.
 let server = null;
 
-/**
- * TWO BROWSER SUITES AT A TIME, and it costs nothing.
- *
- * Four of them at once put four Chromium contexts, four React apps and four
- * animation loops on one CPU, and the suites that drive a UI started failing on
- * a working build: a click would sit through its whole timeout because the app
- * had not finished leaving the title screen yet, and the error reads as a
- * z-index bug in the product rather than as a busy machine. An intermittent red
- * is worse than no check, because the next session learns to read past it.
- *
- * On the four-suite queue measured 4 September 2026, `ui` alone was about 300s
- * and the other three together about 290. Longest-first two-lane scheduling
- * finished in 339s, the same as the uncapped run. That historical result does
- * not estimate the cost of today's larger browser queue.
- *
- * The Vitest suites are CPU-heavy even though they do not render a browser.
- * Running them beside Chromium made duel deadlines, browser clicks, reloads,
- * and animation checks fail on a correct build. Quick Node checks finish first,
- * then `tests` and `coverage` run one at a time, and only then does Chromium
- * start. The browser suites still run in two lanes.
- */
+// Keep CPU-heavy checks away from browser interactions; two browser lanes share one server.
 const BROWSER_LANES = 2;
 
 async function runAll(suites) {
@@ -285,8 +234,8 @@ async function runAll(suites) {
 }
 
 const wallStart = Date.now();
-const results = await runAll(wanted);
-if (server) await server.close();
+let results;
+try { results = await runAll(wanted); } finally { if (server) await server.close(); }
 
 const failed = results.filter((result) => !result.ok);
 for (const result of failed) {
