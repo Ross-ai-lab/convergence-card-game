@@ -66,7 +66,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
 
 In My Deck, click a keyword for its explanation or a token name for its enlarged card.
 Locked cards keep their printed rules visible and identify the champion needed to unlock them.
-Use **Save** to name a deck, the **Saved decks** dropdown to restore it, and **Clear** to empty your working deck. Saved presets survive reloads; incomplete decks can be finished later.
+**Starter Deck** is selected initially. Each named deck saves its edits automatically, including its Hero Power. Use **Create a new deck** to name an empty deck, **Saved decks** to switch between them, and **Clear** to empty the selected deck. Incomplete decks can be finished later.
 Cards sort by mana, lowest first; choosing a mana value sorts that result by rarity instead.
 
 Phone battles use landscape orientation. Menus and deck editing also work upright. Swipe the hand to reach later cards.

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { launch, settleMotion } from './browser.mjs';
 import { seedCampaignProgress } from './campaign-fixtures.mjs';
 import { skipCampaignDialogue } from './story-fixtures.mjs';
-import { confirmStarterRestore } from './deck-fixtures.mjs';
+import { addDeckCard } from './deck-fixtures.mjs';
 import { mkdir } from 'node:fs/promises';
 
 const base = process.argv[2] ?? 'http://localhost:5177';
@@ -291,8 +291,7 @@ try {
   await page.getByRole('button', { name: 'Remove John Wick from deck', exact: true }).click();
   assert.equal((await progress()).hotseatDeck.length, 29);
   assert.deepEqual((await progress()).playerDeck, personalDeck, 'Editing seat two must preserve the personal deck');
-  await page.getByRole('button', { name: 'Restore starter deck', exact: true }).click();
-  await confirmStarterRestore(page);
+  await addDeckCard(page,'John Wick');
   assert.equal((await progress()).hotseatDeck.length, 30);
   await page.getByRole('button', { name: 'Close', exact: true }).click();
   assert(await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).isVisible());

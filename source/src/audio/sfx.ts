@@ -610,18 +610,17 @@ function render(name: SfxName, t: number): void {
       break;
 
     // ---- combat ----------------------------------------------------------
-    // Anime sword slash: air swipe + inharmonic blade ring + sub thump.
+    // Soft air movement and body weight, without a pitched blade ring.
     case "attack":
-      noise({ t, dur: 0.17, gain: 0.17, type: "bandpass", f0: 900, f1: 6200, q: 1.2, pan: jitter, send: 0.35 });
-      metal({ t: t + 0.01, dur: 0.3, gain: 0.075, carrier: 2400, ratio: 3.71, index: 4, pan: jitter, send: 0.45 });
-      osc({ type: "sine", f0: 130, f1: 52, t, dur: 0.13, gain: 0.13, send: 0.15 });
-      taiko(t + 0.02, 0.16, -jitter, 130, 48, 0.3);
+      noise({t,dur:.12,gain:.16,type:'lowpass',f0:950,f1:280,pan:jitter,send:.12});
+      osc({type:'triangle',f0:320,f1:170,t,dur:.1,gain:.085,pan:jitter,send:.08});
+      osc({type:'sine',f0:130,f1:52,t,dur:.15,gain:.15,send:.12});
       break;
 
     case "hit":
-      noise({ t, dur: 0.06, gain: 0.3, type: "lowpass", f0: 6500, f1: 420, pan: jitter, send: 0.2 });
-      osc({ type: "sine", f0: 185, f1: 52, t, dur: 0.2, gain: 0.3, attack: 0.002, send: 0.25 });
-      metal({ t, dur: 0.14, gain: 0.09, carrier: 920, ratio: 2.31, index: 5, pan: jitter, send: 0.3 });
+      noise({t,dur:.065,gain:.24,type:'lowpass',f0:1000,f1:180,pan:jitter,send:.12});
+      osc({type:'triangle',f0:440,f1:220,t,dur:.12,gain:.15,pan:jitter,send:.1});
+      osc({type:'sine',f0:165,f1:52,t,dur:.2,gain:.27,attack:.002,send:.15});
       break;
 
     // Hero core: a room-shaking taiko + gong.
@@ -633,13 +632,12 @@ function render(name: SfxName, t: number): void {
       crash(t + 0.01, 1.3, 0.05, 0.65);
       break;
 
-    // Dissolve: pitch and spectrum collapse into a low bloom.
+    // A muffled collapse; midrange texture remains audible on small speakers.
     case "death":
-      metal({ t, dur: 0.6, gain: 0.09, carrier: 620, ratio: 2.77, index: 5, pan: jitter, send: 0.55 });
-      noise({ t, dur: 0.55, gain: 0.14, type: "lowpass", f0: 1800, f1: 130, send: 0.45 });
-      osc({ type: "sawtooth", f0: 240, f1: 48, t, dur: 0.5, gain: 0.09, send: 0.4 });
-      osc({ type: "sine", f0: 165, f1: 42, t, dur: 0.28, gain: 0.18, attack: 0.002, send: 0.2 });
-      osc({ type: "sine", f0: 110, f1: 40, t: t + 0.24, dur: 0.55, gain: 0.24, send: 0.35 });
+      noise({t,dur:.38,gain:.17,type:'lowpass',f0:780,f1:100,pan:jitter,send:.2});
+      osc({type:'triangle',f0:390,f1:170,t,dur:.25,gain:.14,pan:jitter,send:.12});
+      osc({type:'sine',f0:135,f1:40,t,dur:.32,gain:.2,attack:.002,send:.18});
+      osc({type:'sine',f0:95,f1:36,t:t+.14,dur:.4,gain:.14,send:.2});
       break;
 
     // ---- states ----------------------------------------------------------

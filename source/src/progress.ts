@@ -81,7 +81,9 @@ export function emptyProgress(): Progress {
     ladders: { easy: emptyRecord(), normal: emptyRecord(), hard: emptyRecord(), hotseat: emptyRecord() },
     recent: [], seen: [], played: [], wonWith: [], completedChapters: 0, completedBosses: [],
     unlockedIds: [...CAMPAIGN_INITIAL_COLLECTION], playerDeck: [...CAMPAIGN_STARTER_DECK],
-    hotseatDeck: [...CAMPAIGN_STARTER_DECK], savedDecks:[],selectedDecks:[null,null], selectedHeroPower: firstUnlockedHeroPower(0), heroPowerSeenWins: 0, pendingRewards: [], settledDuels: [],
+    hotseatDeck: [...CAMPAIGN_STARTER_DECK],
+    savedDecks:[{id:'starter-deck',name:'Starter Deck',cards:[...CAMPAIGN_STARTER_DECK],heroPower:firstUnlockedHeroPower(0)}],
+    selectedDecks:['starter-deck',null], selectedHeroPower: firstUnlockedHeroPower(0), heroPowerSeenWins: 0, pendingRewards: [], settledDuels: [],
   };
 }
 
@@ -163,7 +165,7 @@ export function loadProgress(): Progress {
       if (record) progress.ladders[key] = { played: count(record.played), won: count(record.won), lost: count(record.lost), drawn: count(record.drawn) };
     }
     progress.recent = Array.isArray(saved.recent) ? saved.recent.filter((result) => result && LADDER_KEYS.includes(result.ladder) && ["won", "lost", "drawn"].includes(result.outcome)).slice(0, RECENT_LIMIT) : [];
-    return progress;
+    return migrateNamedDecks(progress);
   } catch { return emptyProgress(); }
 }
 
@@ -184,35 +186,72 @@ export function acknowledgeBossSpeech(progress: Progress): Progress { return {..
 export function hasNewHeroPower(progress: Progress): boolean { return Math.min(progress.completedChapters,HERO_POWER_UNLOCK_ORDER.length-1)>progress.heroPowerSeenWins; }
 export function acknowledgeHeroPowers(progress: Progress): Progress { return {...progress, heroPowerSeenWins: Math.min(progress.completedChapters,HERO_POWER_UNLOCK_ORDER.length-1)}; }
 export function canEditDeck(_progress: Progress): boolean { return true; }
-export function selectHeroPower(progress: Progress, power: HeroPowerId): Progress {
-  return isHeroPowerUnlocked(power, botWins(progress)) ? { ...progress, selectedHeroPower: power } : progress;
+export function selectHeroPower(progress: Progress, power: HeroPowerId, seat:0|1=0): Progress {
+  if(!isHeroPowerUnlocked(power, botWins(progress)))return progress;
+  const next=ensureNamedDeck({...progress,selectedHeroPower:power},seat);
+  return {...next,savedDecks:next.savedDecks.map(deck=>deck.id===next.selectedDecks[seat]?{...deck,heroPower:power}:deck)};
 }
 export function saveDeckDraft(progress: Progress, deck: readonly string[], seat: 0 | 1 = 0): Progress {
   if (!canEditDeck(progress)) return progress;
   const allowed = new Set(progress.unlockedIds);
   if (deck.length > 30 || new Set(deck).size !== deck.length || deck.some((id) => !allowed.has(id))) return progress;
-  return { ...progress, [seat === 0 ? "playerDeck" : "hotseatDeck"]: [...deck] };
+  const next=ensureNamedDeck(progress,seat),id=next.selectedDecks[seat];
+  return {
+    ...next,
+    savedDecks:next.savedDecks.map(preset=>preset.id===id?{...preset,cards:[...deck]}:preset),
+    playerDeck:next.selectedDecks[0]===id?[...deck]:next.playerDeck,
+    hotseatDeck:next.selectedDecks[1]===id?[...deck]:next.hotseatDeck,
+  };
 }
-/** Named presets retain unfinished drafts; duel construction still requires 30 cards. */
-export function saveNamedDeck(progress:Progress,name:string,seat:0|1=0,id?:string):Progress {
-  const title=name.trim().replace(/\s+/g,' ').slice(0,60);
-  if(!title)return progress;
+function sameDeck(a:readonly string[],b:readonly string[]):boolean {return a.length===b.length&&a.every(id=>b.includes(id));}
+function uniqueDeckId(progress:Progress):string {
+  let serial=progress.savedDecks.length+1;
+  while(progress.savedDecks.some(deck=>deck.id===`deck-${serial}`))serial++;
+  return `deck-${serial}`;
+}
+/** Give legacy working decks a name without resetting their cards or other presets. */
+export function ensureNamedDeck(progress:Progress,seat:0|1=0):Progress {
+  if(progress.savedDecks.some(deck=>deck.id===progress.selectedDecks[seat]))return progress;
   const cards=seat===0?progress.playerDeck:progress.hotseatDeck;
-  const match=progress.savedDecks.find(deck=>deck.id===id)||progress.savedDecks.find(deck=>deck.name.toLocaleLowerCase()===title.toLocaleLowerCase());
-  const preset:SavedDeck={id:match?.id??`deck-${Date.now().toString(36)}-${progress.savedDecks.length}`,name:title,cards:[...cards],heroPower:progress.selectedHeroPower};
-  const savedDecks=match?progress.savedDecks.map(deck=>deck.id===match.id?preset:deck):[...progress.savedDecks,preset];
+  const starter=progress.savedDecks.find(deck=>deck.name.toLowerCase()==='starter deck');
+  if(seat===0&&starter&&sameDeck(starter.cards,cards))return {...progress,selectedDecks:[starter.id,progress.selectedDecks[1]]};
+  const base=seat===0?(starter?'Recovered Deck':'Starter Deck'):'Player Two Deck';
+  let name=base,serial=2;
+  while(progress.savedDecks.some(deck=>deck.name.toLowerCase()===name.toLowerCase()))name=`${base} ${serial++}`;
+  const preset:SavedDeck={id:uniqueDeckId(progress),name,cards:[...cards],heroPower:progress.selectedHeroPower};
   const selectedDecks=[...progress.selectedDecks] as Progress['selectedDecks'];selectedDecks[seat]=preset.id;
-  return {...progress,savedDecks,selectedDecks};
+  return {...progress,savedDecks:[...progress.savedDecks,preset],selectedDecks};
+}
+function migrateNamedDecks(progress:Progress):Progress {
+  let next=ensureNamedDeck(progress);
+  if(!next.savedDecks.some(deck=>deck.name.toLowerCase()==='starter deck')){
+    next={...next,savedDecks:[{id:uniqueDeckId(next),name:'Starter Deck',cards:[...CAMPAIGN_STARTER_DECK],heroPower:firstUnlockedHeroPower(0)},...next.savedDecks]};
+  }
+  // Older versions kept edits outside the preset. Carry those edits into its name.
+  next=saveDeckDraft(next,progress.playerDeck);
+  next={...next,savedDecks:next.savedDecks.map(deck=>deck.id===next.selectedDecks[0]?{...deck,heroPower:progress.selectedHeroPower}:deck)};
+  if(progress.selectedDecks[1]){
+    if(next.selectedDecks[1]===next.selectedDecks[0]&&!sameDeck(progress.hotseatDeck,progress.playerDeck)){
+      next=ensureNamedDeck({...next,hotseatDeck:[...progress.hotseatDeck],selectedDecks:[next.selectedDecks[0],null]},1);
+    }
+    next=saveDeckDraft(next,progress.hotseatDeck,1);
+  }
+  return next;
+}
+/** New decks start empty. Duplicate names never overwrite an existing deck. */
+export function createNamedDeck(progress:Progress,name:string,seat:0|1=0):Progress {
+  const title=name.trim().replace(/\s+/g,' ').slice(0,60);
+  if(!title||progress.savedDecks.some(deck=>deck.name.toLocaleLowerCase()===title.toLocaleLowerCase()))return progress;
+  const preset:SavedDeck={id:uniqueDeckId(progress),name:title,cards:[],heroPower:progress.selectedHeroPower};
+  const savedDecks=[...progress.savedDecks,preset];
+  const selectedDecks=[...progress.selectedDecks] as Progress['selectedDecks'];selectedDecks[seat]=preset.id;
+  return {...progress,savedDecks,selectedDecks,[seat===0?'playerDeck':'hotseatDeck']:[]};
 }
 export function selectNamedDeck(progress:Progress,id:string,seat:0|1=0):Progress {
-  if(!id){
-    const selectedDecks=[...progress.selectedDecks] as Progress['selectedDecks'];selectedDecks[seat]=null;
-    return {...progress,selectedDecks};
-  }
   const preset=progress.savedDecks.find(deck=>deck.id===id);
   if(!preset||preset.cards.some(card=>!progress.unlockedIds.includes(card)))return progress;
   const selectedDecks=[...progress.selectedDecks] as Progress['selectedDecks'];selectedDecks[seat]=id;
-  return {...saveDeckDraft(progress,preset.cards,seat),selectedDecks,selectedHeroPower:preset.heroPower&&isHeroPowerUnlocked(preset.heroPower,botWins(progress))?preset.heroPower:progress.selectedHeroPower};
+  return {...progress,[seat===0?'playerDeck':'hotseatDeck']:[...preset.cards],selectedDecks,selectedHeroPower:preset.heroPower&&isHeroPowerUnlocked(preset.heroPower,botWins(progress))?preset.heroPower:progress.selectedHeroPower};
 }
 const merge = (left: readonly string[], right: readonly string[]) => [...new Set([...left, ...right])];
 

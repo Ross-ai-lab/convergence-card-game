@@ -99,7 +99,7 @@ import {
 import { revealOrder } from "./unlocks";
 import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES, CAMPAIGN_PREMISE, CAMPAIGN_PROTAGONIST } from "./campaign";
 import { createCampaignDuel } from "./campaign-duel";
-import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, hasNewHeroPower, saveDeckDraft, saveNamedDeck, selectNamedDeck, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, hasNewHeroPower, saveDeckDraft, createNamedDeck, ensureNamedDeck, selectNamedDeck, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
 import { LoreLibrary } from './screens/LoreLibrary';
 import { randomDeck, validateDeck } from "./decks";
 import { remainingDeckCount } from "./engine/draw-piles";
@@ -667,8 +667,16 @@ export default function App() {
   function persistProgress(next: Progress) {
     setProgress(next); const saved = saveProgress(next); setStorageError(!saved); return saved;
   }
-  function setSelectedHeroPower(power: HeroPowerId) { persistProgress(acknowledgeHeroPowers(selectHeroPower(progress, power))); }
+  function createDeckPreset(name:string,seat:0|1):boolean {
+    const next=createNamedDeck(progress,name,seat);
+    if(next===progress)return false;
+    const saved=saveProgress(next);setStorageError(!saved);
+    if(saved)setProgress(next);
+    return saved;
+  }
+  function setSelectedHeroPower(power: HeroPowerId) { persistProgress(acknowledgeHeroPowers(selectHeroPower(progress, power,builderSeat))); }
   function openDeck(seat: 0 | 1 = 0, back: "title" | "campaign" | "hotseat" = "title") {
+    const next=ensureNamedDeck(progress,seat);if(next!==progress)persistProgress(next);
     setBuilderSeat(seat); setBuilderReturn(back); setOverlay("deck");
   }
   function closePack() {
@@ -3437,7 +3445,7 @@ export default function App() {
       {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)}
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
       {overlay === 'lore' && <LoreLibrary completedBosses={progress.completedBosses} onClose={()=>setOverlay(null)} />}
-      {overlay === "deck" && <CardGallery onPresetSave={(name,id)=>persistProgress(saveNamedDeck(progress,name,builderSeat,id))} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+      {overlay === "deck" && <CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}
@@ -3450,7 +3458,7 @@ export default function App() {
         onNavigate={() => undefined}
       />}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "gallery" ? <CardGallery onPresetSave={(name,id)=>persistProgress(saveNamedDeck(progress,name,0,id))} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,0))} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
+      {overlay === "gallery" ? <CardGallery onPresetCreate={name=>createDeckPreset(name,0)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,0))} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={power=>persistProgress(acknowledgeHeroPowers(selectHeroPower(progress,power,0)))} progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel
@@ -4065,18 +4073,17 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
 type UnlockFilter = "unlocked" | "locked";
 type GalleryEntry = { key: string; card: PlayableCard; face: CardFaceModel };
 
-function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose, onPresetSave,onPresetSelect }: {
-  onPresetSave:(name:string,id?:string)=>boolean;onPresetSelect:(id:string)=>boolean;
+function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose, onPresetCreate,onPresetSelect }: {
+  onPresetCreate:(name:string)=>boolean;onPresetSelect:(id:string)=>boolean;
   progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onHeroPowerChange: (power: HeroPowerId) => void; onHeroPowerViewed: () => void; onClose: () => void;
 }) {
   const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
   const selectedPreset=progress.savedDecks.find(entry=>entry.id===progress.selectedDecks[seat]);
-  const presetEdited=Boolean(selectedPreset&&(selectedPreset.cards.length!==deck.length||selectedPreset.cards.some(id=>!deck.includes(id))||selectedPreset.heroPower!==progress.selectedHeroPower));
   const [saveOpen,setSaveOpen]=useState(false);
   const [deckName,setDeckName]=useState('');
   const [deckNotice,setDeckNotice]=useState('');
   const [saveError,setSaveError]=useState('');
-  const replacementPreset=progress.savedDecks.find(preset=>preset.name.toLocaleLowerCase()===deckName.trim().replace(/\s+/g,' ').toLocaleLowerCase());
+  const duplicateName=progress.savedDecks.some(preset=>preset.name.toLocaleLowerCase()===deckName.trim().replace(/\s+/g,' ').toLocaleLowerCase());
   const readOnly = !canEditDeck(progress);
   const deckIds = new Set(deck);
   const [query, setQuery] = useState("");
@@ -4084,21 +4091,20 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   const [powerOpen, setPowerOpen] = useState(false);
   const closePowers=()=>{setPowerOpen(false);onHeroPowerViewed();};
   const [mobileDeckView, setMobileDeckView] = useState(false);
-  const [restoreOpen, setRestoreOpen] = useState(false);
   const [artPreviews, setArtPreviews] = useState<Record<string,string> | null>(null);
   useEffect(() => { void import('./data/gallery-previews').then(module=>setArtPreviews(module.galleryPreviews)).catch(()=>setArtPreviews({})); }, []);
   const [deckPreview, setDeckPreview] = useState<{key:string; face: CardFaceModel; rect: DOMRect} | null>(null);
   const [lockedInfo,setLockedInfo]=useState<{key:string;rect:DOMRect}|null>(null);
   const equippedPower = heroPowerDefinition(progress.selectedHeroPower);
   const powerPicker = useRef<HTMLElement>(null);
-  const restorePicker = useRef<HTMLElement>(null);
+  const createPicker = useRef<HTMLFormElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!restoreOpen) return;
+    if (!saveOpen) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    restorePicker.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    createPicker.current?.querySelector<HTMLInputElement>('input')?.focus();
     return () => previous?.focus({preventScroll:true});
-  }, [restoreOpen]);
+  }, [saveOpen]);
   useEffect(() => {
     if (!powerOpen) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -4121,9 +4127,9 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && (event.target instanceof HTMLElement && !!event.target.closest('select'))) { event.stopImmediatePropagation(); return; }
-      if (event.key === "Escape") { event.stopImmediatePropagation(); if(saveOpen)setSaveOpen(false);else if (restoreOpen) setRestoreOpen(false); else if (powerOpen) closePowers(); else onClose(); }
-      if ((powerOpen || restoreOpen) && event.key === "Tab") {
-        const buttons = [...((restoreOpen ? restorePicker : powerPicker).current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])];
+      if (event.key === "Escape") { event.stopImmediatePropagation(); if(saveOpen)setSaveOpen(false);else if (powerOpen) closePowers(); else onClose(); }
+      if ((powerOpen || saveOpen) && event.key === "Tab") {
+        const buttons = [...((saveOpen ? createPicker : powerPicker).current?.querySelectorAll<HTMLElement>("input,button:not([disabled])") ?? [])];
         const first=buttons[0], last=buttons.at(-1);
         if (event.shiftKey && document.activeElement===first) {event.preventDefault();last?.focus();}
         else if (!event.shiftKey && document.activeElement===last) {event.preventDefault();first?.focus();}
@@ -4131,7 +4137,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, powerOpen, restoreOpen, saveOpen]);
+  }, [onClose, powerOpen, saveOpen]);
 
   const needle = query.trim().toLowerCase();
   // Built ONCE and then only filtered. Rebuilding the faces on every keystroke
@@ -4372,13 +4378,12 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         </div>
         <aside className="gallery-deck" aria-label={seat === 1 ? "Player Two deck" : "Current deck"}>
           <header className="gallery-deck-heading"><label className="gallery-filter gallery-deck-selector"><span className="gallery-filter-label">Saved decks</span>
-            <select aria-label="Saved decks" value={selectedPreset?.id??''} onChange={event=>{setDeckPreview(null);setDeckNotice(onPresetSelect(event.target.value)?event.target.value?'Deck loaded':'Working deck selected':'Could not load. Browser storage is unavailable.');}}>
-              <option value="">Current deck</option>
-              {progress.savedDecks.map(preset=><option key={preset.id} value={preset.id}>{preset.name}{selectedPreset?.id===preset.id&&presetEdited?' • edited':''}</option>)}
+            <select aria-label="Saved decks" value={selectedPreset?.id} onChange={event=>{setDeckPreview(null);setDeckNotice(onPresetSelect(event.target.value)?'Deck loaded':'Could not load. Browser storage is unavailable.');}}>
+              {progress.savedDecks.map(preset=><option key={preset.id} value={preset.id}>{preset.name}</option>)}
             </select></label>
             <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
           <div className="gallery-preset-actions"><button type="button" disabled={!deck.length||readOnly} onClick={()=>{setDeckPreview(null);onChange([]);setDeckNotice('Deck cleared');}}>Clear</button>
-            <button type="button" className="preset-save" disabled={readOnly} onClick={()=>{setDeckName(selectedPreset?.name??`Deck ${progress.savedDecks.length+1}`);setSaveError('');setSaveOpen(true);}}>Save</button></div>
+            <button type="button" className="preset-create" disabled={readOnly} onClick={()=>{let serial=1;while(progress.savedDecks.some(deck=>deck.name.toLowerCase()===`deck ${serial}`))serial++;setDeckName(`Deck ${serial}`);setSaveError('');setSaveOpen(true);}}>Create a new deck</button></div>
           {deckNotice&&<p className="gallery-preset-notice" role="status">{deckNotice}</p>}
           <div className="gallery-deck-list" onScroll={() => setDeckPreview(null)}>{allEntries.filter((entry) => deckIds.has(entry.key))
             .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
@@ -4398,7 +4403,6 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
               return <div key={i}><span data-count={count} style={{ height: `${Math.max(2, count / manaPeak * 13)}px` }}>{count}</span><small>{i + 1}</small></div>;
             })}</div></div>
             <div className="gallery-deck-actions">
-              {!readOnly && <button className="gallery-restore" onClick={() => setRestoreOpen(true)}>Restore starter deck</button>}
               <button type="button" className={`gallery-hero-power${hasNewHeroPower(progress)?' has-new-power':''}`} aria-label="Choose hero power" aria-description={equippedPower?.name} aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
                 <span className="gallery-power-icon" aria-hidden="true">ϟ</span><strong aria-live="polite">{hasNewHeroPower(progress)?'New hero power available':'Choose Hero Power'}</strong>
               </button>
@@ -4409,23 +4413,16 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         </div>
         </div>
       </section>
-      {deckPreview && deckIds.has(deckPreview.key) && !selectedEntry && !powerOpen && !restoreOpen && !saveOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
+      {deckPreview && deckIds.has(deckPreview.key) && !selectedEntry && !powerOpen && !saveOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
       {lockedInfo&&!selectedEntry&&<LockedCardInfo cardId={lockedInfo.key} rect={lockedInfo.rect} onClose={()=>setLockedInfo(null)}/>}
       {saveOpen&&<div className="gallery-power-shade" onPointerDown={event=>{if(event.target===event.currentTarget)setSaveOpen(false);}}>
-        <form className="gallery-save-dialog" role="dialog" aria-modal="true" aria-label="Save deck" onSubmit={event=>{event.preventDefault();if(!deckName.trim())return;const saved=onPresetSave(deckName,replacementPreset?.id);if(saved){setSaveOpen(false);setDeckNotice('Deck saved');}else setSaveError('Could not save. Browser storage is unavailable.');}}>
-          <h3>Save deck</h3><label>Deck name<input aria-label="Deck name" autoFocus maxLength={60} value={deckName} onChange={event=>setDeckName(event.target.value)}/></label>
-          <p>{deck.length}/30 cards{deck.length<30?' · You can finish this deck later.':''}</p>
-          {replacementPreset&&<p>This updates your saved deck “{replacementPreset.name}”.</p>}
+        <form ref={createPicker} className="gallery-save-dialog" role="dialog" aria-modal="true" aria-label="Create a new deck" onSubmit={event=>{event.preventDefault();if(!deckName.trim()||duplicateName)return;const saved=onPresetCreate(deckName);if(saved){setSaveOpen(false);setDeckPreview(null);setMobileDeckView(true);setDeckNotice('New deck created');}else setSaveError('Could not create the deck. Browser storage is unavailable.');}}>
+          <h3>Create a new deck</h3><label>Deck name<input aria-label="Deck name" autoFocus maxLength={60} value={deckName} onChange={event=>setDeckName(event.target.value)}/></label>
+          <p>Start with an empty deck. Your other decks keep their cards.</p>
+          {duplicateName&&<p role="alert">That name already exists. Choose a different name.</p>}
           {saveError&&<p role="alert">{saveError}</p>}
-          <div><button type="button" onClick={()=>setSaveOpen(false)}>Cancel</button><button type="submit" className="primary" disabled={!deckName.trim()}>Save deck</button></div>
+          <div><button type="button" onClick={()=>setSaveOpen(false)}>Cancel</button><button type="submit" className="primary" disabled={!deckName.trim()||duplicateName}>Create deck</button></div>
         </form>
-      </div>}
-      {restoreOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)setRestoreOpen(false);}}>
-        <section ref={restorePicker} className="gallery-restore-dialog" role="dialog" aria-modal="true" aria-label="Restore starter deck?">
-          <h3>Restore starter deck?</h3><p>Are you sure you want to revert your deck back to a starter one?</p>
-          <div><button type="button" onClick={() => setRestoreOpen(false)}>Cancel</button>
-            <button type="button" className="primary" onClick={() => {onChange([...CAMPAIGN_STARTER_DECK]);setRestoreOpen(false);}}>Yes, restore starter deck</button></div>
-        </section>
       </div>}
       {powerOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)closePowers();}}>
         <section ref={powerPicker} className="gallery-power-picker" role="dialog" aria-modal="true" aria-label="Choose hero power">

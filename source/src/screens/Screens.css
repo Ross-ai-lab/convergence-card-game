@@ -1459,6 +1459,7 @@ button.orbit-choice:hover:not(:disabled) {
   box-shadow: 0 0 0 5px rgba(50, 24, 17, 0.86), 0 0 0 7px rgba(231, 183, 85, 0.72), 0 14px 42px rgba(5, 1, 12, 0.7), 0 0 34px rgba(240, 199, 103, 0.32);
   pointer-events: auto;
   transition: background-color 180ms ease, box-shadow 180ms ease;
+  overflow:visible;
 }
 
 .duel-trigger span {
@@ -2006,3 +2007,18 @@ button.duel-trigger:hover:not(:disabled) {
 }
 .title-bottom-left .tutorial-trigger {background:#100c1beb;border-color:#6e604366;color:#c9b991;box-shadow:0 4px 14px #0004;}
 .title-bottom-left .tutorial-trigger:hover:not(:disabled) {background:#21182bee;border-color:#b99a62;color:#f1d8a4;}
+
+/* A revolving gold halo wakes the Collection seal without moving its hit area. */
+@property --collection-angle {syntax:'<angle>';inherits:false;initial-value:0deg;}
+.title-screen .duel-trigger::before,.title-screen .duel-trigger::after {
+  content:'';position:absolute;inset:-11px;border-radius:50%;pointer-events:none;opacity:0;
+  transition:opacity 180ms ease;
+}
+.title-screen .duel-trigger::before {border:2px solid transparent;background:conic-gradient(from var(--collection-angle),transparent 35deg,#ffeeb5 60deg,transparent 100deg 215deg,#eac071 245deg,transparent 285deg) border-box;mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);mask-composite:exclude;}
+.title-screen .duel-trigger::after {inset:-14px;border:1px solid #eac07155;box-shadow:0 0 20px #e5a84455;}
+.title-screen .duel-trigger:hover::before,.title-screen .duel-trigger:focus-visible::before {opacity:1;animation:collection-halo 1.6s linear infinite;}
+.title-screen .duel-trigger:hover::after,.title-screen .duel-trigger:focus-visible::after {opacity:1;animation:collection-radiance 1.2s ease-in-out infinite alternate;}
+.title-screen .duel-trigger:hover span,.title-screen .duel-trigger:focus-visible span {animation:collection-title-lift 500ms cubic-bezier(.2,.8,.3,1) both;}
+@keyframes collection-halo {to{--collection-angle:360deg;}}
+@keyframes collection-radiance {to{transform:scale(1.04);box-shadow:0 0 28px #e5a84488;}}
+@keyframes collection-title-lift {0%{transform:translateY(0)}45%{transform:translateY(-4px)}100%{transform:translateY(-1px)}}
