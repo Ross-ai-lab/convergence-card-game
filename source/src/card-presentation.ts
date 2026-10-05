@@ -61,3 +61,28 @@ const ART_POSITIONS: Readonly<Record<string, string>> = {
 export function cardArtPosition(name: string): string {
   return ART_POSITIONS[name] ?? "center 26%";
 }
+
+/** The visible card, independent of engine bookkeeping and simulation clones. */
+export interface CardFaceModel {
+  name: string;
+  art: string;
+  origin: string;
+  effect: string;
+  rarity: string;
+  camp: string;
+  alignment: string;
+  cost?: number;
+  atk?: number;
+  hp?: number;
+  flavor?: string;
+  keywords?: readonly string[];
+}
+const FACE_FIELDS = ['name', 'art', 'origin', 'effect', 'rarity', 'camp', 'alignment',
+  'cost', 'atk', 'hp', 'flavor'] as const;
+export function sameStrings(a: readonly string[] = [], b: readonly string[] = []): boolean {
+  return a === b || a.length === b.length && a.every((value, index) => value === b[index]);
+}
+/** A counter or copied passive changing must not repaint an unchanged face. */
+export function sameCardFace(a: CardFaceModel, b: CardFaceModel): boolean {
+  return a === b || FACE_FIELDS.every(field => a[field] === b[field]) && sameStrings(a.keywords, b.keywords);
+}

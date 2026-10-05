@@ -23,21 +23,11 @@ export async function launch(extraArgs = []) {
 }
 
 /**
- * Jump every transition and animation on the page straight to its end state.
- *
- * A HEADLESS PAGE NEVER PAINTS, so a CSS transition never advances: the hovered
- * card measures at its starting size, the faded panel measures at zero opacity,
- * and everything about the check looks like a broken feature. It is not — the
- * `:hover` matches, the rule is in the CSSOM and the custom property resolves;
- * only the interpolation is frozen, because nothing is asking for frames.
- *
- * Call this after the screen is set up and before measuring or photographing.
- * It cost an hour the first time (the pack's hover-to-enlarge, 4 September
- * 2026), and it is the same hour for every fade, slide and lift after it.
- *
- * `animations: false` keeps keyframe animations running — use that when the
- * thing being checked is an animation and the transitions are what is in the
- * way.
+ * Freeze motion for geometry checks and deliberate screenshots. This does not
+ * measure smoothness: performance runs keep real animations and frame painting
+ * active. A hidden preview can fail to advance paint-driven motion, while a
+ * normal headless Chromium page does paint, so never infer a stall from geometry
+ * taken midway through an animation.
  */
 export async function settleMotion(page, { animations = true } = {}) {
   await page.addStyleTag({

@@ -9,9 +9,12 @@ export interface BotRequest {
   skill: BotSkill;
 }
 
+export type BotWorkerRequest = Omit<BotRequest, "library"> & {library?:CardLibrary};
+
 /** One reusable worker per mounted game. Cancelled searches cannot play stale moves. */
 export class BotSearch {
   private worker: Worker | null = null;
+  private sentLibrary: CardLibrary | null = null;
   private cancelPending: (() => void) | null = null;
 
   search(request: BotRequest, receive: (action: GameAction | null) => void): () => void {
@@ -29,6 +32,7 @@ export class BotSearch {
       clearTimeout(fallbackTimer);
       this.worker?.terminate();
       this.worker = null;
+      this.sentLibrary = null;
       // Preserve playability if a browser or deployment refuses workers.
       fallbackTimer = setTimeout(() => {
         if (pending) finish(chooseBotAction(request.game, request.library, request.player, request.skill));
@@ -40,6 +44,7 @@ export class BotSearch {
       clearTimeout(fallbackTimer);
       this.worker?.terminate();
       this.worker = null;
+      this.sentLibrary = null;
       this.cancelPending = null;
     };
     this.cancelPending = cancel;
@@ -48,7 +53,11 @@ export class BotSearch {
       this.worker.onmessage = (event: MessageEvent<GameAction | null>) => finish(event.data);
       this.worker.onerror = (event) => { event.preventDefault(); fallback(); };
       this.worker.onmessageerror = fallback;
-      this.worker.postMessage(request);
+      const {library,...move}=request;
+      // The roster is immutable for this game. Transfer it once, not with
+      // every speculative move and every targeting continuation.
+      this.worker.postMessage(this.sentLibrary===library?move:request);
+      this.sentLibrary=library;
     } catch {
       fallback();
     }
@@ -59,5 +68,6 @@ export class BotSearch {
     this.cancelPending?.();
     this.worker?.terminate();
     this.worker = null;
+    this.sentLibrary = null;
   }
 }

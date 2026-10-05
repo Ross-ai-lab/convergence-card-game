@@ -22,11 +22,13 @@ export async function checkDeathMotion(browser, base) {
     await page.reload();await page.locator('.continue-duel').tap();
     await page.evaluate(()=>document.fonts.ready);
     const slot=page.locator('[data-slot="1-1"]');
-    const before=await slot.boundingBox();
+    await slot.locator('.minion-wrap').evaluate(node=>{for(const animation of node.getAnimations())if(animation.animationName==='minion-arrive')animation.finish();window.__dyingFace=node.querySelector('.card-face');});
+    const before=await slot.locator('.minion-wrap').boundingBox();
     await slot.locator('img').first().evaluate(img=>img.decode());
     await page.locator('.hand-card').tap();
     await page.locator('[data-slot="0-0"]').tap();
     await page.locator('.ghost-wrap.dying').waitFor();
+    assert(await page.locator('.ghost-wrap.dying .card-face').evaluate(card=>card===window.__dyingFace),'Death rebuilt the minion card');
     const ghost=await page.locator('.ghost-wrap.dying').boundingBox();
     assert(Math.abs(before.width-ghost.width)<1&&Math.abs(before.height-ghost.height)<1,'Death ghost changes the card dimensions');
     const samples=await page.locator('.ghost-wrap.dying .card-face').evaluate(card=>{

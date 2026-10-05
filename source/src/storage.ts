@@ -1,3 +1,4 @@
+import {DeferredTask,scheduleIdle} from './deferred-task';
 import type { GameEvent, GameState } from "./engine/types";
 import { migrateSavedDuel } from "./save-migrations";
 import type { BotSkill } from "./engine/bot";
@@ -125,6 +126,18 @@ export interface SavedGame {
  */
 export const EVENT_LOG_LIMIT = 300;
 
+const pendingSave=new DeferredTask(scheduleIdle);
+let saveWindow:Window|null=null;
+/** Keep synchronous serialization out of the card's first animation frame. */
+export function queueSaveGame(...args:Parameters<typeof saveGame>):void {
+  if(saveWindow!==window) {
+    saveWindow=window;
+    window.addEventListener('pagehide',pendingSave.flush);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pendingSave.flush();});
+  }
+  pendingSave.queue(()=>saveGame(...args));
+}
+
 export function saveGame(game: GameState, events: GameEvent[], mode: SavedMode, now: number,turnClock?:SavedTurnClock|null): void {
   try {
     const payload: SavedGame = {
@@ -149,6 +162,7 @@ export function saveGame(game: GameState, events: GameEvent[], mode: SavedMode, 
  * checked rather than trusted.
  */
 export function loadGame(): SavedGame | null {
+  pendingSave.flush();
   try {
     const legacy=window.localStorage.getItem('convergence.save.v31');
     const retired = Object.keys(window.localStorage).filter((key) => /^convergence\.save\.v\d+$/.test(key) && Number(key.split("v").at(-1)) < 31);
@@ -250,6 +264,7 @@ export function loadGame(): SavedGame | null {
 }
 
 export function clearSave(): void {
+  pendingSave.discard();
   try {
     for (let version = 1; version <= SAVE_VERSION; version++) window.localStorage.removeItem(`convergence.save.v${version}`);
 

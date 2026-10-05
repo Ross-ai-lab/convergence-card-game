@@ -81,11 +81,11 @@ import type {
   RelicInstance,
   SlotAuraId,
 } from "./engine/types";
-import { cardArtPosition, splitCardText } from "./card-presentation";
+import { cardArtPosition, splitCardText, sameCardFace, sameStrings, type CardFaceModel } from "./card-presentation";
 import { KEYWORD_LOOKUP, plainKeywordText, type KeywordEntry } from "./keywords";
 import { tokenCard } from './engine/tokens';
 import {shouldPlayCardTheme} from './audio/card-theme-policy';
-import { clearSave, EVENT_LOG_LIMIT, loadGame, saveGame } from "./storage";
+import { clearSave, EVENT_LOG_LIMIT, loadGame, queueSaveGame } from "./storage";
 import {
   botWins,
   clearProgress,
@@ -182,22 +182,7 @@ function useFullscreen() {
 // structurally; relics satisfy it too via relicFace() below, which is why the
 // fields are widened rather than Pick'ed — a relic has no ATK/HP, and its rails
 // read RELIC instead of a camp and an alignment.
-type CardFaceModel = {
-  name: string;
-  art: string;
-  origin: string;
-  effect: string;
-  rarity: string;
-  camp: string;
-  alignment: string;
-  cost?: number;
-  atk?: number;
-  hp?: number;
-  flavor?: string;
-  /** Drives the keyword artwork — a Taunt card is drawn behind a stone barrier
-   *  whether it is on the board or still in your hand. */
-  keywords?: readonly string[];
-};
+
 
 /** Relic definitions by id — RelicInstance drops flavour and origin, so the
  *  full card has to be read back out of the library to be shown. */
@@ -924,7 +909,7 @@ export default function App() {
       clearSave();
       setHasLiveSave(false);
     } else if (screen === "playing" && game.phase !== "gameOver") {
-      saveGame(game, events, mode, Date.now(),turnClock.getSnapshot());
+      queueSaveGame(game, events, mode, Date.now(),turnClock.getSnapshot());
       setHasLiveSave(true);
     }
   }, [game, events, mode, screen, tutorialActive, developerDuelActive]);
@@ -1278,7 +1263,7 @@ export default function App() {
   clockLatest.current={game,events,mode,tutorialActive,hasLiveSave,developerDuelActive};
   useLayoutEffect(()=>turnClock.update(clockKey,clockRunning,Date.now()),[turnClock,clockKey,clockRunning]);
   useEffect(()=>{
-    const persist=()=>{const current=clockLatest.current;if(current.hasLiveSave&&!current.tutorialActive&&!current.developerDuelActive&&current.game.phase!=='gameOver')saveGame(current.game,current.events,current.mode,Date.now(),turnClock.getSnapshot());};
+    const persist=()=>{const current=clockLatest.current;if(current.hasLiveSave&&!current.tutorialActive&&!current.developerDuelActive&&current.game.phase!=='gameOver')queueSaveGame(current.game,current.events,current.mode,Date.now(),turnClock.getSnapshot());};
     persist();return turnClock.subscribe(persist);
   },[turnClock]);
   useEffect(()=>{
@@ -1674,7 +1659,7 @@ export default function App() {
       const playedId = game.players[action.player].hand[action.handIndex];
       if (playedId) duelCards.current.played.add(playedId);
     }
-    const result = applyAction(game, action, library);
+    const result = applyAction(game, action, library, legalActions, false);
     if (result.state !== game) {
       if (!tutorialActive && (mode.kind === "hotseat" || action.player === viewerId)) {
         for (const event of result.events) {
@@ -2784,10 +2769,13 @@ export default function App() {
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
       if (mobileMenuOpen && event.key === "Escape") { setMobileMenuOpen(false); return; }
-      if (needsLandscape || overlay || mobileMenuOpen || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "mulligan") return;
+      if (needsLandscape || overlay || developerToolsOpen || mobileMenuOpen || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "mulligan") return;
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
 
       if (event.key === " " || event.key === "Enter") {
+        // A focused control owns its activation key. Do not end the turn when
+        // Enter is meant to pick a card, a slot, or a toolbar button.
+        if(event.key==="Enter"&&target?.closest('button,a,select,[role="button"]'))return;
         if (!endTurnAction) return;
         event.preventDefault();
         perform(endTurnAction);
@@ -2801,7 +2789,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, overlay, mobileMenuOpen, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length, needsLandscape, developerCheatRevealed]);
+  }, [screen, overlay, developerToolsOpen, mobileMenuOpen, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length, needsLandscape, developerCheatRevealed]);
 
   return (
     <FontRevisionContext value={fontRevision}><main
@@ -3533,14 +3521,19 @@ function reachOf(game: GameState, source: MinionInstance): Set<string> {
 }
 
 /** Replay a wrapper's motion without rebuilding its decoded card and observers. */
-function ReplayMotion({sequence,className,style,children}:{sequence?:number;className:string;style?:CSSProperties;children:ReactNode}) {
-  const node=useRef<HTMLDivElement>(null),previous=useRef<Animation[]>([]);
+function ReplayMotion({sequence,className,style,children,animationName}:{sequence?:number;className:string;style?:CSSProperties;children:ReactNode;animationName?:string}) {
+  const node=useRef<HTMLDivElement>(null);
+  const previous=useRef<{sequence?:number;className:string}>({className:""});
   useLayoutEffect(()=>{
-    if(sequence===undefined){previous.current=[];return;}
-    const live=node.current?.getAnimations({subtree:false})??[];
-    if(live.length)previous.current=live;
-    for(const animation of previous.current){animation.currentTime=0;animation.play();}
-  },[sequence]);
+    const last=previous.current;
+    previous.current={sequence,className};
+    // A new CSS animation starts itself. Querying it before paint forces a
+    // separate style/layout pass for every minion hit by the same effect.
+    if(sequence===undefined||last.sequence===undefined||last.className!==className)return;
+    for(const animation of node.current?.getAnimations({subtree:Boolean(animationName)})??[]){
+      if(!animationName||(animation as CSSAnimation).animationName===animationName){animation.currentTime=0;animation.play();}
+    }
+  },[sequence,className,animationName]);
   return <div ref={node} className={className} style={style}>{children}</div>;
 }
 
@@ -3693,35 +3686,33 @@ function BoardRow({
             onMouseEnter={minion ? (e) => onPreview(minion, e.currentTarget) : undefined}
             onMouseLeave={minion ? onPreviewEnd : undefined}
           >
-            {minion ? (
-              <div className="minion-wrap" key={tauntFlashing ? `${minion.instanceId}-taunt-${tauntFlash?.id}` : minion.instanceId}>
+            {/* Keep a departing body's card mounted; only its motion changes.
+                Rebuilding every death face made board-wide clears decode/layout
+                a second board just as the impact animation was starting. */}
+            {[...(minion?[{body:minion,ghost:null}]:[]),...slotGhosts.map(ghost=>({body:ghost.minion,ghost}))].map(({body,ghost})=>(
+              <ReplayMotion key={body.instanceId}
+                sequence={!ghost&&tauntFlashing?tauntFlash?.id:undefined} animationName="taunt-blocker-flash"
+                className={ghost?`minion-wrap ghost-wrap ${ghost.motion==='stasis'?'stasis':ghost.motion==='return'?`returning ${ghost.destinationOwner===viewerId?'returning-down':'returning-up'}`:'dying'}`:'minion-wrap'}
+                style={ghost?({'--fd':`${ghost.delay}s`} as CSSProperties):undefined}>
                 <ReplayMotion
-                  sequence={isLunging&&lunge?lunge.id:undefined}
-                  className={isLunging ? "lunge-wrap lunging" : "lunge-wrap"}
-                  style={
-                    isLunging && lunge ? ({ "--lx": `${lunge.dx}px`, "--ly": `${lunge.dy}px` } as CSSProperties) : undefined
-                  }
-                >
-                  <ReplayMotion
-                    sequence={lastKinetic?.id}
-                    className={joltClasses}
-                    style={lastKinetic ? ({ "--fd": `${lastKinetic.delay}s` } as CSSProperties) : undefined}
-                  >
-                    <MinionFace
-                      minion={minion}
-                      board={game.players[owner].board}
-                      allBoard={game.players.flatMap((player) => player.board)}
-                      onRelicPreview={onRelicPreview}
-                      onRelicPress={onRelicPress}
-                      onRelicPreviewEnd={onPreview}
-                    />
-                    {relicFlash?.instanceId === minion.instanceId ? (
-                      <RelicPopup key={relicFlash.id} flash={relicFlash} />
-                    ) : null}
+                  sequence={!ghost&&isLunging&&lunge?lunge.id:undefined}
+                  className={!ghost&&isLunging?'lunge-wrap lunging':'lunge-wrap'}
+                  style={!ghost&&isLunging&&lunge?({'--lx':`${lunge.dx}px`,'--ly':`${lunge.dy}px`} as CSSProperties):undefined}>
+                  <ReplayMotion sequence={!ghost?lastKinetic?.id:undefined}
+                    className={!ghost?joltClasses:'jolt-wrap'}
+                    style={!ghost&&lastKinetic?({'--fd':`${lastKinetic.delay}s`} as CSSProperties):undefined}>
+                    <MinionFace minion={body}
+                      board={!ghost?game.players[owner].board:undefined}
+                      allBoard={!ghost?game.players.flatMap(player=>player.board):undefined}
+                      onRelicPreview={!ghost?onRelicPreview:undefined}
+                      onRelicPress={!ghost?onRelicPress:undefined}
+                      onRelicPreviewEnd={!ghost?onPreview:undefined}/>
+                    {!ghost&&relicFlash?.instanceId===body.instanceId?<RelicPopup key={relicFlash.id} flash={relicFlash}/>:null}
                   </ReplayMotion>
                 </ReplayMotion>
-              </div>
-            ) : null}
+                {ghost?(ghost.motion==='stasis'?<StasisBurst particles={ghost.particles}/>:ghost.motion==='return'?<ReturnBurst/>:<DeathBurst particles={ghost.particles}/>):null}
+              </ReplayMotion>
+            ))}
             {auras.length ? (
               <span className="slot-auras" aria-hidden="true">
                 {auras.map((aura) => (
@@ -3735,24 +3726,6 @@ function BoardRow({
                 ))}
               </span>
             ) : null}
-            {slotGhosts.map((ghost) => (
-              <div
-                className={[
-                  "ghost-wrap",
-                  ghost.motion === "stasis" ? "stasis" : ghost.motion === "return" ? "returning" : "dying",
-                  ghost.motion === "return"
-                    ? (ghost.destinationOwner === viewerId ? "returning-down" : "returning-up")
-                    : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                key={ghost.id}
-                style={{ "--fd": `${ghost.delay}s` } as CSSProperties}
-              >
-                <MinionFace minion={ghost.minion} />
-                {ghost.motion === "stasis" ? <StasisBurst particles={ghost.particles} /> : ghost.motion === "return" ? <ReturnBurst /> : <DeathBurst particles={ghost.particles} />}
-              </div>
-            ))}
             <span className="fx-layer" aria-hidden="true">
               {slotImpacts.map((fx) => (
                 <ImpactFx key={fx.id} impact={fx} />
@@ -5124,17 +5097,6 @@ function KeywordPopover({
 }
 
 
-function sameFaceValues(a: object, b: object): boolean {
-  if (a === b) return true;
-  const left = a as Record<string, unknown>;
-  const right = b as Record<string, unknown>;
-  const keys = Object.keys(left);
-  return keys.length === Object.keys(right).length && keys.every((key) => {
-    const x = left[key], y = right[key];
-    return Object.is(x, y) || (Array.isArray(x) && Array.isArray(y)
-      && x.length === y.length && x.every((value, index) => Object.is(value, y[index])));
-  });
-}
 const CardFace = memo(function CardFace({
   card,
   lazyArt = false,
@@ -5240,6 +5202,7 @@ const CardFace = memo(function CardFace({
     .join(" ");
   return (
     <article className={classes} style={fit}>
+      {onBoard?<span className="cf-ready-glow" aria-hidden="true"/>:null}
       <div className="cf-stage">
         <div className="cf-frame" aria-hidden="true" />
         <div className="cf-well" aria-hidden="true" />
@@ -5308,7 +5271,10 @@ const CardFace = memo(function CardFace({
       </div>
     </article>
   );
-}, (a, b) => sameFaceValues(a.card, b.card) && sameFaceValues({ ...a, card: null }, { ...b, card: null }));
+}, (a, b) => sameCardFace(a.card, b.card) && sameStrings(a.states, b.states)
+  && a.lazyArt === b.lazyArt && a.quiet === b.quiet && a.onBoard === b.onBoard
+  && a.atkClass === b.atkClass && a.hpClass === b.hpClass && a.effect === b.effect
+  && a.flavor === b.flavor && a.interactiveKeywords === b.interactiveKeywords);
 
 function RelicPopup({ flash }: { flash: RelicFlash }) {
   const [position, setPosition] = useState<CSSProperties>({ visibility: "hidden" });

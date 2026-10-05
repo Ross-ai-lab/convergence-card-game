@@ -58,6 +58,8 @@ describe('background bot search lifecycle', () => {
     search.search(request, receive);
     expect(WorkerStub.instances).toHaveLength(1);
     expect(worker.postMessage).toHaveBeenCalledTimes(2);
+    expect(worker.postMessage.mock.calls[0][0].library).toBe(request.library);
+    expect(worker.postMessage.mock.calls[1][0].library).toBeUndefined();
     expect(receive).toHaveBeenCalledOnce();
     search.dispose();
   });
@@ -74,6 +76,7 @@ describe('background bot search lifecycle', () => {
     expect(oldReceive).not.toHaveBeenCalled();
     WorkerStub.instances[1].onmessage?.({ data: null });
     expect(nextReceive).toHaveBeenCalledWith(null);
+    expect(WorkerStub.instances[1].postMessage.mock.calls[0][0].library).toBe(request.library);
     search.dispose();
   });
   it('cancels the fallback when leaving a duel after a worker load failure', () => {

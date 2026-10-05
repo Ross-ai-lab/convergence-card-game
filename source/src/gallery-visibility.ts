@@ -1,7 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 
-type Watcher = { observer: IntersectionObserver; listeners: Map<Element, (near: boolean) => void> };
-const watchers = new WeakMap<Element, Watcher>();
+type Watcher = {
+  observer:IntersectionObserver;
+  listeners:Map<Element,(near:boolean)=>void>;
+  rebind:()=>void;
+};
+const watchers=new WeakMap<Element,Watcher>();
+function galleryWatcher(body:Element):Watcher {
+  const listeners:Watcher['listeners']=new Map();
+  let root:Element|null=null;
+  const notify=(entries:IntersectionObserverEntry[])=>{
+    for(const entry of entries)listeners.get(entry.target)?.(entry.isIntersecting||entry.target.contains(document.activeElement));
+  };
+  const watcher:Watcher={observer:null!,listeners,rebind:()=>{
+    const outer=body.closest('.gallery-mobile-scroll');
+    const next=getComputedStyle(body).overflowY==='visible'&&outer?outer:body;
+    if(next===root)return;
+    watcher.observer?.disconnect();root=next;
+    watcher.observer=new IntersectionObserver(notify,{root,rootMargin:'700px 0px'});
+    for(const element of listeners.keys())watcher.observer.observe(element);
+  }};
+  watcher.rebind();
+  // One breakpoint read per gallery, not one per card on every resize.
+  window.addEventListener('resize',watcher.rebind);
+  return watcher;
+}
 
 /** Load nearby artwork eagerly without ever discarding an already decoded image. */
 export function useGalleryVisibility() {
@@ -22,39 +45,14 @@ export function useGalleryVisibility() {
       setNear(true);
       return;
     }
-    let boundRoot: Element | null = null;
-    let boundWatcher: Watcher | undefined;
-    const detach = () => {
-      if (!boundRoot || !boundWatcher) return;
-      boundWatcher.observer.unobserve(element);
-      boundWatcher.listeners.delete(element);
-      if (!boundWatcher.listeners.size) { boundWatcher.observer.disconnect(); watchers.delete(boundRoot); }
-    };
-    const bind = () => {
-      const outer = element.closest('.gallery-mobile-scroll');
-      const root = getComputedStyle(body).overflowY === 'visible' && outer ? outer : body;
-      if (root === boundRoot) return;
-      detach();
-      let watcher = watchers.get(root);
-      if (!watcher) {
-        const listeners: Watcher['listeners'] = new Map();
-        const observer = new IntersectionObserver((entries) => {
-          for (const entry of entries) {
-            listeners.get(entry.target)?.(entry.isIntersecting || entry.target.contains(document.activeElement));
-          }
-        }, { root, rootMargin: '700px 0px' });
-        watcher = { observer, listeners };
-        watchers.set(root, watcher);
+    let watcher=watchers.get(body);
+    if(!watcher){watcher=galleryWatcher(body);watchers.set(body,watcher);}
+    watcher.listeners.set(element,setNear);watcher.observer.observe(element);
+    return()=>{
+      watcher.observer.unobserve(element);watcher.listeners.delete(element);
+      if(!watcher.listeners.size){
+        watcher.observer.disconnect();window.removeEventListener('resize',watcher.rebind);watchers.delete(body);
       }
-      watcher.listeners.set(element, setNear);
-      watcher.observer.observe(element);
-      boundRoot = root; boundWatcher = watcher;
-    };
-    bind();
-    window.addEventListener('resize', bind);
-    return () => {
-      window.removeEventListener('resize', bind);
-      detach();
     };
   }, []);
   return { ref, near, onFocus: () => setNear(true) };

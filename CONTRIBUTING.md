@@ -200,3 +200,19 @@ Runtime art and audio addresses must use [asset-url.ts](source/src/engine/asset-
 For documentation-only changes, publish the documentation without rebuilding unchanged game assets.
 Check that the relevant files and pictures render correctly on the repository page.
 A release summary should describe the visible result, the checks performed and any remaining limits.
+
+## Measuring smoothness
+
+Use the existing performance check for gallery rendering, real deaths and bot-worker parity.
+For a comparison, keep the previous release at a separate local URL and measure both production builds on the same machine:
+
+```sh
+node scripts/duel-performance.mjs http://127.0.0.1:5181 --baseline=http://127.0.0.1:5180/baseline --seed=http://127.0.0.1:5177 --runs=3 --label=duel-comparison
+```
+
+The seed URL must be the development server. Each run creates its own browser storage and uses real legal actions, decoded artwork and active animations.
+The default scenario plays John Wick, Giant Tree, Ainz and Meteor. `--scenario=triggers` starts with eight real bodies and exercises Godzilla reactions, Reborn and a hard bot turn.
+`--cpu-rate=4` adds a separate slower-CPU comparison. Do not mix its results with normal-speed runs.
+The runner alternates build order and saves frame intervals, long tasks and CPU profiles in `.preview/duel-performance/`.
+Compare repeated runs without other check suites competing for CPU. Automated Chromium timings are evidence for those scenes, not a guaranteed frame rate on every device.
+Never use `settleMotion` or disable animations in a final smoothness comparison. Temporary CSS bisection is diagnostic only.

@@ -64,11 +64,20 @@ The gallery loads a small preview module when opened, brings full artwork in nea
 Decoded images stay mounted while scrolling. Shared sizing avoids measuring every card separately.
 These choices preserve complete readable cards while avoiding empty artwork panels and unnecessary paint work.
 
+Live bodies retain their decoded face through hits, deaths, returns and stasis. Motion wrappers change without rebuilding the card.
+The duel retains a bounded set of compositor surfaces; the gallery does not promote the entire collection into graphics layers.
+Only visible card fields invalidate a face. Engine bookkeeping and copied passive arrays do not repaint unchanged artwork or text.
+Music loop preparation runs in its own worker, with a yielding compatibility path. Concurrent warm-up and playback requests share one theme fetch and decode. Finished synthesized voices disconnect their temporary audio nodes.
+The bot worker receives the immutable roster once and reuses it. Engine copies retain immutable primitive values while independently copying every mutable record and array; aliases stay intact, and unexpected payload types use a native graph copy. Search depth, difficulty and deterministic decisions remain unchanged.
+
+
 ## Saves preserve a whole transaction
 
 An ongoing duel includes pending targets, queues, decks and turn state. Progression retains unacknowledged dialogue and rewards.
 A first victory awards its fixed reward once and does not rewrite the player's chosen deck.
 Migrations preserve earned content and preferences; they do not reset progress to avoid a compatibility problem.
+Serialization is coalesced into idle time, with a 200 ms deadline. Leaving or hiding the page flushes the newest complete duel and clock.
+Clearing a duel cancels its pending write so an old action cannot restore a finished match.
 Browser storage is local to the device and origin. There is no account synchronization.
 
 ## A static release with relative assets

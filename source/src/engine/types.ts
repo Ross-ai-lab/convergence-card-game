@@ -789,9 +789,8 @@ export interface GameState {
   /**
    * How fast max mana climbs, in mana per turn. Lives in the state so a save and
    * an undo carry it, and so the simulator can sweep it without a global.
-   * 1 is the classic +1 a turn; the shipped value is higher because mana cost is
-   * frozen and the ramp is therefore the only way the expensive half of the
-   * roster ever reaches a board. See `finishStartOfTurn`.
+   * The shipped value is 1: each turn grants the next mana step. The field
+   * stays explicit for saved games and controlled test setups.
    */
   manaRamp: number;
   nextInstance: number;

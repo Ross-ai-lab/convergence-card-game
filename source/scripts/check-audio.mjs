@@ -63,8 +63,11 @@ await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 }).cat
 await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 }).catch(() => {});
 await completeOpeningMulligan();
 // The analyser intentionally spends longer than a real turn probing every clip.
-// Keep its duel in developer test mode so the new deadline cannot start AI audio.
-await page.evaluate(()=>window.__debug.setCore('me',50));
+// Pause the human deadline through the actual workbench while probing sound.
+// Setting Core HP does not enable developer test mode and did not pause it.
+await page.keyboard.type('Ross');
+await page.getByRole('button',{name:'DEV tools',exact:true}).click();
+await page.getByRole('button',{name:'Close developer mode',exact:true}).waitFor();
 // The first duel click can request the battle bed while the menu file is still
 // loading. Wait for the actual track and playback state, not a guessed delay.
 await page.waitForFunction(
@@ -294,6 +297,9 @@ check(
       ? "a card was placed but no theme sounded"
       : "could not place a card — no placeable slot appeared",
 );
+
+await page.waitForFunction(()=>window.__sfx.getStats().voicesLive===0,null,{timeout:12000});
+check('temporary voices are released',await page.evaluate(()=>window.__sfx.getStats().voicesLive===0),'no finished synthesizer routes left connected');
 
 await browser.close();
 console.log(failures.length ? `\n${failures.length} FAILED: ${failures.join(", ")}` : "\nAll audio checks passed.");

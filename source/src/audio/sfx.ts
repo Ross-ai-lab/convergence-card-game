@@ -1,3 +1,4 @@
+import {prepareLoop} from './loop-preparation';
 import { isThemedTokenId } from "../engine/tokens";
 import {shouldPlayCardTheme} from './card-theme-policy';
 
@@ -150,6 +151,7 @@ let mix = loadMix();
 
 const themeCache = new Map<string, AudioBuffer>();
 const themeMisses = new Set<string>();
+const themeLoads = new Map<string,Promise<AudioBuffer|null>>();
 let themeSource: AudioBufferSourceNode | null = null;
 /** Rises on every request so a slow decode can tell it has been superseded. */
 let themeToken = 0;
@@ -195,6 +197,7 @@ function saveMix() {
 
 const stats = {
   played: 0,
+  voicesLive: 0,
   last: "" as SfxName | "",
   byName: {} as Record<string, number>,
   /** Voice lines actually spoken. Counts the TRIGGER, not the audibility —
@@ -297,17 +300,19 @@ function live(): boolean {
 }
 
 /** Fan a voice out to the dry bus and the reverb send. */
-function route(src: AudioNode, pan: number, send: number): void {
+function route(src: AudioNode, pan: number, send: number):()=>void {
   const p = ctx!.createStereoPanner();
   p.pan.value = pan;
   src.connect(p);
   p.connect(sfxBus ?? master!);
-  if (send > 0 && convolver) {
-    const s = ctx!.createGain();
-    s.gain.value = send;
-    p.connect(s);
-    s.connect(convolver);
-  }
+  const reverbSend=send>0&&convolver?ctx!.createGain():null;
+  if(reverbSend){reverbSend.gain.value=send;p.connect(reverbSend);reverbSend.connect(convolver!);}
+  stats.voicesLive++;
+  let connected=true;
+  return()=>{
+    if(!connected)return;connected=false;stats.voicesLive--;
+    src.disconnect();p.disconnect();reverbSend?.disconnect();
+  };
 }
 
 function envGain(t: number, dur: number, peak: number, attack: number): GainNode {
@@ -330,7 +335,8 @@ function osc(o: Common & { type?: OscillatorType; f0: number; f1?: number; attac
   if (o.detune) n.detune.value = o.detune;
   const g = envGain(o.t, o.dur, o.gain, o.attack ?? 0.004);
   n.connect(g);
-  route(g, o.pan ?? 0, o.send ?? 0);
+  const release=route(g, o.pan ?? 0, o.send ?? 0);
+  n.onended=()=>{n.disconnect();release();};
   n.start(o.t);
   n.stop(o.t + o.dur + 0.05);
 }
@@ -347,7 +353,8 @@ function noise(o: Common & { type?: BiquadFilterType; f0: number; f1?: number; q
   const g = envGain(o.t, o.dur, o.gain, o.attack ?? 0.004);
   src.connect(filter);
   filter.connect(g);
-  route(g, o.pan ?? 0, o.send ?? 0);
+  const release=route(g, o.pan ?? 0, o.send ?? 0);
+  src.onended=()=>{src.disconnect();filter.disconnect();release();};
   src.start(o.t, Math.random() * 0.5);
   src.stop(o.t + o.dur + 0.05);
 }
@@ -368,7 +375,8 @@ function metal(o: Common & { carrier: number; ratio: number; index: number; atta
   modGain.connect(car.frequency);
   const g = envGain(o.t, o.dur, o.gain, o.attack ?? 0.003);
   car.connect(g);
-  route(g, o.pan ?? 0, o.send ?? 0.3);
+  const release=route(g, o.pan ?? 0, o.send ?? 0.3);
+  car.onended=()=>{car.disconnect();mod.disconnect();modGain.disconnect();release();};
   car.start(o.t);
   mod.start(o.t);
   car.stop(o.t + o.dur + 0.05);
@@ -393,7 +401,8 @@ function swell(t: number, freqs: number[], dur: number, gain: number, send = 0.4
   filter.frequency.exponentialRampToValueAtTime(700, t + dur);
   const g = envGain(t, dur, gain, dur * 0.18);
   filter.connect(g);
-  route(g, 0, send);
+  const release=route(g, 0, send);
+  let remaining=freqs.length*2;
   for (const f of freqs) {
     for (const det of [-8, 7]) {
       const n = c.createOscillator();
@@ -401,6 +410,7 @@ function swell(t: number, freqs: number[], dur: number, gain: number, send = 0.4
       n.frequency.value = f;
       n.detune.value = det;
       n.connect(filter);
+      n.onended=()=>{n.disconnect();if(--remaining===0){filter.disconnect();release();}};
       n.start(t);
       n.stop(t + dur + 0.06);
     }
@@ -788,36 +798,6 @@ export function hoverTick(): void {
  * Generated tracks never loop cleanly, so fold the tail back over the head with
  * an equal-power crossfade and loop the shortened buffer instead.
  */
-async function makeSeamlessLoop(src: AudioBuffer, fade = 2): Promise<AudioBuffer> {
-  const c = ctx!;
-  const fadeLen = Math.min(Math.floor(fade * src.sampleRate), Math.floor(src.length / 3));
-  const outLen = src.length - fadeLen;
-  const out = c.createBuffer(src.numberOfChannels, outLen, src.sampleRate);
-  // Calculate the crossfade once for every channel. Yield between small blocks
-  // so decoding a new battle bed cannot monopolize a card's landing frame.
-  const headWeights = new Float32Array(fadeLen);
-  const tailWeights = new Float32Array(fadeLen);
-  const yieldToUI = () => new Promise<void>(resolve => setTimeout(resolve, 0));
-  for (let start = 0; start < fadeLen; start += 8192) {
-    for (let i = start; i < Math.min(start + 8192, fadeLen); i++) {
-      const angle = i / fadeLen * Math.PI / 2;
-      headWeights[i] = Math.sin(angle); tailWeights[i] = Math.cos(angle);
-    }
-    await yieldToUI();
-  }
-  for (let ch = 0; ch < src.numberOfChannels; ch++) {
-    const inD = src.getChannelData(ch);
-    const outD = out.getChannelData(ch);
-    outD.set(inD.subarray(0, outLen));
-    for (let start = 0; start < fadeLen; start += 8192) {
-      for (let i = start; i < Math.min(start + 8192, fadeLen); i++) {
-        outD[i] = inD[i] * headWeights[i] + inD[outLen + i] * tailWeights[i];
-      }
-      await yieldToUI();
-    }
-  }
-  return out;
-}
 
 async function fetchTrack(urls: string[], loop: boolean): Promise<AudioBuffer | null> {
   const key = urls[0];
@@ -831,7 +811,7 @@ async function fetchTrack(urls: string[], loop: boolean): Promise<AudioBuffer | 
       const decoded = await ctx.decodeAudioData(await response.arrayBuffer());
       // A generated track never loops cleanly, so fold its tail back over its
       // head with an equal-power crossfade and loop the shortened buffer.
-      const ready = loop ? await makeSeamlessLoop(decoded, 2) : decoded;
+      const ready = loop ? await prepareLoop(ctx, decoded, 2) : decoded;
       // Kept for the DEV loop-seam probe, which compares the folded buffer
       // against the untouched one. Dropping it silently disarms that check.
       if (loop) musicRaw = decoded;
@@ -1053,25 +1033,23 @@ async function loadTheme(cardId: string): Promise<AudioBuffer | null> {
   const cached = themeCache.get(cardId);
   if (cached) return cached;
   if (themeMisses.has(cardId) || !ctx) return null;
-  try {
-    const response = await fetch(themeUrl(cardId));
-    if (!response.ok) {
-      themeMisses.add(cardId);
-      return null;
+  const pending=themeLoads.get(cardId);
+  if(pending)return pending;
+  const context=ctx;
+  // Hover warming, a changing hand, and the actual play share one fetch/decode.
+  const request=(async()=>{
+    try {
+      const response=await fetch(themeUrl(cardId));
+      if(!response.ok){themeMisses.add(cardId);return null;}
+      const buffer=await context.decodeAudioData(await response.arrayBuffer());
+      if(themeCache.size>=THEME_CACHE_LIMIT){const oldest=themeCache.keys().next().value;if(oldest!==undefined)themeCache.delete(oldest);}
+      themeCache.set(cardId,buffer);return buffer;
+    } catch {
+      themeMisses.add(cardId);return null;
     }
-    const buffer = await ctx.decodeAudioData(await response.arrayBuffer());
-    if (themeCache.size >= THEME_CACHE_LIMIT) {
-      const oldest = themeCache.keys().next().value;
-      if (oldest !== undefined) themeCache.delete(oldest);
-    }
-    themeCache.set(cardId, buffer);
-    return buffer;
-  } catch {
-    // A missing or undecodable clip is never worth breaking a turn over: the
-    // card simply lands in silence, exactly as it did before voices existed.
-    themeMisses.add(cardId);
-    return null;
-  }
+  })();
+  themeLoads.set(cardId,request);
+  try{return await request;}finally{themeLoads.delete(cardId);}
 }
 
 export function stopCardTheme(): void {
@@ -1278,7 +1256,7 @@ export function playAnnouncer(clip: string, delay = 0): void {
   })();
 }
 
-/** Plays the licensed, CC0 JRPG trailer cue used when a duel begins. */
+/** Plays the opening cue when a duel begins. */
 export function playOpeningCue(delay = 0): void {
   if (muted || mix.effects <= 0) return;
   unlock();

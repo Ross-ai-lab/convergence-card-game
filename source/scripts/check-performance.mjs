@@ -101,7 +101,7 @@ try {
     return results;
   });
   assert(parity.every(Boolean), 'Worker must choose the same moves at every difficulty');
-  assert.equal(page.workers().length, 1, 'The reusable search worker must remain alive (no synchronous fallback)');
+  assert.equal(page.workers().filter(worker=>worker.url().includes('bot.worker')).length, 1, 'The reusable search worker must remain alive (no synchronous fallback)');
   await page.evaluate(() => { window.__performanceSearch.dispose(); delete window.__performanceSearch; });
   await checkDeathMotion(browser,base);
   await checkPreviewFallback(browser,base);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitCardText } from "./card-presentation";
+import { splitCardText, sameCardFace, type CardFaceModel } from "./card-presentation";
 
 describe("printed card text", () => {
   it("preserves punctuation and highlights aliases only once per concept", () => {
@@ -24,5 +24,17 @@ describe("printed card text", () => {
   });
   it("retains keyword offsets after characters whose lower-case form changes length", () => {
     expect(splitCardText("İ: Freeze").find(piece => piece.entry)?.text).toBe("Freeze");
+  });
+});
+
+describe("card face presentation identity", () => {
+  const face:CardFaceModel={name:'Test',art:'test.webp',origin:'BASIC',effect:'Taunt',rarity:'Black',camp:'Nature',alignment:'Neutral',cost:1,atk:2,hp:3,flavor:'Hello',keywords:['Taunt']};
+  it('ignores cloned engine-only fields while preserving displayed values',()=>{
+    const body={...face,gainedEffects:[{text:'Passive',turn:1}],turnsAlive:3};
+    expect(sameCardFace(body,structuredClone({...body,turnsAlive:4}))).toBe(true);
+    for(const [field,value] of Object.entries(face)) {
+      const changed={...face,[field]:Array.isArray(value)?['Charge']:typeof value==='number'?value+1:String(value)+'!'};
+      expect(sameCardFace(face,changed),field).toBe(false);
+    }
   });
 });

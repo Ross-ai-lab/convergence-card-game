@@ -1,3 +1,4 @@
+import {copyGameState} from './state-copy';
 import { isMinionCard, isRelicCard } from "./types";
 import { drawPileFor, remainingDeckCards } from "./draw-piles";
 import { validateDeck } from "../decks";
@@ -845,7 +846,7 @@ function makePlayer(id: PlayerId, name: string, health: number = DEFAULT_STARTIN
 }
 
 function cloneState(state: GameState): GameState {
-  return structuredClone(state) as GameState;
+  return copyGameState(state);
 }
 
 function seededShuffle<T>(items: T[], seed: string): T[] {

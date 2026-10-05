@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { clearSave, loadGame, saveGame } from "./storage";
+import { clearSave, loadGame, saveGame, queueSaveGame } from "./storage";
 import { createInitialGame } from "./engine/game";
 import { cards, relics } from "./data/cards";
 import type { GameState } from "./engine/types";
@@ -205,5 +205,28 @@ describe("the v26 migration", () => {
     const storage = memoryLocalStorage(); vi.stubGlobal("window", { localStorage: storage });
     storage.values.set(LEGACY_SAVE_KEY, JSON.stringify({ version: 28, game: liveDuel(), events: [], mode: { kind: "hotseat" }, savedAt: 1 }));
     expect(loadGame()).toBeNull(); expect(storage.values.has(LEGACY_SAVE_KEY)).toBe(false);
+  });
+});
+
+describe('deferred duel storage',()=>{
+  it('flushes the newest complete duel and clock when the page closes',()=>{
+    const memory=memoryLocalStorage();const listeners=new Map<string,()=>void>();let idle=()=>{};
+    vi.stubGlobal('window',{localStorage:memory,requestIdleCallback:(run:()=>void)=>{idle=run;return 1;},cancelIdleCallback:vi.fn(),addEventListener:(name:string,run:()=>void)=>listeners.set(name,run)});
+    vi.stubGlobal('document',{visibilityState:'visible',addEventListener:vi.fn()});
+    const first=liveDuel(),latest=structuredClone(first);latest.players[0].health=17;
+    const clock={key:'test:0:1',remainingMs:45000,deadline:55000};
+    queueSaveGame(first,[],{kind:'bot',skill:'normal'},1000);
+    queueSaveGame(latest,[{kind:'info',text:'Newest action'}],{kind:'bot',skill:'normal'},1100,clock);
+    expect(memory.getItem(SAVE_KEY)).toBeNull();listeners.get('pagehide')!();idle();
+    const payload=JSON.parse(memory.getItem(SAVE_KEY)!);
+    expect(payload.game.players[0].health).toBe(17);expect(payload.turnClock).toEqual(clock);
+    expect(payload.events.at(-1).text).toBe('Newest action');
+  });
+  it('does not restore a duel cleared before the pending write',()=>{
+    const memory=memoryLocalStorage();let idle=()=>{};
+    vi.stubGlobal('window',{localStorage:memory,requestIdleCallback:(run:()=>void)=>{idle=run;return 1;},cancelIdleCallback:vi.fn(),addEventListener:vi.fn()});
+    vi.stubGlobal('document',{visibilityState:'visible',addEventListener:vi.fn()});
+    queueSaveGame(liveDuel(),[],{kind:'bot',skill:'normal'},1000);clearSave();idle();
+    expect(memory.getItem(SAVE_KEY)).toBeNull();
   });
 });
