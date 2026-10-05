@@ -99,7 +99,7 @@ import {
 import { revealOrder } from "./unlocks";
 import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES, CAMPAIGN_PREMISE, CAMPAIGN_PROTAGONIST } from "./campaign";
 import { createCampaignDuel } from "./campaign-duel";
-import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, hasNewHeroPower, saveDeckDraft, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, hasNewHeroPower, saveDeckDraft, saveNamedDeck, selectNamedDeck, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
 import { LoreLibrary } from './screens/LoreLibrary';
 import { randomDeck, validateDeck } from "./decks";
 import { remainingDeckCount } from "./engine/draw-piles";
@@ -773,6 +773,7 @@ export default function App() {
   const [shaking, setShaking] = useState(false);
   /** Whether the enemy Hero Power card is showing. Opened by a click, not a hover. */
   const [enemyPowerOpen, setEnemyPowerOpen] = useState(false);
+  const [apexAlert,setApexAlert]=useState<number|null>(null);
   /** The pointer is somewhere over the hand, so the whole fan is enlarged. */
   const [handHovered, setHandHovered] = useState(false);
   /**
@@ -1379,7 +1380,7 @@ export default function App() {
           : kind === "shield"
             ? "shieldBreak"
             : kind === "summon"
-              ? "summonRare"
+              ? "minionLand"
               : kind);
       sfx.play(name, delay + soundSlot * 0.035);
       soundSlot++;
@@ -1479,7 +1480,7 @@ export default function App() {
     const arrivals: MinionInstance[] = [];
     after.forEach((entry, id) => {
       if (!before.has(id)) {
-        addImpact(entry.owner, entry.slot, "summon", 0.1, sfx.summonSoundFor(entry.minion.rarity), entry.minion.camp);
+        addImpact(entry.owner, entry.slot, "summon", 0.1, "minionLand", entry.minion.camp);
         // Weight, and it is keyed to COST rather than to rarity. Rarity already
         // has the fanfare; cost is the thing the player is paying and the thing
         // that makes a body feel big, and a 6-mana Rare should land as hard as
@@ -1608,7 +1609,7 @@ export default function App() {
       const now = next.players[viewerId].mana;
       if (now < was) {
         setManaFx({ id: fxId.current++, kind: "spend", from: was, to: now });
-        sfx.play("mana");
+        if(action.type!=="play_card")sfx.play("mana");
       } else if (now > was) {
         setManaFx({ id: fxId.current++, kind: "refill", from: was, to: now });
       }
@@ -2643,7 +2644,8 @@ export default function App() {
     }
     if (!performed) {
       sfx.play("invalid");
-      if (!cancelAttackerSelection()) setSelection(null);
+      const apexBlocked=drag.kind==='attacker'&&heroEl&&Number(heroEl.getAttribute('data-hero'))===opponentId&&flashApexRestriction();
+      if(!apexBlocked&&!cancelAttackerSelection())setSelection(null);
     }
     clearHoverPreview();
     setDrag(null);
@@ -2672,13 +2674,23 @@ export default function App() {
     onBoardSlot(owner, slotIndex);
   };
 
+  const apexBodies=game.heroPowers[opponentId]==='yujiro_apex_duel'?viewer.board.filter((m):m is MinionInstance=>Boolean(m)):[];
+  const apexAttack=Math.max(-1,...apexBodies.map(m=>m.atk));
+  const apexPrey=(selection?.kind==='attacker'?apexBodies.find(m=>m===viewer.board[selection.slotIndex]&&m.atk===apexAttack):null)??apexBodies.find(m=>m.atk===apexAttack);
+  function flashApexRestriction():boolean {
+    const attacker=selection?.kind==='attacker'?viewer.board[selection.slotIndex]:null;
+    if(game.heroPowers[opponentId]!=='yujiro_apex_duel'||!attacker||attacker.atk>=apexAttack)return false;
+    const marker=fxId.current++;setEnemyPowerOpen(true);setApexAlert(marker);
+    window.setTimeout(()=>setApexAlert(current=>current===marker?null:current),1100);
+    return true;
+  }
   function attackCore() {
     if (selection?.kind !== "attacker") return;
     const action = uiActions.find(
       (candidate) => candidate.type === "attack_core" && candidate.attackerSlot === selection.slotIndex,
     );
     if (action) perform(action);
-    else if (!flashTauntBlockers()) cancelAttackerSelection();
+    else if (!flashApexRestriction()&&!flashTauntBlockers()) cancelAttackerSelection();
   }
 
   const endTurnAction = uiActions.find((action) => action.type === "end_turn");
@@ -2839,7 +2851,7 @@ export default function App() {
             pointer crossed the top strip on its way somewhere else, and covered
             the enemy board while it was there. */}
         <div
-          className={enemyPowerOpen ? "enemy-hero-wrap is-open" : "enemy-hero-wrap"}
+          className={`enemy-hero-wrap${enemyPowerOpen?" is-open":""}${apexAlert!==null?" apex-blocked":""}`}
           onPointerDown={(event) => {
             // The plate is ALSO the button that attacks the enemy core, so the
             // toggle stands aside for exactly the click that would be a swing —
@@ -2867,6 +2879,7 @@ export default function App() {
             onBlockedStrike={selection?.kind === "attacker" ? attackCore : undefined}
             heroPowerCounter={game.heroPowers[opponentId] === "glados_test_protocol" ? `${Math.min(15, game.players[viewerId].turnsStarted)}/15` : undefined}
             protocolWarning={gladosProtocolWarning}
+            apexPrey={apexPrey}
           />
           {campaignBoss && !coreTargetable && selection?.kind !== "attacker" && <button
             type="button" className="opponent-portrait-inspect" aria-label={`Open Star Chart for ${campaignBoss.name}`}
@@ -2874,7 +2887,7 @@ export default function App() {
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => { event.stopPropagation(); setEnemyPowerOpen(false); setOverlay("opponent"); }}
           />}
-          <HeroPowerCard
+          <HeroPowerCard key={apexAlert??"power"}
             definition={heroPowerDefinition(game.heroPowers[opponentId])}
             turnsRemaining={gladosTurnsRemaining}
           />
@@ -3424,7 +3437,7 @@ export default function App() {
       {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)}
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
       {overlay === 'lore' && <LoreLibrary completedBosses={progress.completedBosses} onClose={()=>setOverlay(null)} />}
-      {overlay === "deck" && <CardGallery onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+      {overlay === "deck" && <CardGallery onPresetSave={(name,id)=>persistProgress(saveNamedDeck(progress,name,builderSeat,id))} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}
@@ -3437,7 +3450,7 @@ export default function App() {
         onNavigate={() => undefined}
       />}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "gallery" ? <CardGallery onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
+      {overlay === "gallery" ? <CardGallery onPresetSave={(name,id)=>persistProgress(saveNamedDeck(progress,name,0,id))} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,0))} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
       {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel
@@ -4052,10 +4065,18 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
 type UnlockFilter = "unlocked" | "locked";
 type GalleryEntry = { key: string; card: PlayableCard; face: CardFaceModel };
 
-function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose }: {
+function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose, onPresetSave,onPresetSelect }: {
+  onPresetSave:(name:string,id?:string)=>boolean;onPresetSelect:(id:string)=>boolean;
   progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onHeroPowerChange: (power: HeroPowerId) => void; onHeroPowerViewed: () => void; onClose: () => void;
 }) {
   const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
+  const selectedPreset=progress.savedDecks.find(entry=>entry.id===progress.selectedDecks[seat]);
+  const presetEdited=Boolean(selectedPreset&&(selectedPreset.cards.length!==deck.length||selectedPreset.cards.some(id=>!deck.includes(id))||selectedPreset.heroPower!==progress.selectedHeroPower));
+  const [saveOpen,setSaveOpen]=useState(false);
+  const [deckName,setDeckName]=useState('');
+  const [deckNotice,setDeckNotice]=useState('');
+  const [saveError,setSaveError]=useState('');
+  const replacementPreset=progress.savedDecks.find(preset=>preset.name.toLocaleLowerCase()===deckName.trim().replace(/\s+/g,' ').toLocaleLowerCase());
   const readOnly = !canEditDeck(progress);
   const deckIds = new Set(deck);
   const [query, setQuery] = useState("");
@@ -4100,7 +4121,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && (event.target instanceof HTMLElement && !!event.target.closest('select'))) { event.stopImmediatePropagation(); return; }
-      if (event.key === "Escape") { event.stopImmediatePropagation(); if (restoreOpen) setRestoreOpen(false); else if (powerOpen) closePowers(); else onClose(); }
+      if (event.key === "Escape") { event.stopImmediatePropagation(); if(saveOpen)setSaveOpen(false);else if (restoreOpen) setRestoreOpen(false); else if (powerOpen) closePowers(); else onClose(); }
       if ((powerOpen || restoreOpen) && event.key === "Tab") {
         const buttons = [...((restoreOpen ? restorePicker : powerPicker).current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])];
         const first=buttons[0], last=buttons.at(-1);
@@ -4110,7 +4131,7 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, powerOpen, restoreOpen]);
+  }, [onClose, powerOpen, restoreOpen, saveOpen]);
 
   const needle = query.trim().toLowerCase();
   // Built ONCE and then only filtered. Rebuilding the faces on every keystroke
@@ -4350,8 +4371,15 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
           )}
         </div>
         <aside className="gallery-deck" aria-label={seat === 1 ? "Player Two deck" : "Current deck"}>
-          <header className="gallery-deck-heading"><h3>{seat === 1 ? "Player Two" : "My Deck"}</h3>
+          <header className="gallery-deck-heading"><label className="gallery-filter gallery-deck-selector"><span className="gallery-filter-label">Saved decks</span>
+            <select aria-label="Saved decks" value={selectedPreset?.id??''} onChange={event=>{setDeckPreview(null);setDeckNotice(onPresetSelect(event.target.value)?event.target.value?'Deck loaded':'Working deck selected':'Could not load. Browser storage is unavailable.');}}>
+              <option value="">Current deck</option>
+              {progress.savedDecks.map(preset=><option key={preset.id} value={preset.id}>{preset.name}{selectedPreset?.id===preset.id&&presetEdited?' • edited':''}</option>)}
+            </select></label>
             <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
+          <div className="gallery-preset-actions"><button type="button" disabled={!deck.length||readOnly} onClick={()=>{setDeckPreview(null);onChange([]);setDeckNotice('Deck cleared');}}>Clear</button>
+            <button type="button" className="preset-save" disabled={readOnly} onClick={()=>{setDeckName(selectedPreset?.name??`Deck ${progress.savedDecks.length+1}`);setSaveError('');setSaveOpen(true);}}>Save</button></div>
+          {deckNotice&&<p className="gallery-preset-notice" role="status">{deckNotice}</p>}
           <div className="gallery-deck-list" onScroll={() => setDeckPreview(null)}>{allEntries.filter((entry) => deckIds.has(entry.key))
             .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
             .map((entry) => <div className="gallery-deck-row" key={entry.key} data-card-id={entry.key}
@@ -4381,8 +4409,17 @@ function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerCh
         </div>
         </div>
       </section>
-      {deckPreview && deckIds.has(deckPreview.key) && !selectedEntry && !powerOpen && !restoreOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
+      {deckPreview && deckIds.has(deckPreview.key) && !selectedEntry && !powerOpen && !restoreOpen && !saveOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
       {lockedInfo&&!selectedEntry&&<LockedCardInfo cardId={lockedInfo.key} rect={lockedInfo.rect} onClose={()=>setLockedInfo(null)}/>}
+      {saveOpen&&<div className="gallery-power-shade" onPointerDown={event=>{if(event.target===event.currentTarget)setSaveOpen(false);}}>
+        <form className="gallery-save-dialog" role="dialog" aria-modal="true" aria-label="Save deck" onSubmit={event=>{event.preventDefault();if(!deckName.trim())return;const saved=onPresetSave(deckName,replacementPreset?.id);if(saved){setSaveOpen(false);setDeckNotice('Deck saved');}else setSaveError('Could not save. Browser storage is unavailable.');}}>
+          <h3>Save deck</h3><label>Deck name<input aria-label="Deck name" autoFocus maxLength={60} value={deckName} onChange={event=>setDeckName(event.target.value)}/></label>
+          <p>{deck.length}/30 cards{deck.length<30?' · You can finish this deck later.':''}</p>
+          {replacementPreset&&<p>This updates your saved deck “{replacementPreset.name}”.</p>}
+          {saveError&&<p role="alert">{saveError}</p>}
+          <div><button type="button" onClick={()=>setSaveOpen(false)}>Cancel</button><button type="submit" className="primary" disabled={!deckName.trim()}>Save deck</button></div>
+        </form>
+      </div>}
       {restoreOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)setRestoreOpen(false);}}>
         <section ref={restorePicker} className="gallery-restore-dialog" role="dialog" aria-modal="true" aria-label="Restore starter deck?">
           <h3>Restore starter deck?</h3><p>Are you sure you want to revert your deck back to a starter one?</p>
@@ -5456,6 +5493,7 @@ function HeroPlate({
   onBlockedStrike,
   heroPowerCounter,
   protocolWarning = false,
+  apexPrey,
 }: {
   player: GameState["players"][number];
   identity?: { card: PlayableCard; chapter: number; universe: string };
@@ -5477,6 +5515,7 @@ function HeroPlate({
   onBlockedStrike?: () => void;
   heroPowerCounter?: string;
   protocolWarning?: boolean;
+  apexPrey?:MinionInstance;
 }) {
   const wasHit = floats.some((f) => f.delta < 0);
   const classes = [
@@ -5504,7 +5543,7 @@ function HeroPlate({
       className={classes}
       data-hero={player.id}
       onClick={strikeHandler}
-      aria-disabled={canStrike ? undefined : true}
+      aria-disabled={strikeHandler ? undefined : true}
       aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : undefined}
     >
       {enemy && <span className="hero-health-fill" aria-hidden="true" style={{width:`${Math.max(0,Math.min(1,player.health/STARTING_CORE))*100}%`,'--boss-tint':campAccent(identity && isMinionCard(identity.card) ? identity.card.camp : 'Nature')} as CSSProperties} />}
@@ -5523,6 +5562,7 @@ function HeroPlate({
         </strong>
         {power ? <small className="hero-power-label">⚡ {power.name}{heroPowerCounter ? <b className="hero-power-counter">{heroPowerCounter}</b> : null}</small> : null}
       </span>
+      {enemy&&apexPrey&&<span className="apex-prey" title={`Apex Duel: ${apexPrey.name} is your highest-ATK minion (${apexPrey.atk} ATK)`} aria-label={`Apex Duel target: ${apexPrey.name}`}><img src={apexPrey.art} alt="" draggable={false}/><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16"/><path d="M20 0v10m0 20v10M0 20h10m20 0h10"/></svg></span>}
       {enemy && revealedHand && library ? (
         <span className="revealed-hand" aria-label="The Watcher reveals this hand">
           {revealedHand.map((cardId, index) => {
@@ -6587,26 +6627,22 @@ function DeveloperTools({
           <button type="button" className="screen-x" onClick={onClose} aria-label="Close developer mode">×</button>
         </header>
 
-        <div className="developer-controls">
-          {screen === "playing" ? (
-            <>
-              <button type="button" className={hasInfiniteMana(game, viewerId) ? "developer-action active" : "developer-action"} onClick={onToggleCheat}>
-                {hasInfiniteMana(game, viewerId) ? "Infinite mana: ON" : "Infinite mana: OFF"}
-              </button>
-              <button type="button" className="developer-action" onClick={() => onSetCore(viewerId, 1)}>My Core → 1</button>
-              <button type="button" className="developer-action" onClick={() => onSetCore(otherId, 1)}>Enemy Core → 1</button>
-              <button type="button" className="developer-action" onClick={() => onHealCore(viewerId)}>Fully heal my core</button>
-              <button type="button" className="developer-action" onClick={() => onHealCore(otherId)}>Fully heal enemy core</button>
-              <button type="button" className="developer-action" onClick={() => onClearHand(otherId)}>Remove all enemy cards</button>
-              <button type="button" className={game.coreInvincible?.[viewerId] ? "developer-action active" : "developer-action"} onClick={() => onMakeCoreInvincible(viewerId)}>
-                {game.coreInvincible?.[viewerId] ? "Core invincible: ON" : "Make the core invincible"}
-              </button>
-              <button type="button" className="developer-action" onClick={onUndoTurn} disabled={!canUndoTurn}>Undo a turn</button>
-              <button type="button" className="developer-action" onClick={() => onClearBoard(viewerId)}>Clear my board</button>
-              <button type="button" className="developer-action" onClick={() => onClearBoard(otherId)}>Clear enemy board</button>
-            </>
-          ) : null}
-        </div>
+        {screen==='playing'&&<div className="developer-controls">
+          <div className="developer-control-group dev-mine" aria-label="My cheats"><strong>My side</strong>
+            <button type="button" className={`developer-action${hasInfiniteMana(game,viewerId)?' active':''}`} onClick={onToggleCheat}>Infinite mana: {hasInfiniteMana(game,viewerId)?'ON':'OFF'}</button>
+            <button type="button" className="developer-action" onClick={()=>onSetCore(viewerId,1)}>My Core → 1</button>
+            <button type="button" className="developer-action" onClick={()=>onHealCore(viewerId)}>Fully heal my core</button>
+            <button type="button" className={`developer-action${game.coreInvincible?.[viewerId]?' active':''}`} onClick={()=>onMakeCoreInvincible(viewerId)}>{game.coreInvincible?.[viewerId]?'Core invincible: ON':'Make the core invincible'}</button>
+            <button type="button" className="developer-action" onClick={()=>onClearBoard(viewerId)}>Clear my board</button>
+          </div>
+          <div className="developer-control-group dev-enemy" aria-label="Enemy cheats"><strong>Enemy side</strong>
+            <button type="button" className="developer-action" onClick={()=>onSetCore(otherId,1)}>Enemy Core → 1</button>
+            <button type="button" className="developer-action" onClick={()=>onHealCore(otherId)}>Fully heal enemy core</button>
+            <button type="button" className="developer-action" onClick={()=>onClearHand(otherId)}>Remove all enemy cards</button>
+            <button type="button" className="developer-action" onClick={()=>onClearBoard(otherId)}>Clear enemy board</button>
+          </div>
+          <div className="developer-control-group dev-neutral"><button type="button" className="developer-action" onClick={onUndoTurn} disabled={!canUndoTurn}>Undo a turn</button></div>
+        </div>}
 
         <div className="developer-workbench">
           <div className="developer-card-list-wrap">
@@ -6694,23 +6730,14 @@ function DeveloperTools({
                   </button>
                 ) : (
                   <div className="developer-card-actions">
-                    <button type="button" className="developer-primary" onClick={() => onGiveCard(selected.id, viewerId)}>Give to my hand</button>
-                    <button type="button" className="developer-secondary" onClick={() => onGiveCard(selected.id, otherId)}>Give to enemy hand</button>
-                    {!isRelicCard(selected) ? (
-                      <>
-                        <button type="button" className="developer-secondary" onClick={() => onPlaceCard(selected.id, viewerId)}>Place on my board</button>
-                        <button type="button" className="developer-secondary" onClick={() => onPlaceCard(selected.id, otherId)}>Place on enemy board</button>
-                      </>
-                    ) : (
-                      <>
-                        <button type="button" className="developer-secondary" onClick={() => onEquipRelic(selected.id, viewerId)}>Equip on my first minion</button>
-                        {/* The enemy side, added 2 September 2026. Testing a
-                            relic used to mean testing only what it does FOR
-                            you, and half the roster's relics are interesting
-                            precisely because of what they do to you. */}
-                        <button type="button" className="developer-secondary" onClick={() => onEquipRelic(selected.id, otherId)}>Equip on enemy first minion</button>
-                      </>
-                    )}
+                    <div className="developer-owned-actions dev-mine-actions">
+                      <button type="button" className="developer-secondary dev-mine-action" onClick={()=>onGiveCard(selected.id,viewerId)}>Give to my hand</button>
+                      {!isRelicCard(selected)?<button type="button" className="developer-secondary dev-mine-action" onClick={()=>onPlaceCard(selected.id,viewerId)}>Place on my board</button>:<button type="button" className="developer-secondary dev-mine-action" onClick={()=>onEquipRelic(selected.id,viewerId)}>Equip on my first minion</button>}
+                    </div>
+                    <div className="developer-owned-actions dev-enemy-actions">
+                      <button type="button" className="developer-secondary dev-enemy-action" onClick={()=>onGiveCard(selected.id,otherId)}>Give to enemy hand</button>
+                      {!isRelicCard(selected)?<button type="button" className="developer-secondary dev-enemy-action" onClick={()=>onPlaceCard(selected.id,otherId)}>Place on enemy board</button>:<button type="button" className="developer-secondary dev-enemy-action" onClick={()=>onEquipRelic(selected.id,otherId)}>Equip on enemy first minion</button>}
+                    </div>
                   </div>
                 )}
                 {/* OUTSIDE the title/duel split, like the pack buttons above:
@@ -6723,7 +6750,7 @@ function DeveloperTools({
                   <div className="developer-result-actions">
                     <button
                       type="button"
-                      className="developer-secondary"
+                      className="developer-secondary dev-mine-action"
                       onClick={() => onShowResult(viewerId, selected.id)}
                       title="Shows this result. An active campaign duel counts toward progression."
                     >
@@ -6731,7 +6758,7 @@ function DeveloperTools({
                     </button>
                     <button
                       type="button"
-                      className="developer-secondary"
+                      className="developer-secondary dev-enemy-action"
                       onClick={() => onShowResult(otherId, selected.id)}
                       title="Shows this result. An active campaign duel counts toward progression."
                     >
@@ -6752,7 +6779,7 @@ function DeveloperTools({
           ) : <p className="developer-empty">No cards match this search.</p>}
         </div>
 
-        <p className="developer-note">Developer actions affect this test duel only. The duel itself still counts: finishing one enters your record and pays its cards.</p>
+
       </section>
     </div>
   );

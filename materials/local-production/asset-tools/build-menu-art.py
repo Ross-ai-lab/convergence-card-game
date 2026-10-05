@@ -57,8 +57,8 @@ def main() -> int:
     for path in sorted(SOURCE.iterdir()):
         if path.suffix.lower() not in SUFFIXES:
             continue
-        # One extension out, whatever went in: the app builds the menu path from
-        # the card id alone and must not have to know how the original was saved.
+        # One extension out, whatever went in: the app derives the menu path from
+        # the named raw artwork, without loading the full image on the title.
         out = TARGET / f"{path.stem}.webp"
         with Image.open(path) as im:
             im = im.convert("RGB")
@@ -69,6 +69,13 @@ def main() -> int:
         source_bytes += path.stat().st_size
         output_bytes += out.stat().st_size
         written += 1
+
+    # Thumbnails are generated copies. Retain exactly the current raw library.
+    current_names={f'{path.stem}.webp' for path in SOURCE.iterdir() if path.suffix.lower() in SUFFIXES}
+    for path in TARGET.glob('*.webp'):
+        old=path.resolve()
+        if old.parent!=TARGET.resolve():raise ValueError('Thumbnail cleanup escaped menu folder')
+        if old.is_file() and old.name not in current_names:old.unlink()
 
     if not written:
         print("No source images found.", file=sys.stderr)

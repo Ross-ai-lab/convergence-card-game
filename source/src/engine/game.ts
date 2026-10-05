@@ -5016,8 +5016,8 @@ function canDamage(
     events.push(effectEvent(`${target.name} is unmoved.`, target));
     return false;
   }
-  if (!cannotBeEvaded && !effectDamage && hasEffect(target, "dodge_50") && !target.silenced) {
-    if (coinFlip(state)) {
+  if (!cannotBeEvaded && !effectDamage && hasEffect(target, "dodge_40") && !target.silenced) {
+    if (rollInt(state,100)<40) {
       events.push(effectEvent(`${target.name} slips away.`, target));
       return false;
     }
@@ -5031,12 +5031,6 @@ function canDamage(
   if (!cannotBeEvaded && !effectDamage && hasRelic(target, "evade_50") && !target.silenced) {
     if (coinFlip(state)) {
       events.push(effectEvent(`${target.name} evades the attack through Infinity Castle.`, target));
-      return false;
-    }
-  }
-  if (!cannotBeEvaded && !effectDamage && hasEffect(target, "dodge_80") && !target.silenced) {
-    if (rollInt(state, 100) < 80) {
-      events.push(effectEvent(`${target.name} slips away.`, target));
       return false;
     }
   }

@@ -41,7 +41,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "Taunt.",
     flavor: "The wish dragon answers.",
     origin: "Dragon Ball",
-    art: resolvePublicAssetUrl("/card-art/raw/token-shenron.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/shenron.webp"),
   },
   {
     kind: "minion",
@@ -59,7 +59,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "-",
     flavor: "A small spark can turn the tide.",
     origin: "Hero Power",
-    art: resolvePublicAssetUrl("/card-art/raw/token-knight.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/knight.webp"),
   },
   {
     kind: "minion",
@@ -77,7 +77,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "-",
     flavor: "The dead keep marching.",
     origin: "Hero Power",
-    art: resolvePublicAssetUrl("/card-art/raw/overlord-skeleton.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/skeleton.webp"),
   },
   {
     kind: "minion",
@@ -95,7 +95,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "-",
     flavor: "One body becomes many.",
     origin: "Naruto",
-    art: resolvePublicAssetUrl("/card-art/raw/token-shadow-clone.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/shadow-clone.webp"),
   },
   {
     kind: "minion",
@@ -113,7 +113,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "-",
     flavor: "One more for the hive.",
     origin: "Alien",
-    art: resolvePublicAssetUrl("/card-art/raw/token-larva.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/larva.webp"),
   },
   {
     kind: "minion",
@@ -131,7 +131,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "-",
     flavor: "A fragment of sin.",
     origin: "The Seven Deadly Sins",
-    art: resolvePublicAssetUrl("/card-art/raw/token-sin.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/sin.webp"),
   },
   {
     kind: "minion",
@@ -149,7 +149,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "Charge.",
     flavor: "Twin ion engines scream through the void.",
     origin: "Star Wars",
-    art: resolvePublicAssetUrl("/card-art/raw/token-tie-fighter.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/tie-fighter.webp"),
   },
   {
     kind: "minion",
@@ -167,7 +167,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "Taunt.",
     flavor: "The immovable.",
     origin: "Elden Ring",
-    art: resolvePublicAssetUrl("/card-art/raw/c155.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/margit-the-fell-omen.webp"),
   },
   {
     kind: "minion",
@@ -185,7 +185,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "Taunt.",
     flavor: "Built to end him. Chose otherwise.",
     origin: "MCU",
-    art: resolvePublicAssetUrl("/card-art/raw/token-vision.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/vision.webp"),
   },
   {
     kind: "minion",
@@ -221,7 +221,7 @@ export const TOKEN_CARDS: CardDefinition[] = [
     effect: "-",
     flavor: "The Avatar's spirit wakes.",
     origin: "Avatar",
-    art: resolvePublicAssetUrl("/card-art/raw/token-awakened.webp"),
+    art: resolvePublicAssetUrl("/card-art/raw/awakened.webp"),
   },
 ];
 

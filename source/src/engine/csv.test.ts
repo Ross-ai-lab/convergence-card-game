@@ -19,10 +19,10 @@ describe("card CSV data", () => {
   });
 
   it("resolves public artwork from both root and folder-hosted builds", () => {
-    const artwork = "/card-art/raw/c001.webp";
-    expect(resolvePublicAssetUrl(artwork, "/")).toBe("/card-art/raw/c001.webp");
+    const artwork = "/card-art/raw/john-wick.webp";
+    expect(resolvePublicAssetUrl(artwork, "/")).toBe("/card-art/raw/john-wick.webp");
     expect(resolvePublicAssetUrl(artwork, "/convergence-card-game/play/")).toBe(
-      "/convergence-card-game/play/card-art/raw/c001.webp",
+      "/convergence-card-game/play/card-art/raw/john-wick.webp",
     );
   });
 

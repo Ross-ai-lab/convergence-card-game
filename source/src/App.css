@@ -7145,3 +7145,34 @@ button:disabled {
   .gallery-filter select option {padding:5px 10px;}
  }
 }
+
+/* Shield and readiness have independent silhouettes: gold inside, green outside. */
+.board-slot.occupied.ready .minion-wrap:not(.ghost-wrap) .is-shielded .cf-stage {box-shadow:var(--cf-drop);}
+.board-slot.occupied.ready .minion-wrap:not(.ghost-wrap) .is-shielded .cf-ready-glow {
+  width:calc(850 * var(--u));height:calc(1150 * var(--u));border-radius:calc(36 * var(--u));
+  box-shadow:0 0 0 2px #59e780,0 0 9px 2px #43c96677;
+}
+.card-face.is-shielded::after {z-index:5;}
+.board-slot.occupied.ready .minion-wrap:not(.ghost-wrap) .card-face.is-shielded::after {
+  box-shadow:0 0 0 3px #fff0a8,0 0 18px #ffc640bb,inset 0 0 16px #fff2ba88;
+}
+.apex-prey {position:relative;display:block;flex:0 0 38px;width:38px;height:38px;margin: -3px 6px 0 0;align-self:flex-start;pointer-events:none;}
+.apex-prey img {width:100%;height:100%;object-fit:cover;object-position:center 20%;border-radius:50%;}
+.apex-prey svg {position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);fill:none;stroke:#ffe8a0;stroke-width:2;filter:drop-shadow(0 1px 2px #000);}
+.enemy-hero-wrap.apex-blocked .enemy-power-card {border-color:#ff6c70;background:linear-gradient(145deg,#62212e,#281019);animation:none;}
+.enemy-hero-wrap.apex-blocked .enemy-power-card::after {content:'';position:absolute;inset:-3px;border:2px solid #ff777b;border-radius:inherit;box-shadow:0 0 22px #ff414199;pointer-events:none;animation:apex-warning-flash 250ms ease-in-out 4;}
+@keyframes apex-warning-flash {50%{opacity:.15;}}
+.gallery-deck-selector {min-width:0;flex:1;}
+.gallery-deck-selector select {width:100%;min-height:34px;color:#ffe8ab;font-size:13px;}
+.gallery-deck-selector select::picker(select) {max-height:min(420px,65dvh);overflow:auto;}
+.gallery-preset-actions {display:flex;gap:7px;margin:8px 4px;}
+.gallery-preset-actions button {flex:1;min-height:31px;border-color:#806842;background:#211a15;color:#edc888;font-size:12px;}
+.gallery-preset-actions .preset-save {background:linear-gradient(160deg,#eed08a,#a47b37);color:#20160b;border-color:#eed18d;}
+.gallery-preset-notice {margin:0 4px 7px;font-size:11px;color:#bfe1bb;}
+.gallery-save-dialog {width:min(360px,100%);padding:20px;border:1px solid #e5bb63;border-radius:12px;background:linear-gradient(150deg,#30231b,#17121c);box-shadow:0 20px 70px #000b;}
+.gallery-save-dialog h3 {margin:0 0 15px;color:#f4d28a;}
+.gallery-save-dialog label {display:grid;gap:7px;color:#d9c393;font-size:13px;}
+.gallery-save-dialog input {box-sizing:border-box;width:100%;min-height:40px;padding:8px 10px;border:1px solid #99783f;border-radius:7px;background:#110e15;color:#fff0ce;font:inherit;}
+.gallery-save-dialog p {color:#bcae99;font-size:12px;}
+.gallery-save-dialog>div {display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+@media(max-width:700px){.gallery-deck{max-height:320px}.apex-prey{flex-basis:29px;width:29px;height:29px;margin-right:3px}}

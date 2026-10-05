@@ -50,3 +50,7 @@
  .comic-caption {font-size:11px;padding:4px 6px;top:6px;left:6px;max-width:calc(100% - 12px);}
  .comic-dialogue {font-size:11px;padding:6px 7px;bottom:8px;right:8px;max-width:90%;}
 }
+
+.title-screen .lore-book-button {background:transparent;transition:transform 220ms cubic-bezier(.2,.8,.3,1),filter 220ms ease;transform-origin:50% 85%;}
+.title-screen .lore-book-button:hover:not(:disabled),.title-screen .lore-book-button:focus-visible {background:transparent;transform:translateY(-7px) rotate(-5deg) scale(1.1);filter:drop-shadow(0 10px 15px #000a) drop-shadow(0 0 13px #edc46788);}
+.title-screen .lore-book-button:active {transform:translateY(-2px) rotate(-2deg) scale(1.04);}

@@ -72,6 +72,7 @@ Chromium checks native holds and swipes. WebKit checks long-press pointer events
 | `npm test` | Engine, saves, decks, progression, targeting, and bot legality |
 | `npm run validate:data` | Card definitions, public roster counts, and workbook freshness |
 | `npm run check:ui` | Duel controls and title-screen behaviour |
+| `npm run check -- --only card-interface` | Shield readiness, Apex targeting, grouped cheats, deck presets and placement sound |
 | `npm run check:cardface` | Card names, text fit, stats, and viewport containment |
 | `npm run check:features` | Tutorial, developer tools, and all character profiles |
 | `npm run check -- --only mobile` | Phone/tablet layouts, touch interactions, reader, deck editing, and landscape |
@@ -138,7 +139,7 @@ Collection long presses open Star Charts. Movement cancels the hold; releasing a
 Profiles open in a separate, opaque layer above the gallery and fit the visible viewport without scrolling. Check short phone windows as well as full device dimensions.
 Board cards display current stats and conditions. Equipped relics expose their own complete card when inspected.
 
-The maintained artwork library is [source/public/card-art/raw/](source/public/card-art/raw/), entirely WebP. Keep one authored image collection; the published copy is generated.
+The maintained artwork library is [source/public/card-art/raw/](source/public/card-art/raw/), entirely WebP, with readable character and relic filenames. Legacy paths migrate through `source/data/art-renames.json`. Keep one authored image collection; the published copy is generated.
 Encode replacements directly into that folder, update the CSV path and rebuild gallery previews. Use a new filename for changed art so browser caches cannot retain the previous image.
 The existing [card validator](source/scripts/validate-cards.mjs) checks that both rosters resolve to the retained artwork.
 Card-specific crops must agree between the full image and its embedded preview.

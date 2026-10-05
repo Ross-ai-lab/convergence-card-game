@@ -78,6 +78,7 @@ A first victory awards its fixed reward once and does not rewrite the player's c
 Migrations preserve earned content and preferences; they do not reset progress to avoid a compatibility problem.
 Serialization is coalesced into idle time, with a 200 ms deadline. Leaving or hiding the page flushes the newest complete duel and clock.
 Clearing a duel cancels its pending write so an old action cannot restore a finished match.
+Named deck presets retain independent card lists and the selected Hero Power. Working drafts remain separate; an incomplete preset cannot start a duel until it reaches thirty cards.
 Browser storage is local to the device and origin. There is no account synchronization.
 
 ## A static release with relative assets

@@ -36,6 +36,7 @@ export interface DuelResult {
   at: number;
 }
 
+export interface SavedDeck { id:string;name:string;cards:string[];heroPower:HeroPowerId|null }
 export interface Progress {
   storyIntroduced: boolean;
   developerChaptersUnlocked: boolean;
@@ -51,6 +52,8 @@ export interface Progress {
   completedChapters: number;
   completedBosses: number[];
   unlockedIds: string[];
+  savedDecks:SavedDeck[];
+  selectedDecks:[string|null,string|null];
   playerDeck: string[];
   hotseatDeck: string[];
   selectedHeroPower: HeroPowerId | null;
@@ -78,7 +81,7 @@ export function emptyProgress(): Progress {
     ladders: { easy: emptyRecord(), normal: emptyRecord(), hard: emptyRecord(), hotseat: emptyRecord() },
     recent: [], seen: [], played: [], wonWith: [], completedChapters: 0, completedBosses: [],
     unlockedIds: [...CAMPAIGN_INITIAL_COLLECTION], playerDeck: [...CAMPAIGN_STARTER_DECK],
-    hotseatDeck: [...CAMPAIGN_STARTER_DECK], selectedHeroPower: firstUnlockedHeroPower(0), heroPowerSeenWins: 0, pendingRewards: [], settledDuels: [],
+    hotseatDeck: [...CAMPAIGN_STARTER_DECK], savedDecks:[],selectedDecks:[null,null], selectedHeroPower: firstUnlockedHeroPower(0), heroPowerSeenWins: 0, pendingRewards: [], settledDuels: [],
   };
 }
 
@@ -141,6 +144,15 @@ export function loadProgress(): Progress {
     };
     progress.playerDeck = canEditDeck(progress) ? draft(saved.playerDeck) : [...CAMPAIGN_STARTER_DECK];
     progress.hotseatDeck = canEditDeck(progress) ? draft(saved.hotseatDeck) : [...CAMPAIGN_STARTER_DECK];
+    const presetIds=new Set<string>();
+    progress.savedDecks=Array.isArray(saved.savedDecks)?saved.savedDecks.flatMap(preset=>{
+      if(!preset||typeof preset.id!=='string'||presetIds.has(preset.id)||typeof preset.name!=='string'||!preset.name.trim()||!Array.isArray(preset.cards))return [];
+      const ids=knownIds(preset.cards).filter(id=>allowed.has(id));
+      if(ids.length!==preset.cards.length||ids.length>30)return [];
+      presetIds.add(preset.id);
+      return [{id:preset.id,name:preset.name.trim().slice(0,60),cards:ids,heroPower:preset.heroPower&&isHeroPowerUnlocked(preset.heroPower,botWins(progress))?preset.heroPower:null}];
+    }):[];
+    progress.selectedDecks=[0,1].map(seat=>typeof saved.selectedDecks?.[seat]==='string'&&presetIds.has(saved.selectedDecks[seat]!)?saved.selectedDecks[seat]:null) as Progress['selectedDecks'];
     progress.pendingRewards = knownIds(saved.pendingRewards).filter((id) => allowed.has(id));
     progress.seen = knownIds(saved.seen); progress.played = knownIds(saved.played); progress.wonWith = knownIds(saved.wonWith);
     progress.selectedHeroPower = saved.selectedHeroPower && isHeroPowerUnlocked(saved.selectedHeroPower, botWins(progress))
@@ -180,6 +192,27 @@ export function saveDeckDraft(progress: Progress, deck: readonly string[], seat:
   const allowed = new Set(progress.unlockedIds);
   if (deck.length > 30 || new Set(deck).size !== deck.length || deck.some((id) => !allowed.has(id))) return progress;
   return { ...progress, [seat === 0 ? "playerDeck" : "hotseatDeck"]: [...deck] };
+}
+/** Named presets retain unfinished drafts; duel construction still requires 30 cards. */
+export function saveNamedDeck(progress:Progress,name:string,seat:0|1=0,id?:string):Progress {
+  const title=name.trim().replace(/\s+/g,' ').slice(0,60);
+  if(!title)return progress;
+  const cards=seat===0?progress.playerDeck:progress.hotseatDeck;
+  const match=progress.savedDecks.find(deck=>deck.id===id)||progress.savedDecks.find(deck=>deck.name.toLocaleLowerCase()===title.toLocaleLowerCase());
+  const preset:SavedDeck={id:match?.id??`deck-${Date.now().toString(36)}-${progress.savedDecks.length}`,name:title,cards:[...cards],heroPower:progress.selectedHeroPower};
+  const savedDecks=match?progress.savedDecks.map(deck=>deck.id===match.id?preset:deck):[...progress.savedDecks,preset];
+  const selectedDecks=[...progress.selectedDecks] as Progress['selectedDecks'];selectedDecks[seat]=preset.id;
+  return {...progress,savedDecks,selectedDecks};
+}
+export function selectNamedDeck(progress:Progress,id:string,seat:0|1=0):Progress {
+  if(!id){
+    const selectedDecks=[...progress.selectedDecks] as Progress['selectedDecks'];selectedDecks[seat]=null;
+    return {...progress,selectedDecks};
+  }
+  const preset=progress.savedDecks.find(deck=>deck.id===id);
+  if(!preset||preset.cards.some(card=>!progress.unlockedIds.includes(card)))return progress;
+  const selectedDecks=[...progress.selectedDecks] as Progress['selectedDecks'];selectedDecks[seat]=id;
+  return {...saveDeckDraft(progress,preset.cards,seat),selectedDecks,selectedHeroPower:preset.heroPower&&isHeroPowerUnlocked(preset.heroPower,botWins(progress))?preset.heroPower:progress.selectedHeroPower};
 }
 const merge = (left: readonly string[], right: readonly string[]) => [...new Set([...left, ...right])];
 

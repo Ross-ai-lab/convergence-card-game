@@ -234,7 +234,7 @@ describe("targeted effects", () => {
 
   it("Musashi bypasses Evade when destroying damaged enemies", () => {
     const state = mainState("musashi-evade");
-    state.players[1].board[0] = dummy("Modern Tank", 1, { hp: 2, maxHp: 3, effectId: "dodge_50" });
+    state.players[1].board[0] = dummy("Modern Tank", 1, { hp: 2, maxHp: 3, effectId: "dodge_40" });
     state.players[1].board[1] = makeMinion("Kojiro Sasaki", 1);
     state.players[1].board[2] = dummy("John Wick", 1, { hp: 1, maxHp: 2 });
 

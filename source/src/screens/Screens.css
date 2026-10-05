@@ -1999,3 +1999,10 @@ button.duel-trigger:hover:not(:disabled) {
     bottom: 10px;
   }
 }
+
+.title-screen .continue-duel:hover:not(:disabled),.title-screen .continue-duel:focus-visible {
+  background:linear-gradient(160deg,#483021,#241323);border-color:#ffe29a;color:#fff2c8;
+  transform:translate(-50%,-50%) scale(1.06);box-shadow:0 10px 30px #0009,0 0 22px #ecc05b55;
+}
+.title-bottom-left .tutorial-trigger {background:#100c1beb;border-color:#6e604366;color:#c9b991;box-shadow:0 4px 14px #0004;}
+.title-bottom-left .tutorial-trigger:hover:not(:disabled) {background:#21182bee;border-color:#b99a62;color:#f1d8a4;}

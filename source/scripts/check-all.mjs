@@ -27,6 +27,8 @@ const ALL = options.all, LIST = options.list;
 const HARNESS = /^source\/scripts\/(browser|profile-layout|campaign-fixtures|campaign-motion|story-fixtures|phone-fixtures|deck-fixtures|gallery-interactions|death-motion|tutorial-flow|menu-polish|interface-followup|build-gallery-previews)\.(mjs|py)$/;
 
 const SUITES = [
+  { name: "card-interface", command: ["node", "scripts/check-card-interface.mjs", BASE], browser: true,
+    reaches: [/^source\/scripts\/check-card-interface\.mjs$/] },
   { name: "docs", command: ["node", "scripts/validate-project-docs.mjs"], browser: false,
     reaches: [/\.md$/i, /^source\/scripts\/(validate-project-docs|readme-index)\.mjs$/] },
   { name: "selection", command: ["node", "--test", "scripts/check-selection.test.mjs"], browser: false,

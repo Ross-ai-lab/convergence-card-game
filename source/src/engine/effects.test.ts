@@ -168,11 +168,11 @@ describe("full-roster effects", () => {
     expect(after.maxHp).toBe(3);
   });
 
-  it("Sans (dodge_80): evades an incoming attack", () => {
+  it("Sans (dodge_60): evades an incoming attack", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 3, hp: 20, maxHp: 20 });
     state.players[1].board[0] = makeMinion("Sans", 1);
-    // This deterministic lower-bound RNG value takes the 80% evasion branch
+    // This deterministic lower-bound RNG value takes the 60% evasion branch
     // without making the test probabilistic. The defender still retaliates.
     state.rngSeed = 1;
     const after = attack(state, 0, 0);

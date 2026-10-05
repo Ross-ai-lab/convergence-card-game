@@ -302,7 +302,7 @@ describe("menu Hero Powers", () => {
       hp: 1,
       maxHp: 1,
       suppressArrivalTheme: true,
-      art: "/card-art/raw/token-knight.webp",
+      art: "/card-art/raw/knight.webp",
     });
 
     const taunt = mainState("give_taunt");

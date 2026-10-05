@@ -1,0 +1,3 @@
+Built-in GPT Image edit.
+
+Use case: precise-object-edit. Edit target: the attached local Poké Ball artwork. Preserve the original anime screenshot's composition, hand, ball shape, purple/magenta top panels, central circular button, lighting, pale yellow/teal radiant background, and anime linework. Remove only the white letter M on the purple upper dome of the ball. Fill its location with matching smooth purple shading and the original linework. Do not add any replacement letter, logo, symbol, text, or new object. Keep the same 4:3 composition. This is the raw artwork for a game card, so do not add a card frame, labels, or statistics.

@@ -149,7 +149,7 @@ describe("forced-random attacks", () => {
     expect(after.state.players[0].board[2]?.hp).toBe(30);
   });
 
-  it("Sans evades 80% of attacks", () => {
+  it("Sans evades 60% of attacks", () => {
     const state = mainState("sans");
     state.players[0].board[0] = dummy("Zoro", 0, { atk: 1, sleeping: false, hp: 10, maxHp: 10 });
     state.players[1].board[0] = makeMinion("Sans", 1);

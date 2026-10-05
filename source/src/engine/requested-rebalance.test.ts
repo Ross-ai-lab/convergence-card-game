@@ -23,7 +23,7 @@ describe('requested card revision',()=>{
     expect(card('c077')).toMatchObject({effectId:'dodge_60',keywords:['Taunt','Passive'],effect:'Taunt. Passive: Evade 60% of attacks'});
     expect(card('c133').effect).not.toContain('minimum 1');
   });
-  it.each(['dodge_50','dodge_80','evade_first_attack','evade_allies_33','kaku_evade_counter','korosensei_defense'] as EffectId[])('Nyan bypasses %s without defensive evasion rolls',(effectId)=>{
+  it.each(['dodge_40','dodge_60','evade_first_attack','evade_allies_33','kaku_evade_counter','korosensei_defense'] as EffectId[])('Nyan bypasses %s without defensive evasion rolls',(effectId)=>{
     for(let seed=1;seed<=12;seed++){
       const s=state(`nyan-${effectId}-${seed}`);
       s.players[0].board[0]=minion('c127',0,{atk:5,hp:10,maxHp:10,sleeping:false});

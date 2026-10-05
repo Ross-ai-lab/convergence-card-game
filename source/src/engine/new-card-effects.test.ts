@@ -129,7 +129,7 @@ describe("2026 card replacements", () => {
       hp: 1,
       suppressArrivalTheme: false,
     });
-    expect(after.players[0].board[1]?.art).toContain("token-larva.webp");
+    expect(after.players[0].board[1]?.art).toContain("larva.webp");
   });
 
   it("Xenomorph Queen does not hatch a Larva when a Larva dies", () => {
@@ -160,7 +160,7 @@ describe("2026 card replacements", () => {
 
     expect(clones).toHaveLength(2);
     expect(clones.every((entry) => entry?.name === "Shadow Clone" && entry.atk === 2 && entry.hp === 2)).toBe(true);
-    expect(clones.every((entry) => entry?.art.includes("token-shadow-clone.webp"))).toBe(true);
+    expect(clones.every((entry) => entry?.art.includes("shadow-clone.webp"))).toBe(true);
     expect(clones.every((entry) => entry?.suppressArrivalTheme === true)).toBe(true);
   });
 
@@ -485,7 +485,7 @@ describe("2026 card replacements", () => {
         keywords: ["Divine Shield", "Passive"],
         effect: "Divine Shield. Passive: Do 2x damage when defending against an attack",
       },
-      Sans: { cost: 4, atk: 2, hp: 1, effectId: "dodge_80", effect: "Passive: Evade 80% of attacks" },
+      Sans: { cost: 4, atk: 2, hp: 1, effectId: "dodge_60", effect: "Passive: Evade 60% of attacks" },
       "Doom Slayer": { cost: 8, atk: 4, hp: 8, effectId: "doom_evil_slayer", effectTiming: "passive", keywords: ["Passive"] },
       Ragnaros: { cost: 4, atk: 3, hp: 3, effectId: "ragnaros_ongoing_burn", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
       Musashi: { atk: 2, hp: 1 },
@@ -851,8 +851,8 @@ describe("2026 card replacements", () => {
   it("Morgott summons a 1/1 Taunt Margit on play and has no old Deathrattle", () => {
     const state = mainState("morgott-summons-margit");
     const summoned = play(state, 0, "Morgott, the Omen King", 0);
-    expect(summoned.players[0].board[0]).toMatchObject({cardId:"c155", name:"Morgott, the Omen King", atk:1, hp:1, maxHp:1, keywords:["Taunt"], effectId:"summon_margit", art:"/card-art/raw/token-morgott.webp"});
-    expect(summoned.players[0].board[1]).toMatchObject({cardId:"token:margit", name:"Margit the Fell Omen", atk:1, hp:1, maxHp:1, keywords:["Taunt"], effectId:"none", sleeping:true, suppressArrivalTheme:true, art:"/card-art/raw/c155.webp"});
+    expect(summoned.players[0].board[0]).toMatchObject({cardId:"c155", name:"Morgott, the Omen King", atk:1, hp:1, maxHp:1, keywords:["Taunt"], effectId:"summon_margit", art:"/card-art/raw/morgott-the-omen-king.webp"});
+    expect(summoned.players[0].board[1]).toMatchObject({cardId:"token:margit", name:"Margit the Fell Omen", atk:1, hp:1, maxHp:1, keywords:["Taunt"], effectId:"none", sleeping:true, suppressArrivalTheme:true, art:"/card-art/raw/margit-the-fell-omen.webp"});
     expect(summoned.players[0].board.filter(Boolean)).toHaveLength(2);
     summoned.players[1].board[0] = minion("Zoro", 1, {atk:99,hp:20,maxHp:20,sleeping:false});
     summoned.activePlayer = 1;
@@ -1214,7 +1214,7 @@ describe("2026 card replacements", () => {
     ).state;
     expect(afterDeath.players[0].board[0]).toMatchObject({ name: "Awakened", atk: 6, hp: 3, cost: 6 });
     expect(afterDeath.players[0].board[0]).toMatchObject({
-      art: "/card-art/raw/token-awakened.webp",
+      art: "/card-art/raw/awakened.webp",
       suppressArrivalTheme: false,
     });
   });
@@ -1429,7 +1429,7 @@ describe("2026 card replacements", () => {
     expect(tokenKeywords.map(([keyword]) => keyword).sort()).toEqual(
       ["Divine Shield", "Charge", "Chained"].sort(),
     );
-    expect(sins.every((entry) => entry?.atk === 1 && entry?.hp === 1 && entry.art.endsWith("/token-sin.webp"))).toBe(true);
+    expect(sins.every((entry) => entry?.atk === 1 && entry?.hp === 1 && entry.art.endsWith("/sin.webp"))).toBe(true);
     expect(sins.every((entry) => entry?.art !== after.players[0].board[0]?.art)).toBe(true);
     expect(sins.every((entry) => entry?.suppressArrivalTheme === true)).toBe(true);
   });
@@ -1465,7 +1465,7 @@ describe("2026 card replacements", () => {
     expect(fighters).toHaveLength(2);
     expect(fighters.every((fighter) => fighter.name === "TIE Fighter" && fighter.atk === 1 && fighter.hp === 1)).toBe(true);
     expect(fighters.every((fighter) => fighter.keywords.includes("Charge") && fighter.sleeping === false)).toBe(true);
-    expect(fighters.every((fighter) => fighter.art.endsWith("/token-tie-fighter.webp"))).toBe(true);
+    expect(fighters.every((fighter) => fighter.art.endsWith("/tie-fighter.webp"))).toBe(true);
     expect(fighters.every((fighter) => fighter.suppressArrivalTheme === true)).toBe(true);
   });
 
@@ -1942,7 +1942,7 @@ describe("2026 card replacements", () => {
     // survives on its own.
     expect(after.players[0].board[0]).toMatchObject({ name: "Vision", atk: 5, hp: 3, maxHp: 3, chained: 0 });
     expect(after.players[0].board[0]?.keywords).toEqual(["Taunt"]);
-    expect(after.players[0].board[0]?.art).toBe("/card-art/raw/token-vision.webp");
+    expect(after.players[0].board[0]?.art).toBe("/card-art/raw/vision.webp");
     expect(after.players[0].board[0]?.owner).toBe(0);
   });
 
@@ -2628,7 +2628,7 @@ describe("2026 card replacements", () => {
 });
 
 describe("direct effect reachability", () => {
-  it("Bigfoot evades exactly the printed 50% of incoming attacks", () => {
+  it("Bigfoot evades exactly the printed 40% of incoming attacks", () => {
     const evades = mainState("bigfoot-evades");
     evades.rngSeed = 1;
     evades.players[0].board[0] = minion("John Wick", 0, {

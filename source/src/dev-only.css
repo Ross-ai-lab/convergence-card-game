@@ -405,3 +405,17 @@
 }
 
 .developer-card-mana {display:grid;place-items:center;width:25px;height:28px;flex:none;background:linear-gradient(135deg,#b9ebff,#258abd 50%,#123d71);border:1px solid #c5f1ff;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:white;font-size:15px;font-weight:900;text-shadow:0 1px 2px #073058;}
+
+.developer-control-group {display:flex;flex-wrap:wrap;align-items:center;gap:7px;width:100%;padding:8px 10px;border-radius:9px;border:1px solid #ffffff18;}
+.developer-control-group>strong {flex:0 0 70px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;}
+.developer-control-group.dev-mine {background:#152b2290;border-color:#61c98755;color:#a0e9b6;}
+.developer-control-group.dev-enemy {background:#32162090;border-color:#dc697255;color:#ffb1b6;}
+.dev-mine .developer-action,.developer-card-actions .dev-mine-action {background:#183d2b;border-color:#5cbf80;color:#d6ffe1;}
+.dev-enemy .developer-action,.developer-card-actions .dev-enemy-action {background:#4b202b;border-color:#cb6975;color:#ffe0e4;}
+.dev-mine .developer-action:hover:not(:disabled),.developer-card-actions .dev-mine-action:hover {background:#225d3b;border-color:#9cf3b5;}
+.dev-enemy .developer-action:hover:not(:disabled),.developer-card-actions .dev-enemy-action:hover {background:#792d3f;border-color:#ff9eaa;}
+.dev-neutral {width:auto;padding:0;border:0;}
+
+.developer-owned-actions {display:grid;gap:8px;}
+.developer-result .dev-mine-action {background:#183d2b;border-color:#5cbf80;color:#d6ffe1;}
+.developer-result .dev-enemy-action {background:#4b202b;border-color:#cb6975;color:#ffe0e4;}

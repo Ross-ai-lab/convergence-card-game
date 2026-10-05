@@ -230,3 +230,13 @@ describe('deferred duel storage',()=>{
     expect(memory.getItem(SAVE_KEY)).toBeNull();
   });
 });
+
+it('restores legacy artwork and evasion IDs without losing an ongoing duel',()=>{
+  vi.stubGlobal('window',{localStorage:memoryLocalStorage()});const game=liveDuel();
+  const body=spawnTestMinion(cards.find(card=>card.id==='c004')!,0,{atk:7,hp:1,maxHp:9});
+  Object.assign(body,{art:'/card-art/raw/c004.webp',effectId:'dodge_50',effect:'Passive: Evades 50% of incoming attacks'});
+  body.gainedEffects=[{effectId:'dodge_80' as never,timing:'passive',text:'Passive: Evade 80% of attacks'}];game.players[0].board[0]=body;
+  saveGame(game,[],{kind:'bot',skill:'normal'},1000);const loaded=loadGame()!.game.players[0].board[0]!;
+  expect(loaded.art).toContain('bigfoot.webp');expect(loaded).toMatchObject({atk:7,hp:1,maxHp:9,effectId:'dodge_40'});
+  expect(loaded.effect).toContain('40%');expect(loaded.gainedEffects[0]).toMatchObject({effectId:'dodge_60',text:'Passive: Evade 60% of attacks'});
+});

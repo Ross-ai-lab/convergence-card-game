@@ -23,6 +23,7 @@ import {shouldPlayCardTheme} from './card-theme-policy';
    ============================================================================ */
 
 export type SfxName =
+  | "minionLand"
   | "summonRare"
   | "summonEpic"
   | "summonLegendary"
@@ -554,6 +555,12 @@ function render(name: SfxName, t: number): void {
     // ---- summoning: one fanfare per rarity, each tier adds a layer --------
 
     // Black = Rare. Gunmetal. Grounded and martial: slap, thud, one bell.
+    case "minionLand":
+      // Short, damped body and surface contact. No bell or rising electronic tone.
+      noise({t,dur:.07,gain:.14,type:'lowpass',f0:1100,f1:120,send:.1});
+      osc({type:'sine',f0:112,f1:42,t,dur:.24,gain:.28,attack:.002,send:.12});
+      osc({type:'sine',f0:58,f1:29,t:t+.008,dur:.29,gain:.16,attack:.004,send:.1});
+      break;
     case "summonRare":
       noise({ t, dur: 0.07, gain: 0.18, type: "lowpass", f0: 3000, f1: 300, send: 0.18 });
       osc({ type: "sine", f0: 150, f1: 64, t, dur: 0.2, gain: 0.24, attack: 0.002, send: 0.12 });

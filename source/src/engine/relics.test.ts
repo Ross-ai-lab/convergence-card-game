@@ -35,7 +35,7 @@ function makeToken(tokenId: string): MinionInstance {
     effect: "-",
     flavor: "A temporary token.",
     origin: "Token",
-    art: "/card-art/raw/token-shadow-clone.webp",
+    art: "/card-art/raw/shadow-clone.webp",
   };
   return spawnTestMinion(token, 0);
 }
@@ -337,7 +337,7 @@ describe("relic effects", () => {
       hp: 7,
       keywords: ["Taunt"],
     });
-    expect(after.players[0].board[0]?.art).toContain("token-shenron.webp");
+    expect(after.players[0].board[0]?.art).toContain("shenron.webp");
   });
 
   it("Mjolnir is Good-only and protects its attacking bearer from retaliation", () => {

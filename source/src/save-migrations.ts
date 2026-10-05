@@ -1,3 +1,5 @@
+import artRenames from '../data/art-renames.json';
+import {resolvePublicAssetUrl} from './engine/asset-url';
 import { cards, relics } from "./data/cards";
 import { applyAction, makeCardLibrary, STARTING_CORE } from "./engine/game";
 import type { GameEvent, GameState } from "./engine/types";
@@ -19,10 +21,21 @@ const batmanReduction = batman?.effect.match(/give it (-\d+ ATK)/i)?.[1];
 function refreshSavedValue(value: unknown): void {
   if (!value || typeof value !== "object") return;
   const object = value as Record<string, unknown>;
+  if(object.effectId==='dodge_50'||object.effectId==='dodge_80') {
+    const old=object.effectId==='dodge_50'?'50%':'80%',next=old==='50%'?'40%':'60%';
+    object.effectId=old==='50%'?'dodge_40':'dodge_60';
+    for(const key of ['effect','text'])if(typeof object[key]==='string')object[key]=object[key].replace(old,next);
+  }
+  if(typeof object.art==='string'){
+    const filename=object.art.split('/').pop()?.split(/[?#]/)[0];
+    const next=filename?(artRenames as Record<string,string>)[filename]:undefined;
+    if(next)object.art=resolvePublicAssetUrl('/card-art/raw/'+next);
+  }
   const id = typeof object.cardId === "string" ? object.cardId : "";
   const card = currentCards.get(id);
   if (card) {
     if (refreshedTiers.has(id) && "rarity" in object) object.rarity = card.rarity;
+    if((id==="c004"||id==="c063")&&typeof object.effect==="string")object.effect=card.effect;
     if (refreshedRules.has(id) && typeof object.effect === "string") object.effect = card.effect;
     if (refreshedArt.has(id)) object.art = card.art;
     if (id === "c012") object.camp = card.camp;
