@@ -29,7 +29,7 @@ Follow the current user request and applicable workspace instructions. Read only
 The CSV rosters, campaign JSON and engine are the game authorities.
 Edit source files and regenerate their derived outputs; do not hand-edit [play/](play/), [lore.ts](source/src/data/lore.ts), [gallery-previews.ts](source/src/data/gallery-previews.ts) or the statistics workbook.
 
-For cache cleanup, follow [Local production data](CONTRIBUTING.md#local-production-data); the review folder also holds active voice tools.
+For cache cleanup, follow [Local production data](CONTRIBUTING.md#local-production-data); the review folder also holds voice jobs and recordings.
 
 Keep each documentation rule in its appropriate page. README explains the game, CONTRIBUTING explains the workflow, and DESIGN-DECISIONS records accepted choices.
 [CLAUDE.md](CLAUDE.md) only redirects here. Markdown is allowed throughout this project.

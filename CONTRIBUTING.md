@@ -156,8 +156,8 @@ Relic music, battle music, and ordinary summon effects remain active.
 
 ### Local production data
 
-The ignored `.preview/voice-runtime` and `.preview/models` folders are active voice-generation dependencies, not disposable screenshots.
-Voice jobs and recordings also use `.preview/voice-full-hold` and `.preview/campaign-voices`. Preserve them during routine cleanup.
+The voice-generation runtime and model weights live in the workspace's shared voice pipeline, `Pipelines/audio/qwen/` (its `.venv` and `models`), outside this repository. Set `QWEN_RUNTIME`, `QWEN_MODEL_DIR` or `QWEN_BASE_MODEL_DIR` to use another location.
+Voice jobs and recordings use `.preview/voice-full-hold` and `.preview/campaign-voices`. Preserve them during routine cleanup.
 The workbook preview's `node_modules` is a junction to the shared dependency runtime. Remove the junction itself before clearing that preview; never traverse and delete its target.
 Generated `source/dist` can be removed after publishing. The release in `play/` and authored assets stay available.
 

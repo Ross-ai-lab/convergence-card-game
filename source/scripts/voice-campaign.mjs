@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const python = process.env.QWEN_RUNTIME || path.join(root, ".preview/voice-runtime/Scripts/python.exe");
+// The shared voice runtime and weights live in the workspace's voice pipeline, two levels above this repository.
+const voicePipeline = path.join(root, "../../../Pipelines/audio/qwen");
+const python = process.env.QWEN_RUNTIME || path.join(voicePipeline, ".venv/Scripts/python.exe");
 
 function run(program, args) {
   return new Promise((resolve, reject) => {
@@ -25,8 +27,8 @@ if (!existsSync(python)) {
 }
 
 const models = [
-  ["VoiceDesign", process.env.QWEN_MODEL_DIR || path.join(root, ".preview/models/qwen-voice-design")],
-  ["Base", process.env.QWEN_BASE_MODEL_DIR || path.join(root, "../../../Pipelines/audio/qwen/models/qwen-base")],
+  ["VoiceDesign", process.env.QWEN_MODEL_DIR || path.join(voicePipeline, "models/qwen-voice-design")],
+  ["Base", process.env.QWEN_BASE_MODEL_DIR || path.join(voicePipeline, "models/qwen-base")],
 ];
 for (const [label, model] of models) {
   if (!existsSync(path.join(model, "model.safetensors")) || !existsSync(path.join(model, "speech_tokenizer", "model.safetensors"))) {

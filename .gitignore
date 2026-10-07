@@ -6,7 +6,7 @@ __pycache__/
 .wrangler/
 .env
 .env.*
-# Local QA and voice-generation dependencies; see CONTRIBUTING.md before cleanup.
+# Local QA files, voice jobs and recordings; see CONTRIBUTING.md before cleanup.
 .preview/
 # In-progress atomic workbook exports; the finished workbook and sync record are tracked.
 materials/*.xlsx.sync.lock
