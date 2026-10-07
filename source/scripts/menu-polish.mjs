@@ -25,7 +25,9 @@ export async function checkMenuPolish(page) {
   await skipCampaignDialogue(page);await page.locator('.duel-intro').dblclick();await page.locator('.duel-intro').waitFor({state:'detached'});
   await page.locator('.mulligan-panel button.primary').click();
   await page.waitForFunction(()=>window.__debug.state().phase==='main');
-  await page.evaluate(()=>window.__debug.setCore('them',25));await settleMotion(page);
+  // Half of the real starting core, read from the engine: a hardcoded 25 went stale when cores moved to 30.
+  const start=await page.evaluate(async()=>(await import('/src/engine/game.ts')).STARTING_CORE);
+  await page.evaluate(value=>window.__debug.setCore('them',value),start/2);await settleMotion(page);
   const bar=await page.locator('.hero-plate.enemy').boundingBox(),fill=await page.locator('.hero-health-fill').boundingBox();
   assert(Math.abs(fill.width/bar.width-.5)<.03,'Boss health does not deplete the bar');
   assert.equal(await page.locator('.hero-health-fill').textContent(),'');

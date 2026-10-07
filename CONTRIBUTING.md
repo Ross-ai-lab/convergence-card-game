@@ -17,7 +17,10 @@ Do not clear a real save to reproduce a problem. Use a separate browser context 
 | [source/data/cards.csv](source/data/cards.csv) | Live minion definitions |
 | [source/data/relics.csv](source/data/relics.csv) | Live relic definitions |
 | [source/src/engine/](source/src/engine/) | Deterministic game rules and bot search |
-| [source/src/App.tsx](source/src/App.tsx) | Duel interface and deck editor |
+| [source/src/App.tsx](source/src/App.tsx) | Duel state, screen flow and orchestration |
+| [source/src/duel/](source/src/duel/) | Board rows, hand, hero plates, effects, overlays, card pack and developer tools |
+| [source/src/gallery/](source/src/gallery/) | My Deck collection and Star Chart profiles |
+| [source/src/card-face.tsx](source/src/card-face.tsx) | The live card face every surface draws |
 | [source/src/screens/](source/src/screens/) | Title, campaign, dialogue, rules, and settings |
 | [source/src/mobile.css](source/src/mobile.css) | Phone and tablet layout, loaded after desktop styles |
 | [source/src/phone-layout.ts](source/src/phone-layout.ts) | Phone detection, fullscreen request, and landscape rotation |

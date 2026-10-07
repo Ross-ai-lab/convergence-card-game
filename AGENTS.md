@@ -16,8 +16,8 @@ Follow the current user request and applicable workspace instructions. Read only
 | Task | Source | Focused verification |
 |---|---|---|
 | Card text, stats or rarity | [cards.csv](source/data/cards.csv), [relics.csv](source/data/relics.csv), [game.ts](source/src/engine/game.ts) | Relevant engine test and `validate:data` |
-| Keywords and token inspection | [keywords.ts](source/src/keywords.ts), [card-presentation.ts](source/src/card-presentation.ts), [App.tsx](source/src/App.tsx), [tokens.ts](source/src/engine/tokens.ts) | The affected card and popup in the gallery |
-| Duel, deck editor or profiles | [App.tsx](source/src/App.tsx), [App.css](source/src/App.css), [gallery-detail.css](source/src/gallery-detail.css) | The actual affected screen and interaction |
+| Keywords and token inspection | [keywords.ts](source/src/keywords.ts), [card-presentation.ts](source/src/card-presentation.ts), [card-face.tsx](source/src/card-face.tsx), [tokens.ts](source/src/engine/tokens.ts) | The affected card and popup in the gallery |
+| Duel, deck editor or profiles | [App.tsx](source/src/App.tsx) (duel state and flow), [duel/](source/src/duel/) (board, hand, effects, overlays, developer tools), [gallery/](source/src/gallery/) (My Deck and Star Charts), [App.css](source/src/App.css), [gallery-detail.css](source/src/gallery-detail.css) | The actual affected screen and interaction |
 | Phone layout | [mobile.css](source/src/mobile.css), [phone-layout.ts](source/src/phone-layout.ts) | Only the relevant size and orientation |
 | Campaign and rewards | [campaign-design.json](materials/campaign-design.json), [campaign.ts](source/src/campaign.ts), [progress.ts](source/src/progress.ts) | Relevant campaign/progression tests |
 | Saves and turn expiry | [storage.ts](source/src/storage.ts), [save-migrations.ts](source/src/save-migrations.ts), [turn-clock.tsx](source/src/turn-clock.tsx) | Existing-save migration or timeout tests |

@@ -8,14 +8,6 @@ export type LadderKey = BotSkill | "hotseat";
 
 export const LADDER_KEYS: LadderKey[] = ["easy", "normal", "hard", "hotseat"];
 
-/** The printed name of each opponent level, so the UI never spells one itself. */
-export const LADDER_LABEL: Record<LadderKey, string> = {
-  easy: "Recruit",
-  normal: "Veteran",
-  hard: "Ascendant",
-  hotseat: "Hotseat",
-};
-
 export interface LadderRecord {
   played: number;
   won: number;
@@ -290,25 +282,3 @@ export function finishDuel(progress: Progress, duel: {
   }, cards);
 }
 
-/** Totals across every opponent level, for the one headline number. */
-export function totals(progress: Progress): LadderRecord {
-  return LADDER_KEYS.reduce<LadderRecord>(
-    (sum, key) => {
-      const record = progress.ladders[key];
-      return {
-        played: sum.played + record.played,
-        won: sum.won + record.won,
-        lost: sum.lost + record.lost,
-        drawn: sum.drawn + record.drawn,
-      };
-    },
-    { played: 0, won: 0, lost: 0, drawn: 0 },
-  );
-}
-
-/** Win percentage, or null when nothing decided has been played yet. */
-export function winPct(record: LadderRecord): number | null {
-  const decided = record.won + record.lost;
-  if (decided === 0) return null;
-  return Math.round((record.won / decided) * 100);
-}

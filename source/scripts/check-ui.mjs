@@ -1299,7 +1299,14 @@ await newBoard({ place: false });
     // tilt. That produced a ten-pixel "failure" that was the check being wrong,
     // not the CSS. A board slot holds the card square.
     await page.evaluate(() => window.__debug.place("Detective L", "me", 1));
-    await page.waitForTimeout(300);
+    // Wait for the landing itself to END, not for a fixed delay. `minion-arrive`
+    // scales and drops the whole card, so measuring while it still runs reads the
+    // card settling as the rays drifting. Under check-all's CPU load the
+    // animation can start several hundred milliseconds late.
+    await page.waitForFunction(() => {
+      const wrap = [...document.querySelectorAll(".board-slot.occupied .card-face.rarity-yellow")].at(-1)?.closest(".minion-wrap");
+      return Boolean(wrap) && !wrap.getAnimations().some((animation) => animation.animationName === "minion-arrive");
+    }, null, { timeout: 5000 });
     const pivot = await page
       .locator(".board-slot.occupied .card-face.rarity-yellow")
       .last()

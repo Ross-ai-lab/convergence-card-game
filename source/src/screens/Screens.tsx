@@ -42,14 +42,6 @@ import {
   isHeroPowerUnlocked,
 } from "../engine/hero-powers";
 import type { HeroPowerId } from "../engine/types";
-import {
-  LADDER_KEYS,
-  LADDER_LABEL,
-  totals,
-  winPct,
-  type LadderKey,
-  type Progress,
-} from "../progress";
 import type { BotSkill } from "../engine/bot";
 import { STARTING_POOL } from "../unlocks";
 
@@ -535,73 +527,6 @@ export function HeroPowerChoices({
           })}
         </div>
       </div>
-  );
-}
-
-/** The persistent duel record, grouped by opponent level. */
-export function RecordScreen({ progress, onClose }: { progress: Progress; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const overall = totals(progress);
-  const played = LADDER_KEYS.filter((key) => progress.ladders[key].played > 0);
-
-  return (
-    <div className="screen-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="screen-panel wide" role="dialog" aria-label="Your record">
-        <header className="screen-panel-top">
-          <h2>Your record</h2>
-          <button type="button" className="screen-x" onClick={onClose} aria-label="Close">
-            ×
-          </button>
-        </header>
-        <div className="screen-panel-body record-body">
-          <div className="record-headline">
-            <div className="record-figure">
-              <b>{overall.played}</b>
-              <span>{overall.played === 1 ? "duel" : "duels"}</span>
-            </div>
-            <div className="record-figure">
-              <b>{overall.won}</b>
-              <span>won</span>
-            </div>
-          </div>
-
-          <h3 className="record-heading">By opponent</h3>
-          <table className="record-table">
-            <thead>
-              <tr>
-                <th scope="col">Opponent</th>
-                <th scope="col">Played</th>
-                <th scope="col">Won</th>
-                <th scope="col">Lost</th>
-                <th scope="col">Rate</th>
-              </tr>
-            </thead>
-            <tbody>
-              {played.map((key: LadderKey) => {
-                const record = progress.ladders[key];
-                const pct = winPct(record);
-                return (
-                  <tr key={key}>
-                    <th scope="row">{LADDER_LABEL[key]}</th>
-                    <td>{record.played}</td>
-                    <td>{record.won}</td>
-                    <td>{record.lost}</td>
-                    <td>{pct === null ? "—" : `${pct}%`}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
   );
 }
 

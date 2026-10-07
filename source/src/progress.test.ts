@@ -4,9 +4,7 @@ import {
   emptyProgress,
   finishDuel,
   recordDuel,
-  totals,
   unlockAllProgress,
-  winPct,
   RECENT_LIMIT,
   type DuelResult,
 } from "./progress";
@@ -76,18 +74,13 @@ describe("the duel record", () => {
     expect(before.recent).toEqual([]);
   });
 
-  it("adds up every opponent for the headline figure", () => {
+  it("keeps each opponent level's record separately", () => {
     let progress = recordDuel(emptyProgress(), won, cardsPlayed("c001"));
     progress = recordDuel(progress, { ...lost, ladder: "easy" }, cardsPlayed("c002"));
     progress = recordDuel(progress, { ...won, ladder: "hotseat" }, cardsPlayed("c003"));
-    expect(totals(progress)).toEqual({ played: 3, won: 2, lost: 1, drawn: 0 });
-  });
-
-  it("has no win rate until something has been decided", () => {
-    expect(winPct({ played: 0, won: 0, lost: 0, drawn: 0 })).toBeNull();
-    // A draw is played but not decided, so it must not read as a 0% record.
-    expect(winPct({ played: 3, won: 0, lost: 0, drawn: 3 })).toBeNull();
-    expect(winPct({ played: 4, won: 3, lost: 1, drawn: 0 })).toBe(75);
+    expect(progress.ladders.hard).toEqual({ played: 1, won: 1, lost: 0, drawn: 0 });
+    expect(progress.ladders.easy).toEqual({ played: 1, won: 0, lost: 1, drawn: 0 });
+    expect(progress.ladders.hotseat).toEqual({ played: 1, won: 1, lost: 0, drawn: 0 });
   });
 
   it("leaves a draw out of both the won and lost columns", () => {

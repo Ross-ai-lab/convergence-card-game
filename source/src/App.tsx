@@ -1,7 +1,7 @@
 import { TUTORIAL_LESSONS, tutorialAllowsAction, nextTutorialStep, tutorialOpponentAction } from './tutorial';
 import {TurnClock,TurnClockWarning,humanTurnKey} from './turn-clock';
 import {expirePlayerTurn} from './engine/turn-timeout';
-import { Fragment, createContext, memo, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
 import "./gallery-detail.css";
@@ -15,46 +15,25 @@ import "./board-fx.css";
 // stylesheet so the mode remains easy to audit without hiding the feature from
 // the public build.
 import "./dev-only.css";
-import { sfx, type SfxName } from "./audio/sfx";
+import { sfx } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
-import { LORE_DETAILS, type LoreDetail } from "./data/lore";
 import { BOT_CHEATS } from "./engine/bot";
 import { BotSearch } from "./engine/bot-search";
-import { useGalleryVisibility } from "./gallery-visibility";
-import { useProfileFit } from "./profile-fit";
 import { useFrameState } from "./frame-state";
 
 import { requestPhoneLandscape, usePhoneLayout } from './phone-layout';
 import { useRelicPeek } from './relic-peek';
 
-import {
-  heroPowerCost,
-  heroPowerDefinition,
-  randomHeroPower,
-} from "./engine/hero-powers";
-import {
-  ALIGNMENTS,
-  BASELINE_RARITY,
-  CAMPS,
-  isMinionCard,
-  isRelicCard,
-  RARITIES,
-  rarityName,
-  rarityRank,
-  RELIC_CAMP_LABEL,
-  RELIC_RARITY,
-  TOP_RARITY,
-} from "./engine/types";
-import { isThemedTokenId, isTokenCardId } from "./engine/tokens";
+import { heroPowerDefinition, randomHeroPower } from "./engine/hero-powers";
+import { isMinionCard, isRelicCard } from "./engine/types";
+import { isTokenCardId } from "./engine/tokens";
 import {
   actionKey,
   applyAction,
   attacksRandomly,
   CONCEALED_CHOICE_EFFECTS,
   createInitialGame,
-  duelMvp,
   effectiveCardCost,
-  equipRelicFromOutside,
   getLegalActions,
   hasFreeRelicSlot,
   hasInfiniteMana,
@@ -63,31 +42,18 @@ import {
   opponentHandRevealed,
   relicRequiredAlignment,
   STARTING_CORE,
-  TARGETED_EFFECTS,
-  type CardLibrary,
 } from "./engine/game";
 import type {
-  Camp,
   DamageTallyEntry,
   GameAction,
   GameEvent,
   GameState,
   HeroPowerId,
   MinionInstance,
-  PendingTarget,
   PlayerId,
-  PlayableCard,
-  RelicDefinition,
-  RelicInstance,
-  SlotAuraId,
 } from "./engine/types";
-import { cardArtPosition, splitCardText, sameCardFace, sameStrings, type CardFaceModel } from "./card-presentation";
-import { KEYWORD_LOOKUP, plainKeywordText, type KeywordEntry } from "./keywords";
-import { tokenCard } from './engine/tokens';
-import {shouldPlayCardTheme} from './audio/card-theme-policy';
 import { clearSave, EVENT_LOG_LIMIT, loadGame, queueSaveGame } from "./storage";
 import {
-  botWins,
   clearProgress,
   emptyProgress,
   finishDuel,
@@ -96,41 +62,45 @@ import {
   unlockAllProgress,
   type Progress,
 } from "./progress";
-import { revealOrder } from "./unlocks";
 import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES, CAMPAIGN_PREMISE, CAMPAIGN_PROTAGONIST } from "./campaign";
 import { createCampaignDuel } from "./campaign-duel";
-import { campaignComplete, canPlayChapter, canEditDeck, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, hasNewHeroPower, saveDeckDraft, createNamedDeck, ensureNamedDeck, selectNamedDeck, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { campaignComplete, canPlayChapter, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, saveDeckDraft, createNamedDeck, ensureNamedDeck, selectNamedDeck, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
 import { LoreLibrary } from './screens/LoreLibrary';
 import { randomDeck, validateDeck } from "./decks";
-import { remainingDeckCount } from "./engine/draw-piles";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
 import { CampaignSpeech, CollectedBossSpeech, type SpeechCue } from "./screens/CampaignSpeech";
 import campaignVoiceManifest from "../data/campaign-voices.json";
-import { fitOneLine, fitParagraph, onFontsReady } from "./textfit";
+import { onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
-import { spawnTestMinion } from "./engine/test-utils";
 import {
   DuelIntro,
   FullscreenButton,
   HowToPlay,
   PassScreen,
   SettingsPanel,
-  HeroPowerChoices,
   TitleScreen,
   type DuelIntroPhase,
   type GameMode,
-  RecordScreen,
 } from "./screens/Screens";
-
-const FontRevisionContext = createContext(0);
-
-type Selection =
-  | { kind: "hand"; handIndex: number }
-  | { kind: "attacker"; slotIndex: number }
-  | null;
-
-const STAR_CHART_AXES = ["STR", "VIT", "WIL", "MAG", "INT", "AGI"] as const;
+// The component modules below bring no stylesheets of their own; every CSS
+// import above keeps its original cascade position.
+import { useFullscreen } from "./use-fullscreen";
+import { campAccent, CardFace, FontRevisionContext, KeywordPopover, playableFace, RelicCardPeek } from "./card-face";
+import type { DuelIntroState } from "./duel/fx";
+import { useDuelFx } from "./duel/use-duel-fx";
+import { useCardPreview } from "./duel/use-card-preview";
+import { useDebugHook } from "./duel/use-debug-hook";
+import { applyDeveloperEdit, type DeveloperEdit } from "./duel/developer-edits";
+import { BoardRow, canAttackCore, otherPlayer, TargetingArrow, type Selection } from "./duel/board";
+import { HandFan, ManaTray } from "./duel/hand";
+import { HeroPlate, HeroPowerButton, HeroPowerCard, ProtocolWarningBubble } from "./duel/hero";
+import { DrawChoiceOverlay, EventLog, HoverCard, MulliganOverlay, TargetPrompt, TutorialCoach } from "./duel/panels";
+import { CardPack } from "./duel/card-pack";
+import { DeveloperTools } from "./duel/developer-tools";
+import { GameOver } from "./duel/game-over";
+import { CardGallery } from "./gallery/card-gallery";
+import { GalleryDetailModal } from "./gallery/card-profile";
 
 function campaignVoiceDuration(key: string): number | undefined {
   const entries = campaignVoiceManifest as Record<string, { duration?: unknown }>;
@@ -146,134 +116,6 @@ function heroPowersForDuel(
   return mode.kind === "hotseat" ? [playerPower, playerPower] : [playerPower, randomHeroPower(seed)];
 }
 
-function useFullscreen() {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const isFullscreenActive = () => Boolean(document.fullscreenElement);
-
-  useEffect(() => {
-    const syncFullscreenState = () => setIsFullscreen(isFullscreenActive());
-    syncFullscreenState();
-    document.addEventListener("fullscreenchange", syncFullscreenState);
-    return () => document.removeEventListener("fullscreenchange", syncFullscreenState);
-  }, []);
-
-  const toggleFullscreen = useCallback(() => {
-    if (isFullscreenActive()) {
-      void document.exitFullscreen().catch((error: unknown) => {
-        console.warn("Could not exit full screen.", error);
-      });
-      return;
-    }
-
-    const request = document.documentElement.requestFullscreen;
-    if (!request) return;
-    void request.call(document.documentElement).catch((error: unknown) => {
-      console.warn("Could not enter full screen.", error);
-    });
-  }, []);
-
-  return { isFullscreen, toggleFullscreen };
-}
-
-// Everything the card face needs to DRAW itself. It used to be six fields,
-// because the rest was baked into a PNG; now the face is DOM, so it needs the
-// whole printed card. CardDefinition and MinionInstance both satisfy it
-// structurally; relics satisfy it too via relicFace() below, which is why the
-// fields are widened rather than Pick'ed — a relic has no ATK/HP, and its rails
-// read RELIC instead of a camp and an alignment.
-
-
-/** Relic definitions by id — RelicInstance drops flavour and origin, so the
- *  full card has to be read back out of the library to be shown. */
-const relicLibrary = new Map(relics.map((relic) => [relic.id, relic]));
-
-/** A relic as a drawable card: teal frame, no stat gems, and the
- *  side rails the printed relics use. */
-function relicFace(relic: RelicInstance | RelicDefinition): CardFaceModel {
-  const def = relicLibrary.get(relic.id);
-  return {
-    name: relic.name,
-    art: relic.art,
-    effect: relic.effect,
-    origin: def?.origin ?? "",
-    flavor: def?.flavor ?? "",
-    cost: def?.cost,
-    rarity: RELIC_RARITY,
-    camp: RELIC_CAMP_LABEL,
-    alignment: RELIC_RARITY,
-  };
-}
-
-function playableFace(card: PlayableCard, costOverride?: number): CardFaceModel {
-  const face = isRelicCard(card) ? relicFace(card) : card;
-  return costOverride === undefined || face.cost === costOverride ? face : { ...face, cost: costOverride };
-}
-
-function loreFor(card: PlayableCard): LoreDetail | null {
-  return LORE_DETAILS[card.id] ?? null;
-}
-
-function attachedRelics(minion: MinionInstance): Array<{ relic: RelicInstance; index: number }> {
-  return [
-    { relic: minion.relic, index: 0 },
-    { relic: minion.relic2 ?? null, index: 1 },
-  ].filter((entry): entry is { relic: RelicInstance; index: number } => entry.relic !== null);
-}
-
-// Transient view-only effects. All of them are derived by diffing the previous
-// and next GameState after an action — the engine stays 100% untouched.
-type FloatNum = { id: number; owner: PlayerId; slot: number | "hero"; delta: number; delay: number };
-type Particle = { key: number; dx: number; dy: number; size: number; delay: number; rot: number; dur: number };
-type Ghost = {
-  id: number;
-  owner: PlayerId;
-  slot: number;
-  minion: MinionInstance;
-  delay: number;
-  particles: Particle[];
-  motion: "death" | "return" | "stasis";
-  destinationOwner?: PlayerId;
-};
-type Lunge = { id: number; owner: PlayerId; slot: number; dx: number; dy: number } | null;
-type ImpactKind = "hit" | "heal" | "summon" | "buff" | "debuff" | "freeze" | "shield";
-type Impact = {
-  id: number;
-  owner: PlayerId;
-  slot: number | "hero";
-  kind: ImpactKind;
-  delay: number;
-  particles: Particle[];
-  /**
-   * Which camp is arriving. Only set on a summon, and only four signatures were
-   * built rather than one bespoke effect per card — the board reads far richer
-   * for a fraction of the work, and a player learns the camp language in one
-   * duel.
-   */
-  camp?: Camp;
-};
-/**
- * A card leaving the deck. `from`/`to` are viewport coordinates measured off the
- * real deck pile and the real destination at spawn time — the same technique the
- * attacker lunge uses, and the reason the flight lands where the card actually
- * goes at any window size.
- */
-type Flight = {
-  id: number;
-  fx0: number;
-  fy0: number;
-  fx1: number;
-  fy1: number;
-  mine: boolean;
-  opening?: boolean;
-  delayMs?: number;
-};
-type DuelIntroState = { id: number; phase: DuelIntroPhase };
-type BoardToast = { id: number; text: string; durationMs: number; tone: "normal" | "bargain" };
-type TauntFlash = { id: number; instanceIds: string[] } | null;
-type RelicFlash = { id: number; instanceId: string; relic: RelicDefinition };
-const RELIC_PLAY_FLASH_DURATION_MS = 2000;
-
 // Keep this schedule aligned with the opening animation table in the project
 // README. The intro ends after the mana reveal; opening card flights continue
 // as pointer-free visual polish instead of blocking the first action.
@@ -284,33 +126,8 @@ const DUEL_INTRO_TIMINGS = {
   manaMs: 570,
   exitMs: 315,
 } as const;
-/** Which crystals just changed, and in which direction. */
-type ManaFx = { id: number; kind: "spend" | "refill"; from: number; to: number } | null;
-// A Mythic landing is the loudest moment in a duel, so it takes the whole screen.
 /** Core at or under this swaps the music to the tense bed. Roughly a quarter. */
 const TENSION_CORE = 12;
-/**
- * The mana cost at which a minion lands with a thud instead of just arriving.
- *
- * Six, because that is where the printed curve turns: 1 to 5 is most of what a
- * duel plays and 6 upward is the half a player is saving mana for. Cost rather
- * than stats — a 6-mana body is a decision the player made, and a big minion
- * that got that way from buffs did not arrive big.
- */
-const HEAVY_LANDING_COST = 6;
-/** The cost at which the thud is at full weight. */
-const HEAVY_LANDING_MAX_COST = 10;
-
-/**
- * How long the pointer must rest on a card in hand before its keywords appear.
- *
- * Two seconds (owner's ruling, 3 September 2026). Long enough that sweeping the
- * fan to read it never fires a panel, short enough that stopping on a card you
- * do not understand answers you without a click.
- */
-const HAND_KEYWORD_DELAY_MS = 2000;
-const BOARD_KEYWORD_DELAY_MS = 2000;
-const KEYWORD_POPOVER_GAP = 24;
 
 /**
  * The made-up damage tally behind the developer result screen.
@@ -323,82 +140,6 @@ const KEYWORD_POPOVER_GAP = 24;
 const DEVELOPER_MVP_INSTANCE = "developer-mvp";
 const DEVELOPER_MVP_DAMAGE = 42;
 
-/**
- * The glossary entries for a card's printed keywords, in the card's own order.
- *
- * Matched case-insensitively against every spelling the glossary knows, so
- * "Cannot Attack" on a card finds the "Cannot attack" entry. A keyword with no
- * entry is skipped rather than shown blank; duplicates are collapsed.
- */
-function keywordEntriesFor(keywords: readonly string[]): KeywordEntry[] {
-  const found: KeywordEntry[] = [];
-  for (const keyword of keywords) {
-    const hit = KEYWORD_LOOKUP.find(({ match }) => match.toLowerCase() === keyword.toLowerCase());
-    if (hit && !found.includes(hit.entry)) found.push(hit.entry);
-  }
-  return found;
-}
-
-/**
- * Every glossary word a card puts in front of the player, in printed order.
- *
- * THE RULES TEXT IS SCANNED, not only the keywords column, and relics are
- * scanned as well. The column-only version missed the word players ask about
- * most: `Battlecry` is written in the effect line and is in no card's keywords
- * column, so the one panel that exists to explain a card's timing never once
- * explained it. Relics printed no column at all and so armed nothing, while
- * their whole card is rules text.
- *
- * `splitCardText` is the scan — the same pass the gallery's clickable words
- * use, longest match first and word boundaries respected — so a definition can
- * never be offered by one surface and missed by the other. The text comes first
- * because it is the card's own order; a keyword carried only in the column, with
- * no mention in the text, is appended after it. Deduped by entry, so `Freeze`
- * and `Frozen` on one card are one line.
- */
-function handKeywordEntriesFor(card: PlayableCard): KeywordEntry[] {
-  const found: KeywordEntry[] = [];
-  const add = (entry: KeywordEntry) => {
-    if (!found.includes(entry)) found.push(entry);
-  };
-  for (const piece of splitCardText(card.effect ?? "", isMinionCard(card))) {
-    if (piece.entry) add(piece.entry);
-  }
-  for (const entry of keywordEntriesFor(isMinionCard(card) ? card.keywords : [])) add(entry);
-  return found;
-}
-
-function minionKeywordEntriesFor(minion: MinionInstance): KeywordEntry[] {
-  const found: KeywordEntry[] = [];
-  const add = (entry: KeywordEntry) => {
-    if (!found.includes(entry)) found.push(entry);
-  };
-  if (minion.silenced) return found;
-  for (const piece of splitCardText(minion.effect)) {
-    if (piece.entry) add(piece.entry);
-  }
-  for (const effect of minion.gainedEffects) {
-    for (const piece of splitCardText(effect.text)) {
-      if (piece.entry) add(piece.entry);
-    }
-  }
-  for (const entry of keywordEntriesFor(minion.keywords)) add(entry);
-  return found;
-}
-
-/**
- * How hard a minion of this cost lands, from 0 at 6 mana to 1 at 10.
- *
- * It starts at 0.28 rather than 0, because "minimal" is not "silent" (owner's
- * ruling, 3 September 2026): a 6-mana body should still be felt, and only the
- * top of the curve should be an event. Anything cheaper than 6 never gets here.
- */
-function heavyLandingWeight(cost: number): number {
-  const span = HEAVY_LANDING_MAX_COST - HEAVY_LANDING_COST;
-  const along = Math.max(0, Math.min(1, (cost - HEAVY_LANDING_COST) / span));
-  return 0.28 + 0.72 * along;
-}
-
 // Pointer-driven drag & drop. A press only becomes a drag after DRAG_THRESHOLD px
 // of movement, so plain clicks keep the original select-then-click flow.
 type DragState =
@@ -409,62 +150,6 @@ type DragState =
 type ScreenPoint = { x: number; y: number };
 
 const DRAG_THRESHOLD = 8;
-/** The enlarged card keeps its original one-second hover delay. */
-const HOVER_PREVIEW_DELAY_MS = 1000;
-
-/** Hand card width, matching `.hand-card`'s flex-basis in App.css. */
-const HAND_CARD_W = 118;
-/**
- * How wide the fan is allowed to get.
- *
- * The command bar is `[hero plate] [hand] [mana tray]`, and the hero plate
- * carries its own `min-width: 250px` — so a fan wider than this stops being
- * centred and starts sitting on top of the plate. Deliberately conservative:
- * the shell has ~1420px of usable width at 1440, and 820 + the two 250px
- * columns + the gaps leaves room to spare.
- */
-const HAND_MAX_W = 820;
-
-/** How far apart two hand cards sit. Never more than the card is wide. */
-function handStep(count: number): number {
-  if (count < 2) return HAND_CARD_W;
-  return Math.min(HAND_CARD_W - 10, (HAND_MAX_W - HAND_CARD_W) / (count - 1));
-}
-// Combat FX land when the lunge connects, not when the button is released.
-const STRIKE_DELAY = 0.18;
-// Slot auras are permanent, so the board wears both their label and colour.
-const AURA_LABEL: Record<SlotAuraId, string> = {
-  random_attacks: "RANDOM",
-  slot_silence: "SILENCED",
-  slot_chain: "CHAINED",
-  slot_grow_1: "+1/+1",
-  slot_grow_2: "+2/+2",
-  slot_protected: "SAFE",
-  slot_stats_one: "1/1",
-  slot_bound: "LOCKED",
-};
-const GalleryPreviewContext = createContext<Record<string,string>>({});
-const AURA_TEXT: Record<SlotAuraId, string> = {
-  random_attacks: "a minion here can only attack at random",
-  slot_silence: "a minion here is silenced",
-  slot_chain: "a minion here is permanently Chained",
-  slot_grow_1: "a minion here gains +1/+1 at the start of your turn",
-  slot_grow_2: "a minion here gains +2/+2 at the start of your turn",
-  slot_protected: "minions here resist Silence, Freeze, and Chain; attacks and ordinary removal can still reach them",
-  slot_stats_one: "minions here are permanently set to 1/1",
-  slot_bound: "this slot cannot hold minions for the rest of the game",
-};
-/** Each permanent board-slot effect gets its own visible ring colour. */
-const AURA_COLOR: Record<SlotAuraId, string> = {
-  random_attacks: "#f0c767",
-  slot_silence: "#b47cff",
-  slot_chain: "#6ed7ff",
-  slot_grow_1: "#ff8a65",
-  slot_grow_2: "#35d6c2",
-  slot_protected: "#52b6ff",
-  slot_stats_one: "#ff5f6d",
-  slot_bound: "#ff526f",
-};
 
 const BOT_ID: PlayerId = 1;
 
@@ -485,85 +170,6 @@ const openingEvent: GameEvent = {
   kind: "info",
   text: "The rift opens. Player One begins.",
 };
-
-function rand(min: number, max: number): number {
-  return min + Math.random() * (max - min);
-}
-
-function makeParticles(kind: ImpactKind | "death" | "stasis", camp?: Camp): Particle[] {
-  const out: Particle[] = [];
-  const push = (dx: number, dy: number, size: number, delay: number, rot: number, dur: number) =>
-    out.push({ key: out.length, dx, dy, size, delay, rot, dur });
-  if (kind === "hit") {
-    for (let i = 0; i < 12; i++) {
-      const a = rand(0, Math.PI * 2);
-      const d = rand(24, 78);
-      push(Math.cos(a) * d, Math.sin(a) * d, rand(3, 7), rand(0, 0.06), rand(-160, 160), rand(0.34, 0.52));
-    }
-  } else if (kind === "heal" || kind === "buff") {
-    for (let i = 0; i < 9; i++) push(rand(-34, 34), rand(-30, -86), rand(3, 6), rand(0, 0.24), 0, rand(0.55, 0.85));
-  } else if (kind === "debuff") {
-    for (let i = 0; i < 8; i++) push(rand(-30, 30), rand(26, 70), rand(3, 6), rand(0, 0.2), 0, rand(0.5, 0.8));
-  } else if (kind === "summon") {
-    // Each camp arrives differently, in motion as well as colour — colour alone
-    // is not a signature, and half the read is whether the debris rises, falls
-    // or snaps into place.
-    if (camp === "Nature") {
-      // Growth: everything climbs, from below, unevenly.
-      for (let i = 0; i < 16; i++) {
-        push(rand(-52, 52), rand(-40, -104), rand(3, 8), rand(0, 0.26), rand(-140, 140), rand(0.6, 0.95));
-      }
-    } else if (camp === "Tech") {
-      // Assembly: hard horizontal snap, tight and fast, no drift.
-      for (let i = 0; i < 14; i++) {
-        const side = i % 2 === 0 ? 1 : -1;
-        push(side * rand(34, 96), rand(-16, 16), rand(3, 7), rand(0, 0.08), 0, rand(0.26, 0.4));
-      }
-    } else if (camp === "Magic") {
-      // A sigil: an even ring that turns as it expands.
-      for (let i = 0; i < 15; i++) {
-        const a = (i / 15) * Math.PI * 2;
-        const d = rand(46, 82);
-        push(Math.cos(a) * d, Math.sin(a) * d * 0.65, rand(3, 6), rand(0, 0.14), rand(120, 300), rand(0.5, 0.82));
-      }
-    } else {
-      for (let i = 0; i < 14; i++) {
-        const a = rand(0, Math.PI * 2);
-        const d = rand(30, 86);
-        push(Math.cos(a) * d, Math.sin(a) * d * 0.6, rand(2, 5), rand(0, 0.1), rand(-90, 90), rand(0.4, 0.66));
-      }
-    }
-  } else if (kind === "shield") {
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2 + rand(-0.2, 0.2);
-      const d = rand(40, 84);
-      push(Math.cos(a) * d, Math.sin(a) * d, rand(4, 8), rand(0, 0.05), rand(-200, 200), rand(0.4, 0.6));
-    }
-  } else if (kind === "freeze") {
-    for (let i = 0; i < 8; i++) {
-      const a = rand(0, Math.PI * 2);
-      const d = rand(16, 46);
-      push(Math.cos(a) * d, Math.sin(a) * d, rand(4, 7), rand(0, 0.12), 45, rand(0.5, 0.7));
-    }
-  } else if (kind === "stasis") {
-    // Stasis is suspension, not destruction: a small cyan lattice contracts
-    // around the card while square motes hang in place instead of flying out
-    // as death debris.
-    for (let i = 0; i < 14; i++) {
-      const a = (i / 14) * Math.PI * 2;
-      const d = rand(42, 78);
-      push(Math.cos(a) * d, Math.sin(a) * d * 0.72, rand(3, 6), rand(0, 0.18), rand(0, 90), rand(0.65, 0.95));
-    }
-  } else {
-    // Small embers dissolve around the card, without oversized tumbling shards.
-    for (let i = 0; i < 16; i++) {
-      const a = rand(0, Math.PI * 2);
-      const d = rand(12, 44);
-      push(Math.cos(a) * d, Math.sin(a) * d * 0.7 - 18, rand(2, 4), rand(0.06, 0.16), rand(-35, 35), rand(0.42, 0.62));
-    }
-  }
-  return out;
-}
 
 export default function App() {
   const { isFullscreen, toggleFullscreen } = useFullscreen();
@@ -629,7 +235,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "gallery" | "record" | "campaign" | "deck" | "hotseat" | "opponent" | "lore">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "campaign" | "deck" | "hotseat" | "opponent" | "lore">(null);
   useEffect(() => {
     if (overlay !== "opponent") return;
     const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOverlay(null); };
@@ -765,79 +371,27 @@ export default function App() {
   const [seatedPlayer, setSeatedPlayer] = useState<PlayerId>(0);
   const [history, setHistory] = useState<GameState[]>([]);
   const [selection, setSelection] = useState<Selection>(null);
-  const [hover, setHover] = useState<HoverState>(null);
-  const [floats, setFloats] = useState<FloatNum[]>([]);
-  const [ghosts, setGhosts] = useState<Ghost[]>([]);
-  const [impacts, setImpacts] = useState<Impact[]>([]);
-  const [lunge, setLunge] = useState<Lunge>(null);
-  const [relicFlashes, setRelicFlashes] = useState<RelicFlash[]>([]);
-  const relicFlash = relicFlashes[0] ?? null;
-  useEffect(() => {
-    if (!relicFlash) return;
-    const timer = window.setTimeout(() => setRelicFlashes(items => items.filter(item => item.id !== relicFlash.id)), RELIC_PLAY_FLASH_DURATION_MS);
-    return () => window.clearTimeout(timer);
-  }, [relicFlash]);
-  const [toast, setToast] = useState<BoardToast | null>(null);
-  const [shaking, setShaking] = useState(false);
+  // Against the bot the screen stays on Player One forever. In hotseat it belongs
+  // to whoever is currently SEATED, not to whoever's turn it is — those differ for
+  // exactly as long as the privacy curtain is up, and during that gap nothing on
+  // the incoming player's side may render or be clickable.
+  const viewerId: PlayerId = vsBot ? 0 : seatedPlayer;
+  const opponentId = otherPlayer(viewerId);
+  const fx = useDuelFx(viewerId, opponentId);
+  const relicFlash = fx.relicFlash;
   /** Whether the enemy Hero Power card is showing. Opened by a click, not a hover. */
   const [enemyPowerOpen, setEnemyPowerOpen] = useState(false);
   const [apexAlert,setApexAlert]=useState<number|null>(null);
-  /** The pointer is somewhere over the hand, so the whole fan is enlarged. */
-  const [handHovered, setHandHovered] = useState(false);
-  /**
-   * The keyword panel for a card being rested on in hand, after two seconds.
-   *
-   * TWO SECONDS, not the ordinary hover delay. Sweeping across your own hand to
-   * read it must not fire five panels, and a card whose keywords you want
-   * explained is one you have stopped on. `left`/`top` are the card's top-right
-   * corner in viewport coordinates, which is where the panel hangs.
-   */
-  const [handKeywords, setHandKeywords] = useState<{ entries: KeywordEntry[]; left: number; top: number } | null>(null);
-  const handKeywordTimer = useRef<number | null>(null);
-  const boardKeywordTimer = useRef<number | null>(null);
-  /** The board minion under the pointer, for the reach highlight. */
-  const [reachSource, setReachSource] = useState<string | null>(null);
-  /**
-   * Who that minion is currently affecting. Recomputed only when the pointer
-   * moves to a different minion or the board itself changes, so a hover does
-   * not walk both boards on every unrelated render.
-   */
-  const reach = useMemo(() => {
-    if (!reachSource) return new Set<string>();
-    const found = game.players.flatMap((player) => player.board).find((minion) => minion?.instanceId === reachSource);
-    return found ? reachOf(game, found) : new Set<string>();
-  }, [reachSource, game]);
-  /**
-   * How hard the table is currently dropping, 0 for not at all.
-   *
-   * A 6-mana-or-dearer body has just landed, and the table takes a short slow
-   * drop rather than the fast rattle a core hit gets. Deliberately its own state
-   * and not a reuse of `shaking` — a heavy arrival and a punch in the core are
-   * different events and must not animate the same way. A NUMBER rather than a
-   * flag, because the drop scales with the cost of what landed.
-   */
-  const [landing, setLanding] = useState(0);
-  /** Cards in flight from the deck pile. Measured off the real elements. */
-  const [flights, setFlights] = useState<Flight[]>([]);
-  /** The rift answering an arrival or a death. A counter, so each one remounts. */
-  const [riftFlare, setRiftFlare] = useState(0);
-  /** Crystals just spent, or just refilled. */
-  const [manaFx, setManaFx] = useState<ManaFx>(null);
-  const [banner, setBanner] = useState<{ id: number; text: string; mine: boolean } | null>(null);
-  const [tauntFlash, setTauntFlash] = useState<TauntFlash>(null);
-  /** Non-zero for the moment the killing blow lands, keyed so it replays. */
-  const [lethal, setLethal] = useState(0);
   const [drag, setDrag, scheduleDrag] = useFrameState<DragState>(null);
+  const preview = useCardPreview(game, library, Boolean(drag?.active));
+  const { clearHoverPreview, clearHandKeywords } = preview;
   const [targetArrowOrigin, setTargetArrowOrigin] = useState<ScreenPoint | null>(null);
   const [targetArrowPointer, setTargetArrowPointer, scheduleTargetArrowPointer] = useFrameState<ScreenPoint | null>(null);
   const [playerCount, setPlayerCount] = useState<number | null>(null);
-  const fxId = useRef(1);
   /** Herald lines already spoken this duel. A ref, so a re-render cannot re-fire one. */
   const heraldSaid = useRef(new Set<string>());
   const dragOrigin = useRef({ x: 0, y: 0 });
   const suppressClick = useRef(false);
-  const hoverTimer = useRef<number | null>(null);
-  const hoverRequest = useRef(0);
   const legalActions = useMemo(() => getLegalActions(game, library), [game, library]);
   const botSearch = useMemo(() => new BotSearch(), []);
   useEffect(() => () => botSearch.dispose(), [botSearch]);
@@ -890,7 +444,7 @@ export default function App() {
     }
     if (phase === "draw") {
       const frame = window.requestAnimationFrame(() => {
-        spawnOpeningDeal();
+        fx.spawnOpeningDeal(game.players[viewerId].hand.length, game.players[opponentId].hand.length);
       });
       const timer = window.setTimeout(() => moveTo("mana"), DUEL_INTRO_TIMINGS.drawMs);
       return () => {
@@ -961,7 +515,6 @@ export default function App() {
     sfx.prefetchCardThemes(game.players[mode.kind !== "hotseat" ? 0 : game.activePlayer].hand);
   }, [game, mode.kind, screen]);
 
-
   // The score follows the state of the duel: patient on the title, driving on the
   // board, and tense the moment either core is close enough to end it. Asking for
   // the track already playing is a no-op, so this can run on every render.
@@ -994,15 +547,6 @@ export default function App() {
     }
     void sfx.setTrack(lowestCore <= TENSION_CORE ? "tension" : "battle");
   }, [screen, game.phase, lowestCore, pack]);
-
-  // Hotseat hands the screen to whoever's turn it is. Against the bot the screen
-  // STAYS on Player One — the opponent is a real opponent, so its hand is never
-  // shown and its turn plays out on the far side of the board.
-  // Against the bot the screen stays on Player One forever. In hotseat it belongs
-  // to whoever is currently SEATED, not to whoever's turn it is — those differ for
-  // exactly as long as the privacy curtain is up, and during that gap nothing on
-  // the incoming player's side may render or be clickable.
-  const viewerId: PlayerId = vsBot ? 0 : seatedPlayer;
 
   // A card counts as SEEN once it has been in your hand. Watching the hand
   // rather than the draw event means a card that arrives by Discover, by theft,
@@ -1037,19 +581,8 @@ export default function App() {
         ? "Your turn"
         : "Opponent's turn"
       : `${game.players[game.activePlayer].name}'s turn`;
-    const marker = { id: fxId.current++, text, mine };
-    setBanner(marker);
-    const timer = window.setTimeout(() => setBanner((cur) => (cur && cur.id === marker.id ? null : cur)), 1500);
-    return () => window.clearTimeout(timer);
+    return fx.showBanner(text, mine);
   }, [game.activePlayer, screen, curtainUp, viewerId, vsBot, duelIntro]);
-
-  // The crystal animation is a one-shot; letting it sit in state would re-apply
-  // its classes to whatever pips happen to be in that range on a later turn.
-  useEffect(() => {
-    if (!manaFx) return;
-    const timer = window.setTimeout(() => setManaFx((cur) => (cur && cur.id === manaFx.id ? null : cur)), 950);
-    return () => window.clearTimeout(timer);
-  }, [manaFx]);
 
   // Herald moments. Each fires AT MOST ONCE per duel, tracked in a ref rather
   // than in state so a re-render can never re-fire one — a narrator that repeats
@@ -1119,142 +652,7 @@ export default function App() {
     : undefined;
   const gladosProtocolWarning = gladosTurnsRemaining !== undefined && gladosTurnsRemaining > 0 && gladosTurnsRemaining <= 4;
 
-  /**
-   * The test hook. DEV ONLY.
-   *
-   * `scripts/check-ui.mjs` can drive most of the game by clicking, but some
-   * situations cannot be reached that way without luck: a card that asks for a
-   * target has to BE in your hand, and a relic must be played onto a chosen
-   * bearer. Playing cards and hoping made those checks
-   * skip on almost every run, which is coverage in name only.
-   *
-   * This lets a test say "put this card in my hand" and "hang this relic on
-   * that minion" directly, so those checks run every time.
-   *
-   * It cannot reach the built game. `import.meta.env.DEV` is replaced by the
-   * bundler with a literal `false` and the whole body is dead-code-eliminated —
-   * the same treatment the analyser probes in `audio/sfx.ts` get. `npm run
-   * build` is checked for the string `__debug` as part of this; if it ever
-   * appears there, this has broken.
-   *
-   * `spawnTestMinion` is imported at the top of the file rather than pulled in
-   * here through a dynamic `import()`. The dynamic form was there to keep
-   * test-utils out of the production bundle, and it stopped doing that the day
-   * the Ross-mode workbench — which SHIPS — started calling the same function:
-   * the module was already in the graph, so all the lazy import bought was an
-   * extra async hop and a comment that was no longer true.
-   */
-  useEffect(() => {
-    if (!import.meta.env.DEV || screen !== "playing") return;
-    const w = window as unknown as { __debug?: Record<string, unknown> };
-
-    const findCard = (nameOrId: string) => {
-      const key = nameOrId.trim().toLowerCase();
-      return (
-        Object.values(library).find((c) => c.id.toLowerCase() === key) ??
-        Object.values(library).find((c) => c.name.toLowerCase() === key) ??
-        Object.values(library).find((c) => c.name.toLowerCase().includes(key))
-      );
-    };
-    // `opponent()` is internal to the engine; the flip is trivial enough not
-    // to widen that module's surface just for a dev hook.
-    const other: PlayerId = viewerId === 0 ? 1 : 0;
-    const sideOf = (side: string): PlayerId => (side === "them" ? other : viewerId);
-
-    w.__debug = {
-      /** Names of every card whose battlecry opens a prompt. */
-      targetingCards: () =>
-        Object.values(library)
-          .filter(
-            (c) =>
-              isMinionCard(c) &&
-              (c.effectTiming === "onPlay" || c.effectTiming === "onPlayAndOngoing") &&
-              c.effectId in TARGETED_EFFECTS,
-          )
-          .map((c) => c.name),
-
-      /** Put a card straight into a hand. */
-      giveCard(nameOrId: string, side = "me") {
-        const card = findCard(nameOrId);
-        if (!card) return `no card matching "${nameOrId}"`;
-        const owner = sideOf(side);
-        setGame((current) => {
-          const players = [...current.players] as GameState["players"];
-          players[owner] = { ...players[owner], hand: [...players[owner].hand, card.id] };
-          return { ...current, players };
-        });
-        return card.name;
-      },
-
-      /** Drop a minion onto a board slot, already awake. */
-      place(nameOrId: string, side = "them", slotIndex = 0) {
-        const card = findCard(nameOrId);
-        if (!card || !isMinionCard(card)) return `"${nameOrId}" is not a minion`;
-        const owner = sideOf(side);
-        setGame((current) => {
-          const players = [...current.players] as GameState["players"];
-          const board = [...players[owner].board];
-          board[slotIndex] = spawnTestMinion(card, owner, { sleeping: false });
-          players[owner] = { ...players[owner], board };
-          return { ...current, players };
-        });
-        return card.name;
-      },
-
-      /**
-       * Set a core to any value, so a duel can be brought to the brink.
-       *
-       * Added for the card-pack screen, which only exists after a duel ends
-       * and was otherwise reachable only by playing twenty real turns. It does
-       * NOT end the duel by itself, on purpose: the phase flip belongs to the
-       * engine's own win check, so a duel finished this way finishes through
-       * exactly the path a real one takes. Drop a core to 1, swing at it, and
-       * everything downstream — the record, the reward, the pack — runs for
-       * real.
-       */
-      setCore(side = "them", value = 1) {
-        const owner = sideOf(side);
-        setGame((current) => {
-          const players = [...current.players] as GameState["players"];
-          players[owner] = { ...players[owner], health: value };
-          return { ...current, players };
-        });
-        return `${side} core = ${value}`;
-      },
-
-      /** Hang a relic on a minion already on the board. */
-      equipRelic(relicName: string, side = "me", slotIndex = 0) {
-        const owner = sideOf(side);
-        // Resolve the relic BEFORE setGame. Reading it inside the updater and
-        // assigning to an outer variable returns the stale default, because
-        // the updater runs after this function has already returned.
-        const wanted = relicName.trim().toLowerCase();
-        const relicDef = relics.find((r) => r.name.toLowerCase() === wanted) ?? relics[0];
-        if (!relicDef) return "relic catalog is empty";
-        // Through the engine, so the relic fires whatever it fires on landing.
-        setGame((current) => {
-          const equipped = equipRelicFromOutside(current, owner, slotIndex, relicDef, library);
-          return equipped ? equipped.state : current;
-        });
-        return relicDef.name;
-      },
-
-      /** A small readable summary, for assertions that need numbers. */
-      state: () => ({
-        phase: game.phase,
-        activePlayer: game.activePlayer,
-        viewer: viewerId,
-        hand: game.players[viewerId].hand.length,
-        mine: game.players[viewerId].board.filter(Boolean).length,
-        theirs: game.players[viewerId === 0 ? 1 : 0].board.filter(Boolean).length,
-      }),
-    };
-
-    return () => {
-      delete w.__debug;
-    };
-  }, [game, library, screen, viewerId]);
-  const opponentId = otherPlayer(viewerId);
+  useDebugHook(screen === "playing", game, library, viewerId, setGame);
   const viewerHasInfiniteMana = hasInfiniteMana(game, viewerId);
   const opponentHasInfiniteMana = hasInfiniteMana(game, opponentId);
   const opponent = game.players[opponentId];
@@ -1273,7 +671,9 @@ export default function App() {
   useLayoutEffect(()=>turnClock.update(clockKey,clockRunning,Date.now()),[turnClock,clockKey,clockRunning]);
   useEffect(()=>{
     const persist=()=>{const current=clockLatest.current;if(current.hasLiveSave&&!current.tutorialActive&&!current.developerDuelActive&&current.game.phase!=='gameOver')queueSaveGame(current.game,current.events,current.mode,Date.now(),turnClock.getSnapshot());};
-    persist();return turnClock.subscribe(persist);
+    // Only a clock CHANGE is saved. Persisting on mount rewrote an untouched save on
+    // every page load and appended another "Duel restored" line to its log each time.
+    return turnClock.subscribe(persist);
   },[turnClock]);
   useEffect(()=>{
     const clock=turnClock.getSnapshot();
@@ -1283,70 +683,18 @@ export default function App() {
       const current=clockLatest.current;
       const result=expirePlayerTurn(current.game,clockActor,library);
       if(result.state===current.game)return;
-      spawnFx(current.game,result.state,{type:'end_turn',player:clockActor},result.events);setGame(result.state);setSelection(null);
+      fx.spawnFx(current.game,result.state,{type:'end_turn',player:clockActor},result.events);setGame(result.state);setSelection(null);
       setEvents(items=>[...items,{kind:'info',text:"Time is up. The turn ends.",player:clockActor} as GameEvent,...result.events].slice(-EVENT_LOG_LIMIT));
     },Math.max(0,clock.deadline-Date.now()));
     return()=>window.clearTimeout(timer);
   },[turnClock,clockKey,clockRunning,clockActor,library]);
 
-  function clearFx() {
-    setFloats([]);
-    setGhosts([]);
-    setImpacts([]);
-    setLunge(null);
-    setRelicFlashes([]);
-    setToast(null);
+  function clearFx({ newDuel = false } = {}) {
+    fx.clear({ newDuel });
     setDrag(null);
-    setFlights([]);
-    setManaFx(null);
-    setBanner(null);
     setTargetArrowOrigin(null);
     setTargetArrowPointer(null);
     clearHoverPreview();
-    setTauntFlash(null);
-  }
-
-  /** Sends the already-dealt opening hand out of the deck in a single deal. */
-  function spawnOpeningDeal() {
-    const pile = document.querySelector<HTMLElement>(".deck-pile");
-    const pileBox = pile?.getBoundingClientRect();
-    if (!pileBox) return;
-
-    const startX = pileBox.left + pileBox.width / 2 - 27;
-    const startY = pileBox.top + pileBox.height / 2 - 37;
-    const myTargets = Array.from(document.querySelectorAll<HTMLElement>(".hand-card"));
-    const enemyTarget = document.querySelector<HTMLElement>(`[data-hero="${opponentId}"]`);
-    const targetBox = enemyTarget?.getBoundingClientRect();
-    const flights: Flight[] = [];
-
-    const addFlight = (target: DOMRect, mine: boolean, delayMs: number) => {
-      flights.push({
-        id: fxId.current++,
-        fx0: startX,
-        fy0: startY,
-        fx1: target.left + target.width / 2 - 27,
-        fy1: target.top + target.height / 2 - 37,
-        mine,
-        opening: true,
-        delayMs,
-      });
-    };
-
-    myTargets.slice(0, game.players[viewerId].hand.length).forEach((card, index) => {
-      addFlight(card.getBoundingClientRect(), true, index * 630);
-    });
-
-    if (targetBox) {
-      Array.from({ length: game.players[opponentId].hand.length }, (_, index) => {
-        addFlight(targetBox, false, 330 + index * 630);
-      });
-    }
-
-    if (!flights.length) return;
-    setFlights((current) => [...current, ...flights]);
-    flights.forEach((flight) => sfx.play("draw", (flight.delayMs ?? 0) / 1000));
-    const ids = new Set(flights.map((flight) => flight.id));
-    window.setTimeout(() => setFlights((current) => current.filter((flight) => !ids.has(flight.id))), 6_300);
   }
 
   function skipDuelIntro() {
@@ -1354,300 +702,13 @@ export default function App() {
     // The engine state and opening hands already exist. Only the visual
     // ceremony and its queued opening cue are being skipped.
     sfx.stopCue();
-    setFlights([]);
+    fx.clearFlights();
     setDuelIntro(null);
-  }
-
-  // Diff previous vs next state and spawn all transient FX for this action:
-  // floating numbers, death ghosts, per-card impacts and the attacker lunge.
-  function spawnFx(prev: GameState, next: GameState, action: GameAction, resultEvents: GameEvent[]) {
-    const isStrike = action.type === "attack_minion" || action.type === "attack_core";
-    const strikeDelay = isStrike ? STRIKE_DELAY : 0;
-    const newFloats: FloatNum[] = [];
-    const newGhosts: Ghost[] = [];
-    const newImpacts: Impact[] = [];
-    let heroWasHit = false;
-    let heavyLanding = 0;
-
-    // Stacked sounds get nudged apart so a big turn reads as a volley of hits
-    // rather than one smeared blob.
-    let soundSlot = 0;
-    const addImpact = (
-      owner: PlayerId,
-      slot: number | "hero",
-      kind: ImpactKind,
-      delay: number,
-      soundOverride?: SfxName,
-      camp?: Camp,
-    ) => {
-      newImpacts.push({ id: fxId.current++, owner, slot, kind, delay, particles: makeParticles(kind, camp), camp });
-      const name: SfxName =
-        soundOverride ??
-        (slot === "hero" && kind === "hit"
-          ? "heroHit"
-          : kind === "shield"
-            ? "shieldBreak"
-            : kind === "summon"
-              ? "minionLand"
-              : kind);
-      sfx.play(name, delay + soundSlot * 0.035);
-      soundSlot++;
-    };
-
-    if (isStrike) sfx.play("attack");
-
-    const before = new Map<string, { owner: PlayerId; slot: number; minion: MinionInstance }>();
-    prev.players.forEach((p) =>
-      p.board.forEach((m, slot) => {
-        if (m) before.set(m.instanceId, { owner: p.id, slot, minion: m });
-      }),
-    );
-    const after = new Map<string, { owner: PlayerId; slot: number; minion: MinionInstance }>();
-    next.players.forEach((p) =>
-      p.board.forEach((m, slot) => {
-        if (m) after.set(m.instanceId, { owner: p.id, slot, minion: m });
-      }),
-    );
-    const returningOwners = new Map<string, PlayerId>();
-    const stasisIds = new Set<string>();
-    resultEvents.forEach((event) => {
-      if (event.motion === "return" && event.instanceId && event.player !== undefined) {
-        returningOwners.set(event.instanceId, event.player);
-      }
-      if (event.motion === "stasis" && event.instanceId) stasisIds.add(event.instanceId);
-    });
-    // Equipping a relic is a deliberate power-spike moment, not a
-    // normal card-play click. The relic's own universe theme replaces the old
-    // one-size-fits-all fanfare; generated/effect-driven equips carry cardId too.
-    const equippedRelicId = resultEvents.find(
-      (event) => event.kind === "effect" && /\bequips\b/i.test(event.text) && event.cardId?.startsWith("r"),
-    )?.cardId;
-    if (equippedRelicId) sfx.playCardTheme(equippedRelicId, 0.05);
-    else if (resultEvents.some((event) => event.kind === "effect" && /\bequips\b/i.test(event.text))) sfx.play("relicEquip", 0.05);
-
-    // An enemy relic is easy to miss because its card vanishes from the hidden
-    // hand. Listen to the engine's actual equip event, not only the direct
-    // `play_relic` action: boss effects can grant or equip relics too, and those
-    // were the six placements that previously produced no visual card.
-    const enemyRelicEvents = resultEvents.filter(
-      (event) => {
-        if (!event.cardId?.startsWith("r") || !event.instanceId) return false;
-        if (event.kind !== "effect" || !/\bequips\b/i.test(event.text)) return false;
-        // The bearer is authoritative. Some generated effects describe the
-        // source that granted the relic in `event.player`, not the seat that
-        // now owns the bearer, so checking only that field misses real boss
-        // relic plays.
-        return next.players[opponentId].board.some((minion) => minion?.instanceId === event.instanceId);
-      },
-    );
-    const flashes = enemyRelicEvents.flatMap(event => {
-      const relic = event.cardId ? relicLibrary.get(event.cardId) : undefined;
-      return relic && event.instanceId ? [{ id: fxId.current++, instanceId: event.instanceId, relic }] : [];
-    });
-    if (flashes.length) setRelicFlashes(items => [...items, ...flashes]);
-
-    before.forEach((entry, id) => {
-      const now = after.get(id);
-      if (!now) {
-        const destinationOwner = returningOwners.get(id);
-        const motion = stasisIds.has(id) ? "stasis" : destinationOwner === undefined ? "death" : "return";
-        newGhosts.push({
-          id: fxId.current++,
-          owner: entry.owner,
-          slot: entry.slot,
-          minion: entry.minion,
-          delay: strikeDelay,
-          particles: makeParticles(motion === "stasis" ? "stasis" : "death"),
-          motion,
-          destinationOwner,
-        });
-        return;
-      }
-      const delta = now.minion.hp - entry.minion.hp;
-      if (delta !== 0) {
-        newFloats.push({ id: fxId.current++, owner: now.owner, slot: now.slot, delta, delay: strikeDelay });
-        addImpact(now.owner, now.slot, delta < 0 ? "hit" : "heal", strikeDelay);
-      }
-      if (entry.minion.divineShield && !now.minion.divineShield) addImpact(now.owner, now.slot, "shield", strikeDelay);
-      if (!entry.minion.frozen && now.minion.frozen) addImpact(now.owner, now.slot, "freeze", strikeDelay);
-      if (now.minion.atk > entry.minion.atk || now.minion.maxHp > entry.minion.maxHp) {
-        addImpact(now.owner, now.slot, "buff", strikeDelay);
-      } else if (now.minion.atk < entry.minion.atk || (now.minion.maxHp < entry.minion.maxHp && delta >= 0)) {
-        addImpact(now.owner, now.slot, "debuff", strikeDelay);
-      }
-    });
-
-    // A minion arriving plays the fanfare for its rarity — Rare through Mythic —
-    // and then SPEAKS. The voice is the whole point of the moment, so it waits
-    // for the fanfare's transient instead of starting on the same frame and
-    // smearing into it.
-    //
-    // Exactly one arrival speaks per action: a board-filling effect that summons
-    // three bodies should sound like an army landing, not three people talking
-    // over each other. The loudest card present gets the line.
-    const arrivals: MinionInstance[] = [];
-    after.forEach((entry, id) => {
-      if (!before.has(id)) {
-        addImpact(entry.owner, entry.slot, "summon", 0.1, "minionLand", entry.minion.camp);
-        // Weight, and it is keyed to COST rather than to rarity. Rarity already
-        // has the fanfare; cost is the thing the player is paying and the thing
-        // that makes a body feel big, and a 6-mana Rare should land as hard as
-        // a 6-mana Mythic. The thud waits out the fanfare's transient so the two
-        // read as one arrival instead of smearing together.
-        //
-        // It SCALES from 6 up to 10 rather than being one fixed thud, so the
-        // whole top half of the curve is not flattened into a single sound.
-        // A turn with several arrivals keeps the heaviest one's weight, because
-        // the table has one drop however many bodies landed.
-        if (entry.minion.cost >= HEAVY_LANDING_COST) {
-          const weight = heavyLandingWeight(entry.minion.cost);
-          sfx.playHeavyLand(weight, 0.16);
-          heavyLanding = Math.max(heavyLanding, weight);
-        }
-        arrivals.push(entry.minion);
-      }
-    });
-
-    const thematicArrivals = arrivals.filter(
-      (minion) =>
-        !minion.suppressArrivalTheme &&
-        shouldPlayCardTheme(minion.cardId) &&
-        (!minion.cardId.startsWith("token:") || isThemedTokenId(minion.cardId)),
-    );
-    if (thematicArrivals.length > 0) {
-      const speaker = thematicArrivals.reduce((best, minion) =>
-        rarityRank(minion.rarity) > rarityRank(best.rarity) ||
-        (rarityRank(minion.rarity) === rarityRank(best.rarity) && minion.cost > best.cost)
-          ? minion
-          : best,
-      );
-      sfx.playCardTheme(speaker.cardId, speaker.rarity === TOP_RARITY ? 0.5 : 0.28);
-      // NO HERALD ON A SUMMON (owner ruling). A Mythic landing used to also get a
-      // narrator line stacked behind its theme; between the rarity fanfare, the
-      // card's own theme and the music bed, an arrival already has three layers
-      // and a fourth turned the loudest moment in the duel into clutter. The
-      // herald now speaks only about the DUEL — its opening, first blood, a core
-      // in danger, the ending — never about a card being placed.
-    }
-
-    next.players.forEach((p, i) => {
-      const delta = p.health - prev.players[i].health;
-      if (delta !== 0) {
-        newFloats.push({ id: fxId.current++, owner: p.id, slot: "hero", delta, delay: strikeDelay });
-        addImpact(p.id, "hero", delta < 0 ? "hit" : "heal", strikeDelay);
-        if (delta < 0) heroWasHit = true;
-      }
-    });
-
-    if (newFloats.length) {
-      setFloats((cur) => [...cur, ...newFloats]);
-      const ids = new Set(newFloats.map((f) => f.id));
-      window.setTimeout(() => setFloats((cur) => cur.filter((f) => !ids.has(f.id))), 1250);
-    }
-    if (newGhosts.length) {
-      setGhosts((cur) => [...cur, ...newGhosts]);
-      newGhosts.forEach((g, i) =>
-        sfx.play(g.motion === "stasis" ? "freeze" : g.motion === "return" ? "draw" : "death", g.delay + i * 0.07),
-      );
-      const ids = new Set(newGhosts.map((g) => g.id));
-      window.setTimeout(() => setGhosts((cur) => cur.filter((g) => !ids.has(g.id))), 1020 + Math.max(...newGhosts.map(g => g.delay)) * 1000);
-    }
-    if (newImpacts.length) {
-      setImpacts((cur) => [...cur, ...newImpacts]);
-      const ids = new Set(newImpacts.map((fx) => fx.id));
-      window.setTimeout(() => setImpacts((cur) => cur.filter((fx) => !ids.has(fx.id))), 1600);
-    }
-    if (heroWasHit) {
-      setShaking(true);
-      window.setTimeout(() => setShaking(false), 450);
-    }
-    if (heavyLanding > 0) {
-      const weight = heavyLanding;
-      setLanding(weight);
-      window.setTimeout(() => setLanding((current) => (current === weight ? 0 : current)), 620);
-    }
-
-    // The rift answers whatever crossed it. One flare per action however many
-    // bodies moved — a board-wipe should read as one event, not as six.
-    if (arrivals.length > 0 || newGhosts.length > 0) {
-      setRiftFlare(fxId.current++);
-    }
-
-    // --- the draw -------------------------------------------------------
-    // A card that ARRIVED in a hand while the deck SHRANK is a draw; a card that
-    // arrived without the deck moving was stolen or created, and flying that one
-    // out of the pile would be a lie about where it came from.
-    const drewFor = (id: PlayerId) => remainingDeckCount(next, id) < remainingDeckCount(prev, id) ||
-      (prev.drawChoice?.player === id && !next.drawChoice);
-    if (drewFor(0) || drewFor(1)) {
-      const pile = document.querySelector(".deck-pile");
-      const pileBox = pile?.getBoundingClientRect();
-      const newFlights: Flight[] = [];
-      next.players.forEach((p, i) => {
-        if (!drewFor(p.id)) return;
-        if (p.hand.length <= prev.players[i].hand.length) return;
-        const mine = p.id === viewerId;
-        const target = mine
-          ? document.querySelector(".hand-fan")
-          : document.querySelector(`[data-hero="${p.id}"]`);
-        const targetBox = target?.getBoundingClientRect();
-        if (!pileBox || !targetBox) return;
-        newFlights.push({
-          id: fxId.current++,
-          fx0: pileBox.left + pileBox.width / 2 - 27,
-          fy0: pileBox.top + pileBox.height / 2 - 37,
-          fx1: targetBox.left + targetBox.width / 2 - 27,
-          fy1: targetBox.top + targetBox.height / 2 - 37,
-          mine,
-        });
-      });
-      if (newFlights.length > 0) {
-        setFlights((cur) => [...cur, ...newFlights]);
-        newFlights.forEach((_, i) => sfx.play("draw", i * 0.12));
-        const ids = new Set(newFlights.map((f) => f.id));
-        window.setTimeout(() => setFlights((cur) => cur.filter((f) => !ids.has(f.id))), 700);
-      }
-    }
-
-    // --- the crystals ---------------------------------------------------
-    // Only the viewer's own tray is on screen, so only the viewer's mana is
-    // worth animating. Cheat mode shows an infinity sign and has no pips at all.
-    if (!hasInfiniteMana(next, viewerId)) {
-      const was = prev.players[viewerId].mana;
-      const now = next.players[viewerId].mana;
-      if (now < was) {
-        setManaFx({ id: fxId.current++, kind: "spend", from: was, to: now });
-        if(action.type!=="play_card")sfx.play("mana");
-      } else if (now > was) {
-        setManaFx({ id: fxId.current++, kind: "refill", from: was, to: now });
-      }
-    }
-
-    if (isStrike) {
-      // Measure the two cards on screen so the attacker lunges toward its
-      // actual target instead of a generic hop.
-      const attackerEl = document.querySelector(`[data-slot="${action.player}-${action.attackerSlot}"]`);
-      const targetEl =
-        action.type === "attack_minion"
-          ? document.querySelector(`[data-slot="${otherPlayer(action.player)}-${action.targetSlot}"]`)
-          : document.querySelector(`[data-hero="${otherPlayer(action.player)}"]`);
-      let dx = 0;
-      let dy = -30;
-      if (attackerEl && targetEl) {
-        const a = attackerEl.getBoundingClientRect();
-        const t = targetEl.getBoundingClientRect();
-        dx = (t.left + t.width / 2 - (a.left + a.width / 2)) * 0.72;
-        dy = (t.top + t.height / 2 - (a.top + a.height / 2)) * 0.72;
-      }
-      const marker = { id: fxId.current++, owner: action.player, slot: action.attackerSlot, dx, dy };
-      setLunge(marker);
-      window.setTimeout(() => setLunge((cur) => (cur && cur.id === marker.id ? null : cur)), 500);
-    }
   }
 
   function perform(action: GameAction) {
     if (tutorialActive && tutorialCompleted) return;
-    if(tutorialActive&&!tutorialCompleted&&!tutorialAllowsAction(tutorialStep,game,action)) {showToast('Follow the highlighted lesson, or leave the tutorial.',1800);return;}
+    if(tutorialActive&&!tutorialCompleted&&!tutorialAllowsAction(tutorialStep,game,action)) {fx.showToast('Follow the highlighted lesson, or leave the tutorial.',1800);return;}
     setEnemyPowerOpen(false);
     clearHandKeywords();
     const hiddenEnemyDiscover =
@@ -1677,23 +738,17 @@ export default function App() {
           const boss = chapter ? library[chapter.bossId] : undefined;
           if (chapter && boss && isMinionCard(boss)) {
             const voiceKey = `${String(chapter.chapter).padStart(2, "0")}-play`;
-            const cue = {id:fxId.current++,name:boss.name,art:boss.art,text:chapter.story.play,accent:campAccent(boss.camp),voiceKey,duration:campaignVoiceDuration(voiceKey)};
+            const cue = {id:fx.nextId(),name:boss.name,art:boss.art,text:chapter.story.play,accent:campAccent(boss.camp),voiceKey,duration:campaignVoiceDuration(voiceKey)};
             setBossLines(lines => [...lines, cue]);
           }
         }
       }
-      spawnFx(game, result.state, action, result.events);
+      fx.spawnFx(game, result.state, action, result.events);
       if (result.state.activePlayer !== game.activePlayer && result.state.phase !== "gameOver") {
         sfx.play("turn", 0.05);
       }
       if (result.state.phase === "gameOver" && game.phase !== "gameOver") {
-        // The killing blow gets its own beat before the curtain: a white tear
-        // across the board and a hard shake, so the duel ends on an impact
-        // rather than on a screen simply appearing.
-        setLethal(fxId.current++);
-        setShaking(true);
-        window.setTimeout(() => setShaking(false), 520);
-        sfx.play(result.state.winner === "draw" ? "lose" : "win", 0.45);
+        fx.strikeLethal(result.state.winner === "draw");
         // The fanfare is the transient. The music that follows it is fired by
         // the herald effect on the PHASE, not here, so the developer jump to
         // the result screen gets the same ending piece a played duel does.
@@ -1704,8 +759,8 @@ export default function App() {
       clearHoverPreview();
       setTargetArrowOrigin(null);
       setTargetArrowPointer(null);
-      setTauntFlash(null);
-      if (bargainChoice) showToast(`Doctor Strange's bargain chosen: ${bargainChoice}`, 3000, "bargain");
+      fx.clearTauntFlash();
+      if (bargainChoice) fx.showToast(`Doctor Strange's bargain chosen: ${bargainChoice}`, 3000, "bargain");
 
       if (tutorialActive && !tutorialCompleted && action.player === viewerId) {
         const step=nextTutorialStep(tutorialStep,action,result.state);
@@ -1813,7 +868,7 @@ export default function App() {
     duelRecorded.current = false;
     setPack(null);
     setBossLines([]);
-    setDuelIntro({ id: fxId.current++, phase: "prelude" });
+    setDuelIntro({ id: fx.nextId(), phase: "prelude" });
     setMode(next);
     if (options.testCardId && library[options.testCardId]) {
       nextGame.players[0].hand = [options.testCardId, ...nextGame.players[0].hand].slice(0, 10);
@@ -1823,9 +878,8 @@ export default function App() {
     setGame(nextGame);
     setHistory([]);
     setSelection(null);
-    clearFx();
+    clearFx({ newDuel: true });
     setSeatedPlayer(0);
-    setLethal(0);
     heraldSaid.current = new Set();
     sfx.playOpeningCue(0.35);
     setEvents([
@@ -1877,9 +931,8 @@ export default function App() {
     setGame(tutorialGame);
     setHistory([]);
     setSelection(null);
-    clearFx();
+    clearFx({ newDuel: true });
     setSeatedPlayer(0);
-    setLethal(0);
     heraldSaid.current = new Set();
     sfx.playOpeningCue(0.35);
     setEvents([{ kind: "info", text: "Tutorial started. Follow the Rift guide." }]);
@@ -1951,6 +1004,11 @@ export default function App() {
     return true;
   }
 
+  /** One informational line in the duel log, trimmed to the shared limit. */
+  function logInfo(text: string) {
+    setEvents((items) => [...items, { kind: "info" as const, text }].slice(-EVENT_LOG_LIMIT));
+  }
+
   function undo() {
     if (!developerCheatRevealed) return;
     const [previous, ...rest] = history;
@@ -1960,7 +1018,7 @@ export default function App() {
     setHistory(rest);
     setSelection(null);
     clearFx();
-    setEvents((items) => [...items, { kind: "info" as const, text: "Last local action undone." }].slice(-80));
+    logInfo("Last local action undone.");
   }
 
   function undoTurn() {
@@ -1972,7 +1030,7 @@ export default function App() {
     setHistory(history.slice(boundary + 1));
     setSelection(null);
     clearFx();
-    setEvents((items) => [...items, { kind: "info" as const, text: "Last turn undone." }].slice(-80));
+    logInfo("Last turn undone.");
   }
 
   /** Infinite mana, exposed inside the Ross-only developer workbench. */
@@ -1991,134 +1049,33 @@ export default function App() {
         : { ...current, cheatMode: false, cheatPlayer: null },
     );
     setSelection(null);
-    setEvents((items) =>
-      [
-        ...items,
-        {
-          kind: "info" as const,
-          text: enabled ? "Cheat mode enabled. Mana is infinite." : "Cheat mode disabled. Mana costs restored.",
-        },
-      ].slice(-80),
-    );
+    logInfo(enabled ? "Cheat mode enabled. Mana is infinite." : "Cheat mode disabled. Mana costs restored.");
   }
 
-  function developerSetCore(owner: PlayerId, value: number) {
+  /** A workbench board edit. Relics go through the engine, so their landing effects fire. */
+  function developerEdit(edit: DeveloperEdit) {
+    const result = applyDeveloperEdit(game, edit, library, viewerId);
+    if (!result) return;
     setDeveloperDuelActive(true);
-    setGame((current) => {
-      const players = [...current.players] as GameState["players"];
-      players[owner] = { ...players[owner], health: value };
-      return { ...current, players };
-    });
-    setEvents((items) =>
-      [...items, { kind: "info" as const, text: `Developer mode set ${owner === viewerId ? "your" : "the opponent's"} Core to ${value}.` }].slice(-80),
-    );
-  }
-
-  function developerMakeCoreInvincible(owner: PlayerId) {
-    setDeveloperDuelActive(true);
-    setGame((current) => {
-      const coreInvincible: [boolean, boolean] = [...(current.coreInvincible ?? [false, false])] as [boolean, boolean];
-      coreInvincible[owner] = true;
-      return { ...current, coreInvincible };
-    });
-    setEvents((items) => [...items, { kind: "info" as const, text: `Developer mode made ${owner === viewerId ? "your" : "the opponent's"} Core invincible.` }].slice(-80));
-  }
-
-  function developerHealCore(owner: PlayerId) {
-    setDeveloperDuelActive(true);
-    setGame((current) => {
-      const players = [...current.players] as GameState["players"];
-      players[owner] = { ...players[owner], health: STARTING_CORE };
-      return { ...current, players };
-    });
-    setEvents((items) => [...items, { kind: "info" as const, text: `Developer mode fully healed ${owner === viewerId ? "your" : "the opponent's"} Core.` }].slice(-80));
-  }
-
-  function developerClearHand(owner: PlayerId) {
-    setDeveloperDuelActive(true);
-    setGame((current) => {
-      const players = [...current.players] as GameState["players"];
-      players[owner] = { ...players[owner], hand: [], pressured: null };
-      return { ...current, players };
-    });
-    setEvents((items) => [...items, { kind: "info" as const, text: `Developer mode removed all cards from ${owner === viewerId ? "your" : "the opponent's"} hand.` }].slice(-80));
-  }
-
-  function developerGiveCard(cardId: string, owner: PlayerId) {
-    if (!library[cardId]) return;
-    setDeveloperDuelActive(true);
-    setGame((current) => {
-      const players = [...current.players] as GameState["players"];
-      if (players[owner].hand.length >= 10) return current;
-      players[owner] = { ...players[owner], hand: [...players[owner].hand, cardId] };
-      return { ...current, players };
-    });
-    setEvents((items) =>
-      [...items, { kind: "info" as const, text: `Developer mode added ${library[cardId].name} to ${owner === viewerId ? "your" : "the opponent's"} hand.` }].slice(-80),
-    );
-  }
-
-  function developerPlaceCard(cardId: string, owner: PlayerId) {
-    const card = library[cardId];
-    if (!card || !isMinionCard(card)) return;
-    setDeveloperDuelActive(true);
-    setGame((current) => {
-      const players = [...current.players] as GameState["players"];
-      const slotIndex = players[owner].board.findIndex((slot) => !slot);
-      if (slotIndex < 0) return current;
-      const board = [...players[owner].board];
-      board[slotIndex] = spawnTestMinion(card, owner, { sleeping: false });
-      players[owner] = { ...players[owner], board };
-      return { ...current, players };
-    });
-    setEvents((items) =>
-      [...items, { kind: "info" as const, text: `Developer mode placed ${card.name} on ${owner === viewerId ? "your" : "the opponent's"} board.` }].slice(-80),
-    );
-  }
-
-  /**
-   * Straps a relic onto the first minion with a free slot, THROUGH THE ENGINE.
-   *
-   * It used to write the relic straight into the bearer's slot, which skipped
-   * every one-shot a relic fires on landing — so a workbench Holy Grail did not
-   * double the stats and a workbench Ark granted no shield. Testing a relic
-   * showed a card that cannot exist in a real duel.
-   */
-  function developerEquipRelic(cardId: string, owner: PlayerId) {
-    const relicDef = library[cardId];
-    if (!relicDef || !isRelicCard(relicDef)) return;
-    setDeveloperDuelActive(true);
-    setGame((current) => {
-      const slotIndex = current.players[owner].board.findIndex((slot) => slot && hasFreeRelicSlot(slot));
-      if (slotIndex < 0) return current;
-      const equipped = equipRelicFromOutside(current, owner, slotIndex, relicDef, library);
-      return equipped ? equipped.state : current;
-    });
-    setEvents((items) =>
-      [
-        ...items,
-        {
-          kind: "info" as const,
-          text: `Developer mode equipped ${relicDef.name} on ${owner === viewerId ? "your" : "the enemy's"} first available minion.`,
-        },
-      ].slice(-EVENT_LOG_LIMIT),
-    );
+    setGame(result.state);
+    logInfo(result.text);
   }
 
   /**
    * Jumps straight to the result screen, with a chosen winner and a chosen MVP.
    *
-   * The same reasoning as the pack buttons above, for the other screen a duel
-   * has to be finished to see: the result screen is the winner's title, the
-   * rays, the champion's full card face and its damage line, and every one of
-   * them used to need a real duel played to its end — and a SPECIFIC end, since
-   * which card it names is decided by who dealt the most damage.
+   * The result screen is the winner's title, the rays, the champion's full card
+   * face and its damage line, and every one of them used to need a real duel
+   * played to its end — and a SPECIFIC end, since which card it names is decided
+   * by who dealt the most damage.
    *
-   * NOTHING IS RECORDED. `duelRecorded` is claimed before the phase changes, so
-   * the effect that writes the record, pays the pack and clears the save sees a
-   * duel that has already been dealt with and stands down. The log says so too,
-   * because a result screen that looks exactly like a real one is the one place
-   * a developer shortcut could be mistaken for a win.
+   * OUTSIDE A LIVE CAMPAIGN DUEL NOTHING IS RECORDED. `duelRecorded` is claimed
+   * before the phase changes, so the effect that writes the record, pays the pack
+   * and clears the save sees a duel that has already been dealt with and stands
+   * down. A live campaign duel is the exception: it ends for real and counts
+   * toward progression, as the workbench buttons say. The log names which of the
+   * two happened, because a result screen that looks exactly like a real one is
+   * the one place a developer shortcut could be mistaken for a win.
    *
    * The tally is written the way the engine writes it — one entry, keyed by
    * instance id, owned by the winner — rather than by teaching `GameOver` a
@@ -2157,189 +1114,10 @@ export default function App() {
     setGame((current) => ({ ...current, phase: "gameOver", winner, damageTally: tally }));
     const winnerLabel =
       winner === "draw" ? "a draw" : winner === viewerId ? "your win" : `${game.players[winner].name}'s win`;
-    setEvents((items) =>
-      [
-        ...items,
-        {
-          kind: "info" as const,
-          text: `Developer mode opened the result screen on ${winnerLabel}${
-            card ? `, with ${card.name} as the champion` : ""
-          }. Nothing was recorded: no duel, no record line, no pack.`,
-        },
-      ].slice(-EVENT_LOG_LIMIT),
-    );
-  }
-
-  function developerClearBoard(owner: PlayerId) {
-    setDeveloperDuelActive(true);
-    setGame((current) => {
-      const players = [...current.players] as GameState["players"];
-      players[owner] = { ...players[owner], board: Array(players[owner].board.length).fill(null) };
-      return { ...current, players };
-    });
-    setEvents((items) =>
-      [...items, { kind: "info" as const, text: `Developer mode cleared ${owner === viewerId ? "your" : "the opponent's"} board.` }].slice(-80),
-    );
-  }
-
-  function clearHoverTimer() {
-    hoverRequest.current += 1;
-    if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current);
-    if (boardKeywordTimer.current !== null) window.clearTimeout(boardKeywordTimer.current);
-    hoverTimer.current = null;
-    boardKeywordTimer.current = null;
-  }
-
-  function clearHoverPreview() {
-    clearHoverTimer();
-    setHover(null);
-  }
-
-  function scheduleHoverPreview(preview: () => void) {
-    clearHoverTimer();
-    setHover(null);
-    const request = hoverRequest.current;
-    hoverTimer.current = window.setTimeout(() => {
-      hoverTimer.current = null;
-      if (request === hoverRequest.current) preview();
-    }, HOVER_PREVIEW_DELAY_MS);
-  }
-
-  /**
-   * @param instant Skip the hover delay.
-   *
-   * The delay exists so that sweeping the pointer across your own hand does not
-   * flash five card panels. A hand revealed by The Watcher is the opposite
-   * situation: the whole point of the reveal is to read those cards, they are
-   * 25px wide and unreadable without the panel, and a one-second wait per card
-   * turns reading five of them into five seconds of hovering.
-   */
-  function previewCard(card: PlayableCard, el: HTMLElement, owner?: PlayerId, instant = false) {
-    if (drag?.active) return;
-    const face = playableFace(card, owner === undefined ? undefined : effectiveCardCost(game, owner, card));
-    const show = () => {
-      if (!el.isConnected) return;
-      sfx.hoverTick();
-      const r = el.getBoundingClientRect();
-      setHover({
-        face,
-        effect: card.effect,
-        flavor: card.flavor,
-        atkClass: "",
-        hpClass: "",
-        states: [],
-        onBoard: false,
-        extraEffects: [],
-        keywordEntries: handKeywordEntriesFor(card),
-        rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
-      });
-    };
-    if (instant) {
-      clearHoverTimer();
-      show();
-      return;
-    }
-    scheduleHoverPreview(show);
-  }
-
-  function previewMinion(minion: MinionInstance, el: HTMLElement) {
-    if (drag?.active) return;
-    // Set immediately, unlike the card preview below it. The reach highlight is
-    // an answer to "what is this thing doing", and an answer that arrives after
-    // the same delay as a full card panel arrives after the player has already
-    // moved on.
-    setReachSource(minion.instanceId);
-    const def = library[minion.cardId];
-    const grantedEffects = minion.gainedEffects.map((effect) => effect.text).filter(Boolean);
-    const copiedPassive = minion.stolenPassiveText?.replace(/^Passive:\s*/i, "");
-    const keywordEntries = minionKeywordEntriesFor(minion);
-    scheduleHoverPreview(() => {
-      if (!el.isConnected) return;
-      sfx.hoverTick();
-      const r = el.getBoundingClientRect();
-      setHover({
-        face: minion,
-        effect: minion.silenced ? "" : minion.effect,
-        flavor: def ? def.flavor : "",
-        atkClass: statClass(minion.atk, minion.baseAtk),
-        hpClass: minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp),
-        states: minionStates(minion, game.players[minion.owner].board),
-        onBoard: true,
-        extraEffects: minion.silenced
-          ? []
-          : [
-              ...(grantedEffects.length ? [`Granted effect: ${grantedEffects.join(" • ")}`] : []),
-              ...(copiedPassive ? [`Copied passive: ${copiedPassive}`] : []),
-            ],
-        keywordEntries: [],
-        rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
-      });
-      if (keywordEntries.length > 0) {
-        boardKeywordTimer.current = window.setTimeout(() => {
-          boardKeywordTimer.current = null;
-          if (!el.isConnected) return;
-          setHover((current) => current ? { ...current, keywordEntries } : current);
-        }, Math.max(0, BOARD_KEYWORD_DELAY_MS - HOVER_PREVIEW_DELAY_MS));
-      }
-    });
-  }
-
-  // A relic used to be a 26px badge with a tooltip. Hovering it now shows the
-  // whole Relic card, teal frame and all — the live face costs nothing
-  // to point at a different card.
-  function previewRelic(relic: RelicInstance, el: HTMLElement) {
-    if (drag?.active) return;
-    const face = relicFace(relic);
-    clearHoverTimer();
-    sfx.hoverTick();
-    const r = el.getBoundingClientRect();
-    setHover({
-      face,
-      effect: face.effect,
-      flavor: face.flavor ?? "",
-      atkClass: "",
-      hpClass: "",
-      states: [],
-      onBoard: false,
-      extraEffects: [],
-      keywordEntries: [],
-      rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
-    });
-  }
-
-  /** Cancels a pending hand-keyword panel and hides any open one. */
-  const clearHandKeywords = useCallback(() => {
-    if (handKeywordTimer.current !== null) {
-      window.clearTimeout(handKeywordTimer.current);
-      handKeywordTimer.current = null;
-    }
-    setHandKeywords(null);
-  }, []);
-
-  /**
-   * Arms the two-second keyword panel for one card in hand.
-   *
-   * Reads everything the card PRINTS, in the order it prints it, and looks each
-   * word up in the one glossary the How to play screen also renders from. A card
-   * with no glossary word on it arms nothing, so plenty of cards never show a
-   * panel at all — which is what keeps it from becoming wallpaper.
-   */
-  function armHandKeywords(card: PlayableCard | undefined, el: HTMLElement) {
-    clearHandKeywords();
-    if (!card || drag?.active) return;
-    const entries = handKeywordEntriesFor(card);
-    if (entries.length === 0) return;
-    handKeywordTimer.current = window.setTimeout(() => {
-      handKeywordTimer.current = null;
-      if (!el.isConnected) return;
-      const rect = el.getBoundingClientRect();
-      setHandKeywords({ entries, left: rect.right, top: rect.top });
-    }, HAND_KEYWORD_DELAY_MS);
-  }
-
-  function endPreview() {
-    setReachSource(null);
-    clearHoverPreview();
+    const champion = card ? `, with ${card.name} as the champion` : "";
+    logInfo(campaignResult
+      ? `Developer mode ended this campaign duel on ${winnerLabel}${champion}. It counts toward progression like a played result.`
+      : `Developer mode opened the result screen on ${winnerLabel}${champion}. Nothing was recorded: no duel, no record line, no pack.`);
   }
 
   function trackTargetPointer(event: React.PointerEvent<HTMLElement>) {
@@ -2396,7 +1174,7 @@ export default function App() {
       const noEligibleBearer = requiredAlignment !== null &&
         !viewer.board.some((slot) => slot?.alignment === requiredAlignment && hasFreeRelicSlot(slot));
       const boardFull = !viewer.board.some((slot) => !slot);
-      showToast(
+      fx.showToast(
         relicLock
           ? `${relicLock} is blocking your relics`
           : noEligibleBearer
@@ -2426,7 +1204,7 @@ export default function App() {
       setTargetArrowPointer(origin);
     }
     const minion = viewer.board[slotIndex];
-    if (minion && attacksRandomly(game, minion)) showToast("Swinging blind — the target is rolled");
+    if (minion && attacksRandomly(game, minion)) fx.showToast("Swinging blind — the target is rolled");
   }
 
   /** Drop an armed attack without spending the minion's attack. */
@@ -2438,13 +1216,6 @@ export default function App() {
     setTargetArrowOrigin(null);
     setTargetArrowPointer(null);
     return true;
-  }
-
-  /** One short line in the middle of the board, then gone. */
-  function showToast(text: string, durationMs = 1500, tone: BoardToast["tone"] = "normal") {
-    const next = { id: fxId.current++, text, durationMs, tone };
-    setToast(next);
-    window.setTimeout(() => setToast((cur) => (cur && cur.id === next.id ? null : cur)), durationMs);
   }
 
   /** Flash the live Taunt blockers when an aimed attack tries to pass them. */
@@ -2473,9 +1244,7 @@ export default function App() {
       .map(({ minion }) => minion!.instanceId);
     if (blockerIds.length === 0) return false;
 
-    const marker = { id: fxId.current++, instanceIds: blockerIds };
-    setTauntFlash(marker);
-    window.setTimeout(() => setTauntFlash((current) => (current?.id === marker.id ? null : current)), 1000);
+    fx.flashTaunt(blockerIds);
     return true;
   }
 
@@ -2688,7 +1457,7 @@ export default function App() {
   function flashApexRestriction():boolean {
     const attacker=selection?.kind==='attacker'?viewer.board[selection.slotIndex]:null;
     if(game.heroPowers[opponentId]!=='yujiro_apex_duel'||!attacker||attacker.atk>=apexAttack)return false;
-    const marker=fxId.current++;setEnemyPowerOpen(true);setApexAlert(marker);
+    const marker=fx.nextId();setEnemyPowerOpen(true);setApexAlert(marker);
     window.setTimeout(()=>setApexAlert(current=>current===marker?null:current),1100);
     return true;
   }
@@ -2704,7 +1473,7 @@ export default function App() {
   const endTurnAction = uiActions.find((action) => action.type === "end_turn");
   const coinAction = uiActions.find((action) => action.type === "use_coin");
   const coreTargetable = canAttackCore(uiActions, selection);
-  const heroFx = (id: PlayerId) => impacts.filter((fx) => fx.slot === "hero" && fx.owner === id);
+  const heroFx = (id: PlayerId) => fx.impacts.filter((fx) => fx.slot === "hero" && fx.owner === id);
   // A bot's Discover/target prompt belongs to the hidden opponent. Keep the
   // engine prompt alive for the bot, but do not render its choices to the human.
   const pendingTarget =
@@ -2836,8 +1605,8 @@ export default function App() {
       <div
         className={[
           "table-frame",
-          shaking ? "shaking" : "",
-          landing > 0 ? "heavy-landing" : "",
+          fx.shaking ? "shaking" : "",
+          fx.landing > 0 ? "heavy-landing" : "",
           duelIntro ? "duel-opening" : "",
           duelIntro ? `duel-opening-${duelIntro.phase}` : "",
         ]
@@ -2846,7 +1615,7 @@ export default function App() {
         /* The drop animates the frame without remounting the board. Remounting
            the whole table made every existing minion flicker when a heavy card
            arrived, especially Divine Shield cards such as UFO and Flash. */
-        style={landing > 0 ? ({ "--thud": landing } as CSSProperties) : undefined}
+        style={fx.landing > 0 ? ({ "--thud": fx.landing } as CSSProperties) : undefined}
       >
         <div className="health-damage-overlay" aria-hidden="true" />
         <header className="top-strip">
@@ -2874,15 +1643,15 @@ export default function App() {
             player={opponent}
             heroPower={game.heroPowers[opponentId]}
             cheatMode={opponentHasInfiniteMana}
-            floats={floats.filter((f) => f.slot === "hero" && f.owner === opponentId)}
+            floats={fx.floats.filter((f) => f.slot === "hero" && f.owner === opponentId)}
             impacts={heroFx(opponentId)}
             targetable={coreTargetable}
             active={game.activePlayer === opponentId && game.phase !== "gameOver"}
             thinking={botThinking}
             revealedHand={revealedOpponentHand}
             library={library}
-            onCardPreview={previewCard}
-            onCardPreviewEnd={endPreview}
+            onCardPreview={preview.previewCard}
+            onCardPreviewEnd={preview.endPreview}
             onStrike={attackCore}
             onBlockedStrike={selection?.kind === "attacker" ? attackCore : undefined}
             heroPowerCounter={game.heroPowers[opponentId] === "glados_test_protocol" ? `${Math.min(15, game.players[viewerId].turnsStarted)}/15` : undefined}
@@ -2995,17 +1764,17 @@ export default function App() {
             viewerId={viewerId}
             pendingTarget={pendingTarget}
             selection={selection}
-            tauntFlash={tauntFlash}
+            tauntFlash={fx.tauntFlash}
             onSlot={guardedSlotClick}
-            ghosts={ghosts}
-            floats={floats}
-            impacts={impacts}
-            lunge={lunge}
-            onPreview={previewMinion}
-            onPreviewEnd={endPreview}
-            reach={reach}
+            ghosts={fx.ghosts}
+            floats={fx.floats}
+            impacts={fx.impacts}
+            lunge={fx.lunge}
+            onPreview={preview.previewMinion}
+            onPreviewEnd={preview.endPreview}
+            reach={preview.reach}
             relicFlash={relicFlash}
-            onRelicPreview={previewRelic}
+            onRelicPreview={preview.previewRelic}
             onRelicPress={(event, relic) => { clearHoverPreview(); relicPeek.start(event, relic); }}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
@@ -3020,7 +1789,7 @@ export default function App() {
             <span className="rift-glow" />
             <span className="rift-sweep a" />
             <span className="rift-sweep b" />
-            {riftFlare ? <span key={riftFlare} className="rift-flare" /> : null}
+            {fx.riftFlare ? <span key={fx.riftFlare} className="rift-flare" /> : null}
           </div>
           <BoardRow
             owner={viewerId}
@@ -3030,17 +1799,17 @@ export default function App() {
             viewerId={viewerId}
             pendingTarget={pendingTarget}
             selection={selection}
-            tauntFlash={tauntFlash}
+            tauntFlash={fx.tauntFlash}
             onSlot={guardedSlotClick}
-            ghosts={ghosts}
-            floats={floats}
-            impacts={impacts}
-            lunge={lunge}
-            onPreview={previewMinion}
-            onPreviewEnd={endPreview}
-            reach={reach}
+            ghosts={fx.ghosts}
+            floats={fx.floats}
+            impacts={fx.impacts}
+            lunge={fx.lunge}
+            onPreview={preview.previewMinion}
+            onPreviewEnd={preview.endPreview}
+            reach={preview.reach}
             relicFlash={relicFlash}
-            onRelicPreview={previewRelic}
+            onRelicPreview={preview.previewRelic}
             onRelicPress={(event, relic) => { clearHoverPreview(); relicPeek.start(event, relic); }}
             onDragStart={startAttackDrag}
             onDragMove={moveDrag}
@@ -3059,7 +1828,7 @@ export default function App() {
           </button>}
 
           <div
-            className={flights.length > 0 ? "deck-pile drawing" : "deck-pile"}
+            className={fx.flights.length > 0 ? "deck-pile drawing" : "deck-pile"}
             title={`Your turn ${viewer.turnsStarted}`}
           >
             <span className="card-back" />
@@ -3075,7 +1844,7 @@ export default function App() {
               player={viewer}
               heroPower={game.heroPowers[viewerId]}
               cheatMode={viewerHasInfiniteMana}
-              floats={floats.filter((f) => f.slot === "hero" && f.owner === viewerId)}
+              floats={fx.floats.filter((f) => f.slot === "hero" && f.owner === viewerId)}
               impacts={heroFx(viewerId)}
               active={game.activePlayer === viewerId && game.phase !== "gameOver"}
             />
@@ -3092,135 +1861,31 @@ export default function App() {
             ) : null}
           </div>
 
-          {/* Hovering ANY card lifts and enlarges the WHOLE hand (owner's
-              ruling, 2 September 2026). The old behaviour opened a separate
-              full-size copy of one card beside the fan, which covered the board
-              you were about to play it onto and left the fan itself the same
-              unreadable size it had always been. Board minions keep their
-              preview panel: there is no room to enlarge a board in place. */}
-          <div
-            className={handHovered ? "hand-fan is-open" : "hand-fan"}
-            aria-label={`${viewer.name}'s hand`}
-            onMouseEnter={() => setHandHovered(true)}
-            onMouseLeave={() => {
-              setHandHovered(false);
-              clearHandKeywords();
-            }}
-          >
-            {viewer.hand.map((cardId, handIndex) => {
-              const card = library[cardId];
-              const playable = uiActions.some(
-                (action) => (action.type === "play_card" || action.type === "play_relic") && action.handIndex === handIndex,
-              );
-              const count = viewer.hand.length;
-              const mid = (count - 1) / 2;
-              const spread = count > 7 ? 2.6 : count > 4 ? 3.6 : 5;
-              const lift = count > 7 ? 5 : 7;
-              const style = {
-                "--rot": `${(handIndex - mid) * spread}deg`,
-                // THE ARC LIFTS THE MIDDLE, it does not drop the edges.
-                //
-                // This was `+|i - mid| * lift`, which pushed the outermost cards
-                // DOWN by up to 22px — straight past the bottom of the window,
-                // where the health gem was cut off. Same shape, hung the other
-                // way up: the outermost card now sits on the baseline and the
-                // middle rises, so nothing can ever go below the fan's own
-                // bottom edge however many cards are held.
-                "--ty": `${(Math.abs(handIndex - mid) - mid) * lift}px`,
-                "--intro-index": `${handIndex}`,
-                zIndex: handIndex + 1,
-                // The overlap is COMPUTED so the fan always fits its column.
-                //
-                // It used to be three hand-picked numbers (-46/-34/-16, then
-                // -30/-22/-10 once the cost gem moved to the left corner and the
-                // face needed showing). Hand-picked numbers only work for the
-                // hand sizes somebody happened to look at: at ten cards the
-                // -30 tier ran 910px wide, the command bar's side columns were
-                // squeezed under the hero plate's own 250px minimum, and the fan
-                // slid over the health plate on one side and the mana tray on
-                // the other. A formula cannot have that bug.
-                //
-                // Cards never overlap more than they must, so a small hand now
-                // barely overlaps at all — strictly better than the old -10.
-                marginLeft: handIndex === 0 ? 0 : -(HAND_CARD_W - handStep(count)),
-              } as CSSProperties;
-              const beingDragged = drag?.active && drag.kind === "hand" && drag.handIndex === handIndex;
-              const classes = [
-                "hand-card",
-                selection?.kind === "hand" && selection.handIndex === handIndex ? "selected" : "",
-                playable ? "playable" : "unplayable",
-                beingDragged ? "dragging" : "",
-              ]
-                .filter(Boolean)
-                .join(" ");
-              return (
-                <div className="hand-item" key={`${cardId}-${handIndex}`}>
-                <button
-                  type="button"
-                  key={`${cardId}-${handIndex}`}
-                  className={classes}
-                  style={style}
-                  onClick={() => guardedHandClick(handIndex)}
-                  onPointerDown={(e) => startHandDrag(e, handIndex, playable)}
-                  onPointerMove={moveDrag}
-                  onPointerUp={endDrag}
-                  onPointerCancel={cancelDrag}
-                  /* No per-card preview panel here any more; the fan itself
-                     is what grows. See the note on `.hand-fan` above. What a
-                     single card still gets, after two seconds, is its keywords
-                     explained in a small panel off its top-right corner. */
-                  onMouseEnter={(e) => armHandKeywords(card, e.currentTarget)}
-                  onMouseLeave={clearHandKeywords}
-                  data-playable={playable}
-                  aria-label={card ? `${card.name}, ${effectiveCardCost(game, viewerId, card)} mana${playable ? ", playable" : ""}` : undefined}
-                  /* No `title` here. A native tooltip on a card you are holding
-                     covers the neighbouring card a second after the pointer
-                     lands, which is exactly when the hover preview is trying to
-                     show you that card — and it explains a control the player
-                     has already used by the time they can read it. Owner
-                     ruling. */
-                >
-                  {card ? <CardFace card={playableFace(card, effectiveCardCost(game, viewerId, card))} /> : null}
-                </button>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mana-tray" title={viewerHasInfiniteMana ? "Infinite mana" : `${viewer.mana}/${viewer.maxMana} mana`}>
-            {viewerHasInfiniteMana ? (
-              <em className="mana-inf">∞</em>
-            ) : (
-              <>
-                <strong>{viewer.mana}/{viewer.maxMana}</strong>
-                <div className="mana-row">
-                  {Array.from({ length: viewer.maxMana }, (_, i) => {
-                    // A crystal that just went out, or just came back. `--mi` is
-                    // its position within the changed run, which is what makes
-                    // the group drain one after another instead of all at once.
-                    const spent = manaFx?.kind === "spend" && i >= manaFx.to && i < manaFx.from;
-                    const refill = manaFx?.kind === "refill" && i >= manaFx.from && i < manaFx.to;
-                    const classes = ["mana-pip", i < viewer.mana ? "full" : "", spent ? "spent" : "", refill ? "refill" : ""]
-                      .filter(Boolean)
-                      .join(" ");
-                    return (
-                      <span
-                        key={`${manaFx?.id ?? 0}-${i}`}
-                        className={classes}
-                        style={
-                          {
-                            ...(spent ? { "--mi": manaFx.from - 1 - i } : {}),
-                            ...(refill ? { "--mi": i - manaFx.from } : {}),
-                            ...(duelIntro?.phase === "mana" ? { "--intro-mana-index": i } : {}),
-                          } as CSSProperties
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              </>
+          <HandFan
+            game={game}
+            library={library}
+            viewerId={viewerId}
+            playable={(handIndex) => uiActions.some(
+              (action) => (action.type === "play_card" || action.type === "play_relic") && action.handIndex === handIndex,
             )}
-          </div>
+            selectedIndex={selection?.kind === "hand" ? selection.handIndex : null}
+            draggingIndex={drag?.active && drag.kind === "hand" ? drag.handIndex : null}
+            onCardClick={guardedHandClick}
+            onCardPointerDown={startHandDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerCancel={cancelDrag}
+            onCardRest={preview.armHandKeywords}
+            onLeave={clearHandKeywords}
+          />
+
+          <ManaTray
+            mana={viewer.mana}
+            maxMana={viewer.maxMana}
+            infinite={viewerHasInfiniteMana}
+            manaFx={fx.manaFx}
+            introReveal={duelIntro?.phase === "mana"}
+          />
         </section>
       </div>
 
@@ -3248,7 +1913,7 @@ export default function App() {
 
       {/* Cards leaving the deck. Fixed layer, so a flight is not clipped by the
           table frame on its way from the pile to the fan. */}
-      {flights.map((flight) => (
+      {fx.flights.map((flight) => (
         <div
           key={flight.id}
           className={[
@@ -3273,13 +1938,13 @@ export default function App() {
         </div>
       ))}
 
-      {banner ? (
-        <div key={banner.id} className={banner.mine ? "turn-banner" : "turn-banner theirs"} aria-hidden="true">
-          <b>{banner.text}</b>
+      {fx.banner ? (
+        <div key={fx.banner.id} className={fx.banner.mine ? "turn-banner" : "turn-banner theirs"} aria-hidden="true">
+          <b>{fx.banner.text}</b>
         </div>
       ) : null}
 
-      {hover ? <HoverCard hover={hover} /> : null}
+      {preview.hover ? <HoverCard hover={preview.hover} /> : null}
       {relicPeek.relic && relicPeek.rect && screen === 'playing' && !needsLandscape && <RelicCardPeek relic={relicPeek.relic} rect={relicPeek.rect} />}
       {compactLayout && screen === 'playing' && !needsLandscape && game.phase === 'main' && !overlay && !mobileMenuOpen && !enemyPowerOpen && !logOpen && !curtainUp && !duelIntro && !pack && !chapterSpeech && !defeatedChapter && !developerToolsOpen
         ? createPortal(<button type="button" className="end-turn mobile-end-turn" disabled={!endTurnAction}
@@ -3290,28 +1955,27 @@ export default function App() {
           {typeof document.documentElement.requestFullscreen === 'function' && <button className="primary" onClick={() => { void requestPhoneLandscape(true); }}>Enter landscape fullscreen</button>}
           <button onClick={toTitle}>Return to menu</button></section>
       </div>}
-      {handKeywords ? (
+      {preview.handKeywords ? (
         // ABOVE the card, never beside it. Beside meant sitting on the card it
         // was explaining, or on its neighbour in the fan; the empty board over
         // the hand is the one place with room. The panel is CENTRED on the left
         // it is given, so this hangs it over the card's right-hand side.
         // Owner's ruling, 3 September 2026.
-        <KeywordPopover entries={handKeywords.entries} left={handKeywords.left + 96} top={handKeywords.top} above />
+        <KeywordPopover entries={preview.handKeywords.entries} left={preview.handKeywords.left + 96} top={preview.handKeywords.top} above />
       ) : null}
-
 
       {/* The blow that ends the duel. Fires on the action that sets a winner, so
           the hit is seen before the victory curtain drops over it. */}
-      {lethal ? <div key={lethal} className="lethal-flash" aria-hidden="true" /> : null}
+      {fx.lethal ? <div key={fx.lethal} className="lethal-flash" aria-hidden="true" /> : null}
 
-      {toast ? (
+      {fx.toast ? (
         <div
-          className={toast.tone === "bargain" ? "board-toast bargain-popup" : "board-toast"}
-          key={toast.id}
+          className={fx.toast.tone === "bargain" ? "board-toast bargain-popup" : "board-toast"}
+          key={fx.toast.id}
           role="status"
-          style={{ animationDuration: `${toast.durationMs}ms` }}
+          style={{ animationDuration: `${fx.toast.durationMs}ms` }}
         >
-          {toast.text}
+          {fx.toast.text}
         </div>
       ) : null}
       {screen==='playing'&&!tutorialActive&&<TurnClockWarning clock={turnClock}/>}
@@ -3458,8 +2122,6 @@ export default function App() {
         onNavigate={() => undefined}
       />}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
-      {overlay === "gallery" ? <CardGallery onPresetCreate={name=>createDeckPreset(name,0)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,0))} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={power=>persistProgress(acknowledgeHeroPowers(selectHeroPower(progress,power,0)))} progress={progress} fontRevision={fontRevision} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, 0))} onClose={() => setOverlay(null)} /> : null}
-      {overlay === "record" ? <RecordScreen progress={progress} onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel
           onClose={() => setOverlay(null)}
@@ -3479,3430 +2141,11 @@ export default function App() {
           onToggleCheat={toggleCheatMode}
           onUndoTurn={undoTurn}
           canUndoTurn={history.some((snapshot) => snapshot.turnNumber < game.turnNumber)}
-          onSetCore={developerSetCore}
-          onMakeCoreInvincible={developerMakeCoreInvincible}
-          onHealCore={developerHealCore}
-          onClearHand={developerClearHand}
-          onGiveCard={developerGiveCard}
-          onPlaceCard={developerPlaceCard}
-          onEquipRelic={developerEquipRelic}
-          onClearBoard={developerClearBoard}
+          onEdit={developerEdit}
           onShowResult={developerShowResult}
           onTestCard={(cardId) => beginDuel({ kind: "bot", skill: "easy" }, { testCardId: cardId })}
         />
       ) : null}
     </main></FontRevisionContext>
   );
-}
-
-type HoverState = {
-  face: CardFaceModel;
-  effect: string;
-  flavor: string;
-  atkClass: string;
-  hpClass: string;
-  states: string[];
-  onBoard: boolean;
-  extraEffects: string[];
-  keywordEntries: KeywordEntry[];
-  rect: { left: number; right: number; top: number; bottom: number };
-} | null;
-
-/**
- * Every minion the hovered one is currently reaching, by instance id.
- *
- * A REVERSE LOOKUP over live state, not a reading of card text. The engine
- * already writes down who is paying whom — an aura bonus records the source
- * that granted it, a shield records the source holding it up, a mark records
- * who set it — because it has to take those things back when the source dies.
- * Nothing here re-derives an effect: it asks the board who is on the hook, and
- * a minion whose text has not actually landed on anybody lights up nothing,
- * which is the honest answer.
- */
-function reachOf(game: GameState, source: MinionInstance): Set<string> {
-  const reached = new Set<string>();
-  const id = source.instanceId;
-  for (const player of game.players) {
-    for (const minion of player.board) {
-      if (!minion || minion.instanceId === id) continue;
-      const touched =
-        (minion.auraBonuses ?? []).some((bonus) => bonus.sourceId === id) ||
-        (minion.divineShieldAuraSources ?? []).includes(id) ||
-        (minion.passiveSilenceSources ?? []).includes(id) ||
-        minion.markedBy === id ||
-        minion.stolenPassiveFrom === id;
-      if (touched) reached.add(minion.instanceId);
-    }
-  }
-  // Two the source itself records, rather than the target: a slot it is holding
-  // safe, and a shot it has already lined up.
-  if (source.protectedByMeleoron) reached.add(source.protectedByMeleoron);
-  if (source.deathStarTarget?.kind === "minion") reached.add(source.deathStarTarget.instanceId);
-  return reached;
-}
-
-/** Replay a wrapper's motion without rebuilding its decoded card and observers. */
-function ReplayMotion({sequence,className,style,children,animationName}:{sequence?:number;className:string;style?:CSSProperties;children:ReactNode;animationName?:string}) {
-  const node=useRef<HTMLDivElement>(null);
-  const previous=useRef<{sequence?:number;className:string}>({className:""});
-  useLayoutEffect(()=>{
-    const last=previous.current;
-    previous.current={sequence,className};
-    // A new CSS animation starts itself. Querying it before paint forces a
-    // separate style/layout pass for every minion hit by the same effect.
-    if(sequence===undefined||last.sequence===undefined||last.className!==className)return;
-    for(const animation of node.current?.getAnimations({subtree:Boolean(animationName)})??[]){
-      if(!animationName||(animation as CSSAnimation).animationName===animationName){animation.currentTime=0;animation.play();}
-    }
-  },[sequence,className,animationName]);
-  return <div ref={node} className={className} style={style}>{children}</div>;
-}
-
-function BoardRow({
-  owner,
-  label,
-  game,
-  legalActions,
-  viewerId,
-  pendingTarget,
-  selection,
-  tauntFlash,
-  onSlot,
-  ghosts,
-  floats,
-  impacts,
-  lunge,
-  onPreview,
-  onPreviewEnd,
-  onRelicPreview,
-  onRelicPress,
-  relicFlash,
-  onDragStart,
-  onDragMove,
-  onDragEnd,
-  onDragCancel,
-  reach,
-}: {
-  owner: PlayerId;
-  label: string;
-  game: GameState;
-  legalActions: GameAction[];
-  /** Whose side of the table this is drawn from — not necessarily whose turn it is. */
-  viewerId: PlayerId;
-  pendingTarget: PendingTarget | null;
-  selection: Selection;
-  tauntFlash: TauntFlash;
-  onSlot: (owner: PlayerId, slotIndex: number) => void;
-  ghosts: Ghost[];
-  floats: FloatNum[];
-  impacts: Impact[];
-  lunge: Lunge;
-  onPreview: (minion: MinionInstance, el: HTMLElement) => void;
-  onPreviewEnd: () => void;
-  onRelicPreview: (relic: RelicInstance, el: HTMLElement) => void;
-  onRelicPress: (event: React.PointerEvent<HTMLElement>, relic: RelicInstance) => void;
-  relicFlash: RelicFlash | null;
-  onDragStart: (e: React.PointerEvent<HTMLElement>, slotIndex: number, canAttack: boolean) => void;
-  onDragMove: (e: React.PointerEvent) => void;
-  onDragEnd: (e: React.PointerEvent) => void;
-  onDragCancel: () => void;
-  /** Instance ids the hovered minion is currently affecting. */
-  reach: ReadonlySet<string>;
-}) {
-  return (
-    <div className="board-row" aria-label={label} data-side={owner === viewerId ? "Your board" : "Opponent's board"}>
-      {game.players[owner].board.map((minion, slotIndex) => {
-        const canPlace =
-          selection?.kind === "hand" &&
-          owner === viewerId &&
-          legalActions.some(
-            (action) =>
-              (action.type === "play_card" || action.type === "play_relic") && action.slotIndex === slotIndex,
-          );
-        const canTarget =
-          selection?.kind === "attacker" &&
-          owner !== viewerId &&
-          legalActions.some((action) => action.type === "attack_minion" && action.targetSlot === slotIndex);
-        const canAttack =
-          owner === viewerId &&
-          minion &&
-          legalActions.some(
-            (action) =>
-              (action.type === "attack_minion" || action.type === "attack_core") && action.attackerSlot === slotIndex,
-          );
-        const armed = selection?.kind === "attacker" && owner === viewerId && selection.slotIndex === slotIndex;
-        const tauntFlashing = Boolean(minion && tauntFlash?.instanceIds.includes(minion.instanceId));
-        const isLunging = lunge !== null && lunge.owner === owner && lunge.slot === slotIndex;
-        // A targeted effect is waiting: only its legal victims light up, and the
-        // highlight reads differently from an attack target on purpose.
-        // "slot" prompts point at a POSITION, so empty slots are choosable too.
-        const boardPrompt =
-          pendingTarget !== null &&
-          (pendingTarget.kind === "board" || pendingTarget.kind === "slot" || pendingTarget.kind === "boardOrCore")
-            ? pendingTarget
-            : null;
-        const auras = game.players[owner].slotAuras.filter((aura) => aura.slot === slotIndex);
-        const auraColors = auras.map((aura) => AURA_COLOR[aura.auraId]);
-        const auraStyle = auraColors.length
-          ? ({
-              "--slot-aura-primary": auraColors[0],
-              "--slot-aura-rings": auraColors
-                .map((color, index) => `0 0 0 ${2 + index * 3}px ${color}`)
-                .join(", "),
-            } as CSSProperties)
-          : undefined;
-        const canBeChosen =
-          boardPrompt !== null &&
-          boardPrompt.options.some((option,index) => option.owner === owner && option.slot === slotIndex && legalActions.some(action=>action.type==='choose_target'&&action.choiceIndex===index));
-        const classes = [
-          "board-slot",
-          minion ? "occupied" : "empty",
-          auras.length ? "has-slot-aura" : "",
-          auras.some((aura) => aura.auraId === "slot_bound") ? "slot-is-bound" : "",
-          canPlace ? "placeable" : "",
-          canTarget ? "targetable" : "",
-          canAttack ? "ready" : "",
-          armed ? "armed" : "",
-          tauntFlashing ? "taunt-flashing" : "",
-          isLunging ? "striking" : "",
-          canBeChosen ? "choosable" : "",
-          boardPrompt !== null && !canBeChosen ? "dimmed" : "",
-          // Only the minions being AFFECTED are ringed. The source used to be
-          // ringed too, more brightly, and that was the wrong read: the source
-          // is the one you are already pointing at, so marking it says nothing
-          // and puts a fifth ring on a board that has four. Owner's ruling,
-          // 3 September 2026.
-          minion && reach.has(minion.instanceId) ? "in-reach" : "",
-        ]
-          .filter(Boolean)
-          .join(" ");
-        const slotGhosts = ghosts.filter((g) => g.owner === owner && g.slot === slotIndex);
-        const slotFloats = floats.filter((f) => f.owner === owner && f.slot === slotIndex);
-        const slotImpacts = impacts.filter((fx) => fx.owner === owner && fx.slot === slotIndex);
-        // Motion replays on the wrapper; the card stays mounted through impacts.
-        const kinetic = slotImpacts.filter((fx) => fx.kind === "hit" || fx.kind === "freeze");
-        const lastKinetic = kinetic.length ? kinetic[kinetic.length - 1] : null;
-        const joltClasses = [
-          "jolt-wrap",
-          kinetic.some((fx) => fx.kind === "hit") ? "jolting" : "",
-          kinetic.some((fx) => fx.kind === "freeze") ? "frosting" : "",
-        ]
-          .filter(Boolean)
-          .join(" ");
-        return (
-          <div className="board-cell" key={slotIndex}>
-          <button
-            type="button"
-            key={slotIndex}
-            className={classes}
-            style={auraStyle}
-            data-slot={`${owner}-${slotIndex}`}
-            data-instance={minion?.instanceId}
-            aria-label={minion ? `${minion.name}, ${minion.atk} attack, ${minion.hp} health${canAttack ? ", ready to attack" : ""}` : `Empty slot ${slotIndex + 1}`}
-            onClick={() => onSlot(owner, slotIndex)}
-            onPointerDown={(e) => onDragStart(e, slotIndex, Boolean(canAttack))}
-            onPointerMove={onDragMove}
-            onPointerUp={onDragEnd}
-            onPointerCancel={onDragCancel}
-            onMouseEnter={minion ? (e) => onPreview(minion, e.currentTarget) : undefined}
-            onMouseLeave={minion ? onPreviewEnd : undefined}
-          >
-            {/* Keep a departing body's card mounted; only its motion changes.
-                Rebuilding every death face made board-wide clears decode/layout
-                a second board just as the impact animation was starting. */}
-            {[...(minion?[{body:minion,ghost:null}]:[]),...slotGhosts.map(ghost=>({body:ghost.minion,ghost}))].map(({body,ghost})=>(
-              <ReplayMotion key={body.instanceId}
-                sequence={!ghost&&tauntFlashing?tauntFlash?.id:undefined} animationName="taunt-blocker-flash"
-                className={ghost?`minion-wrap ghost-wrap ${ghost.motion==='stasis'?'stasis':ghost.motion==='return'?`returning ${ghost.destinationOwner===viewerId?'returning-down':'returning-up'}`:'dying'}`:'minion-wrap'}
-                style={ghost?({'--fd':`${ghost.delay}s`} as CSSProperties):undefined}>
-                <ReplayMotion
-                  sequence={!ghost&&isLunging&&lunge?lunge.id:undefined}
-                  className={!ghost&&isLunging?'lunge-wrap lunging':'lunge-wrap'}
-                  style={!ghost&&isLunging&&lunge?({'--lx':`${lunge.dx}px`,'--ly':`${lunge.dy}px`} as CSSProperties):undefined}>
-                  <ReplayMotion sequence={!ghost?lastKinetic?.id:undefined}
-                    className={!ghost?joltClasses:'jolt-wrap'}
-                    style={!ghost&&lastKinetic?({'--fd':`${lastKinetic.delay}s`} as CSSProperties):undefined}>
-                    <MinionFace minion={body}
-                      board={!ghost?game.players[owner].board:undefined}
-                      allBoard={!ghost?game.players.flatMap(player=>player.board):undefined}
-                      onRelicPreview={!ghost?onRelicPreview:undefined}
-                      onRelicPress={!ghost?onRelicPress:undefined}
-                      onRelicPreviewEnd={!ghost?onPreview:undefined}/>
-                    {!ghost&&relicFlash?.instanceId===body.instanceId?<RelicPopup key={relicFlash.id} flash={relicFlash}/>:null}
-                  </ReplayMotion>
-                </ReplayMotion>
-                {ghost?(ghost.motion==='stasis'?<StasisBurst particles={ghost.particles}/>:ghost.motion==='return'?<ReturnBurst/>:<DeathBurst particles={ghost.particles}/>):null}
-              </ReplayMotion>
-            ))}
-            {auras.length ? (
-              <span className="slot-auras" aria-hidden="true">
-                {auras.map((aura) => (
-                  <span
-                    key={aura.auraId}
-                    className={`slot-aura ${aura.auraId}`}
-                    title={`${aura.sourceName} marked this slot permanently: ${AURA_TEXT[aura.auraId]}`}
-                  >
-                    {AURA_LABEL[aura.auraId]}
-                  </span>
-                ))}
-              </span>
-            ) : null}
-            <span className="fx-layer" aria-hidden="true">
-              {slotImpacts.map((fx) => (
-                <ImpactFx key={fx.id} impact={fx} />
-              ))}
-            </span>
-            {slotFloats.map((f, index) => (
-              <span
-                key={f.id}
-                className={f.delta < 0 ? "float-num hurt" : "float-num heal"}
-                style={{ top: `calc(30% + ${index * 20}px)`, "--fd": `${f.delay}s` } as CSSProperties}
-              >
-                {f.delta < 0 ? f.delta : `+${f.delta}`}
-              </span>
-            ))}
-          </button>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ImpactFx({ impact }: { impact: Impact }) {
-  const campClass = impact.camp ? ` camp-${impact.camp.toLowerCase()}` : "";
-  return (
-    <span
-      className={`impact impact-${impact.kind}${campClass}`}
-      style={{ "--fd": `${impact.delay}s` } as CSSProperties}
-    >
-      <span className="impact-core" />
-      {/* The camp's signature: a rune ring for Magic, a rising bloom for Nature,
-          a snapping bracket for Tech, and a compass for ALL. Drawn in CSS, so
-          it costs no asset. */}
-      {impact.camp ? <span className="camp-sigil" /> : null}
-      {impact.particles.map((p) => (
-        <i
-          key={p.key}
-          className={`p p-${impact.kind}`}
-          style={
-            {
-              "--dx": `${p.dx}px`,
-              "--dy": `${p.dy}px`,
-              "--ps": `${p.size}px`,
-              "--pd": `${p.delay}s`,
-              "--pr": `${p.rot}deg`,
-              "--pt": `${p.dur}s`,
-            } as CSSProperties
-          }
-        />
-      ))}
-    </span>
-  );
-}
-
-function DeathBurst({ particles }: { particles: Particle[] }) {
-  return (
-    <span className="death-burst" aria-hidden="true">
-      <span className="death-flash" />
-      <span className="death-ring death-ring-one" />
-      {particles.map((p) => (
-        <i
-          key={p.key}
-          className="p p-death"
-          style={
-            {
-              "--dx": `${p.dx}px`,
-              "--dy": `${p.dy}px`,
-              "--ps": `${p.size}px`,
-              "--pd": `${p.delay}s`,
-              "--pr": `${p.rot}deg`,
-              "--pt": `${p.dur}s`,
-            } as CSSProperties
-          }
-        />
-      ))}
-    </span>
-  );
-}
-
-function ReturnBurst() {
-  return (
-    <span className="return-burst" aria-hidden="true">
-      <i />
-      <i />
-      <i />
-      <i />
-    </span>
-  );
-}
-
-function StasisBurst({ particles }: { particles: Particle[] }) {
-  return (
-    <span className="stasis-burst" aria-hidden="true">
-      <span className="stasis-ring stasis-ring-one" />
-      <span className="stasis-ring stasis-ring-two" />
-      {particles.map((p) => (
-        <i
-          key={p.key}
-          style={
-            {
-              "--dx": `${p.dx}px`,
-              "--dy": `${p.dy}px`,
-              "--ps": `${p.size}px`,
-              "--pd": `${p.delay}s`,
-              "--pr": `${p.rot}deg`,
-              "--pt": `${p.dur}s`,
-            } as CSSProperties
-          }
-        />
-      ))}
-    </span>
-  );
-}
-
-function TargetingArrow({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
-  const dist = Math.hypot(x2 - x1, y2 - y1);
-  const lift = Math.min(90, dist * 0.28);
-  const cx = x1 + (x2 - x1) / 2;
-  const cy = y1 + (y2 - y1) / 2 - lift;
-  const angle = (Math.atan2(y2 - cy, x2 - cx) * 180) / Math.PI;
-  return (
-    <svg className="target-arrow" aria-hidden="true">
-      <path className="arrow-path" d={`M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`} />
-      <g transform={`translate(${x2} ${y2}) rotate(${angle})`}>
-        <polygon className="arrow-head" points="-6,-13 22,0 -6,13" />
-      </g>
-    </svg>
-  );
-}
-
-// --- text auto-fit ----------------------------------------------------------
-// The sizes come from `textfit.ts`, which measures the real glyphs in the real
-// fonts and wraps them the way the browser will. The box numbers below are the
-// real geometry out of App.css.
-//
-// These used to be two arithmetic estimates based on an average character
-// width. That worked only because a hard ceiling of 37 design units was doing
-// the real work — nearly every card hit the cap and the estimate never decided
-// anything. The ceilings below are 2-3x higher, so the fit now IS the answer for
-// most of the roster, and a character-count estimate is not good enough to be
-// the answer: it assumes text fills a box completely when real text wraps at
-// word boundaries and leaves a ragged edge, and it overestimates hardest exactly
-// when the font is large.
-
-/** Usable banner width. NOT the full 740: the mana gem sits on top of the
- *  banner's right end, so the name has to stop clear of it or it renders
- *  underneath the number. Symmetric because the name is centred. */
-/* 500, down from 580, because the mana crystal grew a third: 84 design units to
- * 112, which walks its left edge from 664 to 636. MEASURED, not reasoned: the
- * widest name on the roster inks 475 units at the old 46 cap and stopped 52
- * short of the crystal. Raise the cap to 55 and that ink becomes ~570 and ends
- * at 660 — 24 units UNDER the enlarged crystal. The name is centred, so every
- * unit the crystal gains costs the box two. */
-const NAME_BOX = 500;        // full-size card, 112-unit crystal
-// Small card. The compact mana crystal grew 104 -> 240 design units (see the
-// @container block in App.css), and this is the width the name is allowed to
-// use before it slides under the cost number — so it had to come down with it.
-const NAME_BOX_COMPACT = 470;
-/**
- * A minion IN PLAY has its own geometry and needs its own two numbers, because
- * its gems are much bigger than the printed card's: the cost crystal is 150
- * design units against the print card's 78, and the ATK blade and HP heart are
- * 150-156 against 80-86. Reusing the printed card's boxes put every long name
- * underneath the cost number and ran the last line of wordy cards under the
- * blade — both measured, neither visible in a screenshot.
- *
- * The name is also pushed LEFT on board (see `.card-face.on-board .cf-name`), so
- * this width is the space to the left of the crystal rather than a symmetric
- * reserve.
- */
-const NAME_BOX_BOARD = 540;
-/**
- * The width a board name may use and still sit CENTRED.
- *
- * A minion in play carries a 150-unit cost crystal whose left edge is at 598, so
- * a centred name has to stay 152 units clear of BOTH edges: 750 - 2 x 152 = 446,
- * and 440 keeps a little back. Names that fit here are centred; the rest keep
- * the old left-shifted layout, because for them the space to the left of the
- * crystal is space they genuinely need.
- */
-const NAME_BOX_BOARD_CENTRED = 440;
-/** The board's own name cap, written in CSS as `min(46, …)`. Kept here so the
- *  centring test and the stylesheet cannot disagree about it. */
-const BOARD_NAME_CAP = 46;
-
-/** The description plaque's inner box: 618 x 302 design units, line-height 1.16. */
-const RULES_BOX = { w: 618, h: 302, lineHeight: 1.16 } as const;
-/**
- * The plaque on a board minion. SMALLER than the printed card's, because the
- * artwork is 15% BIGGER than the printed card's and the plaque takes what is
- * left. That is the intended direction of the trade: the picture is the card.
- * Trimmed padding (14 rather than 30/22) claws back what it can without
- * touching the art.
- */
-const RULES_BOX_BOARD = { w: 664, h: 198, lineHeight: 1.16 } as const;
-/** The flavour strip: 610 x 84, line-height 1.1. */
-const FLAVOR_BOX = { w: 610, h: 84, lineHeight: 1.1 } as const;
-
-/**
- * How big the rules text may get. Raised from 37, which is where "way too
- * small" came from: at 37 units a board minion's text renders around ten
- * pixels, and since the overwhelming majority of cards say something short
- * ("Taunt.", "Divine Shield.", "Freeze a minion") they ALL sat at that cap with
- * room to spare around them. Short text now fills its plaque. The wordiest cards
- * in the roster are limited by the box rather than by this number, and land
- * wherever the measurer says they land.
- */
-const RULES_CEILING = 64;
-const FLAVOR_CEILING = 32;
-/* 55, up a fifth from 46. Every name on the roster was measured before this
- * moved: they all sat at 45.5, pinned by this ceiling rather than by their box,
- * so raising it is the only thing that makes a name bigger. The two longest —
- * "Rennala Queen of the Full Moon" and "Goku" — are
- * box-limited instead and grow less, which is the honest outcome rather than a
- * bug. The BOARD keeps its own 46 cap in CSS: a minion in play has far less
- * room across the top and nothing there was asking to be bigger. */
-const NAME_CEILING = 55;
-const NAME_CEILING_COMPACT = 72;
-
-/**
- * Every card in the game, on one page.
- *
- * It draws through the same `CardFace` the board draws through, from the same
- * `cards` and `relics` the engine loads, so it CANNOT go stale. Change a card's
- * text and the gallery already shows the new text; add a card and it appears.
- * That is the entire reason it is a screen inside the game rather than a folder
- * of exported pictures — a picture is right on the day it was taken and quietly
- * wrong forever after, with nothing to say so.
- *
- * Cards are shown as printed: no board state, no live buffs, no conditions.
- */
-/**
- * The gallery's filters: one dropdown per attribute, never one dropdown for all
- * of them.
- *
- * The first version offered a single "sort by" list with Camp as an option,
- * which was incoherent — sorting BY camp cannot answer "show me the Tech
- * cards", and that is the only question anyone actually has. Each attribute now
- * gets its own control, and they combine, so Tech + Evil + 7 mana is three
- * clicks.
- *
- * The option lists are derived from the roster rather than typed out, so relics
- * (rarity "Relic", camp "Relic") appear on their own without a special case,
- * and a new camp or rarity would appear the moment a card used one.
- */
-type FilterKey = "cost" | "rarity" | "camp" | "alignment";
-
-const FILTER_LABEL: Record<FilterKey, string> = {
-  cost: "Mana",
-  rarity: "Rarity",
-  camp: "Camp",
-  alignment: "Alignment",
-};
-
-/** Shown when a filter is off. Reads as a sentence in the control itself. */
-const FILTER_ANY: Record<FilterKey, string> = {
-  cost: "Any mana",
-  rarity: "Any rarity",
-  camp: "Any camp",
-  alignment: "Any alignment",
-};
-
-/**
- * The order each filter's options are listed in.
- *
- * Rarity runs commonest to rarest, which is not alphabetical, and it is read off
- * the engine's own tier table rather than typed out again — the colours carry no
- * order of their own, which is how Legendary once ended up listed above Epic.
- * Relics are appended because they are a card class rather than a character
- * tier.
- */
-const VALUE_ORDER: Record<FilterKey, string[]> = {
-  cost: [],
-  rarity: [...RARITIES, RELIC_RARITY],
-  camp: [...CAMPS],
-  alignment: [...ALIGNMENTS],
-};
-
-/**
- * Values that exist in the data but must not be offered as a filter.
- *
- * A relic is not a camp and it is not an alignment — it carries the placeholder
- * strings "Relic" and "Relic" so the card face has something to print on its
- * rails. Deriving the option lists from the roster is what surfaced them, and
- * they read as real choices next to Magic and Evil, which they are not. Rarity
- * keeps "Relic" because there it IS the answer: it is what those cards are.
- */
-const HIDDEN_FILTER_VALUES: Partial<Record<FilterKey, string[]>> = {
-  camp: [RELIC_CAMP_LABEL],
-  alignment: [RELIC_RARITY],
-};
-
-/**
- * A tier's option label is its PLAYER-FACING name.
- *
- * The colours are internal labels — they name the gem on the card, not the tier
- * — so a filter offering "Yellow" and "Red" would ask the player to know an
- * implementation detail. `rarityName` is the engine's own table, so every
- * surface that names a tier reads the same one.
- */
-function filterOptionLabel(key: FilterKey, value: string): string {
-  return key === "rarity" ? rarityName(value) : value;
-}
-
-function faceValue(face: CardFaceModel, key: FilterKey): string {
-  return key === "cost" ? String(face.cost ?? "") : (face[key] ?? "");
-}
-
-/**
- * The unlock filter, which is deliberately NOT a fifth `FilterKey`.
- *
- * The other four read a value printed on the card face and match it. This one
- * asks a question about the player's record instead, and folding it into the
- * same machinery would mean inventing a fake face attribute for it and then
- * hiding that attribute from the option lists. Two controls that look identical
- * and are built differently is the honest arrangement here.
- *
- * It is also the only filter with NO "any" option, and the only one that starts
- * switched on. Owner's ruling: the gallery is your collection first and the
- * locked wall second, so mixing unlocked and sealed cards is a
- * list that answers neither question. There is therefore no view that shows the
- * whole roster at once, which is the deliberate cost of that.
- */
-type UnlockFilter = "unlocked" | "locked";
-type GalleryEntry = { key: string; card: PlayableCard; face: CardFaceModel };
-
-function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose, onPresetCreate,onPresetSelect }: {
-  onPresetCreate:(name:string)=>boolean;onPresetSelect:(id:string)=>boolean;
-  progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onHeroPowerChange: (power: HeroPowerId) => void; onHeroPowerViewed: () => void; onClose: () => void;
-}) {
-  const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
-  const selectedPreset=progress.savedDecks.find(entry=>entry.id===progress.selectedDecks[seat]);
-  const [saveOpen,setSaveOpen]=useState(false);
-  const [deckName,setDeckName]=useState('');
-  const [deckNotice,setDeckNotice]=useState('');
-  const [saveError,setSaveError]=useState('');
-  const duplicateName=progress.savedDecks.some(preset=>preset.name.toLocaleLowerCase()===deckName.trim().replace(/\s+/g,' ').toLocaleLowerCase());
-  const readOnly = !canEditDeck(progress);
-  const deckIds = new Set(deck);
-  const [query, setQuery] = useState("");
-  const [help, setHelp] = useState(false);
-  const [powerOpen, setPowerOpen] = useState(false);
-  const closePowers=()=>{setPowerOpen(false);onHeroPowerViewed();};
-  const [mobileDeckView, setMobileDeckView] = useState(false);
-  const [artPreviews, setArtPreviews] = useState<Record<string,string> | null>(null);
-  useEffect(() => { void import('./data/gallery-previews').then(module=>setArtPreviews(module.galleryPreviews)).catch(()=>setArtPreviews({})); }, []);
-  const [deckPreview, setDeckPreview] = useState<{key:string; face: CardFaceModel; rect: DOMRect} | null>(null);
-  const [lockedInfo,setLockedInfo]=useState<{key:string;rect:DOMRect}|null>(null);
-  const equippedPower = heroPowerDefinition(progress.selectedHeroPower);
-  const powerPicker = useRef<HTMLElement>(null);
-  const createPicker = useRef<HTMLFormElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!saveOpen) return;
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    createPicker.current?.querySelector<HTMLInputElement>('input')?.focus();
-    return () => previous?.focus({preventScroll:true});
-  }, [saveOpen]);
-  useEffect(() => {
-    if (!powerOpen) return;
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    powerPicker.current?.querySelector<HTMLButtonElement>("button")?.focus();
-    return () => previous?.focus();
-  }, [powerOpen]);
-  const [showEquipped, setShowEquipped] = useState(true);
-  const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
-  const [status, setStatus] = useState<UnlockFilter>("unlocked");
-  const [filters, setFilters] = useState<Record<FilterKey, string>>({
-    cost: "",
-    rarity: "",
-    camp: "",
-    alignment: "",
-  });
-  /** The scrolling element, so the scroll handler can flag it without a render. */
-  const bodyRef = useRef<HTMLDivElement | null>(null);
-  const openEntry = useCallback((entryKey: string) => setSelectedEntryKey(entryKey), []);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && (event.target instanceof HTMLElement && !!event.target.closest('select'))) { event.stopImmediatePropagation(); return; }
-      if (event.key === "Escape") { event.stopImmediatePropagation(); if(saveOpen)setSaveOpen(false);else if (powerOpen) closePowers(); else onClose(); }
-      if ((powerOpen || saveOpen) && event.key === "Tab") {
-        const buttons = [...((saveOpen ? createPicker : powerPicker).current?.querySelectorAll<HTMLElement>("input,button:not([disabled])") ?? [])];
-        const first=buttons[0], last=buttons.at(-1);
-        if (event.shiftKey && document.activeElement===first) {event.preventDefault();last?.focus();}
-        else if (!event.shiftKey && document.activeElement===last) {event.preventDefault();first?.focus();}
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, powerOpen, saveOpen]);
-
-  const needle = query.trim().toLowerCase();
-  // Built ONCE and then only filtered. Rebuilding the faces on every keystroke
-  // handed React a brand-new object for every card, so every cell re-rendered for every
-  // letter typed even though the cards had not changed.
-  const allEntries = useMemo(
-    (): GalleryEntry[] => [
-      ...cards.map((card) => ({ key: card.id, card, face: playableFace(card) })),
-      ...relics.map((relic) => ({ key: relic.id, card: relic, face: relicFace(relic) })),
-    ],
-    [],
-  );
-  // Sets, not `includes`: this is checked once per card per render, and the
-  // three lists together are the size of the whole roster.
-  const collection = useMemo(
-    () => ({
-      seen: new Set(progress.seen),
-      played: new Set(progress.played),
-      wonWith: new Set(progress.wonWith),
-      unlocked: new Set(progress.unlockedIds),
-    }),
-    [progress],
-  );
-  const entries = useMemo(() => {
-    const all = allEntries;
-    if (!needle) return all;
-    // Search everything printed on the face. Looking for "freeze" should find
-    // the cards that freeze, not only the ones with Freeze in their name.
-    return all.filter((entry) =>
-      [
-        entry.face.name,
-        entry.face.effect,
-        entry.face.origin,
-        entry.face.camp,
-        entry.face.alignment,
-        entry.face.rarity,
-        entry.face.flavor ?? "",
-        (entry.face.keywords ?? []).join(" "),
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(needle),
-    );
-  }, [needle, allEntries]);
-
-  // Every value the roster actually uses, in the house order, so no option ever
-  // points at an empty result.
-  const options = useMemo(() => {
-    const build = (key: FilterKey) => {
-      const hidden = new Set(HIDDEN_FILTER_VALUES[key] ?? []);
-      const present = new Set(
-        allEntries.map((entry) => faceValue(entry.face, key)).filter((value) => value && !hidden.has(value)),
-      );
-      if (key === "cost") {
-        return [...present].sort((a, b) => Number(a) - Number(b));
-      }
-      const order = VALUE_ORDER[key];
-      return [...present].sort((a, b) => {
-        const ai = order.indexOf(a);
-        const bi = order.indexOf(b);
-        return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi) || a.localeCompare(b);
-      });
-    };
-    return { cost: build("cost"), rarity: build("rarity"), camp: build("camp"), alignment: build("alignment") };
-  }, [allEntries]);
-
-  const sorted = useMemo(() => {
-    const active = (Object.keys(filters) as FilterKey[]).filter((key) => filters[key] !== "");
-    let kept = active.length
-      ? entries.filter((entry) => active.every((key) => faceValue(entry.face, key) === filters[key]))
-      : entries;
-    const wantUnlocked = status === "unlocked";
-    kept = kept.filter((entry) => collection.unlocked.has(entry.key) === wantUnlocked && (showEquipped || !deck.includes(entry.key)));
-    const rarityRank = (entry: GalleryEntry) => {
-      const index = VALUE_ORDER.rarity.indexOf(entry.face.rarity);
-      return index < 0 ? VALUE_ORDER.rarity.length : index;
-    };
-    return [...kept].sort((a, b) =>
-      (filters.cost ? rarityRank(a) - rarityRank(b) : (a.face.cost ?? 99) - (b.face.cost ?? 99))
-      || a.face.name.localeCompare(b.face.name));
-  }, [entries, filters, status, collection, showEquipped, deck]);
-
-  const selectedEntry = selectedEntryKey ? allEntries.find((entry) => entry.key === selectedEntryKey) ?? null : null;
-
-  useEffect(() => {
-    if (selectedEntryKey && !selectedEntry) setSelectedEntryKey(null);
-  }, [selectedEntryKey, selectedEntry]);
-
-  useEffect(() => {
-    const body = bodyRef.current, outer = body?.closest<HTMLElement>('.gallery-mobile-scroll');
-    (outer && getComputedStyle(outer).overflowY === 'auto' ? outer : body)?.scrollTo({ top: 0 });
-  }, [needle, filters, status]);
-
-  /**
-   * Flags the body while it is being scrolled, so the CSS can park the card
-   * shine for the duration.
-   *
-   * Deliberately a classList write and not a state update. A scroll fires far
-   * more often than a frame, and re-rendering the full memoised grid to
-   * say "we are moving" would cost more than the animations it is trying to
-   * quieten.
-   */
-  useEffect(() => {
-    const body = bodyRef.current;
-    if (!body) return;
-    let idleTimer = 0;
-    const onScroll = () => {
-      body.classList.add("is-scrolling");
-      window.clearTimeout(idleTimer);
-      // Long enough to cover the tail of a flick, short enough that letting go
-      // and looking brings the shine straight back.
-      idleTimer = window.setTimeout(() => body.classList.remove("is-scrolling"), 140);
-    };
-    body.addEventListener("scroll", onScroll, { passive: true });
-    const outer = body.closest('.gallery-mobile-scroll');
-    outer?.addEventListener('scroll', onScroll, {passive:true});
-    return () => {
-      body.removeEventListener("scroll", onScroll);
-      outer?.removeEventListener('scroll', onScroll);
-      window.clearTimeout(idleTimer);
-      body.classList.remove("is-scrolling");
-    };
-  }, []);
-
-  const manaCurve = Array.from({length:10},(_,i)=>allEntries.filter(entry=>deckIds.has(entry.key) && entry.face.cost===i+1).length);
-  const manaPeak = Math.max(1,...manaCurve);
-  useLayoutEffect(() => {
-    const grid=gridRef.current;
-    if (!grid) return;
-    const size=()=>{const width=grid.firstElementChild?.getBoundingClientRect().width;if(width)grid.style.setProperty('--gallery-unit',`${width/750}px`);};
-    const observer=new ResizeObserver(size);observer.observe(grid);size();
-    return ()=>observer.disconnect();
-  },[artPreviews, mobileDeckView, sorted.length]);
-  return (
-    <GalleryPreviewContext.Provider value={artPreviews ?? {}}><div
-      className={`screen-veil gallery-veil${selectedEntry || help ? " has-detail" : ""}${selectedEntry ? " has-profile" : ""}`}
-      onPointerDown={(event) => event.target === event.currentTarget && onClose()}
-    >
-      {/* Deliberately NOT `wide`. That class sets its own 760px width at the same
-          specificity as anything here can reach, and it is defined in a stylesheet
-          that loads later, so it wins on source order and squeezes the grid to
-          three columns. Leaving it off means nothing competes. */}
-      <section className={`screen-panel gallery-panel${mobileDeckView ? " mobile-deck-view" : ""}`} role="dialog" aria-label="My Deck" aria-modal="true">
-        <div className="gallery-mobile-scroll">
-        <header className="screen-panel-top">
-          <h2>My Deck</h2>
-          <nav className="mobile-deck-tabs" aria-label="Deck builder view">
-            <button type="button" aria-pressed={!mobileDeckView} onClick={() => setMobileDeckView(false)}>Collection</button>
-            <button type="button" aria-pressed={mobileDeckView} onClick={() => setMobileDeckView(true)}>Deck · {deck.length}/30</button>
-          </nav>
-          <label className="gallery-equipped"><input type="checkbox" checked={showEquipped} onChange={event => setShowEquipped(event.target.checked)} />Show equipped cards</label>
-          <input
-            className="gallery-search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search name, rules, origin…"
-            aria-label="Search the gallery"
-          />
-          <div className="gallery-filters">
-            {(Object.keys(FILTER_LABEL) as FilterKey[]).map((key) => (
-              <label key={key} className={filters[key] ? "gallery-filter is-active" : "gallery-filter"}>
-                <span className="gallery-filter-label">{FILTER_LABEL[key]}</span>
-                <select
-                  value={filters[key]}
-                  aria-label={`Filter by ${FILTER_LABEL[key].toLowerCase()}`}
-                  onChange={(event) => setFilters((current) => ({ ...current, [key]: event.target.value }))}
-                >
-                  <option value="">{FILTER_ANY[key]}</option>
-                  {options[key].map((value) => (
-                    <option key={value} value={value}>
-                      {filterOptionLabel(key, value)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ))}
-            <label className="gallery-filter is-active">
-              <span className="gallery-filter-label">Collection</span>
-              <select
-                value={status}
-                aria-label="Filter by unlocked or locked"
-                onChange={(event) => setStatus(event.target.value as UnlockFilter)}
-              >
-                <option value="unlocked">Unlocked</option>
-                <option value="locked">Locked</option>
-              </select>
-            </label>
-          </div>
-          <span className="gallery-count">{sorted.length}</span>
-          <button
-            type="button"
-            className={help ? "gallery-help is-open" : "gallery-help"}
-            onClick={() => setHelp((open) => !open)}
-            aria-expanded={help}
-            aria-label="How unlocking works"
-          >
-            ?
-          </button>
-          <button type="button" className="screen-x" onClick={onClose} aria-label="Close">
-            ×
-          </button>
-        </header>
-        {help ? <UnlockHelp progress={progress} onClose={() => setHelp(false)} /> : null}
-        <div className="gallery-workspace">
-        <div className="screen-panel-body gallery-body" ref={bodyRef}>
-          {!artPreviews ? <p role="status">Opening collection…</p> : sorted.length ? (
-            <div className="gallery-grid" ref={gridRef}>
-              {sorted.map((entry) => (
-                <div className="gallery-deck-card" key={entry.key} data-card-id={entry.key}>
-                <GalleryCell
-                  key={entry.key}
-                  face={entry.face}
-                  fontRevision={fontRevision}
-                  locked={!collection.unlocked.has(entry.key)}
-                  entryKey={entry.key}
-                  onOpen={openEntry}
-                  onLocked={(key,rect)=>{setDeckPreview(null);setLockedInfo({key,rect});}}
-                  inDeck={deckIds.has(entry.key)}
-                  canAdd={!readOnly && (deckIds.has(entry.key) || deck.length < 30) && collection.unlocked.has(entry.key)}
-                  onAdd={() => onChange(deckIds.has(entry.key) ? deck.filter(id => id !== entry.key) : [...deck, entry.key])}
-                  mark={
-                    collection.wonWith.has(entry.key)
-                      ? "won"
-                      : collection.played.has(entry.key)
-                        ? "played"
-                        : collection.seen.has(entry.key)
-                          ? "seen"
-                          : "unseen"
-                  }
-                />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="gallery-empty">Nothing matches “{query}”.</p>
-          )}
-        </div>
-        <aside className="gallery-deck" aria-label={seat === 1 ? "Player Two deck" : "Current deck"}>
-          <header className="gallery-deck-heading"><label className="gallery-filter gallery-deck-selector"><span className="gallery-filter-label">Saved decks</span>
-            <select aria-label="Saved decks" value={selectedPreset?.id} onChange={event=>{setDeckPreview(null);setDeckNotice(onPresetSelect(event.target.value)?'Deck loaded':'Could not load. Browser storage is unavailable.');}}>
-              {progress.savedDecks.map(preset=><option key={preset.id} value={preset.id}>{preset.name}</option>)}
-            </select></label>
-            <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
-          <div className="gallery-preset-actions"><button type="button" disabled={!deck.length||readOnly} onClick={()=>{setDeckPreview(null);onChange([]);setDeckNotice('Deck cleared');}}>Clear</button>
-            <button type="button" className="preset-create" disabled={readOnly} onClick={()=>{let serial=1;while(progress.savedDecks.some(deck=>deck.name.toLowerCase()===`deck ${serial}`))serial++;setDeckName(`Deck ${serial}`);setSaveError('');setSaveOpen(true);}}>Create a new deck</button></div>
-          {deckNotice&&<p className="gallery-preset-notice" role="status">{deckNotice}</p>}
-          <div className="gallery-deck-list" onScroll={() => setDeckPreview(null)}>{allEntries.filter((entry) => deckIds.has(entry.key))
-            .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
-            .map((entry) => <div className="gallery-deck-row" key={entry.key} data-card-id={entry.key}
-              onPointerEnter={event => { if (event.pointerType === 'mouse' && matchMedia('(hover: hover) and (pointer: fine)').matches) setDeckPreview({key:entry.key,face:entry.face,rect:event.currentTarget.getBoundingClientRect()}); }}
-              onPointerLeave={() => setDeckPreview(null)}>
-              <img src={entry.card.art} alt="" loading="lazy" />
-              <button className="gallery-deck-inspect" onClick={() => { setSelectedEntryKey(entry.key); }} aria-label={`Inspect ${entry.face.name}`}>
-                <span className="gallery-deck-mana">{entry.face.cost}</span><span className="gallery-deck-name">{entry.face.name}</span>
-              </button>
-              <button className="gallery-deck-remove" disabled={readOnly} onClick={() => {setDeckPreview(null);onChange(deck.filter((id) => id !== entry.key));}}
-                aria-label={`Remove ${entry.face.name} from deck`} title={`Remove ${entry.face.name}`}>−</button>
-            </div>)}</div>
-          <footer className="gallery-deck-footer">
-            <div className="gallery-mana-summary"><span className="gallery-mana-title">Mana curve</span><div className="gallery-deck-curve" aria-label="Deck mana curve">{Array.from({ length: 10 }, (_, i) => {
-              const count = manaCurve[i];
-              return <div key={i}><span data-count={count} style={{ height: `${Math.max(2, count / manaPeak * 13)}px` }}>{count}</span><small>{i + 1}</small></div>;
-            })}</div></div>
-            <div className="gallery-deck-actions">
-              <button type="button" className={`gallery-hero-power${hasNewHeroPower(progress)?' has-new-power':''}`} aria-label="Choose hero power" aria-description={equippedPower?.name} aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
-                <span className="gallery-power-icon" aria-hidden="true">ϟ</span><strong aria-live="polite">{hasNewHeroPower(progress)?'New hero power available':'Choose Hero Power'}</strong>
-              </button>
-            </div>
-            {readOnly && <small>Starter deck · 30 cards</small>}
-          </footer>
-        </aside>
-        </div>
-        </div>
-      </section>
-      {deckPreview && deckIds.has(deckPreview.key) && !selectedEntry && !powerOpen && !saveOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
-      {lockedInfo&&!selectedEntry&&<LockedCardInfo cardId={lockedInfo.key} rect={lockedInfo.rect} onClose={()=>setLockedInfo(null)}/>}
-      {saveOpen&&<div className="gallery-power-shade" onPointerDown={event=>{if(event.target===event.currentTarget)setSaveOpen(false);}}>
-        <form ref={createPicker} className="gallery-save-dialog" role="dialog" aria-modal="true" aria-label="Create a new deck" onSubmit={event=>{event.preventDefault();if(!deckName.trim()||duplicateName)return;const saved=onPresetCreate(deckName);if(saved){setSaveOpen(false);setDeckPreview(null);setMobileDeckView(true);setDeckNotice('New deck created');}else setSaveError('Could not create the deck. Browser storage is unavailable.');}}>
-          <h3>Create a new deck</h3><label>Deck name<input aria-label="Deck name" autoFocus maxLength={60} value={deckName} onChange={event=>setDeckName(event.target.value)}/></label>
-          <p>Start with an empty deck. Your other decks keep their cards.</p>
-          {duplicateName&&<p role="alert">That name already exists. Choose a different name.</p>}
-          {saveError&&<p role="alert">{saveError}</p>}
-          <div><button type="button" onClick={()=>setSaveOpen(false)}>Cancel</button><button type="submit" className="primary" disabled={!deckName.trim()||duplicateName}>Create deck</button></div>
-        </form>
-      </div>}
-      {powerOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)closePowers();}}>
-        <section ref={powerPicker} className="gallery-power-picker" role="dialog" aria-modal="true" aria-label="Choose hero power">
-          <header><h3>Hero power</h3><button type="button" aria-label="Close hero power chooser" onClick={closePowers}>×</button></header>
-          <HeroPowerChoices botWins={botWins(progress)} selectedPower={progress.selectedHeroPower} onSelect={power => {onHeroPowerChange(power);setPowerOpen(false);}} />
-        </section>
-      </div>}
-      {selectedEntry ? (
-        <GalleryDetailModal
-          entry={selectedEntry}
-          locked={!collection.unlocked.has(selectedEntry.key)}
-          onClose={() => setSelectedEntryKey(null)}
-          onNavigate={(direction) => {
-            const index = sorted.findIndex((entry) => entry.key === selectedEntry.key);
-            if (index < 0 || !sorted.length) return;
-            const next = sorted[(index + direction + sorted.length) % sorted.length];
-            setSelectedEntryKey(next.key);
-          }}
-        />
-      ) : null}
-    </div></GalleryPreviewContext.Provider>
-  );
-}
-
-/**
- * The six-axis lore radar.
- *
- * Redesigned 5 September 2026. The old one drew a 240-unit chart at 220px with
- * 10px labels, which renders around 9 real pixels — unreadable, and absurd once
- * the profile copy around it went to 20px. Three things changed and all three
- * are about legibility rather than decoration: the axis name and its value are
- * now two stacked lines instead of one cramped string, the value is the larger
- * of the two because the number is what a reader is actually scanning for, and
- * the whole chart is drawn 1:1 so an SVG unit IS a CSS pixel and a size written
- * here is the size on screen.
- *
- * The rings fade outward so the shape reads against them rather than through a
- * uniform grid, and the plotted polygon carries a real glow in the card's camp
- * colour, which is what makes a hexagon feel like an instrument.
- */
-function StarChart({ values, accent, name }: { values: number[]; accent: string; name: string }) {
-  const size = 300;
-  const centre = size / 2;
-  const radius = 90;
-  const point = (index: number, value: number, extra = 0) => {
-    const angle = (-90 + index * 60) * (Math.PI / 180);
-    const distance = (radius * Math.max(0, Math.min(10, value))) / 10 + extra;
-    return { x: centre + Math.cos(angle) * distance, y: centre + Math.sin(angle) * distance, angle };
-  };
-  const polygon = (value: number) =>
-    STAR_CHART_AXES.map((_axis, index) => {
-      const at = point(index, value);
-      return `${at.x.toFixed(1)},${at.y.toFixed(1)}`;
-    }).join(" ");
-  const dataPoints = STAR_CHART_AXES.map((_axis, index) => point(index, values[index] ?? 0));
-  const accentStyle = { "--chart-accent": accent } as CSSProperties;
-  // One id per mounted chart, so two charts on one page cannot share a filter.
-  const glowId = `radar-glow-${name.replace(/[^a-z0-9]+/gi, "")}`;
-
-  return (
-    <svg className="star-chart" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${name} Star Chart`} style={accentStyle}>
-      <defs>
-        <filter id={glowId} x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <radialGradient id={`${glowId}-bed`}>
-          <stop offset="0%" stopColor={accent} stopOpacity="0.16" />
-          <stop offset="100%" stopColor={accent} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      <circle cx={centre} cy={centre} r={radius + 10} fill={`url(#${glowId}-bed)`} />
-
-      {/* Outermost ring brightest: it is the boundary the shape is read against. */}
-      {[2, 4, 6, 8, 10].map((level) => (
-        <polygon key={level} className="star-chart-ring" points={polygon(level)} style={{ opacity: 0.18 + level * 0.028 }} />
-      ))}
-      {STAR_CHART_AXES.map((_axis, index) => {
-        const end = point(index, 10);
-        return <line key={index} className="star-chart-axis" x1={centre} y1={centre} x2={end.x} y2={end.y} />;
-      })}
-
-      <polygon
-        className="star-chart-data"
-        points={dataPoints.map((item) => `${item.x.toFixed(1)},${item.y.toFixed(1)}`).join(" ")}
-        filter={`url(#${glowId})`}
-      />
-      {dataPoints.map((item, index) => (
-        <circle key={index} className="star-chart-point" cx={item.x} cy={item.y} r="4.5" />
-      ))}
-
-      {STAR_CHART_AXES.map((axis, index) => {
-        const label = point(index, 10, 24);
-        const cos = Math.cos(label.angle);
-        const anchor = cos > 0.28 ? "start" : cos < -0.28 ? "end" : "middle";
-        // The top and bottom labels sit on the axis, so they need the whole
-        // two-line block nudged clear of the ring rather than just the baseline.
-        const lift = Math.sin(label.angle) < -0.9 ? -12 : Math.sin(label.angle) > 0.9 ? 2 : -6;
-        return (
-          <g key={axis} className="star-chart-label" textAnchor={anchor}>
-            <text x={label.x} y={label.y + lift} className="star-chart-axis-name">{axis}</text>
-            <text x={label.x} y={label.y + lift + 24} className="star-chart-axis-value">{values[index] ?? 0}</text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-function campAccent(camp: string): string {
-  if (camp === "Nature") return "#79c66a";
-  if (camp === "Tech") return "#70c9ff";
-  if (camp === "ALL") return "#f0c767";
-  // Relics print "Relic" where a character prints its camp, and fell
-  // through to the Magic purple, so every relic wore another class's colour.
-  // Teal is what their own card frame is printed in.
-  if (camp === RELIC_CAMP_LABEL) return "#56d8cd";
-  return "#b996ff";
-}
-
-/**
- * The card dossier.
- *
- * Rebuilt from scratch 5 September 2026 at the owner's request. The version it
- * replaces was four identical rounded rectangles of grey text with the card
- * floating in dead space beside them, and it had no title at all — the only
- * place the character's name appeared was inside the artwork.
- *
- * Two structural decisions carry the whole thing:
- *
- * 1. THE LAYOUT IS A RAIL AND A COLUMN, not a grid with per-variant overrides.
- *    The old one placed everything on one grid and then reshaped it with
- *    `display: contents`, explicit `grid-row`s, a `:last-child` span and — for
- *    relics, which have no radar — an ABSOLUTELY POSITIONED card. That last hack
- *    took the card out of flow, collapsed the column that was holding it, and
- *    let every relic profile print its Signature move underneath its own card
- *    art. Nothing in the layout said which cell anything belonged to, so the
- *    variant that had one fewer element simply fell through the floor. A rail
- *    holds the card and whatever sits under it; a column holds the prose. A
- *    relic just has a different thing in the rail.
- * 2. THE CAMP COLOUR DRIVES THE PANEL. It reached the radar and the quote bar
- *    and nothing else, so every profile in the game looked identical. It is now
- *    the edge light, the header rule, the chips, the section bars and the radar,
- *    which is what makes a Tech card feel unlike a Magic one.
- *
- * The header is new and is built out of data that was already sitting in
- * `lore.ts` unread: `epithet` ("Baba Yaga", "Clown Prince of Crime") and `rank`
- * ("C-tier · #25 in Willpower"). Relics carry both too — their rank reads
- * "Arthurian legend · Sacred vessel" — so the rail has something real to hold
- * where a relic's radar would have been.
- */
-function GalleryDetailModal({
-  entry,
-  locked,
-  onClose,
-  onNavigate,
-}: {
-  entry: GalleryEntry;
-  locked: boolean;
-  onClose: () => void;
-  onNavigate: (direction: number) => void;
-}) {
-  const profile = locked ? null : loreFor(entry.card);
-  const accent = campAccent(entry.face.camp);
-  const isRelic = isRelicCard(entry.card);
-  const {panel, fit} = useProfileFit(entry.key);
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if(document.querySelector('.cf-kw-pop,.equipped-relic-peek[aria-label^="Token card:"]'))return;
-        event.stopPropagation();
-        onClose();
-      } else if (!locked && event.key === "ArrowLeft") {
-        event.preventDefault();
-        event.stopPropagation();
-        onNavigate(-1);
-      } else if (!locked && event.key === "ArrowRight") {
-        event.preventDefault();
-        event.stopPropagation();
-        onNavigate(1);
-      }
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [locked, onClose, onNavigate]);
-
-  return (
-    createPortal(<div className="gallery-detail-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="gallery-detail-fit" style={fit.width ? {width:fit.width*fit.scale,height:fit.height*fit.scale} : undefined}>
-      <section
-        ref={panel}
-        className={`gallery-detail-panel ${isRelic ? "is-relic" : "is-minion"}`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${entry.face.name} Star Chart`}
-        style={{ "--accent": accent, zoom:fit.scale } as CSSProperties}
-      >
-        <button type="button" className="screen-x gallery-detail-close" onClick={onClose} aria-label="Close Star Chart">×</button>
-
-        <header className="gdx-head">
-          <div className="gdx-title">
-            <h2>{entry.face.name}</h2>
-            {profile?.epithet ? <p className="gdx-epithet">{profile.epithet}</p> : null}
-          </div>
-          <div className="gdx-chips">
-            <span className="gdx-chip is-origin">{profile?.origin || entry.face.origin}</span>
-            <span className="gdx-chip">{rarityName(entry.face.rarity)}</span>
-            {isRelic ? null : <span className="gdx-chip is-camp">{entry.face.camp}</span>}
-            {isRelic ? null : <span className="gdx-chip">{entry.face.alignment}</span>}
-          </div>
-        </header>
-
-        <div className="gallery-detail-body">
-          <div className="gdx-rail">
-            <div className="gallery-detail-card">
-              {locked ? <SealedFace card={entry.face} /> : <CardFace card={entry.face} interactiveKeywords quiet />}
-            </div>
-            {locked ? <p className="gallery-detail-sealed-note">Lore remains sealed until this card is unlocked.</p> : null}
-            {!locked && profile?.rank ? <p className="gdx-rank">{profile.rank}</p> : null}
-          </div>
-
-          <div className="gdx-main">
-            {locked ? (
-              <div className="gallery-detail-locked">
-                <span className="gallery-detail-kicker">The Rift is holding this profile</span>
-                <h3>Unlock this card to read its Star Chart</h3>
-                <p>The full card remains visible. Its lore profile stays sealed until the card is unlocked.</p>
-              </div>
-            ) : profile ? (
-              <>
-                <div className="gdx-top">
-                  <div className="gallery-detail-lore">
-                    <p>{profile.lore}</p>
-                    {profile.quote ? <blockquote>“{profile.quote}”</blockquote> : null}
-                  </div>
-                  {isRelic ? null : (
-                    <div className="gdx-scope">
-                      <StarChart values={profile.vals} accent={accent} name={entry.face.name} />
-                      <span className="gallery-detail-chart-caption">Lore attributes · 0 to 10</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="gdx-grid">
-                  <DetailList title="Strengths" tone="strength" items={profile.str} />
-                  <DetailList title="Weaknesses" tone="weakness" items={profile.wk} />
-                  <DetailBox title="Signature move" tone="signature">
-                    {profile.sig_name ? <strong>{profile.sig_name}</strong> : null}
-                    <span>{profile.sig_desc || "No signature move recorded."}</span>
-                  </DetailBox>
-                  <section className="gallery-detail-box gallery-detail-relationships is-bonds">
-                    <h3>Relationships</h3>
-                    <div className="gallery-detail-box-copy">
-                      {profile.rivals.length ? profile.rivals.map((rival) => (
-                        <span key={`${rival.who}-${rival.rel}`} className={rival.id ? "detail-rival linked" : "detail-rival"}>
-                          <b>{rival.who}</b>{rival.rel ? <> <i>{rival.rel}</i></> : null}
-                        </span>
-                      )) : <span className="detail-rival">No recorded relationship</span>}
-                    </div>
-                  </section>
-                </div>
-              </>
-            ) : (
-              <div className="gallery-detail-locked">
-                <span className="gallery-detail-kicker">Card profile</span>
-                <h3>This card has no Star Chart entry yet</h3>
-                <p>The current card rules remain authoritative above. The lore page has not profiled this card.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-      </div>
-    </div>,document.body)
-  );
-}
-
-function DetailList({ title, tone, items }: { title: string; tone: "strength" | "weakness"; items: string[] }) {
-  return (
-    <section className={`gallery-detail-box ${tone}`}>
-      <h3>{title}</h3>
-      <ul>{items.length ? items.map((item) => <li key={item}>{item}</li>) : <li>Not recorded</li>}</ul>
-    </section>
-  );
-}
-
-function DetailBox({ title, tone, children }: { title: string; tone?: string; children: ReactNode }) {
-  return (
-    <section className={tone ? `gallery-detail-box is-${tone}` : "gallery-detail-box"}>
-      <h3>{title}</h3>
-      <div className="gallery-detail-box-copy">{children}</div>
-    </section>
-  );
-}
-
-/** Stable faces retain their artwork while offscreen rendering stays deferred. */
-const GalleryCell = memo(function GalleryCell({
-  entryKey,
-  face,
-  mark,
-  locked = false,
-  onOpen,
-  inDeck,
-  canAdd,
-  onAdd,
-  onLocked,
-}: {
-  entryKey: string;
-  face: CardFaceModel;
-  fontRevision: number;
-  mark: CollectionMark;
-  /** Not yet unlocked. Shown, never hidden — see `UnlockHelp`. */
-  locked?: boolean;
-  onOpen: (entryKey: string) => void;
-  inDeck: boolean;
-  canAdd: boolean;
-  onAdd: () => void;
-  onLocked: (entryKey:string,rect:DOMRect)=>void;
-}) {
-  const { ref, near, onFocus } = useGalleryVisibility();
-  const hold = useRef<{timer:number; x:number; y:number; id:number} | null>(null);
-  const heldClick = useRef(false);
-  const cancelHold = useCallback(() => { if (hold.current) window.clearTimeout(hold.current.timer); hold.current = null; }, []);
-  useEffect(() => {
-    document.addEventListener('scroll', cancelHold, true);
-    return () => { cancelHold(); document.removeEventListener('scroll', cancelHold, true); };
-  }, [cancelHold]);
-  return (
-    <div
-      ref={ref}
-      onFocus={onFocus}
-      className={`gallery-cell mark-${mark}${near ? " is-near" : ""}${locked ? " is-locked" : ""}${inDeck ? " is-in-deck" : ""}`}
-      data-mark={mark}
-      onContextMenu={event => event.preventDefault()}
-      onPointerDown={event => {
-        if (event.pointerType === 'mouse') return;
-        cancelHold(); heldClick.current = false;
-        hold.current = {id:event.pointerId,x:event.clientX,y:event.clientY,timer:window.setTimeout(() => {
-          heldClick.current = true; cancelHold(); onOpen(entryKey);
-        },1000)};
-      }}
-      onPointerMove={event => { const pending=hold.current; if (pending && Math.hypot(event.clientX-pending.x,event.clientY-pending.y)>10) {heldClick.current=true;cancelHold();} }}
-      onPointerUp={cancelHold}
-      onPointerCancel={cancelHold}
-      onClickCapture={event => { if (heldClick.current) {event.preventDefault();event.stopPropagation();heldClick.current=false;} }}
-    >
-      <CardFace card={face} lazyArt quiet interactiveKeywords />
-      {inDeck && <span className="gallery-deck-badge" aria-hidden="true">✓ In deck</span>}
-      <button type="button" className="gallery-card-add" aria-label={locked?`Unlock requirements for ${face.name}`:`${inDeck ? "Remove" : "Add"} ${face.name}`} aria-pressed={inDeck}
-        disabled={!canAdd&&!locked} onClick={event=>locked?onLocked(entryKey,event.currentTarget.getBoundingClientRect()):onAdd()} />
-      <button type="button" className="gallery-card-name" aria-label={`Open Star Chart for ${face.name}`}
-        title={`Open ${face.name} lore`} onClick={() => onOpen(entryKey)} />
-      {near && locked ? (
-        <span className="gallery-lock" aria-hidden="true">
-          {/* An ANTIQUE ORNATE padlock, drawn rather than fetched because it is
-              furniture — an icon in the same family as the keyword artwork, not
-              a photograph.
-
-              The shape does the work, and the first version got that wrong: a
-              plain rounded rectangle with a band and four rivets reads as a
-              padlock ICON, the kind of thing a browser puts in an address bar,
-              and no amount of extra rivets rescues it. What makes a lock look
-              OLD is its silhouette — horns at the four corners, sides that
-              pinch inward, a body that comes to a point at the foot — and then
-              scrollwork inside that outline.
-
-              Every dark mark is a hole, a groove or a shadow, so the whole
-              thing still works as one flat colour over any artwork. */}
-          <svg viewBox="0 0 120 152" width="120" height="152">
-            {/* shackle, drawn first so the body's shoulders overlap its feet */}
-            <path
-              d="M34 70V48a26 26 0 0 1 52 0v22"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="13"
-              strokeLinecap="round"
-              opacity="0.94"
-            />
-            <path
-              d="M38 66V48a22 22 0 0 1 44 0v18"
-              fill="none"
-              stroke="rgba(16,12,22,0.28)"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-
-            {/* The body: horns at the four corners, sides that pinch inward, a
-                broad foot with only a slight dip.
-
-                The foot was a long spike first and the lock read as a shield or
-                a pendant. An antique padlock is WIDE at the bottom — it has to
-                hold a mechanism — so the curve is shallow and the corners flare
-                out past it. */}
-            <path
-              fill="currentColor"
-              d="M33 63 L16 48 L26 70
-                 C11 75 11 84 24 89
-                 C11 94 11 103 26 108
-                 L16 126 L34 112
-                 C40 126 48 132 60 134
-                 C72 132 80 126 86 112
-                 L104 126 L94 108
-                 C109 103 109 94 96 89
-                 C109 84 109 75 94 70
-                 L104 48 L87 63 Z"
-            />
-
-            {/* inner bevel, one step darker, following the same silhouette */}
-            <path
-              fill="rgba(16,12,22,0.16)"
-              d="M37 70 C27 74 27 81 34 87 C27 93 27 100 37 105
-                 C43 118 49 124 60 127 C71 124 77 118 83 105
-                 C93 100 93 93 86 87 C93 81 93 74 83 70 Z"
-            />
-
-            {/* Scrollwork in the SHOULDERS and the HAUNCHES, not around the
-                keyhole. Two curls level with the keyhole plus a curve beneath
-                it read as a face — eyes and a mouth — which is the one thing an
-                ornate lock must not do. Pushed out to the corners they read as
-                what they are: iron scrollwork following the body's edge. */}
-            <g fill="none" stroke="rgba(16,12,22,0.6)" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M41 72 C31 73 28 81 35 84 C40 86 44 82 42 78" />
-              <path d="M79 72 C89 73 92 81 85 84 C80 86 76 82 78 78" />
-              <path d="M40 105 C31 108 30 117 38 118 C43 118 45 114 43 110" />
-              <path d="M80 105 C89 108 90 117 82 118 C77 118 75 114 77 110" />
-            </g>
-
-            <g fill="rgba(16,12,22,0.82)">
-              {/* screws set into the horns, where a real lock is bolted */}
-              <circle cx="27" cy="66" r="2.4" />
-              <circle cx="93" cy="66" r="2.4" />
-              <circle cx="29" cy="111" r="2.2" />
-              <circle cx="91" cy="111" r="2.2" />
-              {/* keyhole, cut clean through */}
-              <circle cx="60" cy="92" r="7.4" />
-              <path d="M55.4 96.5h9.2l2.6 15H52.8z" />
-            </g>
-
-            {/* the escutcheon ring the keyhole sits in */}
-            <circle cx="60" cy="95" r="13" fill="none" stroke="rgba(16,12,22,0.4)" strokeWidth="1.8" />
-          </svg>
-        </span>
-      ) : null}
-    </div>
-  );
-});
-
-/**
- * What the "?" in the gallery header opens.
- *
- * It exists because every part of this system is invisible from the board: a
- * player who wins a duel sees a pack, and nothing tells them why it held six
- * cards instead of three.
- *
- * A POPUP over the gallery, not a panel pushed in above the grid. The inline
- * version shoved 200 cards down the page to make room for itself, so opening it
- * lost the reader's place in the list and closing it lost it again.
- *
- * It is also down to a table and one line of state. Everything else it used to
- * print — a paragraph of preamble, the reason hotseat pays nothing, a paragraph
- * on how batches are balanced — was true and unread: the table already answers
- * the only question anyone opens this to ask.
- */
-function UnlockHelp({ progress, onClose }: { progress: Progress; onClose: () => void }) {
-  const left = cards.length + relics.length - progress.unlockedIds.length;
-  return <div className="help-veil" onClick={onClose}><section className="help-pop" onClick={(event) => event.stopPropagation()}>
-    <button type="button" className="help-x" onClick={onClose} aria-label="Close unlocking help">×</button><h3>Unlocking cards</h3>
-    <p>Start with 45 available cards, a 30-card deck, and Mend Core. First-time victories unlock the fixed cards listed in each universe.</p>
-    <p>Your deck always starts a duel with exactly 30 different unlocked cards. Swap cards in the deck builder from the start.</p>
-    <p>Losses, draws, replays and hotseat duels grant no cards.</p>
-    <p>Clicking on card title opens their Star Chart.</p>
-    <p className="help-state">{progress.unlockedIds.length} cards unlocked{left ? ` · ${left} still to earn` : " · collection complete"}.</p>
-  </section></div>;
-}
-
-/**
- * Which tiers carry an animated shine, and the baseline tier is deliberately
- * absent.
- *
- * The escalation only reads as an escalation if the bottom of it is still. Give
- * every card a shine and the tiers stop meaning anything; 60 Rare cards then
- * also stop costing anything, which is what keeps a full gallery affordable.
- *
- * Derived, so adding a tier to the engine's table cannot leave this list behind:
- * everything above the baseline, plus relics.
- */
-const SHINE_RARITIES = new Set(
-  [...RARITIES.filter((rarity) => rarity !== BASELINE_RARITY), RELIC_RARITY].map((rarity) => rarity.toLowerCase()),
-);
-
-/**
- * Rail values with a lit palette built for them.
- *
- * The camp and alignment marks live on the RAILS — the two vertical words down
- * the card's edges — rather than as artwork behind the picture. That was tried
- * and scrapped: two animated systems in the middle of one card compete for the
- * same space, and a card has one middle.
- *
- * `ALL` is in here despite belonging to only two cards, because its palette is
- * not a seventh invention — it cycles the other three camp hues in turn, which
- * is what the camp itself means.
- */
-const RAIL_CAMPS = new Set(["magic", "tech", "nature", "all"]);
-const RAIL_ALIGNMENTS = new Set(["good", "neutral", "evil"]);
-
-/** How far a card has got in your collection. Ordered weakest to strongest. */
-type CollectionMark = "unseen" | "seen" | "played" | "won";
-
-/**
- * A locked card, drawn cheaply.
- *
- * The seal already covers the middle of the face, so a locked card was building
- * a full 23-element card face — rules panel, flavour, origin, both rails, the
- * stat gems, the shine — and then hiding almost all of it behind a padlock.
- * Laying those hidden faces out measured 219 ms against 4.5 ms when they are
- * skipped: about 1.4 ms each, which is three rows per frame at a normal scroll
- * speed.
- *
- * This draws the four things a sealed card is SUPPOSED to show and nothing else
- * — frame colour, name, mana cost, and a shape behind the glass. That is the
- * printed doctrine for a locked card rather than a saving invented to fit one,
- * and the saving comes for free: nine elements instead of twenty-three, and one
- * text measurement instead of six. The three paragraph fits are the expensive
- * ones and none of them is needed, because none of that text is drawn.
- *
- * It keeps the `card-face` class and the rarity class, so every rule that
- * already dressed a locked card — the grayscale, the thin outline, the seal
- * itself — lands on it unchanged.
- */
-function SealedFace({ card, lazyArt = false }: { card: CardFaceModel; lazyArt?: boolean }) {
-  return <CardFace card={card} lazyArt={lazyArt} quiet interactiveKeywords/>;
-}
-
-function LockedCardInfo({cardId,rect,onClose}:{cardId:string;rect:DOMRect;onClose:()=>void}) {
-  const node=useRef<HTMLElement>(null);
-  const chapter=CAMPAIGN_CHAPTERS.find(chapter=>chapter.rewardCardIds.includes(cardId));
-  const boss=cards.find(card=>card.id===chapter?.bossId),card=[...cards,...relics].find(card=>card.id===cardId);
-  useEffect(()=>{
-    const outside=(event:PointerEvent)=>{if(!node.current?.contains(event.target as Node))onClose();};
-    const key=(event:KeyboardEvent)=>{if(event.key==='Escape'){event.stopImmediatePropagation();onClose();}};
-    window.addEventListener('pointerdown',outside,true);window.addEventListener('keydown',key,true);window.addEventListener('scroll',onClose,true);window.addEventListener('resize',onClose);
-    return()=>{window.removeEventListener('pointerdown',outside,true);window.removeEventListener('keydown',key,true);window.removeEventListener('scroll',onClose,true);window.removeEventListener('resize',onClose);};
-  },[onClose]);
-  const width=Math.min(280,innerWidth-20),left=Math.max(10,Math.min(rect.right+12+width<=innerWidth?rect.right+12:rect.left-width-12,innerWidth-width-10));
-  const top=Math.max(10,Math.min(rect.top+rect.height*.2,innerHeight-150));
-  return createPortal(<section ref={node} className="locked-card-info" role="dialog" aria-label={`Unlock ${card?.name}`} style={{left,top,width}}>
-    <button type="button" onClick={onClose} aria-label="Close unlock requirements">×</button><small>Locked card</small><strong>{card?.name}</strong>
-    <p>{boss?<>Defeat <b>{boss.name}</b> in {chapter?.universe} to unlock this card.</>:'This card is available from the start.'}</p>
-  </section>,document.body);
-}
-
-/**
- * Rules text with every glossary word turned into a button.
- *
- * The scan is a single pass over the string against `KEYWORD_LOOKUP`, which is
- * sorted longest-match-first — that ordering is what stops "Shield" claiming
- * the position that belongs to "Divine Shield". A match only counts on word
- * boundaries, so "Charged" is not Charge and "Retarget" is not Target.
- *
- * The popover is rendered inline, next to the word, rather than in a portal. It
- * is small, it belongs to the sentence it interrupts, and every surface that
- * switches this on is already a modal with room around the card.
- */
-function ProtocolWarningBubble({turns}:{turns:number}) {
-  const [visible,setVisible]=useState(true);
-  useEffect(()=>{setVisible(true);const timer=setTimeout(()=>setVisible(false),6000);return()=>clearTimeout(timer);},[turns]);
-  if(!visible)return null;
-  const lines:Record<number,string>={4:'4 turns left. Failure is still an option.',3:'3 turns left. Your odds are not improving.',2:'2 turns left. Do try something intelligent.',1:'1 turn left. This is the part where you disappoint me.'};
-  return <span className="protocol-speech" role="status" aria-label={`GLaDOS: ${lines[turns]}`}><b>GLaDOS</b>{lines[turns]}</span>;
-}
-
-function KeywordText({ text, allowRelic = true }: { text: string; allowRelic?: boolean }) {
-  const [open, setOpen] = useState<{ index: number; left: number; top: number;rect:DOMRect } | null>(null);
-  const pieces = useMemo(() => splitCardText(text,allowRelic), [text,allowRelic]);
-  const root=useRef<HTMLSpanElement>(null);
-  useEffect(()=>setOpen(null),[text]);
-
-  // Anything that moves the word out from under the panel closes it: a scroll,
-  // a resize, Escape, or a click anywhere else. A definition pinned to a
-  // viewport position is wrong the moment its word is somewhere else.
-  useEffect(() => {
-    if (!open) return;
-    const close = () => setOpen(null);
-    const outside=(event:PointerEvent)=>{if(!root.current?.contains(event.target as Node))close();};
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.stopImmediatePropagation();
-        close();
-      }
-    };
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
-    window.addEventListener("pointerdown", outside,true);
-    window.addEventListener("keydown", onKey, true);
-    return () => {
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
-      window.removeEventListener("pointerdown", outside,true);
-      window.removeEventListener("keydown", onKey, true);
-    };
-  }, [open]);
-
-  return (
-    <span ref={root}>
-      {pieces.map((piece, index) =>
-        piece.entry||piece.token ? (
-          <button
-            key={index}
-            type="button"
-            className={open?.index === index ? "cf-kw is-open" : "cf-kw"}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              // The card face sits inside clickable furniture in some of its
-              // homes; a definition must never also be a card selection.
-              event.stopPropagation();
-              if (open?.index === index) {
-                setOpen(null);
-                return;
-              }
-              const rect = event.currentTarget.getBoundingClientRect();
-              setOpen({ index, left: (rect.left + rect.right) / 2, top: rect.bottom,rect });
-            }}
-            aria-expanded={open?.index === index}
-          >
-            {piece.text}
-          </button>
-        ) : (
-          <Fragment key={index}>{piece.text}</Fragment>
-        ),
-      )}
-      {open && pieces[open.index]?.entry ? (
-        <KeywordPopover entries={[pieces[open.index].entry!]} left={open.left} top={open.top} />
-      ) : null}
-      {open&&pieces[open.index]?.token&&<CardPeek face={playableFace(tokenCard(pieces[open.index].token!,pieces[open.index].token==='token:sin'?{effect:'Gets one random keyword when summoned: Taunt, Divine Shield, Charge, or Chained.'}:{}))} rect={open.rect} label={`Token card: ${tokenCard(pieces[open.index].token!).name}`}/>}
-    </span>
-  );
-}
-
-/** The definition panel itself, kept on screen and out of the card's clipping. */
-function KeywordPopover({
-  entries,
-  left,
-  top,
-  above = false,
-  side,
-}: {
-  entries: KeywordEntry[];
-  left: number;
-  top: number;
-  /** Always sit ABOVE `top`, rather than below it unless there is no room. */
-  above?: boolean;
-  /** Place beside an anchored card, keeping the card itself unobstructed. */
-  side?: "auto" | "left" | "right";
-}) {
-  const baseWidth = 264;
-  // Flip above the word when there is no room beneath it. The estimate scales
-  // with how many definitions are stacked in one panel.
-  const sideGap = KEYWORD_POPOVER_GAP;
-  const beside = side !== undefined;
-  const canFitRight = left + sideGap + baseWidth <= window.innerWidth - 10;
-  const placement = side === "auto" ? (canFitRight ? "right" : "left") : side;
-  const availableSide = placement === "right"
-    ? window.innerWidth - left - sideGap - 10
-    : left - sideGap - 10;
-  // A narrow screen can leave less room than the full panel. Shrink the panel
-  // inside that side column instead of clamping it back over the card.
-  const width = beside ? Math.max(160, Math.min(baseWidth, availableSide)) : baseWidth;
-  const estimatedHeight = 60 + entries.length * (width < baseWidth ? 150 : 120);
-  const besideLeft = placement === "right" ? left + sideGap : left - width - sideGap;
-  const clampedLeft = beside
-    ? Math.max(10, Math.min(besideLeft, window.innerWidth - width - 10))
-    : Math.max(10, Math.min(left - width / 2, window.innerWidth - width - 10));
-  const clampedTop = Math.max(10, Math.min(top, window.innerHeight - estimatedHeight - 10));
-  const flip = above || top + estimatedHeight > window.innerHeight;
-  // A PORTAL, and that is the fix for the clipping.
-  //
-  // The panel is `position: fixed`, which is normally enough — but a fixed
-  // element is still positioned and painted inside the nearest ancestor that
-  // makes a stacking context, and a card face is full of them: transforms on the
-  // frame, blend modes on the shine, its own z-indexed gems and rails. Rendered
-  // in place, the panel was showing the card's flavour text through itself and
-  // being painted over by the ATK gem. Mounted on `document.body` it has no
-  // ancestor left to be trapped by.
-  return createPortal(
-    <span
-      className={flip ? "cf-kw-pop is-above" : "cf-kw-pop"}
-      role="note"
-      style={beside
-        ? { left: clampedLeft, top: clampedTop, width }
-        : { left: clampedLeft, top: flip ? undefined : top + 8, bottom: flip ? window.innerHeight - top + 12 : undefined, width }}
-      onPointerDown={(event) => event.stopPropagation()}
-    >
-      {entries.map((entry) => (
-        <span key={entry.term} className="cf-kw-pop-entry">
-          <strong>{entry.term}</strong>
-          <span>{plainKeywordText(entry.text)}</span>
-        </span>
-      ))}
-    </span>,
-    document.body,
-  );
-}
-
-
-const CardFace = memo(function CardFace({
-  card,
-  lazyArt = false,
-  quiet = false,
-  states = [],
-  onBoard = false,
-  atkClass = "",
-  hpClass = "",
-  effect,
-  flavor,
-  interactiveKeywords = false,
-}: {
-  card: CardFaceModel;
-  /** Gallery only — see the loading note in `CardArtwork`. */
-  lazyArt?: boolean;
-  quiet?: boolean;
-  /** Live condition classes for a minion in play (`is-frozen`, `is-shielded`…). */
-  states?: readonly string[];
-  /** True once the minion is on the table, where live state replaces the
-   *  printed keyword — a popped Divine Shield must stop glowing. */
-  onBoard?: boolean;
-  atkClass?: string;
-  hpClass?: string;
-  /** Overrides the printed text — a silenced minion's box really is blank. */
-  effect?: string;
-  /** MinionInstance carries no flavour, so the board passes it in. */
-  flavor?: string;
-  /**
-   * Turns every glossary word in the rules text into a button that explains
-   * itself.
-   *
-   * OPT-IN, and deliberately off everywhere the card is a control rather than a
-   * page. A card in hand is clicked to PLAY it and a minion on the board is
-   * clicked to ATTACK with it; putting a second meaning on part of those faces
-   * would turn "I clicked Taunt" into a misplay. It is on in the gallery, which
-   * is the one place a card is only ever being read.
-   */
-  interactiveKeywords?: boolean;
-}) {
-  useContext(FontRevisionContext);
-  // The card is DRAWN, not shown. Every number here is live, so a buff recolours
-  // the real gem instead of pasting a second number over a picture, and changing
-  // a line of cards.csv changes the card.
-  const rawText = effect ?? card.effect ?? "";
-  // 21 cards are stat-only and carry "-" as their effect, which is how the CSV
-  // says "nothing". Printing it renders a lone dash in the middle of an empty
-  // panel, which reads as a missing value rather than as a card with no text —
-  // and it only became visible when board minions started showing their rules.
-  // A vanilla minion gets no panel at all and spends the space on its artwork.
-  const text = rawText.trim() === "-" ? "" : rawText;
-  // Silence blanks only the rules copy. Keep the normal plaque, flavour and
-  // rails in place so the red cross is the sole mark inside an otherwise
-  // familiar card; vanilla stat-only cards still use the compact blank layout.
-  const blank = text.trim().length === 0 && !states.includes("is-silenced");
-  const quote = flavor ?? card.flavor ?? "";
-  const fit = {
-    "--cf-namefit": fitOneLine(card.name, NAME_BOX, NAME_CEILING),
-    "--cf-namefitc": fitOneLine(card.name, NAME_BOX_COMPACT, NAME_CEILING_COMPACT),
-    "--cf-namefitb": fitOneLine(card.name, NAME_BOX_BOARD, NAME_CEILING),
-    // Canvas text metrics are a little more optimistic than the browser's
-    // actual line boxes on the longest effects. Keep a conservative width
-    // reserve so the final glyph line cannot be clipped by the plaque.
-    "--cf-efffit": fitParagraph(text, RULES_BOX.w * 0.9, RULES_BOX.h, RULES_BOX.lineHeight, RULES_CEILING),
-    "--cf-efffitb": fitParagraph(text, RULES_BOX_BOARD.w * 0.9, RULES_BOX_BOARD.h, RULES_BOX_BOARD.lineHeight, RULES_CEILING),
-    "--cf-flavfit": fitParagraph(quote, FLAVOR_BOX.w, FLAVOR_BOX.h, FLAVOR_BOX.lineHeight, FLAVOR_CEILING, "flavor"),
-  } as CSSProperties;
-  const rarity = (card.rarity ?? "Black").toLowerCase();
-  const isRelicFace = rarity === "relic";
-  /* Centre the board name only when centring costs it nothing — that is, when
-   * the symmetric box fits the name at the same size the wider asymmetric box
-   * would. The centred box is the smaller of the two, so its fit can never be
-   * larger; equality means both were capped by the ceiling rather than by width.
-   *
-   * COMPARING THE TWO FITS, not testing one against the cap. `fitOneLine` floors
-   * its answer to half units (`Math.floor(lo * 2) / 2`), so a name that fits
-   * comfortably at the 46 cap comes back as 45.5 and never as 46 — a `>= 46`
-   * test is dead code that silently centres nothing. Every name on the roster
-   * measures 45.5 for exactly this reason. */
-  const boardNameCentred = onBoard &&
-    fitOneLine(card.name, NAME_BOX_BOARD_CENTRED, BOARD_NAME_CAP) >=
-    fitOneLine(card.name, NAME_BOX_BOARD, BOARD_NAME_CAP);
-  // Only values with a palette BUILT get a lit rail. A relic's camp and
-  // alignment are the placeholders "Relic" and "Relic", and relics print no
-  // rails at all; naming the built sets explicitly is what stops a future camp
-  // or alignment silently rendering a class nothing styles.
-  const campMark = RAIL_CAMPS.has((card.camp ?? "").toLowerCase()) ? (card.camp ?? "").toLowerCase() : null;
-  const alignMark = RAIL_ALIGNMENTS.has((card.alignment ?? "").toLowerCase())
-    ? (card.alignment ?? "").toLowerCase()
-    : null;
-  // Keyword artwork. On the board the live flags win, because a Divine Shield
-  // can be popped while the printed keyword stays on the card forever.
-  // Conditions belong to the BOARD, never the hand (owner ruling). A card you are
-  // holding shows its keywords in its text; the artwork only reacts once the
-  // minion is actually in play. Taunt is the one keyword that stays live in
-  // `keywords` (minions can be granted it), so it is read from there; Divine
-  // Shield and Chained come from the live flags in `states`.
-  const silenceHidesKeywords = states.includes("is-silenced") || states.includes("is-chained");
-  const keywordClasses = onBoard && !silenceHidesKeywords
-    ? (card.keywords ?? []).filter((k) => k === "Taunt").map(() => "kw-taunt")
-    : [];
-  const classes = ["card-face", `rarity-${rarity}`, onBoard ? "on-board" : "", blank ? "cf-blank" : "", ...keywordClasses, ...states]
-    .filter(Boolean)
-    .join(" ");
-  return (
-    <article className={classes} style={fit}>
-      {onBoard?<span className="cf-ready-glow" aria-hidden="true"/>:null}
-      <div className="cf-stage">
-        <div className="cf-frame" aria-hidden="true" />
-        <div className="cf-well" aria-hidden="true" />
-        <CardArtwork card={card} lazy={lazyArt} />
-        <div className="cf-desc"><p>{interactiveKeywords ? <KeywordText text={text} allowRelic={!isRelicFace}/> : text}</p></div>
-        {/* A relic has no camp and no alignment. It carried the placeholders
-            "Relic" and "Relic" purely so the rails had something to print,
-            and two rails naming a thing that is not a property of the card is
-            worse than empty rails — the frame colour and the gem already say
-            "relic" without help. Characters keep both. */}
-        {isRelicFace ? null : (
-          <>
-            {/* Both rails are where a card announces itself now. An earlier
-                build put a turning arcane circle behind the artwork instead,
-                and it was scrapped: a second animated system in the middle of
-                the card competes with the tier shine for the same space, and
-                the card only has one middle. The words were already there. */}
-            <span className={campMark ? `cf-rail cf-camp rail-${campMark}` : "cf-rail cf-camp"}>{card.camp}</span>
-            <span className={alignMark ? `cf-rail cf-align rail-${alignMark}` : "cf-rail cf-align"}>
-              {card.alignment}
-            </span>
-          </>
-        )}
-        {/* Relics use RELIC as a bare slot label. Character flavour keeps its
-            decorative quotation marks. */}
-        {quote ? <div className="cf-flavor"><span>{isRelicFace ? quote : `“${quote}”`}</span></div> : null}
-        <div className="cf-origin">{card.origin}</div>
-        {/* A board name is CENTRED when it can be.
-            On a board the name used to be pushed left by an asymmetric padding
-            so it cleared the cost crystal, which left short names — most of
-            them — visibly off-centre for no reason. They are centred now, and
-            only a name too wide for the symmetric safe box falls back to the
-            old layout, because for that name the space beside the crystal is
-            space it genuinely needs. */}
-        <div className="cf-banner">
-          <span className={boardNameCentred ? "cf-name is-centred" : "cf-name"}>{card.name}</span>
-        </div>
-        <div className="cf-gem cf-mana">{card.cost}</div>
-        <div className={`cf-gem cf-atk ${atkClass}`}>{card.atk}</div>
-        <div className={`cf-gem cf-hp ${hpClass}`}>{card.hp}</div>
-        {/* The rarity shine. Its own element rather than pseudo-elements on the
-            existing layers, because `.cf-art::after` is already the glass sheen
-            and `.cf-stage::after` is spoken for by the board's rim states — a
-            shine written on top of either would fight a condition the player
-            needs to see.
-
-            FIVE FIXED SLOTS for every tier, styled per rarity, with the ones a
-            tier does not use switched off in CSS. The alternative — a different
-            element list per rarity — puts the layer count in two places at once
-            and lets the markup and the stylesheet disagree silently. Rare gets
-            no shine at all: it is the baseline the other tiers escalate from. */}
-        {!quiet && SHINE_RARITIES.has(rarity) ? (
-          <div className="cf-shine" aria-hidden="true">
-            <span className="sh-field" />
-            <span className="sh-veil" />
-            <span className="sh-grain" />
-            <span className="sh-grain2" />
-            <span className="sh-sweep" />
-            <span className="sh-rim" />
-          </div>
-        ) : null}
-        {!quiet && <div className="cf-fx" aria-hidden="true" />}
-        {states.includes("is-sleeping") ? (
-          <span className="cf-sleep" aria-hidden="true"><i>z</i><i>z</i></span>
-        ) : null}
-      </div>
-    </article>
-  );
-}, (a, b) => sameCardFace(a.card, b.card) && sameStrings(a.states, b.states)
-  && a.lazyArt === b.lazyArt && a.quiet === b.quiet && a.onBoard === b.onBoard
-  && a.atkClass === b.atkClass && a.hpClass === b.hpClass && a.effect === b.effect
-  && a.flavor === b.flavor && a.interactiveKeywords === b.interactiveKeywords);
-
-function RelicPopup({ flash }: { flash: RelicFlash }) {
-  const [position, setPosition] = useState<CSSProperties>({ visibility: "hidden" });
-  useLayoutEffect(() => {
-    const place = () => {
-      const bearer = document.querySelector<HTMLElement>(`[data-instance="${flash.instanceId}"]`);
-      if (!bearer) return;
-      const rect = bearer.getBoundingClientRect();
-      const width = Math.min(240, window.innerWidth - 24, (window.innerHeight - 24) * 5 / 7);
-      const height = width * 7 / 5;
-      const right = rect.right + 12;
-      const left = right + width <= window.innerWidth - 12 ? right : rect.left - width - 12;
-      setPosition({ width, height, left: Math.max(12, Math.min(left, window.innerWidth - width - 12)),
-        top: Math.max(12, Math.min(rect.top + rect.height / 2 - height / 2, window.innerHeight - height - 12)) });
-    };
-    place();
-    window.addEventListener("resize", place);
-    return () => window.removeEventListener("resize", place);
-  }, [flash.instanceId]);
-  // Escape board transforms, stacking contexts and board-only card sizing.
-  return createPortal(<div className="relic-play-flash" data-bearer={flash.instanceId} style={position} aria-hidden="true">
-    <CardFace card={relicFace(flash.relic)} />
-  </div>, document.body);
-}
-
-function MinionFace({
-  minion,
-  board,
-  allBoard,
-  onRelicPreview,
-  onRelicPress,
-  onRelicPreviewEnd,
-}: {
-  minion: MinionInstance;
-  board?: Array<MinionInstance | null>;
-  allBoard?: Array<MinionInstance | null>;
-  /** Hovering the relic badge swaps the preview to the relic's own card. */
-  onRelicPreview?: (relic: RelicInstance, el: HTMLElement) => void;
-  onRelicPress?: (event: React.PointerEvent<HTMLElement>, relic: RelicInstance) => void;
-  /** Leaving it puts the minion back under the pointer, so the preview never
-   *  goes blank while the pointer is still inside the slot. */
-  onRelicPreviewEnd?: (minion: MinionInstance, el: HTMLElement) => void;
-}) {
-  const atkClass = statClass(minion.atk, minion.baseAtk);
-  const hpClass = minion.hp < minion.maxHp ? "is-hurt" : statClass(minion.maxHp, minion.baseHp);
-  return (
-    <>
-      <CardFace
-        card={minion}
-        onBoard
-        states={minionStates(minion, board, allBoard)}
-        atkClass={atkClass}
-        hpClass={hpClass}
-        effect={minion.silenced ? "" : minion.effect}
-      />
-      {attachedRelics(minion).map(({ relic, index }) => (
-        <span
-          key={`${relic.id}-${index}`}
-          role={onRelicPress ? 'button' : undefined}
-          aria-label={`Inspect equipped ${relic.name}`}
-          onPointerDown={onRelicPress ? event => { event.stopPropagation(); event.preventDefault(); onRelicPress(event, relic); } : undefined}
-          onClick={onRelicPress ? event => { event.stopPropagation(); event.preventDefault(); } : undefined}
-          onContextMenu={event => event.preventDefault()}
-          className={[
-            "relic-badge",
-            `relic-badge-${index}`,
-            onRelicPreview ? "peekable" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          onMouseEnter={
-            onRelicPreview
-              ? (e) => {
-                  e.stopPropagation();
-                  onRelicPreview(relic, e.currentTarget);
-                }
-              : undefined
-          }
-          onMouseLeave={
-            onRelicPreviewEnd
-              ? (e) => {
-                  e.stopPropagation();
-                  onRelicPreviewEnd(minion, e.currentTarget.parentElement ?? e.currentTarget);
-                }
-              : undefined
-          }
-        >
-          <img src={relic.art} alt="" draggable={false} />
-        </span>
-      ))}
-    </>
-  );
-}
-
-function CardArtwork({ card, lazy = false }: { card: CardFaceModel; lazy?: boolean }) {
-  const previews=useContext(GalleryPreviewContext);
-  const preview=previews[card.art.split('/').pop()?.replace('.webp','') ?? ''];
-  const position = cardArtPosition(card.name);
-  // NEVER loading="lazy" here. Cards mount and unmount constantly as they move
-  // between hand, board and preview, and a lazy <img> that is re-created during
-  // that churn frequently never fires its load at all — it stays
-  // complete:false / naturalWidth:0 forever and the card renders as a black
-  // rectangle while the file itself serves fine. Half a board went black this
-  // way. Only a handful of card images exist at once; load them eagerly.
-  //
-  // The GALLERY is the one exception, and it is a different situation, not a
-  // relaxation of the rule above. Its cells mount once and stay put, so there is
-  // no churn to lose a load in — while requesting the full roster at once is the
-  // single biggest cost of opening the screen.
-  if (!card.art) return <div className="cf-art empty-art" aria-hidden="true" />;
-  return (
-    <div
-      className="cf-art"
-      style={{
-        "--card-art-position": position,
-        ...(preview ? { backgroundImage: `url("${preview}")`, backgroundSize: "cover", backgroundPosition: position } : {}),
-      } as CSSProperties}
-    >
-      <img src={card.art} alt="" draggable={false} loading={lazy ? "lazy" : undefined} decoding={lazy ? "async" : undefined}
-        onError={preview ? event=>{event.currentTarget.style.opacity='0';} : undefined}
-        onLoad={preview ? event=>{event.currentTarget.style.opacity='';} : undefined} />
-    </div>
-  );
-}
-
-/**
- * Live conditions as classes, so the CARD shows them — a stone barrier for
- * Taunt, a gold rim for Divine Shield, ice for Frozen. There is deliberately no
- * badge or chip anywhere: the artwork does the talking, the way it should.
- */
-function minionStates(
-  minion: MinionInstance,
-  board?: Array<MinionInstance | null>,
-  allBoard?: Array<MinionInstance | null>,
-): string[] {
-  const effectIds = new Set([minion.effectId, ...minion.gainedEffects.map((effect) => effect.effectId)]);
-  const effectsActive = !minion.silenced && minion.chained === 0;
-  const otherGood = board?.some((other) => other && other.instanceId !== minion.instanceId && other.alignment === "Good") ?? false;
-  const activeInvulnerable =
-    effectsActive &&
-    (effectIds.has("invuln_if_alone")
-      ? (board?.filter(Boolean).length ?? 1) <= 1
-      : effectIds.has("invuln_with_good_ally")
-        ? otherGood
-        : effectIds.has("invulnerable_if_frozen")
-          ? (allBoard ?? board)?.some((other) => other?.frozen) ?? false
-          : false);
-  return [
-    minion.sleeping ? "is-sleeping" : "",
-    minion.chained > 0 ? "is-chained" : "",
-    minion.frozen ? "is-frozen" : "",
-    minion.silenced ? "is-silenced" : "",
-    minion.divineShield && !minion.silenced ? "is-shielded" : "",
-    activeInvulnerable ? "is-invulnerable" : "",
-    minion.attackLocked || minion.techAttackSuppressed || (!minion.silenced && minion.keywords.includes("Cannot Attack"))
-      ? "is-locked"
-      : "",
-    minion.markedBy || minion.markedForDeathAtTurn !== null && minion.markedForDeathAtTurn !== undefined ? "is-marked" : "",
-    minion.campImmunity ? "is-adapted" : "",
-  ].filter(Boolean);
-}
-
-function HeroPlate({
-  player,
-  identity,
-  heroPower,
-  cheatMode,
-  floats,
-  impacts,
-  enemy = false,
-  targetable = false,
-  active = false,
-  thinking = false,
-  revealedHand,
-  library,
-  onCardPreview,
-  onCardPreviewEnd,
-  onStrike,
-  onBlockedStrike,
-  heroPowerCounter,
-  protocolWarning = false,
-  apexPrey,
-}: {
-  player: GameState["players"][number];
-  identity?: { card: PlayableCard; chapter: number; universe: string };
-  heroPower?: HeroPowerId | null;
-  cheatMode: boolean;
-  floats: FloatNum[];
-  impacts: Impact[];
-  enemy?: boolean;
-  targetable?: boolean;
-  /** Holds for the whole turn. The banner is the event, this is the state. */
-  active?: boolean;
-  /** The practice opponent is mid-move. Only ever true on the enemy plate. */
-  thinking?: boolean;
-  revealedHand?: string[];
-  library?: CardLibrary;
-  onCardPreview?: (card: PlayableCard, el: HTMLElement, owner?: PlayerId, instant?: boolean) => void;
-  onCardPreviewEnd?: () => void;
-  onStrike?: () => void;
-  onBlockedStrike?: () => void;
-  heroPowerCounter?: string;
-  protocolWarning?: boolean;
-  apexPrey?:MinionInstance;
-}) {
-  const wasHit = floats.some((f) => f.delta < 0);
-  const classes = [
-    "hero-plate",
-    identity ? "campaign-hero" : "",
-    enemy ? "enemy" : "me",
-    wasHit ? "hit" : "",
-    // A plate cannot be both the thing you are about to hit and the thing
-    // quietly announcing whose turn it is — targetable's red wins.
-    active && !targetable ? "active" : "",
-    thinking ? "thinking" : "",
-    targetable ? "targetable" : "",
-    protocolWarning ? "protocol-warning" : "",
-    player.heroDivineShield ? "is-shielded" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const backs = Math.min(player.hand.length, 10);
-  const power = heroPowerDefinition(heroPower);
-  const canStrike = enemy && targetable && Boolean(onStrike);
-  const strikeHandler = canStrike ? onStrike : onBlockedStrike;
-  return (
-    <button
-      type="button"
-      className={classes}
-      data-hero={player.id}
-      onClick={strikeHandler}
-      aria-disabled={strikeHandler ? undefined : true}
-      aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : undefined}
-    >
-      {enemy && <span className="hero-health-fill" aria-hidden="true" style={{width:`${Math.max(0,Math.min(1,player.health/STARTING_CORE))*100}%`,'--boss-tint':campAccent(identity && isMinionCard(identity.card) ? identity.card.camp : 'Nature')} as CSSProperties} />}
-      <span className="hero-sigil" title={identity ? identity.card.name : `${player.name}'s sigil`}>
-        {identity ? <img className="boss-portrait" src={identity.card.art} alt={`${identity.card.name} portrait`} draggable={false} /> : <HeroSigil playerId={player.id} />}
-      </span>
-      <span className="hero-name">
-        {identity && <span className="boss-chapter" title={identity.universe}>Universe · {identity.universe}</span>}
-        <strong>
-          {player.name}
-          <span className="hero-think" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
-        </strong>
-        {power ? <small className="hero-power-label">⚡ {power.name}{heroPowerCounter ? <b className="hero-power-counter">{heroPowerCounter}</b> : null}</small> : null}
-      </span>
-      {enemy&&apexPrey&&<span className="apex-prey" title={`Apex Duel: ${apexPrey.name} is your highest-ATK minion (${apexPrey.atk} ATK)`} aria-label={`Apex Duel target: ${apexPrey.name}`}><img src={apexPrey.art} alt="" draggable={false}/><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16"/><path d="M20 0v10m0 20v10M0 20h10m20 0h10"/></svg></span>}
-      {enemy && revealedHand && library ? (
-        <span className="revealed-hand" aria-label="The Watcher reveals this hand">
-          {revealedHand.map((cardId, index) => {
-            const card = library[cardId];
-            return card ? (
-              <span
-                key={`${cardId}-${index}`}
-                className="revealed-hand-card"
-                /* No `title`. A native tooltip on a card whose full face is
-                   already being shown is a second, worse copy of the same
-                   answer, and it arrives on top of the artwork. */
-                onMouseEnter={onCardPreview ? (e) => onCardPreview(card, e.currentTarget, undefined, true) : undefined}
-                onMouseLeave={onCardPreviewEnd}
-              >
-                <CardFace card={playableFace(card)} />
-              </span>
-            ) : null;
-          })}
-          <em>{revealedHand.length}</em>
-        </span>
-      ) : enemy ? (
-        <span className="hand-backs" title={`${player.hand.length} cards in hand`}>
-          {Array.from({ length: backs }, (_, i) => (
-            <span key={i} className="card-back" style={{ marginLeft: i === 0 ? 0 : -9 }} />
-          ))}
-          <em>{player.hand.length}</em>
-        </span>
-      ) : null}
-      {enemy ? (
-        <span className="mini-mana" title={cheatMode ? "Infinite mana" : `${player.mana}/${player.maxMana} mana`}>
-          {cheatMode ? "∞" : `${player.mana}/${player.maxMana}`}
-        </span>
-      ) : null}
-      <span className="health-gem" title={`Core: ${player.health} health${player.heroDivineShield ? " — Divine Shield" : ""}`}>
-        {player.health}
-      </span>
-      <span className="fx-layer" aria-hidden="true">
-        {impacts.map((fx) => (
-          <ImpactFx key={fx.id} impact={fx} />
-        ))}
-      </span>
-      {floats.map((f, index) => (
-        <span
-          key={f.id}
-          className={f.delta < 0 ? "float-num hurt" : "float-num heal"}
-          style={{ top: `calc(18% + ${index * 18}px)`, "--fd": `${f.delay}s` } as CSSProperties}
-        >
-          {f.delta < 0 ? f.delta : `+${f.delta}`}
-        </span>
-      ))}
-    </button>
-  );
-}
-
-function HeroPowerCard({ definition, turnsRemaining }: { definition: ReturnType<typeof heroPowerDefinition>; turnsRemaining?: number }) {
-  if (!definition) return null;
-  const cost = heroPowerCost(definition);
-  return (
-    <aside className="enemy-power-card" id="enemy-hero-power-card" aria-label={`${definition.name}: ${definition.text}`}>
-      <div className="enemy-power-card-head">
-        <span className="enemy-power-card-cost">{definition.passive ? "∞" : cost}</span>
-        <span className="enemy-power-card-title">
-          <small>ENEMY HERO POWER</small>
-          <strong>⚡ {definition.name}</strong>
-        </span>
-      </div>
-      <p>{definition.text}</p>
-      {definition.id === "glados_test_protocol" && turnsRemaining !== undefined ? (
-        <small className="enemy-power-card-count">{turnsRemaining} turns remaining</small>
-      ) : null}
-      <small className="enemy-power-card-foot">{definition.passive ? "Always active" : `Costs ${cost} mana · Once per turn`}</small>
-    </aside>
-  );
-}
-
-function HeroPowerButton({
-  definition,
-  action,
-  used,
-  onUse,
-}: {
-  definition: ReturnType<typeof heroPowerDefinition>;
-  action?: GameAction;
-  used: boolean;
-  onUse: (action: Extract<GameAction, { type: "use_hero_power" }>) => void;
-}) {
-  if (!definition) return null;
-  const cost = heroPowerCost(definition);
-  const usable = action?.type === "use_hero_power" && !used;
-  return (
-    <button
-      type="button"
-      className={usable ? "hero-power-button ready" : "hero-power-button"}
-      disabled={!usable}
-      onClick={() => {
-        if (action?.type === "use_hero_power") onUse(action);
-      }}
-      title={`${definition.text} ${definition.passive ? "Always active." : `Costs ${cost} mana and can be used once per turn.`}`}
-    >
-      <span className="hero-power-cost">{definition.passive ? "∞" : cost}</span>
-      <span className="hero-power-copy">
-        <strong>⚡ {definition.name}</strong>
-        <small>{used ? "Used this turn" : definition.text}</small>
-      </span>
-    </button>
-  );
-}
-
-/**
- * The banner that hangs over the board while a targeted effect waits. It is a
- * strip rather than a modal on purpose: you pick the victim by clicking it on
- * the real board, so covering the board would defeat the whole feature.
- */
-function TargetPrompt({
-  pending,
-  library,
-  botControlled,
-  onChoose,
-  onCancel,
-}: {
-  pending: PendingTarget;
-  library: CardLibrary;
-  botControlled: boolean;
-  onChoose: (choiceIndex: number) => void;
-  onCancel: () => void;
-}) {
-  const card = library[pending.sourceCardId];
-  const canCancel = Boolean((pending.cancelPlay || pending.cancelHeroPower) && !botControlled);
-  const hasCardChoices = pending.kind === 'option' && pending.labelOptions.some(option => Boolean(library[option.value]));
-  const cancelLabel = pending.cancelHeroPower ? "Cancel Hero Power" : "Return to hand";
-  const hint = botControlled
-    ? "The practice bot is choosing…"
-    : pending.kind === "board" || pending.kind === "slot" || pending.kind === "boardOrCore"
-      ? canCancel
-        ? pending.cancelHeroPower
-          ? "Click a highlighted minion — or click the board/hand to cancel this Hero Power."
-          : "Click a highlighted minion — or click the board/hand to return this minion."
-        : `Click a highlighted minion — ${pending.options.length} legal targets.`
-      : pending.kind === "hand"
-        ? "Their hand, face up. Pick one."
-        : "Pick a value.";
-  return (
-    <div
-      className={[
-        "target-prompt",
-        pending.kind === "board" && !canCancel ? "" : "interactive",
-        hasCardChoices ? "card-choice-prompt" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      role="status"
-    >
-      <div className="target-prompt-head">
-        {card ? <img className="target-prompt-art" src={card.art} alt="" draggable={false} /> : null}
-        <div className="target-prompt-text">
-          <strong>{pending.sourceName}</strong>
-          <span>{pending.prompt}</span>
-          <small>{hint}</small>
-        </div>
-      </div>
-
-      {canCancel ? (
-        <button type="button" className="prompt-cancel" onClick={onCancel}>
-          {cancelLabel}
-        </button>
-      ) : null}
-
-      {/* Hand targeting reveals the hand it is reaching into — that reveal IS
-          the effect, so there is nothing to hide from the other player. */}
-      {pending.kind === "hand" ? (
-        <div className="prompt-hand">
-          {pending.handOptions.map((option, choiceIndex) => (
-            <button
-              type="button"
-              key={`${option.cardId}-${option.index}`}
-              className="prompt-hand-card"
-              disabled={botControlled}
-              onClick={() => onChoose(choiceIndex)}
-              title={library[option.cardId]?.name}
-            >
-              {library[option.cardId] ? <CardFace card={playableFace(library[option.cardId])} /> : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      {pending.kind === "boardOrCore" && pending.coreOption ? (
-        <div className="prompt-values">
-          <button
-            type="button"
-            className="prompt-value prompt-core-choice"
-            disabled={botControlled}
-            onClick={() => onChoose(pending.options.length)}
-          >
-            Enemy Core
-          </button>
-        </div>
-      ) : null}
-
-      {pending.kind === "option" ? (
-        <div className="prompt-values">
-          {pending.labelOptions.map((option, choiceIndex) => (
-            <button
-              type="button"
-              key={option.value}
-              className={library[option.value] ? "prompt-value prompt-card-choice" : "prompt-value"}
-              disabled={botControlled}
-              onClick={() => onChoose(choiceIndex)}
-              title={library[option.value] ? `${option.label}: ${library[option.value].effect}` : option.label}
-              aria-label={library[option.value] ? `${option.label}. ${library[option.value].effect}` : option.label}
-            >
-              {library[option.value] ? <CardFace card={playableFace(library[option.value])} /> : option.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * A player's permanent heraldry. Player One is the convergent star — rays drawn
- * inward to a single point. Player Two is the eclipse — a broken ring around a
- * dark core. Fixed for the whole game: a hero is never a picture of a minion.
- */
-function HeroSigil({ playerId }: { playerId: PlayerId }) {
-  if (playerId === 0) {
-    return (
-      <svg viewBox="0 0 40 40" aria-hidden="true">
-        <circle className="sigil-field" cx="20" cy="20" r="19" />
-        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
-          <line key={deg} className="sigil-ray" x1="20" y1="20" x2="20" y2="3" transform={`rotate(${deg} 20 20)`} />
-        ))}
-        <polygon className="sigil-core" points="20,9 27,20 20,31 13,20" />
-        <circle className="sigil-pip" cx="20" cy="20" r="2.6" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 40 40" aria-hidden="true">
-      <circle className="sigil-field" cx="20" cy="20" r="19" />
-      <circle className="sigil-ring" cx="20" cy="20" r="13" />
-      <circle className="sigil-ring inner" cx="20" cy="20" r="8.5" />
-      <path className="sigil-shard" d="M20 3 L25 14 L20 20 L15 14 Z" />
-      <path className="sigil-shard" d="M20 37 L15 26 L20 20 L25 26 Z" />
-      <circle className="sigil-void" cx="20" cy="20" r="5" />
-    </svg>
-  );
-}
-
-/**
- * The duel log, newest first.
- *
- * It prints EVERYTHING it is handed. It used to print the last 30 of the 80
- * events being kept, which meant one busy turn — a board wipe, a chain of
- * Deathrattles — could push the move that caused it off the top of a list the
- * player was scrolling precisely to find that move in. A log that silently
- * drops the middle of a story is worse than a shorter one, because nothing
- * marks the gap.
- *
- * Memoised, because it is a few hundred list items rendered inside a
- * `<details>` whose children React builds whether or not the drawer is open,
- * and the events array only changes when something actually happened.
- */
-const EventLog = memo(function EventLog({ events }: { events: GameEvent[] }) {
-  return (
-    <ol className="event-log">
-      {events
-        .map((event, index) => ({ event, index }))
-        .reverse()
-        .map(({ event, index }) => (
-          // Keyed on the FORWARD index, so an entry keeps its key as newer
-          // events arrive. Keying on the reversed position renumbered every row
-          // in the list on every single action.
-          <li key={`${index}-${event.text}`} className={`event-${event.kind}`}>
-            {event.text}
-          </li>
-        ))}
-    </ol>
-  );
-});
-
-function CardPeek({face,rect,label}: {face:CardFaceModel;rect:{left:number;right:number;top:number;bottom:number};label:string}) {
-  const width=Math.min(300,(innerHeight-16)/1.4,innerWidth-16),height=width*1.4;
-  const beside=rect.right+12;
-  const left=Math.max(8,Math.min(beside+width<=innerWidth-8?beside:rect.left-width-12,innerWidth-width-8));
-  const top=Math.max(8,Math.min((rect.top+rect.bottom-height)/2,innerHeight-height-8));
-  return createPortal(<aside className="equipped-relic-peek" role="status" aria-label={label} style={{left,top,width}}>
-    <CardFace card={face} />
-  </aside>,document.body);
-}
-
-function RelicCardPeek({relic,rect}: {relic:RelicInstance;rect:{left:number;right:number;top:number;bottom:number}}) {
-  return <CardPeek face={relicFace(relic)} rect={rect} label={`Equipped relic: ${relic.name}`} />;
-}
-
-function HoverCard({ hover }: { hover: NonNullable<HoverState> }) {
-  // Bigger than it used to be, and no text panel underneath: the face prints its
-  // own effect and flavour now, so this IS the readable copy of the card.
-  const width = 300;
-  const height = hover.extraEffects.length ? 492 : 440;
-  const viewportW = window.innerWidth;
-  const viewportH = window.innerHeight;
-  let left = hover.rect.right + 14;
-  if (left + width > viewportW - 10) left = hover.rect.left - width - 14;
-  if (left < 10) left = 10;
-  let top = (hover.rect.top + hover.rect.bottom) / 2 - height / 2;
-  top = Math.max(10, Math.min(top, viewportH - height - 10));
-  const keywordWidth = 264;
-  const keywordLeft = Math.min(left + width + 12, viewportW - keywordWidth - 10);
-  const keywordOffset = keywordLeft - left;
-  return (
-    <aside className="hover-preview" style={{ left, top, width }} aria-hidden="true">
-      <CardFace
-        card={hover.face}
-        atkClass={hover.atkClass}
-        hpClass={hover.hpClass}
-        effect={hover.effect}
-        flavor={hover.flavor}
-        states={hover.states}
-        onBoard={hover.onBoard}
-      />
-      {hover.extraEffects.length ? <span className="hover-extra-effect">{hover.extraEffects.join(" • ")}</span> : null}
-      {hover.keywordEntries.length ? (
-        <div className="hover-keyword-definitions" style={{ left: keywordOffset, top: 0, width: keywordWidth }} aria-label="Keyword explanations">
-          <span className="hover-keyword-heading">Keyword explanations</span>
-          {hover.keywordEntries.map((entry) => (
-            <span key={entry.term} className="hover-keyword-definition">
-              <strong>{entry.term}</strong>
-              <span>{plainKeywordText(entry.text)}</span>
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </aside>
-  );
-}
-
-function MulliganOverlay({
-  game,
-  library,
-  onChoose,
-  locked = false,
-}: {
-  game: GameState;
-  library: CardLibrary;
-  onChoose: (action: GameAction) => void;
-  locked?: boolean;
-}) {
-  const mulligan = game.mulligan;
-  if (!mulligan) return null;
-  const selectedCount = mulligan.selected.filter(Boolean).length;
-  return (
-    <div className="overlay">
-      <section className={locked ? "draw-panel mulligan-panel locked" : "draw-panel mulligan-panel"}>
-        <h2>{locked ? "Waiting for the opening hand…" : "Choose cards to replace"}</h2>
-        <div className="mulligan-row">
-          {game.players[mulligan.player].hand.map((cardId, handIndex) => {
-            const selected = Boolean(mulligan.selected[handIndex]);
-            const card = library[cardId];
-            return (
-              <button
-                type="button"
-                key={`${cardId}-${handIndex}`}
-                className={selected ? "mulligan-card selected" : "mulligan-card"}
-                aria-pressed={selected}
-                disabled={locked}
-                onClick={() => {
-                  sfx.play("button");
-                  onChoose({ type: "toggle_mulligan", player: mulligan.player, handIndex });
-                }}
-              >
-                {card ? <CardFace card={playableFace(card)} /> : null}
-              </button>
-            );
-          })}
-        </div>
-        <div className="choice-detail">
-          <button
-            type="button"
-            className="primary"
-            disabled={locked}
-            onClick={() => {
-              sfx.play("draw");
-              onChoose({ type: "confirm_mulligan", player: mulligan.player });
-            }}
-          >
-            {selectedCount ? "Mulligan selected" : "Keep opening hand"}
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function DrawChoiceOverlay({
-  game,
-  library,
-  onChoose,
-  locked = false,
-}: {
-  game: GameState;
-  library: CardLibrary;
-  onChoose: (action: GameAction) => void;
-  /** True while the practice bot owns this draw — the human must not pick for it. */
-  locked?: boolean;
-}) {
-  const drawChoice = game.drawChoice;
-  const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
-  if (!drawChoice) return null;
-  return (
-    <div className="overlay">
-      <section className={locked ? "draw-panel locked" : "draw-panel"}>
-        <span>Draw Step</span>
-        <h2>
-          {locked
-            ? `${game.players[drawChoice.player].name} is choosing…`
-            : `${game.players[drawChoice.player].name}, inspect and choose`}
-        </h2>
-        <div className="choice-row">
-          {drawChoice.cards.map((cardId, choiceIndex) => (
-            <button
-              type="button"
-              key={cardId}
-              className={selectedChoice === choiceIndex ? "choice-card selected" : "choice-card"}
-              aria-pressed={selectedChoice === choiceIndex}
-              disabled={locked}
-              onClick={() => {
-                if (selectedChoice === choiceIndex) {
-                  sfx.play("draw");
-                  onChoose({ type: "choose_draw", player: drawChoice.player, choiceIndex });
-                } else {
-                  sfx.play("button");
-                  setSelectedChoice(choiceIndex);
-                }
-              }}
-            >
-              {library[cardId] ? <CardFace card={playableFace(library[cardId])} /> : null}
-            </button>
-          ))}
-        </div>
-        <div className="choice-detail">
-          <button
-            type="button"
-            className="primary"
-            disabled={locked || selectedChoice === null}
-            onClick={() => {
-              if (selectedChoice === null) return;
-              sfx.play("draw");
-              onChoose({ type: "choose_draw", player: drawChoice.player, choiceIndex: selectedChoice });
-            }}
-          >
-            {locked ? "Bot is choosing" : selectedChoice === null ? "Pick a card" : "Choose Card"}
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-/**
- * The card pack a finished duel hands over.
- *
- * Three deliberate choices, because the obvious build of this is worse:
- *
- * The pack takes FIVE hits, not one. A single click is a dialog with a picture
- * on it — the reward arrives before the player has done anything, so nothing
- * builds. Raised from three on 3 September 2026 (owner's ruling): three had a
- * middle, five has a CLIMB, and each hit now cuts its own line into the box so
- * the damage is countable rather than just louder. The last hit does not open
- * it — the box holds, fully cracked and straining, for a beat, and then goes.
- *
- * The cards deal themselves out one at a time rather than appearing as a grid.
- * A grid of ten is read as "ten"; a stagger is read as ten separate arrivals,
- * which is the same information and a completely different feeling.
- *
- * The fireworks are generated once per mount and held in a ref. Generating them
- * during render would re-roll every spark on every state change, so the burst
- * would visibly reshuffle itself the moment the first card landed.
- */
-const PACK_HITS = 5;
-
-/**
- * The beat between the last hit and the burst.
- *
- * The pack does not open ON the fifth click. It holds, shaking, with all five
- * cracks lit, and then goes. That pause is the whole payoff of counting to five:
- * the player lands the last hit and then watches it fail, which is a different
- * event from a box that simply opens when clicked enough times.
- */
-const PACK_BURST_DELAY_MS = 1000;
-
-/**
- * Where each crack sits. One per hit, in the order they are cut.
- *
- * Angles rather than a symmetric fan: five evenly spaced lines read as a
- * snowflake, which is a pattern rather than damage. `scale` shortens the later
- * ones so the box looks broken from the middle outward instead of sliced into
- * equal pieces.
- */
-const PACK_CRACKS = [
-  { angle: 16, scale: 1 },
-  { angle: -38, scale: 0.8 },
-  { angle: 72, scale: 0.66 },
-  { angle: -76, scale: 0.58 },
-  { angle: 44, scale: 0.72 },
-];
-
-/** Card width and gap from `.pack-card` / `.pack-reveal`; keep the three in step. */
-const PACK_CARD_WIDTH = 206;
-const PACK_CARD_GAP = 14;
-/** The card's own 750 × 1050 shape at the layout width above. */
-const PACK_CARD_HEIGHT = (PACK_CARD_WIDTH * 1050) / 750;
-/**
- * How far past its layout size the reveal may be DRAWN.
- *
- * The cards lay out at 206px and the transform decides what that looks like, so
- * a wide screen has no reason to stop at 206: at 1920 the fifteen-card grid was
- * using 1,081px of 1,920 and leaving 420px of empty veil down each side (owner's
- * ruling, 3 September 2026 — "why so much wasted space"). 1.35 is a ceiling
- * rather than a target: a transform scaled far past 1 rasterises text softly,
- * and a third bigger is the most this face takes while staying crisp.
- */
-const PACK_MAX_SCALE = 1.35;
-/**
- * Everything on the pack stage that is not the reveal — the kicker, the running
- * total, the Collect button and the gaps between them.
- *
- * Only a FALLBACK, used for the first frame before the reveal's own box has been
- * measured. The real figure is read off the laid-out wrapper, because a constant
- * here goes quietly stale the moment a font or a gap on that stage changes, and
- * the way it fails is a pack that scrolls again.
- */
-const PACK_STAGE_RESERVE = 210;
-
-interface PackLayout {
-  columns: number;
-  rows: number;
-  /** The reveal's LAYOUT size, always at full card width. */
-  width: number;
-  height: number;
-  /** What the whole reveal is rendered at, so it fits without scrolling. */
-  scale: number;
-  /** What a hovered card multiplies itself by to reach `PACK_HOVER_WIDTH`. */
-  lift: number;
-}
-
-/**
- * How wide a hovered card should end up on screen, in real pixels.
- *
- * A pack card is drawn anywhere between about 115px and 262px depending on how
- * many arrived and how big the window is, so a fixed hover scale means the
- * enlarged card is a different size every time — and on a fifteen-card pack in a
- * small window, still too small to read. This is the size it lands at instead,
- * and the multiplier is worked back from whatever the grid did.
- *
- * 315, cut a quarter from 420 on 4 September 2026 (owner's ruling). At 420 an
- * enlarged card covered most of its neighbours; the point is to read one card,
- * not to lose the row it came from.
- */
-const PACK_HOVER_WIDTH = 315;
-/** Never smaller than the card already is, never a jump that covers the screen. */
-const PACK_HOVER_RANGE = { min: 1.25, max: 3.2 };
-
-/** Reward cards preserve their complete printed face while the grid scales to fit. */
-function packLayout(count: number, viewportWidth: number, availableHeight: number): PackLayout {
-  const cards = Math.max(1, count);
-  // `96vw` is the stage's own width in App.css; keep the two in step.
-  const availableWidth = Math.max(160, viewportWidth * 0.96);
-  const usableHeight = Math.max(160, availableHeight);
-  let best: PackLayout | null = null;
-  for (let split = 1; split <= cards; split += 1) {
-    const columns = Math.ceil(cards / split);
-    const rows = Math.ceil(cards / columns);
-    const width = columns * PACK_CARD_WIDTH + (columns - 1) * PACK_CARD_GAP;
-    const height = rows * PACK_CARD_HEIGHT + (rows - 1) * PACK_CARD_GAP;
-    const scale = Math.min(PACK_MAX_SCALE, availableWidth / width, usableHeight / height);
-    // The epsilon keeps the FEWEST rows on a tie: two rows and three rows often
-    // fit identically, and the flatter one reads as a hand.
-    if (!best || scale > best.scale + 0.001) {
-      best = { columns, rows, width, height, scale, lift: hoverLift(scale) };
-    }
-  }
-  return best ?? {
-    columns: 1,
-    rows: 1,
-    width: PACK_CARD_WIDTH,
-    height: PACK_CARD_HEIGHT,
-    scale: 1,
-    lift: hoverLift(1),
-  };
-}
-
-/** The hover multiplier that lands a card of this scale at `PACK_HOVER_WIDTH`. */
-function hoverLift(scale: number): number {
-  const wanted = PACK_HOVER_WIDTH / (PACK_CARD_WIDTH * scale);
-  return Math.max(PACK_HOVER_RANGE.min, Math.min(PACK_HOVER_RANGE.max, wanted));
-}
-
-function CardPack({
-  ids,
-  library,
-  total,
-  onDone,
-}: {
-  ids: string[];
-  library: CardLibrary;
-  total: number;
-  onDone: () => void;
-}) {
-  const [hits, setHits] = useState(0);
-  const [dealt, setDealt] = useState(0);
-  /**
-   * Fully cracked but not yet open.
-   *
-   * `opened` is its own state rather than `hits >= PACK_HITS`, because the last
-   * hit and the burst are now a second apart. Everything downstream — the
-   * fireworks, the deal, the Collect button — keys off `opened`, so none of it
-   * had to learn about the pause.
-   */
-  const charged = hits >= PACK_HITS;
-  const [opened, setOpened] = useState(false);
-  const [packKeywords, setPackKeywords] = useState<{
-    entries: KeywordEntry[];
-    left: number;
-    top: number;
-    side: "left" | "right";
-  } | null>(null);
-  const packKeywordTimer = useRef<number | null>(null);
-
-  useEffect(() => () => {
-    if (packKeywordTimer.current !== null) window.clearTimeout(packKeywordTimer.current);
-  }, []);
-
-  useEffect(() => {
-    if (!charged || opened) return;
-    const handle = window.setTimeout(() => {
-      setOpened(true);
-      sfx.play("summonMythic");
-    }, PACK_BURST_DELAY_MS);
-    return () => window.clearTimeout(handle);
-  }, [charged, opened]);
-  // How many cards a row can hold depends on the window, so it is read from the
-  // window and re-read when that changes. A pack is on screen for a few seconds,
-  // which makes one listener cheap and a stale layout expensive.
-  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
-  const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
-  useEffect(() => {
-    const onResize = () => {
-      setViewportWidth(window.innerWidth);
-      setViewportHeight(window.innerHeight);
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-  /**
-   * The height the reveal is actually allowed, MEASURED rather than assumed.
-   *
-   * The wrapper is the one flexible child of the stage, so whatever the kicker,
-   * the total and the Collect button leave over is exactly its height — and
-   * reading it beats guessing it, because the guess is what goes stale. There is
-   * no feedback loop: the reveal is scaled by a transform, which takes no part
-   * in layout, so the box being measured never moves because of what is measured.
-   */
-  const revealBox = useRef<HTMLDivElement | null>(null);
-  const [measuredHeight, setMeasuredHeight] = useState(0);
-  useEffect(() => {
-    const node = revealBox.current;
-    if (!node) return;
-    setMeasuredHeight(node.clientHeight);
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => setMeasuredHeight(node.clientHeight));
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [opened]);
-  // Sorted so the rarest and dearest card is the last one to land. What the pack
-  // CONTAINS is already settled by the unlock order; this only decides the order
-  // they arrive in, so it cannot bias the reward.
-  const rewardCards = useMemo(
-    () => revealOrder(ids.map((id) => library[id]).filter((card): card is PlayableCard => Boolean(card))),
-    [ids, library],
-  );
-  const faces = useMemo(() => rewardCards.map((card) => playableFace(card)), [rewardCards]);
-
-  function clearPackKeywords() {
-    if (packKeywordTimer.current !== null) {
-      window.clearTimeout(packKeywordTimer.current);
-      packKeywordTimer.current = null;
-    }
-    setPackKeywords(null);
-  }
-
-  function armPackKeywords(card: PlayableCard | undefined, el: HTMLElement) {
-    clearPackKeywords();
-    if (!card) return;
-    const entries = handKeywordEntriesFor(card);
-    if (entries.length === 0) return;
-    packKeywordTimer.current = window.setTimeout(() => {
-      packKeywordTimer.current = null;
-      if (!el.isConnected) return;
-      // The layout wrapper stays small while the inner card grows on hover.
-      // Calculate that intended visual rectangle directly, so the popup never
-      // falls back onto the enlarged face when the transform is in flight.
-      const rect = el.getBoundingClientRect();
-      const origin = getComputedStyle(el).getPropertyValue("--lift-origin").trim().split(/\s+/);
-      const visualWidth = PACK_HOVER_WIDTH;
-      const visualHeight = PACK_CARD_HEIGHT * (visualWidth / PACK_CARD_WIDTH);
-      const visualLeft = origin[0] === "left"
-        ? rect.left
-        : origin[0] === "right"
-          ? rect.right - visualWidth
-          : rect.left + (rect.width - visualWidth) / 2;
-      const visualTop = origin[1] === "top"
-        ? rect.top
-        : origin[1] === "bottom"
-          ? rect.bottom - visualHeight
-          : rect.top + (rect.height - visualHeight) / 2;
-      const visualRight = visualLeft + visualWidth;
-      const side = window.innerWidth - visualRight - KEYWORD_POPOVER_GAP >= visualLeft - KEYWORD_POPOVER_GAP ? "right" : "left";
-      setPackKeywords({
-        entries,
-        left: side === "right" ? visualRight : visualLeft,
-        top: visualTop,
-        side,
-      });
-    }, 1000);
-  }
-  // One roll per mount. `useState` with an initialiser, not `useMemo`: a memo is
-  // allowed to be thrown away and recomputed, and a re-rolled firework is a
-  // visible glitch rather than a cheap recovery.
-  const [sparks] = useState(() => {
-    // The blast is sized to the SCREEN. A fixed 620px reach is a fair explosion
-    // in a 900px window and a modest puff in the middle of a 1440px-tall one,
-    // which is the shape of the complaint that produced this: it read as a small
-    // rectangle of light rather than as something going off.
-    const reach = Math.max(0.85, Math.min(window.innerWidth, window.innerHeight) / 820);
-    return Array.from({ length: 128 }, (_, index) => {
-      // Two shells, not one ring. A single evenly spaced ring reads as a circle
-      // of dots however fast it moves; a dense near shell inside a sparser far
-      // one is what a firework actually looks like.
-      const near = index % 3 !== 0;
-      const angle = (index / 128) * Math.PI * 2 + Math.random() * 0.7;
-      const distance = (near ? 150 + Math.random() * 250 : 380 + Math.random() * 420) * reach;
-      return {
-        key: index,
-        x: Math.cos(angle) * distance,
-        // ROUND, not squashed. The vertical throw was multiplied by 0.8, which
-        // is what made a burst read as a wide flat oval instead of a sphere
-        // opening (owner's ruling, 3 September 2026).
-        y: Math.sin(angle) * distance,
-        size: near ? 6 + Math.random() * 10 : 3 + Math.random() * 6,
-        delay: Math.random() * (near ? 0.2 : 0.4),
-        dur: near ? 0.9 + Math.random() * 0.6 : 1.2 + Math.random() * 0.8,
-        hue: [46, 190, 276, 12][index % 4],
-      };
-    });
-  });
-
-  // Cards deal themselves; there is nothing left to click once the pack is open,
-  // so making the player click ten more times would only be in the way.
-  useEffect(() => {
-    if (!opened || dealt >= faces.length) return;
-    const handle = window.setTimeout(() => {
-      setDealt((count) => count + 1);
-      sfx.play("draw");
-    }, dealt === 0 ? 420 : 160);
-    return () => window.clearTimeout(handle);
-  }, [opened, dealt, faces.length]);
-
-  function strike() {
-    if (charged) return;
-    const next = hits + 1;
-    setHits(next);
-    // The climb is in the SOUND as well as the cracks. The first hit is a dull
-    // knock, the middle three are the shell breaking, and the last one is a
-    // heavy landing rather than the fanfare — the fanfare belongs to the burst
-    // a second later, or the two would collide.
-    if (next >= PACK_HITS) sfx.playHeavyLand(1);
-    else sfx.play(next === 1 ? "hit" : "shieldBreak");
-  }
-
-  const allDealt = opened && dealt >= faces.length;
-  const layout = packLayout(
-    faces.length,
-    viewportWidth,
-    // The fallback is the first frame only, before the wrapper exists to measure.
-    measuredHeight || Math.min(viewportHeight * 0.94, viewportHeight - 40) - PACK_STAGE_RESERVE,
-  );
-
-  return (
-    <div className={opened ? "pack-veil is-open" : "pack-veil"}>
-      {opened ? (
-        <div className="pack-burst" aria-hidden="true">
-          {/* The blast itself, and the part that was missing: a round white core
-              that swells and dies, with two shockwave rings running out through
-              it. The sparks alone read as confetti appearing — a firework is
-              light FIRST and debris second. All three are circles centred on the
-              pack, so the explosion has a shape instead of a bounding box. */}
-          <span className="pack-flash" />
-          <span className="pack-shock" />
-          <span className="pack-shock is-late" />
-          {sparks.map((spark) => (
-            <span
-              key={spark.key}
-              className="pack-spark"
-              style={
-                {
-                  "--sx": `${spark.x}px`,
-                  "--sy": `${spark.y}px`,
-                  "--ss": `${spark.size}px`,
-                  "--sd": `${spark.delay}s`,
-                  "--st": `${spark.dur}s`,
-                  "--sh": `${spark.hue}`,
-                } as CSSProperties
-              }
-            />
-          ))}
-        </div>
-      ) : null}
-
-      <section className="pack-stage" role="dialog" aria-label="New cards unlocked">
-        {opened ? null : (
-          <>
-            {/* NO WORDS ON THE SEALED SCREEN (owner's ruling, 4 September 2026).
-                The count above the pack and the running instruction below it —
-                "Strike it open", "Again", "Once more", "It is giving way…" —
-                are gone. A pack that shakes, cracks and brightens under the
-                pointer is already saying what to do, and the sentence saying it
-                too was the only part of the ceremony written in prose. The
-                button keeps its `aria-label`, which is where that instruction
-                genuinely belongs. */}
-            <button
-              type="button"
-              // Keyed on the count, so the shake RESTARTS on every click. Same
-              // animation name on every hit state means the browser would
-              // otherwise let it run once and ignore the rest.
-              key={`pack-${hits}`}
-              className={`pack-box hits-${hits}${charged ? " is-charged" : ""}`}
-              onClick={strike}
-              // The shake and the glow both read this, so their strength climbs
-              // with the count instead of being three hand-written states.
-              style={{ "--hit": hits / PACK_HITS } as CSSProperties}
-              aria-label={`Strike the pack to open it. ${Math.max(0, PACK_HITS - hits)} to go.`}
-            >
-              <span className="pack-box-face" aria-hidden="true">
-                <span className="pack-box-sigil">✦</span>
-              </span>
-              {PACK_CRACKS.map((crack, index) => (
-                <span
-                  // Keyed by the HIT it belongs to, so a new line mounts on its
-                  // own click and plays its cut animation once. Rendering all
-                  // five and toggling opacity would fade them in instead.
-                  key={index}
-                  className={index < hits ? "pack-box-crack is-cut" : "pack-box-crack"}
-                  style={{ "--ca": `${crack.angle}deg`, "--cs": crack.scale } as CSSProperties}
-                  aria-hidden="true"
-                />
-              ))}
-              <span className="pack-box-glow" aria-hidden="true" />
-            </button>
-          </>
-        )}
-
-        {opened ? (
-          <>
-            {/* No kicker here either (owner's ruling, 4 September 2026). "Added
-                to the shared deck" was the last line of prose on this screen,
-                and the cards arriving one at a time already say it. The running
-                total below them stays, because it is a number nothing else
-                reports. */}
-            {/* Rows are balanced rather than left to wrap. Six cards wrapping
-                naturally gave a row of five and one card stranded underneath it,
-                which reads as a mistake; three and three reads as a hand. The
-                width is what does it, because flex-wrap has no notion of an
-                even split. */}
-            <div className="pack-scroll" ref={revealBox}>
-              {/* Laid out at full card width and DRAWN smaller. The width and
-                  height below are the layout the faces measure themselves
-                  against — 206px a card, above the floor where `.card-face`
-                  retains its complete rules — and the transform is what makes fifteen
-                  of them fit a window that has room for ten. */}
-              <div
-                className="pack-reveal"
-                style={
-                  {
-                    width: `${layout.width}px`,
-                    height: `${layout.height}px`,
-                    transform: `scale(${layout.scale})`,
-                    // How far a hovered card lifts, computed so it always reads
-                    // at about the same size on screen whatever the grid did:
-                    // a fixed 1.5 is a small nudge on a five-card pack drawn at
-                    // 1.27 and not nearly enough on fifteen drawn at 0.56.
-                    "--pack-lift": layout.lift,
-                  } as CSSProperties
-                }
-              >
-                {faces.slice(0, dealt).map((face, index) => (
-                  <div
-                    className="pack-card"
-                    key={`${face.name}-${index}`}
-                    onMouseEnter={(event) => armPackKeywords(rewardCards[index], event.currentTarget)}
-                    onMouseLeave={clearPackKeywords}
-                    // A card on the edge of the grid grows INWARD. Enlarging
-                    // from the centre pushed the first card 63px off the left of
-                    // a 1920 screen, and the grid is deliberately as wide as the
-                    // window now, so the outer column is exactly where a pointer
-                    // lands most often.
-                    style={
-                      {
-                        "--lift-origin": `${
-                          index % layout.columns === 0
-                            ? "left"
-                            : index % layout.columns === layout.columns - 1
-                              ? "right"
-                              : "center"
-                        } ${
-                          layout.rows === 1
-                            ? "center"
-                            : index < layout.columns
-                              ? "top"
-                              : Math.floor(index / layout.columns) === layout.rows - 1
-                                ? "bottom"
-                                : "center"
-                        }`,
-                      } as CSSProperties
-                    }
-                  >
-                    {/* The lift lives on an INNER element. `.pack-card` is
-                        carrying the deal animation, whose `both` fill holds a
-                        transform on it forever, and an animation's fill beats a
-                        plain `:hover` rule in the cascade — the hover would
-                        simply never apply. */}
-                    <div className="pack-card-lift">
-                      {/* NOT lazy, unlike the gallery. Fifteen images at the
-                          most, and each one is the thing the player is here to
-                          look at — a card that deals itself onto the table with
-                          an empty black frame is the reward arriving broken. */}
-                      <CardFace card={face} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <p className={allDealt ? "pack-total is-in" : "pack-total"}>
-              {total} of {cards.length + relics.length} cards unlocked
-            </p>
-            <button type="button" className="primary pack-collect" onClick={onDone} disabled={!allDealt}>
-              Collect
-            </button>
-            {packKeywords ? <KeywordPopover entries={packKeywords.entries} left={packKeywords.left} top={packKeywords.top} side={packKeywords.side} /> : null}
-          </>
-        ) : null}
-      </section>
-    </div>
-  );
-}
-
-function TutorialCoach({step,completed,onSkip,onStart}:{step:number;completed:boolean;onSkip:()=>void;onStart:()=>void}) {
-  const lesson=TUTORIAL_LESSONS[Math.min(step,TUTORIAL_LESSONS.length-1)];
-  return <aside className={`tutorial-coach${step===0?' is-welcome':''}`} aria-label="Tutorial">
-    <div className="tutorial-coach-top"><span>Rick's field guide</span><small>{completed?'Complete':`${step+1} / ${TUTORIAL_LESSONS.length}`}</small></div>
-    <strong>{completed?'Ready for the Convergence':lesson.title}</strong>
-    <p>{completed?'Training complete. Returning to the menu…':lesson.body}</p>
-    <small className="tutorial-coach-hint">{completed?'Choose any universe when you are ready.':lesson.hint}</small>
-    {step===0&&!completed&&<button type="button" className="primary" onClick={onStart}>Start lesson</button>}
-    <button type="button" onClick={onSkip}>Leave tutorial</button>
-  </aside>;
-}
-
-function DeveloperTools({
-  screen,
-  cards: allCards,
-  game,
-  viewerId,
-  onClose,
-  onToggleCheat,
-  onUndoTurn,
-  canUndoTurn,
-  onSetCore,
-  onMakeCoreInvincible,
-  onHealCore,
-  onClearHand,
-  onShowResult,
-  onGiveCard,
-  onPlaceCard,
-  onEquipRelic,
-  onClearBoard,
-  onTestCard,
-}: {
-  screen: "title" | "playing";
-  cards: PlayableCard[];
-  game: GameState;
-  viewerId: PlayerId;
-  onClose: () => void;
-  onToggleCheat: () => void;
-  onUndoTurn: () => void;
-  canUndoTurn: boolean;
-  onSetCore: (owner: PlayerId, value: number) => void;
-  onMakeCoreInvincible: (owner: PlayerId) => void;
-  onHealCore: (owner: PlayerId) => void;
-  onClearHand: (owner: PlayerId) => void;
-  onShowResult: (winner: PlayerId | "draw", cardId: string) => void;
-  onGiveCard: (cardId: string, owner: PlayerId) => void;
-  onPlaceCard: (cardId: string, owner: PlayerId) => void;
-  onEquipRelic: (cardId: string, owner: PlayerId) => void;
-  onClearBoard: (owner: PlayerId) => void;
-  onTestCard: (cardId: string) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState(allCards[0]?.id ?? "");
-  const [filters, setFilters] = useState({ kind: "all", cost: "all", rarity: "all", camp: "all", alignment: "all" });
-  const otherId: PlayerId = viewerId === 0 ? 1 : 0;
-  const selected = allCards.find((card) => card.id === selectedId) ?? allCards[0];
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return allCards
-      .filter((card) => {
-        const relic = isRelicCard(card);
-        const kind = relic ? "relic" : "minion";
-        const cost = card.cost === undefined ? "" : String(card.cost);
-        const rarity = relic ? RELIC_RARITY : card.rarity;
-        const camp = relic ? RELIC_CAMP_LABEL : card.camp;
-        const alignment = relic ? RELIC_RARITY : card.alignment;
-        return (
-          (!needle || [card.name, card.origin, card.effect, relic ? "relic" : "minion"].join(" ").toLowerCase().includes(needle)) &&
-          (filters.kind === "all" || filters.kind === kind) &&
-          (filters.cost === "all" || filters.cost === cost) &&
-          (filters.rarity === "all" || filters.rarity === rarity) &&
-          (filters.camp === "all" || filters.camp === camp) &&
-          (filters.alignment === "all" || filters.alignment === alignment)
-        );
-      })
-      .sort((left, right) => left.name.localeCompare(right.name));
-  }, [allCards, filters, query]);
-
-  const setFilter = (key: keyof typeof filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
-
-  useEffect(() => {
-    if (selected && filtered.some((card) => card.id === selected.id)) return;
-    if (filtered[0]) setSelectedId(filtered[0].id);
-  }, [filtered, selected]);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
-
-  return (
-    <div className="developer-veil" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="developer-panel" role="dialog" aria-modal="true" aria-label="Developer mode">
-        <header className="developer-panel-top">
-          <div>
-            <span className="developer-kicker">Ross access</span>
-            <h2>Developer mode</h2>
-          </div>
-          <button type="button" className="screen-x" onClick={onClose} aria-label="Close developer mode">×</button>
-        </header>
-
-        {screen==='playing'&&<div className="developer-controls">
-          <div className="developer-control-group dev-mine" aria-label="My cheats"><strong>My side</strong>
-            <button type="button" className={`developer-action${hasInfiniteMana(game,viewerId)?' active':''}`} onClick={onToggleCheat}>Infinite mana: {hasInfiniteMana(game,viewerId)?'ON':'OFF'}</button>
-            <button type="button" className="developer-action" onClick={()=>onSetCore(viewerId,1)}>My Core → 1</button>
-            <button type="button" className="developer-action" onClick={()=>onHealCore(viewerId)}>Fully heal my core</button>
-            <button type="button" className={`developer-action${game.coreInvincible?.[viewerId]?' active':''}`} onClick={()=>onMakeCoreInvincible(viewerId)}>{game.coreInvincible?.[viewerId]?'Core invincible: ON':'Make the core invincible'}</button>
-            <button type="button" className="developer-action" onClick={()=>onClearBoard(viewerId)}>Clear my board</button>
-          </div>
-          <div className="developer-control-group dev-enemy" aria-label="Enemy cheats"><strong>Enemy side</strong>
-            <button type="button" className="developer-action" onClick={()=>onSetCore(otherId,1)}>Enemy Core → 1</button>
-            <button type="button" className="developer-action" onClick={()=>onHealCore(otherId)}>Fully heal enemy core</button>
-            <button type="button" className="developer-action" onClick={()=>onClearHand(otherId)}>Remove all enemy cards</button>
-            <button type="button" className="developer-action" onClick={()=>onClearBoard(otherId)}>Clear enemy board</button>
-          </div>
-          <div className="developer-control-group dev-neutral"><button type="button" className="developer-action" onClick={onUndoTurn} disabled={!canUndoTurn}>Undo a turn</button></div>
-        </div>}
-
-        <div className="developer-workbench">
-          <div className="developer-card-list-wrap">
-            <label className="developer-search">
-              <span>Find any card</span>
-              <input
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Name, origin, or effect"
-                autoFocus
-              />
-            </label>
-            <div className="developer-filters" aria-label="Card filters">
-              <label>
-                <span>Type</span>
-                <select aria-label="Filter by type" value={filters.kind} onChange={(event) => setFilter("kind", event.target.value)}>
-                  <option value="all">All types</option>
-                  <option value="minion">Minions</option>
-                  <option value="relic">Relics</option>
-                </select>
-              </label>
-              <label>
-                <span>Cost</span>
-                <select aria-label="Filter by cost" value={filters.cost} onChange={(event) => setFilter("cost", event.target.value)}>
-                  <option value="all">Any cost</option>
-                  {Array.from(new Set(allCards.map((card) => card.cost).filter((cost): cost is number => cost !== undefined))).sort((a, b) => a - b).map((cost) => (
-                    <option key={cost} value={cost}>{cost} mana</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Rarity</span>
-                <select aria-label="Filter by rarity" value={filters.rarity} onChange={(event) => setFilter("rarity", event.target.value)}>
-                  <option value="all">Any rarity</option>
-                  {RARITIES.map((rarity) => <option key={rarity} value={rarity}>{rarityName(rarity)}</option>)}
-                  <option value={RELIC_RARITY}>{RELIC_RARITY}</option>
-                </select>
-              </label>
-              <label>
-                <span>Camp</span>
-                <select aria-label="Filter by camp" value={filters.camp} onChange={(event) => setFilter("camp", event.target.value)}>
-                  <option value="all">Any camp</option>
-                  {CAMPS.map((camp) => <option key={camp} value={camp}>{camp}</option>)}
-                  <option value={RELIC_CAMP_LABEL}>{RELIC_CAMP_LABEL}</option>
-                </select>
-              </label>
-              <label>
-                <span>Alignment</span>
-                <select aria-label="Filter by alignment" value={filters.alignment} onChange={(event) => setFilter("alignment", event.target.value)}>
-                  <option value="all">Any alignment</option>
-                  {ALIGNMENTS.map((alignment) => <option key={alignment} value={alignment}>{alignment}</option>)}
-                  <option value={RELIC_RARITY}>{RELIC_RARITY}</option>
-                </select>
-              </label>
-            </div>
-            <div className="developer-card-list">
-              {filtered.map((card) => (
-                <button
-                  type="button"
-                  key={card.id}
-                  className={card.id === selected?.id ? "developer-card-row selected" : "developer-card-row"}
-                  onClick={() => setSelectedId(card.id)}
-                >
-                  <span className="developer-card-mana" aria-label={`${card.cost} mana`}>{card.cost}</span>
-                  <span className="developer-card-name">{card.name}</span>
-                  <small>{card.origin}</small>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {selected ? (
-            <div className="developer-inspector">
-              <div className="developer-card-preview">
-                <CardFace card={playableFace(selected)} />
-              </div>
-              <div className="developer-card-copy">
-                <span className="developer-kicker">Selected card</span>
-                <h3>{selected.name}</h3>
-                <p>{selected.effect}</p>
-                {screen === "title" ? (
-                  <button type="button" className="developer-primary" onClick={() => onTestCard(selected.id)}>
-                    Start test duel with this card
-                  </button>
-                ) : (
-                  <div className="developer-card-actions">
-                    <div className="developer-owned-actions dev-mine-actions">
-                      <button type="button" className="developer-secondary dev-mine-action" onClick={()=>onGiveCard(selected.id,viewerId)}>Give to my hand</button>
-                      {!isRelicCard(selected)?<button type="button" className="developer-secondary dev-mine-action" onClick={()=>onPlaceCard(selected.id,viewerId)}>Place on my board</button>:<button type="button" className="developer-secondary dev-mine-action" onClick={()=>onEquipRelic(selected.id,viewerId)}>Equip on my first minion</button>}
-                    </div>
-                    <div className="developer-owned-actions dev-enemy-actions">
-                      <button type="button" className="developer-secondary dev-enemy-action" onClick={()=>onGiveCard(selected.id,otherId)}>Give to enemy hand</button>
-                      {!isRelicCard(selected)?<button type="button" className="developer-secondary dev-enemy-action" onClick={()=>onPlaceCard(selected.id,otherId)}>Place on enemy board</button>:<button type="button" className="developer-secondary dev-enemy-action" onClick={()=>onEquipRelic(selected.id,otherId)}>Equip on enemy first minion</button>}
-                    </div>
-                  </div>
-                )}
-                {/* OUTSIDE the title/duel split, like the pack buttons above:
-                    the result screen is not part of a duel either, and it is
-                    reachable normally only by playing one to a particular end.
-                    The champion is whichever card is selected here, so this
-                    needs no second card picker. */}
-                <div className="developer-result">
-                  <span className="developer-kicker">Result screen, this card as champion</span>
-                  <div className="developer-result-actions">
-                    <button
-                      type="button"
-                      className="developer-secondary dev-mine-action"
-                      onClick={() => onShowResult(viewerId, selected.id)}
-                      title="Shows this result. An active campaign duel counts toward progression."
-                    >
-                      I win
-                    </button>
-                    <button
-                      type="button"
-                      className="developer-secondary dev-enemy-action"
-                      onClick={() => onShowResult(otherId, selected.id)}
-                      title="Shows this result. An active campaign duel counts toward progression."
-                    >
-                      Enemy wins
-                    </button>
-                    <button
-                      type="button"
-                      className="developer-secondary"
-                      onClick={() => onShowResult("draw", selected.id)}
-                      title="Shows this result. An active campaign duel counts toward progression."
-                    >
-                      Draw
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : <p className="developer-empty">No cards match this search.</p>}
-        </div>
-
-
-      </section>
-    </div>
-  );
-}
-
-function GameOver({
-  game,
-  library,
-  tutorial = false,
-  campaign = false,
-  campaignLoss = false,
-  onRestart,
-  onMenu,
-}: {
-  game: GameState;
-  /** So the MVP can be drawn as its real card face rather than as a thumbnail. */
-  library: CardLibrary;
-  tutorial?: boolean;
-  campaign?: boolean;
-  campaignLoss?: boolean;
-  onRestart: () => void;
-  onMenu: () => void;
-}) {
-  const draw = game.winner === "draw";
-  const winnerId: PlayerId | null = typeof game.winner === "number" ? game.winner : null;
-  const winner = winnerId !== null ? game.players[winnerId] : null;
-  const title = draw ? "Mutual Annihilation" : winner ? `${winner.name} Wins` : "Game Over";
-  /**
-   * The one card this screen is about: whichever of the winner's minions dealt
-   * the most damage over the whole duel.
-   *
-   * It replaced the parade of survivors, and the reason is that surviving is
-   * the wrong measure. A board is what happens to be left standing at the end,
-   * so the parade was routinely five bodies that had done nothing and none of
-   * the ones that won the duel — a Mythic that traded for three minions and
-   * died in the process never appeared on its own victory screen. Damage is
-   * what a duel is actually decided by, and it is the only figure here that
-   * names a card rather than a number.
-   *
-   * A draw has no winner to ask, so it asks the whole table.
-   */
-  const mvp =
-    winnerId !== null
-      ? duelMvp(game, winnerId)
-      : (() => {
-          const both = ([0, 1] as PlayerId[]).map((id) => duelMvp(game, id));
-          return both.reduce<DamageTallyEntry | null>(
-            (best, entry) => (entry && (!best || entry.damage > best.damage) ? entry : best),
-            null,
-          );
-        })();
-  const mvpCard = mvp ? library[mvp.cardId] : undefined;
-  const mvpOwner = mvp ? game.players[mvp.owner] : null;
-  /*
-   * TWO THINGS WERE REMOVED FROM THIS SCREEN on 3 September 2026, owner's
-   * ruling, and both for the same reason: the screen was saying a thing twice.
-   *
-   * The wide champion strip was the MVP's own artwork, bled across the top —
-   * the same picture as the card face directly beneath it, at lower resolution
-   * and with nothing on it. It was already being dropped under 720px of height
-   * as the first thing to go; it is now gone at every height.
-   *
-   * The line under the title — "The rift stabilizes after N turns", plus
-   * whichever sentence about the practice bot applied — was the only prose on a
-   * screen whose whole job is to name a winner and a card.
-   */
-  return (
-    <div className={draw ? "overlay result-overlay draw" : "overlay result-overlay"}>
-      {/* The rays turn inside a CLIPPING FRAME. A rotating square has to be
-          about 1.8x the viewport or its corners sweep into view, and a box that
-          big — by inset or by transform, both count — is scrollable overflow the
-          overlay then reports forever. The frame is exactly viewport-sized and
-          clips, so the overlay measures what it can actually show. */}
-      <div className="result-rays-frame" aria-hidden="true">
-        <div className="result-rays" />
-      </div>
-      <section className="result-panel grand">
-        <h2 className="result-title">{title}</h2>
-        {mvp ? (
-          <div className="result-mvp">
-            <span className="result-mvp-kicker">
-              {mvpOwner ? `${mvpOwner.name}'s champion` : "Champion of the duel"}
-            </span>
-            {/* The complete printed champion card. */}
-            <div className="result-mvp-card">
-              {mvpCard ? (
-                <CardFace card={playableFace(mvpCard)} />
-              ) : (
-                <figure className="result-mvp-fallback">
-                  <img src={mvp.art} alt="" draggable={false} />
-                  <figcaption>{mvp.name}</figcaption>
-                </figure>
-              )}
-            </div>
-            <p className="result-mvp-line">
-              <strong>{mvp.damage}</strong> damage dealt
-            </p>
-          </div>
-        ) : null}
-        <div className="gameover-buttons">
-          {campaignLoss ? (
-            <><button type="button" className="primary" onClick={onRestart}>Rematch</button><button type="button" onClick={onMenu}>Return to menu</button></>
-          ) : winnerId !== null && !tutorial ? (
-            <button type="button" className="primary" onClick={campaign ? onRestart : onMenu}>Continue</button>
-          ) : (
-            <><button type="button" className="primary" onClick={onRestart}>{tutorial ? "Play tutorial again" : "Rematch"}</button><button type="button" onClick={onMenu}>Menu</button></>
-          )}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function canAttackCore(legalActions: GameAction[], selection: Selection): boolean {
-  return (
-    selection?.kind === "attacker" &&
-    legalActions.some((action) => action.type === "attack_core" && action.attackerSlot === selection.slotIndex)
-  );
-}
-
-function otherPlayer(player: PlayerId): PlayerId {
-  return player === 0 ? 1 : 0;
-}
-
-function statClass(current: number, base: number): string {
-  if (current > base) return "is-buffed";
-  if (current < base) return "is-hurt";
-  return "";
 }

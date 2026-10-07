@@ -1,5 +1,6 @@
 import { KEYWORD_LOOKUP, type KeywordEntry } from "./keywords";
 import { TOKEN_CARDS } from "./engine/tokens";
+import { isMinionCard, type MinionInstance, type PlayableCard } from "./engine/types";
 
 export interface CardTextPiece {
   text: string;
@@ -85,4 +86,67 @@ export function sameStrings(a: readonly string[] = [], b: readonly string[] = []
 /** A counter or copied passive changing must not repaint an unchanged face. */
 export function sameCardFace(a: CardFaceModel, b: CardFaceModel): boolean {
   return a === b || FACE_FIELDS.every(field => a[field] === b[field]) && sameStrings(a.keywords, b.keywords);
+}
+
+/**
+ * The glossary entries for a card's printed keywords, in the card's own order.
+ *
+ * Matched case-insensitively against every spelling the glossary knows, so
+ * "Cannot Attack" on a card finds the "Cannot attack" entry. A keyword with no
+ * entry is skipped rather than shown blank; duplicates are collapsed.
+ */
+function keywordEntriesFor(keywords: readonly string[]): KeywordEntry[] {
+  const found: KeywordEntry[] = [];
+  for (const keyword of keywords) {
+    const hit = KEYWORD_LOOKUP.find(({ match }) => match.toLowerCase() === keyword.toLowerCase());
+    if (hit && !found.includes(hit.entry)) found.push(hit.entry);
+  }
+  return found;
+}
+
+/**
+ * Every glossary word a card puts in front of the player, in printed order.
+ *
+ * THE RULES TEXT IS SCANNED, not only the keywords column, and relics are
+ * scanned as well. The column-only version missed the word players ask about
+ * most: `Battlecry` is written in the effect line and is in no card's keywords
+ * column, so the one panel that exists to explain a card's timing never once
+ * explained it. Relics printed no column at all and so armed nothing, while
+ * their whole card is rules text.
+ *
+ * `splitCardText` is the scan — the same pass the gallery's clickable words
+ * use, longest match first and word boundaries respected — so a definition can
+ * never be offered by one surface and missed by the other. The text comes first
+ * because it is the card's own order; a keyword carried only in the column, with
+ * no mention in the text, is appended after it. Deduped by entry, so `Freeze`
+ * and `Frozen` on one card are one line.
+ */
+export function handKeywordEntriesFor(card: PlayableCard): KeywordEntry[] {
+  const found: KeywordEntry[] = [];
+  const add = (entry: KeywordEntry) => {
+    if (!found.includes(entry)) found.push(entry);
+  };
+  for (const piece of splitCardText(card.effect ?? "", isMinionCard(card))) {
+    if (piece.entry) add(piece.entry);
+  }
+  for (const entry of keywordEntriesFor(isMinionCard(card) ? card.keywords : [])) add(entry);
+  return found;
+}
+
+export function minionKeywordEntriesFor(minion: MinionInstance): KeywordEntry[] {
+  const found: KeywordEntry[] = [];
+  const add = (entry: KeywordEntry) => {
+    if (!found.includes(entry)) found.push(entry);
+  };
+  if (minion.silenced) return found;
+  for (const piece of splitCardText(minion.effect)) {
+    if (piece.entry) add(piece.entry);
+  }
+  for (const effect of minion.gainedEffects) {
+    for (const piece of splitCardText(effect.text)) {
+      if (piece.entry) add(piece.entry);
+    }
+  }
+  for (const entry of keywordEntriesFor(minion.keywords)) add(entry);
+  return found;
 }

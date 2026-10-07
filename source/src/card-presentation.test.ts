@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { splitCardText, sameCardFace, type CardFaceModel } from "./card-presentation";
+import { handKeywordEntriesFor, minionKeywordEntriesFor, splitCardText, sameCardFace, type CardFaceModel } from "./card-presentation";
+import { cards } from "./data/cards";
+import { spawnTestMinion } from "./engine/test-utils";
 
 describe("printed card text", () => {
   it("preserves punctuation and highlights aliases only once per concept", () => {
@@ -36,5 +38,24 @@ describe("card face presentation identity", () => {
       const changed={...face,[field]:Array.isArray(value)?['Charge']:typeof value==='number'?value+1:String(value)+'!'};
       expect(sameCardFace(face,changed),field).toBe(false);
     }
+  });
+});
+
+describe("keyword panels", () => {
+  const card = (name: string) => {
+    const found = cards.find((entry) => entry.name === name);
+    if (!found) throw new Error(`Missing card ${name}`);
+    return found;
+  };
+  it("explains rules-text keywords in printed order, then column-only keywords", () => {
+    const aang = card("Avatar Aang");
+    expect(handKeywordEntriesFor(aang).map((entry) => entry.term)).toEqual(["Battlecry", "Deathrattle", "Summon"]);
+    const batman = card("Batman");
+    expect(handKeywordEntriesFor(batman).map((entry) => entry.term).slice(0, 3)).toEqual(["Battlecry", "Freeze", "Silence"]);
+  });
+  it("shows a silenced minion no keyword panel at all", () => {
+    const minion = spawnTestMinion(card("Avatar Aang"), 0);
+    expect(minionKeywordEntriesFor(minion).length).toBeGreaterThan(0);
+    expect(minionKeywordEntriesFor({ ...minion, silenced: true })).toEqual([]);
   });
 });

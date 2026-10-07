@@ -4180,6 +4180,32 @@ button:disabled {
   padding: 0 18px;
 }
 
+/* Up to 1180px the duel toolbar is compact, so on a desktop window that keeps
+   the full table (901 to 1180px wide) it fits its column instead of sliding
+   under the enemy plate. Phones and tablets fold it into the Menu button. */
+@media (max-width: 1180px) {
+  .system-buttons {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .system-buttons button {
+    min-height: 26px;
+    padding: 0 8px;
+    font-size: 0.68rem;
+  }
+
+  .system-buttons .fullscreen-label {
+    display: none;
+  }
+
+  .system-buttons .fullscreen-trigger {
+    width: 30px;
+    padding-inline: 0;
+  }
+}
+
 /* ============================================================================
    NARROW SCREENS — a real portrait layout, not a squeezed desktop one.
 
@@ -4199,8 +4225,15 @@ button:disabled {
        the tap-to-select-then-tap-to-place path that already exists takes over.
        That path is not a mobile special case — it is how the game has always
        worked with a mouse.
+
+   THE SAME CONDITIONS AS mobile.css, which loads later and finishes this layout.
+   A bare `max-width: 1180px` also caught a mouse-driven desktop window between
+   901 and 1180px wide: mobile.css stayed out, so the half-built phone layout
+   showed alone — board slots packed to the left with an empty strip on the
+   right, and the hand running off the left edge at 1024×768. That window now
+   keeps the desktop table, which fits it.
    ============================================================================ */
-@media (max-width: 1180px) {
+@media (max-width: 900px), (max-width: 1180px) and (pointer: coarse), (max-width: 1180px) and (max-height: 600px) and (orientation: landscape) {
   .hs-shell {
     padding: 0;
   }
@@ -4221,27 +4254,6 @@ button:disabled {
 
   .brand-mini strong {
     display: none; /* the mark alone; the word costs a button's worth of width */
-  }
-
-  .system-buttons {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 4px;
-  }
-
-  .system-buttons button {
-    min-height: 26px;
-    padding: 0 8px;
-    font-size: 0.68rem;
-  }
-
-  .system-buttons .fullscreen-label {
-    display: none;
-  }
-
-  .system-buttons .fullscreen-trigger {
-    width: 30px;
-    padding-inline: 0;
   }
 
   .table-frame {
@@ -5240,71 +5252,6 @@ button:disabled {
 
 .gallery-cell.mark-won {
   box-shadow: 0 0 0 2px rgba(224, 169, 58, 0.95), 0 0 16px rgba(224, 169, 58, 0.4);
-}
-
-/* ---------------------------------------------------------------------------
-   The record panel.
-   --------------------------------------------------------------------------- */
-.record-body {
-  overflow-y: auto;
-}
-
-.record-headline {
-  display: flex;
-  gap: 26px;
-  flex-wrap: wrap;
-  padding: 4px 0 18px;
-}
-
-.record-figure {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-}
-
-.record-figure b {
-  font-family: "Baloo 2", cursive;
-  font-size: 2.1rem;
-  color: var(--gold, #e0a93a);
-}
-
-.record-figure span {
-  font-size: 0.82rem;
-  color: rgba(246, 236, 216, 0.62);
-}
-
-.record-heading {
-  margin: 18px 0 8px;
-  font-size: 0.86rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: rgba(246, 236, 216, 0.58);
-}
-
-.record-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.92rem;
-}
-
-.record-table th,
-.record-table td {
-  padding: 7px 10px;
-  text-align: right;
-  border-bottom: 1px solid rgba(246, 236, 216, 0.1);
-}
-
-.record-table thead th {
-  font-size: 0.76rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgba(246, 236, 216, 0.5);
-}
-
-.record-table th[scope="row"],
-.record-table thead th:first-child {
-  text-align: left;
-  color: rgba(246, 236, 216, 0.92);
 }
 
 /* ---------------------------------------------------------------------------
