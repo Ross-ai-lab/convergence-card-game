@@ -217,6 +217,7 @@ node scripts/duel-performance.mjs http://127.0.0.1:5181 --baseline=http://127.0.
 The seed URL must be the development server. Each run creates its own browser storage and uses real legal actions, decoded artwork and active animations.
 The default scenario plays John Wick, Giant Tree, Ainz and Meteor. `--scenario=triggers` starts with eight real bodies and exercises Godzilla reactions, Reborn and a hard bot turn.
 `--cpu-rate=4` adds a separate slower-CPU comparison. Do not mix its results with normal-speed runs.
+`--gpu` uses the machine's graphics device. Without it, headless Chromium composites in software and hides layer, blend-mode and blur costs, so judge gallery scrolling and idle duels with `--gpu`.
 The runner alternates build order and saves frame intervals, long tasks and CPU profiles in `.preview/duel-performance/`.
 Compare repeated runs without other check suites competing for CPU. Automated Chromium timings are evidence for those scenes, not a guaranteed frame rate on every device.
 Never use `settleMotion` or disable animations in a final smoothness comparison. Temporary CSS bisection is diagnostic only.

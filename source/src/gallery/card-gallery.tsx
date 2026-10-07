@@ -166,9 +166,18 @@ export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHero
     camp: "",
     alignment: "",
   });
-  /** The scrolling element, so the scroll handler can flag it without a render. */
+  /** The scrolling element, so a new search or filter can return to the top. */
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const openEntry = useCallback((entryKey: string) => setSelectedEntryKey(entryKey), []);
+  // Stable callbacks keep the memoised cells still when unrelated gallery state
+  // changes, such as hovering the deck list. They read the latest deck at click time.
+  const latestDeck = useRef({ deck, onChange });
+  latestDeck.current = { deck, onChange };
+  const toggleCard = useCallback((entryKey: string) => {
+    const { deck, onChange } = latestDeck.current;
+    onChange(deck.includes(entryKey) ? deck.filter(id => id !== entryKey) : [...deck, entryKey]);
+  }, []);
+  const showLockedInfo = useCallback((key: string, rect: DOMRect) => { setDeckPreview(null); setLockedInfo({ key, rect }); }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -277,36 +286,6 @@ export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHero
     (outer && getComputedStyle(outer).overflowY === 'auto' ? outer : body)?.scrollTo({ top: 0 });
   }, [needle, filters, status]);
 
-  /**
-   * Flags the body while it is being scrolled, so the CSS can park the card
-   * shine for the duration.
-   *
-   * Deliberately a classList write and not a state update. A scroll fires far
-   * more often than a frame, and re-rendering the full memoised grid to
-   * say "we are moving" would cost more than the animations it is trying to
-   * quieten.
-   */
-  useEffect(() => {
-    const body = bodyRef.current;
-    if (!body) return;
-    let idleTimer = 0;
-    const onScroll = () => {
-      body.classList.add("is-scrolling");
-      window.clearTimeout(idleTimer);
-      // Long enough to cover the tail of a flick, short enough that letting go
-      // and looking brings the shine straight back.
-      idleTimer = window.setTimeout(() => body.classList.remove("is-scrolling"), 140);
-    };
-    body.addEventListener("scroll", onScroll, { passive: true });
-    const outer = body.closest('.gallery-mobile-scroll');
-    outer?.addEventListener('scroll', onScroll, {passive:true});
-    return () => {
-      body.removeEventListener("scroll", onScroll);
-      outer?.removeEventListener('scroll', onScroll);
-      window.clearTimeout(idleTimer);
-      body.classList.remove("is-scrolling");
-    };
-  }, []);
 
   const manaCurve = Array.from({length:10},(_,i)=>allEntries.filter(entry=>deckIds.has(entry.key) && entry.face.cost===i+1).length);
   const manaPeak = Math.max(1,...manaCurve);
@@ -401,10 +380,10 @@ export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHero
                   locked={!collection.unlocked.has(entry.key)}
                   entryKey={entry.key}
                   onOpen={openEntry}
-                  onLocked={(key,rect)=>{setDeckPreview(null);setLockedInfo({key,rect});}}
+                  onLocked={showLockedInfo}
                   inDeck={deckIds.has(entry.key)}
                   canAdd={!readOnly && (deckIds.has(entry.key) || deck.length < 30) && collection.unlocked.has(entry.key)}
-                  onAdd={() => onChange(deckIds.has(entry.key) ? deck.filter(id => id !== entry.key) : [...deck, entry.key])}
+                  onToggle={toggleCard}
                   mark={
                     collection.wonWith.has(entry.key)
                       ? "won"
@@ -502,7 +481,7 @@ const GalleryCell = memo(function GalleryCell({
   onOpen,
   inDeck,
   canAdd,
-  onAdd,
+  onToggle,
   onLocked,
 }: {
   entryKey: string;
@@ -514,17 +493,20 @@ const GalleryCell = memo(function GalleryCell({
   onOpen: (entryKey: string) => void;
   inDeck: boolean;
   canAdd: boolean;
-  onAdd: () => void;
+  onToggle: (entryKey: string) => void;
   onLocked: (entryKey:string,rect:DOMRect)=>void;
 }) {
   const { ref, near, onFocus } = useGalleryVisibility();
   const hold = useRef<{timer:number; x:number; y:number; id:number} | null>(null);
   const heldClick = useRef(false);
-  const cancelHold = useCallback(() => { if (hold.current) window.clearTimeout(hold.current.timer); hold.current = null; }, []);
-  useEffect(() => {
-    document.addEventListener('scroll', cancelHold, true);
-    return () => { cancelHold(); document.removeEventListener('scroll', cancelHold, true); };
-  }, [cancelHold]);
+  // A scroll cancels a pending hold. The listener exists only while a hold is
+  // pending: one per cell, permanently, ran every card's handler on every scroll.
+  const cancelHold = useCallback(function cancel() {
+    if (!hold.current) return;
+    window.clearTimeout(hold.current.timer); hold.current = null;
+    document.removeEventListener('scroll', cancel, true);
+  }, []);
+  useEffect(() => cancelHold, [cancelHold]);
   return (
     <div
       ref={ref}
@@ -538,6 +520,7 @@ const GalleryCell = memo(function GalleryCell({
         hold.current = {id:event.pointerId,x:event.clientX,y:event.clientY,timer:window.setTimeout(() => {
           heldClick.current = true; cancelHold(); onOpen(entryKey);
         },1000)};
+        document.addEventListener('scroll', cancelHold, true);
       }}
       onPointerMove={event => { const pending=hold.current; if (pending && Math.hypot(event.clientX-pending.x,event.clientY-pending.y)>10) {heldClick.current=true;cancelHold();} }}
       onPointerUp={cancelHold}
@@ -547,7 +530,7 @@ const GalleryCell = memo(function GalleryCell({
       <CardFace card={face} lazyArt quiet interactiveKeywords />
       {inDeck && <span className="gallery-deck-badge" aria-hidden="true">✓ In deck</span>}
       <button type="button" className="gallery-card-add" aria-label={locked?`Unlock requirements for ${face.name}`:`${inDeck ? "Remove" : "Add"} ${face.name}`} aria-pressed={inDeck}
-        disabled={!canAdd&&!locked} onClick={event=>locked?onLocked(entryKey,event.currentTarget.getBoundingClientRect()):onAdd()} />
+        disabled={!canAdd&&!locked} onClick={event=>locked?onLocked(entryKey,event.currentTarget.getBoundingClientRect()):onToggle(entryKey)} />
       <button type="button" className="gallery-card-name" aria-label={`Open Star Chart for ${face.name}`}
         title={`Open ${face.name} lore`} onClick={() => onOpen(entryKey)} />
       {near && locked ? (

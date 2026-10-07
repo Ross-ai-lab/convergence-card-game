@@ -1,9 +1,10 @@
 /** The viewer's hand fan and mana tray along the bottom of the duel. */
-import { useState, type CSSProperties, type PointerEvent } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { effectiveCardCost, type CardLibrary } from "../engine/game";
 import type { GameState, PlayableCard, PlayerId } from "../engine/types";
 import { CardFace, playableFace } from "../card-face";
 import type { ManaFx } from "./fx";
+import type { PointerStore } from "../pointer-store";
 
 /** Hand card width, matching `.hand-card`'s flex-basis in App.css. */
 const HAND_CARD_W = 118;
@@ -192,6 +193,24 @@ export function ManaTray({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * The card being dragged from the hand. It follows the pointer store and
+ * writes its own transform each frame, so a drag never re-renders the duel.
+ */
+export function DragGhost({ pointer, children }: { pointer: PointerStore; children: ReactNode }) {
+  const layer = useRef<HTMLDivElement>(null);
+  const place = (point: { x: number; y: number } | null) => point ? `translate(${point.x - 64}px, ${point.y - 104}px)` : undefined;
+  useLayoutEffect(() => pointer.subscribe(() => {
+    const transform = place(pointer.get());
+    if (layer.current && transform) layer.current.style.transform = transform;
+  }), [pointer]);
+  return (
+    <div ref={layer} className="drag-layer" style={{ transform: place(pointer.get()) }} aria-hidden="true">
+      <div className="drag-card">{children}</div>
     </div>
   );
 }

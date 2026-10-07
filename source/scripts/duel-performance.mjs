@@ -93,7 +93,10 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   const runs=Number(option('runs','3')),cpuRate=Number(option('cpu-rate','1'));
   const label=option('label','comparison'),scenario=option('scenario','plays');
   if(!Number.isInteger(runs)||runs<1||!Number.isFinite(cpuRate)||cpuRate<1||!/^[a-zA-Z0-9_.-]+$/.test(label)||!['plays','triggers'].includes(scenario))throw new Error('Invalid performance comparison options');
-  const {launch}=await import('./browser.mjs');const browser=await launch();const results=[];
+  // --gpu uses the machine's real graphics device. Headless Chromium otherwise
+  // composites in software, which hides layer, blend and blur costs entirely.
+  const gpu=args.includes('--gpu')?['--enable-gpu','--ignore-gpu-blocklist','--enable-gpu-rasterization',...(process.platform==='win32'?['--use-angle=d3d11']:[])]:[];
+  const {launch}=await import('./browser.mjs');const browser=await launch(gpu);const results=[];
   try {
     for(let run=1;run<=runs;run++) {
       // Alternate ordering so warm-up or machine load does not always favour one side.

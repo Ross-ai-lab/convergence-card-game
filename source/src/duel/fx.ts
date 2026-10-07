@@ -94,6 +94,29 @@ function rand(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
+/**
+ * At most this many particles start from one action. A hit, a summon or a trade
+ * between two minions stays under it untouched. A board-wide clear started over
+ * two hundred at once, and creating them all in one frame was about a third of
+ * that frame's stall, so above the budget every burst keeps an even share.
+ */
+export const PARTICLE_BUDGET = 96;
+/** The fewest particles a thinned burst keeps, so every burst still reads. */
+const MIN_BURST_PARTICLES = 4;
+
+/** Thin each burst to its share of the budget, sampling evenly so rings stay rings. */
+export function budgetParticles(bursts: Array<{ particles: Particle[] }>, budget = PARTICLE_BUDGET): void {
+  const total = bursts.reduce((sum, burst) => sum + burst.particles.length, 0);
+  if (total <= budget) return;
+  const share = budget / total;
+  for (const burst of bursts) {
+    const count = burst.particles.length;
+    const keep = Math.min(count, Math.max(MIN_BURST_PARTICLES, Math.round(count * share)));
+    const stride = count / keep;
+    burst.particles = Array.from({ length: keep }, (_, index) => burst.particles[Math.floor(index * stride)]);
+  }
+}
+
 export function makeParticles(kind: ImpactKind | "death" | "stasis", camp?: Camp): Particle[] {
   const out: Particle[] = [];
   const push = (dx: number, dy: number, size: number, delay: number, rot: number, dur: number) =>

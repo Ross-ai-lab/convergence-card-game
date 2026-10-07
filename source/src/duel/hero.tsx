@@ -89,6 +89,9 @@ export function HeroPlate({
       aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : undefined}
     >
       {enemy && <span className="hero-health-fill" aria-hidden="true" style={{width:`${Math.max(0,Math.min(1,player.health/STARTING_CORE))*100}%`,'--boss-tint':campAccent(identity && isMinionCard(identity.card) ? identity.card.camp : 'Nature')} as CSSProperties} />}
+      {/* Light layers that pulse by opacity alone, so the compositor runs them. */}
+      {targetable && <span className="hero-plate-pulse" aria-hidden="true" />}
+      {wasHit && <span className="hero-plate-flash" aria-hidden="true" />}
       <span className="hero-sigil" title={identity ? identity.card.name : `${player.name}'s sigil`}>
         {identity ? <img className="boss-portrait" src={identity.card.art} alt={`${identity.card.name} portrait`} draggable={false} /> : <HeroSigil playerId={player.id} />}
       </span>

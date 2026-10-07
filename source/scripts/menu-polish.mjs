@@ -28,6 +28,9 @@ export async function checkMenuPolish(page) {
   // Half of the real starting core, read from the engine: a hardcoded 25 went stale when cores moved to 30.
   const start=await page.evaluate(async()=>(await import('/src/engine/game.ts')).STARTING_CORE);
   await page.evaluate(value=>window.__debug.setCore('them',value),start/2);await settleMotion(page);
+  // The fill eases to its new width over 480 ms. A transition already running
+  // ignores the settle style, so under load a fixed pause measured it mid-slide.
+  await page.waitForFunction(()=>document.querySelector('.hero-health-fill')?.getAnimations().length===0);
   const bar=await page.locator('.hero-plate.enemy').boundingBox(),fill=await page.locator('.hero-health-fill').boundingBox();
   assert(Math.abs(fill.width/bar.width-.5)<.03,'Boss health does not deplete the bar');
   assert.equal(await page.locator('.hero-health-fill').textContent(),'');

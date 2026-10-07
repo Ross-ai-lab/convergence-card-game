@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import type { GameAction, GameState, MinionInstance, PendingTarget, PlayerId, RelicInstance, SlotAuraId } from "../engine/types";
 import { CardFace, relicFace } from "../card-face";
 import type { FloatNum, Ghost, Impact, Lunge, Particle, RelicFlash, TauntFlash } from "./fx";
+import type { PointerStore, ScreenPoint } from "../pointer-store";
 
 export type Selection =
   | { kind: "hand"; handIndex: number }
@@ -404,16 +405,38 @@ function StasisBurst({ particles }: { particles: Particle[] }) {
   );
 }
 
-export function TargetingArrow({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
-  const dist = Math.hypot(x2 - x1, y2 - y1);
+/** A curve that lifts with its length, from the source to the pointer. */
+function arrowGeometry(from: ScreenPoint, to: ScreenPoint): { path: string; head: string } {
+  const dist = Math.hypot(to.x - from.x, to.y - from.y);
   const lift = Math.min(90, dist * 0.28);
-  const cx = x1 + (x2 - x1) / 2;
-  const cy = y1 + (y2 - y1) / 2 - lift;
-  const angle = (Math.atan2(y2 - cy, x2 - cx) * 180) / Math.PI;
+  const cx = from.x + (to.x - from.x) / 2;
+  const cy = from.y + (to.y - from.y) / 2 - lift;
+  const angle = (Math.atan2(to.y - cy, to.x - cx) * 180) / Math.PI;
+  return { path: `M ${from.x} ${from.y} Q ${cx} ${cy} ${to.x} ${to.y}`, head: `translate(${to.x} ${to.y}) rotate(${angle})` };
+}
+
+/**
+ * The targeting arrow, from its source to the live pointer. It follows the
+ * pointer store directly, rewriting two attributes per frame, so aiming never
+ * re-renders the duel.
+ */
+export function FollowingArrow({ from, pointer }: { from: ScreenPoint; pointer: PointerStore }) {
+  const path = useRef<SVGPathElement>(null);
+  const head = useRef<SVGGElement>(null);
+  const initial = arrowGeometry(from, pointer.get() ?? from);
+  useLayoutEffect(() => {
+    const draw = () => {
+      const geometry = arrowGeometry(from, pointer.get() ?? from);
+      path.current?.setAttribute("d", geometry.path);
+      head.current?.setAttribute("transform", geometry.head);
+    };
+    draw();
+    return pointer.subscribe(draw);
+  }, [from, pointer]);
   return (
     <svg className="target-arrow" aria-hidden="true">
-      <path className="arrow-path" d={`M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`} />
-      <g transform={`translate(${x2} ${y2}) rotate(${angle})`}>
+      <path ref={path} className="arrow-path" d={initial.path} />
+      <g ref={head} transform={initial.head}>
         <polygon className="arrow-head" points="-6,-13 22,0 -6,13" />
       </g>
     </svg>

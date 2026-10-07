@@ -110,18 +110,26 @@
   pointer-events: none;
 }
 
-.floating-card-field img {
+/* The wrapper moves; the picture inside it carries the filter and shadow, so
+   they are drawn into the wrapper's layer once instead of every frame. */
+.floating-card-field .float-card {
   position: absolute;
   width: clamp(48px, 8vw, 116px);
   aspect-ratio: 5 / 7;
+  opacity: var(--float-opacity);
+  will-change: transform;
+  animation: floating-card-drift var(--float-duration) linear var(--float-delay) infinite;
+}
+
+.floating-card-field img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border: 1px solid rgba(240, 199, 103, 0.34);
   border-radius: 8px;
-  opacity: var(--float-opacity);
   filter: saturate(0.86) contrast(0.92) brightness(0.72);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
-  will-change: transform;
-  animation: floating-card-drift var(--float-duration) linear var(--float-delay) infinite;
 }
 
 @keyframes floating-card-drift {
@@ -1218,13 +1226,9 @@
   background: rgba(10, 4, 18, 0.025);
 }
 
-.floating-card-field img {
+.floating-card-field .float-card {
   width: clamp(52px, 7.4vw, 118px);
-  border-color: rgba(240, 199, 103, 0.48);
-  border-radius: 9px;
   opacity: var(--float-opacity);
-  filter: blur(var(--float-blur)) saturate(1.04) contrast(1.05) brightness(0.82);
-  box-shadow: 0 18px 38px rgba(4, 1, 10, 0.62), 0 0 16px rgba(126, 80, 186, 0.28);
   animation-name: floating-card-rise;
   animation-duration: var(--float-duration);
   animation-timing-function: linear;
@@ -1232,7 +1236,14 @@
   animation-iteration-count: infinite;
 }
 
-.floating-card-field img.reverse {
+.floating-card-field img {
+  border-color: rgba(240, 199, 103, 0.48);
+  border-radius: 9px;
+  filter: blur(var(--float-blur)) saturate(1.04) contrast(1.05) brightness(0.82);
+  box-shadow: 0 18px 38px rgba(4, 1, 10, 0.62), 0 0 16px rgba(126, 80, 186, 0.28);
+}
+
+.floating-card-field .float-card.reverse {
   animation-name: floating-card-fall;
 }
 
@@ -1825,7 +1836,7 @@ button.duel-trigger:hover:not(:disabled) {
     font-size: 9px;
   }
 
-  .floating-card-field img {
+  .floating-card-field .float-card {
     width: clamp(44px, 15vw, 76px);
   }
 

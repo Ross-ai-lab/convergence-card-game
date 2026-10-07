@@ -46,9 +46,12 @@ try {
   assert.equal(results.gallery.faces, results.gallery.cells, 'Every shell retains its full face');
   assert(results.gallery.near > 0 && results.gallery.near < results.gallery.cells, 'Only nearby artwork is eager');
   assert(await page.locator('.gallery-cell').evaluateAll(cells => cells.every(cell => getComputedStyle(cell).contentVisibility === 'visible')), 'Gallery still uses paint-skipping containment');
+  // The covered title skips rendering entirely (content-visibility), which also
+  // freezes its style, so its animations stay nominally "running" but draw nothing.
   const backdropRunning = await page.evaluate(() => document.getAnimations().filter(a =>
-    a.playState === 'running' && a.effect?.target?.closest?.('.title-screen')).length);
-  assert.equal(backdropRunning, 0, 'Menu animations must pause behind the gallery');
+    a.playState === 'running' && a.effect?.target?.closest?.('.title-screen') && a.effect.target.checkVisibility()).length);
+  assert.equal(backdropRunning, 0, 'Menu animations must pause or stop rendering behind the gallery');
+  assert.equal(await page.locator('.title-screen').evaluate(el => getComputedStyle(el).contentVisibility), 'hidden', 'The covered title must skip rendering');
   await page.getByLabel('Filter by unlocked or locked').selectOption('locked');
   await sample('locked');
   await page.evaluate(() => { const body = document.querySelector('.gallery-body'); body.scrollTop = body.scrollHeight; });

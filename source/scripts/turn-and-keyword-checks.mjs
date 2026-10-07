@@ -41,6 +41,8 @@ export async function checkTurnAndKeywords(browser,base){
       const deadline=await duel.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v32')).turnClock.deadline);
       const rng=await duel.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v32')).game.rngSeed);
       await duel.locator('.hand-card').click();await duel.locator('[data-slot="0-0"]').click();await duel.locator('.card-choice-prompt').waitFor();
+      // Saves are coalesced into idle time (up to 200 ms), so wait for this one to land.
+      await duel.waitForFunction(rng=>JSON.parse(localStorage.getItem('convergence.save.v32')).game.rngSeed!==rng,rng,{timeout:3000}).catch(()=>{});
       assert.notEqual(await duel.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v32')).game.rngSeed),rng,'The test did not exercise a random effect');
       assert.equal(await duel.evaluate(()=>JSON.parse(localStorage.getItem('convergence.save.v32')).turnClock.deadline),deadline,'A random card play reset the human deadline');
      }

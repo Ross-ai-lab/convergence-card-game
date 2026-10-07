@@ -19,7 +19,7 @@ import { sfx } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
 import { BOT_CHEATS } from "./engine/bot";
 import { BotSearch } from "./engine/bot-search";
-import { useFrameState } from "./frame-state";
+import { PointerStore, type ScreenPoint } from "./pointer-store";
 
 import { requestPhoneLandscape, usePhoneLayout } from './phone-layout';
 import { useRelicPeek } from './relic-peek';
@@ -92,8 +92,8 @@ import { useDuelFx } from "./duel/use-duel-fx";
 import { useCardPreview } from "./duel/use-card-preview";
 import { useDebugHook } from "./duel/use-debug-hook";
 import { applyDeveloperEdit, type DeveloperEdit } from "./duel/developer-edits";
-import { BoardRow, canAttackCore, otherPlayer, TargetingArrow, type Selection } from "./duel/board";
-import { HandFan, ManaTray } from "./duel/hand";
+import { BoardRow, canAttackCore, FollowingArrow, otherPlayer, type Selection } from "./duel/board";
+import { DragGhost, HandFan, ManaTray } from "./duel/hand";
 import { HeroPlate, HeroPowerButton, HeroPowerCard, ProtocolWarningBubble } from "./duel/hero";
 import { DrawChoiceOverlay, EventLog, HoverCard, MulliganOverlay, TargetPrompt, TutorialCoach } from "./duel/panels";
 import { CardPack } from "./duel/card-pack";
@@ -141,13 +141,12 @@ const DEVELOPER_MVP_INSTANCE = "developer-mvp";
 const DEVELOPER_MVP_DAMAGE = 42;
 
 // Pointer-driven drag & drop. A press only becomes a drag after DRAG_THRESHOLD px
-// of movement, so plain clicks keep the original select-then-click flow.
+// of movement, so plain clicks keep the original select-then-click flow. The
+// live pointer position is not here: it lives in the PointerStore.
 type DragState =
-  | { kind: "hand"; handIndex: number; cardId: string; x: number; y: number; active: boolean }
-  | { kind: "attacker"; slotIndex: number; ox: number; oy: number; x: number; y: number; active: boolean }
+  | { kind: "hand"; handIndex: number; cardId: string; active: boolean }
+  | { kind: "attacker"; slotIndex: number; ox: number; oy: number; active: boolean }
   | null;
-
-type ScreenPoint = { x: number; y: number };
 
 const DRAG_THRESHOLD = 8;
 
@@ -382,11 +381,14 @@ export default function App() {
   /** Whether the enemy Hero Power card is showing. Opened by a click, not a hover. */
   const [enemyPowerOpen, setEnemyPowerOpen] = useState(false);
   const [apexAlert,setApexAlert]=useState<number|null>(null);
-  const [drag, setDrag, scheduleDrag] = useFrameState<DragState>(null);
+  const [drag, setDrag] = useState<DragState>(null);
+  /** Where a drag or an aim points. Moves re-render only the ghost and the arrow. */
+  const pointer = useMemo(() => new PointerStore(), []);
+  useEffect(() => () => pointer.cancel(), [pointer]);
+  const dragArrowOrigin = useMemo(() => (drag?.kind === "attacker" ? { x: drag.ox, y: drag.oy } : null), [drag]);
   const preview = useCardPreview(game, library, Boolean(drag?.active));
   const { clearHoverPreview, clearHandKeywords } = preview;
   const [targetArrowOrigin, setTargetArrowOrigin] = useState<ScreenPoint | null>(null);
-  const [targetArrowPointer, setTargetArrowPointer, scheduleTargetArrowPointer] = useFrameState<ScreenPoint | null>(null);
   const [playerCount, setPlayerCount] = useState<number | null>(null);
   /** Herald lines already spoken this duel. A ref, so a re-render cannot re-fire one. */
   const heraldSaid = useRef(new Set<string>());
@@ -693,7 +695,6 @@ export default function App() {
     fx.clear({ newDuel });
     setDrag(null);
     setTargetArrowOrigin(null);
-    setTargetArrowPointer(null);
     clearHoverPreview();
   }
 
@@ -758,7 +759,6 @@ export default function App() {
       setSelection(null);
       clearHoverPreview();
       setTargetArrowOrigin(null);
-      setTargetArrowPointer(null);
       fx.clearTauntFlash();
       if (bargainChoice) fx.showToast(`Doctor Strange's bargain chosen: ${bargainChoice}`, 3000, "bargain");
 
@@ -1122,7 +1122,7 @@ export default function App() {
 
   function trackTargetPointer(event: React.PointerEvent<HTMLElement>) {
     if (game.phase === "main" && selection?.kind === "attacker" && !drag?.active) {
-      scheduleTargetArrowPointer({ x: event.clientX, y: event.clientY });
+      pointer.schedule({ x: event.clientX, y: event.clientY });
       return;
     }
     if (
@@ -1133,7 +1133,7 @@ export default function App() {
     ) {
       return;
     }
-    scheduleTargetArrowPointer({ x: event.clientX, y: event.clientY });
+    pointer.schedule({ x: event.clientX, y: event.clientY });
   }
 
   function onHandCard(handIndex: number) {
@@ -1201,7 +1201,7 @@ export default function App() {
     if (bounds) {
       const origin = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
       setTargetArrowOrigin(origin);
-      setTargetArrowPointer(origin);
+      pointer.set(origin);
     }
     const minion = viewer.board[slotIndex];
     if (minion && attacksRandomly(game, minion)) fx.showToast("Swinging blind — the target is rolled");
@@ -1214,7 +1214,6 @@ export default function App() {
     setSelection(null);
     clearHoverPreview();
     setTargetArrowOrigin(null);
-    setTargetArrowPointer(null);
     return true;
   }
 
@@ -1316,7 +1315,7 @@ export default function App() {
       // synthetic events have no active pointer — drag still works without capture
     }
     dragOrigin.current = { x: e.clientX, y: e.clientY };
-    setDrag({ kind: "hand", handIndex, cardId: viewer.hand[handIndex], x: e.clientX, y: e.clientY, active: false });
+    setDrag({ kind: "hand", handIndex, cardId: viewer.hand[handIndex], active: false });
   }
 
   function startAttackDrag(e: React.PointerEvent<HTMLElement>, slotIndex: number, canAttack: boolean) {
@@ -1336,8 +1335,6 @@ export default function App() {
       slotIndex,
       ox: r.left + r.width / 2,
       oy: r.top + r.height / 2,
-      x: e.clientX,
-      y: e.clientY,
       active: false,
     });
   }
@@ -1354,12 +1351,13 @@ export default function App() {
       else {
         armAttacker(drag.slotIndex);
         setTargetArrowOrigin(null);
-        setTargetArrowPointer(null);
       }
     }
     // Activate immediately so a release before the next frame still drops the card.
-    if (becameActive) setDrag({ ...drag, x: e.clientX, y: e.clientY, active: true });
-    else if (drag.active) scheduleDrag({ ...drag, x: e.clientX, y: e.clientY, active: true });
+    if (becameActive) {
+      pointer.set({ x: e.clientX, y: e.clientY });
+      setDrag({ ...drag, active: true });
+    } else if (drag.active) pointer.schedule({ x: e.clientX, y: e.clientY });
   }
 
   function endDrag(e: React.PointerEvent) {
@@ -1496,7 +1494,6 @@ export default function App() {
       (pendingTarget.kind !== "board" && pendingTarget.kind !== "slot" && pendingTarget.kind !== "boardOrCore")
     ) {
       setTargetArrowOrigin(null);
-      setTargetArrowPointer(null);
       return;
     }
 
@@ -1515,12 +1512,11 @@ export default function App() {
     const bounds = sourceElement?.getBoundingClientRect();
     if (!bounds) {
       setTargetArrowOrigin(null);
-      setTargetArrowPointer(null);
       return;
     }
     const origin = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
     setTargetArrowOrigin(origin);
-    setTargetArrowPointer(origin);
+    pointer.set(origin);
   }, [game.phase, pendingTarget?.kind, targetSourceKey, viewerId]);
   // Read off the state rather than asking the bot — chooseBotAction simulates
   // every legal move, which is far too much work to redo on every render.
@@ -1586,6 +1582,7 @@ export default function App() {
         "hs-shell",
         screen === "title" ? "at-title" : "",
         overlay || developerToolsOpen || pack || chapterSpeech || defeatedChapter ? "has-overlay" : "",
+        overlay === "deck" ? "title-covered" : "",
         drag?.active ? "grabbing" : "",
         tutorialActive ? "tutorial-mode" : "",
         developerDuelActive ? "developer-duel" : "",
@@ -1981,24 +1978,17 @@ export default function App() {
       {screen==='playing'&&!tutorialActive&&<TurnClockWarning clock={turnClock}/>}
 
       {drag?.active && drag.kind === "hand" ? (
-        <div className="drag-layer" style={{ transform: `translate(${drag.x - 64}px, ${drag.y - 104}px)` }} aria-hidden="true">
-          <div className="drag-card">
-            {library[drag.cardId] ? <CardFace card={playableFace(library[drag.cardId], effectiveCardCost(game, viewerId, library[drag.cardId]))} /> : null}
-          </div>
-        </div>
+        <DragGhost pointer={pointer}>
+          {library[drag.cardId] ? <CardFace card={playableFace(library[drag.cardId], effectiveCardCost(game, viewerId, library[drag.cardId]))} /> : null}
+        </DragGhost>
       ) : null}
 
       {drag?.active && drag.kind === "attacker" ? (
-        <TargetingArrow x1={drag.ox} y1={drag.oy} x2={drag.x} y2={drag.y} />
+        <FollowingArrow from={dragArrowOrigin!} pointer={pointer} />
       ) : null}
 
-      {targetArrowOrigin && targetArrowPointer && (pendingTarget || (selection?.kind === "attacker" && !drag?.active)) ? (
-        <TargetingArrow
-          x1={targetArrowOrigin.x}
-          y1={targetArrowOrigin.y}
-          x2={targetArrowPointer.x}
-          y2={targetArrowPointer.y}
-        />
+      {targetArrowOrigin && (pendingTarget || (selection?.kind === "attacker" && !drag?.active)) ? (
+        <FollowingArrow from={targetArrowOrigin} pointer={pointer} />
       ) : null}
 
       {/* Board/slot prompts are now entirely in-board: the highlighted legal

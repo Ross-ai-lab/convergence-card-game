@@ -16,6 +16,7 @@ import type { Camp, GameAction, GameEvent, GameState, MinionInstance, PlayerId }
 import { relicLibrary } from "../card-face";
 import { otherPlayer } from "./board";
 import {
+  budgetParticles,
   HEAVY_LANDING_COST,
   heavyLandingWeight,
   makeParticles,
@@ -328,6 +329,7 @@ export function useDuelFx(viewerId: PlayerId, opponentId: PlayerId) {
       }
     });
 
+    budgetParticles([...newImpacts, ...newGhosts]);
     if (newFloats.length) {
       setFloats((cur) => [...cur, ...newFloats]);
       const ids = new Set(newFloats.map((f) => f.id));

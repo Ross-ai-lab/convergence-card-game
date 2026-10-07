@@ -128,18 +128,19 @@ function menuArt(art: string): string {
   return art.replace("/card-art/raw/", "/card-art/menu/").replace(/\.(png|jpe?g)$/i, ".webp");
 }
 
+/**
+ * Each card is a moving wrapper around a still, filtered picture. The blur
+ * lives on the picture, so it is drawn into the wrapper's layer once and then
+ * only moved; on the moving element itself the graphics chip re-blurred all
+ * 84 cards on every frame, which held the title near 30 fps on integrated GPUs.
+ */
 function FloatingCardField() {
   return (
     <div className="floating-card-field" aria-hidden="true">
       {FLOATING_CARDS.map((card) => (
-        <img
+        <span
           key={card.id}
-          src={menuArt(card.art)}
-          alt=""
-          draggable={false}
-          loading="eager"
-          decoding="async"
-          className={card.reverse ? "reverse" : undefined}
+          className={card.reverse ? "float-card reverse" : "float-card"}
           style={
             {
               left: `${card.left}%`,
@@ -153,7 +154,9 @@ function FloatingCardField() {
               "--float-blur": `${card.blur}px`,
             } as CSSProperties
           }
-        />
+        >
+          <img src={menuArt(card.art)} alt="" draggable={false} loading="eager" decoding="async" />
+        </span>
       ))}
     </div>
   );
