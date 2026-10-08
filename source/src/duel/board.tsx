@@ -1,5 +1,5 @@
 /** The two board rows, their slot auras and the motion wrappers around live minions. */
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { GameAction, GameState, MinionInstance, PendingTarget, PlayerId, RelicInstance, SlotAuraId } from "../engine/types";
 import { CardFace, relicFace } from "../card-face";
@@ -102,6 +102,25 @@ function ReplayMotion({sequence,className,style,children,animationName}:{sequenc
   return <div ref={node} className={className} style={style}>{children}</div>;
 }
 
+/**
+ * Departures from one action begin on successive frames, one card each. Every
+ * death restyles and relays out its own card (about 7 ms), so seven at once was
+ * a single ~110 ms frame; spread out, a board wipe ripples across a tenth of a
+ * second. Until its frame, a departing card looks exactly as it did alive.
+ */
+function useDepartureRipple(ghosts: Ghost[]): (ghost: Ghost) => boolean {
+  const latest = ghosts.reduce((batch, ghost) => Math.max(batch, ghost.batch), -1);
+  const last = ghosts.reduce((order, ghost) => (ghost.batch === latest ? Math.max(order, ghost.order) : order), 0);
+  const [ripple, setRipple] = useState({ batch: -1, step: 0 });
+  const step = ripple.batch === latest ? ripple.step : 0;
+  useEffect(() => {
+    if (latest < 0 || step >= last) return;
+    const frame = requestAnimationFrame(() => setRipple({ batch: latest, step: step + 1 }));
+    return () => cancelAnimationFrame(frame);
+  }, [latest, step, last]);
+  return (ghost) => ghost.batch !== latest || ghost.order <= step;
+}
+
 export function BoardRow({
   owner,
   label,
@@ -153,6 +172,7 @@ export function BoardRow({
   /** Instance ids the hovered minion is currently affecting. */
   reach: ReadonlySet<string>;
 }) {
+  const departed = useDepartureRipple(ghosts);
   return (
     <div className="board-row" aria-label={label} data-side={owner === viewerId ? "Your board" : "Opponent's board"}>
       {game.players[owner].board.map((minion, slotIndex) => {
@@ -198,9 +218,12 @@ export function BoardRow({
         const canBeChosen =
           boardPrompt !== null &&
           boardPrompt.options.some((option,index) => option.owner === owner && option.slot === slotIndex && legalActions.some(action=>action.type==='choose_target'&&action.choiceIndex===index));
+        const slotGhosts = ghosts.filter((g) => g.owner === owner && g.slot === slotIndex);
+        // A departure still waiting for its frame keeps the slot exactly as it was.
+        const departureWaiting = slotGhosts.some((g) => !departed(g));
         const classes = [
           "board-slot",
-          minion ? "occupied" : "empty",
+          minion || departureWaiting ? "occupied" : "empty",
           auras.length ? "has-slot-aura" : "",
           auras.some((aura) => aura.auraId === "slot_bound") ? "slot-is-bound" : "",
           canPlace ? "placeable" : "",
@@ -220,7 +243,6 @@ export function BoardRow({
         ]
           .filter(Boolean)
           .join(" ");
-        const slotGhosts = ghosts.filter((g) => g.owner === owner && g.slot === slotIndex);
         const slotFloats = floats.filter((f) => f.owner === owner && f.slot === slotIndex);
         const slotImpacts = impacts.filter((fx) => fx.owner === owner && fx.slot === slotIndex);
         // Motion replays on the wrapper; the card stays mounted through impacts.
@@ -254,11 +276,11 @@ export function BoardRow({
             {/* Keep a departing body's card mounted; only its motion changes.
                 Rebuilding every death face made board-wide clears decode/layout
                 a second board just as the impact animation was starting. */}
-            {[...(minion?[{body:minion,ghost:null}]:[]),...slotGhosts.map(ghost=>({body:ghost.minion,ghost}))].map(({body,ghost})=>(
+            {[...(minion?[{body:minion,ghost:null as Ghost|null,gone:false}]:[]),...slotGhosts.map(ghost=>({body:ghost.minion,ghost,gone:departed(ghost)}))].map(({body,ghost,gone})=>(
               <ReplayMotion key={body.instanceId}
                 sequence={!ghost&&tauntFlashing?tauntFlash?.id:undefined} animationName="taunt-blocker-flash"
-                className={ghost?`minion-wrap ghost-wrap ${ghost.motion==='stasis'?'stasis':ghost.motion==='return'?`returning ${ghost.destinationOwner===viewerId?'returning-down':'returning-up'}`:'dying'}`:'minion-wrap'}
-                style={ghost?({'--fd':`${ghost.delay}s`} as CSSProperties):undefined}>
+                className={ghost&&gone?`minion-wrap ghost-wrap ${ghost.motion==='stasis'?'stasis':ghost.motion==='return'?`returning ${ghost.destinationOwner===viewerId?'returning-down':'returning-up'}`:'dying'}`:'minion-wrap'}
+                style={ghost&&gone?({'--fd':`${ghost.delay}s`} as CSSProperties):undefined}>
                 <ReplayMotion
                   sequence={!ghost&&isLunging&&lunge?lunge.id:undefined}
                   className={!ghost&&isLunging?'lunge-wrap lunging':'lunge-wrap'}
@@ -275,7 +297,7 @@ export function BoardRow({
                     {!ghost&&relicFlash?.instanceId===body.instanceId?<RelicPopup key={relicFlash.id} flash={relicFlash}/>:null}
                   </ReplayMotion>
                 </ReplayMotion>
-                {ghost?(ghost.motion==='stasis'?<StasisBurst particles={ghost.particles}/>:ghost.motion==='return'?<ReturnBurst/>:<DeathBurst particles={ghost.particles}/>):null}
+                {ghost&&gone?(ghost.motion==='stasis'?<StasisBurst particles={ghost.particles}/>:ghost.motion==='return'?<ReturnBurst/>:<DeathBurst particles={ghost.particles}/>):null}
               </ReplayMotion>
             ))}
             {auras.length ? (

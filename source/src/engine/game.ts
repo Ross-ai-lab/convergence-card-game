@@ -466,8 +466,9 @@ function heroPowerIsUsable(state: GameState, playerId: PlayerId): boolean {
   return definition.target === "none" || heroPowerTargetOptions(state, playerId, powerId).length > 0;
 }
 
-/** Rudeus makes the controller's one Hero Power payment free while active. */
-function effectiveHeroPowerCost(state: GameState, playerId: PlayerId): number {
+/** Rudeus makes the controller's one Hero Power payment free while active.
+ *  The interface shows this cost, never the printed one. */
+export function effectiveHeroPowerCost(state: GameState, playerId: PlayerId): number {
   const free = state.players[playerId].board.some(
     (minion) => minion && hasEffect(minion, "rudeus_hero_power_free"),
   );

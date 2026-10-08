@@ -34,6 +34,7 @@ import {
   CONCEALED_CHOICE_EFFECTS,
   createInitialGame,
   effectiveCardCost,
+  effectiveHeroPowerCost,
   getLegalActions,
   hasFreeRelicSlot,
   hasInfiniteMana,
@@ -1669,6 +1670,7 @@ export default function App() {
           />}
           <HeroPowerCard key={apexAlert??"power"}
             definition={heroPowerDefinition(game.heroPowers[opponentId])}
+            cost={effectiveHeroPowerCost(game, opponentId)}
             turnsRemaining={gladosTurnsRemaining}
           />
           {gladosProtocolWarning&&screen==='playing'&&<ProtocolWarningBubble turns={gladosTurnsRemaining!}/>}
@@ -1854,6 +1856,7 @@ export default function App() {
             {game.heroPowers[viewerId] ? (
               <HeroPowerButton
                 definition={heroPowerDefinition(game.heroPowers[viewerId])}
+                cost={effectiveHeroPowerCost(game, viewerId)}
                 action={uiActions.find((candidate) => candidate.type === "use_hero_power")}
                 used={game.heroPowerUsed[viewerId]}
                 onUse={(action) => {

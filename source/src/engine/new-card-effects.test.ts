@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "../data/cards";
-import { applyAction, createInitialGame, effectiveCardCost, getLegalActions, makeCardLibrary, opponentHandRevealed } from "./game";
+import { applyAction, createInitialGame, effectiveCardCost, effectiveHeroPowerCost, getLegalActions, makeCardLibrary, opponentHandRevealed } from "./game";
 import { HERO_POWER_UNLOCK_ORDER } from "./hero-powers";
 import { spawnTestMinion } from "./test-utils";
 import type { GameState, MinionInstance, PlayerId, RelicInstance } from "./types";
@@ -2851,6 +2851,8 @@ describe("direct effect reachability", () => {
     state.players[0].board[1] = minion("John Wick", 0);
 
     expect(getLegalActions(state, library)).toContainEqual({ type: "use_hero_power", player: 0 });
+    // The Hero Power button shows this cost, so it must read 0 too.
+    expect(effectiveHeroPowerCost(state, 0)).toBe(0);
     const pending = applyAction(state, { type: "use_hero_power", player: 0 }, library).state;
     expect(pending.players[0].mana).toBe(0);
     expect(pending.heroPowerUsed[0]).toBe(true);
@@ -2860,6 +2862,7 @@ describe("direct effect reachability", () => {
     pending.phase = "main";
     pending.heroPowerUsed = [false, false];
     expect(getLegalActions(pending, library)).not.toContainEqual({ type: "use_hero_power", player: 0 });
+    expect(effectiveHeroPowerCost(pending, 0)).toBe(2);
   });
 
   it("Prince Lloyd reduces damage to other friendly minions, not to himself", () => {

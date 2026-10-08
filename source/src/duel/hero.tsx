@@ -162,9 +162,9 @@ export function HeroPlate({
   );
 }
 
-export function HeroPowerCard({ definition, turnsRemaining }: { definition: ReturnType<typeof heroPowerDefinition>; turnsRemaining?: number }) {
+export function HeroPowerCard({ definition, cost: liveCost, turnsRemaining }: { definition: ReturnType<typeof heroPowerDefinition>; cost?: number; turnsRemaining?: number }) {
   if (!definition) return null;
-  const cost = heroPowerCost(definition);
+  const cost = liveCost ?? heroPowerCost(definition);
   return (
     <aside className="enemy-power-card" id="enemy-hero-power-card" aria-label={`${definition.name}: ${definition.text}`}>
       <div className="enemy-power-card-head">
@@ -185,17 +185,20 @@ export function HeroPowerCard({ definition, turnsRemaining }: { definition: Retu
 
 export function HeroPowerButton({
   definition,
+  cost: liveCost,
   action,
   used,
   onUse,
 }: {
   definition: ReturnType<typeof heroPowerDefinition>;
+  /** What using it costs right now (a board effect can waive the printed cost). */
+  cost?: number;
   action?: GameAction;
   used: boolean;
   onUse: (action: Extract<GameAction, { type: "use_hero_power" }>) => void;
 }) {
   if (!definition) return null;
-  const cost = heroPowerCost(definition);
+  const cost = liveCost ?? heroPowerCost(definition);
   const usable = action?.type === "use_hero_power" && !used;
   return (
     <button

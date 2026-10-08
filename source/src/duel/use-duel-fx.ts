@@ -241,8 +241,9 @@ export function useDuelFx(viewerId: PlayerId, opponentId: PlayerId) {
       if (!now) {
         const destinationOwner = returningOwners.get(id);
         const motion = stasisIds.has(id) ? "stasis" : destinationOwner === undefined ? "death" : "return";
+        const ghostId = fxId.current++;
         newGhosts.push({
-          id: fxId.current++,
+          id: ghostId,
           owner: entry.owner,
           slot: entry.slot,
           minion: entry.minion,
@@ -250,6 +251,8 @@ export function useDuelFx(viewerId: PlayerId, opponentId: PlayerId) {
           particles: makeParticles(motion === "stasis" ? "stasis" : "death"),
           motion,
           destinationOwner,
+          batch: newGhosts[0]?.batch ?? ghostId,
+          order: newGhosts.length,
         });
         return;
       }

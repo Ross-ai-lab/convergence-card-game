@@ -426,6 +426,17 @@ button:disabled {
   animation: table-thud calc(0.34s + 0.16s * var(--thud)) cubic-bezier(0.22, 0.9, 0.3, 1) 0.16s both;
 }
 
+/* Values set inline on one element and read only by that element are
+   registered as non-inherited. Unregistered, a new `--thud` on the table frame
+   restyled all of its ~400 elements (about 20 ms, twice per heavy play), and a
+   re-fanned hand restyled every card face inside it. */
+@property --thud { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --rot { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@property --ty { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --intro-index { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --lx { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --ly { syntax: "<length>"; inherits: false; initial-value: -30px; }
+
 @keyframes table-thud {
   0% { transform: none; }
   22% { transform: translateY(calc(9px * var(--thud))); }

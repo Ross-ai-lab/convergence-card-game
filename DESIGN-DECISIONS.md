@@ -72,6 +72,8 @@ The bot worker receives the immutable roster once and reuses it. Engine copies r
 
 The card's design unit `--u` is a registered length, declared on the card's children. It is computed once per card instead of being re-resolved inside every `calc()` of every element whenever a card restyles.
 Effects animate transform and opacity only, so the compositor runs them while the main thread is busy. A ring scales with a constant border; a flash or pulse is its own light layer that fades.
+Departures from one action start on successive frames, one card each, so a board wipe ripples across about a tenth of a second instead of restyling seven cards in one frame. Until its frame, a departing card looks exactly as it did alive.
+Values set inline on one element and read only by it (the table's thud, the hand's fan angle and lift, the attack lunge) are registered as non-inherited. Changing them never restyles the cards inside.
 One action starts at most 96 particles. Hits, summons and two-minion trades stay below that; a board-wide clear thins every burst evenly instead of creating two hundred elements in one frame.
 A moving layer never carries its own blur. Filters and shadows sit on a still child, so they are drawn once and the layer only moves; the title's floating cards and the drag ghost follow this.
 Dragging and aiming keep the pointer outside React. The drag ghost and targeting arrow follow a frame-coalesced pointer store; the duel itself does not re-render while the pointer moves.

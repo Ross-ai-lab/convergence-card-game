@@ -19,6 +19,10 @@ export type Ghost = {
   particles: Particle[];
   motion: "death" | "return" | "stasis";
   destinationOwner?: PlayerId;
+  /** Departures created by one action share a batch; each starts `order`
+   *  frames after the first, so a board wipe ripples instead of landing in one frame. */
+  batch: number;
+  order: number;
 };
 export type Lunge = { id: number; owner: PlayerId; slot: number; dx: number; dy: number } | null;
 export type ImpactKind = "hit" | "heal" | "summon" | "buff" | "debuff" | "freeze" | "shield";
