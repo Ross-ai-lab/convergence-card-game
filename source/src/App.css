@@ -2809,6 +2809,11 @@ button:disabled {
   position: relative;
   display: grid;
   place-items: center;
+  /* The Taunt plate is larger than the card, so it sizes the one grid cell.
+     Without this the oversized cell started at the top-left and pushed the
+     whole Taunt card right and down inside its slot; centred, the plate is
+     proud on every side and the card sits where every other card does. */
+  place-content: center;
   width: 100%;
   min-height: 0;
   aspect-ratio: 5 / 7;
@@ -3478,35 +3483,26 @@ button:disabled {
   border-radius: calc(12 * var(--u));
 }
 
-/* --- TAUNT: the original black steel plate behind the card -----------------
-   Taunt is a silhouette, not a label. The artwork and rules remain untouched;
-   the dark iron plate sits behind the card and is proud on every side. */
+/* --- TAUNT: a riveted steel bulwark behind the card --------------------------
+   Taunt is a silhouette, not a label. A bevelled armour frame with corner
+   brackets and side clamps sits behind the card, proud by 56 units at the sides
+   and only 32 above and below, because the two board rows are close and a
+   taller plate collided across the middle line. One vector drawing stretched to
+   the plate, so it stays crisp at every card size and is rasterised once.
+   (Owner's choice from three designs, 8 October 2026.) */
 .card-face.kw-taunt::before {
   content: "";
   grid-area: 1 / 1;
   z-index: 0;
   width: calc(862 * var(--u));
-  height: calc(1162 * var(--u));
+  height: calc(1114 * var(--u));
   pointer-events: none;
-  border-radius: calc(26 * var(--u));
-  clip-path: polygon(
-    0% 4%, 4% 0%, 18% 0%, 20% 3%, 34% 3%, 36% 0%, 64% 0%, 66% 3%, 80% 3%, 82% 0%, 96% 0%, 100% 4%,
-    100% 38%, 89% 45%, 100% 52%,
-    100% 96%, 96% 95%, 4% 95%, 0% 96%,
-    0% 52%, 11% 45%, 0% 38%
-  );
-  background:
-    repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.06) 0 calc(9 * var(--u)), rgba(0, 0, 0, 0.16) calc(9 * var(--u)) calc(19 * var(--u))),
-    linear-gradient(157deg, #8e9aa6 0%, #59626d 18%, #333a43 48%, #1b2027 76%, #6f7a86 100%);
-  box-shadow:
-    inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(0, 0, 0, 0.95),
-    inset 0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(230, 240, 255, 0.5),
-    inset 0 calc(-14 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.8),
-    0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20862%201114%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22s%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23dfe5ec%22%2F%3E%3Cstop%20offset%3D%22.2%22%20stop-color%3D%22%23909ba7%22%2F%3E%3Cstop%20offset%3D%22.48%22%20stop-color%3D%22%234b545f%22%2F%3E%3Cstop%20offset%3D%22.76%22%20stop-color%3D%22%23252b33%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237b8693%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22l%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%22.85%22%2F%3E%3Cstop%20offset%3D%22.4%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000%22%20stop-opacity%3D%22.8%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22c%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23c3ccd5%22%2F%3E%3Cstop%20offset%3D%22.5%22%20stop-color%3D%22%235d6773%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%231b2026%22%2F%3E%3C%2FlinearGradient%3E%3CradialGradient%20id%3D%22r%22%20cx%3D%22.35%22%20cy%3D%22.3%22%20r%3D%22.8%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%2F%3E%3Cstop%20offset%3D%22.3%22%20stop-color%3D%22%23ccd5de%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%231e242b%22%2F%3E%3C%2FradialGradient%3E%3Cpath%20id%3D%22k%22%20d%3D%22M4%2040Q4%204%2040%204H230L214%2030H52V210L4%20228Z%22%2F%3E%3Cg%20id%3D%22b%22%3E%3Cuse%20href%3D%22%23k%22%20fill%3D%22url(%23c)%22%20stroke%3D%22%2306080b%22%20stroke-width%3D%225%22%2F%3E%3Ccircle%20cx%3D%2225%22%20cy%3D%2225%22%20r%3D%2211%22%20fill%3D%22url(%23r)%22%20stroke%3D%22%2306080b%22%20stroke-width%3D%223%22%2F%3E%3Ccircle%20cx%3D%22140%22%20cy%3D%2217%22%20r%3D%228%22%20fill%3D%22url(%23r)%22%20stroke%3D%22%2306080b%22%20stroke-width%3D%222.5%22%2F%3E%3Ccircle%20cx%3D%2225%22%20cy%3D%22140%22%20r%3D%228%22%20fill%3D%22url(%23r)%22%20stroke%3D%22%2306080b%22%20stroke-width%3D%222.5%22%2F%3E%3C%2Fg%3E%3C%2Fdefs%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%22856%22%20height%3D%221108%22%20rx%3D%2234%22%20fill%3D%22url(%23s)%22%20stroke%3D%22%2306080b%22%20stroke-width%3D%226%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%2211%22%20width%3D%22840%22%20height%3D%221092%22%20rx%3D%2228%22%20fill%3D%22none%22%20stroke%3D%22url(%23l)%22%20stroke-width%3D%226%22%2F%3E%3Crect%20x%3D%2246%22%20y%3D%2220%22%20width%3D%22770%22%20height%3D%221074%22%20rx%3D%2218%22%20fill%3D%22none%22%20stroke%3D%22%2306080b%22%20stroke-width%3D%2210%22%2F%3E%3Crect%20x%3D%2240%22%20y%3D%2215%22%20width%3D%22782%22%20height%3D%221084%22%20rx%3D%2221%22%20fill%3D%22none%22%20stroke%3D%22%23eef3f8%22%20stroke-opacity%3D%22.3%22%20stroke-width%3D%222.5%22%2F%3E%3Cuse%20href%3D%22%23b%22%2F%3E%3Cuse%20href%3D%22%23b%22%20transform%3D%22translate(862%200)%20scale(-1%201)%22%2F%3E%3Cuse%20href%3D%22%23b%22%20transform%3D%22translate(0%201114)%20scale(1%20-1)%22%2F%3E%3Cuse%20href%3D%22%23b%22%20transform%3D%22translate(862%201114)%20scale(-1%20-1)%22%2F%3E%3Cg%20fill%3D%22url(%23c)%22%20stroke%3D%22%2306080b%22%20stroke-width%3D%224%22%3E%3Crect%20x%3D%227%22%20y%3D%22497%22%20width%3D%2232%22%20height%3D%22120%22%20rx%3D%228%22%2F%3E%3Crect%20x%3D%22823%22%20y%3D%22497%22%20width%3D%2232%22%20height%3D%22120%22%20rx%3D%228%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22url(%23r)%22%20stroke%3D%22%2306080b%22%20stroke-width%3D%222.5%22%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%22525%22%20r%3D%228%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%22589%22%20r%3D%228%22%2F%3E%3Ccircle%20cx%3D%22839%22%20cy%3D%22525%22%20r%3D%228%22%2F%3E%3Ccircle%20cx%3D%22839%22%20cy%3D%22589%22%20r%3D%228%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") center / 100% 100% no-repeat;
+  filter: drop-shadow(0 calc(10 * var(--u)) calc(18 * var(--u)) rgba(0, 0, 0, 0.6));
 }
 
-/* A blocked attack briefly makes the guard unmistakable. The alert is on the
-   existing Taunt barrier, so the card's artwork and rules stay readable. */
+/* A blocked attack briefly makes the guard unmistakable: the steel runs red
+   and glows. The alert is on the plate, so the card stays readable. */
 .board-slot.taunt-flashing .card-face.kw-taunt::before {
   animation: taunt-blocker-flash 1s ease-in-out both;
 }
@@ -3514,27 +3510,12 @@ button:disabled {
 @keyframes taunt-blocker-flash {
   0%,
   100% {
-    background:
-      repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.06) 0 calc(9 * var(--u)), rgba(0, 0, 0, 0.16) calc(9 * var(--u)) calc(19 * var(--u))),
-      linear-gradient(157deg, #8e9aa6 0%, #59626d 18%, #333a43 48%, #1b2027 76%, #6f7a86 100%);
-    box-shadow:
-      inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(0, 0, 0, 0.95),
-      inset 0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(230, 240, 255, 0.5),
-      inset 0 calc(-14 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.8),
-      0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
+    filter: drop-shadow(0 calc(10 * var(--u)) calc(18 * var(--u)) rgba(0, 0, 0, 0.6));
   }
 
   38%,
   62% {
-    background:
-      repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.12) 0 calc(9 * var(--u)), rgba(91, 0, 10, 0.28) calc(9 * var(--u)) calc(19 * var(--u))),
-      linear-gradient(157deg, #ff9d8f 0%, #f32c39 18%, #a0101a 48%, #5b070d 76%, #ed4b51 100%);
-    box-shadow:
-      inset 0 0 0 max(2px, calc(5 * var(--u))) rgba(255, 48, 48, 1),
-      inset 0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(255, 148, 148, 0.72),
-      inset 0 calc(-14 * var(--u)) calc(22 * var(--u)) rgba(72, 0, 0, 0.9),
-      0 0 calc(26 * var(--u)) rgba(255, 30, 40, 0.98),
-      0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.9);
+    filter: drop-shadow(0 0 calc(26 * var(--u)) rgba(255, 30, 40, 0.98)) sepia(1) saturate(6) hue-rotate(-30deg) brightness(0.9);
   }
 }
 
@@ -4638,15 +4619,19 @@ button:disabled {
    cover the HP gem in the lower-right corner. */
 /* Picked up with pointerdown, so it needs the same gesture opt-out the hand and
    the board slots take. */
+/* The same size and baseline as the board's mana and HP gems (150 of the card's
+   750 design units, 12 up from the bottom), so a relic reads as part of the card's
+   stat line rather than as a speck under it. Sized against the card's own box,
+   because the badge sits beside the card face, outside its design unit. */
 .relic-badge {
   touch-action: none;
   position: absolute;
   left: 50%;
-  bottom: 0;
+  bottom: 1.15%;
   transform: translateX(-50%);
   z-index: 5;
-  width: 20px;
-  height: 20px;
+  width: 20%;
+  aspect-ratio: 1;
   overflow: visible;
   border: 2px solid var(--gold);
   border-radius: 50%;
@@ -4654,11 +4639,11 @@ button:disabled {
   pointer-events: auto;
 }
 
-/* One relic is centered. Only when the second badge exists do the two share
-   the rail and move left/right to clear the HP gem. */
+/* One relic is centred. Two sit side by side about the centre with a hairline
+   gap: each badge is 20% wide, so their centres are 10.5% either side. */
 .relic-badge-0 { left: 50%; }
-.relic-badge-1 { left: 65%; }
-.minion-wrap:has(.relic-badge-1) .relic-badge-0 { left: 35%; }
+.relic-badge-1 { left: 60.5%; }
+.minion-wrap:has(.relic-badge-1) .relic-badge-0 { left: 39.5%; }
 
 /* Hovering the badge swaps the preview to the relic's own full card. */
 .relic-badge.peekable {
