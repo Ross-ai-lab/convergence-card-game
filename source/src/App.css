@@ -1013,11 +1013,12 @@ button:disabled {
     frost-tint 0.9s ease-out var(--fd, 0s) both;
 }
 
+/* Same display as the living wrap. Switching a dying card to another layout
+   mode rebuilt its whole card from scratch, the slowest frame of a board wipe. */
 .ghost-wrap {
   position: absolute;
   inset: 0;
   z-index: 3;
-  display: grid;
   pointer-events: none;
 }
 
@@ -6109,6 +6110,14 @@ button:disabled {
    can carry all six without any tier having to know about the others. */
 .cf-shine > span {
   display: none;
+}
+
+/* A drag or an aim makes every display frame a main-thread frame, and Chrome
+   restyles each running animation on every one of them. The board's shine holds
+   still until the pointer lets go; the held card is outside the table frame and
+   keeps moving. Paused, not removed, so each layer resumes where it stopped. */
+.table-frame.pointer-following .cf-shine > span {
+  animation-play-state: paused;
 }
 
 /* --- shared geometry -------------------------------------------------------

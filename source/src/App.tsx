@@ -1576,6 +1576,11 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [screen, overlay, developerToolsOpen, mobileMenuOpen, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length, needsLandscape, developerCheatRevealed]);
 
+  // While a card or an arrow follows the pointer, every display frame runs the
+  // main thread, and Chrome then restyles each running CSS animation on it. The
+  // board's rarity shine holds still for that moment; the held card keeps its own.
+  const pointerFollowing = Boolean(drag?.active) || Boolean(targetArrowOrigin && (pendingTarget || selection?.kind === "attacker"));
+
   return (
     <FontRevisionContext value={fontRevision}><main
       className={[
@@ -1606,6 +1611,7 @@ export default function App() {
           fx.landing > 0 ? "heavy-landing" : "",
           duelIntro ? "duel-opening" : "",
           duelIntro ? `duel-opening-${duelIntro.phase}` : "",
+          pointerFollowing ? "pointer-following" : "",
         ]
           .filter(Boolean)
           .join(" ")}

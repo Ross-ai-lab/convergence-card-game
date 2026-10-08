@@ -905,11 +905,15 @@ await newBoard({ place: false });
       );
       await page.waitForTimeout(60);
     }
+    const held = await page.evaluate(() => ({
+      following: document.querySelector(".table-frame")?.classList.contains("pointer-following"),
+      runningShine: document.getAnimations().filter((a) => a.playState === "running" && a.effect?.target?.closest?.(".table-frame .cf-shine")).length,
+    }));
+    check("the board's shine holds still during a drag", held.following && held.runningShine === 0, JSON.stringify(held));
     await page.mouse.up();
     await page.waitForTimeout(700);
     const after = await page.locator(".board-slot.occupied").count();
-    check("a card can be DRAGGED into a slot", after > before, `${before} -> ${after} occupied`);
-  }
+    check("a card can be DRAGGED into a slot", after > before, `${before} -> ${after} occupied`);  }
 }
 
 // ------------------------------------------------------------------ 7. undo

@@ -171,7 +171,9 @@ try {
   const continueBefore = await page.locator('.continue-duel').boundingBox();
   await page.locator('.continue-duel').hover(); await page.waitForTimeout(220);
   const continueAfter = await page.locator('.continue-duel').boundingBox();
-  assert(continueBefore && continueAfter && Math.abs(continueAfter.x - continueBefore.x) < 0.25 && Math.abs(continueAfter.y - continueBefore.y) < 0.25);
+  // The title's hover grows the button about its centre; the centre must not move.
+  const centre = box => ({x: box.x + box.width / 2, y: box.y + box.height / 2});
+  assert(continueBefore && continueAfter && Math.abs(centre(continueAfter).x - centre(continueBefore).x) < 0.25 && Math.abs(centre(continueAfter).y - centre(continueBefore).y) < 0.25, 'Continue moved on hover');
   await page.locator('.continue-duel').click();
   assert.equal(await page.locator('.mulligan-panel').count(), 0);
   await finish("I win", true);

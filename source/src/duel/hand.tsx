@@ -91,6 +91,9 @@ export function HandFan({
       }}
     >
       {viewer.hand.map((cardId, handIndex) => {
+        // Keyed by which copy of the card this is, not by position: an index key
+        // rebuilt and re-decoded every card to the right of each one played.
+        const copy = viewer.hand.slice(0, handIndex).filter((id) => id === cardId).length;
         const card = library[cardId];
         const canPlay = playable(handIndex);
         const cost = card ? effectiveCardCost(game, viewerId, card) : undefined;
@@ -114,7 +117,7 @@ export function HandFan({
           .filter(Boolean)
           .join(" ");
         return (
-          <div className="hand-item" key={`${cardId}-${handIndex}`}>
+          <div className="hand-item" key={`${cardId}#${copy}`}>
             <button
               type="button"
               className={classes}

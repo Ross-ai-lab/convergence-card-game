@@ -64,7 +64,7 @@ The gallery loads a small preview module when opened, brings full artwork in nea
 Decoded images stay mounted while scrolling. Shared sizing avoids measuring every card separately.
 These choices preserve complete readable cards while avoiding empty artwork panels and unnecessary paint work.
 
-Live bodies retain their decoded face through hits, deaths, returns and stasis. Motion wrappers change without rebuilding the card.
+Live bodies retain their decoded face through hits, deaths, returns and stasis. Motion wrappers change without rebuilding the card, and a dying wrapper keeps the living one's layout mode, so a board wipe never lays every card out again. Hand cards are keyed by card and copy, never by position, so playing one card leaves the rest of the hand untouched.
 The duel retains a bounded set of compositor surfaces; the gallery does not promote the entire collection into graphics layers.
 Only visible card fields invalidate a face. Engine bookkeeping and copied passive arrays do not repaint unchanged artwork or text.
 Music loop preparation runs in its own worker, with a yielding compatibility path. Concurrent warm-up and playback requests share one theme fetch and decode. Finished synthesized voices disconnect their temporary audio nodes.
@@ -75,6 +75,7 @@ Effects animate transform and opacity only, so the compositor runs them while th
 One action starts at most 96 particles. Hits, summons and two-minion trades stay below that; a board-wide clear thins every burst evenly instead of creating two hundred elements in one frame.
 A moving layer never carries its own blur. Filters and shadows sit on a still child, so they are drawn once and the layer only moves; the title's floating cards and the drag ghost follow this.
 Dragging and aiming keep the pointer outside React. The drag ghost and targeting arrow follow a frame-coalesced pointer store; the duel itself does not re-render while the pointer moves.
+While something follows the pointer, every display frame runs the main thread and Chrome restyles each running animation on it. The board's rarity shine pauses for that moment and resumes where it stopped; the held card keeps its own.
 An opaque screen skips rendering what it covers. My Deck hides the title screen's floating cards instead of keeping their layers alive under the collection.
 
 ## Saves preserve a whole transaction

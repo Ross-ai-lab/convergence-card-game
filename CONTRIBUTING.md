@@ -219,5 +219,7 @@ The default scenario plays John Wick, Giant Tree, Ainz and Meteor. `--scenario=t
 `--cpu-rate=4` adds a separate slower-CPU comparison. Do not mix its results with normal-speed runs.
 `--gpu` uses the machine's graphics device. Without it, headless Chromium composites in software and hides layer, blend-mode and blur costs, so judge gallery scrolling and idle duels with `--gpu`.
 The runner alternates build order and saves frame intervals, long tasks and CPU profiles in `.preview/duel-performance/`.
-Compare repeated runs without other check suites competing for CPU. Automated Chromium timings are evidence for those scenes, not a guaranteed frame rate on every device.
+Compare repeated runs without other check suites competing for CPU.
+Before measuring, check live per-process CPU and graphics load, not lifetime totals. Another AI coding app, a game or a 3D editor running alongside makes the same build's slowest frame swing several-fold between runs. When repeated runs of one build disagree like that, find the competing program before reading any result.
+Automated Chromium timings are evidence for those scenes, not a guaranteed frame rate on every device.
 Never use `settleMotion` or disable animations in a final smoothness comparison. Temporary CSS bisection is diagnostic only.
