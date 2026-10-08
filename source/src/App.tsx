@@ -1581,6 +1581,10 @@ export default function App() {
   // main thread, and Chrome then restyles each running CSS animation on it. The
   // board's rarity shine holds still for that moment; the held card keeps its own.
   const pointerFollowing = Boolean(drag?.active) || Boolean(targetArrowOrigin && (pendingTarget || selection?.kind === "attacker"));
+  // While an action's effects play, the graphics chip is the limit, so the
+  // board's shine holds still for that moment too (owner's choice, 8 October
+  // 2026). A card that has just landed keeps its own; see `just-arrived`.
+  const effectsPlaying = fx.impacts.length > 0 || fx.ghosts.length > 0 || fx.floats.length > 0 || fx.lunge !== null || fx.shaking || fx.landing > 0;
 
   return (
     <FontRevisionContext value={fontRevision}><main
@@ -1613,6 +1617,7 @@ export default function App() {
           duelIntro ? "duel-opening" : "",
           duelIntro ? `duel-opening-${duelIntro.phase}` : "",
           pointerFollowing ? "pointer-following" : "",
+          effectsPlaying ? "effects-playing" : "",
         ]
           .filter(Boolean)
           .join(" ")}

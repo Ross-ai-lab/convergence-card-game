@@ -6131,6 +6131,17 @@ button:disabled {
   animation-play-state: paused;
 }
 
+/* The same pause while an action's effects play: then the graphics chip, not
+   the main thread, is what drops frames, and the shine is most of its work.
+   The card that just landed is where the eye goes, so it keeps moving. */
+.table-frame.effects-playing .cf-shine > span {
+  animation-play-state: paused;
+}
+
+.table-frame.effects-playing .board-slot.just-arrived .cf-shine > span {
+  animation-play-state: running;
+}
+
 /* --- shared geometry -------------------------------------------------------
    A field is oversized because a blob sized to its container shows its own edge
    the moment it drifts, and the parent clips anyway. A grain layer is 200% tall

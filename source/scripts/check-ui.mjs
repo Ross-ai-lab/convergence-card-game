@@ -913,7 +913,10 @@ await newBoard({ place: false });
     await page.mouse.up();
     await page.waitForTimeout(700);
     const after = await page.locator(".board-slot.occupied").count();
-    check("a card can be DRAGGED into a slot", after > before, `${before} -> ${after} occupied`);  }
+    check("a card can be DRAGGED into a slot", after > before, `${before} -> ${after} occupied`);
+    check("the board's shine pauses while the play's effects run", (await page.locator(".table-frame.effects-playing").count()) === 1);
+    await page.waitForFunction(() => !document.querySelector(".table-frame.effects-playing"), null, { timeout: 4000 }).catch(() => {});
+    check("the board's shine resumes once the effects end", (await page.locator(".table-frame.effects-playing").count()) === 0);  }
 }
 
 // ------------------------------------------------------------------ 7. undo

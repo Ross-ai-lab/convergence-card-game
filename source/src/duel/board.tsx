@@ -221,6 +221,7 @@ export function BoardRow({
         const slotGhosts = ghosts.filter((g) => g.owner === owner && g.slot === slotIndex);
         // A departure still waiting for its frame keeps the slot exactly as it was.
         const departureWaiting = slotGhosts.some((g) => !departed(g));
+        const slotImpacts = impacts.filter((fx) => fx.owner === owner && fx.slot === slotIndex);
         const classes = [
           "board-slot",
           minion || departureWaiting ? "occupied" : "empty",
@@ -240,11 +241,12 @@ export function BoardRow({
           // and puts a fifth ring on a board that has four. Owner's ruling,
           // 3 September 2026.
           minion && reach.has(minion.instanceId) ? "in-reach" : "",
+          // The card that just landed keeps its shine while the rest of the board's pauses.
+          slotImpacts.some((fx) => fx.kind === "summon") ? "just-arrived" : "",
         ]
           .filter(Boolean)
           .join(" ");
         const slotFloats = floats.filter((f) => f.owner === owner && f.slot === slotIndex);
-        const slotImpacts = impacts.filter((fx) => fx.owner === owner && fx.slot === slotIndex);
         // Motion replays on the wrapper; the card stays mounted through impacts.
         const kinetic = slotImpacts.filter((fx) => fx.kind === "hit" || fx.kind === "freeze");
         const lastKinetic = kinetic.length ? kinetic[kinetic.length - 1] : null;
