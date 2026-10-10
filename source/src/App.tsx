@@ -69,6 +69,8 @@ import { campaignComplete, canPlayChapter, acknowledgeBossSpeech, acknowledgeRew
 import { LoreLibrary } from './screens/LoreLibrary';
 import { randomDeck, validateDeck } from "./decks";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
+import { DraftScreen } from "./screens/DraftScreen";
+import { beginDraftDuel, draftBotSkill, draftDifficulty, draftDuelIndex, draftReady, draftRivalDeck, loadDraft, recordDraftDuel, saveDraft, startDraftRun, type DraftRun, type DraftSave } from "./draft";
 import { CampaignSpeech, CollectedBossSpeech, type SpeechCue } from "./screens/CampaignSpeech";
 import campaignVoiceManifest from "../data/campaign-voices.json";
 import { onFontsReady } from "./textfit";
@@ -159,7 +161,8 @@ const BOT_ID: PlayerId = 1;
  * Every other cheat lives in the bot's own search. Hotseat grants it to nobody.
  */
 function foresightSeat(mode: GameMode): PlayerId | null {
-  return mode.kind !== "hotseat" && BOT_CHEATS[mode.skill].foresight ? BOT_ID : null;
+  // A draft rival carries its own fair cheats in the duel state instead.
+  return (mode.kind === "bot" || mode.kind === "campaign") && BOT_CHEATS[mode.skill].foresight ? BOT_ID : null;
 }
 // The practice bot thinks fast enough to be invisible — these pauses exist so a
 // human can watch what it did, not because it is slow.
@@ -187,6 +190,11 @@ export default function App() {
    * straight through to localStorage whenever it changes.
    */
   const [progress, setProgress] = useState<Progress>(initialProgress);
+  /** Rift Draft's run and record. Stored apart from the collection, which a draft never touches. */
+  const [draft, setDraft] = useState<DraftSave>(() => loadDraft());
+  function persistDraft(next: DraftSave) {
+    setDraft(next); const saved = saveDraft(next); setStorageError(!saved); return saved;
+  }
   // Save the initial campaign record before a first duel can finish.
   useEffect(() => {
     if (!saveProgress(initialProgress)) setStorageError(true);
@@ -197,6 +205,11 @@ export default function App() {
     const saved = loadGame();
     if (saved?.mode.kind === "bot" && !campaignComplete(initialProgress)) return null;
     if (saved?.mode.kind === "campaign" && !canPlayChapter(initialProgress, saved.mode.chapter)) return null;
+    // A draft duel resumes only inside the run that started it.
+    if (saved?.mode.kind === "draft") {
+      const run = loadDraft().run;
+      if (!draftReady(run) || run.id !== saved.mode.runId || run.activeDuel !== saved.mode.duelId) return null;
+    }
     if (saved && saved.mode.kind !== 'hotseat') {
       saved.game.players[0].name = 'Rick Gramps';
       saved.events = saved.events.map(event => ({ ...event, text: event.text.replaceAll('Player One', 'Rick Gramps') }));
@@ -235,7 +248,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "campaign" | "deck" | "hotseat" | "opponent" | "lore">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "campaign" | "deck" | "hotseat" | "opponent" | "lore" | "draft">(null);
   useEffect(() => {
     if (overlay !== "opponent") return;
     const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOverlay(null); };
@@ -789,6 +802,12 @@ export default function App() {
   useEffect(() => {
     if (game.phase !== "gameOver" || duelRecorded.current || tutorialActive) return;
     duelRecorded.current = true;
+    // A draft result belongs to the run, never to the collection's records.
+    if (mode.kind === "draft") {
+      const outcome = game.winner === viewerId ? "won" : typeof game.winner === "number" ? "lost" : "drawn";
+      if (persistDraft(recordDraftDuel(draft, mode.runId, mode.duelId ?? "", outcome))) { clearSave(); setHasLiveSave(false); }
+      return;
+    }
     const next = finishDuel(
       progress,
       { winner: game.winner, viewerId, mode, turns: game.turnNumber, at: Date.now() },
@@ -797,9 +816,20 @@ export default function App() {
     const saved = persistProgress(next);
     if (saved) { clearSave(); setHasLiveSave(false); }
     if (next.pendingRewards.length) setPack(next.pendingRewards);
-  }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress, tutorialActive]);
+  }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress, tutorialActive, draft]);
 
-  function prepareDuel(next: GameMode, seed: string, developer = false) {
+  function prepareDuel(next: GameMode, seed: string, developer = false, draftRun?: DraftRun) {
+    if (next.kind === "draft" && draftRun) {
+      // The rival drafts its own deck, seeded by the run and the duel number,
+      // and climbs from Recruit to the fair Ascendant as the run's wins mount.
+      const rival = draftRivalDeck(draftRun.id, draftDuelIndex(draftRun));
+      const difficulty = CAMPAIGN_DIFFICULTIES[draftDifficulty(draftRun.wins)];
+      const state = createInitialGame(cards, seed, relics, { decks: [draftRun.picks, rival.deck],
+        botCheats: [null, difficulty.cheats], heroPowers: [draftRun.heroPower, rival.heroPower], mulliganPlayers: [0], hasCoin: false });
+      state.players[0].name = 'Rick Gramps';
+      state.players[1].name = 'Rival Drafter';
+      return state;
+    }
     if (next.kind === "campaign") return createCampaignDuel({ chapter: next.chapter, playerDeck: progress.playerDeck,
       unlockedCardIds: progress.unlockedIds, cards, relics, seed, heroPower: selectedHeroPower }).state;
     const playerDeck = developer ? CAMPAIGN_STARTER_DECK : progress.playerDeck;
@@ -812,6 +842,15 @@ export default function App() {
   }
 
   function restart() {
+    // In a draft, Restart is Concede: mid-duel it counts the duel as lost, and
+    // from the result screen it only returns to the run.
+    if (mode.kind === "draft") {
+      if (game.phase !== "gameOver" && mode.duelId) persistDraft(recordDraftDuel(draft, mode.runId, mode.duelId, "lost"));
+      duelRecorded.current = true;
+      clearSave(); setHasLiveSave(false);
+      toTitle(); setOverlay("draft");
+      return;
+    }
     if (mode.kind === "campaign" && game.winner === viewerId) { toTitle(); setOverlay("campaign"); return; }
     if (mode.kind === "campaign") {
       if (progress.pendingBossSpeech !== null) persistProgress(acknowledgeBossSpeech(progress));
@@ -842,7 +881,8 @@ export default function App() {
   function beginDuel(next: GameMode, options: { testCardId?: string; skipStory?: boolean } = {}) {
     if (next.kind === "campaign" && !canPlayChapter(progress, next.chapter)) return;
     if (next.kind === "bot" && !campaignComplete(progress) && !options.testCardId) { setOverlay("campaign"); return; }
-    if (!options.testCardId && !validateDeck(progress.playerDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) {
+    if (next.kind === "draft" && (!draftReady(draft.run) || draft.run.id !== next.runId)) { setOverlay("draft"); return; }
+    if (!options.testCardId && next.kind !== "draft" && !validateDeck(progress.playerDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid) {
       openDeck(0, next.kind === "campaign" ? "campaign" : next.kind === "hotseat" ? "hotseat" : "title");
       return;
     }
@@ -853,8 +893,17 @@ export default function App() {
       return;
     }
     const seed = createDuelSeed();
+    let draftRun: DraftRun | undefined;
+    if (next.kind === "draft") {
+      // Settles any duel of this run left unfinished, which can end the run.
+      const marked = beginDraftDuel(draft, seed);
+      persistDraft(marked);
+      if (!draftReady(marked.run)) { setOverlay("draft"); return; }
+      draftRun = marked.run;
+      next = { ...next, skill: draftBotSkill(marked.run.wins) };
+    }
     void requestPhoneLandscape(phoneLayout.phone);
-    const nextGame = prepareDuel(next, seed, Boolean(options.testCardId));
+    const nextGame = prepareDuel(next, seed, Boolean(options.testCardId), draftRun);
     next = { ...next, duelId: seed }; setOverlay(null);
     sfx.play("button");
     sfx.unlock();
@@ -890,7 +939,9 @@ export default function App() {
       {
         kind: "info",
         text:
-          next.kind !== "hotseat"
+          next.kind === "draft"
+            ? "A rival drafter takes the far side of the board."
+            : next.kind !== "hotseat"
             ? "A practice opponent takes the far side of the board."
             : "Two players, one screen. The board hides itself when the turn changes hands.",
       },
@@ -940,6 +991,16 @@ export default function App() {
     heraldSaid.current = new Set();
     sfx.playOpeningCue(0.35);
     setEvents([{ kind: "info", text: "Tutorial started. Follow the Rift guide." }]);
+    setScreen("playing");
+  }
+
+  /** Returns to the saved duel exactly as it was left. */
+  function continueDuel() {
+    void requestPhoneLandscape(phoneLayout.phone);
+    sfx.play("button");
+    sfx.unlock();
+    setOverlay(null);
+    setDuelIntro(null);
     setScreen("playing");
   }
 
@@ -1694,7 +1755,7 @@ export default function App() {
             <span>{heroPowerDefinition(game.heroPowers[viewerId])?.text}</span><small>2 mana · Once per turn{game.heroPowerUsed[viewerId] ? " · Used" : ""}</small></p>}
           <button type="button" className="mobile-log-trigger" onClick={() => setLogOpen(open => !open)}>Duel log</button>
           {developerCheatRevealed && <button type="button" className="mobile-undo-trigger" disabled={!history.length || botThinking || game.phase !== "main"} onClick={undo}>Undo last action</button>}
-          <button type="button" onClick={restart}>Restart</button>
+          <button type="button" onClick={restart}>{mode.kind === "draft" ? "Concede" : "Restart"}</button>
           <button
             type="button"
             onClick={() => {
@@ -2043,6 +2104,7 @@ export default function App() {
           tutorial={tutorialActive}
           campaign={mode.kind === "campaign"}
           campaignLoss={mode.kind === "campaign" && typeof game.winner === "number" && game.winner !== viewerId}
+          draftRun={mode.kind === "draft" ? draft.run : undefined}
           onRestart={tutorialActive ? beginTutorial : restart}
           onMenu={toTitle}
         />
@@ -2091,13 +2153,8 @@ export default function App() {
         <TitleScreen
           canContinue={hasLiveSave && game.phase !== "gameOver"}
           playerCount={playerCount}
-          onContinue={() => {
-            void requestPhoneLandscape(phoneLayout.phone);
-            sfx.play("button");
-            sfx.unlock();
-            setDuelIntro(null);
-            setScreen("playing");
-          }}
+          onContinue={continueDuel}
+          onDraft={() => { sfx.play("button"); setOverlay("draft"); }}
           onStart={(next) => next.kind === "hotseat" ? setOverlay("hotseat") : beginDuel(next)}
           campaignCleared={campaignComplete(progress)}
           completedChapters={progress.completedChapters}
@@ -2119,6 +2176,13 @@ export default function App() {
 
       {overlay === "campaign" && <CampaignScreen progress={progress} onClose={() => setOverlay(null)}
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
+      {overlay === "draft" && <DraftScreen save={draft}
+        liveDuel={hasLiveSave && mode.kind === "draft" && game.phase !== "gameOver" && draft.run?.activeDuel === mode.duelId}
+        onChange={persistDraft}
+        onStartRun={() => persistDraft(startDraftRun(draft, createDuelSeed()))}
+        onDuel={() => { if (draft.run) beginDuel({ kind: "draft", skill: draftBotSkill(draft.run.wins), runId: draft.run.id }); }}
+        onResume={continueDuel}
+        onClose={() => setOverlay(null)} />}
       {overlay === 'lore' && <LoreLibrary completedBosses={progress.completedBosses} onClose={()=>setOverlay(null)} />}
       {overlay === "deck" && <CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}

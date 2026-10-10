@@ -37,6 +37,14 @@ Each seat owns its draw and bottom piles. Hotseat privacy hides the other player
 The full card library stays available to the engine even when a deck or collection is restricted.
 Bosses, summoned tokens, copies and saved bodies may reference cards outside the player's collection.
 
+## Rift Draft is separate from the collection
+
+A draft uses the whole deckable pool, owned or not, and never changes the collection. Its run and record live in their own save, so a draft can neither grant cards nor be blocked by a missing one.
+Offers are derived from the run's seed, the pick number and the cards already taken. A reload shows the same three cards, so a pick cannot be rerolled by refreshing.
+Each offer is one rarity, so a pick weighs cards against their equals. Rare is the common case; three fixed picks offer only Legendary or Mythic cards, and relics stop once a deck holds six, because relics need bodies to carry them.
+Rivals draft from the same offers with a simple stats-and-curve picker, and climb from Recruit to the fair Ascendant as the run's wins mount. They never use the Ascendant's hidden-information cheats, because both sides are playing drafted decks.
+A duel left unfinished counts as a loss when the next one starts, and Concede replaces Restart. Walking away from a losing duel never erases it from the run.
+
 ## One shared Core limit
 
 [STARTING_CORE](source/src/engine/game.ts) supplies the starting health and healing ceiling for every ordinary mode.

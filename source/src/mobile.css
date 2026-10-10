@@ -187,7 +187,7 @@
   .title-actions button { flex: 1; min-height: 56px; font-size: 12px; border-radius: 12px; }
   .title-actions .campaign-trigger { font-size: 11px; }
   .title-bottom-left { bottom: max(22px, env(safe-area-inset-bottom)); left: 16px; right: 16px; align-items: center; gap: 12px; }
-  .title-bottom-left .hotseat-trigger { position: static; width: 100%; min-height: 48px; font-size: 13px; border-radius: 12px; }
+  .title-bottom-left .hotseat-trigger, .title-bottom-left .draft-trigger { position: static; width: 100%; min-height: 48px; font-size: 13px; border-radius: 12px; }
   .title-bottom-left .title-player-count { font-size: 11px; }
   .floating-card-field .float-card { width: 60px; }
 }
@@ -214,7 +214,7 @@
   .title-actions button { flex: 1; min-height: 46px; border-radius: 10px; font-size: 11px; padding: 8px; }
   .title-actions .campaign-trigger { min-height: 46px; font-size: 10px; }
   .title-bottom-left { left: 20px; bottom: 20px; right: auto; gap: 8px; }
-  .title-bottom-left .hotseat-trigger { position: static; min-height: 44px; font-size: 12px; }
+  .title-bottom-left .hotseat-trigger, .title-bottom-left .draft-trigger { position: static; min-height: 44px; font-size: 12px; }
   .title-bottom-left .title-player-count { font-size: 10px; }
   .continue-duel, .continue-duel:hover:not(:disabled) { top: auto; bottom: 124px; left: 28%; transform: translateX(-50%); min-height: 44px; padding: 10px 14px; font-size: 11px; }
   .table-frame { grid-template-columns: 48px minmax(0, 1fr) 184px; grid-template-rows: 58px minmax(0, 1fr); gap: 7px; }

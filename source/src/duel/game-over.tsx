@@ -1,6 +1,7 @@
 import { duelMvp, type CardLibrary } from "../engine/game";
 import type { DamageTallyEntry, GameState, PlayerId } from "../engine/types";
 import { CardFace, playableFace } from "../card-face";
+import { DRAFT_LOSS_LIMIT, DRAFT_WIN_GOAL, type DraftRun } from "../draft";
 
 export function GameOver({
   game,
@@ -8,6 +9,7 @@ export function GameOver({
   tutorial = false,
   campaign = false,
   campaignLoss = false,
+  draftRun,
   onRestart,
   onMenu,
 }: {
@@ -17,6 +19,8 @@ export function GameOver({
   tutorial?: boolean;
   campaign?: boolean;
   campaignLoss?: boolean;
+  /** Set for a Rift Draft duel: the run as it stands after this result. */
+  draftRun?: DraftRun | null;
   onRestart: () => void;
   onMenu: () => void;
 }) {
@@ -96,8 +100,17 @@ export function GameOver({
             </p>
           </div>
         ) : null}
+        {draftRun ? (
+          <p className="result-draft-line">
+            {draftRun.finished
+              ? `Run complete · ${draftRun.wins} win${draftRun.wins === 1 ? "" : "s"}`
+              : `Draft run · ${draftRun.wins} of ${DRAFT_WIN_GOAL} wins · ${draftRun.losses} of ${DRAFT_LOSS_LIMIT} losses`}
+          </p>
+        ) : null}
         <div className="gameover-buttons">
-          {campaignLoss ? (
+          {draftRun !== undefined ? (
+            <button type="button" className="primary" onClick={onRestart}>Continue</button>
+          ) : campaignLoss ? (
             <><button type="button" className="primary" onClick={onRestart}>Rematch</button><button type="button" onClick={onMenu}>Return to menu</button></>
           ) : winnerId !== null && !tutorial ? (
             <button type="button" className="primary" onClick={campaign ? onRestart : onMenu}>Continue</button>

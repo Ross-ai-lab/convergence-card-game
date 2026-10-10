@@ -173,6 +173,20 @@ describe("the save slot", () => {
     expect(restored?.mode).toEqual({ kind: "bot", skill: "normal" });
   });
 
+  it("round-trips a Rift Draft duel with its run, and refuses one without fair cheats", () => {
+    const storage = memoryLocalStorage();
+    vi.stubGlobal("window", { localStorage: storage });
+    const game = liveDuel();
+    const fair = { trueDice: false, readsYourReply: false, clairvoyance: false, foresight: false };
+    const mode = { kind: "draft" as const, skill: "hard" as const, runId: "run-1", duelId: "duel-1" };
+
+    saveGame({ ...game, botCheats: [null, fair] }, [], mode, 1_000);
+    expect(loadGame()?.mode).toEqual(mode);
+
+    saveGame(game, [], mode, 1_000);
+    expect(loadGame()).toBeNull();
+  });
+
   it("clears the previous version's key as well, so a finished duel stays finished", () => {
     const storage = memoryLocalStorage();
     vi.stubGlobal("window", { localStorage: storage });

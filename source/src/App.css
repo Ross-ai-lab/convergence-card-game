@@ -4241,6 +4241,15 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.result-draft-line {
+  margin: 6px 0 12px;
+  color: #a9dfe4;
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .result-mvp-line strong {
   color: var(--gold);
   font-size: 1.5rem;

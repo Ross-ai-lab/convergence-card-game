@@ -231,6 +231,7 @@ export function TitleScreen({
   isFullscreen,
   onToggleFullscreen,
   onTutorial,
+  onDraft,
   onLore,
   onDeveloperTools,
   onDeveloperUnlock,
@@ -252,6 +253,7 @@ export function TitleScreen({
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   onTutorial: () => void;
+  onDraft: () => void;
   onLore: () => void;
   onDeveloperTools: () => void;
   onDeveloperUnlock: () => void;
@@ -404,6 +406,10 @@ export function TitleScreen({
         >
           <UsersThree size={22} weight="fill" aria-hidden="true" />
           <span>2 players</span>
+        </button>
+        <button type="button" className="draft-trigger" onClick={onDraft}>
+          <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="4.5" y="4" width="11" height="16" rx="2" transform="rotate(-12 10 12)"/><rect x="12.5" y="5" width="11" height="16" rx="2" transform="rotate(10 18 13)"/><path d="M14 18l1.6 3.4 3.4 1.6-3.4 1.6L14 28l-1.6-3.4L9 23l3.4-1.6z"/></svg>
+          <span>Rift Draft</span>
         </button>
         {playerCount !== null ? (
           <p className="title-player-count"><b>{playerCount.toLocaleString()}</b> played this game</p>

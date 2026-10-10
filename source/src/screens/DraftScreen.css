@@ -1,0 +1,195 @@
+/* Rift Draft. One full-screen panel with a stage on the left and the growing
+   deck on the right; the deck stacks under the stage on narrow screens. */
+
+.draft-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 160;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  color: #f4e7cd;
+  background:
+    radial-gradient(ellipse at 12% 18%, #3c5f7a 0, transparent 46%),
+    radial-gradient(ellipse at 88% 82%, #5b3d73 0, transparent 48%),
+    #141526;
+  isolation: isolate;
+  overflow: clip;
+}
+
+.draft-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1240px, 100%);
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  padding: 18px 20px;
+  border: 1px solid #b49a6266;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1f2238f2, #17142af2);
+  box-shadow: 0 15px 80px #08061399;
+}
+
+.draft-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex: none;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #a58a5038;
+}
+
+.draft-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.draft-title h2 { margin: 0; font: 34px/1.05 Georgia, serif; color: #fff6e2; }
+.draft-record { margin: 4px 0 0; font-size: 12px; color: #c9bfd2; }
+.draft-sigil { display: grid; place-items: center; width: 54px; height: 54px; flex: none; border: 1px solid #d9bd7f88; border-radius: 12px; background: linear-gradient(145deg, #2a3a52, #2d1f3c); }
+.draft-sigil svg { width: 36px; height: 36px; fill: #7fd6df1f; stroke: #ecd08c; stroke-width: 1.6; }
+.draft-sigil svg path { fill: #ecd08c; stroke: none; }
+
+.draft-panel button { font: inherit; cursor: var(--convergence-cursor); }
+.draft-close { flex: none; width: 44px; height: 44px; padding: 0; border: 1px solid #f06d70; border-radius: 10px; background: #9e2438; color: #ffe7dc; font-size: 28px; font-weight: 800; line-height: 1; }
+.draft-close:hover { background: #cb3d4d; }
+
+.draft-primary { min-height: 48px; padding: 10px 22px; border: 1px solid #ffe09a; border-radius: 10px; background: linear-gradient(180deg, #ffe09a, #c88f35); color: #2a1a08; font-weight: 900; letter-spacing: .02em; box-shadow: 0 8px 18px #f0c76740, inset 0 1px 0 #fffcdfcc; }
+.draft-primary:hover { background: linear-gradient(180deg, #fff0bd, #daa447); }
+.draft-secondary, .draft-retire-confirm button { min-height: 40px; padding: 8px 16px; border: 1px solid #c18b6966; border-radius: 9px; background: #30213d; color: #f6e4bc; }
+.draft-secondary:hover, .draft-retire-confirm button:hover { background: #43305a; }
+.draft-retire-confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
+.draft-retire-confirm .danger { border-color: #f06d70; background: #7d2233; }
+
+.draft-kicker { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: #9fd8de; }
+.draft-kicker.champion { padding: 3px 9px; border-radius: 999px; background: linear-gradient(90deg, #6a3d11, #8a2a1c); color: #ffe3a0; box-shadow: 0 0 18px #ffb44a40; }
+
+/* --- intro and summary ---------------------------------------------------- */
+.draft-intro { flex: 1 1 auto; min-height: 0; display: flex; flex-wrap: wrap; align-items: center; align-content: center; justify-content: center; gap: clamp(22px, 5vw, 64px); padding: 18px 4px 4px; overflow-y: auto; }
+/* Three real cards fanned, the way a hand of picks looks. Quiet faces: the
+   shine belongs to the duel, and three decorative loops here cost for nothing. */
+.draft-showcase { position: relative; flex: none; width: min(420px, 80vw); height: min(400px, 56vh); }
+.draft-showcase-card { position: absolute; left: 50%; bottom: 0; width: min(210px, 40vw, calc(56vh * 0.52)); transform-origin: 50% 110%; filter: drop-shadow(0 18px 28px #05030cb3); }
+.draft-showcase-card:nth-child(1) { transform: translateX(-50%) rotate(-14deg) translate(-34%, 4%); }
+.draft-showcase-card:nth-child(2) { transform: translateX(-50%) rotate(14deg) translate(34%, 4%); }
+.draft-showcase-card:nth-child(3) { transform: translateX(-50%) translateY(-6%); z-index: 1; }
+.draft-rules { flex: 1 1 380px; max-width: 560px; display: grid; gap: 12px; justify-items: start; }
+.draft-rules h3 { margin: 0; font: 24px Georgia, serif; color: #fff2d6; }
+.draft-rules ol { margin: 0; padding-left: 22px; display: grid; gap: 10px; line-height: 1.5; color: #e8dfe9; }
+.draft-rules b { color: #ffe3a0; }
+.draft-note { margin: 0; font-size: 12px; color: #b9aec4; }
+.draft-summary { flex: 1 1 320px; max-width: 420px; display: grid; gap: 10px; justify-items: center; text-align: center; padding: 16px; border: 1px solid #7d6aa066; border-radius: 14px; background: #1b1830; }
+.draft-summary.perfect { border-color: #ffd36e; box-shadow: 0 0 34px #ffc4504a; }
+.draft-summary-score { font: 54px/1 Georgia, serif; color: #fff1c8; }
+.draft-summary-score small { font-size: 20px; color: #d8c79f; }
+.draft-summary p { margin: 0; color: #d8cfe0; }
+
+/* --- the stage: a heading, then the cards or powers ----------------------- */
+.draft-board { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 264px; gap: 18px; padding-top: 14px; }
+.draft-stage { min-height: 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+/* The Hero Power choice is short; it sits in the middle of the panel. */
+.draft-panel > .draft-stage { flex: 1 1 auto; justify-content: center; padding-bottom: 6vh; }
+.draft-stage-head { display: grid; justify-items: center; gap: 6px; text-align: center; width: min(520px, 100%); }
+.draft-stage-head h3 { margin: 0; font: 28px/1.1 Georgia, serif; color: #fff4dc; }
+/* Georgia's figures are old-style, so a 0 reads as a letter O; the record uses the game's own face. */
+.draft-hub .draft-stage-head h3, .draft-summary-score { font-family: "Baloo 2", "Nunito", sans-serif; font-weight: 800; }
+.draft-stage-head h3 small { font-size: 16px; color: #cbbfa3; }
+.draft-progress { width: 100%; height: 6px; border-radius: 999px; background: #2c2840; overflow: hidden; }
+.draft-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6fd3dc, #ecd08c); transition: width 240ms ease; }
+
+/* Three cards sized to fit both the width and the height left under the
+   heading, so a short landscape phone still shows all three whole. */
+.draft-offer { --pick-w: min(300px, 25vw, calc((100dvh - 250px) * 0.714)); flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; gap: clamp(10px, 2.4vw, 30px); }
+.draft-pick { position: relative; width: var(--pick-w); padding: 0; border: 0; background: transparent; border-radius: 14px; transition: transform 160ms ease; }
+.draft-pick::after { content: ""; position: absolute; inset: -6px; border-radius: 16px; pointer-events: none; opacity: 0; transition: opacity 160ms ease; box-shadow: 0 0 0 2px #ecd08c, 0 0 30px #ecd08c66; }
+.draft-pick:hover, .draft-pick:focus-visible { transform: translateY(-8px); }
+.draft-pick:hover::after, .draft-pick:focus-visible::after { opacity: 1; }
+.draft-pick:focus-visible { outline: none; }
+.draft-offer.tier-red .draft-pick::after { box-shadow: 0 0 0 2px #ff8a5c, 0 0 34px #ff5a3a66; }
+.draft-offer.tier-relic .draft-pick::after { box-shadow: 0 0 0 2px #7fe6dd, 0 0 30px #56d8cd66; }
+
+.draft-powers { display: grid; grid-template-columns: repeat(3, minmax(0, 250px)); justify-content: center; gap: 16px; width: 100%; padding-top: 10px; }
+.draft-power { display: grid; align-content: start; gap: 10px; min-height: 168px; padding: 18px 16px; border: 1px solid #c9ab6b88; border-radius: 14px; background: linear-gradient(160deg, #2c2a48, #1d1830); color: #eadfcf; text-align: left; line-height: 1.45; transition: transform 160ms ease, border-color 160ms ease; }
+.draft-power strong { display: flex; align-items: center; gap: 7px; font: 19px Georgia, serif; color: #fff1c6; }
+.draft-power strong svg { color: #ffd36e; flex: none; }
+.draft-power small { margin-top: auto; font-size: 11px; color: #a9d8dd; }
+.draft-power:hover, .draft-power:focus-visible { transform: translateY(-6px); border-color: #ffe29a; outline: none; box-shadow: 0 0 26px #ecd08c40; }
+
+/* --- the run between duels ------------------------------------------------ */
+.draft-hub { justify-content: center; gap: 16px; }
+.draft-pips { display: grid; gap: 10px; justify-items: center; }
+.draft-pip-row { display: flex; gap: 8px; }
+.draft-pip-row i { display: block; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #8c7a5a; background: #221d33; }
+.draft-pip-row.wins i.on { border-color: #ffe29a; background: radial-gradient(circle at 40% 35%, #fff4c7, #e0a83e 70%); box-shadow: 0 0 14px #ffc85580; }
+.draft-pip-row.losses i { width: 20px; height: 20px; border-radius: 5px; transform: rotate(45deg); }
+.draft-pip-row.losses i.on { border-color: #ff8f84; background: linear-gradient(135deg, #e0464c, #7c1724); box-shadow: 0 0 12px #ff4d4d70; }
+.draft-next { margin: 0; color: #d8cfe0; }
+.draft-next b { color: #ffe3a0; }
+.draft-warning { margin: 0; max-width: 360px; padding: 8px 12px; border-left: 3px solid #f1c168; border-radius: 4px; background: #5b2433; font-size: 12px; line-height: 1.45; text-align: left; }
+
+/* --- the deck column ------------------------------------------------------ */
+.draft-deck { min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid #7d6aa055; border-radius: 12px; background: #161427; }
+.draft-deck header { display: flex; justify-content: space-between; align-items: baseline; }
+.draft-deck header strong { font: 17px Georgia, serif; color: #fff1d0; }
+.draft-deck header span { font-size: 12px; font-weight: 800; color: #b8acc7; font-variant-numeric: tabular-nums; }
+.draft-deck-power { display: flex; align-items: center; gap: 6px; margin: 0; padding: 6px 8px; border-radius: 8px; background: #2a2340; font-size: 12px; font-weight: 800; color: #ffe3a0; }
+.draft-deck-power svg { color: #ffd36e; flex: none; }
+.draft-curve { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; height: 70px; padding-top: 12px; flex: none; }
+.draft-curve-bar { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-height: 0; }
+.draft-curve-bar i { display: block; width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #8fd3ff, #3f78c9); transition: height 220ms ease; }
+.draft-curve-bar b { position: absolute; top: -12px; font-size: 10px; color: #e2d7c2; }
+.draft-curve-bar small { margin-top: 3px; font-size: 10px; font-weight: 800; color: #9b90ad; }
+.draft-deck-list { flex: 1 1 auto; min-height: 0; margin: 0; padding: 0 2px 0 0; list-style: none; display: grid; align-content: start; gap: 3px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #6c5b86 transparent; }
+.draft-deck-list li { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 3px 8px 3px 4px; border-left: 3px solid #8a8f99; border-radius: 6px; background: #221e33; font-size: 13px; }
+.draft-deck-list li.tier-purple { border-left-color: #b483f5; }
+.draft-deck-list li.tier-yellow { border-left-color: #f2c24f; }
+.draft-deck-list li.tier-red { border-left-color: #ff6a4a; }
+.draft-deck-list li.tier-relic { border-left-color: #56d8cd; }
+.draft-row-cost { display: grid; place-items: center; width: 24px; height: 24px; flex: none; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: linear-gradient(135deg, #7cc4ff, #2a5fb0); font-size: 11px; font-weight: 900; color: #fff; }
+.draft-row-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #efe5d3; }
+.draft-row-preview { position: fixed; z-index: 2; width: 220px; transform: translate(calc(-100% - 14px), -50%); pointer-events: none; filter: drop-shadow(0 12px 22px #05030c99); }
+.draft-deck.compact { width: 100%; max-height: 340px; }
+
+@media (max-width: 860px) {
+  .draft-board { grid-template-columns: 1fr; grid-template-rows: auto auto; overflow-y: auto; }
+  .draft-deck { max-height: 360px; }
+  .draft-offer { --pick-w: min(220px, 29vw); flex: none; }
+  .draft-powers { grid-template-columns: 1fr; max-width: 420px; }
+  .draft-power { min-height: 0; }
+}
+
+@media (max-width: 560px) {
+  .draft-panel { padding: 12px; }
+  .draft-title h2 { font-size: 24px; }
+  .draft-sigil { width: 42px; height: 42px; }
+  .draft-sigil svg { width: 28px; height: 28px; }
+  .draft-offer { --pick-w: 30vw; gap: 6px; }
+  .draft-showcase { height: 200px; width: min(300px, 80vw); }
+  .draft-showcase-card { width: 112px; }
+  .draft-stage-head h3 { font-size: 22px; }
+}
+
+/* A sideways phone: the deck stays beside the stage, narrower. */
+@media (max-height: 600px) and (orientation: landscape) {
+  .draft-panel { padding: 10px 14px; }
+  .draft-header { padding-bottom: 6px; }
+  .draft-title h2 { font-size: 22px; }
+  .draft-record { font-size: 10px; }
+  .draft-sigil { width: 36px; height: 36px; }
+  .draft-sigil svg { width: 24px; height: 24px; }
+  .draft-board { grid-template-columns: minmax(0, 1fr) 200px; grid-template-rows: none; gap: 10px; padding-top: 8px; overflow: visible; }
+  .draft-deck { max-height: none; padding: 8px; }
+  .draft-curve { height: 46px; }
+  .draft-deck-list li { min-height: 22px; font-size: 11px; }
+  .draft-stage { gap: 6px; }
+  .draft-stage-head h3 { font-size: 18px; }
+  .draft-offer { --pick-w: min(170px, 22vw, calc((100dvh - 178px) * 0.714)); flex: 1 1 auto; }
+  .draft-intro { flex-wrap: nowrap; gap: 22px; padding-top: 6px; }
+  .draft-showcase { width: min(300px, 34vw); height: min(250px, calc(100dvh - 110px)); }
+  .draft-showcase-card { width: min(140px, calc((100dvh - 110px) * 0.52)); }
+  .draft-rules { gap: 8px; }
+  .draft-rules h3 { font-size: 18px; }
+  .draft-rules ol { gap: 4px; font-size: 13px; line-height: 1.35; }
+  .draft-primary { min-height: 40px; padding: 8px 18px; }
+  .draft-powers { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: none; }
+}

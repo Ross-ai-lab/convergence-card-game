@@ -21,6 +21,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
   - [Controls](#controls)
 - [Rules at a glance](#rules-at-a-glance)
 - [Win and collect](#win-and-collect)
+  - [Rift Draft](#rift-draft)
   - [Progress stays in this browser](#progress-stays-in-this-browser)
 - [Explore and contribute](#explore-and-contribute)
 <!-- README-NAV-END -->
@@ -32,6 +33,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
 | Collection campaign | Challenge twenty champions. Every universe is available from the start. |
 | My Deck | Build a thirty-card deck from your collection and choose a Hero Power. |
 | Two-player hotseat | Share one device with separate decks and private hands. |
+| Rift Draft | Draft a deck from offers of three, then duel rival drafters until seven wins or three losses. |
 | Free duels | Finish the campaign to unlock Recruit, Veteran and Ascendant opponents. |
 | Tutorial | Learn card play, attacks, targeting, relics and Hero Powers in a short guided duel. |
 
@@ -107,6 +109,14 @@ Training and developer test duels have no deadline.
 
 Each champion has a named power and voiced dialogue. The text remains readable when audio is unavailable.
 Victory dialogue and unclaimed rewards survive a reload.
+
+### Rift Draft
+
+Choose a Hero Power from three, then pick thirty cards, one from each offer of three cards of the same rarity. Every card in the game can be offered, owned or not, and a card is never offered twice in one draft.
+Picks 1, 11 and 21 offer only Legendary or Mythic cards. Relics stop appearing once a deck holds six.
+Each rival drafts its own deck. Rivals play as Recruit for your first two wins, Veteran up to four, then Ascendant, always without Ascendant's extra knowledge.
+A run ends at **seven wins** or **three losses**. A draw is replayed. Conceding, or starting the next duel while one is unfinished, counts as a loss.
+Drafts never award or remove collection cards. The draft screen keeps your best run and total wins.
 
 ### Progress stays in this browser
 

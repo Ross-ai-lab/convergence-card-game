@@ -275,6 +275,37 @@ for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Gr
 
 await checkProfileLayouts(page, geometryOf, fitsOnOneScreen, check);
 
+// Rift Draft -----------------------------------------------------------------
+// The whole run in a fresh profile: rules, Hero Power, thirty picks, a duel
+// against a rival drafter, and Concede counting as a loss. A draft never
+// touches the collection, so the unlocked count must not move.
+await fresh();
+await page.setViewportSize({ width: 1440, height: 900 });
+const unlockedBefore = await page.evaluate(() => JSON.parse(localStorage.getItem("convergence.progress.v4") ?? "{}").unlockedIds?.length ?? 0);
+await page.locator(".draft-trigger").click();
+check("Rift Draft opens from the title screen", await page.locator(".draft-overlay").isVisible());
+await page.getByRole("button", { name: "Start drafting", exact: true }).click();
+check("a draft offers three Hero Powers", (await page.locator(".draft-power").count()) === 3);
+await page.locator(".draft-power").first().click();
+let picksShown = 0;
+for (let pick = 0; pick < 30; pick++) {
+  picksShown += (await page.locator(".draft-pick").count()) === 3 ? 1 : 0;
+  await page.locator(".draft-pick").nth(pick % 3).click();
+}
+check("every draft pick offers three cards", picksShown === 30, `${picksShown}/30`);
+const draftRun = await page.evaluate(() => JSON.parse(localStorage.getItem("convergence.draft.v1")).run);
+check("a finished draft holds thirty different cards", draftRun.picks.length === 30 && new Set(draftRun.picks).size === 30);
+await page.getByRole("button", { name: "Duel the next rival", exact: true }).click();
+await waitForBoard();
+check("a draft duel faces a rival drafter", (await page.locator(".hero-plate.enemy").textContent())?.includes("Rival Drafter") ?? false);
+await page.getByRole("button", { name: "Concede", exact: true }).click();
+await page.locator(".draft-overlay").waitFor({ state: "visible", timeout: 5000 });
+const afterConcede = await page.evaluate(() => JSON.parse(localStorage.getItem("convergence.draft.v1")).run);
+check("conceding a draft duel counts one loss", afterConcede.losses === 1 && afterConcede.wins === 0 && afterConcede.activeDuel === null, JSON.stringify({ wins: afterConcede.wins, losses: afterConcede.losses }));
+const unlockedAfter = await page.evaluate(() => JSON.parse(localStorage.getItem("convergence.progress.v4") ?? "{}").unlockedIds?.length ?? 0);
+check("a draft leaves the collection untouched", unlockedAfter === unlockedBefore, `${unlockedBefore} -> ${unlockedAfter}`);
+await page.screenshot({ path: path.join(outputDir, "rift-draft-run.png"), fullPage: false });
+
 const failed = results.filter((result) => !result.condition);
 await fresh();
 await page.setViewportSize({width:1440,height:900});

@@ -6,7 +6,9 @@ import { CAMPAIGN_DIFFICULTIES, getCampaignChapter } from "./campaign";
 import type {SavedTurnClock} from './turn-clock';
 
 /** How the duel is being played. Mirrors GameMode in screens/Screens.tsx. */
-export type SavedMode = ({ kind: "hotseat" } | { kind: "bot"; skill: BotSkill } | { kind: "campaign"; chapter: number; skill: BotSkill }) & { duelId?: string };
+export type SavedMode = ({ kind: "hotseat" } | { kind: "bot"; skill: BotSkill } | { kind: "campaign"; chapter: number; skill: BotSkill }
+  /** A Rift Draft duel: `runId` ties the result to the run that drafted the deck. */
+  | { kind: "draft"; skill: BotSkill; runId: string }) & { duelId?: string };
 
 const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 
@@ -230,7 +232,7 @@ export function loadGame(): SavedGame | null {
     if (!Array.isArray(game.darkDimension)) return null;
     if (game.phase === "gameOver") return null; // finished duels are not worth resuming
     const saved = parsed.mode;
-    if (!saved || !["hotseat", "bot", "campaign"].includes(saved.kind)) return null;
+    if (!saved || !["hotseat", "bot", "campaign", "draft"].includes(saved.kind)) return null;
     let mode: SavedMode;
     const identity = typeof saved.duelId === "string" ? { duelId: saved.duelId } : {};
     if (saved.kind === "campaign") {
@@ -242,6 +244,10 @@ export function loadGame(): SavedGame | null {
     } else if (saved.kind === "bot") {
       if (!SKILLS.includes(saved.skill)) return null;
       mode = { kind: "bot", skill: saved.skill, ...identity };
+    } else if (saved.kind === "draft") {
+      // A draft rival never cheats, so a draft duel always carries its fair cheats.
+      if (!SKILLS.includes(saved.skill) || typeof saved.runId !== "string" || !game.botCheats?.[1]) return null;
+      mode = { kind: "draft", skill: saved.skill, runId: saved.runId, ...identity };
     } else mode = { kind: "hotseat", ...identity };
     const refreshed = migrateSavedDuel(game);
     const events = Array.isArray(parsed.events) ? parsed.events : [];
