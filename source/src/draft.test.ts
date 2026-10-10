@@ -130,4 +130,14 @@ describe("Rift Draft", () => {
     expect(save.run).toMatchObject({ losses: 3, finished: true, activeDuel: null });
     expect(draftReady(save.run)).toBe(false);
   });
+
+  it("keeps each duel's result and deciding card, and survives a reload with them", () => {
+    let save: DraftSave = { ...emptyDraftSave(), run: draftAll("hist") };
+    save = recordDraftDuel(save, "hist", "a", "won", "c001");
+    save = recordDraftDuel(save, "hist", "b", "lost", null);
+    expect(save.run!.history).toEqual([{ outcome: "won", mvpCardId: "c001" }, { outcome: "lost", mvpCardId: null }]);
+    expect(parseDraftSave(JSON.stringify(save)).run!.history).toEqual(save.run!.history);
+    const older = JSON.parse(JSON.stringify(save)); delete older.run.history;
+    expect(parseDraftSave(JSON.stringify(older)).run!.history).toEqual([]);
+  });
 });

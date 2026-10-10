@@ -275,7 +275,7 @@ export function finishDuel(progress: Progress, duel: {
   winner: 0 | 1 | "draw" | null; viewerId: 0 | 1; mode: SavedMode; turns: number; at: number;
 }, cards: { seen: readonly string[]; played: readonly string[] }): Progress {
   return recordDuel(progress, {
-    ladder: duel.mode.kind === "hotseat" ? "hotseat" : duel.mode.skill,
+    ladder: duel.mode.kind === "hotseat" || duel.mode.kind === "online" ? "hotseat" : duel.mode.skill,
     outcome: duel.winner === "draw" || duel.winner === null ? "drawn" : duel.mode.kind === "hotseat" || duel.winner === duel.viewerId ? "won" : "lost",
     turns: duel.turns, at: duel.at, duelId: duel.mode.duelId,
     ...(duel.mode.kind === "campaign" ? { chapter: duel.mode.chapter } : {}),

@@ -45,6 +45,15 @@ Each offer is one rarity, so a pick weighs cards against their equals. Rare is t
 Rivals draft from the same offers with a simple stats-and-curve picker, and climb from Recruit to the fair Ascendant as the run's wins mount. They never use the Ascendant's hidden-information cheats, because both sides are playing drafted decks.
 A duel left unfinished counts as a loss when the next one starts, and Concede replaces Restart. Walking away from a losing duel never erases it from the run.
 
+## Online duels run in lockstep with a referee
+
+Both browsers hold the same state and run the same deterministic engine. The room's creator is the referee: it applies every move first, numbers it and sends it on, and the joining player asks it to make its own moves. Moves are small, so a duel never sends the whole board after each click.
+After each move the referee also sends a fingerprint of its state. A joining player whose fingerprint differs asks for the full state and replaces its copy, so a mismatch heals instead of splitting the duel.
+The turn clock, a concession and a player leaving end turns and duels without an engine action, so they travel as numbered steps too. Only the referee's clock ends a turn.
+Two builds with different card data refuse each other, because the same moves would play out differently.
+Connections go directly between browsers through PeerJS's free public signalling and relay service. It needs no account and no server of our own; the trade is that a few strict networks cannot connect. Either player could read hidden cards with browser tools, which is acceptable for duels between friends.
+Online duels never take the save slot and keep no record, because neither browser can resume one alone.
+
 ## One shared Core limit
 
 [STARTING_CORE](source/src/engine/game.ts) supplies the starting health and healing ceiling for every ordinary mode.

@@ -1,5 +1,5 @@
 import {DeferredTask,scheduleIdle} from './deferred-task';
-import type { GameEvent, GameState } from "./engine/types";
+import type { GameEvent, GameState, PlayerId } from "./engine/types";
 import { migrateSavedDuel } from "./save-migrations";
 import type { BotSkill } from "./engine/bot";
 import { CAMPAIGN_DIFFICULTIES, getCampaignChapter } from "./campaign";
@@ -8,7 +8,9 @@ import type {SavedTurnClock} from './turn-clock';
 /** How the duel is being played. Mirrors GameMode in screens/Screens.tsx. */
 export type SavedMode = ({ kind: "hotseat" } | { kind: "bot"; skill: BotSkill } | { kind: "campaign"; chapter: number; skill: BotSkill }
   /** A Rift Draft duel: `runId` ties the result to the run that drafted the deck. */
-  | { kind: "draft"; skill: BotSkill; runId: string }) & { duelId?: string };
+  | { kind: "draft"; skill: BotSkill; runId: string }
+  /** An online duel against a friend. Never saved: it cannot be resumed alone. */
+  | { kind: "online"; seat: PlayerId; room: string }) & { duelId?: string };
 
 const SKILLS: BotSkill[] = ["easy", "normal", "hard"];
 

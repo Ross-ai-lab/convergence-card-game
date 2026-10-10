@@ -1579,10 +1579,10 @@ button.duel-trigger:hover:not(:disabled) {
  .deck-trigger .gallery-trigger-stack {top:60px;width:72px;font-size:11px;gap:6px;}
  .title-screen .title-bottom-left {display:grid;grid-template-columns:1fr 1fr;gap:8px;bottom:max(18px,env(safe-area-inset-bottom));}
  .title-screen .title-bottom-left .title-player-count {grid-column:1/-1;justify-self:center;margin:0;}
- .title-screen .title-bottom-left .tutorial-trigger,.title-screen .title-bottom-left .hotseat-trigger,.title-screen .title-bottom-left .draft-trigger {width:100%;min-height:44px;justify-content:center;font-size:12px;}
+ .title-screen .title-bottom-left .tutorial-trigger,.title-screen .title-bottom-left .hotseat-trigger,.title-screen .title-bottom-left .draft-trigger,.title-screen .title-bottom-left .online-trigger {width:100%;min-height:44px;justify-content:center;font-size:12px;}
  /* Three modes in one row: a second row would lift the buttons into My Deck. */
- .title-screen .title-bottom-left {grid-template-columns:repeat(3,minmax(0,1fr));}
- .title-screen .title-bottom-left .tutorial-trigger,.title-screen .title-bottom-left .hotseat-trigger,.title-screen .title-bottom-left .draft-trigger {padding:6px 4px;gap:5px;font-size:11px;}
+ .title-screen .title-bottom-left {grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+ .title-screen .title-bottom-left .tutorial-trigger,.title-screen .title-bottom-left .hotseat-trigger,.title-screen .title-bottom-left .draft-trigger,.title-screen .title-bottom-left .online-trigger {flex-direction:column;gap:3px;min-height:54px;padding:6px 2px;font-size:10.5px;line-height:1.1;text-align:center;}
 }
 @media(max-width:1180px) and (max-height:600px) and (orientation:landscape) {
  .title-screen .title-actions {width:min(310px,calc(100vw - 36px));right:18px;bottom:14px;flex-direction:row;align-items:flex-end;justify-content:flex-end;}
@@ -1592,7 +1592,7 @@ button.duel-trigger:hover:not(:disabled) {
  .deck-trigger .gallery-trigger-stack {top:63px;width:72px;font-size:11px;gap:6px;}
  .title-screen .duel-orbit {bottom:145px;}
  .title-screen .title-bottom-left {gap:6px;left:18px;bottom:14px;}
- .title-bottom-left .tutorial-trigger, .title-bottom-left .draft-trigger {min-height:38px;font-size:12px;padding:6px 10px;}
+ .title-bottom-left .tutorial-trigger, .title-bottom-left .draft-trigger, .title-bottom-left .online-trigger {min-height:38px;font-size:12px;padding:6px 10px;}
 }
 
 .title-bottom-left > * {
@@ -1807,6 +1807,12 @@ button.duel-trigger:hover:not(:disabled) {
 /* Rift Draft is a mode of its own, so it wears the Tutorial's framed button. */
 .title-bottom-left .draft-trigger {display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:9px 13px;border:1px solid #6e604366;border-radius:8px;background:#100c1beb;color:#c9b991;font-size:13px;font-weight:800;box-shadow:0 4px 14px #0004;}
 .title-bottom-left .draft-trigger:hover {border-color:#cfb47799;color:#f6e3b1;}
+.title-bottom-left .online-trigger {display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:9px 13px;border:1px solid #6e604366;border-radius:8px;background:#100c1beb;color:#c9b991;font-size:13px;font-weight:800;box-shadow:0 4px 14px #0004;}
+.title-bottom-left .online-trigger:hover {border-color:#7fc8cf99;color:#e6f7f8;}
+/* Four modes side by side read as one row only if all four wear the same frame. */
+.title-bottom-left .hotseat-trigger {display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:9px 13px;border:1px solid #6e604366;border-radius:8px;background:#100c1beb;color:#c9b991;font-size:13px;font-weight:800;box-shadow:0 4px 14px #0004;}
+.title-bottom-left .hotseat-trigger:hover:not(:disabled) {background:#100c1beb;border-color:#7fc8cf99;color:#e6f7f8;}
+.online-trigger svg {color:#8fe0e8;}
 .draft-trigger svg {width:22px;height:22px;fill:#d9b86a1f;stroke:#e3c888;stroke-width:1.5;}
 .draft-trigger svg path {fill:#e3c888;stroke:none;}
 

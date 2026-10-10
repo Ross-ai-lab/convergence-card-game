@@ -123,8 +123,25 @@
 .draft-pip-row.wins i.on { border-color: #ffe29a; background: radial-gradient(circle at 40% 35%, #fff4c7, #e0a83e 70%); box-shadow: 0 0 14px #ffc85580; }
 .draft-pip-row.losses i { width: 20px; height: 20px; border-radius: 5px; transform: rotate(45deg); }
 .draft-pip-row.losses i.on { border-color: #ff8f84; background: linear-gradient(135deg, #e0464c, #7c1724); box-shadow: 0 0 12px #ff4d4d70; }
-.draft-next { margin: 0; color: #d8cfe0; }
-.draft-next b { color: #ffe3a0; }
+/* The next rival: who it is and the power it will use. */
+.draft-rival { display: grid; justify-items: center; gap: 6px; max-width: 420px; text-align: center; }
+.draft-rival-power { display: grid; gap: 3px; margin: 0; padding: 9px 14px; border: 1px solid #8f6fb455; border-radius: 10px; background: #231d38; }
+.draft-rival-power strong { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 16px Georgia, serif; color: #fff1c6; }
+.draft-rival-power strong svg { color: #ff8f6a; }
+.draft-rival-power span { font-size: 13px; color: #dcd2e4; }
+.draft-rival small { font-size: 11px; color: #b9aec4; }
+
+/* Duel history: one small card per finished duel. */
+.draft-history-wrap { display: grid; justify-items: center; gap: 10px; }
+.draft-history { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.draft-history-duel { position: relative; display: grid; justify-items: center; gap: 4px; width: 78px; }
+.draft-history-card { width: 78px; border-radius: 7px; }
+.draft-history-card.empty { aspect-ratio: 5 / 7; border: 1px dashed #6d5f84; background: #1b1830; }
+.draft-history-duel.lost .draft-history-card { filter: saturate(.55) brightness(.8); }
+.draft-history-duel small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: #cfc4da; }
+.draft-history-badge { position: absolute; z-index: 2; top: -7px; left: 50%; transform: translateX(-50%); padding: 1px 7px; border-radius: 999px; font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; background: #6b5427; color: #fff1c6; box-shadow: 0 2px 6px #0008; }
+.draft-history-duel.lost .draft-history-badge { background: #7d2233; color: #ffe1dc; }
+.draft-history-duel.drawn .draft-history-badge { background: #3c4a66; color: #e3ecff; }
 .draft-warning { margin: 0; max-width: 360px; padding: 8px 12px; border-left: 3px solid #f1c168; border-radius: 4px; background: #5b2433; font-size: 12px; line-height: 1.45; text-align: left; }
 
 /* --- the deck column ------------------------------------------------------ */

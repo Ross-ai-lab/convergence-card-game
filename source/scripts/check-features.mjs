@@ -57,6 +57,10 @@ function check(name, condition, detail = "") {
   results.push({ name, condition });
   console.log(`${condition ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
 }
+/** A check that cannot run here (no network, say): reported, never counted as passed. */
+function skip(name, reason) {
+  console.log(`SKIP  ${name} — ${reason}`);
+}
 
 // Tutorial first duel ------------------------------------------------------
 await fresh();
@@ -305,6 +309,60 @@ check("conceding a draft duel counts one loss", afterConcede.losses === 1 && aft
 const unlockedAfter = await page.evaluate(() => JSON.parse(localStorage.getItem("convergence.progress.v4") ?? "{}").unlockedIds?.length ?? 0);
 check("a draft leaves the collection untouched", unlockedAfter === unlockedBefore, `${unlockedBefore} -> ${unlockedAfter}`);
 await page.screenshot({ path: path.join(outputDir, "rift-draft-run.png"), fullPage: false });
+
+// Online duel ----------------------------------------------------------------
+// Two separate browser profiles meet through PeerJS's public signalling service,
+// so this needs the internet. When the service cannot be reached the checks are
+// skipped, not failed: that is the network, not the game. What must hold when
+// it can: the guest joins by invite link, both browsers play the same duel,
+// and after every move the two states are byte-for-byte the same.
+{
+  const hostContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const guestContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const hostPage = await hostContext.newPage();
+  const guestPage = await guestContext.newPage();
+  const fingerprints = async () => Promise.all([hostPage, guestPage].map((p) => p.evaluate(() => window.__debug?.state())));
+  try {
+    await hostPage.goto(BASE); await hostPage.locator(".title-screen").waitFor();
+    await hostPage.locator(".online-trigger").click();
+    await hostPage.getByRole("button", { name: "Create a room", exact: true }).click();
+    const opened = await hostPage.waitForFunction(() => {
+      if (document.querySelector(".online-error")) return "error";
+      return document.querySelector(".online-code") && !document.querySelector(".online-primary")?.disabled ? "open" : false;
+    }, null, { timeout: 20000 }).then((handle) => handle.jsonValue()).catch(() => "timeout");
+    if (opened !== "open") {
+      skip("online duel", `the connection service could not be reached (${opened})`);
+    } else {
+      const code = (await hostPage.locator(".online-code").textContent()).trim();
+      await guestPage.goto(`${BASE}?room=${code}`);
+      await guestPage.locator(".online-overlay").waitFor();
+      check("an invite link opens the online lobby with its code", (await guestPage.locator(".online-join input").inputValue()) === code);
+      await guestPage.getByRole("button", { name: "Join", exact: true }).click();
+      for (const p of [hostPage, guestPage]) {
+        await p.locator(".battlefield").waitFor({ timeout: 25000 });
+        await p.locator(".duel-intro").waitFor({ state: "detached", timeout: 20000 });
+      }
+      const [hostStart, guestStart] = await fingerprints();
+      check("both browsers start the same online duel", hostStart.fingerprint === guestStart.fingerprint && hostStart.viewer === 0 && guestStart.viewer === 1);
+      await hostPage.locator(".mulligan-panel button.primary").click();
+      await guestPage.locator(".mulligan-panel button.primary").click();
+      await hostPage.waitForTimeout(800);
+      await hostPage.keyboard.press("Space");
+      await hostPage.waitForTimeout(1200);
+      await guestPage.keyboard.press("Space");
+      await hostPage.waitForTimeout(1200);
+      const [hostAfter, guestAfter] = await fingerprints();
+      check("online moves keep both duels identical", hostAfter.fingerprint === guestAfter.fingerprint && hostAfter.turn === 3, JSON.stringify({ host: hostAfter.turn, guest: guestAfter.turn }));
+      await guestPage.getByRole("button", { name: "Concede", exact: true }).click();
+      await hostPage.locator(".result-overlay").waitFor({ timeout: 10000 });
+      check("a guest concession ends the duel for the host", (await hostPage.locator(".result-title").textContent())?.includes("Wins") ?? false);
+      check("only the host is offered a rematch", (await hostPage.getByRole("button", { name: "Rematch" }).count()) === 1 && (await guestPage.getByRole("button", { name: "Rematch" }).count()) === 0);
+    }
+  } finally {
+    await hostContext.close();
+    await guestContext.close();
+  }
+}
 
 const failed = results.filter((result) => !result.condition);
 await fresh();

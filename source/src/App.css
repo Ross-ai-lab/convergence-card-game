@@ -4241,6 +4241,14 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.result-online-note {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  color: #a9dfe4;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
 .result-draft-line {
   margin: 6px 0 12px;
   color: #a9dfe4;

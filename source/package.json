@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "peerjs": "1.5.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

@@ -1,0 +1,111 @@
+/* The online lobby: one compact panel, teal for "connection", gold for actions. */
+
+.online-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 160;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  color: #f2e8d4;
+  background:
+    radial-gradient(ellipse at 20% 15%, #1f6a72 0, transparent 46%),
+    radial-gradient(ellipse at 85% 85%, #4b3a78 0, transparent 50%),
+    #12182a;
+  overflow-y: auto;
+}
+
+.online-panel {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+  width: min(760px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 20px 22px;
+  border: 1px solid #7fc8cf55;
+  border-radius: 16px;
+  background: linear-gradient(140deg, #1b2438f2, #191630f2);
+  box-shadow: 0 15px 70px #050a1499;
+}
+
+.online-panel button { font: inherit; cursor: var(--convergence-cursor); }
+.online-header { display: flex; align-items: center; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid #7fc8cf2e; }
+.online-header h2 { margin: 0; font: 30px/1.1 Georgia, serif; color: #f6fbff; }
+.online-header p { margin: 4px 0 0; font-size: 13px; color: #c3cfd9; }
+.online-sigil { display: grid; place-items: center; width: 52px; height: 52px; flex: none; border: 1px solid #7fd6df88; border-radius: 12px; background: linear-gradient(145deg, #1f4a55, #27234a); color: #9fe6ec; }
+.online-close { margin-left: auto; flex: none; width: 44px; height: 44px; padding: 0; border: 1px solid #f06d70; border-radius: 10px; background: #9e2438; color: #ffe7dc; font-size: 28px; font-weight: 800; line-height: 1; }
+.online-close:hover { background: #cb3d4d; }
+
+.online-primary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 46px; padding: 9px 20px; border: 1px solid #ffe09a; border-radius: 10px; background: linear-gradient(180deg, #ffe09a, #c88f35); color: #2a1a08; font-weight: 900; box-shadow: 0 8px 18px #f0c76733, inset 0 1px 0 #fffcdfcc; }
+.online-primary:hover:not(:disabled) { background: linear-gradient(180deg, #fff0bd, #daa447); }
+.online-primary:disabled, .online-secondary:disabled { opacity: .45; cursor: default; }
+.online-secondary { min-height: 40px; padding: 8px 16px; border: 1px solid #7fc8cf66; border-radius: 9px; background: #1e2c42; color: #dff4f6; }
+.online-secondary:hover:not(:disabled) { background: #28405a; }
+.online-link { padding: 0; border: 0; background: none; color: #8fe0e8; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+
+.online-identity { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 14px; }
+.online-field, .online-deck { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.online-field span, .online-deck > span { font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: #9fd8de; }
+.online-field input, .online-join input { width: 100%; min-width: 0; box-sizing: border-box; min-height: 44px; padding: 8px 12px; border: 1px solid #6f8aa266; border-radius: 9px; background: #10172a; color: #fff6e6; font: inherit; font-size: 16px; }
+.online-field input:focus, .online-join input:focus { outline: 2px solid #8fe0e8; outline-offset: 1px; }
+.online-deck strong { font-size: 15px; color: #fff1c6; }
+.online-deck .online-link { justify-self: start; font-size: 13px; }
+
+.online-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.online-choice { display: grid; align-content: start; gap: 10px; min-width: 0; padding: 16px; border: 1px solid #7fc8cf33; border-radius: 12px; background: #141c30; }
+.online-choice h3 { margin: 0; font: 21px Georgia, serif; color: #f6fbff; }
+.online-choice p { margin: 0; font-size: 13px; line-height: 1.5; color: #c8d3dc; }
+.online-choice .online-primary { justify-self: start; }
+.online-join { display: flex; gap: 8px; }
+.online-join input { flex: 1 1 auto; min-width: 0; letter-spacing: .3em; text-transform: uppercase; font-weight: 900; }
+
+.online-room { display: grid; justify-items: center; gap: 14px; padding: 8px 0 4px; text-align: center; }
+.online-kicker { font-size: 12px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: #9fd8de; }
+.online-code { display: flex; gap: 8px; }
+.online-code span { display: grid; place-items: center; width: 52px; height: 64px; border: 1px solid #ecd08c88; border-radius: 10px; background: linear-gradient(180deg, #2b2a4a, #1a1830); font: 800 34px "Baloo 2", "Nunito", sans-serif; color: #fff1c6; box-shadow: inset 0 -3px 0 #00000055; }
+.online-copy-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.online-waiting { display: flex; align-items: center; gap: 10px; margin: 0; max-width: 460px; font-size: 14px; color: #d8e3ea; }
+.online-dot { width: 10px; height: 10px; flex: none; border-radius: 50%; background: #7fe6dd; animation: online-pulse 1.4s ease-in-out infinite; }
+@keyframes online-pulse { 0%, 100% { opacity: .35; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.15); } }
+
+.online-error { margin: 0; padding: 10px 14px; border-left: 3px solid #f1c168; border-radius: 4px; background: #5b2433; font-size: 13px; line-height: 1.45; }
+.online-note { margin: 0; font-size: 12px; color: #a9b6c2; }
+
+@media (max-width: 640px) {
+  .online-panel { padding: 14px; }
+  .online-header h2 { font-size: 24px; }
+  .online-identity, .online-choices { grid-template-columns: 1fr; }
+  .online-code span { width: 42px; height: 54px; font-size: 28px; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .online-panel { gap: 10px; padding: 12px 16px; }
+  .online-header { padding-bottom: 8px; }
+  .online-header h2 { font-size: 22px; }
+  .online-choice { padding: 12px; gap: 6px; }
+  .online-code span { width: 40px; height: 50px; font-size: 26px; }
+}
+
+/* In the duel: the line to the opponent dropped. */
+.online-connection-banner {
+  position: fixed;
+  z-index: 900;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border: 1px solid #f1c16888;
+  border-radius: 999px;
+  background: #3b2433f2;
+  color: #fff1dc;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 8px 24px #0008;
+}

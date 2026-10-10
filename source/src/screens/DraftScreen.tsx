@@ -4,8 +4,9 @@ import { CardFace, playableFace } from "../card-face";
 import { sfx } from "../audio/sfx";
 import { heroPowerDefinition } from "../engine/hero-powers";
 import { rarityName, type HeroPowerId } from "../engine/types";
+import type { CardLibrary } from "../engine/game";
 import {
-  chooseDraftHeroPower, draftCard, draftShowcase, draftDifficultyTitle, draftOffer, draftReady, pickDraftCard, retireDraftRun,
+  chooseDraftHeroPower, draftCard, draftDuelIndex, draftRivalDeck, draftShowcase, type DraftDuelRecord, draftDifficultyTitle, draftOffer, draftReady, pickDraftCard, retireDraftRun,
   draftCost, tierOf, updateDraftRun, DRAFT_LOSS_LIMIT, DRAFT_PICKS, DRAFT_WIN_GOAL, type DraftSave, type DraftTier,
 } from "../draft";
 import "./DraftScreen.css";
@@ -20,8 +21,10 @@ const PICK_SOUND = { Black: "summonRare", Purple: "summonEpic", Yellow: "summonL
  * picks, the run between duels and its end. One screen with phases rather than
  * four overlays, because every phase shows the same growing deck beside it.
  */
-export function DraftScreen({ save, liveDuel, onChange, onStartRun, onDuel, onResume, onClose }: {
+export function DraftScreen({ save, library, liveDuel, onChange, onStartRun, onDuel, onResume, onClose }: {
   save: DraftSave;
+  /** Resolves a duel's deciding card, which can be a token as well as a pool card. */
+  library: CardLibrary;
   /** A saved, unfinished duel of this run that "Continue" can pick up. */
   liveDuel: boolean;
   onChange: (next: DraftSave) => void;
@@ -48,11 +51,11 @@ export function DraftScreen({ save, liveDuel, onChange, onStartRun, onDuel, onRe
           <button type="button" className="draft-close" onClick={() => { sfx.play("button"); onClose(); }} aria-label="Close Rift Draft">×</button>
         </header>
         {!run || run.finished ? (
-          <DraftIntro save={save} onStartRun={onStartRun} />
+          <DraftIntro save={save} library={library} onStartRun={onStartRun} />
         ) : !run.heroPower ? (
           <PowerChoice choices={run.powerChoices} onChoose={(power) => { sfx.play("buff"); onChange(updateDraftRun(save, chooseDraftHeroPower(run, power))); }} />
         ) : draftReady(run) ? (
-          <RunHub save={save} liveDuel={liveDuel} onDuel={onDuel} onResume={onResume} onRetire={() => onChange(retireDraftRun(save))} />
+          <RunHub save={save} library={library} liveDuel={liveDuel} onDuel={onDuel} onResume={onResume} onRetire={() => onChange(retireDraftRun(save))} />
         ) : (
           <PickStage save={save} onChange={onChange} />
         )}
@@ -71,7 +74,7 @@ function DraftSigil() {
   );
 }
 
-function DraftIntro({ save, onStartRun }: { save: DraftSave; onStartRun: () => void }) {
+function DraftIntro({ save, library, onStartRun }: { save: DraftSave; library: CardLibrary; onStartRun: () => void }) {
   const last = save.run?.finished ? save.run : null;
   // A new trio each time a run ends, so the screen does not wear one look forever.
   const showcase = useMemo(() => draftShowcase(`runs-${save.record.runs}`), [save.record.runs]);
@@ -83,6 +86,7 @@ function DraftIntro({ save, onStartRun }: { save: DraftSave; onStartRun: () => v
           <strong className="draft-summary-score">{last.wins} <small>wins</small></strong>
           <RecordPips wins={last.wins} losses={last.losses} />
           <p>{last.wins >= DRAFT_WIN_GOAL ? "Seven rivals fell to one drafted deck." : `${last.wins} win${last.wins === 1 ? "" : "s"} and ${last.losses} loss${last.losses === 1 ? "" : "es"} with this deck.`}</p>
+          <DuelHistory history={last.history} library={library} />
           <DeckList picks={last.picks} heroPower={last.heroPower} compact />
         </div>
       ) : (
@@ -176,9 +180,11 @@ function PickStage({ save, onChange }: { save: DraftSave; onChange: (next: Draft
   );
 }
 
-function RunHub({ save, liveDuel, onDuel, onResume, onRetire }: { save: DraftSave; liveDuel: boolean; onDuel: () => void; onResume: () => void; onRetire: () => void }) {
+function RunHub({ save, library, liveDuel, onDuel, onResume, onRetire }: { save: DraftSave; library: CardLibrary; liveDuel: boolean; onDuel: () => void; onResume: () => void; onRetire: () => void }) {
   const run = save.run!;
   const [confirmRetire, setConfirmRetire] = useState(false);
+  // The same seeded rival the next duel will deal, so its power is known now.
+  const rivalPower = useMemo(() => heroPowerDefinition(draftRivalDeck(run.id, draftDuelIndex(run)).heroPower), [run]);
   return (
     <div className="draft-board">
       <div className="draft-stage draft-hub">
@@ -187,16 +193,23 @@ function RunHub({ save, liveDuel, onDuel, onResume, onRetire }: { save: DraftSav
           <h3>{run.wins} <small>win{run.wins === 1 ? "" : "s"}</small> · {run.losses} <small>loss{run.losses === 1 ? "" : "es"}</small></h3>
         </div>
         <RecordPips wins={run.wins} losses={run.losses} />
-        <p className="draft-next">
-          Next rival: <b>{draftDifficultyTitle(run.wins)}</b>
-          {run.draws ? <span> · {run.draws} draw{run.draws === 1 ? "" : "s"} replayed</span> : null}
-        </p>
+        <div className="draft-rival">
+          <span className="draft-kicker">Next rival · {draftDifficultyTitle(run.wins)}</span>
+          {rivalPower ? (
+            <p className="draft-rival-power">
+              <strong><Lightning size={16} weight="fill" aria-hidden="true" /> {rivalPower.name}</strong>
+              <span>{rivalPower.text}</span>
+            </p>
+          ) : null}
+          {run.draws ? <small>{run.draws} draw{run.draws === 1 ? "" : "s"} replayed</small> : null}
+        </div>
         {liveDuel ? (
           <button type="button" className="draft-primary" onClick={() => { sfx.play("button"); onResume(); }}>Resume your duel</button>
         ) : (
           <button type="button" className="draft-primary" onClick={() => { sfx.play("button"); onDuel(); }}>Duel the next rival</button>
         )}
         {run.activeDuel && !liveDuel ? <p className="draft-warning">Your last duel was left unfinished. It counts as a loss when the next one starts.</p> : null}
+        <DuelHistory history={run.history} library={library} />
         {confirmRetire ? (
           <div className="draft-retire-confirm" role="group" aria-label="Retire this run?">
             <span>End the run now with {run.wins} win{run.wins === 1 ? "" : "s"}?</span>
@@ -208,6 +221,30 @@ function RunHub({ save, liveDuel, onDuel, onResume, onRetire }: { save: DraftSav
         )}
       </div>
       <DeckList picks={run.picks} heroPower={run.heroPower} />
+    </div>
+  );
+}
+
+const OUTCOME_LABEL = { won: "Won", lost: "Lost", drawn: "Draw" } as const;
+
+/** Each finished duel as the card that decided it: yours for a win, the rival's for a loss. */
+function DuelHistory({ history, library }: { history: DraftDuelRecord[]; library: CardLibrary }) {
+  if (!history.length) return null;
+  return (
+    <div className="draft-history-wrap">
+    <span className="draft-kicker">Duels so far</span>
+    <ol className="draft-history" aria-label="Duels so far">
+      {history.map((entry, index) => {
+        const card = entry.mvpCardId ? library[entry.mvpCardId] : undefined;
+        return (
+          <li key={index} className={`draft-history-duel ${entry.outcome}`}>
+            <span className="draft-history-badge">{OUTCOME_LABEL[entry.outcome]}</span>
+            {card ? <div className="draft-history-card"><CardFace card={playableFace(card)} quiet /></div> : <div className="draft-history-card empty" />}
+            <small>{card ? (entry.outcome === "lost" ? `Beaten by ${card.name}` : card.name) : `Duel ${index + 1}`}</small>
+          </li>
+        );
+      })}
+    </ol>
     </div>
   );
 }

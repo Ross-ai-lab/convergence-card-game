@@ -10,6 +10,7 @@ export function GameOver({
   campaign = false,
   campaignLoss = false,
   draftRun,
+  online,
   onRestart,
   onMenu,
 }: {
@@ -21,6 +22,8 @@ export function GameOver({
   campaignLoss?: boolean;
   /** Set for a Rift Draft duel: the run as it stands after this result. */
   draftRun?: DraftRun | null;
+  /** Set for an online duel: only the host can deal a rematch, while the line is up. */
+  online?: { host: boolean; connected: boolean };
   onRestart: () => void;
   onMenu: () => void;
 }) {
@@ -108,7 +111,13 @@ export function GameOver({
           </p>
         ) : null}
         <div className="gameover-buttons">
-          {draftRun !== undefined ? (
+          {online ? (
+            <>
+              {online.host && online.connected ? <button type="button" className="primary" onClick={onRestart}>Rematch</button> : null}
+              <button type="button" className={online.host && online.connected ? "" : "primary"} onClick={onMenu}>Menu</button>
+              {!online.host && online.connected ? <p className="result-online-note">Your opponent can deal a rematch.</p> : null}
+            </>
+          ) : draftRun !== undefined ? (
             <button type="button" className="primary" onClick={onRestart}>Continue</button>
           ) : campaignLoss ? (
             <><button type="button" className="primary" onClick={onRestart}>Rematch</button><button type="button" onClick={onMenu}>Return to menu</button></>

@@ -4,6 +4,7 @@ import { equipRelicFromOutside, TARGETED_EFFECTS, type CardLibrary } from "../en
 import { isMinionCard } from "../engine/types";
 import type { GameState, PlayerId } from "../engine/types";
 import { spawnTestMinion } from "../engine/test-utils";
+import { stateFingerprint } from "../online/protocol";
 
 export function useDebugHook(
   active: boolean,
@@ -140,6 +141,9 @@ export function useDebugHook(
         hand: game.players[viewerId].hand.length,
         mine: game.players[viewerId].board.filter(Boolean).length,
         theirs: game.players[viewerId === 0 ? 1 : 0].board.filter(Boolean).length,
+        /** The whole state's fingerprint: two online browsers must agree on it. */
+        fingerprint: stateFingerprint(game),
+        turn: game.turnNumber,
       }),
     };
 

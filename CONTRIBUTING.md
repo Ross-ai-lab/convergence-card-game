@@ -77,7 +77,7 @@ Chromium checks native holds and swipes. WebKit checks long-press pointer events
 | `npm run check:ui` | Duel controls and title-screen behaviour |
 | `npm run check -- --only card-interface` | Shield readiness, Apex targeting, grouped cheats, deck presets and placement sound |
 | `npm run check:cardface` | Card names, text fit, stats, and viewport containment |
-| `npm run check:features` | Tutorial, developer tools, and all character profiles |
+| `npm run check:features` | Tutorial, developer tools, all character profiles, a Rift Draft run, and an online duel between two browser profiles (needs the internet; skipped when the PeerJS service cannot be reached) |
 | `npm run check -- --only mobile` | Phone/tablet layouts, touch interactions, reader, deck editing, and landscape |
 | `npm run check:audio` | Music and effects routing |
 | `npm run check:campaign-voices` | Campaign recordings, cast manifest, and checksums |
@@ -121,7 +121,7 @@ Every new engine vocabulary value belongs in [types.ts](source/src/engine/types.
 
 Mana is the subject's lore power tier. Assign it from canon capabilities and the Basic reference ladder, independently of card stats or gameplay results.
 Do not change mana as an incidental balance adjustment. Routine interface work must preserve card costs, effects, bot strength, and pacing.
-Fine balance, bot valuation, draft, and online multiplayer are separate future work.
+Fine balance and bot valuation are separate future work.
 Run `sim` or `check:balance` only when the current request explicitly asks for simulation or a difficulty study; use [balance.config.json](source/balance.config.json) for measured thresholds and minimum samples.
 An insufficient sample is a skip, never a pass. The difficulty ladder requires a separately requested run.
 

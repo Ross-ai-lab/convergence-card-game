@@ -30,6 +30,13 @@ const ORDINARY_WEIGHTS: Readonly<Record<DraftTier, number>> = { Black: 48, Purpl
 const SPECIAL_WEIGHTS: Readonly<Record<DraftTier, number>> = { Black: 0, Purple: 0, Yellow: 75, Red: 25, Relic: 0 };
 const FALLBACK: Readonly<Record<DraftTier, DraftTier>> = { Red: "Yellow", Yellow: "Purple", Purple: "Black", Relic: "Black", Black: "Black" };
 
+/** One finished duel of a run, and the card that decided it. */
+export interface DraftDuelRecord {
+  outcome: DraftOutcome;
+  /** The winner's top damage dealer: yours after a win, the rival's after a loss. */
+  mvpCardId: string | null;
+}
+
 export interface DraftRun {
   /** The run's seed, and its identity in a saved duel. */
   id: string;
@@ -49,6 +56,8 @@ export interface DraftRun {
    * it from the run.
    */
   activeDuel: string | null;
+  /** Every finished duel, in order. */
+  history: DraftDuelRecord[];
   /** Set when the run reaches its goal, its loss limit, or is retired. */
   finished: boolean;
 }
@@ -133,6 +142,7 @@ export function newDraftRun(id: string): DraftRun {
     draws: 0,
     settled: [],
     activeDuel: null,
+    history: [],
     finished: false,
   };
 }
@@ -234,7 +244,7 @@ export function draftRivalDeck(runId: string, duelIndex: number): { deck: string
 export type DraftOutcome = "won" | "lost" | "drawn";
 
 /** Counts one finished duel into the run, once; the run ends at its goal or limit. */
-export function recordDraftDuel(save: DraftSave, runId: string, duelId: string, outcome: DraftOutcome): DraftSave {
+export function recordDraftDuel(save: DraftSave, runId: string, duelId: string, outcome: DraftOutcome, mvpCardId: string | null = null): DraftSave {
   const run = save.run;
   if (!run || run.id !== runId || run.finished || run.settled.includes(duelId)) return save;
   const next: DraftRun = {
@@ -244,6 +254,7 @@ export function recordDraftDuel(save: DraftSave, runId: string, duelId: string, 
     draws: run.draws + Number(outcome === "drawn"),
     settled: [...run.settled, duelId].slice(-40),
     activeDuel: run.activeDuel === duelId ? null : run.activeDuel,
+    history: [...run.history, { outcome, mvpCardId }],
   };
   if (next.wins >= DRAFT_WIN_GOAL || next.losses >= DRAFT_LOSS_LIMIT) return closeRun(save, next);
   return { ...save, run: next };
@@ -326,14 +337,17 @@ export function parseDraftSave(raw: string | null): DraftSave {
       (run.heroPower === null || run.powerChoices.includes(run.heroPower)) &&
       run.picks.length <= DRAFT_PICKS && new Set(run.picks).size === run.picks.length &&
       run.picks.every((id) => BY_ID.has(id)) && typeof run.finished === "boolean" &&
-      (run.activeDuel === undefined || run.activeDuel === null || typeof run.activeDuel === "string");
+      (run.activeDuel === undefined || run.activeDuel === null || typeof run.activeDuel === "string") &&
+      (run.history === undefined || (Array.isArray(run.history) && run.history.every((entry) =>
+        entry && ["won", "lost", "drawn"].includes(entry.outcome) && (entry.mvpCardId === null || typeof entry.mvpCardId === "string"))));
     return {
       version: 1,
       record: safeRecord,
       run: runOk ? {
         id: run.id, powerChoices: [...run.powerChoices], heroPower: run.heroPower, picks: [...run.picks],
         wins: Math.min(DRAFT_WIN_GOAL, count(run.wins)), losses: Math.min(DRAFT_LOSS_LIMIT, count(run.losses)), draws: count(run.draws),
-        settled: [...run.settled], activeDuel: run.activeDuel ?? null, finished: run.finished,
+        settled: [...run.settled], activeDuel: run.activeDuel ?? null,
+        history: (run.history ?? []).map((entry) => ({ outcome: entry.outcome, mvpCardId: entry.mvpCardId })), finished: run.finished,
       } : null,
     };
   } catch {

@@ -22,6 +22,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
 - [Rules at a glance](#rules-at-a-glance)
 - [Win and collect](#win-and-collect)
   - [Rift Draft](#rift-draft)
+  - [Online duels](#online-duels)
   - [Progress stays in this browser](#progress-stays-in-this-browser)
 - [Explore and contribute](#explore-and-contribute)
 <!-- README-NAV-END -->
@@ -34,6 +35,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
 | My Deck | Build a thirty-card deck from your collection and choose a Hero Power. |
 | Two-player hotseat | Share one device with separate decks and private hands. |
 | Rift Draft | Draft a deck from offers of three, then duel rival drafters until seven wins or three losses. |
+| Online duel | Play a friend on another device with a six-letter room code or an invite link. |
 | Free duels | Finish the campaign to unlock Recruit, Veteran and Ascendant opponents. |
 | Tutorial | Learn card play, attacks, targeting, relics and Hero Powers in a short guided duel. |
 
@@ -117,12 +119,21 @@ Picks 1, 11 and 21 offer only Legendary or Mythic cards. Relics stop appearing o
 Each rival drafts its own deck. Rivals play as Recruit for your first two wins, Veteran up to four, then Ascendant, always without Ascendant's extra knowledge.
 A run ends at **seven wins** or **three losses**. A draw is replayed. Conceding, or starting the next duel while one is unfinished, counts as a loss.
 Drafts never award or remove collection cards. The draft screen keeps your best run and total wins.
+Between duels, the run screen shows the next rival's Hero Power and, for each finished duel, the card that decided it.
+
+### Online duels
+
+Open **Online** on the title screen. One player creates a room and sends its six-letter code or invite link; the other joins with it. The duel starts as soon as both are in. No account is needed.
+Each player uses their own deck and Hero Power. The room's creator plays first; the other player receives **The Coin**. Both players have an opening mulligan and 100-second turns.
+**Concede** ends the duel at once. After a duel, the room's creator can deal a rematch. Online duels do not award cards and are not saved.
+If a connection drops, the duel waits for up to a minute while the joining player reconnects, including after reloading the page. Leaving the duel concedes it.
+Players connect directly, through PeerJS's free public service. A few strict networks block such connections; another network usually works.
 
 ### Progress stays in this browser
 
 Your collection, decks and ongoing duel save on this device in this browser.
 A private window or cleared browser storage starts a separate collection. **Continue duel** restores an unfinished game.
-There is no online multiplayer or account synchronization. The website displays an aggregate visit count.
+There is no account synchronization. The website displays an aggregate visit count.
 
 ## Explore and contribute
 
