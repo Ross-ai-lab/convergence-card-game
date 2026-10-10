@@ -18,7 +18,10 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { LEAD_CHECKPOINTS, OPENING_TURNS } from "./sim-core";
+import { CAMPAIGN_DIFFICULTIES } from "../src/campaign";
 import {
+  CAMPAIGN_STEPS,
+  CAMPAIGN_TIER_ORDER,
   checkConfigAgainstHarness,
   diffRuns,
   evaluate,
@@ -29,6 +32,7 @@ import {
   tierOutliers,
   watchlist,
   type BalanceConfig,
+  type CampaignMetric,
   type CardRow,
   type CheckResult,
   type GateMetrics,
@@ -48,6 +52,7 @@ function config(): BalanceConfig {
       minLeadGamesForSnowball: 200,
       minCardDrawnForRates: 40,
       minCardPlaysForTier: 60,
+      minGamesPerCampaignTier: 160,
     },
     checks: {
       coinFlip: { enabled: true, minPct: 44, maxPct: 56 },
@@ -63,6 +68,7 @@ function config(): BalanceConfig {
         floors: { "hard>easy": 60, "hard>normal": 55, "normal>easy": 53 },
       },
       snowball: { enabled: true, atTurn: 5, maxLeaderWinPct: 78 },
+      campaignClimb: { enabled: true, gamesPerChapter: 60, minStepPct: 8, maxChapterGapPct: 20 },
     },
     report: {
       watchlistPlayRatePct: 20,
@@ -71,6 +77,20 @@ function config(): BalanceConfig {
       diffNoiseMultiple: 2,
       historyRunsKept: 20,
     },
+  });
+}
+
+/**
+ * A campaign that climbs: four tiers, every boss of a tier equally hard, two
+ * stand-in decks per chapter at 40 duels each, as the shipped config plays it.
+ */
+const TIER_OF_CHAPTER = (chapter: number) => (chapter <= 4 ? "recruit" : chapter <= 10 ? "veteran" : chapter <= 14 ? "ascendantFair" : "ascendant");
+const HEALTHY_BOSS_PCT: Record<string, number> = { recruit: 25, veteran: 50, ascendantFair: 70, ascendant: 85 };
+function campaignRows(override: (chapter: number) => number | undefined = () => undefined): CampaignMetric[] {
+  return Array.from({ length: 20 }, (_, index) => index + 1).flatMap((chapter) => {
+    const difficulty = TIER_OF_CHAPTER(chapter);
+    const pct = override(chapter) ?? HEALTHY_BOSS_PCT[difficulty];
+    return ["starter", "drafted"].map(() => ({ chapter, boss: `Boss ${chapter}`, difficulty, games: 40, bossWins: Math.round((pct / 100) * 40) }));
   });
 }
 
@@ -97,6 +117,7 @@ function healthy(): GateMetrics {
       { key: "normal>easy", strong: "normal", weak: "easy", played: 200, decided: 198, winPct: 62.4 },
     ],
     snowball: { turn: 5, leadGames: 1400, tiedGames: 100, leaderWinPct: 70 },
+    campaign: campaignRows(),
   };
 }
 
@@ -117,8 +138,8 @@ describe("the healthy baseline", () => {
   it("passes every check, so a planted failure below means something", () => {
     const results = evaluate(healthy(), config());
     expect(results.filter((result) => result.state !== "pass")).toEqual([]);
-    expect(results).toHaveLength(11);
-    expect(summarise(results).verdict).toBe("PASS — all 11 checks green");
+    expect(results).toHaveLength(15);
+    expect(summarise(results).verdict).toBe("PASS — all 15 checks green");
   });
 });
 
@@ -227,7 +248,93 @@ describe("live fire — snowballing", () => {
   });
 });
 
+describe("live fire — does the campaign climb", () => {
+  it("names each step between tiers as its own check", () => {
+    expect(CAMPAIGN_STEPS).toEqual(["recruit<veteran", "veteran<ascendantFair", "ascendantFair<ascendant"]);
+  });
+
+  it("knows exactly the game's own difficulty tiers", () => {
+    // A tier added to the campaign data must reach the gate, and one removed
+    // must not leave a check judging nothing.
+    expect([...CAMPAIGN_TIER_ORDER].sort()).toEqual(Object.keys(CAMPAIGN_DIFFICULTIES).sort());
+  });
+
+  for (const step of ["recruit<veteran", "veteran<ascendantFair", "ascendantFair<ascendant"]) {
+    it(`catches the step ${step} going flat`, () => {
+      const [lower, upper] = step.split("<");
+      // The harder tier plays exactly as hard as the one below it.
+      const metrics = { ...healthy(), campaign: campaignRows((chapter) => (TIER_OF_CHAPTER(chapter) === upper ? HEALTHY_BOSS_PCT[lower] : undefined)) };
+      const results = evaluate(metrics, config());
+      expect(find(results, `campaign:${step}`).state).toBe("fail");
+      expect(find(results, `campaign:${step}`).note).toMatch(/not measurably harder/);
+    });
+  }
+
+  it("catches a harder tier that is EASIER than the one before it", () => {
+    // What the shipped game measured: Ascendant's cheats bought nothing.
+    const metrics = { ...healthy(), campaign: campaignRows((chapter) => (TIER_OF_CHAPTER(chapter) === "ascendant" ? 66 : undefined)) };
+    expectOnlyFailure(evaluate(metrics, config()), "campaign:ascendantFair<ascendant");
+  });
+
+  it("fails a step that is real but too small to feel", () => {
+    // 2000 duels a tier makes a 4-point gap statistically clear; it is still
+    // not a difficulty step anybody would notice.
+    const big = (rows: CampaignMetric[]) => rows.map((row) => ({ ...row, games: row.games * 10, bossWins: row.bossWins * 10 }));
+    const metrics = { ...healthy(), campaign: big(campaignRows((chapter) => (TIER_OF_CHAPTER(chapter) === "ascendant" ? 74 : undefined))) };
+    const check = find(evaluate(metrics, config()), "campaign:ascendantFair<ascendant");
+    expect(check.state).toBe("fail");
+    expect(check.note).toMatch(/less than a player could feel/);
+  });
+
+  it("names a boss far out of line with its own tier, and only that boss", () => {
+    // Chapter 5 plays like a final boss in the middle of the Veteran chapters.
+    const metrics = { ...healthy(), campaign: campaignRows((chapter) => (chapter === 5 ? 80 : undefined)) };
+    const results = evaluate(metrics, config());
+    expectOnlyFailure(results, "campaign:outliers");
+    expect(find(results, "campaign:outliers").measured).toMatch(/^chapter 5 Boss 5 \(veteran\) 80% vs 50%$/);
+  });
+
+  it("judges a boss against the REST of its tier, so one extreme boss cannot hide by moving the mean", () => {
+    // Four recruit bosses: one at 55 lifts the tier's own mean to 32.5, and a
+    // gap judged against that would be 22.5 — but against the other three it is 30.
+    const metrics = { ...healthy(), campaign: campaignRows((chapter) => (chapter === 2 ? 55 : undefined)) };
+    expect(find(evaluate(metrics, config()), "campaign:outliers").measured).toMatch(/55% vs 25%/);
+  });
+
+  it("does not name ordinary bosses beside an extreme one", () => {
+    // What the shipped campaign measured: one Veteran boss near 85% lifted the
+    // MEAN of the rest to 53%, and three ordinary 37% bosses were named as too
+    // easy. Against the median of the others they are where they belong.
+    const rates: Record<number, number> = { 5: 85, 6: 37.5, 7: 37.5, 8: 47.5, 9: 47.5, 10: 37.5 };
+    const metrics = { ...healthy(), campaign: campaignRows((chapter) => rates[chapter]) };
+    const check = find(evaluate(metrics, config()), "campaign:outliers");
+    expect(check.state).toBe("fail");
+    expect(check.measured).toMatch(/^chapter 5 Lord|^chapter 5 Boss 5/);
+    expect(check.measured).not.toMatch(/chapter (6|7|10)/);
+  });
+
+  it("does not name a boss whose gap is inside the noise", () => {
+    const metrics = { ...healthy(), campaign: campaignRows((chapter) => (chapter === 6 ? 65 : undefined)) };
+    expect(find(evaluate(metrics, config()), "campaign:outliers").state).toBe("pass");
+  });
+});
+
 describe("skips are not passes", () => {
+  it("skips every campaign check when the campaign did not run", () => {
+    const results = evaluate({ ...healthy(), campaign: null }, config());
+    for (const id of [...CAMPAIGN_STEPS.map((step) => `campaign:${step}`), "campaign:outliers"]) {
+      expect(find(results, id).state, id).toBe("skip");
+      expect(find(results, id).note).toMatch(/check:balance/);
+    }
+  });
+
+  it("skips a campaign step below its sample floor", () => {
+    const thin = campaignRows().map((row) => ({ ...row, games: 4, bossWins: Math.round(row.bossWins / 10) }));
+    const check = find(evaluate({ ...healthy(), campaign: thin }, config()), "campaign:recruit<veteran");
+    expect(check.state).toBe("skip");
+    expect(check.note).toMatch(/needs 160 boss duels per tier/);
+  });
+
   it("skips the coin flip below its sample floor instead of passing it", () => {
     const results = evaluate({ ...healthy(), decidedGames: 300 }, config());
     const check = find(results, "coin-flip");
@@ -275,9 +382,9 @@ describe("skips are not passes", () => {
     const results = evaluate({ ...healthy(), decidedGames: 300, ladder: null }, config());
     const summary = summarise(results);
     expect(summary.skipped).toBe(4);
-    expect(summary.passed).toBe(7);
+    expect(summary.passed).toBe(11);
     expect(summary.passed + summary.skipped).toBe(results.length);
-    expect(summary.verdict).not.toBe("PASS — all 11 checks green");
+    expect(summary.verdict).not.toBe("PASS — all 15 checks green");
     expect(summary.verdict).toMatch(/PASS WITH 4 SKIPPED/);
     expect(formatGateBlock(results)).toMatch(/A skipped check is NOT a pass/);
   });
@@ -316,7 +423,7 @@ describe("holes found by adversarial review", () => {
     off.checks.coinFlip.enabled = false;
     off.checks.snowball.enabled = false;
     const results = evaluate(healthy(), off);
-    expect(results).toHaveLength(11);
+    expect(results).toHaveLength(15);
     expect(find(results, "coin-flip").state).toBe("skip");
     expect(find(results, "coin-flip").note).toMatch(/disabled in balance.config.json/);
     expect(summarise(results).verdict).not.toMatch(/all 9 checks green/);
@@ -328,7 +435,7 @@ describe("holes found by adversarial review", () => {
     const gapped = config();
     delete (gapped.checks.skillLadder.floors as Record<string, number>)["normal>easy"];
     const results = evaluate(healthy(), gapped);
-    expect(results).toHaveLength(11);
+    expect(results).toHaveLength(15);
     const check = find(results, "ladder:normal>easy");
     expect(check.state).toBe("fail");
     expect(check.note).toMatch(/may not vanish from the gate/);
@@ -543,7 +650,8 @@ function snapshot(over: Partial<RunSnapshot> = {}): RunSnapshot {
     games: 1500,
     skill: "normal",
     seedPrefix: "sim",
-    coreHp: 75,
+    harness: "constructed-1",
+    coreHp: 30,
     headline: { firstWinPct: 49, medianTurns: 21 },
     cards: [{ id: "c001", name: "Whitebeard", cost: 9, winRate: 55, playRate: 60, sample: 400 }],
     ...over,
@@ -561,7 +669,15 @@ describe("before / after", () => {
   it("refuses to compare runs from different seeds, skills or core HP", () => {
     expect(diffRuns(snapshot({ seedPrefix: "other" }), snapshot(), config()).reason).toMatch(/seed/);
     expect(diffRuns(snapshot({ skill: "hard" }), snapshot(), config()).reason).toMatch(/bot/);
-    expect(diffRuns(snapshot({ coreHp: 30 }), snapshot(), config()).reason).toMatch(/core HP/);
+    expect(diffRuns(snapshot({ coreHp: 75 }), snapshot(), config()).reason).toMatch(/core HP/);
+  });
+
+  it("refuses to compare a run made on the old shared-pile harness", () => {
+    // Runs saved before constructed decks carry no harness field. They measured
+    // a game nobody plays, so a delta against one would mean nothing.
+    const old = snapshot();
+    delete old.harness;
+    expect(diffRuns(old, snapshot(), config()).reason).toMatch(/different harness \(shared pile vs constructed-1\)/);
   });
 
   it("says so plainly when there is no baseline yet", () => {

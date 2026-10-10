@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { parseCardsCsv, parseRelicsCsv } from "../src/engine/csv";
 import {
   applyAction,
+  BOARD_SIZE,
   createInitialGame,
   getLegalActions,
   makeCardLibrary,
@@ -23,7 +24,9 @@ import {
   type CardLibrary,
 } from "../src/engine/game";
 import { chooseBotAction, BOT_CHEATS, type BotSkill } from "../src/engine/bot";
-import type { CardDefinition, GameAction, GameState, MinionInstance, PlayerId, RelicDefinition } from "../src/engine/types";
+import { createDraftKit } from "../src/draft-core";
+import { CAMPAIGN_CARD_IDS } from "../src/progress";
+import type { CardDefinition, GameAction, GameState, HeroPowerId, MinionInstance, PlayerId, RelicDefinition } from "../src/engine/types";
 
 /** How many of each player's OWN opening turns are sampled for playability. */
 export const OPENING_TURNS = 4;
@@ -88,7 +91,7 @@ export function checkState(state: GameState, where: string): string[] {
     if (!Number.isFinite(player.health)) bad(`p${player.id} health is ${player.health}`);
     if (!Number.isFinite(player.mana) || player.mana < 0) bad(`p${player.id} mana is ${player.mana}`);
     if (player.maxMana > 10) bad(`p${player.id} maxMana ${player.maxMana} above the cap`);
-    if (player.board.length !== 5) bad(`p${player.id} board has ${player.board.length} slots`);
+    if (player.board.length !== BOARD_SIZE) bad(`p${player.id} board has ${player.board.length} slots, not ${BOARD_SIZE}`);
     if (player.hand.length > 40) bad(`p${player.id} hand has ${player.hand.length} cards`);
 
     player.board.forEach((minion, slot) => {
@@ -156,6 +159,41 @@ export function checkSerialisable(state: GameState, where: string): string[] {
 // ---------------------------------------------------------------------------
 
 export type Driver = "bot" | "random";
+
+// ---------------------------------------------------------------------------
+// The decks a measured duel is played with.
+//
+// THE REAL GAME IS CONSTRUCTED: each seat brings its own 30-card deck and a Hero
+// Power. The harness used to start every duel with no decks at all, which makes
+// the engine deal both seats from ONE shared pile of the whole roster with no
+// Hero Powers — a game nobody has played since separate decks arrived, and the
+// one every balance number was quietly measured on.
+//
+// Each seat now drafts its deck with the Rift Draft rival picker, from offers
+// seeded by the duel: thirty different cards with a sane curve, a spread of
+// rarities and a Hero Power, which is the closest honest stand-in for "a deck a
+// player built". The same seed always drafts the same two decks.
+// ---------------------------------------------------------------------------
+
+const draftKits = new WeakMap<CardDefinition[], ReturnType<typeof createDraftKit>>();
+
+function draftKitFor(cards: CardDefinition[], relics: RelicDefinition[]) {
+  let kit = draftKits.get(cards);
+  if (!kit) {
+    const deckable = new Set(CAMPAIGN_CARD_IDS);
+    kit = createDraftKit([...cards, ...relics].filter((card) => deckable.has(card.id)));
+    draftKits.set(cards, kit);
+  }
+  return kit;
+}
+
+/** One drafted deck and Hero Power for a seat, from the duel's seed. */
+export function draftedSeat(cards: CardDefinition[], relics: RelicDefinition[], seed: string, seat: PlayerId): { deck: string[]; heroPower: HeroPowerId } {
+  return draftKitFor(cards, relics).draftRivalDeck(`${seed}:deck`, seat);
+}
+
+/** Never let a seat use a cheat it was not given: an explicit fair profile. */
+export const FAIR_CHEATS = { trueDice: false, readsYourReply: false, clairvoyance: false, foresight: false } as const;
 
 /** Who was ahead at one checkpoint, and by how much. */
 export interface LeadSnapshot {
@@ -247,6 +285,12 @@ export interface PlayOptions {
    * how the three opponents compare as the player actually meets them.
    */
   grantCheats?: boolean;
+  /**
+   * The duel's opening state, when the caller sets it up itself: a campaign boss
+   * duel, say. Omitted = two drafted decks with Hero Powers, a mulligan for each
+   * seat and The Coin for the second, as two people meet online or in hotseat.
+   */
+  initialState?: GameState;
 }
 
 /**
@@ -282,12 +326,30 @@ export function playOneGame(options: PlayOptions): GameResult {
   const rng = makeRng(`${seed}:driver`);
   const byId = new Map([...cards, ...relics].map((card) => [card.id, card]));
 
-  const setup: { startingHealth?: number; manaRamp?: number; foresightFor?: PlayerId | null } = {};
-  if (startingHealth) setup.startingHealth = startingHealth;
-  if (manaRamp) setup.manaRamp = manaRamp;
-  const cheatSeat = resolveCheatSeat(drivers, skills, grantCheats);
-  if (cheatSeat !== null) setup.foresightFor = cheatSeat;
-  let state = createInitialGame(cards, seed, relics, setup);
+  let state: GameState;
+  if (options.initialState) {
+    state = options.initialState;
+  } else {
+    const seats = ([0, 1] as const).map((seat) => draftedSeat(cards, relics, seed, seat));
+    const setup: Parameters<typeof createInitialGame>[3] = {
+      decks: [seats[0].deck, seats[1].deck],
+      heroPowers: [seats[0].heroPower, seats[1].heroPower],
+      mulliganPlayers: [0, 1],
+      hasCoin: true,
+    };
+    if (startingHealth) setup.startingHealth = startingHealth;
+    if (manaRamp) setup.manaRamp = manaRamp;
+    const cheatSeat = resolveCheatSeat(drivers, skills, grantCheats);
+    if (cheatSeat !== null) setup.foresightFor = cheatSeat;
+    state = createInitialGame(cards, seed, relics, setup);
+    // The search-side cheats (true dice, reading replies, clairvoyance) would
+    // otherwise default from the skill for EVERY hard seat. Self-play measures
+    // the honest game; only the ladder's entitled seat may cheat.
+    state.botCheats = [
+      cheatSeat === 0 ? BOT_CHEATS[skills[0]] : FAIR_CHEATS,
+      cheatSeat === 1 ? BOT_CHEATS[skills[1]] : FAIR_CHEATS,
+    ].map((cheats) => ({ ...cheats })) as GameState["botCheats"];
+  }
   let peakMana = 1;
   const playsByCost = new Array(11).fill(0);
   const problems: string[] = [];
@@ -449,7 +511,7 @@ export function playOneGame(options: PlayOptions): GameResult {
     playsByCost,
     openingPlayable,
     leads,
-    startingHealth: startingHealth ?? STARTING_CORE,
+    startingHealth: options.initialState ? options.initialState.players[0].health : startingHealth ?? STARTING_CORE,
     problems,
   };
 }

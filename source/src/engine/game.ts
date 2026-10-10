@@ -35,6 +35,8 @@ import type {
 export type CardLibrary = Record<string, PlayableCard>;
 
 const boardSize = 4;
+/** Minion slots per side; read by the balance harness's state invariants. */
+export const BOARD_SIZE = boardSize;
 const handLimit = 10;
 /**
  * How many of its own turns a Chained minion loses. TWO, everywhere, always.

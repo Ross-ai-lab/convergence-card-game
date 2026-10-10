@@ -31,6 +31,9 @@ Every universe stays selectable. Later champions receive stronger search and, in
 | 11–14 | Ascendant search with cheats disabled |
 | 15–20 | Full Ascendant with reply-reading, true-dice knowledge, Clairvoyance and Foresight |
 
+The balance gate holds the schedule to account. Each tier's bosses must win measurably more often than the tier below.
+No boss may sit far from the rest of its own tier; such a boss is retuned or its chapter moves.
+
 ## Separate decks, complete library
 
 Each seat owns its draw and bottom piles. Hotseat privacy hides the other player's hand.

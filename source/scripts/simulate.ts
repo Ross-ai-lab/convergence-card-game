@@ -5,11 +5,17 @@
  *
  *   --mode selfplay   thousands of bot-vs-bot duels, reporting how long games
  *                     last, whether they end at all, how much the coin flip
- *                     decides, and how every one of the 175 cards actually
+ *                     decides, and how every card in the roster actually
  *                     performs when it reaches a board.
  *   --mode fuzz       both seats play random LEGAL moves with the full invariant
  *                     suite armed after every action, hunting crashes, corrupt
  *                     states, unserialisable saves and soft-locks.
+ *   --full            adds the bot ladder and every campaign boss, the second
+ *                     played in worker processes alongside everything else
+ *                     (`campaign-difficulty.ts`).
+ *
+ * Every self-play duel is two drafted 30-card decks with Hero Powers, the game
+ * as people play it. See `draftedSeat` in `sim-core.ts`.
  *
  * Usage:
  *   npm run sim                          both modes, default sizes
@@ -21,6 +27,7 @@
  */
 
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpus } from "node:os";
 import { join } from "node:path";
 
 import { loadData, playOneGame, ROOT, LEAD_CHECKPOINTS, OPENING_TURNS, type Driver, type GameResult } from "./sim-core";
@@ -29,6 +36,7 @@ import {
   diffRuns,
   evaluate,
   formatGateBlock,
+  HARNESS_VERSION,
   parseConfig,
   summarise,
   tierOutliers,
@@ -43,6 +51,7 @@ import {
   type LadderGame,
   type LadderRun,
 } from "./ladder-compare";
+import { formatCampaignTable, runCampaignDifficultyParallel, type CampaignRun } from "./campaign-difficulty";
 import { botDials, type BotSkill } from "../src/engine/bot";
 import { STARTING_CORE } from "../src/engine/game";
 import type { CardDefinition, PlayerId } from "../src/engine/types";
@@ -667,6 +676,7 @@ interface GateSection {
   watch: ReturnType<typeof cardRows>;
   diff: ReturnType<typeof diffRuns>;
   ladder: Array<LadderMetric & { medianTurns: number }> | null;
+  campaign: CampaignRun | null;
 }
 
 function buildReport(
@@ -841,6 +851,33 @@ ${gate.ladder
 </tbody></table>`
     : `<h2>Does skill win?</h2><p class="sub">The ladder did not run — <code>npm run check:balance</code> is the full gate.</p>`;
 
+  // --- The campaign, boss by boss. Lower is easier for the player.
+  const campaign = gate.campaign;
+  const campaignBlock = campaign
+    ? `
+<h2>Does the campaign climb?</h2>
+<p class="sub">Every boss set up exactly as the game sets it up, against a stand-in player at ${esc(campaign.playerSkill)}
+search depth who never cheats: once with the starter deck, once with a deck drafted from the whole collection.
+${campaign.gamesPerChapter} duels per boss and deck. The number is how often the <b>boss</b> wins.</p>
+<table><thead><tr><th>Chapter</th><th>Boss</th><th>Tier</th><th>vs starter deck</th><th>vs drafted deck</th></tr></thead><tbody>
+${[...new Set(campaign.chapters.map((row) => row.chapter))]
+  .map((chapter) => {
+    const rows = campaign.chapters.filter((row) => row.chapter === chapter);
+    const cell = (proxy: string) => {
+      const row = rows.find((entry) => entry.proxy === proxy);
+      return row ? `${row.bossWinPct}% <span class="dim">±${row.ci95}</span>` : "—";
+    };
+    return `<tr><td>${chapter}</td><td>${esc(rows[0].boss)}</td><td>${esc(rows[0].difficulty)}</td><td>${cell("starter")}</td><td>${cell("drafted")}</td></tr>`;
+  })
+  .join("")}
+</tbody></table>
+<table><thead><tr><th>Tier</th><th>Stand-in deck</th><th>Boss wins</th><th>Duels</th></tr></thead><tbody>
+${campaign.tiers
+  .map((tier) => `<tr><td>${esc(tier.difficulty)}</td><td>${tier.proxy}</td><td>${tier.bossWinPct}% <span class="dim">±${tier.ci95}</span></td><td>${tier.games}</td></tr>`)
+  .join("")}
+</tbody></table>`
+    : `<h2>Does the campaign climb?</h2><p class="sub">The campaign did not run — <code>npm run check:balance</code> is the full gate.</p>`;
+
   return `<meta charset="utf-8"><title>Convergence balance</title>
 <style>
  body{background:#14100c;color:#e8dcc8;font:14px/1.55 system-ui,sans-serif;margin:0;padding:28px 34px}
@@ -876,7 +913,7 @@ ${
  <div class="kpi"><b>${sp.turnMedian}</b><span>median turns</span></div>
  <div class="kpi"><b>${sp.turnP10}–${sp.turnP90}</b><span>10th–90th pct</span></div>
  <div class="kpi"><b class="${Math.abs(sp.firstWinPct - 50) > 6 ? "bad" : "good"}">${sp.firstWinPct}%</b><span>first player wins</span></div>
- <div class="kpi"><b>${sp.blowoutPct}%</b><span>blowouts (winner ≥25 hp)</span></div>
+ <div class="kpi"><b>${sp.blowoutPct}%</b><span>blowouts (winner keeps ≥80% of core)</span></div>
  <div class="kpi"><b>${sp.avgBoard}</b><span>avg minions per side</span></div>
  <div class="kpi"><b>${sp.avgActions}</b><span>actions per game</span></div>
 </div>
@@ -901,6 +938,7 @@ ${table(
     : ""
 }
 ${ladderBlock}
+${campaignBlock}
 ${diffBlock}
 ${
   fz
@@ -1036,6 +1074,19 @@ if (flag("sweep")) {
   process.exit(0);
 }
 
+// The campaign's boss duels run in worker processes, started first so they play
+// alongside the single-threaded self-play, fuzz and ladder below. Their search
+// is the deepest in the game, so on their own they would double the gate's time.
+const campaignClimb = CONFIG.checks.campaignClimb;
+const campaignJobs = Math.max(1, Math.min(8, cpus().length - 2));
+const campaignPending = FULL && campaignClimb.enabled
+  ? (console.log(`Campaign: every boss, ${campaignClimb.gamesPerChapter} duels per deck, in ${campaignJobs} workers…`),
+    runCampaignDifficultyParallel({ games: campaignClimb.gamesPerChapter, jobs: campaignJobs, seedPrefix: `${SEED_PREFIX}-campaign` }))
+  : null;
+// Rejected later, when awaited. Without this, a worker that dies during the long
+// synchronous self-play would be reported as an unhandled rejection first.
+campaignPending?.catch(() => undefined);
+
 if (MODE === "selfplay" || MODE === "both") {
   console.log(`Self-play: ${GAMES} games at ${SKILL}…`);
   selfPlay = runSelfPlay(GAMES);
@@ -1054,6 +1105,13 @@ if (FULL && CONFIG.checks.skillLadder.enabled) {
   ladder = run.table;
   ladderHygiene = run.hygiene;
   writeLadderFile(ladder);
+}
+
+let campaign: CampaignRun | null = null;
+if (campaignPending) {
+  console.log("Campaign: waiting for the boss duels to finish…");
+  campaign = await campaignPending;
+  writeFileSync(join(outDir, "campaign.json"), JSON.stringify(campaign, null, 2), "utf8");
 }
 
 // ---------------------------------------------------------------------------
@@ -1092,6 +1150,9 @@ const metrics: GateMetrics = {
       }
     : null,
   ladder,
+  campaign: campaign
+    ? campaign.chapters.map((row) => ({ chapter: row.chapter, boss: row.boss, difficulty: row.difficulty, games: row.games, bossWins: row.bossWins }))
+    : null,
   snowball: selfPlay
     ? {
         turn: selfPlay.snowball.turn,
@@ -1137,6 +1198,7 @@ const snapshot: RunSnapshot = {
   games: GAMES,
   skill: SKILL,
   seedPrefix: SEED_PREFIX,
+  harness: HARNESS_VERSION,
   coreHp: selfPlay?.startingCore ?? CORE_HP ?? STARTING_CORE,
   headline: {
     firstWinPct: selfPlay?.firstWinPct ?? 0,
@@ -1145,6 +1207,16 @@ const snapshot: RunSnapshot = {
     avgBoard: selfPlay?.avgBoard ?? 0,
     deadOpeningPct: selfPlay?.opening.deadThroughWindowPct ?? 0,
     snowballPct: selfPlay?.snowball.leaderWinPct ?? 0,
+    // Boss win rate per tier, both stand-in decks pooled: only on full runs, and
+    // a headline is compared only when both runs carry it.
+    ...Object.fromEntries(
+      [...new Set(campaign?.tiers.map((tier) => tier.difficulty) ?? [])].map((difficulty) => {
+        const tiers = campaign!.tiers.filter((tier) => tier.difficulty === difficulty);
+        const games = tiers.reduce((sum, tier) => sum + tier.games, 0);
+        const wins = tiers.reduce((sum, tier) => sum + (tier.bossWinPct / 100) * tier.games, 0);
+        return [`boss:${difficulty}`, Math.round((wins / games) * 1000) / 10];
+      }),
+    ),
   },
   cards: rows.map((row) => ({
     id: row.id,
@@ -1175,6 +1247,7 @@ const gateSection: GateSection = {
   watch: watchlist(rows, CONFIG),
   diff,
   ladder,
+  campaign,
 };
 
 writeFileSync(join(outDir, "report.html"), buildReport(selfPlay, fuzz, gateSection), "utf8");
@@ -1186,6 +1259,7 @@ writeFileSync(
       selfPlay: selfPlay ? { ...selfPlay, stats: rows } : null,
       fuzz,
       ladder,
+      campaign,
       diff,
     },
     null,
@@ -1269,8 +1343,13 @@ if (selfPlay?.stalledSeeds.length || selfPlay?.softLockedSeeds.length) {
   }
 }
 
+if (campaign) {
+  console.log("");
+  console.log(formatCampaignTable(campaign));
+}
+
 console.log(formatGateBlock(results));
 console.log(`Report: .preview/balance/report.html`);
-if (!FULL) console.log(`Full gate including the bot ladder: npm run check:balance`);
+if (!FULL) console.log(`Full gate including the bot ladder and every campaign boss: npm run check:balance`);
 
 process.exitCode = summary.green ? 0 : 1;

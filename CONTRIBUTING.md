@@ -124,6 +124,10 @@ Do not change mana as an incidental balance adjustment. Routine interface work m
 Fine balance and bot valuation are separate future work.
 Run `sim` or `check:balance` only when the current request explicitly asks for simulation or a difficulty study; use [balance.config.json](source/balance.config.json) for measured thresholds and minimum samples.
 An insufficient sample is a skip, never a pass. The difficulty ladder requires a separately requested run.
+The simulator plays the real game: each seat drafts a 30-card deck with the Rift Draft picker and brings a Hero Power. Only the ladder's designated seat may cheat.
+`check:balance` also plays every campaign boss in worker processes. It fails when a tier is not harder than the tier below it, or when a boss sits far from the rest of its tier.
+[campaign-difficulty.ts](source/scripts/campaign-difficulty.ts) measures the bosses alone (`--games`, `--jobs`, `--chapters`). `--cheats none` or `--cheats all` replays the same seeds with every boss fair or fully cheating, which measures what the cheats are worth.
+A saved run from a different harness is never compared with a new one.
 
 Engine contracts are recorded in [the design decisions](DESIGN-DECISIONS.md#engine-contracts).
 Clickable definitions and aliases live in [keywords.ts](source/src/keywords.ts). Their scanner and shared artwork positions live in [card-presentation.ts](source/src/card-presentation.ts). Engine vocabulary and effect IDs belong in [types.ts](source/src/engine/types.ts).

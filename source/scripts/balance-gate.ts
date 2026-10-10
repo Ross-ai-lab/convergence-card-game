@@ -32,6 +32,7 @@ export interface BalanceConfig {
     minLeadGamesForSnowball: number;
     minCardDrawnForRates: number;
     minCardPlaysForTier: number;
+    minGamesPerCampaignTier: number;
   };
   checks: {
     coinFlip: { enabled: boolean; minPct: number; maxPct: number };
@@ -44,6 +45,8 @@ export interface BalanceConfig {
     /** `games` is per matchup: the hard bot's duels cost ~8x and need far less sample. */
     skillLadder: { enabled: boolean; games: Record<string, number>; floors: Record<string, number> };
     snowball: { enabled: boolean; atTurn: number; maxLeaderWinPct: number | null };
+    /** Boss duels per chapter AND per stand-in deck; the full gate plays both decks. */
+    campaignClimb: { enabled: boolean; gamesPerChapter: number; minStepPct: number; maxChapterGapPct: number };
   };
   report: {
     watchlistPlayRatePct: number;
@@ -69,6 +72,7 @@ const SHAPE: Record<string, Record<string, string>> = {
     minLeadGamesForSnowball: "number",
     minCardDrawnForRates: "number",
     minCardPlaysForTier: "number",
+    minGamesPerCampaignTier: "number",
   },
   checks: {
     coinFlip: "object",
@@ -80,6 +84,7 @@ const SHAPE: Record<string, Record<string, string>> = {
     deadOpening: "object",
     skillLadder: "object",
     snowball: "object",
+    campaignClimb: "object",
   },
   report: {
     watchlistPlayRatePct: "number",
@@ -100,6 +105,14 @@ const SHAPE: Record<string, Record<string, string>> = {
  */
 export const LADDER_MATCHUPS = ["hard>easy", "hard>normal", "normal>easy"] as const;
 
+/**
+ * The campaign's difficulty tiers, easiest first. Canonical for the same reason
+ * as the ladder: a tier must not leave the gate by leaving a data file. A test
+ * holds this list equal to the game's own profiles in `src/campaign.ts`.
+ */
+export const CAMPAIGN_TIER_ORDER = ["recruit", "veteran", "ascendantFair", "ascendant"] as const;
+export const CAMPAIGN_STEPS = CAMPAIGN_TIER_ORDER.slice(1).map((upper, index) => `${CAMPAIGN_TIER_ORDER[index]}<${upper}`);
+
 /** Every check id the gate must account for. Nothing may quietly leave this list. */
 export const REQUIRED_CHECKS = [
   "soft-locks",
@@ -111,6 +124,8 @@ export const REQUIRED_CHECKS = [
   "dead-opening",
   ...LADDER_MATCHUPS.map((key) => `ladder:${key}`),
   "snowball",
+  ...CAMPAIGN_STEPS.map((key) => `campaign:${key}`),
+  "campaign:outliers",
 ] as const;
 
 const CHECK_SHAPE: Record<string, string[]> = {
@@ -123,6 +138,7 @@ const CHECK_SHAPE: Record<string, string[]> = {
   deadOpening: ["enabled", "throughOwnTurns", "maxPct"],
   skillLadder: ["enabled", "games", "floors"],
   snowball: ["enabled", "atTurn", "maxLeaderWinPct"],
+  campaignClimb: ["enabled", "gamesPerChapter", "minStepPct", "maxChapterGapPct"],
 };
 
 /** Keys beginning with `$` are prose for whoever opens the file. Never data. */
@@ -289,6 +305,11 @@ export interface GateMetrics {
   } | null;
   /** null = the ladder was not run (the fast loop skips it). */
   ladder: LadderMetric[] | null;
+  /**
+   * null = the campaign was not played (only the full gate plays it). One row
+   * per chapter and stand-in deck, exactly as `campaign-difficulty.ts` reports.
+   */
+  campaign: CampaignMetric[] | null;
   /** null = the snowball snapshot was not measured. */
   snowball: {
     turn: number;
@@ -296,6 +317,14 @@ export interface GateMetrics {
     tiedGames: number;
     leaderWinPct: number;
   } | null;
+}
+
+export interface CampaignMetric {
+  chapter: number;
+  boss: string;
+  difficulty: string;
+  games: number;
+  bossWins: number;
 }
 
 const pass = (id: string, title: string, measured: string, expected: string): CheckResult => ({
@@ -579,6 +608,8 @@ export function evaluate(metrics: GateMetrics, config: BalanceConfig): CheckResu
     }
   }
 
+  evaluateCampaign(metrics.campaign, config, results);
+
   // Last line of defence. Every id in REQUIRED_CHECKS must be accounted for by
   // the time we get here — a check that produces no result at all is invisible,
   // and `summarise` counts against `results.length`, which would happily report
@@ -594,6 +625,110 @@ export function evaluate(metrics: GateMetrics, config: BalanceConfig): CheckResu
   }
 
   return results;
+}
+
+/** The middle value; the mean of the two middle values for an even count. */
+function median(values: readonly number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/** Wins and duels pooled over every row given, across both stand-in decks. */
+function pool(rows: readonly CampaignMetric[]): { games: number; pct: number } {
+  const games = rows.reduce((sum, row) => sum + row.games, 0);
+  const wins = rows.reduce((sum, row) => sum + row.bossWins, 0);
+  return { games, pct: games === 0 ? 0 : (wins / games) * 100 };
+}
+
+/**
+ * Does the campaign get harder the way its labels say?
+ *
+ * One check per step between neighbouring tiers, so the summary names the step
+ * that broke. A step passes only when the harder tier's bosses win at least
+ * `minStepPct` more often AND the 95% range of that gap sits above zero: a
+ * tier that is harder by shuffle luck alone is not a tier.
+ *
+ * Then one check over every chapter: a boss that sits far from the other
+ * bosses of its own tier is named. Judged against the MEDIAN of the other
+ * bosses, never their mean: measured on the shipped campaign, one extreme boss
+ * lifted the mean of the rest so far that three ordinary bosses beside it were
+ * named as too easy.
+ */
+function evaluateCampaign(campaign: CampaignMetric[] | null, config: BalanceConfig, results: CheckResult[]): void {
+  const c = config.checks.campaignClimb;
+  const floor = config.sample.minGamesPerCampaignTier;
+  for (const step of CAMPAIGN_STEPS) {
+    const [lower, upper] = step.split("<");
+    const id = `campaign:${step}`;
+    const title = `Campaign climbs — ${upper} bosses harder than ${lower}`;
+    const expected = `at least ${c.minStepPct} points more boss wins, clear of zero beyond noise`;
+    if (!c.enabled) {
+      results.push(skip(id, title, "not run", expected, "disabled in balance.config.json"));
+      continue;
+    }
+    if (!campaign) {
+      results.push(skip(id, title, "not measured", expected, "the campaign did not run — use `npm run check:balance` for the full gate"));
+      continue;
+    }
+    const low = pool(campaign.filter((row) => row.difficulty === lower));
+    const high = pool(campaign.filter((row) => row.difficulty === upper));
+    const gap = high.pct - low.pct;
+    const margin = 1.96 * Math.sqrt(sePct(low.pct, low.games) ** 2 + sePct(high.pct, high.games) ** 2);
+    const measured = `${round1(low.pct)}% → ${round1(high.pct)}% boss wins (${gap >= 0 ? "+" : ""}${round1(gap)} ±${round1(margin)}) over ${low.games} and ${high.games} duels`;
+    if (low.games < floor || high.games < floor) {
+      results.push(skip(id, title, measured, expected, `needs ${floor} boss duels per tier`));
+    } else if (gap < c.minStepPct) {
+      results.push(fail(id, title, measured, expected,
+        gap - margin > 0
+          ? `${upper} is harder, but by less than a player could feel — the two tiers play alike`
+          : `${upper} is not measurably harder than ${lower} — its label promises a step the bosses do not take`));
+    } else if (gap - margin <= 0) {
+      results.push(fail(id, title, measured, expected, `the 95% range of the gap reaches ${round1(gap - margin)} — not distinguishable from no step at all`));
+    } else {
+      results.push(pass(id, title, measured, expected));
+    }
+  }
+
+  const id = "campaign:outliers";
+  const title = "Campaign bosses sit with their own tier";
+  const expected = `no boss more than ${c.maxChapterGapPct} points from the median of its tier's other bosses, beyond noise`;
+  if (!c.enabled) {
+    results.push(skip(id, title, "not run", expected, "disabled in balance.config.json"));
+    return;
+  }
+  if (!campaign) {
+    results.push(skip(id, title, "not measured", expected, "the campaign did not run — use `npm run check:balance` for the full gate"));
+    return;
+  }
+  const chapters = [...new Set(campaign.map((row) => row.chapter))].sort((a, b) => a - b);
+  const named: string[] = [];
+  let judged = 0;
+  for (const chapter of chapters) {
+    const own = campaign.filter((row) => row.chapter === chapter);
+    const tier = own[0].difficulty;
+    const others = campaign.filter((row) => row.difficulty === tier && row.chapter !== chapter);
+    const rest = pool(others);
+    if (rest.games < floor) continue;
+    judged += 1;
+    const boss = pool(own);
+    const peers = median([...new Set(others.map((row) => row.chapter))].map((other) => pool(others.filter((row) => row.chapter === other)).pct));
+    const gap = boss.pct - peers;
+    // The median's own noise is approximated by the pooled rest's: close
+    // enough at these sample sizes, and it errs towards naming nobody.
+    const margin = 1.96 * Math.sqrt(sePct(boss.pct, boss.games) ** 2 + sePct(peers, rest.games) ** 2);
+    if (Math.abs(gap) >= c.maxChapterGapPct && Math.abs(gap) - margin > 0) {
+      named.push(`chapter ${chapter} ${own[0].boss} (${tier}) ${round1(boss.pct)}% vs ${round1(peers)}%`);
+    }
+  }
+  const measured = named.length ? named.join("; ") : `${judged} bosses judged, none out of line`;
+  if (judged === 0) {
+    results.push(skip(id, title, measured, expected, `needs ${floor} boss duels in the rest of each tier`));
+  } else if (named.length) {
+    results.push(fail(id, title, measured, expected, "these bosses play like a different tier from the one their chapter promises — retune the boss or move the chapter"));
+  } else {
+    results.push(pass(id, title, measured, expected));
+  }
 }
 
 export interface GateSummary {
@@ -729,8 +864,18 @@ export function watchlist<T extends CardRow>(rows: T[], config: BalanceConfig): 
 // Before / after
 // ---------------------------------------------------------------------------
 
+/**
+ * Which game the harness plays. Runs made on a different harness measure a
+ * different game, so they are never compared. `constructed` is two drafted
+ * 30-card decks with Hero Powers; runs saved before it have no field at all and
+ * were dealt from one shared pile of the whole roster.
+ */
+export const HARNESS_VERSION = "constructed-1";
+
 export interface RunSnapshot {
   stamp: string;
+  /** Missing on runs made before constructed decks: those used the shared pile. */
+  harness?: string;
   games: number;
   skill: string;
   seedPrefix: string;
@@ -778,6 +923,7 @@ export function diffRuns(prev: RunSnapshot | null, curr: RunSnapshot, config: Ba
   if (!prev) return { ...empty, reason: "no previous run stored yet — this run becomes the baseline" };
 
   const mismatches: string[] = [];
+  if ((prev.harness ?? "shared-pile") !== (curr.harness ?? "shared-pile")) mismatches.push(`a different harness (${prev.harness ?? "shared pile"} vs ${curr.harness ?? "shared pile"})`);
   if (prev.games !== curr.games) mismatches.push(`${prev.games} vs ${curr.games} duels`);
   if (prev.seedPrefix !== curr.seedPrefix) mismatches.push(`seed "${prev.seedPrefix}" vs "${curr.seedPrefix}"`);
   if (prev.skill !== curr.skill) mismatches.push(`${prev.skill} vs ${curr.skill} bot`);

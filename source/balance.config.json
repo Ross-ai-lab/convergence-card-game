@@ -22,7 +22,8 @@
     "minGamesPerLadderMatchup": 75,
     "minLeadGamesForSnowball": 200,
     "minCardDrawnForRates": 40,
-    "minCardPlaysForTier": 60
+    "minCardPlaysForTier": 60,
+    "minGamesPerCampaignTier": 160
   },
 
   "checks": {
@@ -30,7 +31,10 @@
       "$comment": [
         "How often the player who moves first wins. 50% is a perfectly fair start.",
         "Band widened from 45-55 to 44-56 on owner ruling: the game measures 46-49%, and a 45%",
-        "floor sits close enough to that to go red on shuffle luck rather than on a real problem."
+        "floor sits close enough to that to go red on shuffle luck rather than on a real problem.",
+        "Those 46-49% came from the old shared-pile harness. The constructed game (two drafted decks,",
+        "Hero Powers, The Coin for the second seat) measures 59.2% of 1000 duels, +-3. The band is the",
+        "design target, not a baseline, so it stays and this check is red until the opening changes."
       ],
       "enabled": true,
       "minPct": 44,
@@ -40,7 +44,7 @@
     "matchLength": {
       "$comment": [
         "Median duel length in player-turns (about half that many turns each).",
-        "The shipped game measures 21. Outside this band the pacing has moved and every",
+        "The constructed game measures 19 (10th to 90th percentile 15 to 24). Outside this band the pacing has moved and every",
         "per-turn effect in the game changed value with it (README, Choosing a pacing lever)."
       ],
       "enabled": true,
@@ -93,17 +97,9 @@
         "beside it but never gated — going first means two cards and one mana, so a dead first turn",
         "is the design, not a defect.",
         "",
-        "LATEST FULL RUN on 2000 openings at the current hand sizes of 3 and 3: 14.3% overall",
-        "(286 openings). Re-baselined after the opening-hand change; the earlier 17.3% measurement",
-        "used 2 and 3 cards, while the older 24% guard was based on hand sizes of 1 and 2.",
-        "",
-        "Owner ruling, 2 September 2026: accept up to 20%, raised from 18%.",
-        "MEASURED at 800 self-play duels (1600 openings): 18.4%, on the default seed and on a",
-        "second seed alike. The old 18% guard therefore failed on an unchanged game — it was set",
-        "against a 400-duel sample that read 16.6%, and the number simply sits higher than that at",
-        "a larger sample. Confirmed by an A/B: 18.4% before the Chained change and 18.4% after, so",
-        "this is where the roster genuinely sits, not a regression anything introduced.",
-        "20% leaves real headroom above that without hiding a drift worth catching.",
+        "Owner ruling: accept up to 20%.",
+        "MEASURED on the constructed game, 2000 openings: 10.6% (first seat 12.5%, second 8.7%).",
+        "The older 14-18% readings came from the shared-pile harness, where nobody built a curve.",
         "Re-baseline this again after any change to hand size, the draw, or the cost curve."
       ],
       "enabled": true,
@@ -116,8 +112,8 @@
         "Does skill actually win? Each matchup is its own check, so the summary names which one broke.",
         "A matchup passes only when BOTH hold: the observed rate clears its floor, AND the 95%",
         "confidence interval sits entirely above 50% — i.e. the gap is real, not shuffle luck.",
-        "Measured on the shipped cheat bot, 2026-08-17, at these sample sizes: hard>easy 91.0,",
-        "hard>normal 82.0, normal>easy 71.5.",
+        "Measured on the constructed game at these sample sizes: hard>easy 86, hard>normal 85,",
+        "normal>easy 76.",
         "",
         "Sample sizes are per matchup because the cost and the need are inverted. A duel involving",
         "the hard bot takes about eight times as long (it searches whole turns), and those two",
@@ -153,15 +149,39 @@
         "the player on more health at turn 5 is often just the one who has not attacked yet.",
         "Duels where the two measures disagree are excluded, not counted as ties.",
         "",
-        "MEASURED across 627 duels with a clear turn-5 leader: 59.5%. The curve then runs 66% at",
-        "turn 9, 73% at turn 13, 85% at turn 17 — a game that tightens gradually rather than one",
-        "decided in its opening. This is a genuinely healthy result.",
+        "MEASURED on the constructed game across 369 duels with a clear turn-5 leader: 56.4%",
+        "(68% at turn 6, read at the top of the second seat's turn). An early lead does not decide it.",
         "70 is a regression guard with room for normal variation (about five standard errors above",
         "the measured value). The line where an early lead starts to FEEL deterministic is nearer 80."
       ],
       "enabled": true,
       "atTurn": 5,
       "maxLeaderWinPct": 70
+    },
+
+    "campaignClimb": {
+      "$comment": [
+        "Does the campaign get harder the way its four labels say? Full gate only.",
+        "Every boss is set up exactly as the game sets it up and played against a stand-in player",
+        "at Veteran search depth who never cheats: once with the starter deck, once with a deck",
+        "drafted from the whole collection. gamesPerChapter is per boss AND per deck.",
+        "",
+        "minStepPct: each tier's bosses must win at least this many points more often than the",
+        "  tier below, and the 95% range of that gap must sit above zero. One check per step.",
+        "  Recruit to Veteran measured about 28 points and Veteran to Ascendant about 34, so 8 is a",
+        "  floor for 'a player can feel it', not a target.",
+        "maxChapterGapPct: a boss further than this from the MEDIAN of its tier's other bosses, beyond",
+        "  the noise, is named. The median, because one extreme boss lifts the mean of the rest far",
+        "  enough to get ordinary bosses beside it named. 20 is over half of the smaller tier step",
+        "  measured: a boss that far out plays like a different tier from the one its chapter promises.",
+        "  At 15, and 40 duels per deck, Po and Gilgamesh were named on one seed and not on the next.",
+        "60 duels per boss and deck. The boss duels run in worker processes alongside the self-play and",
+        "the ladder, so they add little to the gate's time. The standalone runner takes --games for more."
+      ],
+      "enabled": true,
+      "gamesPerChapter": 60,
+      "minStepPct": 8,
+      "maxChapterGapPct": 20
     }
   },
 
