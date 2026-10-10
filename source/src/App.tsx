@@ -387,9 +387,12 @@ export default function App() {
   const pointer = useMemo(() => new PointerStore(), []);
   useEffect(() => () => pointer.cancel(), [pointer]);
   const dragArrowOrigin = useMemo(() => (drag?.kind === "attacker" ? { x: drag.ox, y: drag.oy } : null), [drag]);
-  const preview = useCardPreview(game, library, Boolean(drag?.active));
-  const { clearHoverPreview, clearHandKeywords } = preview;
   const [targetArrowOrigin, setTargetArrowOrigin] = useState<ScreenPoint | null>(null);
+  // An arrow on screen means the player is aiming: an armed attacker, or a
+  // spell, battlecry or Hero Power waiting for its target. A dragged attacker
+  // drops the arrow origin, so the drag itself counts too.
+  const preview = useCardPreview(game, library, Boolean(drag?.active) || targetArrowOrigin !== null);
+  const { clearHoverPreview, clearHandKeywords } = preview;
   const [playerCount, setPlayerCount] = useState<number | null>(null);
   /** Herald lines already spoken this duel. A ref, so a re-render cannot re-fire one. */
   const heraldSaid = useRef(new Set<string>());
@@ -1643,6 +1646,10 @@ export default function App() {
             // toggle stands aside for exactly the click that would be a swing —
             // and takes every other click on it, which is the whole strip.
             if ((event.target as HTMLElement).closest(".hero-plate.targetable")) return;
+            // While aiming, a click on the portrait is an attempt to hit it, even
+            // behind a Taunt. Opening the power card then would cover the board
+            // mid-aim. Yujiro's hunt still opens it, from the blocked strike.
+            if (selection?.kind === "attacker" || targetArrowOrigin !== null) return;
             setEnemyPowerOpen((open) => !open);
           }}
         >

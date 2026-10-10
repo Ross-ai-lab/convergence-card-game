@@ -1937,9 +1937,17 @@ button:disabled {
   z-index: 39 !important;
 }
 
+/* Selection rings on a card are box-shadow spreads, NEVER `outline`. A card's
+   stage always carries a drop shadow, and Chrome re-rasterises an element that
+   has both an outline and a box-shadow on EVERY frame while any composited
+   animation runs inside it: one rarity-shine card in hand cost about half the
+   idle frame rate. The thin dark first ring stands in for the old outline gap. */
 .hand-card.selected .cf-stage {
-  outline: 3px solid rgba(67, 205, 189, 0.95);
-  outline-offset: 1px;
+  box-shadow:
+    0 0 0 1px rgba(8, 14, 26, 0.9),
+    0 0 0 4px rgba(67, 205, 189, 0.95),
+    0 0 22px rgba(67, 205, 189, 0.45),
+    0 14px 34px rgba(0, 0, 0, 0.4);
 }
 
 /* Affordable right now — BLUE, the colour of mana, matching the crystals in the
@@ -1948,14 +1956,29 @@ button:disabled {
    Giant Crystal appear playable at 2 mana). It must not be green either — green
    is the board's "this minion can attack". One colour, one meaning, screen-wide. */
 .hand-card.playable .cf-stage {
-  outline: 2.5px solid rgba(96, 178, 255, 0.95);
-  outline-offset: 1px;
-  box-shadow: 0 0 22px rgba(70, 150, 255, 0.5), 0 14px 34px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(8, 14, 26, 0.9),
+    0 0 0 3.5px rgba(96, 178, 255, 0.95),
+    0 0 22px rgba(70, 150, 255, 0.5),
+    0 14px 34px rgba(0, 0, 0, 0.4);
 }
 
 .hand-card.playable:hover:not(:disabled) .cf-stage {
-  outline-color: #cfe6ff;
-  box-shadow: 0 0 36px rgba(120, 195, 255, 0.85), 0 14px 34px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(8, 14, 26, 0.9),
+    0 0 0 3.5px #cfe6ff,
+    0 0 36px rgba(120, 195, 255, 0.85),
+    0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+/* Selected wins over playable: the order above puts playable later, so the
+   selected ring is restated here with the higher specificity it needs. */
+.hand-card.playable.selected .cf-stage {
+  box-shadow:
+    0 0 0 1px rgba(8, 14, 26, 0.9),
+    0 0 0 4px rgba(67, 205, 189, 0.95),
+    0 0 22px rgba(67, 205, 189, 0.45),
+    0 14px 34px rgba(0, 0, 0, 0.4);
 }
 
 /* THE COST MOVES TO THE LEFT IN HAND, and this is not a style choice.
@@ -3502,7 +3525,10 @@ button:disabled {
 }
 
 /* A blocked attack briefly makes the guard unmistakable: the steel runs red
-   and glows. The alert is on the plate, so the card stays readable. */
+   and glows red. The alert is on the plate, so the card stays readable. The
+   steel is darkened before it is tinted, so no highlight clips to orange, and
+   the glow comes last so the tint never recolours it. Every keyframe lists the
+   same filters in the same order, which keeps the change smooth. */
 .board-slot.taunt-flashing .card-face.kw-taunt::before {
   animation: taunt-blocker-flash 1s ease-in-out both;
 }
@@ -3510,12 +3536,12 @@ button:disabled {
 @keyframes taunt-blocker-flash {
   0%,
   100% {
-    filter: drop-shadow(0 calc(10 * var(--u)) calc(18 * var(--u)) rgba(0, 0, 0, 0.6));
+    filter: brightness(1) sepia(0) saturate(1) hue-rotate(0deg) drop-shadow(0 calc(10 * var(--u)) calc(18 * var(--u)) rgba(0, 0, 0, 0.6));
   }
 
   38%,
   62% {
-    filter: drop-shadow(0 0 calc(26 * var(--u)) rgba(255, 30, 40, 0.98)) sepia(1) saturate(6) hue-rotate(-30deg) brightness(0.9);
+    filter: brightness(0.4) sepia(1) saturate(8) hue-rotate(-35deg) drop-shadow(0 0 calc(26 * var(--u)) rgba(255, 16, 16, 0.98));
   }
 }
 
@@ -4060,7 +4086,8 @@ button:disabled {
 }
 
 .mulligan-card.selected .cf-stage {
-  outline: 3px solid #ffbd62;
+  /* A shadow ring, not an outline: see the hand selection ring. */
+  box-shadow: 0 0 0 3px #ffbd62, var(--cf-drop);
 }
 
 .mulligan-card.selected::after {
@@ -4113,8 +4140,8 @@ button:disabled {
 /* Selection glows target .cf-stage, not .card-face: the face is a letterbox that
    can be larger than the card inside it, so a glow on it would float in space. */
 .choice-card.selected .cf-stage {
-  outline: 4px solid #5eff8f;
-  box-shadow: 0 0 42px rgba(94, 255, 143, 0.35), 0 14px 34px rgba(0, 0, 0, 0.28);
+  /* A shadow ring, not an outline: see the hand selection ring. */
+  box-shadow: 0 0 0 4px #5eff8f, 0 0 42px rgba(94, 255, 143, 0.35), 0 14px 34px rgba(0, 0, 0, 0.28);
 }
 
 .choice-detail {
@@ -4455,7 +4482,8 @@ button:disabled {
   }
 
   .hand-card.selected .cf-stage {
-    outline-width: 4px; /* the lift-and-scale cue is gone, so the outline carries it */
+    /* the lift-and-scale cue is gone, so a thicker ring carries it */
+    box-shadow: 0 0 0 1px rgba(8, 14, 26, 0.9), 0 0 0 5px rgba(67, 205, 189, 0.95), 0 0 22px rgba(67, 205, 189, 0.45), 0 14px 34px rgba(0, 0, 0, 0.4);
   }
 
   /* The enemy plate keeps its reduced size but loses the width floor. */
@@ -6030,133 +6058,109 @@ button:disabled {
    THE RARITY SHINE
 
    Every card above Rare carries an animated shine, and each tier's is a
-   different KIND of thing rather than the same thing in another colour:
+   different KIND of motion, not a recolour:
 
      Epic       violet   mist drifting sideways, dust settling through it
-     Legendary  gold     radiant rays turning, a bloom swelling behind them
-     Mythic     crimson  flame tongues licking upward, embers off the top
-     Relic      teal     aurora, motes rising, one rare foil sweep
+     Legendary  gold     ten thin rays turning about the card's foot
+     Mythic     crimson  a bed of flame licking upward, embers rising
+     Relic      teal     aurora curtains, motes rising, one rare light bar
      Rare       —        nothing at all
 
    Rare having none is load-bearing. Give every card a shine and the tiers stop
-   meaning anything, and 58 of the 196 cards stop costing anything at the same
-   time, which is what keeps a gallery of this size affordable.
+   meaning anything.
 
-   THE SIX RULES THIS IS BUILT ON. They are the transferable part — the colours
-   are not.
+   PICTURES THAT MOVE, NOT GRADIENTS THAT ARE PAINTED. Each layer is a small
+   texture drawn once by `scripts/build-shine.mjs` (rerun it after changing a
+   look: `npm run build:shine`) and listed per tier in `card-shine.ts`. CSS only
+   moves, turns and fades them. The rules this is built on:
 
-   1. **Three layers minimum, and they must differ in KIND.** A colour field, a
-      particle field and an edge do three different jobs. One layer, however
-      pretty, is read as a loop within about two seconds.
-
-   2. **Mismatched, non-multiple periods.** Every duration here is chosen so no
-      two share a factor. Two layers on 8s and 16s realign every 16 seconds and
-      the whole thing snaps back into one visible beat.
-
-   3. **Motion KIND carries identity far more than colour does.** Epic drifts
-      sideways, Legendary ROTATES, Mythic licks upward in fast irregular
-      tongues, Relic rises slowly. Recolour all four teal and they are still
-      four different cards. Two tiers sharing a motion is the failure — an
-      earlier build had gold dust falling and crimson embers rising, and they
-      read as one effect with the hue changed.
-
-   4. **Size everything in `--u`, never px.** A 1.5px dot is a speck on a card
-      rendered 1400px tall, so a particle layer sized in pixels looks like
-      nothing at all rather than like a bug.
-
-   5. **Transform and opacity only.** Nothing may reflow or repaint layout: a
-      gallery can hold a screen of these at once. Anything animating
-      `background-position`, `width`, `filter` or `box-shadow` belongs
-      somewhere else. `filter: contrast()` is how most CSS fire on the web is
-      built and it is exactly what cannot be used here.
-
-   6. **Particles need a near-white CORE, not a flat tier colour.** Screen
-      blending a mid-tone over bright artwork barely moves it; the first Mythic
-      embers vanished completely against a silver-white figure. A white centre
-      with a coloured falloff reads on anything.
-
-   And one rule about the SWEEP specifically: **a light bar crossing the card
-   belongs to relics and to nothing else.** It was on Legendary and Mythic too,
-   and having three tiers share the single most noticeable motion in the system
-   flattened all three. It is now the relic's signature.
+   1. **No blend modes, no masks, no rounded clip.** Each of those makes the
+      graphics chip render the card into a separate surface and composite it
+      again, every frame, on every shiny card on screen. Measured on an idle
+      duel with eight shiny cards: the old `mix-blend-mode: screen` layers cost
+      about a second of graphics work per four seconds, and the rounded clip
+      about seven tenths. The falloffs and the caps that used to be masks are
+      baked into the textures, and light colours with alpha read as light
+      without screen blending. The box clips to a plain rectangle; the card's
+      own rounded stage still trims the corners.
+   2. **Transform and opacity only.** Nothing here repaints or reflows.
+   3. **Mismatched, non-multiple periods,** so no two layers realign into one
+      visible beat.
+   4. **Motion KIND carries identity far more than colour does.** Two tiers
+      sharing a motion is the failure: dust falling and embers rising read as
+      one effect with the hue changed.
+   5. **Particles have a near-white core** with a coloured falloff, so they read
+      on pale artwork as well as dark.
+   6. **The light bar belongs to relics and to nothing else.**
 
    Proof, not vibes: `npm run check:ui` asserts the expected number of
    animations are RUNNING per tier, and that the card's pixels change between
-   two frames a second apart. Neither alone is enough — live-fired by
-   misspelling one keyframe name, which the pixel diff passed happily.
+   two frames a second apart. `card-shine.test.ts` pins the layer list.
    =========================================================================== */
 
 .cf-shine {
   position: absolute;
-  /* Matches `.cf-well`, so the shine fills the card's inner face and stops at
-     the metal frame rather than spilling over it. */
+  /* Matches `.cf-well`, so the shine fills the card's inner face. */
   inset: calc(9 * var(--u));
-  z-index: 4;
-  border-radius: calc(10 * var(--u));
+  /* Under the cost, ATK and HP gems (z-index 4): a flame or a ray passing over
+     a number washes it out, and the numbers are what the player reads. */
+  z-index: 3;
   overflow: hidden;
   pointer-events: none;
 }
 
-.cf-shine > span {
+.cf-shine > img {
   position: absolute;
   display: block;
-}
-
-/* Off by default. Each tier switches on only the slots it uses, so the markup
-   can carry all six without any tier having to know about the others. */
-.cf-shine > span {
-  display: none;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* A drag or an aim makes every display frame a main-thread frame, and Chrome
    restyles each running animation on every one of them. The board's shine holds
    still until the pointer lets go; the held card is outside the table frame and
    keeps moving. Paused, not removed, so each layer resumes where it stopped. */
-.table-frame.pointer-following .cf-shine > span {
+.table-frame.pointer-following .cf-shine > img {
   animation-play-state: paused;
 }
 
-/* The same pause while an action's effects play: then the graphics chip, not
-   the main thread, is what drops frames, and the shine is most of its work.
-   The card that just landed is where the eye goes, so it keeps moving. */
-.table-frame.effects-playing .cf-shine > span {
+/* The same pause while an action's effects play: the graphics chip is then the
+   limit. The card that just landed is where the eye goes, so it keeps moving. */
+.table-frame.effects-playing .cf-shine > img {
   animation-play-state: paused;
 }
 
-.table-frame.effects-playing .board-slot.just-arrived .cf-shine > span {
+.table-frame.effects-playing .board-slot.just-arrived .cf-shine > img {
   animation-play-state: running;
 }
 
-/* --- shared geometry -------------------------------------------------------
-   A field is oversized because a blob sized to its container shows its own edge
-   the moment it drifts, and the parent clips anyway. A grain layer is 200% tall
-   so its travel can run a full container height and loop with nothing to see at
-   the seam. */
-.sh-field,
-.sh-veil {
-  inset: -35%;
-  mix-blend-mode: screen;
+/* --- shared slots --------------------------------------------------------- */
+
+/* A field is half a card larger on every side, so its drift never shows an
+   edge. The texture fades to nothing well inside its own border. */
+.cf-shine > .sh-field {
+  left: -25%;
+  top: -25%;
+  width: 150%;
+  height: 150%;
 }
 
-.sh-grain,
-.sh-grain2 {
+/* Particle fields are two card-heights tall with matching halves, so moving
+   them by half their height loops with no seam. */
+.cf-shine > .sh-near,
+.cf-shine > .sh-far {
   left: 0;
-  right: 0;
   top: 0;
+  width: 100%;
   height: 200%;
-  background-repeat: repeat;
-  background-size: 100% 50%;
-  mix-blend-mode: screen;
 }
 
-.sh-sweep {
-  inset: 0;
-  mix-blend-mode: screen;
-}
-
-.sh-rim {
-  inset: 0;
-  border-radius: inherit;
+.cf-shine > .sh-rim {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
 }
 
 @keyframes sh-rise {
@@ -6164,71 +6168,44 @@ button:disabled {
   to { transform: translate3d(0, -50%, 0); }
 }
 
-/* One breathe for every tier; only the period and the glow differ. */
+/* One breathe for every tier's rim; only the period differs. */
 @keyframes sh-breathe {
   from { opacity: 0.3; }
   to { opacity: 0.92; }
 }
 
-/* ===========================================================================
-   EPIC — violet mist with dust settling through it.
-
-   Two layers that must both be visible, which is the whole note here: the first
-   build's mist was so faint that only the dust registered, and a tier whose
-   name is "mist" reading as "specks" is the effect failing quietly. The field
-   is now roughly twice the alpha it was.
-   =========================================================================== */
-.rarity-purple .sh-field,
-.rarity-purple .sh-grain,
-.rarity-purple .sh-grain2,
-.rarity-purple .sh-rim {
-  display: block;
-}
-
+/* --- EPIC: violet mist drifting sideways, dust settling ------------------- */
 .rarity-purple .sh-field {
-  background:
-    radial-gradient(46% 38% at 28% 32%, rgba(186, 132, 252, 0.62), transparent 66%),
-    radial-gradient(40% 32% at 74% 66%, rgba(142, 92, 226, 0.58), transparent 68%),
-    radial-gradient(32% 26% at 50% 92%, rgba(206, 164, 255, 0.42), transparent 70%);
   animation: sh-mist 17s ease-in-out infinite alternate;
 }
 
-/* Sideways, not up or down. That is the whole of Epic's identity next to the
-   tier that licks upward and the tier that turns. */
+/* Sideways, not up or down: that is Epic's identity next to the tier that
+   licks upward and the tier that turns. */
 @keyframes sh-mist {
-  0% { transform: translate3d(-8%, 1%, 0) scale(1); opacity: 0.66; }
-  50% { transform: translate3d(3%, -3%, 0) scale(1.16); opacity: 1; }
-  100% { transform: translate3d(9%, 2%, 0) scale(1.06); opacity: 0.74; }
+  0% { transform: translate3d(-9%, 1%, 0) scale(1); opacity: 0.66; }
+  50% { transform: translate3d(2%, -2%, 0) scale(1.1); opacity: 1; }
+  100% { transform: translate3d(8%, 2%, 0) scale(1.04); opacity: 0.74; }
 }
 
-/* Dust SETTLING, not rising: it drifts sideways and sinks, which is what dust
-   in still air does and what keeps it away from the Mythic embers. */
-.rarity-purple .sh-grain {
-  background-image:
-    radial-gradient(circle at 22% 9%, rgba(246, 232, 255, 1) 0, rgba(184, 128, 250, 0.62) calc(1.3 * var(--u)), transparent calc(3.6 * var(--u))),
-    radial-gradient(circle at 68% 19%, rgba(240, 222, 255, 0.95) 0, rgba(164, 110, 240, 0.58) calc(1.7 * var(--u)), transparent calc(4.4 * var(--u))),
-    radial-gradient(circle at 40% 31%, rgba(246, 232, 255, 1) 0, rgba(184, 128, 250, 0.6) calc(1.4 * var(--u)), transparent calc(3.8 * var(--u))),
-    radial-gradient(circle at 88% 41%, rgba(240, 222, 255, 0.92) 0, rgba(164, 110, 240, 0.56) calc(1.6 * var(--u)), transparent calc(4.2 * var(--u))),
-    radial-gradient(circle at 9% 44%, rgba(246, 232, 255, 0.96) 0, rgba(184, 128, 250, 0.58) calc(1.2 * var(--u)), transparent calc(3.4 * var(--u)));
+/* Dust SETTLING: it sinks and drifts, which keeps it away from Mythic's rising
+   embers. The fields are wider than the card so the drift shows no edge. */
+.rarity-purple .sh-near,
+.rarity-purple .sh-far {
+  left: -6%;
+  width: 112%;
+}
+
+.rarity-purple .sh-near {
   animation: sh-settle 26s linear infinite;
 }
 
-/* A second, finer dust at a different speed. Two fields at different scales is
-   what turns a moving texture into depth. */
-.rarity-purple .sh-grain2 {
-  background-image:
-    radial-gradient(circle at 51% 6%, rgba(240, 226, 255, 0.8) 0, rgba(172, 120, 244, 0.45) calc(0.9 * var(--u)), transparent calc(2.5 * var(--u))),
-    radial-gradient(circle at 15% 24%, rgba(246, 232, 255, 0.75) 0, rgba(158, 106, 236, 0.42) calc(1 * var(--u)), transparent calc(2.8 * var(--u))),
-    radial-gradient(circle at 79% 15%, rgba(240, 226, 255, 0.8) 0, rgba(172, 120, 244, 0.44) calc(0.8 * var(--u)), transparent calc(2.3 * var(--u))),
-    radial-gradient(circle at 33% 42%, rgba(246, 232, 255, 0.7) 0, rgba(158, 106, 236, 0.4) calc(1.1 * var(--u)), transparent calc(3 * var(--u))),
-    radial-gradient(circle at 94% 34%, rgba(240, 226, 255, 0.75) 0, rgba(172, 120, 244, 0.42) calc(0.9 * var(--u)), transparent calc(2.6 * var(--u)));
-  opacity: 0.8;
+.rarity-purple .sh-far {
   animation: sh-settle-slow 37s linear infinite;
 }
 
 @keyframes sh-settle {
-  from { transform: translate3d(-5%, -50%, 0); }
-  to { transform: translate3d(5%, 0, 0); }
+  from { transform: translate3d(-4.5%, -50%, 0); }
+  to { transform: translate3d(4.5%, 0, 0); }
 }
 
 @keyframes sh-settle-slow {
@@ -6237,143 +6214,21 @@ button:disabled {
 }
 
 .rarity-purple .sh-rim {
-  box-shadow:
-    inset 0 0 calc(30 * var(--u)) rgba(178, 122, 240, 0.5),
-    inset 0 0 0 calc(1.6 * var(--u)) rgba(206, 168, 250, 0.3);
   animation: sh-breathe 8.7s ease-in-out infinite alternate;
 }
 
-/* ===========================================================================
-   LEGENDARY — radiant rays turning behind the card.
+/* --- LEGENDARY: rays turning about the card's foot ------------------------ */
 
-   ROTATION is the point. Nothing else in the system rotates, so this tier is
-   identifiable from the corner of an eye without reading a colour. It replaced
-   falling gold dust, which was the right colour and the wrong idea: dust
-   falling and embers rising are the same motion mirrored, and Legendary read as
-   a paler Mythic because of it.
-
-   A `repeating-conic-gradient` gives the spokes for free. It rotates as a whole
-   under one transform, so it costs a composite and nothing else.
-   =========================================================================== */
-.rarity-yellow .sh-veil,
-.rarity-yellow .sh-grain,
-.rarity-yellow .sh-rim {
-  display: block;
-}
-
-/* ONE ray set, thin, and centred on the card.
-
-   Three separate corrections, all owner calls and all in the same direction:
-
-   - There were TWO counter-rotating sets. Two is what the mismatched-periods
-     rule asks for, and two is also what made this the busiest tier on the
-     board. One set that turns slowly reads as light; two crossing sets read as
-     machinery. The bloom below is the second moving thing, so the rule is still
-     satisfied without a second ray layer.
-   - The rays were 6 degrees wide. Thin spokes read as light through a gap;
-     fat ones read as a pie chart.
-   - Everything was anchored at 50% 34% and the bloom had a second lobe at
-     50% 2%, so light appeared to come from two places at once and from neither
-     of them convincingly. There is now ONE origin, the middle of the card, and
-     every layer uses it. */
-/* EIGHT rays, 45 degrees apart, reaching the corners.
-
-   There were nineteen. Nineteen rays 19 degrees apart is a texture, not a
-   burst — at that spacing the eye reads the gaps as noise rather than counting
-   spokes, and the whole thing goes back to being a wash. Eight is few enough to
-   see as eight.
-
-   `farthest-corner`, not `closest-side`. A card is 750 by 1050 design units, so
-   `closest-side` measures 375 and the rays died about halfway to a corner,
-     which looked like a circle with a soft edge instead of light filling the
-     frame. The fade now runs out at the corners themselves. */
-/* THE ELEMENT IS CENTRED ON THE RAYS' OWN ORIGIN, and that is the whole fix.
-
-   `transform: rotate()` spins an element about ITS OWN centre. The conic
-   gradient's origin was at 50% 78% while the element's centre was at 50% 50%,
-   so the origin ORBITED that centre once per turn: the rays did not spin in
-   place, they crawled sideways across the card and swept off its edge. It read
-   as a searchlight rather than a sun, and it is the sort of fault that looks
-   like a timing problem while being a geometry one.
-
-   So the layer is now a big square whose centre sits exactly where the light
-   comes from — the middle of the card's foot. The gradient origin, the
-   element's centre and the rotation pivot are then all the same point, and the
-   fan turns without going anywhere. 260% of the container in each direction is
-   enough for the corners to stay covered at every angle. */
-.rarity-yellow .sh-veil {
-  inset: auto;
-  left: 50%;
-  top: 100%;
-  /* Sized and offset in DESIGN UNITS, never in percentages.
-     A percentage margin resolves against the containing block's WIDTH on BOTH
-     axes — that is the CSS rule, and it is easy to forget. `margin-top: -130%`
-     therefore pulled the layer up by 130% of the card's WIDTH instead of its
-     height, leaving the pivot about a quarter of a card below the foot: the
-     rays stopped travelling, which was the real bug, but they were centred on
-     the wrong point. Units have no such trap.
-     2400 square, so half of it (1200) still reaches the card's top corners
-     (1098 away from the foot) at every angle of rotation. */
-  width: calc(2400 * var(--u));
-  height: calc(2400 * var(--u));
-  margin-left: calc(-1200 * var(--u));
-  margin-top: calc(-1200 * var(--u));
-  /* Radius in DESIGN UNITS, not a percentage keyword. The rays must stop below
-     the rules plaque, whose bottom edge sits 130 units up from the card's foot,
-     and a percentage of this oversized box would have had to be recomputed
-     every time the box changed size. 150 units puts the last of the light just
-     past the plaque's edge and gone. */
-  -webkit-mask: radial-gradient(
-    circle calc(150 * var(--u)) at 50% 50%,
-    transparent 2%,
-    rgba(0, 0, 0, 0.92) 24%,
-    rgba(0, 0, 0, 0.5) 66%,
-    transparent 100%
-  );
-  mask: radial-gradient(
-    circle calc(150 * var(--u)) at 50% 50%,
-    transparent 2%,
-    rgba(0, 0, 0, 0.92) 24%,
-    rgba(0, 0, 0, 0.5) 66%,
-    transparent 100%
-  );
-  /* TEN wedges around the full circle, so FIVE are over the card at once.
-
-     The origin sits on the card's foot, so the lower half of the circle is
-     always outside the frame: the number of rays you can COUNT is half the
-     number in the gradient. Nineteen at 19 degrees was a texture, eight at 45
-     was a burst, five at 72 showed as about three, and ten at 36 shows as five.
-
-     NOT a `repeating-conic-gradient` any more. A repeating one stamps the same
-     wedge every time, so every ray is necessarily the same colour. Naming the
-     stops out gives each ray its own tint of yellow, and because the whole
-     gradient turns, any one spot on the card is lit by a slightly different
-     gold each time a ray passes over it. THAT is where the colour change comes
-     from -- the rotation, not from animating a colour, which would repaint. */
-  background: conic-gradient(
-    from 12deg at 50% 50%,
-    rgba(255, 246, 204, 0.4) 0deg 4.4deg,
-    transparent 4.4deg 36deg,
-    rgba(255, 232, 154, 0.4) 36deg 40.4deg,
-    transparent 40.4deg 72deg,
-    rgba(255, 215, 102, 0.4) 72deg 76.4deg,
-    transparent 76.4deg 108deg,
-    rgba(255, 242, 184, 0.4) 108deg 112.4deg,
-    transparent 112.4deg 144deg,
-    rgba(255, 223, 127, 0.4) 144deg 148.4deg,
-    transparent 148.4deg 180deg,
-    rgba(255, 250, 224, 0.4) 180deg 184.4deg,
-    transparent 184.4deg 216deg,
-    rgba(255, 207, 77, 0.4) 216deg 220.4deg,
-    transparent 220.4deg 252deg,
-    rgba(255, 234, 168, 0.4) 252deg 256.4deg,
-    transparent 256.4deg 288deg,
-    rgba(255, 217, 140, 0.4) 288deg 292.4deg,
-    transparent 292.4deg 324deg,
-    rgba(255, 248, 214, 0.4) 324deg 328.4deg,
-    transparent 328.4deg 360deg
-  );
-  /* 67s, half of what it was. Fast enough to notice, slow enough not to nag. */
+/* ROTATION is the point: nothing else in the system rotates. The layer is a
+   square CENTRED on the rays' own origin, the middle of the card's foot, so the
+   texture's centre, the element's centre and the rotation pivot are one point
+   and the fan turns in place instead of orbiting. Sized in design units: the
+   light fades out 150 units from the foot, below the rules plaque. */
+.rarity-yellow .sh-rays {
+  left: calc(50% - 160 * var(--u));
+  top: calc(100% - 160 * var(--u));
+  width: calc(320 * var(--u));
+  height: calc(320 * var(--u));
   animation: sh-turn-back 67s linear infinite;
 }
 
@@ -6382,20 +6237,13 @@ button:disabled {
   to { transform: rotate(0deg); }
 }
 
-/* The bloom the rays come out of, swelling on its own clock. One lobe, centred
-   on the same point the rays turn around. */
-.rarity-yellow .sh-grain {
-  left: -30%;
-  right: -30%;
-  top: -30%;
-  height: 160%;
-  /* Moved down with the rays, and shrunk with them. The bloom is the thing the
-     light comes OUT of, so it has to sit on the same point the rays turn about
-     — the middle of the card's foot — and it has to stop where they stop. This
-     layer is inset -30% top and sides, so 50% 88% here lands on that point. */
-  background: radial-gradient(26% 13% at 50% 88%, rgba(255, 232, 168, 0.34), transparent 72%);
-  background-repeat: no-repeat;
-  background-size: auto;
+/* The bloom the rays come out of, swelling on its own clock, centred on the
+   same point. */
+.rarity-yellow .sh-bloom {
+  left: 10%;
+  top: 75%;
+  width: 80%;
+  height: 50%;
   animation: sh-bloom 19s ease-in-out infinite alternate;
 }
 
@@ -6405,127 +6253,36 @@ button:disabled {
 }
 
 .rarity-yellow .sh-rim {
-  box-shadow:
-    inset 0 0 calc(40 * var(--u)) rgba(255, 200, 96, 0.62),
-    inset 0 0 0 calc(2.2 * var(--u)) rgba(255, 236, 176, 0.55);
   animation: sh-breathe 6.1s ease-in-out infinite alternate;
 }
-/* ===========================================================================
-   MYTHIC — the card is on fire.
 
-   Rebuilt after the first version read as "a red glow" rather than as flame.
-   The published CSS-fire techniques were read before rebuilding, and they agree
-   on two things this had wrong:
+/* --- MYTHIC: a bed of flame along the foot, embers rising ----------------- */
 
-   **A TEMPERATURE RAMP is the biggest single realism cue.** Real fire is
-   white-hot at the base, yellow above that, orange, then deep red, then gone.
-   The first build gave every lobe one flat orange, so it had no temperature at
-   all and could only ever look like coloured light. Every tongue below runs
-   white → gold → orange → red → transparent along its own length.
-
-   **Tongues are NARROW AND TAPERED.** They were wide ellipses, which is the
-   shape of a glow, not of a flame. Each is now roughly a tenth of the card wide
-   and several times taller than it is wide.
-
-   What could NOT be taken from those sources: both end at either a prerendered
-   Perlin-noise texture scrolled upward, or a `filter: contrast()`/`blur()` stack
-   over sliding noise. The filter route is barred by rule 5 — it rasterises the
-   whole layer every frame and a gallery row of these would pay for it — and a
-   texture is an asset this project does not need. The substitute for noise is
-   two tongue rows on different fast clocks, at different widths and offsets,
-   with a `skewX` lean in the keyframes. The lean is what sells it: a flame that
-   only grows and shrinks is a lamp, and a flame that also bends is fire.
-
-   **Height is deliberately low** — a bed of flame along the bottom edge, ending
-   just above the flavour line, not a bonfire the card is standing behind. It
-   has been lowered twice on the owner's call and is now roughly a ninth of the
-   card. The mask's top stop is what caps it; the lobe heights only decide how
-   the tongues taper before they get there.
-
-     .sh-field   the main row of tongues, 1.7s
-     .sh-veil    a hotter, shorter core row at the base, 1.1s
-     .sh-grain   near embers coming off the top, 14s
-     .sh-grain2  far embers, 19s
-     .sh-rim     the crimson heartbeat, 5.7s
-
-   `transform-origin: bottom` on both tongue rows is load-bearing: scaling from
-   the centre grows the flame downward out of the card as well as up, which
-   reads as a pulsing blob rather than as fire.
-   =========================================================================== */
-.rarity-red .sh-field,
-.rarity-red .sh-veil,
-.rarity-red .sh-grain,
-.rarity-red .sh-grain2,
-.rarity-red .sh-rim {
-  display: block;
-}
-
-/* Masked off the very bottom AND cut short well before the artwork.
-
-   Unmasked, the brightest part of the flame sat exactly on the ATK and HP gems
-   and the origin line, and screen blending turned all three to pale mush. The
-   top of the fade is what caps the height: nothing survives past a third of
-   this layer, so the flame dies out inside the rules plaque. */
-.rarity-red .sh-field,
-.rarity-red .sh-veil {
-  -webkit-mask: linear-gradient(
-    to top,
-    transparent 0%,
-    rgba(0, 0, 0, 0.55) 2%,
-    #000 4.5%,
-    rgba(0, 0, 0, 0.62) 7.5%,
-    transparent 11%
-  );
-  mask: linear-gradient(
-    to top,
-    transparent 0%,
-    rgba(0, 0, 0, 0.55) 2%,
-    #000 4.5%,
-    rgba(0, 0, 0, 0.62) 7.5%,
-    transparent 11%
-  );
-}
-
-/* Eight tongues, none the same width, none the same height, none evenly
-   spaced. Even spacing is the tell that turns a fire back into a pattern. */
-.rarity-red .sh-field {
-  inset: 0;
+/* Low on purpose, a bed of flame rather than a bonfire: the texture's own fade
+   is gone 11% of the card above the foot, off the gems and below the art.
+   `transform-origin: bottom` is load-bearing: scaling from the centre grows the
+   flame down out of the card as well as up, which reads as a pulsing blob. */
+.rarity-red .sh-flame,
+.rarity-red .sh-core {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 12%;
   transform-origin: 50% 100%;
-  background:
-    radial-gradient(7% 6.2% at 8% 100%, rgba(255, 252, 238, 0.95) 0%, rgba(255, 208, 108, 0.82) 24%, rgba(250, 124, 40, 0.56) 52%, rgba(206, 40, 24, 0.26) 76%, transparent 90%),
-    radial-gradient(5% 8.4% at 21% 100%, rgba(255, 254, 246, 0.98) 0%, rgba(255, 220, 132, 0.86) 20%, rgba(252, 138, 44, 0.6) 46%, rgba(214, 44, 26, 0.28) 72%, transparent 88%),
-    radial-gradient(8% 5.3% at 33% 100%, rgba(255, 250, 232, 0.92) 0%, rgba(255, 202, 100, 0.8) 26%, rgba(246, 116, 38, 0.54) 54%, rgba(200, 38, 24, 0.24) 78%, transparent 92%),
-    radial-gradient(5% 7.5% at 45% 100%, rgba(255, 254, 244, 0.96) 0%, rgba(255, 216, 124, 0.84) 22%, rgba(250, 130, 42, 0.58) 48%, rgba(210, 42, 26, 0.27) 74%, transparent 89%),
-    radial-gradient(7% 9.1% at 58% 100%, rgba(255, 255, 250, 1) 0%, rgba(255, 226, 146, 0.88) 18%, rgba(254, 146, 48, 0.62) 44%, rgba(218, 46, 28, 0.3) 70%, transparent 87%),
-    radial-gradient(6% 5.9% at 70% 100%, rgba(255, 250, 234, 0.93) 0%, rgba(255, 204, 104, 0.8) 25%, rgba(248, 120, 38, 0.55) 53%, rgba(204, 38, 24, 0.25) 77%, transparent 91%),
-    radial-gradient(5% 7.8% at 82% 100%, rgba(255, 254, 245, 0.97) 0%, rgba(255, 218, 128, 0.85) 21%, rgba(251, 134, 43, 0.59) 47%, rgba(212, 43, 26, 0.28) 73%, transparent 88%),
-    radial-gradient(8% 5.0% at 94% 100%, rgba(255, 248, 230, 0.9) 0%, rgba(255, 198, 96, 0.78) 27%, rgba(244, 112, 36, 0.52) 55%, rgba(198, 36, 24, 0.23) 79%, transparent 93%);
+}
+
+.rarity-red .sh-flame {
   animation: sh-lick 3.4s ease-in-out infinite alternate;
 }
 
-/* The core: shorter, whiter, faster, and offset so its tongues sit between the
-   main row's rather than on top of them. */
-.rarity-red .sh-veil {
-  inset: 0;
-  transform-origin: 50% 100%;
-  background:
-    radial-gradient(9% 3.6% at 15% 100%, rgba(255, 255, 252, 0.95) 0%, rgba(255, 232, 168, 0.7) 30%, rgba(252, 150, 52, 0.36) 62%, transparent 86%),
-    radial-gradient(7% 4.5% at 28% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
-    radial-gradient(10% 3.0% at 39% 100%, rgba(255, 254, 248, 0.9) 0%, rgba(255, 226, 154, 0.66) 34%, rgba(250, 142, 48, 0.32) 66%, transparent 88%),
-    radial-gradient(8% 4.2% at 52% 100%, rgba(255, 255, 254, 0.98) 0%, rgba(255, 238, 182, 0.72) 28%, rgba(253, 156, 54, 0.38) 60%, transparent 85%),
-    radial-gradient(9% 3.3% at 65% 100%, rgba(255, 254, 250, 0.92) 0%, rgba(255, 230, 162, 0.68) 32%, rgba(251, 146, 50, 0.34) 64%, transparent 87%),
-    radial-gradient(7% 4.5% at 77% 100%, rgba(255, 255, 254, 1) 0%, rgba(255, 240, 190, 0.74) 26%, rgba(254, 162, 58, 0.4) 58%, transparent 84%),
-    radial-gradient(10% 2.7% at 89% 100%, rgba(255, 254, 246, 0.88) 0%, rgba(255, 224, 148, 0.64) 36%, rgba(249, 138, 46, 0.3) 68%, transparent 89%);
+.rarity-red .sh-core {
   animation: sh-lick-far 2.2s ease-in-out infinite alternate;
 }
 
 /* Asymmetric scaling plus a SKEW. The skew is the part that reads as fire:
    flames lean and recover, and no amount of scaling alone produces that.
-
-   The periods were halved once already — 1.7s and 1.1s became 3.4s and 2.2s.
-   Real fire does flicker in about a second, but a card is not a campfire: a
-   thumbnail-sized flame at that rate reads as a strobe, and a whole gallery row
-   of them is unusable. Slow enough to watch beats accurate. */
+   Slower than a real flicker, because a thumbnail flame at a real flame's rate
+   reads as a strobe. */
 @keyframes sh-lick {
   0% { transform: skewX(-2.4deg) scale(1, 0.86); opacity: 0.72; }
   35% { transform: skewX(1.8deg) scale(1.05, 1.18); opacity: 0.96; }
@@ -6539,39 +6296,20 @@ button:disabled {
   100% { transform: skewX(1.4deg) scale(1.01, 1.04); opacity: 0.84; }
 }
 
-/* Near embers: bigger, brighter, faster, each with a near-white core. */
-.rarity-red .sh-grain {
-  background-image:
-    radial-gradient(circle at 18% 8%, rgba(255, 250, 236, 1) 0, rgba(255, 150, 70, 0.7) calc(1.6 * var(--u)), transparent calc(4.4 * var(--u))),
-    radial-gradient(circle at 62% 17%, rgba(255, 244, 220, 1) 0, rgba(255, 122, 52, 0.72) calc(2.2 * var(--u)), transparent calc(6 * var(--u))),
-    radial-gradient(circle at 36% 28%, rgba(255, 250, 236, 1) 0, rgba(255, 160, 84, 0.7) calc(1.8 * var(--u)), transparent calc(5 * var(--u))),
-    radial-gradient(circle at 88% 37%, rgba(255, 244, 220, 1) 0, rgba(255, 110, 48, 0.7) calc(2.4 * var(--u)), transparent calc(6.4 * var(--u))),
-    radial-gradient(circle at 8% 44%, rgba(255, 250, 236, 1) 0, rgba(255, 150, 70, 0.7) calc(1.5 * var(--u)), transparent calc(4.2 * var(--u)));
+.rarity-red .sh-near {
   animation: sh-rise 14s linear infinite;
 }
 
-.rarity-red .sh-grain2 {
-  background-image:
-    radial-gradient(circle at 44% 4%, rgba(255, 236, 206, 0.9) 0, rgba(255, 150, 78, 0.5) calc(1 * var(--u)), transparent calc(2.8 * var(--u))),
-    radial-gradient(circle at 12% 21%, rgba(255, 228, 194, 0.85) 0, rgba(255, 130, 66, 0.5) calc(1.2 * var(--u)), transparent calc(3.2 * var(--u))),
-    radial-gradient(circle at 76% 12%, rgba(255, 236, 206, 0.9) 0, rgba(255, 168, 96, 0.5) calc(0.9 * var(--u)), transparent calc(2.6 * var(--u))),
-    radial-gradient(circle at 28% 39%, rgba(255, 228, 194, 0.8) 0, rgba(255, 130, 66, 0.46) calc(1.3 * var(--u)), transparent calc(3.4 * var(--u))),
-    radial-gradient(circle at 92% 30%, rgba(255, 236, 206, 0.85) 0, rgba(255, 150, 78, 0.5) calc(1 * var(--u)), transparent calc(2.9 * var(--u))),
-    radial-gradient(circle at 56% 47%, rgba(255, 236, 206, 0.9) 0, rgba(255, 168, 96, 0.5) calc(1.1 * var(--u)), transparent calc(3.1 * var(--u)));
-  opacity: 0.85;
+.rarity-red .sh-far {
   animation: sh-rise 19s linear infinite;
-}
-
-.rarity-red .sh-rim {
-  box-shadow:
-    inset 0 0 calc(52 * var(--u)) rgba(255, 88, 44, 0.8),
-    inset 0 0 calc(14 * var(--u)) rgba(255, 156, 92, 0.5),
-    inset 0 0 0 calc(2.6 * var(--u)) rgba(255, 190, 140, 0.66);
-  animation: sh-pulse 5.7s ease-in-out infinite;
 }
 
 /* A pulse, not a breath: it swells and falls back twice per cycle with a hard
    peak, which reads as a heartbeat rather than as fog thickening. */
+.rarity-red .sh-rim {
+  animation: sh-pulse 5.7s ease-in-out infinite;
+}
+
 @keyframes sh-pulse {
   0%, 100% { opacity: 0.42; }
   38% { opacity: 1; }
@@ -6579,67 +6317,39 @@ button:disabled {
   74% { opacity: 0.92; }
 }
 
-/* ===========================================================================
-   RELIC — aurora, motes rising, and the one light bar in the game.
-   =========================================================================== */
-.rarity-relic .sh-field,
-.rarity-relic .sh-grain,
-.rarity-relic .sh-sweep,
-.rarity-relic .sh-rim {
-  display: block;
-}
-
+/* --- RELIC: aurora curtains, motes rising, the one light bar -------------- */
 .rarity-relic .sh-field {
-  background:
-    radial-gradient(40% 30% at 26% 30%, rgba(126, 240, 255, 0.42), transparent 66%),
-    radial-gradient(34% 26% at 76% 62%, rgba(64, 180, 224, 0.4), transparent 68%),
-    radial-gradient(28% 22% at 52% 88%, rgba(168, 250, 255, 0.3), transparent 70%);
   animation: sh-aurora 13s ease-in-out infinite alternate;
 }
 
 @keyframes sh-aurora {
   0% { transform: translate3d(-5%, 3%, 0) scale(1); opacity: 0.72; }
-  50% { transform: translate3d(4%, -4%, 0) scale(1.14); opacity: 1; }
-  100% { transform: translate3d(6%, 5%, 0) scale(1.05); opacity: 0.8; }
+  50% { transform: translate3d(4%, -4%, 0) scale(1.1); opacity: 1; }
+  100% { transform: translate3d(6%, 5%, 0) scale(1.04); opacity: 0.8; }
 }
 
-.rarity-relic .sh-grain {
-  background-image:
-    radial-gradient(circle at 16% 6%, rgba(226, 252, 255, 0.95) 0, transparent calc(2.6 * var(--u))),
-    radial-gradient(circle at 63% 13%, rgba(170, 240, 255, 0.85) 0, transparent calc(3.6 * var(--u))),
-    radial-gradient(circle at 86% 4%, rgba(226, 252, 255, 0.8) 0, transparent calc(2.2 * var(--u))),
-    radial-gradient(circle at 31% 22%, rgba(200, 248, 255, 0.9) 0, transparent calc(4 * var(--u))),
-    radial-gradient(circle at 73% 29%, rgba(226, 252, 255, 0.78) 0, transparent calc(2.8 * var(--u))),
-    radial-gradient(circle at 7% 35%, rgba(170, 240, 255, 0.85) 0, transparent calc(3.4 * var(--u))),
-    radial-gradient(circle at 46% 43%, rgba(226, 252, 255, 0.92) 0, transparent calc(2.4 * var(--u))),
-    radial-gradient(circle at 93% 47%, rgba(200, 248, 255, 0.8) 0, transparent calc(3.8 * var(--u)));
+.rarity-relic .sh-near {
   animation: sh-rise 19s linear infinite;
 }
 
-/* The only light bar left in the game, and it is deliberately rare. */
+/* The only light bar in the game, and it is deliberately rare. The layer is a
+   tilted bar 0.8 of the card wide that crosses in one transform, fully off the
+   card at both ends of its travel. */
 .rarity-relic .sh-sweep {
-  background: linear-gradient(
-    104deg,
-    transparent 36%,
-    rgba(214, 250, 255, 0.22) 45%,
-    rgba(255, 255, 255, 0.52) 50%,
-    rgba(214, 250, 255, 0.22) 55%,
-    transparent 64%
-  );
+  left: 10%;
+  top: 0;
+  width: 80%;
+  height: 100%;
   animation: sh-sweep 15s ease-in-out infinite;
 }
 
 @keyframes sh-sweep {
-  0% { transform: translate3d(-160%, 0, 0); }
-  /* 17% of 15s is the same 2.5-second crossing this always had. Only the WAIT
-     between passes changes when the period does. */
-  17%, 100% { transform: translate3d(160%, 0, 0); }
+  0% { transform: translate3d(-135%, 0, 0); }
+  /* 17% of 15s is a 2.5-second crossing; the rest is the wait between passes. */
+  17%, 100% { transform: translate3d(135%, 0, 0); }
 }
 
 .rarity-relic .sh-rim {
-  box-shadow:
-    inset 0 0 calc(26 * var(--u)) rgba(150, 240, 255, 0.5),
-    inset 0 0 0 calc(2 * var(--u)) rgba(196, 248, 255, 0.5);
   animation: sh-breathe 5.3s ease-in-out infinite alternate;
 }
 

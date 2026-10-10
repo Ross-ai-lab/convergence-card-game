@@ -1,7 +1,7 @@
 /** Ross mode's developer workbench: board edits, card placement and result previews. */
 import { useEffect, useMemo, useState } from "react";
 import { hasInfiniteMana } from "../engine/game";
-import { ALIGNMENTS, CAMPS, isRelicCard, RARITIES, rarityName, RELIC_CAMP_LABEL, RELIC_RARITY } from "../engine/types";
+import { ALIGNMENTS, CAMPS, compareCatalogue, isRelicCard, RARITIES, rarityName, RELIC_CAMP_LABEL, RELIC_RARITY } from "../engine/types";
 import type { GameState, PlayableCard, PlayerId } from "../engine/types";
 import { CardFace, playableFace } from "../card-face";
 import type { DeveloperEdit } from "./developer-edits";
@@ -55,7 +55,12 @@ export function DeveloperTools({
           (filters.alignment === "all" || filters.alignment === alignment)
         );
       })
-      .sort((left, right) => left.name.localeCompare(right.name));
+      // The gallery's order, so a card sits where the player would look for it.
+      .sort((left, right) => compareCatalogue(
+        { ...left, rarity: isRelicCard(left) ? RELIC_RARITY : left.rarity },
+        { ...right, rarity: isRelicCard(right) ? RELIC_RARITY : right.rarity },
+        filters.cost !== "all",
+      ));
   }, [allCards, filters, query]);
 
   const setFilter = (key: keyof typeof filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));

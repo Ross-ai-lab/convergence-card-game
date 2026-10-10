@@ -83,6 +83,9 @@ await page.keyboard.type("Ross");
 await page.getByRole("button", { name: "Open developer tools", exact: true }).click();
 check("developer mode opens its workbench", await page.locator(".developer-panel").isVisible());
 check("developer mode lists the complete library", (await page.locator(".developer-card-row").count()) === 217);
+// The gallery's order: mana cost first, so a card sits where a player looks.
+const devCosts = await page.locator(".developer-card-row .developer-card-mana").allTextContents();
+check("developer mode lists cards by mana cost", devCosts.every((cost, i) => i === 0 || Number(devCosts[i - 1]) <= Number(cost)), devCosts.slice(0, 12).join(","));
 await page.screenshot({ path: path.join(outputDir, "developer-workbench.png"), fullPage: false });
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(250);

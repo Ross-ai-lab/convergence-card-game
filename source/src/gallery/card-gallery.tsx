@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { createPortal } from "react-dom";
 import { cards, relics } from "../data/cards";
 import { heroPowerDefinition } from "../engine/hero-powers";
-import { ALIGNMENTS, CAMPS, RARITIES, rarityName, RELIC_CAMP_LABEL, RELIC_RARITY } from "../engine/types";
+import { ALIGNMENTS, CAMPS, CATALOGUE_RARITY_ORDER, compareCatalogue, rarityName, RELIC_CAMP_LABEL, RELIC_RARITY } from "../engine/types";
 import type { HeroPowerId } from "../engine/types";
 import type { CardFaceModel } from "../card-presentation";
 import { CardFace, CardPeek, GalleryPreviewContext, playableFace, relicFace } from "../card-face";
@@ -67,7 +67,7 @@ const FILTER_ANY: Record<FilterKey, string> = {
  */
 const VALUE_ORDER: Record<FilterKey, string[]> = {
   cost: [],
-  rarity: [...RARITIES, RELIC_RARITY],
+  rarity: [...CATALOGUE_RARITY_ORDER],
   camp: [...CAMPS],
   alignment: [...ALIGNMENTS],
 };
@@ -266,13 +266,7 @@ export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHero
       : entries;
     const wantUnlocked = status === "unlocked";
     kept = kept.filter((entry) => collection.unlocked.has(entry.key) === wantUnlocked && (showEquipped || !deck.includes(entry.key)));
-    const rarityRank = (entry: GalleryEntry) => {
-      const index = VALUE_ORDER.rarity.indexOf(entry.face.rarity);
-      return index < 0 ? VALUE_ORDER.rarity.length : index;
-    };
-    return [...kept].sort((a, b) =>
-      (filters.cost ? rarityRank(a) - rarityRank(b) : (a.face.cost ?? 99) - (b.face.cost ?? 99))
-      || a.face.name.localeCompare(b.face.name));
+    return [...kept].sort((a, b) => compareCatalogue(a.face, b.face, Boolean(filters.cost)));
   }, [entries, filters, status, collection, showEquipped, deck]);
 
   const selectedEntry = selectedEntryKey ? allEntries.find((entry) => entry.key === selectedEntryKey) ?? null : null;

@@ -6,7 +6,8 @@
 import { createContext, Fragment, memo, useContext, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { relics } from "./data/cards";
-import { BASELINE_RARITY, isRelicCard, RARITIES, RELIC_CAMP_LABEL, RELIC_RARITY } from "./engine/types";
+import { isRelicCard, RELIC_CAMP_LABEL, RELIC_RARITY } from "./engine/types";
+import { SHINE_LAYERS } from "./card-shine";
 import type { PlayableCard, RelicDefinition, RelicInstance } from "./engine/types";
 import { tokenCard } from "./engine/tokens";
 import { cardArtPosition, splitCardText, sameCardFace, sameStrings, type CardFaceModel } from "./card-presentation";
@@ -152,21 +153,6 @@ export function campAccent(camp: string): string {
   if (camp === RELIC_CAMP_LABEL) return "#56d8cd";
   return "#b996ff";
 }
-
-/**
- * Which tiers carry an animated shine, and the baseline tier is deliberately
- * absent.
- *
- * The escalation only reads as an escalation if the bottom of it is still. Give
- * every card a shine and the tiers stop meaning anything; 60 Rare cards then
- * also stop costing anything, which is what keeps a full gallery affordable.
- *
- * Derived, so adding a tier to the engine's table cannot leave this list behind:
- * everything above the baseline, plus relics.
- */
-const SHINE_RARITIES = new Set(
-  [...RARITIES.filter((rarity) => rarity !== BASELINE_RARITY), RELIC_RARITY].map((rarity) => rarity.toLowerCase()),
-);
 
 /**
  * Rail values with a lit palette built for them.
@@ -395,6 +381,7 @@ export const CardFace = memo(function CardFace({
     "--cf-flavfit": fitParagraph(quote, FLAVOR_BOX.w, FLAVOR_BOX.h, FLAVOR_BOX.lineHeight, FLAVOR_CEILING, "flavor"),
   } as CSSProperties;
   const rarity = (card.rarity ?? "Black").toLowerCase();
+  const shineLayers = SHINE_LAYERS[rarity];
   const isRelicFace = rarity === "relic";
   /* Centre the board name only when centring costs it nothing — that is, when
    * the symmetric box fits the name at the same size the wider asymmetric box
@@ -478,21 +465,13 @@ export const CardFace = memo(function CardFace({
             existing layers, because `.cf-art::after` is already the glass sheen
             and `.cf-stage::after` is spoken for by the board's rim states — a
             shine written on top of either would fight a condition the player
-            needs to see.
-
-            FIVE FIXED SLOTS for every tier, styled per rarity, with the ones a
-            tier does not use switched off in CSS. The alternative — a different
-            element list per rarity — puts the layer count in two places at once
-            and lets the markup and the stylesheet disagree silently. Rare gets
-            no shine at all: it is the baseline the other tiers escalate from. */}
-        {!quiet && SHINE_RARITIES.has(rarity) ? (
+            needs to see. Each layer is a pre-drawn picture that App.css only
+            moves and fades; `card-shine.ts` lists them per tier. */}
+        {!quiet && shineLayers ? (
           <div className="cf-shine" aria-hidden="true">
-            <span className="sh-field" />
-            <span className="sh-veil" />
-            <span className="sh-grain" />
-            <span className="sh-grain2" />
-            <span className="sh-sweep" />
-            <span className="sh-rim" />
+            {shineLayers.map((layer) => (
+              <img key={layer.slot} className={`sh-${layer.slot}`} src={layer.src} alt="" draggable={false} decoding="async" />
+            ))}
           </div>
         ) : null}
         {!quiet && <div className="cf-fx" aria-hidden="true" />}

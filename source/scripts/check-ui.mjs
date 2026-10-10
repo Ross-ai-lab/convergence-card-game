@@ -712,6 +712,35 @@ if (readyCount > 0) {
     (await page.locator(".board-slot.armed").count()) === 0 && (await page.locator(".target-arrow").count()) === 0,
     "attacker and targeting arrow cleared",
   );
+
+  // While aiming, the board is what the player is choosing from, so nothing
+  // may open over it: no enlarged card after resting on a minion, and no enemy
+  // Hero Power card from a click on the portrait strip. The second half is
+  // proved against a control, so a portrait that never opens cannot pass it.
+  await page.locator(".board-slot.occupied.ready").first().click();
+  const restOn = page.locator(".board-row").first().locator(".board-slot.occupied").first();
+  if ((await restOn.count()) > 0) {
+    await restOn.hover();
+    await page.waitForTimeout(1400);
+    const previews = await page.locator(".hover-preview").count();
+    check("aiming an attack opens no enlarged card", previews === 0 && (await page.locator(".board-slot.armed").count()) === 1, `${previews} enlarged card(s) while armed`);
+  } else {
+    skip("aiming an attack opens no enlarged card", "no enemy minion to rest on");
+  }
+  await page.locator(".enemy-hero-wrap").dispatchEvent("pointerdown");
+  await page.waitForTimeout(150);
+  const openWhileAiming = await page.locator(".enemy-hero-wrap.is-open").count();
+  await page.locator(".board-slot.empty").first().click();
+  await page.waitForTimeout(150);
+  await page.locator(".enemy-hero-wrap").dispatchEvent("pointerdown");
+  await page.waitForTimeout(150);
+  const openAtRest = await page.locator(".enemy-hero-wrap.is-open").count();
+  if (openAtRest) await page.locator(".enemy-hero-wrap").dispatchEvent("pointerdown");
+  check(
+    "a portrait click while aiming leaves the enemy Hero Power closed",
+    openWhileAiming === 0 && openAtRest === 1,
+    `while aiming ${openWhileAiming}, at rest ${openAtRest}`,
+  );
 } else {
   skip("clicking a ready minion arms it", "no rested minion to click");
   skip("clicking a ready minion shows a targeting arrow", "no rested minion to click");
@@ -1244,8 +1273,8 @@ await newBoard({ place: false });
 // keyframe name leaves the other layers moving and a pixel diff passes it. That
 // has been live-fired, not assumed.
 //
-// The counts are the escalation itself. Epic is the quietest with three layers,
-// Legendary and Relic carry four, Mythic five. A tier that silently loses a
+// The counts are the escalation itself. Legendary carries three layers, Epic
+// and Relic four, Mythic five. A tier that silently loses a
 // layer stops escalating, and nothing else in this project would notice.
 const SHINE_TIERS = [
   { rarity: "purple", name: "Epic", card: "Aizen", layers: 4 },
@@ -1269,7 +1298,7 @@ await newBoard({ place: false });
         continue;
       }
       const running = await face.evaluate((element) =>
-        [...element.querySelectorAll(".cf-shine > span")]
+        [...element.querySelectorAll(".cf-shine > img")]
           .filter((layer) => getComputedStyle(layer).display !== "none")
           .flatMap((layer) => layer.getAnimations())
           .filter((animation) => animation.playState === "running")
@@ -1318,7 +1347,7 @@ await newBoard({ place: false });
       .locator(".board-slot.occupied .card-face.rarity-yellow")
       .last()
       .evaluate(async (face) => {
-        const veil = face.querySelector(".cf-shine > .sh-veil");
+        const veil = face.querySelector(".cf-shine > .sh-rays");
         if (!veil) return { found: false };
         const card = face.getBoundingClientRect();
         const centre = () => {

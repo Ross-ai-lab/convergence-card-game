@@ -134,6 +134,8 @@ A repeated keyword is highlighted only on its first occurrence in a card descrip
 Card faces are live DOM, not exported images. Stats and conditions come from actual game state.
 Keep mana, attack, health, name, artwork, and printed rules visible at every breakpoint. Small cards retain the same complete card design.
 Mythic, Legendary, Epic, and Relic cards use their own animated shine. Keep the animation and palette coherent with rarity ordering in `types.ts`.
+The shine is pre-drawn textures listed in `card-shine.ts` and drawn by `npm run build:shine`; change a look in that script and rerun it. Its animated layers use no blend mode, mask or rounded clip.
+Selection rings on cards are `box-shadow` spreads, never `outline`: a card already carries a drop shadow, and Chrome redraws an element with both on every frame while its shine runs.
 The desktop hand enlarges as one container. Phone hands scroll without scaling or overlap.
 During a duel, tap-and-hold inspection applies to equipped relic badges. Their card-only preview includes the printed description, without a modal backdrop or separate text.
 Equipped relic badges do not grow on hover or tap. Their card preview lasts one second after a tap, or until a held pointer is released.
@@ -223,4 +225,3 @@ Compare repeated runs without other check suites competing for CPU.
 Before measuring, check live per-process CPU and graphics load, not lifetime totals. Another AI coding app, a game or a 3D editor running alongside makes the same build's slowest frame swing several-fold between runs. When repeated runs of one build disagree like that, find the competing program before reading any result.
 Automated Chromium timings are evidence for those scenes, not a guaranteed frame rate on every device.
 Never use `settleMotion` or disable animations in a final smoothness comparison. Temporary CSS bisection is diagnostic only.
-Open work: a busy idle duel runs near 30 fps on an integrated graphics chip, because the gradient rarity shine is re-rasterised every frame. Removing the shine cut graphics work from 3.9 s to 1.2 s per 4 s, while dropping blend modes, rounded clips, isolation or `will-change` changed nothing. Replace it rather than tune it: draw each tier as a few small pre-rendered images that only move and fade, keep the Epic mist, Legendary rays, Mythic flames and Relic aurora identities, keep the shine assertions in `check-ui.mjs` valid, and measure idle duels and card plays with `--gpu` before and after.

@@ -3,7 +3,7 @@
  * two-second keyword panel on a resting hand card, and the reach highlight that
  * rings every minion the hovered one is affecting.
  */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sfx } from "../audio/sfx";
 import { effectiveCardCost, type CardLibrary } from "../engine/game";
 import type { GameState, MinionInstance, PlayableCard, PlayerId, RelicInstance } from "../engine/types";
@@ -25,8 +25,13 @@ const HOVER_PREVIEW_DELAY_MS = 1000;
 const HAND_KEYWORD_DELAY_MS = 2000;
 const BOARD_KEYWORD_DELAY_MS = 2000;
 
-/** `dragActive` suppresses every preview while a card or attacker is being dragged. */
-export function useCardPreview(game: GameState, library: CardLibrary, dragActive: boolean) {
+/**
+ * `aiming` suppresses every preview while a card is dragged or an arrow is out.
+ *
+ * The enlarged card covers the board, and the board is exactly what the player
+ * is choosing from while aiming. A preview that opens over the target hides it.
+ */
+export function useCardPreview(game: GameState, library: CardLibrary, aiming: boolean) {
   const [hover, setHover] = useState<HoverState>(null);
   const hoverTimer = useRef<number | null>(null);
   const hoverRequest = useRef(0);
@@ -87,7 +92,7 @@ export function useCardPreview(game: GameState, library: CardLibrary, dragActive
    * turns reading five of them into five seconds of hovering.
    */
   function previewCard(card: PlayableCard, el: HTMLElement, owner?: PlayerId, instant = false) {
-    if (dragActive) return;
+    if (aiming) return;
     const face = playableFace(card, owner === undefined ? undefined : effectiveCardCost(game, owner, card));
     const show = () => {
       if (!el.isConnected) return;
@@ -115,7 +120,7 @@ export function useCardPreview(game: GameState, library: CardLibrary, dragActive
   }
 
   function previewMinion(minion: MinionInstance, el: HTMLElement) {
-    if (dragActive) return;
+    if (aiming) return;
     // Set immediately, unlike the card preview below it. The reach highlight is
     // an answer to "what is this thing doing", and an answer that arrives after
     // the same delay as a full card panel arrives after the player has already
@@ -160,7 +165,7 @@ export function useCardPreview(game: GameState, library: CardLibrary, dragActive
   // whole Relic card, teal frame and all — the live face costs nothing
   // to point at a different card.
   function previewRelic(relic: RelicInstance, el: HTMLElement) {
-    if (dragActive) return;
+    if (aiming) return;
     const face = relicFace(relic);
     clearHoverTimer();
     sfx.hoverTick();
@@ -198,7 +203,7 @@ export function useCardPreview(game: GameState, library: CardLibrary, dragActive
    */
   function armHandKeywords(card: PlayableCard | undefined, el: HTMLElement) {
     clearHandKeywords();
-    if (!card || dragActive) return;
+    if (!card || aiming) return;
     const entries = handKeywordEntriesFor(card);
     if (entries.length === 0) return;
     handKeywordTimer.current = window.setTimeout(() => {
@@ -208,6 +213,16 @@ export function useCardPreview(game: GameState, library: CardLibrary, dragActive
       setHandKeywords({ entries, left: rect.right, top: rect.top });
     }, HAND_KEYWORD_DELAY_MS);
   }
+
+  // Starting to aim closes whatever was already open or pending, so a card that
+  // was hovered just before the click does not pop up under the arrow.
+  useEffect(() => {
+    if (!aiming) return;
+    clearHoverTimer();
+    setHover(null);
+    setReachSource(null);
+    clearHandKeywords();
+  }, [aiming, clearHandKeywords]);
 
   function endPreview() {
     setReachSource(null);

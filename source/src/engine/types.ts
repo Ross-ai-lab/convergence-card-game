@@ -88,6 +88,27 @@ export function rarityName(rarity: string): string {
  */
 export const RELIC_RARITY = "Relic";
 
+/** Rarity order for lists: the tiers low to high, then relics. */
+export const CATALOGUE_RARITY_ORDER: readonly string[] = [...RARITIES, RELIC_RARITY];
+
+/**
+ * The one order every card list uses: mana cost, then name. When the list is
+ * already narrowed to a single cost, cost no longer separates anything, so
+ * rarity takes its place. Pass a relic's rarity as `RELIC_RARITY`.
+ */
+export function compareCatalogue(
+  a: { cost?: number; rarity?: string; name: string },
+  b: { cost?: number; rarity?: string; name: string },
+  costChosen: boolean,
+): number {
+  const rank = (rarity?: string) => {
+    const index = rarity === undefined ? -1 : CATALOGUE_RARITY_ORDER.indexOf(rarity);
+    return index < 0 ? CATALOGUE_RARITY_ORDER.length : index;
+  };
+  const first = costChosen ? rank(a.rarity) - rank(b.rarity) : (a.cost ?? 99) - (b.cost ?? 99);
+  return first || a.name.localeCompare(b.name);
+}
+
 /**
  * What a relic prints where a character prints its camp.
  *

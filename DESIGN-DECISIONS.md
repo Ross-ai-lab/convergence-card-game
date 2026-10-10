@@ -78,6 +78,7 @@ One action starts at most 96 particles. Hits, summons and two-minion trades stay
 A moving layer never carries its own blur. Filters and shadows sit on a still child, so they are drawn once and the layer only moves; the title's floating cards and the drag ghost follow this.
 Dragging and aiming keep the pointer outside React. The drag ghost and targeting arrow follow a frame-coalesced pointer store; the duel itself does not re-render while the pointer moves.
 While something follows the pointer, every display frame runs the main thread and Chrome restyles each running animation on it. The board's rarity shine pauses for that moment and resumes where it stopped; the held card keeps its own.
+The rarity shine is a few pre-drawn pictures per card that only move, turn and fade. Blends, masks and soft falloffs are baked into the pictures once instead of being composited again on every frame; this cut an idle duel's graphics work by more than half. It sits under the cost, attack and health gems so it never washes out a number.
 The shine also pauses while an action's effects play, because the graphics chip is then the limit and the shine is most of its work. A card that has just landed keeps its shine moving, since that is where the player looks.
 An opaque screen skips rendering what it covers. My Deck hides the title screen's floating cards instead of keeping their layers alive under the collection.
 

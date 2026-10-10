@@ -36,6 +36,7 @@
     "check:coverage": "node scripts/check-effect-coverage.mjs",
     "check:features": "node scripts/check-features.mjs",
     "build:gallery-art": "node scripts/build-gallery-previews.mjs",
+    "build:shine": "node scripts/build-shine.mjs",
     "prepare:assets": "npm run build:lore && npm run sync:cards && npm run build:gallery-art"
   },
   "dependencies": {
