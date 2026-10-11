@@ -9660,7 +9660,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "sig_name": "Zoltraak",
     "sig_desc": "A once-lethal demon spell becomes a familiar tool through patient analysis and mastery.",
     "playstyle": "A patient archivist whose power grows through knowledge",
-    "ability": "Passive: The first time you cast a relic each turn, discover another relic",
+    "ability": "Passive: Whenever you cast a relic, discover another relic",
     "rivals": [
       {
         "who": "Himmel",
