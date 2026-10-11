@@ -40,12 +40,12 @@ export function HotseatSetup({ progress, onEdit, onStart, onClose }: {
   progress: Progress; onEdit: (seat: 0 | 1) => void; onStart: () => void; onClose: () => void;
 }) {
   const valid = [progress.playerDeck, progress.hotseatDeck].every((deck) => validateDeck(deck, rosterIds, progress.unlockedIds).valid);
-  return <div className="campaign-overlay" role="dialog" aria-modal="true" aria-label="Two-player decks"><section className="campaign-panel hotseat-decks">
-    <header className="campaign-header"><h2>Two players, two decks</h2><button onClick={onClose}>Close</button></header>
+  return <div className="campaign-overlay" role="dialog" aria-modal="true" aria-label="Local Duel decks"><section className="campaign-panel hotseat-decks">
+    <header className="campaign-header"><h2>Local Duel: two players, two decks</h2><button onClick={onClose}>Close</button></header>
     <p>Each player uses a separate 30-card deck. Both decks can use the same unlocked cards. Hands stay private between turns.</p>
     <div className="campaign-toolbar"><button onClick={() => onEdit(0)}>Player One · {progress.playerDeck.length}/30</button>
       <button onClick={() => onEdit(1)}>Player Two · {progress.hotseatDeck.length}/30</button></div>
     {!valid && <p className="campaign-warning">Both players need exactly 30 cards before starting.</p>}
-    <button className="primary" disabled={!valid} onClick={onStart}>Start two-player duel</button>
+    <button className="primary" disabled={!valid} onClick={onStart}>Start local duel</button>
   </section></div>;
 }

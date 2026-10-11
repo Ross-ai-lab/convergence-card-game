@@ -77,7 +77,7 @@ Chromium checks native holds and swipes. WebKit checks long-press pointer events
 | `npm run check:ui` | Duel controls and title-screen behaviour |
 | `npm run check -- --only card-interface` | Shield readiness, Apex targeting, grouped cheats, deck presets and placement sound |
 | `npm run check:cardface` | Card names, text fit, stats, and viewport containment |
-| `npm run check:features` | Tutorial, developer tools, all character profiles, a Rift Draft run, and an online duel between two browser profiles (needs the internet; skipped when the PeerJS service cannot be reached) |
+| `npm run check:features` | Tutorial, developer tools, all character profiles, an Arena run, and an online duel between two browser profiles (needs the internet; skipped when the PeerJS service cannot be reached) |
 | `npm run check -- --only mobile` | Phone/tablet layouts, touch interactions, reader, deck editing, and landscape |
 | `npm run check:audio` | Music and effects routing |
 | `npm run check:campaign-voices` | Campaign recordings, cast manifest, and checksums |
@@ -124,7 +124,7 @@ Do not change mana as an incidental balance adjustment. Routine interface work m
 Fine balance and bot valuation are separate future work.
 Run `sim` or `check:balance` only when the current request explicitly asks for simulation or a difficulty study; use [balance.config.json](source/balance.config.json) for measured thresholds and minimum samples.
 An insufficient sample is a skip, never a pass. The difficulty ladder requires a separately requested run.
-The simulator plays the real game: each seat drafts a 30-card deck with the Rift Draft picker and brings a Hero Power. Only the ladder's designated seat may cheat.
+The simulator plays the real game: each seat drafts a 30-card deck with the Arena's draft picker and brings a Hero Power. Only the ladder's designated seat may cheat.
 `check:balance` also plays every campaign boss in worker processes. It fails when a tier is not harder than the tier below it, or when a boss sits far from the rest of its tier.
 [campaign-difficulty.ts](source/scripts/campaign-difficulty.ts) measures the bosses alone (`--games`, `--jobs`, `--chapters`). `--cheats none` or `--cheats all` replays the same seeds with every boss fair or fully cheating, which measures what the cheats are worth.
 A saved run from a different harness is never compared with a new one.

@@ -494,8 +494,6 @@ export interface MinionInstance {
   auraBonuses?: Array<{ sourceId: string; atk: number; hp: number; keywords: Keyword[]; divineShield?: boolean; spentAtk?: number; suppressedHp?: number }>;
   /** Goku: the turn in which its first attack was evaded. */
   evadedAttackAtTurn?: number | null;
-  /** Grand Master Oogway: one rescue per turn. */
-  rescueUsedAtTurn?: number | null;
   /** Fantastic Four: live slot-1 Divine Shield contributions. */
   divineShieldAuraSources?: string[];
   /** Fantastic Four: a shield broken while its source remains alive. */
@@ -513,8 +511,6 @@ export interface MinionInstance {
   stolenPassiveText: string | null;
   /** Yubaba/Nyan: passive or ongoing effects granted by another card. */
   gainedEffects: Array<{ effectId: EffectId; timing: "passive" | "ongoing"; text: string }>;
-  /** Frieren: the turn on which this minion already discovered a relic. */
-  relicDiscoveryTurn: number | null;
   /** Flowey: the core HP captured by its Battlecry, restored on death. */
   savedCoreHealth?: number | null;
   /** Hero power: this minion gets +1/+1 when its one-turn chain expires. */

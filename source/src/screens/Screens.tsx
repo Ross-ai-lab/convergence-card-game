@@ -408,11 +408,11 @@ export function TitleScreen({
           }}
         >
           <UsersThree size={22} weight="fill" aria-hidden="true" />
-          <span>2 players</span>
+          <span>Local Duel</span>
         </button>
         <button type="button" className="draft-trigger" onClick={onDraft}>
           <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="4.5" y="4" width="11" height="16" rx="2" transform="rotate(-12 10 12)"/><rect x="12.5" y="5" width="11" height="16" rx="2" transform="rotate(10 18 13)"/><path d="M14 18l1.6 3.4 3.4 1.6-3.4 1.6L14 28l-1.6-3.4L9 23l3.4-1.6z"/></svg>
-          <span>Rift Draft</span>
+          <span>Arena</span>
         </button>
         <button type="button" className="online-trigger" onClick={onOnline}>
           <GlobeHemisphereWest size={22} weight="duotone" aria-hidden="true" />
@@ -424,9 +424,9 @@ export function TitleScreen({
       </div>
 
       {hotseatConfirmOpen ? (
-        <Overlay title="Two-player duel" onClose={() => setHotseatConfirmOpen(false)}>
+        <Overlay title="Local Duel" onClose={() => setHotseatConfirmOpen(false)}>
           <div className="hotseat-confirm">
-            <p className="hotseat-confirm-question">Start local 2 player duel?</p>
+            <p className="hotseat-confirm-question">Start a local duel on this device?</p>
             <p className="hotseat-confirm-note">This mode does not award cards</p>
             <div className="hotseat-confirm-actions">
               <button

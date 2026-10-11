@@ -1,5 +1,5 @@
 /**
- * Rift Draft, bound to the game: the deckable card pool, the rivals' climb
+ * The Arena, bound to the game: the deckable card pool, the rivals' climb
  * through the campaign's difficulty profiles, and the browser save.
  *
  * Every card in the game is draftable, whether or not the collection owns it:

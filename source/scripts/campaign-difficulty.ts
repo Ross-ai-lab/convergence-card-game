@@ -42,6 +42,8 @@ export type CheatMode = "tier" | "none" | "all";
 export const PLAYER_PROXIES: readonly PlayerProxy[] = ["starter", "drafted"];
 /** The stand-in player's search depth: Veteran, the middle of the three. */
 export const PLAYER_SKILL: BotSkill = "normal";
+/** Fewer duels per boss and deck than this is a smoke test, saved apart. */
+const MIN_SAVED_GAMES = 40;
 
 export interface ChapterResult {
   chapter: number;
@@ -221,7 +223,13 @@ if (isMain) {
     console.log(`(${run.seconds}s)`);
     const dir = join(ROOT, ".preview", "balance");
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, cheatMode === "tier" ? "campaign.json" : `campaign-cheats-${cheatMode}.json`), JSON.stringify(run, null, 2));
+    // Only a run of every chapter at a real sample may replace `campaign.json`,
+    // the result the full gate also writes. A quick or partial run keeps its own
+    // file, so a smoke test never overwrites a measurement.
+    const full = !chapters && games >= MIN_SAVED_GAMES;
+    const name = cheatMode !== "tier" ? `campaign-cheats-${cheatMode}${full ? "" : "-partial"}.json` : full ? "campaign.json" : "campaign-partial.json";
+    writeFileSync(join(dir, name), JSON.stringify(run, null, 2));
+    console.log(`Saved to .preview/balance/${name}`);
   }
   if (quiet) process.exitCode = 0;
 }

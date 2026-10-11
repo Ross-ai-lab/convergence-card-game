@@ -1,5 +1,5 @@
 /**
- * Rift Draft's rules, independent of where the cards come from.
+ * The Arena's draft rules, independent of where the cards come from.
  *
  * Everything here is pure and seeded. An offer is derived from the run id, the
  * pick number and the cards already taken, so a reload shows the same three

@@ -21,7 +21,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
   - [Controls](#controls)
 - [Rules at a glance](#rules-at-a-glance)
 - [Win and collect](#win-and-collect)
-  - [Rift Draft](#rift-draft)
+  - [Arena](#arena)
   - [Online duels](#online-duels)
   - [Progress stays in this browser](#progress-stays-in-this-browser)
 - [Explore and contribute](#explore-and-contribute)
@@ -33,8 +33,8 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
 |---|---|
 | Collection campaign | Challenge twenty champions. Every universe is available from the start. |
 | My Deck | Build a thirty-card deck from your collection and choose a Hero Power. |
-| Two-player hotseat | Share one device with separate decks and private hands. |
-| Rift Draft | Draft a deck from offers of three, then duel rival drafters until seven wins or three losses. |
+| Local Duel | Two players share one device with separate decks and private hands. |
+| Arena | Draft a deck from offers of three, then duel rival drafters until seven wins or three losses. |
 | Online duel | Play a friend on another device with a six-letter room code or an invite link. |
 | Free duels | Finish the campaign to unlock Recruit, Veteran and Ascendant opponents. |
 | Tutorial | Learn card play, attacks, targeting, relics and Hero Powers in a short guided duel. |
@@ -71,6 +71,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
 In My Deck, click a keyword for its explanation or a token name for its enlarged card.
 Locked cards keep their printed rules visible and identify the champion needed to unlock them.
 **Starter Deck** is selected initially. Each named deck saves its edits automatically, including its Hero Power. Use **Create a new deck** to name an empty deck, **Saved decks** to switch between them, and **Clear** to empty the selected deck. Incomplete decks can be finished later.
+The pencil and bin beside **Saved decks** rename or delete the selected deck. The Starter Deck always keeps its name and cannot be deleted. **Choose Hero Power** sits at the top of the deck list.
 Cards sort by mana, lowest first; choosing a mana value sorts that result by rarity instead.
 
 Phone battles use landscape orientation. Menus and deck editing also work upright. Swipe the hand to reach later cards.
@@ -82,7 +83,7 @@ Relics are teal equipment cards carried by minions. The in-game **How to play** 
 ## Rules at a glance
 
 - Both cores begin at **30 health**. Reduce the opposing core to zero to win.
-- Each player draws from their own shuffled **30-card deck** and opens with **3 cards**. Solo play offers one opening mulligan; hotseat offers one private mulligan per player. The second hotseat player receives **The Coin**.
+- Each player draws from their own shuffled **30-card deck** and opens with **3 cards**. Solo play offers one opening mulligan; Local Duel offers one private mulligan per player. The second Local Duel player receives **The Coin**.
 - At the start of a turn, draw one card. Mana begins at **1**, refills each turn, and increases by one up to **10**.
 - Your hand holds at most **10 cards**. A card drawn into a full hand burns.
 - Pay a card's mana cost to play it. Each player has **four board slots**. Summons need an available slot.
@@ -112,7 +113,7 @@ Training and developer test duels have no deadline.
 Each champion has a named power and voiced dialogue. The text remains readable when audio is unavailable.
 Victory dialogue and unclaimed rewards survive a reload.
 
-### Rift Draft
+### Arena
 
 Choose a Hero Power from three, then pick thirty cards, one from each offer of three cards of the same rarity. Every card in the game can be offered, owned or not, and a card is never offered twice in one draft.
 Picks 1, 11 and 21 offer only Legendary or Mythic cards. Relics stop appearing once a deck holds six.

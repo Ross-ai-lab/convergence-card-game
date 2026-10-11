@@ -6885,7 +6885,8 @@ button:disabled {
 .enemy-hero-wrap.apex-blocked .enemy-power-card::after {content:'';position:absolute;inset:-3px;border:2px solid #ff777b;border-radius:inherit;box-shadow:0 0 22px #ff414199;pointer-events:none;animation:apex-warning-flash 250ms ease-in-out 4;}
 @keyframes apex-warning-flash {50%{opacity:.15;}}
 .gallery-deck-selector {min-width:0;flex:1;}
-.gallery-deck-selector select {width:100%;min-height:34px;color:#ffe8ab;font-size:13px;}
+.gallery-deck-selector select {width:100%;min-height:34px;color:#ffe8ab;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gallery-deck-selector select selectedcontent {display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .gallery-deck-selector select::picker(select) {max-height:min(420px,65dvh);overflow:auto;}
 .gallery-preset-actions {display:flex;gap:7px;margin:8px 4px;}
 .gallery-preset-actions button {flex:1;min-height:31px;border-color:#806842;background:#211a15;color:#edc888;font-size:12px;}
@@ -6897,4 +6898,20 @@ button:disabled {
 .gallery-save-dialog input {box-sizing:border-box;width:100%;min-height:40px;padding:8px 10px;border:1px solid #99783f;border-radius:7px;background:#110e15;color:#fff0ce;font:inherit;}
 .gallery-save-dialog p {color:#bcae99;font-size:12px;}
 .gallery-save-dialog>div {display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+/* Rename and delete sit beside the deck picker. Starter Deck greys them out. */
+.gallery-deck-manage {display:flex;gap:4px;flex:none;}
+.gallery-deck-manage button {display:grid;place-items:center;width:30px;height:34px;padding:0;border:1px solid #806842;border-radius:7px;background:#211a15;color:#edc888;cursor:var(--convergence-cursor);}
+.gallery-deck-manage button:hover:not(:disabled) {border-color:#e5bb63;color:#fff0ce;}
+.gallery-deck-manage button:last-child:hover:not(:disabled) {border-color:#e07a62;color:#ffc2b1;}
+.gallery-deck-manage button:disabled {opacity:.35;cursor:default;}
+.gallery-delete-dialog {border-color:#d0735c;}
+.gallery-delete-dialog .danger {border:1px solid #f0a08a;background:linear-gradient(160deg,#c4573f,#7d2a1d);color:#fff2ec;font-weight:800;}
+/* Hero Power heads the sidebar, in its own teal so it never reads as the deck picker. */
+aside.gallery-deck > .gallery-hero-power {flex-wrap:wrap;column-gap:7px;row-gap:0;min-height:40px;margin:0 4px 9px;width:auto;padding:5px 10px;border:1px solid #58b9b3aa;background:linear-gradient(120deg,#16413f,#0d2427);color:#dcfaf5;box-shadow:inset 0 1px 0 #8ff1e822;}
+aside.gallery-deck > .gallery-hero-power:hover {border-color:#8ff1e8;background:linear-gradient(120deg,#1c5250,#10302f);}
+aside.gallery-deck > .gallery-hero-power .gallery-power-icon {color:#8ff1e8;}
+aside.gallery-deck > .gallery-hero-power strong {font-size:13px;}
+.gallery-power-equipped {font-size:11px;color:#9fd8d1;}
+.gallery-power-equipped::before {content:'· ';}
+aside.gallery-deck > .gallery-hero-power.has-new-power {border-color:#ffe298;color:#fff1b6;}
 @media(max-width:700px){.gallery-deck{max-height:320px}.apex-prey{flex-basis:29px;width:29px;height:29px;margin-right:3px}}

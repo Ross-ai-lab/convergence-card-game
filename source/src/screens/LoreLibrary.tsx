@@ -3,19 +3,46 @@ import { LORE_CHAPTER_ONE, isLoreChapterUnlocked } from '../lore-chapters';
 import { resolvePublicAssetUrl } from '../engine/asset-url';
 import './LoreLibrary.css';
 
+/**
+ * A real book: a leather cover hinged on its spine, over a block of pages.
+ * Hovering opens the cover and turns one leaf, and the first page glows.
+ * Every moving part animates transform and opacity only.
+ */
 export function LoreBookButton({onOpen}:{onOpen:()=>void}) {
   return <button type="button" className="lore-book-button" aria-label="Lore" onClick={onOpen}>
-    <svg viewBox="0 0 90 120" aria-hidden="true">
-      <defs><linearGradient id="lore-cover"><stop stopColor="#593259"/><stop offset="1" stopColor="#20172f"/></linearGradient></defs>
-      <path d="M13 8H72Q81 8 81 17V110H17Q8 110 8 102V16Q8 8 13 8Z" fill="#17111d"/>
-      <path d="M17 99H81V111H17Q10 111 10 105Q10 99 17 99Z" fill="#d6bd85" stroke="#8a683c"/>
-      <path d="M18 103H77M18 107H77" stroke="#947d53"/>
-      <path d="M11 8H77V100H17Q11 100 11 107Z" fill="url(#lore-cover)" stroke="#dab566" strokeWidth="2"/>
-      <path d="M22 8V100M28 20H68V87H28Z" fill="none" stroke="#b99758" opacity=".7"/>
-      <path d="M48 28L56 40L48 52L40 40Z" fill="#e0bc71"/>
-      <text x="48" y="68" textAnchor="middle" fill="#f2d99b" fontSize="13" fontFamily="Georgia" fontWeight="bold">LORE</text>
-      <path d="M11 27H22M11 80H22" stroke="#dab566" strokeWidth="4"/>
-    </svg>
+    <span className="lb-stage" aria-hidden="true">
+      <span className="lb-book">
+        <span className="lb-back"/>
+        <span className="lb-pages"/>
+        <span className="lb-page"><span className="lb-glow"/><span className="lb-lines"/><span className="lb-sigil">◆</span></span>
+        <span className="lb-leaf"/>
+        <span className="lb-cover">
+          <span className="lb-cover-front">
+            <svg viewBox="0 0 80 106">
+              <defs>
+                <linearGradient id="lb-leather" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#6d3a63"/><stop offset=".55" stopColor="#47264d"/><stop offset="1" stopColor="#24162f"/></linearGradient>
+                <radialGradient id="lb-sheen" cx=".3" cy=".25" r=".8"><stop offset="0" stopColor="#fff" stopOpacity=".16"/><stop offset="1" stopColor="#fff" stopOpacity="0"/></radialGradient>
+                <linearGradient id="lb-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fbe6a6"/><stop offset=".5" stopColor="#d6aa55"/><stop offset="1" stopColor="#9b7334"/></linearGradient>
+              </defs>
+              <rect x="0" y="0" width="80" height="106" rx="3" fill="url(#lb-leather)"/>
+              <rect x="0" y="0" width="80" height="106" rx="3" fill="url(#lb-sheen)"/>
+              <rect x="6" y="6" width="68" height="94" rx="2" fill="none" stroke="url(#lb-gold)" strokeWidth="1.6"/>
+              <rect x="9.5" y="9.5" width="61" height="87" rx="1.5" fill="none" stroke="#d6aa55" strokeWidth=".6" opacity=".7"/>
+              {[[6,6],[74,6],[6,100],[74,100]].map(([x,y])=><path key={`${x}-${y}`} d={`M${x} ${y-5}L${x+5} ${y}L${x} ${y+5}L${x-5} ${y}Z`} fill="url(#lb-gold)"/>)}
+              <circle cx="40" cy="41" r="15" fill="none" stroke="#d6aa55" strokeWidth=".8" opacity=".75"/>
+              <path d="M40 27L49 41L40 55L31 41Z" fill="url(#lb-gold)" stroke="#7d5a26" strokeWidth=".6"/>
+              <path d="M40 31L45.5 41L40 51L34.5 41Z" fill="#7a3f73"/>
+              <path d="M40 34L43 41L40 48L37 41Z" fill="#e7b9ff" opacity=".85"/>
+              <text x="40" y="74" textAnchor="middle" fill="url(#lb-gold)" fontSize="12.5" fontFamily="Georgia, serif" fontWeight="bold" letterSpacing="1.5">LORE</text>
+              <path d="M25 80H55" stroke="#d6aa55" strokeWidth=".7" opacity=".8"/>
+              <circle cx="40" cy="80" r="1.4" fill="#f2d48b"/>
+            </svg>
+          </span>
+          <span className="lb-cover-inside"/>
+        </span>
+        <span className="lb-spine"><i/><i/><i/><i/></span>
+      </span>
+    </span>
   </button>;
 }
 

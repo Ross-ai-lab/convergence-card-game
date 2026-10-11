@@ -188,15 +188,15 @@ check(
 
 await page.locator(".hotseat-trigger").click({ timeout: 2000 });
 check(
-  "2 Players opens a confirmation before starting",
-  (await page.locator('[role="dialog"][aria-label="Two-player duel"]').count()) === 1 &&
+  "Local Duel opens a confirmation before starting",
+  (await page.locator('[role="dialog"][aria-label="Local Duel"]').count()) === 1 &&
     (await page.locator(".title-screen").count()) === 1 &&
     (await page.locator(".duel-intro").count()) === 0,
   "confirmation is visible before a new duel intro begins",
 );
 check(
   "local hotseat confirmation uses the requested wording",
-  (await page.locator(".hotseat-confirm-question").textContent())?.trim() === "Start local 2 player duel?" &&
+  (await page.locator(".hotseat-confirm-question").textContent())?.trim() === "Start a local duel on this device?" &&
     (await page.locator(".hotseat-confirm-note").textContent())?.trim() === "This mode does not award cards",
   "the no-rewards note is visible",
 );
@@ -380,7 +380,7 @@ async function newBoard({ awake = true, place = true, cheat = true } = {}) {
   await seedCampaignProgress(page, 20, { boardDeck: true });
   await page.locator(".hotseat-trigger").first().click();
   await page.locator(".hotseat-confirm-start").click();
-  await page.getByRole("button", { name: "Start two-player duel", exact: true }).click();
+  await page.getByRole("button", { name: "Start local duel", exact: true }).click();
   await page.locator(".hs-shell").waitFor({ state: "visible", timeout: 9000 });
   await page.locator(".duel-intro").waitFor({ state: "detached", timeout: 18000 });
   // Hotseat now gives both seats a private mulligan. Confirm Player One, pass

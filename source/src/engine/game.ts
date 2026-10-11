@@ -1037,7 +1037,6 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     protectedByMeleoron: null,
     auraBonuses: [],
     evadedAttackAtTurn: null,
-    rescueUsedAtTurn: null,
     divineShieldAuraSources: [],
     brokenAuraSources: [],
     deathStarTarget: null,
@@ -1045,7 +1044,6 @@ function createMinion(card: CardDefinition, owner: PlayerId, state: GameState): 
     stolenPassiveFrom: null,
     stolenPassiveText: null,
     gainedEffects: [],
-    relicDiscoveryTurn: null,
     savedCoreHealth: null,
     chainGrowthPending: false,
   };
@@ -1366,7 +1364,11 @@ function resolveDueMonkeyPaws(state: GameState, events: GameEvent[]): void {
   }
 }
 
-/** Pandora's Box claims its bearer at the start of that owner's next turn. */
+/**
+ * Pandora's Box used to claim its bearer at the start of the owner's next turn.
+ * A box opened today never sets `destroyOnOwnerTurn`, so this only finishes a
+ * box equipped in a duel saved before the change.
+ */
 function resolveDuePandoraBoxes(state: GameState, playerId: PlayerId, events: GameEvent[]): void {
   const due = state.players[playerId].board
     .map((minion, slot) => ({ minion, slot }))
@@ -2447,9 +2449,7 @@ function triggerRelicDiscoveries(
     const sourceSlot = state.players[playerId].board.findIndex((minion) => minion?.instanceId === sourceId);
     const source = sourceSlot >= 0 ? state.players[playerId].board[sourceSlot] : null;
     if (!source || source.silenced || source.effectId !== "frieren_relic_discover") continue;
-    if (source.relicDiscoveryTurn === state.turnNumber) continue;
     if (relicsInDeck(state, playerId, library).length === 0) continue;
-    source.relicDiscoveryTurn = state.turnNumber;
     const suspended = runEffect(state, source, sourceSlot, library, events);
     if (suspended) {
       if (state.pendingTarget) state.pendingTarget.queuedRelicSources = remaining;
@@ -4224,6 +4224,34 @@ function canEquipRelicToBearer(relic: Pick<RelicDefinition | RelicInstance, "rel
   return required === null || bearer.alignment === required;
 }
 
+/**
+ * Pandora's Box takes on a random other relic's effect, rolled when it is
+ * equipped. The card stays Pandora's Box: it keeps the box's id, so the box is
+ * what goes to the discard pile, while it carries the chosen relic's rule id,
+ * text, art and name, so every rule keyed on that relic applies to it.
+ * Only printed roster relics the bearer could carry itself are rolled.
+ */
+function openPandorasBox(
+  state: GameState,
+  bearer: MinionInstance,
+  box: RelicInstance,
+  library: CardLibrary,
+  events: GameEvent[],
+): RelicInstance {
+  const options = Object.values(library).filter((card): card is RelicDefinition =>
+    isRelicCard(card) && /^r\d+$/.test(card.id) && card.relicId !== "none" && card.relicId !== "pandora_box" && canEquipRelicToBearer(card, bearer));
+  if (options.length === 0) return box;
+  const chosen = options[rollInt(state, options.length)];
+  events.push({
+    kind: "effect",
+    text: `Pandora's Box opens: ${bearer.name} gains the effect of ${chosen.name}.`,
+    player: bearer.owner,
+    cardId: box.id,
+    instanceId: bearer.instanceId,
+  });
+  return { ...createRelicInstance(chosen), id: box.id, name: `Pandora's Box: ${chosen.name}` };
+}
+
 function equipRelic(
   state: GameState,
   bearer: MinionInstance,
@@ -4234,6 +4262,7 @@ function equipRelic(
   if (!canEquipRelicToBearer(relic, bearer)) return;
   const slot = bearer.relic === null ? 0 : bearer.relic2 === null || bearer.relic2 === undefined ? 1 : -1;
   if (slot < 0) return;
+  if (relic.relicId === "pandora_box") relic = openPandorasBox(state, bearer, relic, library, events);
   setRelicAt(bearer, slot, relic);
   events.push({
     kind: "effect",
@@ -4252,9 +4281,6 @@ function equipRelic(
     bearer.hp *= 2;
   } else if (relic.relicId === "double_bearer_attack") {
     bearer.atk *= 2;
-  } else if (relic.relicId === "pandora_box") {
-    buffMinion(bearer, 4, 4);
-    relic.destroyOnOwnerTurn = state.players[bearer.owner].turnsStarted + 1;
   } else if (relic.relicId === "monkeys_paw") {
     buffMinion(bearer, 5, 5);
     relic.destroyOnTurn = state.turnNumber + 1;
@@ -5652,17 +5678,13 @@ function rescueWithOogway(state: GameState, playerId: PlayerId, slotIndex: numbe
       minion &&
       minion.instanceId !== target.instanceId &&
       hasEffect(minion, "oogway_rescue") &&
-      !minion.silenced &&
-      minion.rescueUsedAtTurn !== state.turnNumber,
+      !minion.silenced,
   );
   if (!oogway) return false;
-  oogway.rescueUsedAtTurn = state.turnNumber;
   state.players[playerId].board[slotIndex] = null;
   discardAttachedRelics(state, target);
   events.push({ kind: "death", text: `${target.name} would die, but Grand Master Oogway returns it to hand.`, player: playerId, instanceId: target.instanceId, cardId: target.cardId });
   putCardInHand(state, playerId, target.cardId, events, target.instanceId);
-  applyChain(state, oogway, events);
-  events.push(effectEvent(`${oogway.name} is Chained after saving ${target.name}.`, oogway));
   return true;
 }
 

@@ -58,11 +58,11 @@ function check(name, ok, detail = "") {
 const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 await page.goto(BASE, { waitUntil: "domcontentloaded" });
-// Use the current title-screen control. Two-player mode asks for confirmation
+// Use the current title-screen control. Local Duel asks for confirmation
 // before it opens the shared board.
 await page.locator(".hotseat-trigger").first().click();
 await page.locator(".hotseat-confirm-start").click();
-await page.getByRole("button", { name: "Start two-player duel", exact: true }).click();
+await page.getByRole("button", { name: "Start local duel", exact: true }).click();
 // Wait for the hook itself, not for a guessed 1200ms. `window.__debug` is
 // registered from inside a DYNAMIC import, so the first page load after a
 // rebuild has to fetch and transform that module before it appears — which took

@@ -173,7 +173,7 @@ describe("the save slot", () => {
     expect(restored?.mode).toEqual({ kind: "bot", skill: "normal" });
   });
 
-  it("round-trips a Rift Draft duel with its run, and refuses one without fair cheats", () => {
+  it("round-trips an Arena duel with its run, and refuses one without fair cheats", () => {
     const storage = memoryLocalStorage();
     vi.stubGlobal("window", { localStorage: storage });
     const game = liveDuel();

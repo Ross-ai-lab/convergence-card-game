@@ -20,7 +20,7 @@ export function GameOver({
   tutorial?: boolean;
   campaign?: boolean;
   campaignLoss?: boolean;
-  /** Set for a Rift Draft duel: the run as it stands after this result. */
+  /** Set for an Arena duel: the run as it stands after this result. */
   draftRun?: DraftRun | null;
   /** Set for an online duel: only the host can deal a rematch, while the line is up. */
   online?: { host: boolean; connected: boolean };
@@ -106,8 +106,8 @@ export function GameOver({
         {draftRun ? (
           <p className="result-draft-line">
             {draftRun.finished
-              ? `Run complete · ${draftRun.wins} win${draftRun.wins === 1 ? "" : "s"}`
-              : `Draft run · ${draftRun.wins} of ${DRAFT_WIN_GOAL} wins · ${draftRun.losses} of ${DRAFT_LOSS_LIMIT} losses`}
+              ? `Arena run complete · ${draftRun.wins} win${draftRun.wins === 1 ? "" : "s"}`
+              : `Arena run · ${draftRun.wins} of ${DRAFT_WIN_GOAL} wins · ${draftRun.losses} of ${DRAFT_LOSS_LIMIT} losses`}
           </p>
         ) : null}
         <div className="gameover-buttons">

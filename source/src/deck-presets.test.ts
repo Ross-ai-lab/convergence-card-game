@@ -1,5 +1,5 @@
 import {describe,it,expect,vi,afterEach} from 'vitest';
-import {emptyProgress,saveDeckDraft,createNamedDeck,ensureNamedDeck,selectNamedDeck,selectHeroPower,unlockAllProgress,saveProgress,loadProgress,PROGRESS_KEY} from './progress';
+import {emptyProgress,saveDeckDraft,createNamedDeck,ensureNamedDeck,selectNamedDeck,selectHeroPower,unlockAllProgress,saveProgress,loadProgress,renameNamedDeck,deleteNamedDeck,PROGRESS_KEY} from './progress';
 afterEach(()=>vi.unstubAllGlobals());
 function memoryStorage(){
   const values=new Map<string,string>();
@@ -65,5 +65,39 @@ describe('automatically saved named decks',()=>{
     values.set(PROGRESS_KEY,JSON.stringify({...p,playerDeck:p.playerDeck.slice(0,29),hotseatDeck:p.hotseatDeck.slice(0,28),selectedDecks:[p.selectedDecks[0],p.selectedDecks[0]]}));
     const loaded=loadProgress();expect(loaded.playerDeck).toHaveLength(29);expect(loaded.hotseatDeck).toHaveLength(28);
     expect(loaded.selectedDecks[0]).not.toBe(loaded.selectedDecks[1]);
+  });
+});
+describe('renaming and deleting decks',()=>{
+  it('renames a deck under the same name rules as a new one',()=>{
+    const p=createNamedDeck(emptyProgress(),'Nature'),id=p.selectedDecks[0]!;
+    const renamed=renameNamedDeck(p,id,'  Wild   Things ');
+    expect(renamed.savedDecks.find(d=>d.id===id)?.name).toBe('Wild Things');
+    expect(renamed.playerDeck).toEqual(p.playerDeck);
+    expect(renameNamedDeck(p,id,'')).toBe(p);
+    expect(renameNamedDeck(p,id,'starter DECK')).toBe(p);
+    const two=createNamedDeck(p,'Tech');
+    expect(renameNamedDeck(two,id,'tech')).toBe(two);
+  });
+  it('keeps the Starter Deck, which every load would recreate anyway',()=>{
+    const p=emptyProgress(),starter=p.selectedDecks[0]!;
+    expect(renameNamedDeck(p,starter,'Mine')).toBe(p);
+    expect(deleteNamedDeck(p,starter)).toBe(p);
+  });
+  it('deletes a deck and moves every seat that used it to the Starter Deck',()=>{
+    const p=unlockAllProgress(emptyProgress()),starter=p.selectedDecks[0]!;
+    const created=saveDeckDraft(createNamedDeck(p,'Nature'),[p.playerDeck[0]]),id=created.selectedDecks[0]!;
+    const both=selectNamedDeck(created,id,1);
+    const gone=deleteNamedDeck(both,id);
+    expect(gone.savedDecks.some(d=>d.id===id)).toBe(false);
+    expect(gone.selectedDecks).toEqual([starter,starter]);
+    expect(gone.playerDeck).toHaveLength(30);expect(gone.hotseatDeck).toHaveLength(30);
+    expect(gone.unlockedIds).toEqual(both.unlockedIds);
+  });
+  it('leaves other seats alone when the deleted deck was not theirs',()=>{
+    const p=createNamedDeck(emptyProgress(),'Spare'),spare=p.selectedDecks[0]!;
+    const other=createNamedDeck(p,'Main'),main=other.selectedDecks[0]!;
+    const gone=deleteNamedDeck(other,spare);
+    expect(gone.selectedDecks[0]).toBe(main);
+    expect(gone.savedDecks.map(d=>d.name)).toEqual(['Starter Deck','Main']);
   });
 });

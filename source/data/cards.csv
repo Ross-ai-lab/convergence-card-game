@@ -89,7 +89,7 @@ c090,Shigaraki,6,4,4,Black,Magic,Evil,Passive,shigaraki_decay,passive,"Passive: 
 c091,Ten Commandments,6,3,5,Purple,Magic,Evil,Passive,ten_commandments_first_attack,passive,Passive: The first enemy minion to attack each turn is Chained,Their reputation preceded them by centuries,Seven Deadly Sins,/card-art/raw/ten-commandments.webp
 c092,UFO,6,3,3,Black,Tech,Neutral,Divine Shield,none,none,Divine Shield,-,Basic,/card-art/raw/ufo.webp
 c093,Yoriichi Type Zero,3,2,2,Black,Tech,Neutral,Passive,survivor_buff,passive,"Passive: Whenever a friendly minion survives a combat, it gains +1/+1",Strongest puppet,Demon Slayer,/card-art/raw/yoriichi-type-zero.webp
-c094,Grand Master Oogway,5,2,2,Yellow,Magic,Good,Divine Shield;Passive,oogway_rescue,passive,"Divine Shield. Passive: Once per turn, when another friendly minion would die, return it to your hand instead and Chain Oogway",Patience,Kung-Fu Panda,/card-art/raw/grand-master-oogway.webp
+c094,Grand Master Oogway,5,2,2,Yellow,Magic,Good,Divine Shield;Passive,oogway_rescue,passive,"Divine Shield. Passive: When another friendly minion would die, return it to your hand instead",Patience,Kung-Fu Panda,/card-art/raw/grand-master-oogway.webp
 c095,Kojiro Sasaki,5,2,2,Red,Nature,Good,Passive,evade_allies_33,passive,Passive: All friendly minions have +33% chance to evade an attack,Spending infinity in the Astral made him on par with the Gods,RoR,/card-art/raw/kojiro-sasaki.webp
 c096,Dio Brando,5,3,2,Red,Magic,Evil,,freeze_all_enemies,onPlay,Battlecry: Freeze all enemy minions,THE WORLD,JoJo,/card-art/raw/dio-brando.webp
 c097,Elden Beast,6,4,4,Yellow,Magic,Neutral,Passive,elden_beast_neutral_magic_atk,passive,Passive: All friendly Neutral or Magic minions have +2 ATK,Legends carved into the Lands Between,Elden Ring,/card-art/raw/elden-beast.webp
@@ -107,7 +107,7 @@ c108,Musashi,4,2,1,Yellow,Nature,Neutral,,destroy_all_damaged_enemies,onPlay,Bat
 c109,Nine Hashira,4,3,3,Yellow,Nature,Good,,hashira_good_volley,onPlay,Battlecry: Deal 1 damage to all enemy minions for each friendly Good minion,Nine pillars holding the sky,Demon Slayer,/card-art/raw/nine-hashira.webp
 c110,Po,4,3,3,Red,Nature,Good,Passive,on_survive_buff_1,passive,Passive: Gain +1/+1 each time you survive after attacking or defending,Chosen by accident. Or destiny?,Kung-Fu Panda,/card-art/raw/po.webp
 c111,Doctor Octopus,4,3,3,Black,Tech,Evil,,destroy_relic,onPlay,Battlecry: Destroy an enemy Relic (equipped by an enemy minion) of your choice,"The power of the Sun, in the palm of my hands",MCU,/card-art/raw/doctor-octopus.webp
-c112,Gyoro Gyoro,4,1,4,Purple,Magic,Evil,,buff_evil_ally_2,ongoing,Ongoing: Give +2/+2 to a friendly Evil minion of your choice,Puppet's puppet-master,OPM,/card-art/raw/gyoro-gyoro.webp
+c112,Gyoro Gyoro,4,2,6,Purple,Magic,Evil,,buff_evil_ally_2,ongoing,Ongoing: Give +2/+2 to a friendly Evil minion of your choice,Puppet's puppet-master,OPM,/card-art/raw/gyoro-gyoro.webp
 c113,Kite,4,1,2,Purple,Magic,Good,,dice_buff,ongoing,Ongoing: Roll a dice to gain from +1/+1 to +3/+3,Spin the wheel,HxH,/card-art/raw/kite.webp
 c114,Lord Voldemort,4,4,4,Purple,Magic,Evil,Passive,voldemort_phylactery,passive,"Passive: Any time Voldemort would die, destroy the lowest-HP other friendly minion instead and restore Voldemort to full HP. If he is alone, he dies normally",Seven horcruxes,Harry Potter,/card-art/raw/lord-voldemort.webp
 c115,One-Eyed Owl,5,4,4,Purple,Nature,Evil,Passive,chain_watch_growth,passive,"Passive: Whenever a minion becomes Chained, Frozen or Silenced, gain +1/+1",All seeing eye,Tokyo Ghoul,/card-art/raw/one-eyed-owl.webp
@@ -152,7 +152,7 @@ c153,Black Ops,2,2,2,Black,Tech,Neutral,Passive,black_ops_ignore_taunt,passive,P
 c154,Gravelord Nito,4,2,3,Black,Magic,Neutral,Passive,nito_any_death_1_1,passive,Passive: Gain +1/+1 when a minion dies,The first of the dead keeps the count.,Dark Souls,/card-art/raw/gravelord-nito.webp
 c155,"Morgott, the Omen King",3,1,1,Black,Magic,Neutral,Taunt,summon_margit,onPlay,Taunt. Battlecry: Summon Margit (1/1 with Taunt),The immovable,Elden Ring,/card-art/raw/morgott-the-omen-king.webp
 c156,Ouken,2,2,1,Purple,Magic,Evil,Reborn,ouken_reborn,reborn,Reborn infinitely. Become Chained after each Reborn,Immortality cost him everything,Ranking of Kings,/card-art/raw/ouken.webp
-c157,Pillar Men,4,4,4,Black,Nature,Evil,Chained;Passive,pillar_men_kill_heal,passive,"Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health",They outwaited the sun.,JoJo,/card-art/raw/pillar-men.webp
+c157,Pillar Men,4,5,4,Black,Nature,Evil,Chained;Passive,pillar_men_kill_heal,passive,"Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health",They outwaited the sun.,JoJo,/card-art/raw/pillar-men.webp
 c159,Indiana Jones,1,1,1,Yellow,Nature,Good,,discover_relic_self,onPlay,Battlecry: Discover 1 of 3 Relics. Add it to your hand,Mine,Indiana Jones,/card-art/raw/indiana-jones.webp
 c160,Domovoy,1,1,1,Purple,Magic,Good,,draw_relic,onPlay,Battlecry: Draw an Relic,The house spirit,Myth,/card-art/raw/domovoy.webp
 c161,Flowey,3,2,2,Yellow,Magic,Evil,Deathrattle,flowey_save_load,deathrattle,Battlecry: Save your core's current HP. Deathrattle: Set your core to the saved HP,Friendliness is a face you put on.,Undertale,/card-art/raw/flowey.webp
@@ -178,7 +178,7 @@ c180,Prince Lloyd,6,2,2,Purple,Magic,Good,Divine Shield;Passive,prince_lloyd_dam
 c181,Motoko Kusanagi,4,2,1,Purple,Tech,Good,,motoko_kusanagi,onPlay,Battlecry: Take control of an enemy Tech minion with 4 HP or less until the end of your next turn,The ghost can choose the shell.,Ghost in the Shell,/card-art/raw/motoko-kusanagi.webp
 c182,Xenomorph Queen,4,1,4,Black,Nature,Evil,Passive,xenomorph_queen_brood,passive,Passive: Whenever a friendly minion dies summon a 1/1 Larva,The hive has a mother.,Alien,/card-art/raw/xenomorph-queen.webp
 c183,Naruto,8,2,2,Yellow,Magic,Good,,naruto_shadow_clones,onPlay,Battlecry: Fill your board with 2/2 Shadow Clones in empty friendly slots,"A thousand bodies, one will.",Naruto,/card-art/raw/naruto.webp
-c184,Frieren,6,2,5,Yellow,Magic,Good,Passive,frieren_relic_discover,passive,"Passive: The first time you cast a relic each turn, discover another relic",Every spell is worth remembering.,Frieren: Beyond Journey's End,/card-art/raw/frieren.webp
+c184,Frieren,6,2,6,Yellow,Magic,Good,Passive,frieren_relic_discover,passive,"Passive: Whenever you cast a relic, discover another relic",Every spell is worth remembering.,Frieren: Beyond Journey's End,/card-art/raw/frieren.webp
 c185,Guts,3,1,1,Black,Nature,Neutral,Passive,guts_missing_core_growth,passive,Passive: Gains +1/+1 for each 5 HP your Core is missing,Struggle is the only answer.,Berserk,/card-art/raw/guts.webp
 c186,Antimatter Bomb,9,1,1,Black,Tech,Neutral,Deathrattle,deathrattle_damage_both_cores_20,deathrattle,Deathrattle: Deal 20 damage to both cores,No safe distance.,Basic,/card-art/raw/antimatter-bomb.webp
 c187,Carrier Strike Group,5,2,5,Black,Tech,Neutral,Passive,carrier_lock_enemy_tech,passive,Passive: Enemy Tech minions cannot attack,The horizon belongs to the fleet.,Basic,/card-art/raw/carrier-strike-group.webp

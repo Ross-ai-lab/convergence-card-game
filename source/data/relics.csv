@@ -19,7 +19,7 @@ r018,Shinigami Eyes,1,Relic,relic,ignore_defences,The bearer ignores Taunt and D
 r019,The Green Mask,2,Relic,relic,return_on_death,Return the bearer to your hand after death,RELIC,The Mask,/card-art/raw/the-green-mask.webp
 r020,Tesseract,4,Relic,relic,double_attack,The bearer can attack twice each turn,RELIC,MCU,/card-art/raw/tesseract.webp
 r021,Infinity Castle,4,Relic,relic,evade_50,The bearer's Evade chance is 50%,RELIC,Demon Slayer,/card-art/raw/infinity-castle.webp
-r022,Pandora's Box,2,Relic,relic,pandora_box,The bearer gains +4/+4. It dies at the start of your next turn,RELIC,Myth,/card-art/raw/pandora-s-box.webp
+r022,Pandora's Box,2,Relic,relic,pandora_box,The bearer gains an effect of a random relic,RELIC,Myth,/card-art/raw/pandora-s-box.webp
 r023,The Monkey's Paw,2,Relic,relic,monkeys_paw,The bearer gains +5/+5. It dies next turn,RELIC,Myth,/card-art/raw/the-monkey-s-paw.webp
 r024,Ark of the Covenant,4,Relic,relic,ark_divine_shield,The bearer gains Divine Shield,RELIC,Indiana Jones,/card-art/raw/ark-of-the-covenant.webp
 r025,Necronomicon,2,Relic,relic,necronomicon,The bearer's Deathrattle triggers twice,RELIC,Myth,/card-art/raw/necronomicon.webp

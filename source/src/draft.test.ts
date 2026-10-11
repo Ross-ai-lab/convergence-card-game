@@ -15,7 +15,7 @@ function draftAll(id: string): DraftRun {
   return run;
 }
 
-describe("Rift Draft", () => {
+describe("Arena draft", () => {
   it("offers three distinct Hero Powers, then three cards of one tier per pick", () => {
     const run = newDraftRun("seed-a");
     expect(new Set(run.powerChoices).size).toBe(3);

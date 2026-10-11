@@ -169,7 +169,7 @@ export type Driver = "bot" | "random";
 // Hero Powers — a game nobody has played since separate decks arrived, and the
 // one every balance number was quietly measured on.
 //
-// Each seat now drafts its deck with the Rift Draft rival picker, from offers
+// Each seat now drafts its deck with the Arena's rival picker, from offers
 // seeded by the duel: thirty different cards with a sane curve, a spread of
 // rarities and a Hero Power, which is the closest honest stand-in for "a deck a
 // player built". The same seed always drafts the same two decks.

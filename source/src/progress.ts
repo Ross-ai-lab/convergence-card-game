@@ -239,6 +239,39 @@ export function createNamedDeck(progress:Progress,name:string,seat:0|1=0):Progre
   const selectedDecks=[...progress.selectedDecks] as Progress['selectedDecks'];selectedDecks[seat]=preset.id;
   return {...progress,savedDecks,selectedDecks,[seat===0?'playerDeck':'hotseatDeck']:[]};
 }
+/**
+ * The Starter Deck is the template every collection keeps: loading progress
+ * recreates it whenever no deck carries its name, so renaming or deleting it
+ * would only bring a fresh copy back on the next visit. It stays put instead.
+ */
+export function isStarterPreset(deck:SavedDeck|undefined):boolean {return deck?.name.toLocaleLowerCase()==='starter deck';}
+/** Same name rules as a new deck. Returns the progress unchanged when refused. */
+export function renameNamedDeck(progress:Progress,id:string,name:string):Progress {
+  const title=name.trim().replace(/\s+/g,' ').slice(0,60);
+  const deck=progress.savedDecks.find(entry=>entry.id===id);
+  if(!deck||isStarterPreset(deck)||!title||title.toLocaleLowerCase()==='starter deck')return progress;
+  if(progress.savedDecks.some(entry=>entry.id!==id&&entry.name.toLocaleLowerCase()===title.toLocaleLowerCase()))return progress;
+  if(deck.name===title)return progress;
+  return {...progress,savedDecks:progress.savedDecks.map(entry=>entry.id===id?{...entry,name:title}:entry)};
+}
+/**
+ * Removes a deck. Any seat that had it selected moves to the Starter Deck, so a
+ * seat is never left pointing at a deck that no longer exists. The cards stay
+ * in the collection; only the list is gone.
+ */
+export function deleteNamedDeck(progress:Progress,id:string):Progress {
+  const deck=progress.savedDecks.find(entry=>entry.id===id);
+  const starter=progress.savedDecks.find(entry=>entry.id!==id&&isStarterPreset(entry));
+  if(!deck||isStarterPreset(deck)||!starter)return progress;
+  let next:Progress={...progress,savedDecks:progress.savedDecks.filter(entry=>entry.id!==id)};
+  for(const seat of [0,1] as const){
+    if(next.selectedDecks[seat]!==id)continue;
+    const selectedDecks=[...next.selectedDecks] as Progress['selectedDecks'];selectedDecks[seat]=starter.id;
+    next={...next,selectedDecks,[seat===0?'playerDeck':'hotseatDeck']:[...starter.cards]};
+    if(seat===0&&starter.heroPower&&isHeroPowerUnlocked(starter.heroPower,botWins(next)))next={...next,selectedHeroPower:starter.heroPower};
+  }
+  return next;
+}
 export function selectNamedDeck(progress:Progress,id:string,seat:0|1=0):Progress {
   const preset=progress.savedDecks.find(deck=>deck.id===id);
   if(!preset||preset.cards.some(card=>!progress.unlockedIds.includes(card)))return progress;

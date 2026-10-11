@@ -17,7 +17,7 @@ const TIER_LABEL: Record<DraftTier, string> = {
 const PICK_SOUND = { Black: "summonRare", Purple: "summonEpic", Yellow: "summonLegendary", Red: "summonMythic", Relic: "relicEquip" } as const;
 
 /**
- * Rift Draft's whole front end: the rules, the Hero Power choice, the thirty
+ * The Arena's whole front end: the rules, the Hero Power choice, the thirty
  * picks, the run between duels and its end. One screen with phases rather than
  * four overlays, because every phase shows the same growing deck beside it.
  */
@@ -36,19 +36,19 @@ export function DraftScreen({ save, library, liveDuel, onChange, onStartRun, onD
   const run = save.run;
   const record = save.record;
   return (
-    <div className="draft-overlay" role="dialog" aria-modal="true" aria-label="Rift Draft">
+    <div className="draft-overlay" role="dialog" aria-modal="true" aria-label="Arena">
       <section className="draft-panel">
         <header className="draft-header">
           <div className="draft-title">
             <span className="draft-sigil" aria-hidden="true"><DraftSigil /></span>
             <div>
-              <h2>Rift Draft</h2>
+              <h2>Arena</h2>
               <p className="draft-record">
                 {record.runs ? `Best run ${record.bestWins} wins · ${record.runs} run${record.runs === 1 ? "" : "s"} · ${record.totalWins} total wins` : "Draft a deck. Win seven before you lose three."}
               </p>
             </div>
           </div>
-          <button type="button" className="draft-close" onClick={() => { sfx.play("button"); onClose(); }} aria-label="Close Rift Draft">×</button>
+          <button type="button" className="draft-close" onClick={() => { sfx.play("button"); onClose(); }} aria-label="Close Arena">×</button>
         </header>
         {!run || run.finished ? (
           <DraftIntro save={save} library={library} onStartRun={onStartRun} />

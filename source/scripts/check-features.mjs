@@ -279,7 +279,7 @@ for (const name of ["Meteor", "Planetary Defense Grid", "Black Hole", "Rudeus Gr
 
 await checkProfileLayouts(page, geometryOf, fitsOnOneScreen, check);
 
-// Rift Draft -----------------------------------------------------------------
+// Arena (draft) --------------------------------------------------------------
 // The whole run in a fresh profile: rules, Hero Power, thirty picks, a duel
 // against a rival drafter, and Concede counting as a loss. A draft never
 // touches the collection, so the unlocked count must not move.
@@ -287,7 +287,7 @@ await fresh();
 await page.setViewportSize({ width: 1440, height: 900 });
 const unlockedBefore = await page.evaluate(() => JSON.parse(localStorage.getItem("convergence.progress.v4") ?? "{}").unlockedIds?.length ?? 0);
 await page.locator(".draft-trigger").click();
-check("Rift Draft opens from the title screen", await page.locator(".draft-overlay").isVisible());
+check("Arena opens from the title screen", await page.locator(".draft-overlay").isVisible());
 await page.getByRole("button", { name: "Start drafting", exact: true }).click();
 check("a draft offers three Hero Powers", (await page.locator(".draft-power").count()) === 3);
 await page.locator(".draft-power").first().click();

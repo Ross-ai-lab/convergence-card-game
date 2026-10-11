@@ -1804,7 +1804,7 @@ button.duel-trigger:hover:not(:disabled) {
 }
 .hotseat-trigger { background: rgba(20, 12, 30, .48); }
 .hotseat-trigger:hover:not(:disabled) { background: rgba(38, 23, 49, .56); }
-/* Rift Draft is a mode of its own, so it wears the Tutorial's framed button. */
+/* The Arena is a mode of its own, so it wears the Tutorial's framed button. */
 .title-bottom-left .draft-trigger {display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:9px 13px;border:1px solid #6e604366;border-radius:8px;background:#100c1beb;color:#c9b991;font-size:13px;font-weight:800;box-shadow:0 4px 14px #0004;}
 .title-bottom-left .draft-trigger:hover {border-color:#cfb47799;color:#f6e3b1;}
 .title-bottom-left .online-trigger {display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:9px 13px;border:1px solid #6e604366;border-radius:8px;background:#100c1beb;color:#c9b991;font-size:13px;font-weight:800;box-shadow:0 4px 14px #0004;}

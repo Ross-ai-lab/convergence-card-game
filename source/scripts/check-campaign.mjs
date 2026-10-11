@@ -65,8 +65,8 @@ try {
   await page.screenshot({ path: '../.preview/campaign/title.png' });
   await page.keyboard.type('Ross');
   await page.locator('.hotseat-trigger').click(); await page.locator('.hotseat-confirm-start').click();
-  assert(await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).isVisible());
-  await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).getByRole('button', { name: 'Close', exact: true }).click();
+  assert(await page.getByRole('dialog', { name: 'Local Duel decks', exact: true }).isVisible());
+  await page.getByRole('dialog', { name: 'Local Duel decks', exact: true }).getByRole('button', { name: 'Close', exact: true }).click();
   await page.locator('.duel-trigger').click();
   assert.equal(await page.locator('.campaign-chapter button:not([disabled])').count(), 20);
   const desktopMap=await page.locator('.campaign-chapters').evaluate(el=>({height:el.clientHeight,content:el.scrollHeight}));
@@ -296,7 +296,7 @@ try {
   await addDeckCard(page,'John Wick');
   assert.equal((await progress()).hotseatDeck.length, 30);
   await page.getByRole('button', { name: 'Close', exact: true }).click();
-  assert(await page.getByRole('dialog', { name: 'Two-player decks', exact: true }).isVisible());
+  assert(await page.getByRole('dialog', { name: 'Local Duel decks', exact: true }).isVisible());
 
   await seedCampaignProgress(page,5);
   const deckBeforePower=(await progress()).playerDeck;

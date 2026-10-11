@@ -78,10 +78,18 @@ try{
  await picker.selectOption(id);assert((await deckPage.locator('.gallery-deck-heading strong').innerText()).startsWith('1'));
  await deckPage.reload();await deckPage.locator('.deck-trigger').click();assert.equal(await deckPage.getByRole('combobox',{name:'Saved decks'}).inputValue(),id);
  assert((await deckPage.locator('.gallery-deck-heading strong').innerText()).startsWith('1'));
- await deckPage.getByRole('button',{name:'Clear',exact:true}).click();await deckPage.getByRole('combobox',{name:'Saved decks'}).selectOption('starter-deck');assert((await deckPage.locator('.gallery-deck-heading strong').innerText()).startsWith('29'));
+ // Rename and delete: the selected deck only, never the Starter Deck.
+ assert(await deckPage.getByRole('button',{name:'Rename deck',exact:true}).isEnabled());
+ await deckPage.getByRole('button',{name:'Rename deck',exact:true}).click();await deckPage.getByRole('textbox',{name:'Deck name'}).fill('Wild squad');await deckPage.getByRole('button',{name:'Rename',exact:true}).click();
+ assert.equal(await picker.locator('option:checked').innerText(),'Wild squad');assert((await deckPage.locator('.gallery-deck-heading strong').innerText()).startsWith('1'));
+ await deckPage.getByRole('button',{name:'Create a new deck',exact:true}).click();await deckPage.getByRole('textbox',{name:'Deck name'}).fill('Spare');await deckPage.getByRole('button',{name:'Create deck',exact:true}).click();
+ await deckPage.getByRole('button',{name:'Delete deck',exact:true}).click();await deckPage.getByRole('alertdialog',{name:'Delete deck'}).getByRole('button',{name:'Delete deck',exact:true}).click();
+ assert.equal(await picker.inputValue(),'starter-deck');assert.equal(await picker.locator('option').filter({hasText:'Spare'}).count(),0);assert.equal(await picker.locator('option').filter({hasText:'Wild squad'}).count(),1);
+ assert(await deckPage.getByRole('button',{name:'Rename deck',exact:true}).isDisabled());assert(await deckPage.getByRole('button',{name:'Delete deck',exact:true}).isDisabled());
+ await picker.selectOption(id); await deckPage.getByRole('button',{name:'Clear',exact:true}).click();await deckPage.getByRole('combobox',{name:'Saved decks'}).selectOption('starter-deck');assert((await deckPage.locator('.gallery-deck-heading strong').innerText()).startsWith('29'));
  await deckPage.waitForTimeout(600);await deckPage.screenshot({path:output+'/saved-decks.png'});
  await deckPage.setViewportSize({width:390,height:844});await deckPage.getByRole('button',{name:/Deck · 29\/30/}).click();await deckPage.getByRole('button',{name:'Create a new deck',exact:true}).click();
  const dialog=await deckPage.getByRole('dialog',{name:'Create a new deck',exact:true}).boundingBox();assert(dialog.x>=0&&dialog.y>=0&&dialog.x+dialog.width<=390&&dialog.y+dialog.height<=844);
  await deckPage.screenshot({path:output+'/phone-save-deck.png'});await deckPage.getByRole('button',{name:'Cancel',exact:true}).click();await deckPage.close();
- console.log('PASS: placement thud without mana beep, Collection hover, Starter Deck, automatic deck edits across switches/reload, empty new decks and phone creation dialog.');
+ console.log('PASS: placement thud without mana beep, Collection hover, Starter Deck, automatic deck edits across switches/reload, rename and delete with a protected Starter Deck, empty new decks and phone creation dialog.');
 }finally{await browser.close()}

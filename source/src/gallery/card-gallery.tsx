@@ -7,7 +7,8 @@ import { ALIGNMENTS, CAMPS, CATALOGUE_RARITY_ORDER, compareCatalogue, rarityName
 import type { HeroPowerId } from "../engine/types";
 import type { CardFaceModel } from "../card-presentation";
 import { CardFace, CardPeek, GalleryPreviewContext, playableFace, relicFace } from "../card-face";
-import { botWins, canEditDeck, hasNewHeroPower, type Progress } from "../progress";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
+import { botWins, canEditDeck, hasNewHeroPower, isStarterPreset, type Progress } from "../progress";
 import { CAMPAIGN_CHAPTERS } from "../campaign";
 import { useGalleryVisibility } from "../gallery-visibility";
 import { HeroPowerChoices } from "../screens/Screens";
@@ -119,17 +120,24 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
  */
 type UnlockFilter = "unlocked" | "locked";
 
-export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose, onPresetCreate,onPresetSelect }: {
+export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose, onPresetCreate,onPresetSelect,onPresetRename,onPresetDelete }: {
   onPresetCreate:(name:string)=>boolean;onPresetSelect:(id:string)=>boolean;
+  onPresetRename:(id:string,name:string)=>boolean;onPresetDelete:(id:string)=>boolean;
   progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onHeroPowerChange: (power: HeroPowerId) => void; onHeroPowerViewed: () => void; onClose: () => void;
 }) {
   const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
   const selectedPreset=progress.savedDecks.find(entry=>entry.id===progress.selectedDecks[seat]);
   const [saveOpen,setSaveOpen]=useState(false);
+  /** The name dialog either creates a deck or renames the selected one. */
+  const [nameMode,setNameMode]=useState<'create'|'rename'>('create');
+  const [deleteOpen,setDeleteOpen]=useState(false);
   const [deckName,setDeckName]=useState('');
   const [deckNotice,setDeckNotice]=useState('');
   const [saveError,setSaveError]=useState('');
-  const duplicateName=progress.savedDecks.some(preset=>preset.name.toLocaleLowerCase()===deckName.trim().replace(/\s+/g,' ').toLocaleLowerCase());
+  const typedName=deckName.trim().replace(/\s+/g,' ').toLocaleLowerCase();
+  const duplicateName=typedName==='starter deck'&&nameMode==='rename'||progress.savedDecks.some(preset=>(nameMode==='create'||preset.id!==selectedPreset?.id)&&preset.name.toLocaleLowerCase()===typedName);
+  const starterSelected=isStarterPreset(selectedPreset);
+  const deletePicker = useRef<HTMLDivElement>(null);
   const readOnly = !canEditDeck(progress);
   const deckIds = new Set(deck);
   const [query, setQuery] = useState("");
@@ -151,6 +159,12 @@ export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHero
     createPicker.current?.querySelector<HTMLInputElement>('input')?.focus();
     return () => previous?.focus({preventScroll:true});
   }, [saveOpen]);
+  useEffect(() => {
+    if (!deleteOpen) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    deletePicker.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => previous?.focus({preventScroll:true});
+  }, [deleteOpen]);
   useEffect(() => {
     if (!powerOpen) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -396,13 +410,25 @@ export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHero
           )}
         </div>
         <aside className="gallery-deck" aria-label={seat === 1 ? "Player Two deck" : "Current deck"}>
+          <button type="button" className={`gallery-hero-power${hasNewHeroPower(progress)?' has-new-power':''}`} aria-label="Choose hero power" aria-description={equippedPower?.name} aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
+            <span className="gallery-power-icon" aria-hidden="true">ϟ</span><strong aria-live="polite">{hasNewHeroPower(progress)?'New hero power available':'Choose Hero Power'}</strong>
+            {equippedPower&&!hasNewHeroPower(progress)?<small className="gallery-power-equipped">{equippedPower.name}</small>:null}
+          </button>
           <header className="gallery-deck-heading"><label className="gallery-filter gallery-deck-selector"><span className="gallery-filter-label">Saved decks</span>
             <select aria-label="Saved decks" value={selectedPreset?.id} onChange={event=>{setDeckPreview(null);setDeckNotice(onPresetSelect(event.target.value)?'Deck loaded':'Could not load. Browser storage is unavailable.');}}>
               {progress.savedDecks.map(preset=><option key={preset.id} value={preset.id}>{preset.name}</option>)}
             </select></label>
+            <div className="gallery-deck-manage">
+              <button type="button" disabled={readOnly||starterSelected||!selectedPreset} aria-label="Rename deck"
+                title={starterSelected?'The Starter Deck keeps its name':'Rename deck'}
+                onClick={()=>{if(!selectedPreset)return;setNameMode('rename');setDeckName(selectedPreset.name);setSaveError('');setSaveOpen(true);}}><PencilSimple size={16} weight="bold" aria-hidden="true"/></button>
+              <button type="button" disabled={readOnly||starterSelected||!selectedPreset} aria-label="Delete deck"
+                title={starterSelected?'The Starter Deck is always kept':'Delete deck'}
+                onClick={()=>{setSaveError('');setDeleteOpen(true);}}><Trash size={16} weight="bold" aria-hidden="true"/></button>
+            </div>
             <strong aria-live="polite" className={deck.length === 30 ? "is-complete" : "is-incomplete"}>{deck.length}<small> / 30</small></strong></header>
           <div className="gallery-preset-actions"><button type="button" disabled={!deck.length||readOnly} onClick={()=>{setDeckPreview(null);onChange([]);setDeckNotice('Deck cleared');}}>Clear</button>
-            <button type="button" className="preset-create" disabled={readOnly} onClick={()=>{let serial=1;while(progress.savedDecks.some(deck=>deck.name.toLowerCase()===`deck ${serial}`))serial++;setDeckName(`Deck ${serial}`);setSaveError('');setSaveOpen(true);}}>Create a new deck</button></div>
+            <button type="button" className="preset-create" disabled={readOnly} onClick={()=>{let serial=1;while(progress.savedDecks.some(deck=>deck.name.toLowerCase()===`deck ${serial}`))serial++;setNameMode('create');setDeckName(`Deck ${serial}`);setSaveError('');setSaveOpen(true);}}>Create a new deck</button></div>
           {deckNotice&&<p className="gallery-preset-notice" role="status">{deckNotice}</p>}
           <div className="gallery-deck-list" onScroll={() => setDeckPreview(null)}>{allEntries.filter((entry) => deckIds.has(entry.key))
             .sort((a, b) => (a.face.cost ?? 0) - (b.face.cost ?? 0) || a.face.name.localeCompare(b.face.name))
@@ -421,27 +447,37 @@ export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHero
               const count = manaCurve[i];
               return <div key={i}><span data-count={count} style={{ height: `${Math.max(2, count / manaPeak * 13)}px` }}>{count}</span><small>{i + 1}</small></div>;
             })}</div></div>
-            <div className="gallery-deck-actions">
-              <button type="button" className={`gallery-hero-power${hasNewHeroPower(progress)?' has-new-power':''}`} aria-label="Choose hero power" aria-description={equippedPower?.name} aria-expanded={powerOpen} onClick={() => setPowerOpen(true)}>
-                <span className="gallery-power-icon" aria-hidden="true">ϟ</span><strong aria-live="polite">{hasNewHeroPower(progress)?'New hero power available':'Choose Hero Power'}</strong>
-              </button>
-            </div>
             {readOnly && <small>Starter deck · 30 cards</small>}
           </footer>
         </aside>
         </div>
         </div>
       </section>
-      {deckPreview && deckIds.has(deckPreview.key) && !selectedEntry && !powerOpen && !saveOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
+      {deckPreview && deckIds.has(deckPreview.key) && !selectedEntry && !powerOpen && !saveOpen && !deleteOpen && <CardPeek face={deckPreview.face} rect={deckPreview.rect} label={`Deck card: ${deckPreview.face.name}`} />}
       {lockedInfo&&!selectedEntry&&<LockedCardInfo cardId={lockedInfo.key} rect={lockedInfo.rect} onClose={()=>setLockedInfo(null)}/>}
       {saveOpen&&<div className="gallery-power-shade" onPointerDown={event=>{if(event.target===event.currentTarget)setSaveOpen(false);}}>
-        <form ref={createPicker} className="gallery-save-dialog" role="dialog" aria-modal="true" aria-label="Create a new deck" onSubmit={event=>{event.preventDefault();if(!deckName.trim()||duplicateName)return;const saved=onPresetCreate(deckName);if(saved){setSaveOpen(false);setDeckPreview(null);setMobileDeckView(true);setDeckNotice('New deck created');}else setSaveError('Could not create the deck. Browser storage is unavailable.');}}>
-          <h3>Create a new deck</h3><label>Deck name<input aria-label="Deck name" autoFocus maxLength={60} value={deckName} onChange={event=>setDeckName(event.target.value)}/></label>
-          <p>Start with an empty deck. Your other decks keep their cards.</p>
+        <form ref={createPicker} className="gallery-save-dialog" role="dialog" aria-modal="true" aria-label={nameMode==='create'?'Create a new deck':'Rename deck'} onSubmit={event=>{event.preventDefault();if(!deckName.trim()||duplicateName)return;
+          if(nameMode==='rename'){
+            if(!selectedPreset)return;
+            if(deckName.trim().replace(/\s+/g,' ')===selectedPreset.name){setSaveOpen(false);return;}
+            if(onPresetRename(selectedPreset.id,deckName)){setSaveOpen(false);setDeckNotice('Deck renamed');}else setSaveError('Could not rename the deck. Browser storage is unavailable.');
+            return;
+          }
+          const saved=onPresetCreate(deckName);if(saved){setSaveOpen(false);setDeckPreview(null);setMobileDeckView(true);setDeckNotice('New deck created');}else setSaveError('Could not create the deck. Browser storage is unavailable.');}}>
+          <h3>{nameMode==='create'?'Create a new deck':'Rename deck'}</h3><label>Deck name<input aria-label="Deck name" autoFocus maxLength={60} value={deckName} onChange={event=>setDeckName(event.target.value)}/></label>
+          {nameMode==='create'&&<p>Start with an empty deck. Your other decks keep their cards.</p>}
           {duplicateName&&<p role="alert">That name already exists. Choose a different name.</p>}
           {saveError&&<p role="alert">{saveError}</p>}
-          <div><button type="button" onClick={()=>setSaveOpen(false)}>Cancel</button><button type="submit" className="primary" disabled={!deckName.trim()||duplicateName}>Create deck</button></div>
+          <div><button type="button" onClick={()=>setSaveOpen(false)}>Cancel</button><button type="submit" className="primary" disabled={!deckName.trim()||duplicateName}>{nameMode==='create'?'Create deck':'Rename'}</button></div>
         </form>
+      </div>}
+      {deleteOpen&&selectedPreset&&<div className="gallery-power-shade" onPointerDown={event=>{if(event.target===event.currentTarget)setDeleteOpen(false);}} onKeyDown={event=>{if(event.key==='Escape')setDeleteOpen(false);}}>
+        <div ref={deletePicker} className="gallery-save-dialog gallery-delete-dialog" role="alertdialog" aria-modal="true" aria-label="Delete deck">
+          <h3>Delete “{selectedPreset.name}”?</h3>
+          <p>The deck list is removed. Its cards stay in your collection, and the Starter Deck is selected.</p>
+          {saveError&&<p role="alert">{saveError}</p>}
+          <div><button type="button" onClick={()=>setDeleteOpen(false)}>Cancel</button><button type="button" className="danger" onClick={()=>{if(onPresetDelete(selectedPreset.id)){setDeleteOpen(false);setDeckPreview(null);setDeckNotice('Deck deleted');}else setSaveError('Could not delete the deck. Browser storage is unavailable.');}}>Delete deck</button></div>
+        </div>
       </div>}
       {powerOpen && <div className="gallery-power-shade" onPointerDown={event => {if(event.target===event.currentTarget)closePowers();}}>
         <section ref={powerPicker} className="gallery-power-picker" role="dialog" aria-modal="true" aria-label="Choose hero power">

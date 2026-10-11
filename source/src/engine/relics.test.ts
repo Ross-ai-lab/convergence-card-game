@@ -197,7 +197,7 @@ describe("relic effects", () => {
       ["The Green Mask", 2, "Return the bearer to your hand after death"],
       ["Tesseract", 4, "The bearer can attack twice each turn"],
       ["Infinity Castle", 4, "The bearer's Evade chance is 50%"],
-      ["Pandora's Box", 2, "The bearer gains +4/+4. It dies at the start of your next turn"],
+      ["Pandora's Box", 2, "The bearer gains an effect of a random relic"],
       ["Omnitrix", 3, "At the start of your turn transform the bearer into a random minion that costs 1 more"],
       ["Stand Arrow", 1, "50% chance to transform the bearer into a random minion that costs 2 more; otherwise Silence it"],
       ["Poké Ball", 1, "Return the bearer to your hand"],
@@ -268,20 +268,45 @@ describe("relic effects", () => {
     expect(after.players[0].board[0]?.divineShield).toBe(true);
   });
 
-  it("Pandora's Box buffs its bearer and kills it at the start of its owner's next turn", () => {
-    const state = mainState("pandora-box");
+  it("Pandora's Box gives its bearer the effect of a random other relic, and the bearer lives on", () => {
+    const seen = new Set<string>();
+    for (const seed of ["pandora-a", "pandora-b", "pandora-c", "pandora-d", "pandora-e", "pandora-f"]) {
+      const state = mainState(seed);
+      state.players[0].board[0] = makeMinion("John Wick", 0);
+      const afterEquip = playRelicFor(state, 0, "Pandora's Box", 0);
+      const bearer = afterEquip.players[0].board[0];
+      // A relic that returns or transforms its bearer can leave the slot empty;
+      // the box itself is what the rest of this test reads.
+      const box = bearer?.relic ?? null;
+      if (!box) continue;
+      const chosen = relics.find((relic) => relic.relicId === box.relicId);
+      expect(box.id).toBe(relicByName("Pandora's Box").id);
+      expect(box.relicId).not.toBe("pandora_box");
+      expect(chosen, box.relicId).toBeDefined();
+      expect(box.name).toBe(`Pandora's Box: ${chosen!.name}`);
+      expect(box.effect).toBe(chosen!.effect);
+      seen.add(box.relicId);
+
+      const afterRound = endTurnAndDraw(endTurnAndDraw(afterEquip, 0), 1);
+      if (afterRound.players[0].board[0]?.instanceId === bearer!.instanceId) {
+        expect(afterRound.players[0].board[0]?.relic?.id).toBe(relicByName("Pandora's Box").id);
+      }
+    }
+    // Random, not one fixed relic.
+    expect(seen.size).toBeGreaterThan(1);
+  });
+
+  it("Pandora's Box takes on a one-shot relic's effect at once", () => {
+    // Force the roll: a library holding only Pandora's Box and The Holy Grail.
+    const state = mainState("pandora-grail");
     state.players[0].board[0] = makeMinion("John Wick", 0);
-    const afterEquip = playRelicFor(state, 0, "Pandora's Box", 0);
-    expect(afterEquip.players[0].board[0]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
-
-    const afterOpponentTurn = endTurnAndDraw(afterEquip, 0);
-    expect(afterOpponentTurn.players[0].board[0]).toMatchObject({ atk: 5, hp: 5, maxHp: 5 });
-    expect(afterOpponentTurn.players[1].board.filter(Boolean)).toHaveLength(0);
-
-    const afterOwnerNextTurn = endTurnAndDraw(afterOpponentTurn, 1);
-    expect(afterOwnerNextTurn.players[0].board[0]).toBeNull();
-    expect(afterOwnerNextTurn.players[1].board.filter(Boolean)).toHaveLength(0);
-    expect(afterOwnerNextTurn.discard).toContain(relicByName("Pandora's Box").id);
+    const box = relicByName("Pandora's Box"), grail = relicByName("The Holy Grail");
+    const only = Object.fromEntries(Object.entries(library).filter(([, card]) => card.kind !== "relic" || card.id === box.id || card.id === grail.id));
+    const next: GameState = { ...state, cheatMode: true, activePlayer: 0, phase: "main", drawChoice: null };
+    next.players = [{ ...state.players[0], hand: [box.id] }, state.players[1]];
+    const after = applyAction(next, { type: "play_relic", player: 0, handIndex: 0, slotIndex: 0 }, only).state;
+    expect(after.players[0].board[0]).toMatchObject({ atk: 2, hp: 2, maxHp: 2 });
+    expect(after.players[0].board[0]?.relic).toMatchObject({ id: box.id, relicId: "double_stats", name: "Pandora's Box: The Holy Grail" });
   });
 
   it("The Monkey's Paw buffs its bearer and kills it on the next turn", () => {

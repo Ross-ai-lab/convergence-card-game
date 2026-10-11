@@ -66,7 +66,7 @@ import {
 } from "./progress";
 import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES, CAMPAIGN_PREMISE, CAMPAIGN_PROTAGONIST } from "./campaign";
 import { createCampaignDuel } from "./campaign-duel";
-import { campaignComplete, canPlayChapter, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, saveDeckDraft, createNamedDeck, ensureNamedDeck, selectNamedDeck, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { campaignComplete, canPlayChapter, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, saveDeckDraft, createNamedDeck, ensureNamedDeck, selectNamedDeck, renameNamedDeck, deleteNamedDeck, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
 import { LoreLibrary } from './screens/LoreLibrary';
 import { randomDeck, validateDeck } from "./decks";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
@@ -195,7 +195,7 @@ export default function App() {
    * straight through to localStorage whenever it changes.
    */
   const [progress, setProgress] = useState<Progress>(initialProgress);
-  /** Rift Draft's run and record. Stored apart from the collection, which a draft never touches. */
+  /** The Arena's run and record. Stored apart from the collection, which a draft never touches. */
   const [draft, setDraft] = useState<DraftSave>(() => loadDraft());
   function persistDraft(next: DraftSave) {
     setDraft(next); const saved = saveDraft(next); setStorageError(!saved); return saved;
@@ -299,6 +299,20 @@ export default function App() {
   }
   function createDeckPreset(name:string,seat:0|1):boolean {
     const next=createNamedDeck(progress,name,seat);
+    if(next===progress)return false;
+    const saved=saveProgress(next);setStorageError(!saved);
+    if(saved)setProgress(next);
+    return saved;
+  }
+  function renameDeckPreset(id:string,name:string):boolean {
+    const next=renameNamedDeck(progress,id,name);
+    if(next===progress)return false;
+    const saved=saveProgress(next);setStorageError(!saved);
+    if(saved)setProgress(next);
+    return saved;
+  }
+  function deleteDeckPreset(id:string):boolean {
+    const next=deleteNamedDeck(progress,id);
     if(next===progress)return false;
     const saved=saveProgress(next);setStorageError(!saved);
     if(saved)setProgress(next);
@@ -2449,7 +2463,7 @@ export default function App() {
         onResume={continueDuel}
         onClose={() => setOverlay(null)} />}
       {overlay === 'lore' && <LoreLibrary completedBosses={progress.completedBosses} onClose={()=>setOverlay(null)} />}
-      {overlay === "deck" && <CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+      {overlay === "deck" && <CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onPresetRename={renameDeckPreset} onPresetDelete={deleteDeckPreset} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}

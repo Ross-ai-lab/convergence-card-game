@@ -92,11 +92,11 @@ describe("2026 card replacements", () => {
     expect(cards.find((card) => card.name === "Frieren")).toMatchObject({
       cost: 6,
       atk: 2,
-      hp: 5,
+      hp: 6,
       rarity: "Yellow",
       effectId: "frieren_relic_discover",
       effectTiming: "passive",
-      effect: "Passive: The first time you cast a relic each turn, discover another relic",
+      effect: "Passive: Whenever you cast a relic, discover another relic",
     });
     expect(cards.find((card) => card.name === "Guts")).toMatchObject({
       cost: 3,
@@ -164,7 +164,7 @@ describe("2026 card replacements", () => {
     expect(clones.every((entry) => entry?.suppressArrivalTheme === true)).toBe(true);
   });
 
-  it("Frieren discovers once per turn for each Frieren, then resets next turn", () => {
+  it("Frieren discovers for every relic cast, once for each Frieren", () => {
     const state = mainState("frieren-relic-discover");
     state.players[0].board[0] = minion("Frieren", 0);
     state.players[0].board[1] = minion("Frieren", 0);
@@ -191,20 +191,21 @@ describe("2026 card replacements", () => {
     expect(after.pendingTarget).toBeNull();
     expect(after.players[0].hand).toHaveLength(2);
 
-    // Keep this follow-up relic inert. New relics may have an immediate
-    // transformation or return effect, which would remove the second Frieren
-    // before the next-turn reset is tested.
+    // A second relic in the same turn discovers again: there is no once-per-turn
+    // limit. Kept inert, since some relics transform or return their bearer.
     const sameTurnRelic = relicId("Tesseract");
     after.players[0].hand = [sameTurnRelic];
     after.deck = after.deck.filter((cardId) => cardId !== sameTurnRelic);
-    const sameTurn = applyAction(
+    const sameTurnAsking = applyAction(
       after,
       { type: "play_relic", player: 0, handIndex: 0, slotIndex: 1 },
       library,
     ).state;
+    expect(sameTurnAsking.phase).toBe("targeting");
+    expect(sameTurnAsking.pendingTarget?.queuedRelicSources).toHaveLength(1);
+    const sameTurn = choose(choose(sameTurnAsking, 0), 0);
     expect(sameTurn.phase).toBe("main");
-    expect(sameTurn.pendingTarget).toBeNull();
-    expect(sameTurn.players[0].hand).toHaveLength(0);
+    expect(sameTurn.players[0].hand).toHaveLength(2);
 
     const nextTurn = endTurn(endTurn(sameTurn, 0), 1);
     const nextRelic = relicId("Tesseract");
@@ -342,7 +343,7 @@ describe("2026 card replacements", () => {
         keywords: ["Deathrattle"],
         effect: "Deathrattle: Summon Galactus (8/8)",
       },
-      "Pillar Men": { cost: 4, atk: 4, hp: 4, effectId: "pillar_men_kill_heal", effectTiming: "passive", keywords: ["Chained", "Passive"], effect: "Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health" },
+      "Pillar Men": { cost: 4, atk: 5, hp: 4, effectId: "pillar_men_kill_heal", effectTiming: "passive", keywords: ["Chained", "Passive"], effect: "Chained. Passive: Whenever Pillar Men kills a minion, restore itself to full health" },
       Cthulhu: {
         cost: 6,
         atk: 6,
@@ -2347,7 +2348,7 @@ describe("2026 card replacements", () => {
     expect(after.players[0].board[0]).toMatchObject({ atk: 8, hp: 10, maxHp: 10 });
   });
 
-  it("Grand Master Oogway rescues one dying ally per turn and is Chained for it", () => {
+  it("Grand Master Oogway rescues every dying ally and is never Chained for it", () => {
     const state = mainState("oogway-rescue");
     state.players[0].board[0] = minion("Grand Master Oogway", 0);
     state.players[0].board[1] = minion("John Wick", 0, { hp: 1, maxHp: 1 });
@@ -2358,13 +2359,15 @@ describe("2026 card replacements", () => {
     state.activePlayer = 1;
 
     const first = applyAction(state, { type: "attack_minion", player: 1, attackerSlot: 0, targetSlot: 1 }, library).state;
-    expect(first.players[0].board[0]).toMatchObject({ divineShield: true, chained: 3, rescueUsedAtTurn: first.turnNumber });
+    expect(first.players[0].board[0]).toMatchObject({ divineShield: true, chained: 0 });
     expect(first.players[0].board[1]).toBeNull();
     expect(first.players[0].hand).toContain(cardId("John Wick"));
 
+    // The same turn, a second ally: rescued too.
     const second = applyAction(first, { type: "attack_minion", player: 1, attackerSlot: 1, targetSlot: 2 }, library).state;
     expect(second.players[0].board[2]).toBeNull();
-    expect(second.players[0].hand).not.toContain(cardId("Zoro"));
+    expect(second.players[0].hand).toContain(cardId("Zoro"));
+    expect(second.players[0].board[0]).toMatchObject({ chained: 0 });
   });
 
   it("The Driller consumes an enemy Tech minion at the exact 4 HP limit", () => {

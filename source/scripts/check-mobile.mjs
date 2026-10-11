@@ -290,7 +290,7 @@ try {
   assert(await page.getByRole('button',{name:'Full screen',exact:true}).isDisabled(), 'Unsupported fullscreen remains interactive');
   await page.locator('.hotseat-trigger').tap();
   await page.locator('.hotseat-confirm-start').tap();
-  await page.getByRole('button',{name:'Start two-player duel',exact:true}).tap();
+  await page.getByRole('button',{name:'Start local duel',exact:true}).tap();
   await rotateForDuel(page,390,844);
   await page.locator('.duel-intro').dblclick();
   await page.locator('.duel-intro').waitFor({state:'detached'});
