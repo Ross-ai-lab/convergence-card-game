@@ -47,6 +47,7 @@ hash.update(readFileSync(join(SOURCE,'data','cards.csv')));
 hash.update(readFileSync(join(SOURCE,'data','relics.csv')));
 hash.update(readFileSync(join(SOURCE,'scripts','browser.mjs')));
 hash.update(readFileSync(join(SOURCE,'scripts','story-fixtures.mjs')));
+hash.update(readFileSync(fileURLToPath(import.meta.url)));
 const sourceHash=hash.digest('hex');
 const manifestPath=join(OUT,'captures.json');
 const manifest=existsSync(manifestPath)?JSON.parse(readFileSync(manifestPath,'utf8')):{clips:{}};

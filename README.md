@@ -163,5 +163,6 @@ From the AI workspace root, `just video-remotion make "Ross/Github/Convergence/t
 `prepare.mjs` uses this project's Playwright installation, starts a local Vite server only when required, and captures isolated browser contexts. It never reads the owner's browser progress.
 It stages reproducible board states through the existing development hooks, then performs real game actions. It also captures actual card faces and mixes the game's music with a champion line and trailer effects.
 Generated media and capture fingerprints live in `.preview/trailer/`; the authored composition, cast and soundtrack specification stay in `trailer/`.
+Capture reuse also fingerprints the production script and browser helpers. Changing preparation instructions refreshes the captures, favoring reproducibility over faster media-only rebuilds.
 The MP4 remains local until the owner asks to share or publish it.
 `finish.mjs` creates `Convergence-Trailer-Share.mp4`, a smaller full-HD messaging copy, and `Convergence-Trailer-Poster.jpg`. The shared front door runs it after the master passes verification.
