@@ -45,6 +45,8 @@ function fingerprint(folder) {for(const entry of readdirSync(folder,{withFileTyp
 fingerprint(join(SOURCE,'src'));
 hash.update(readFileSync(join(SOURCE,'data','cards.csv')));
 hash.update(readFileSync(join(SOURCE,'data','relics.csv')));
+hash.update(readFileSync(join(SOURCE,'scripts','browser.mjs')));
+hash.update(readFileSync(join(SOURCE,'scripts','story-fixtures.mjs')));
 const sourceHash=hash.digest('hex');
 const manifestPath=join(OUT,'captures.json');
 const manifest=existsSync(manifestPath)?JSON.parse(readFileSync(manifestPath,'utf8')):{clips:{}};
@@ -98,7 +100,7 @@ async function duel(page,chapter=6){
   await page.waitForTimeout(650);
 }
 async function capture(name,setup,action,hold=1.5){
-  const signature=createHash('sha256').update(sourceHash+setup.toString()+action.toString()+hold).digest('hex');
+  const signature=createHash('sha256').update(sourceHash+pageFor.toString()+seedCollection.toString()+duel.toString()+setup.toString()+action.toString()+hold).digest('hex');
   const previous=manifest.clips[name];
   if(!FORCE&&previous?.signature===signature&&existsSync(join(ASSETS,'clips',`${name}.mp4`))){console.log(`Reusing ${name}`);return;}
   const rawFolder=join(OUT,'raw',name);mkdirSync(rawFolder,{recursive:true});
