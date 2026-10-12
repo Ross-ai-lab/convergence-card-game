@@ -1,0 +1,91 @@
+{
+  "sources": [
+    "source/public/audio/music/battle.ogg",
+    "source/public/audio/stings/opening-jrpg-trailer.ogg"
+  ],
+  "events": [
+    {
+      "effect": "whoosh",
+      "seconds": 1.52,
+      "gain": 0.7
+    },
+    {
+      "effect": "impact",
+      "seconds": 1.7,
+      "gain": 0.7
+    },
+    {
+      "effect": "impact",
+      "seconds": 3.6,
+      "gain": 0.85
+    },
+    {
+      "effect": "whoosh",
+      "seconds": 9.28,
+      "gain": 0.65
+    },
+    {
+      "effect": "impact",
+      "seconds": 9.6,
+      "gain": 0.7
+    },
+    {
+      "effect": "impact",
+      "seconds": 15,
+      "gain": 0.75
+    },
+    {
+      "effect": "impact",
+      "seconds": 17.6,
+      "gain": 0.4
+    },
+    {
+      "effect": "whoosh",
+      "seconds": 21.65,
+      "gain": 0.7
+    },
+    {
+      "effect": "impact",
+      "seconds": 22,
+      "gain": 0.7
+    },
+    {
+      "effect": "whoosh",
+      "seconds": 26.12,
+      "gain": 0.65
+    },
+    {
+      "effect": "impact",
+      "seconds": 28.6,
+      "gain": 0.65
+    },
+    {
+      "effect": "impact",
+      "seconds": 33.5,
+      "gain": 0.7
+    },
+    {
+      "effect": "whoosh",
+      "seconds": 37.18,
+      "gain": 0.6
+    },
+    {
+      "effect": "rise",
+      "seconds": 41.8,
+      "gain": 0.8
+    },
+    {
+      "effect": "impact",
+      "seconds": 44,
+      "gain": 0.9
+    },
+    {
+      "effect": "vader-voice",
+      "seconds": 4.3,
+      "gain": 1.6
+    }
+  ],
+  "durationSeconds": 48,
+  "targetLUFS": -16,
+  "maxTruePeakDB": -1.5
+}

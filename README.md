@@ -25,6 +25,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
   - [Online duels](#online-duels)
   - [Progress stays in this browser](#progress-stays-in-this-browser)
 - [Explore and contribute](#explore-and-contribute)
+- [Trailer production](#trailer-production)
 <!-- README-NAV-END -->
 
 ## Choose your arena
@@ -151,3 +152,16 @@ See [contributing](CONTRIBUTING.md#reporting-a-problem) for the details that mak
 
 The [WebP artwork collection](source/public/card-art/raw/) is the maintained image library.
 Optional [audio tracks](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Audio-Tracks.7z) and [rendered card-production material](https://github.com/Ross-ai-lab/convergence-card-game/releases/download/v1.0/Convergence-Card-Production.7z) are available separately.
+
+## Trailer production
+
+The friends trailer is `Convergence-Trailer.mp4`: a 48-second, 1920×1080 film showing crossover teams, the collection, live attacks, relic equipment, champion rewards and friend duels.
+Its source lives in [trailer/](trailer/). The game itself is not modified for filming.
+
+From the AI workspace root, `just video-remotion make "Ross/Github/Convergence/trailer" --quality final` prepares the media, renders the film and checks the result.
+`just video-remotion preview "Ross/Github/Convergence/trailer"` starts its editable timeline; open `ConvergenceTrailer` in the Studio URL it prints.
+`prepare.mjs` uses this project's Playwright installation, starts a local Vite server only when required, and captures isolated browser contexts. It never reads the owner's browser progress.
+It stages reproducible board states through the existing development hooks, then performs real game actions. It also captures actual card faces and mixes the game's music with a champion line and trailer effects.
+Generated media and capture fingerprints live in `.preview/trailer/`; the authored composition, cast and soundtrack specification stay in `trailer/`.
+The MP4 remains local until the owner asks to share or publish it.
+`finish.mjs` creates `Convergence-Trailer-Share.mp4`, a smaller full-HD messaging copy, and `Convergence-Trailer-Poster.jpg`. The shared front door runs it after the master passes verification.

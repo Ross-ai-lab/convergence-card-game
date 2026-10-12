@@ -1,0 +1,154 @@
+[
+  {
+    "id": "c029",
+    "name": "Darth Vader",
+    "origin": "Star Wars",
+    "cost": 5,
+    "art": "art/c029.webp",
+    "face": "cards/c029.png"
+  },
+  {
+    "id": "c044",
+    "name": "Goku",
+    "origin": "Dragon Ball",
+    "cost": 10,
+    "art": "art/c044.webp",
+    "face": "cards/c044.png"
+  },
+  {
+    "id": "c076",
+    "name": "Godzilla",
+    "origin": "Godzilla",
+    "cost": 7,
+    "art": "art/c076.webp",
+    "face": "cards/c076.png"
+  },
+  {
+    "id": "c001",
+    "name": "John Wick",
+    "origin": "John Wick",
+    "cost": 1,
+    "art": "art/c001.webp",
+    "face": "cards/c001.png"
+  },
+  {
+    "id": "c005",
+    "name": "Batman",
+    "origin": "DCEU",
+    "cost": 2,
+    "art": "art/c005.webp",
+    "face": "cards/c005.png"
+  },
+  {
+    "id": "c089",
+    "name": "Kratos",
+    "origin": "God of War Game",
+    "cost": 6,
+    "art": "art/c089.webp",
+    "face": "cards/c089.png"
+  },
+  {
+    "id": "c104",
+    "name": "GLaDOS",
+    "origin": "Portal",
+    "cost": 5,
+    "art": "art/c104.webp",
+    "face": "cards/c104.png"
+  },
+  {
+    "id": "c110",
+    "name": "Po",
+    "origin": "Kung-Fu Panda",
+    "cost": 4,
+    "art": "art/c110.webp",
+    "face": "cards/c110.png"
+  },
+  {
+    "id": "c022",
+    "name": "Gojo",
+    "origin": "Jujutsu Kaisen",
+    "cost": 9,
+    "art": "art/c022.webp",
+    "face": "cards/c022.png"
+  },
+  {
+    "id": "c025",
+    "name": "Saitama",
+    "origin": "OPM",
+    "cost": 10,
+    "art": "art/c025.webp",
+    "face": "cards/c025.png"
+  },
+  {
+    "id": "c016",
+    "name": "Doom Slayer",
+    "origin": "Doom",
+    "cost": 8,
+    "art": "art/c016.webp",
+    "face": "cards/c016.png"
+  },
+  {
+    "id": "c096",
+    "name": "Dio Brando",
+    "origin": "JoJo",
+    "cost": 5,
+    "art": "art/c096.webp",
+    "face": "cards/c096.png"
+  },
+  {
+    "id": "c045",
+    "name": "Rick Prime",
+    "origin": "Rick and Morty",
+    "cost": 10,
+    "art": "art/c045.webp",
+    "face": "cards/c045.png"
+  },
+  {
+    "id": "c060",
+    "name": "Monkey D. Luffy",
+    "origin": "One Piece",
+    "cost": 8,
+    "art": "art/c060.webp",
+    "face": "cards/c060.png"
+  },
+  {
+    "id": "c070",
+    "name": "Vergil & Dante & Nero",
+    "origin": "Devil May Cry",
+    "cost": 7,
+    "art": "art/c070.webp",
+    "face": "cards/c070.png"
+  },
+  {
+    "id": "c027",
+    "name": "Thanos",
+    "origin": "MCU",
+    "cost": 10,
+    "art": "art/c027.webp",
+    "face": "cards/c027.png"
+  },
+  {
+    "id": "r035",
+    "name": "Green Lantern Ring",
+    "origin": "DC",
+    "cost": 1,
+    "art": "art/r035.webp",
+    "face": "cards/r035.png"
+  },
+  {
+    "id": "r005",
+    "name": "Infinity Stone",
+    "origin": "MCU",
+    "cost": 3,
+    "art": "art/r005.webp",
+    "face": "cards/r005.png"
+  },
+  {
+    "id": "r027",
+    "name": "Mjolnir",
+    "origin": "Marvel",
+    "cost": 5,
+    "art": "art/r027.webp",
+    "face": "cards/r027.png"
+  }
+]

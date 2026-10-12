@@ -1,0 +1,13 @@
+{
+  "entry": "index.tsx",
+  "composition": "ConvergenceTrailer",
+  "publicDir": "../.preview/trailer/assets",
+  "output": "../Convergence-Trailer.mp4",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "durationInFrames": 1440,
+  "audioRequired": true,
+  "prepare": ["node", "prepare.mjs"],
+  "afterRender": ["node", "finish.mjs"]
+}

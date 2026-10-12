@@ -1,0 +1,13 @@
+{
+  "extends": "../../../../Pipelines/video/remotion/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../../../../Pipelines/video/remotion",
+    "paths": {
+      "react": ["node_modules/@types/react"],
+      "react/*": ["node_modules/@types/react/*"],
+      "remotion": ["node_modules/remotion"],
+      "@remotion/*": ["node_modules/@remotion/*"]
+    }
+  },
+  "include": ["*.tsx", "cast.json"]
+}
