@@ -28,11 +28,10 @@ export const Atmosphere = ({intense=false}:{intense?:boolean}) => {
   </AbsoluteFill>;
 };
 
-export const Header = ({eyebrow,title}:{eyebrow:string;title:string}) => {
+export const Header = ({title}:{title:string}) => {
   const f=useCurrentFrame();const {fps}=useVideoConfig();
-  return <div style={{position:'absolute',left:78,right:78,top:27,color:palette.ink,fontFamily:sans,translate:interpolate(f,[0,0.38*fps],['0px 28px','0px 0px'],{...clamp,easing:ease}),opacity:interpolate(f,[0,0.2*fps],[0,1],clamp)}}>
-    <div style={{fontSize:22,fontWeight:800,letterSpacing:7,color:palette.gold,marginBottom:6}}>{eyebrow}</div>
-    <div style={{fontSize:62,fontWeight:1000,lineHeight:1.03,letterSpacing:-1.4}}>{title}</div>
+  return <div style={{position:'absolute',left:80,right:80,top:43,color:palette.ink,fontFamily:sans,translate:interpolate(f,[0,0.38*fps],['0px 28px','0px 0px'],{...clamp,easing:ease}),opacity:interpolate(f,[0,0.2*fps],[0,1],clamp)}}>
+    <div style={{fontSize:67,fontWeight:1000,lineHeight:1.03,letterSpacing:-1.2}}>{title}</div>
   </div>;
 };
 
@@ -49,12 +48,12 @@ export const Card = ({id,x,y,width=360,angle=0,delay=0,depth=0}:{id:string;x:num
   </div>;
 };
 
-export const MovieWindow = ({clip,start=0,rate=1,zoom=1,focus='50% 50%',action=false}:{clip:string;start?:number;rate?:number;zoom?:number;focus?:string;action?:boolean}) => {
+export const MovieWindow = ({clip,start=0,rate=1,zoom=1,focus='50% 50%',action=false,left=60}:{clip:string;start?:number;rate?:number;zoom?:number;focus?:string;action?:boolean;left?:number}) => {
   const frame=useCurrentFrame();const {fps}=useVideoConfig();
-  return <div style={{position:'absolute',left:60,right:60,top:143,bottom:50,overflow:'hidden',border:`1px solid ${palette.gold}55`,borderRadius:17,background:'#30223b',boxShadow:'0 18px 65px #21172e66',
+  return <div style={{position:'absolute',left,right:60,top:136,bottom:40,overflow:'hidden',border:`1px solid ${palette.gold}55`,borderRadius:17,background:'#30223b',boxShadow:'0 18px 65px #21172e66',
     scale:interpolate(frame,[0,0.8*fps],[0.985,1],{...clamp,easing:ease})}}>
     <div style={{position:'absolute',inset:0,transformOrigin:focus,scale:action?interpolate(frame,[0,2*fps,3*fps,4.2*fps,6.1*fps],[1,1,zoom,zoom,1],{...clamp,easing:ease}):interpolate(frame,[0,0.9*fps],[zoom*0.98,zoom],{...clamp,easing:ease})}}>
-      <Video src={staticFile(`clips/${clip}.mp4`)} premountFor={fps} trimBefore={start*fps} playbackRate={rate} objectFit="contain" muted style={{width:'100%',height:'100%'}} />
+      <Video name={clip} src={staticFile(`clips/${clip}.mp4`)} premountFor={fps} trimBefore={start*fps} playbackRate={rate} objectFit="contain" muted style={{width:'100%',height:'100%'}} />
     </div>
   </div>;
 };

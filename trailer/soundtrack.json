@@ -1,91 +1,250 @@
 {
-  "sources": [
-    "source/public/audio/music/battle.ogg",
-    "source/public/audio/stings/opening-jrpg-trailer.ogg"
+  "durationSeconds": 90,
+  "voices": [
+    {
+      "file": "06-play",
+      "at": 0.7,
+      "scene": "opening",
+      "character": "Darth Vader",
+      "duration": 4.5,
+      "text": "Your command is acknowledged. I will clear the path."
+    },
+    {
+      "file": "07-play",
+      "at": 10.2,
+      "scene": "battle",
+      "character": "Conquest",
+      "duration": 3.92,
+      "text": "You promised me a fight, Gramps. These had better not disappoint."
+    },
+    {
+      "file": "big_hit",
+      "at": 26.2,
+      "scene": "relic",
+      "character": "Announcer",
+      "kind": "announcer",
+      "text": "That will leave a mark.",
+      "duration": 1.263417
+    },
+    {
+      "file": "10-play",
+      "at": 43.6,
+      "scene": "champions",
+      "character": "Meruem",
+      "duration": 4.5,
+      "text": "I see the shape of this contest, Gramps. Allow me to change it."
+    },
+    {
+      "file": "05-play",
+      "at": 49,
+      "scene": "champions",
+      "character": "Lord Voldemort",
+      "duration": 6,
+      "text": "Your enemies will learn to fear your collection, Gramps. I shall make certain of it."
+    },
+    {
+      "file": "overkill",
+      "at": 56.2,
+      "scene": "reward",
+      "character": "Announcer",
+      "kind": "announcer",
+      "text": "Overkill.",
+      "duration": 0.950833
+    },
+    {
+      "file": "01-play",
+      "at": 60.1,
+      "scene": "reward",
+      "character": "GLaDOS",
+      "duration": 7.1,
+      "text": "Your assistant has arrived, Gramps. Try not to lower the average intelligence on this side of the arena."
+    },
+    {
+      "file": "turn_you",
+      "at": 68.4,
+      "scene": "powers",
+      "character": "Announcer",
+      "kind": "announcer",
+      "text": "Your move.",
+      "duration": 0.887125
+    },
+    {
+      "file": "18-play",
+      "at": 82.2,
+      "scene": "montage",
+      "character": "Thanos",
+      "duration": 4.64,
+      "text": "You have chosen your moment, Gramps. I will make it decisive."
+    }
   ],
   "events": [
     {
-      "effect": "whoosh",
-      "seconds": 1.52,
-      "gain": 0.7
+      "at": 1.7,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "impact",
-      "seconds": 1.7,
-      "gain": 0.7
+      "at": 8,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "impact",
-      "seconds": 3.6,
-      "gain": 0.85
+      "at": 9.1,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "whoosh",
-      "seconds": 9.28,
-      "gain": 0.65
+      "at": 12,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "impact",
-      "seconds": 9.6,
-      "gain": 0.7
+      "at": 15.3,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "impact",
-      "seconds": 15,
-      "gain": 0.75
+      "at": 17.6,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "impact",
-      "seconds": 17.6,
-      "gain": 0.4
+      "at": 20,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "whoosh",
-      "seconds": 21.65,
-      "gain": 0.7
+      "at": 22.4,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "impact",
-      "seconds": 22,
-      "gain": 0.7
+      "at": 26,
+      "gain": 0.52,
+      "kind": "impact"
     },
     {
-      "effect": "whoosh",
-      "seconds": 26.12,
-      "gain": 0.65
+      "at": 31,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "impact",
-      "seconds": 28.6,
-      "gain": 0.65
+      "at": 43,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "impact",
-      "seconds": 33.5,
-      "gain": 0.7
+      "at": 55.8,
+      "gain": 0.52,
+      "kind": "impact"
     },
     {
-      "effect": "whoosh",
-      "seconds": 37.18,
-      "gain": 0.6
+      "at": 58.2,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "rise",
-      "seconds": 41.8,
-      "gain": 0.8
+      "at": 58.6,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "impact",
-      "seconds": 44,
-      "gain": 0.9
+      "at": 59,
+      "gain": 0.25,
+      "kind": "impact"
     },
     {
-      "effect": "vader-voice",
-      "seconds": 4.3,
-      "gain": 1.6
+      "at": 59.4,
+      "gain": 0.25,
+      "kind": "impact"
+    },
+    {
+      "at": 59.8,
+      "gain": 0.25,
+      "kind": "impact"
+    },
+    {
+      "at": 60.8,
+      "gain": 0.25,
+      "kind": "impact"
+    },
+    {
+      "at": 68,
+      "gain": 0.25,
+      "kind": "impact"
+    },
+    {
+      "at": 70,
+      "gain": 0.25,
+      "kind": "impact"
+    },
+    {
+      "at": 73.6,
+      "gain": 0.25,
+      "kind": "impact"
+    },
+    {
+      "at": 78,
+      "gain": 0.25,
+      "kind": "impact"
+    },
+    {
+      "at": 82,
+      "gain": 0.25,
+      "kind": "impact"
+    },
+    {
+      "at": 85,
+      "gain": 0.25,
+      "kind": "impact"
+    },
+    {
+      "at": 7.65,
+      "gain": 0.45,
+      "kind": "whoosh"
+    },
+    {
+      "at": 19.65,
+      "gain": 0.45,
+      "kind": "whoosh"
+    },
+    {
+      "at": 30.65,
+      "gain": 0.45,
+      "kind": "whoosh"
+    },
+    {
+      "at": 42.65,
+      "gain": 0.45,
+      "kind": "whoosh"
+    },
+    {
+      "at": 54.65,
+      "gain": 0.45,
+      "kind": "whoosh"
+    },
+    {
+      "at": 67.65,
+      "gain": 0.45,
+      "kind": "whoosh"
+    },
+    {
+      "at": 77.65,
+      "gain": 0.45,
+      "kind": "whoosh"
+    },
+    {
+      "at": 84.65,
+      "gain": 0.45,
+      "kind": "whoosh"
+    },
+    {
+      "at": 82.5,
+      "gain": 0.65,
+      "kind": "rise"
     }
   ],
-  "durationSeconds": 48,
+  "musicDucking": 0.84,
   "targetLUFS": -16,
   "maxTruePeakDB": -1.5
 }

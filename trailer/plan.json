@@ -1,0 +1,26 @@
+{
+  "durationSeconds": 90,
+  "fps": 60,
+  "scenes": [
+    {"id":"opening","seconds":8,"cards":["c029","c044","c076"]},
+    {"id":"battle","seconds":12,"cards":["c001","c005","c165","c012","c024"]},
+    {"id":"relic","seconds":11,"cards":["c020","r005","c036","c088","c111"]},
+    {"id":"collection","seconds":12,"cards":["c159","c002","c003","c103","c173","c172"]},
+    {"id":"champions","seconds":12,"cards":["c084","c114"]},
+    {"id":"reward","seconds":13,"cards":["c016","c104","c093","c105","c004","c026","c064","c008","c067"]},
+    {"id":"powers","seconds":10,"cards":["c010","c184","c031","c048"]},
+    {"id":"montage","seconds":7,"cards":["c022","c060","c070","c027","c183","c025"]},
+    {"id":"finale","seconds":5,"cards":[]}
+  ],
+  "voices": [
+    {"file":"06-play","at":0.7,"scene":"opening","character":"Darth Vader"},
+    {"file":"07-play","at":10.2,"scene":"battle","character":"Conquest"},
+    {"file":"big_hit","at":26.2,"scene":"relic","character":"Announcer","kind":"announcer","text":"That will leave a mark."},
+    {"file":"10-play","at":43.6,"scene":"champions","character":"Meruem"},
+    {"file":"05-play","at":49.0,"scene":"champions","character":"Lord Voldemort"},
+    {"file":"overkill","at":56.2,"scene":"reward","character":"Announcer","kind":"announcer","text":"Overkill."},
+    {"file":"01-play","at":60.1,"scene":"reward","character":"GLaDOS"},
+    {"file":"turn_you","at":68.4,"scene":"powers","character":"Announcer","kind":"announcer","text":"Your move."},
+    {"file":"18-play","at":82.2,"scene":"montage","character":"Thanos"}
+  ]
+}

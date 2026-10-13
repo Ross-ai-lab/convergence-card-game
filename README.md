@@ -155,14 +155,14 @@ Optional [audio tracks](https://github.com/Ross-ai-lab/convergence-card-game/rel
 
 ## Trailer production
 
-The friends trailer is `Convergence-Trailer.mp4`: a 48-second, 1920×1080 film showing crossover teams, the collection, live attacks, relic equipment, champion rewards and friend duels.
+The friends trailer is `Convergence-Trailer.mp4`: a 90-second, 1920×1080, 60 fps film showing cross-Universe synergies, the collection, real combat, Infinity Stone equipment, voiced champions, rewards and player powers.
 Its source lives in [trailer/](trailer/). The game itself is not modified for filming.
 
-From the AI workspace root, `just video-remotion make "Ross/Github/Convergence/trailer" --quality final` prepares the media, renders the film and checks the result.
+From the AI workspace root, `just video-remotion make "Ross/Github/Convergence/trailer" --quality master` prepares the media, renders the film and checks the result.
 `just video-remotion preview "Ross/Github/Convergence/trailer"` starts its editable timeline; open `ConvergenceTrailer` in the Studio URL it prints.
 `prepare.mjs` uses this project's Playwright installation, starts a local Vite server only when required, and captures isolated browser contexts. It never reads the owner's browser progress.
-It stages reproducible board states through the existing development hooks, then performs real game actions. It also captures actual card faces and mixes the game's music with a champion line and trailer effects.
+It stages reproducible board states through the existing development hooks, then performs real game actions. The shared frame recorder advances JavaScript and CSS motion explicitly, captures 60 frames per second, and encodes them without frame repetition or interpolation. It also captures actual card faces and mixes the game's music with six complete character lines, three announcer cues and trailer effects.
 Generated media and capture fingerprints live in `.preview/trailer/`; the authored composition, cast and soundtrack specification stay in `trailer/`.
 Capture reuse also fingerprints the production script and browser helpers. Changing preparation instructions refreshes the captures, favoring reproducibility over faster media-only rebuilds.
 The MP4 remains local until the owner asks to share or publish it.
-`finish.mjs` creates `Convergence-Trailer-Share.mp4`, a smaller full-HD messaging copy, and `Convergence-Trailer-Poster.jpg`. The shared front door runs it after the master passes verification.
+The cast ledger in [trailer/plan.json](trailer/plan.json) assigns each card to one continuous appearance and rejects repeats. [Trailer rules](trailer/Trailer-Rules.md) are copied to `Convergence-Trailer-Rules.md` on the Windows Desktop during preparation. The source-footage check rejects low-fps or unverified recordings before rendering. Only the full-quality MP4 is delivered; the separate sharing copy, poster and their generation hook were removed.

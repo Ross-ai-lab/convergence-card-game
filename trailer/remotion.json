@@ -5,9 +5,12 @@
   "output": "../Convergence-Trailer.mp4",
   "width": 1920,
   "height": 1080,
-  "fps": 30,
-  "durationInFrames": 1440,
+  "fps": 60,
+  "durationInFrames": 5400,
   "audioRequired": true,
-  "prepare": ["node", "prepare.mjs"],
-  "afterRender": ["node", "finish.mjs"]
+  "minFootageFps": 60,
+  "requireCaptureReports": true,
+  "footage": ["clips/battle.mp4", "clips/relic.mp4", "clips/collection.mp4", "clips/reward.mp4", "clips/powers.mp4"],
+  "reviewFrames": [180,780,1440,2220,2760,3120,3810,4320,5010,5220],
+  "prepare": ["node", "prepare.mjs"]
 }
