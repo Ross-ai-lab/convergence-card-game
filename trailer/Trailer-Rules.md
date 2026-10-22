@@ -55,5 +55,3 @@ Create an epic, cinematic, fast-paced trailer for friends. Show actual gameplay 
 - Verify the final duration, picture, audio, complete decoding, titles, cast ledger and removed outputs.
 - Inspect a representative frame from every scene and moving sections with capture concerns.
 - Report listening limitations honestly. A loudness measurement is not a listening check.
-
-This source is copied to the Windows Desktop by the preparation script, so the desktop rules remain current.

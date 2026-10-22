@@ -41,7 +41,6 @@ for(const card of cast){const path=join(SOURCE,'public',card.art.replace(/^\//,'
 const sourceHash=hash.digest('hex');
 for(const font of ['Nunito','Baloo2'])copyFileSync(join(SOURCE,`public/fonts/${font}.woff2`),join(ASSETS,`${font}.woff2`));
 writeFileSync(join(HERE,'cast.json'),JSON.stringify(cast.map(c=>({id:c.id,name:c.name,origin:c.origin||'Relic',cost:Number(c.cost),art:`art/${c.id}.webp`,face:`cards/${c.id}.png`,scene:used.get(c.id)})),null,2));
-copyFileSync(join(HERE,'Trailer-Rules.md'),join(process.env.USERPROFILE,'Desktop/Convergence-Trailer-Rules.md'));
 buildSoundtrack({source:SOURCE,assets:ASSETS,here:HERE,plan});
 let ownedServer;
 try{await fetch(BASE);}catch{ownedServer=spawn(process.execPath,[join(SOURCE,'node_modules/vite/bin/vite.js'),'--host','127.0.0.1','--port','5187','--strictPort'],{cwd:SOURCE,stdio:'ignore',windowsHide:true});for(let i=0;i<80;i++){try{await fetch(BASE);break;}catch{await new Promise(r=>setTimeout(r,250));}}}
