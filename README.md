@@ -165,4 +165,9 @@ It stages reproducible board states through the existing development hooks, then
 Generated media and capture fingerprints live in `.preview/trailer/`; the authored composition, cast and soundtrack specification stay in `trailer/`.
 Capture reuse also fingerprints the production script and browser helpers. Changing preparation instructions refreshes the captures, favoring reproducibility over faster media-only rebuilds.
 The MP4 remains local until the owner asks to share or publish it.
+
+The alternate native Concat cut is `Convergence-Concat-Trailer.mp4`, also 90 seconds at 1080p/60 fps.
+Its editable project is [trailer/Concat-Project/](trailer/Concat-Project/), authored by [concat_build.py](trailer/concat_build.py).
+From the workspace root, `just video-concat make "Ross/Github/Convergence/trailer"` prepares missing assets, checks recorded footage, builds the native timeline, renders through Concat and verifies the MP4 before replacing this alternate output.
+Its card, title and music animations, transitions, nine dialogue clips and separate sound-effect tracks remain editable in Concat. FFmpeg masters the exported audio without re-encoding the picture. The original Remotion cut is retained.
 The cast ledger in [trailer/plan.json](trailer/plan.json) assigns each card to one continuous appearance and rejects repeats. [Trailer rules](trailer/Trailer-Rules.md) live only in the trailer folder; preparation no longer copies them to the Desktop. The source-footage check rejects low-fps or unverified recordings before rendering. Only the full-quality MP4 is delivered; the separate sharing copy, poster and their generation hook were removed.

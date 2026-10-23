@@ -8,6 +8,8 @@ __pycache__/
 .env.*
 # Local QA files, voice jobs and recordings; see CONTRIBUTING.md before cleanup.
 .preview/
+trailer/Concat-Project/concat.lock
+trailer/Concat-Project/cache/
 # In-progress atomic workbook exports; the finished workbook and sync record are tracked.
 materials/*.xlsx.sync.lock
 materials/*.xlsx.*.tmp
