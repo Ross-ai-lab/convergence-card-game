@@ -2456,6 +2456,1199 @@ function triggerRelicDiscoveries(
  * Runs a minion's effect. Returns TRUE when it suspended waiting for a target —
  * the caller must stop and let `choose_target` resume it.
  */
+/** What every effect starts from: the minion, where it stands and what it was told. */
+interface EffectStart {
+  state: GameState;
+  source: MinionInstance;
+  sourceSlot: number;
+  library: CardLibrary;
+  events: GameEvent[];
+  chosen?: ResolvedChoice;
+  player: PlayerState;
+  enemyId: PlayerId;
+  enemy: PlayerState;
+  label: string;
+}
+
+/** An effect's start plus whatever its targeting prompt resolved to. */
+interface EffectContext extends EffectStart {
+  picked: MinionInstance | null;
+  pickedSlot: TargetOption | null;
+  pickedHand: HandOption | null;
+  pickedValue: string | null;
+  pickedCoreOwner: PlayerId | null;
+}
+
+/** Returns true when the effect suspended to wait for a target. */
+type EffectHandler<Context> = (ctx: Context) => boolean | void;
+
+function effectDiscoverRelicSelf(ctx: EffectStart): boolean | void {
+  const { state, source, sourceSlot, library, events, chosen, label } = ctx;
+  if (chosen?.kind !== "option") {
+    const next = requestChoice(
+      state,
+      source,
+      {
+        kind: "option",
+        side: "friendly",
+        prompt: source.effectId === "discover_relic_self" ? "Discover 1 of 3 Relics" : "Choose 1 of 3 Relics",
+        values: discoverThree(state, relicsInDeck(state, source.owner, library)).map((relic) => ({ label: relic.name, value: relic.id })),
+      },
+      library,
+    );
+    if (next === "asked") return true;
+    if (next) return runEffect(state, source, sourceSlot, library, events, next);
+    return false;
+  }
+
+  const relic = takeRelicFromDeckToHand(state, source.owner, chosen.option.value, library, events);
+  if (relic) {
+    events.push(effectEvent(`${label} claims ${relic.name}.`, source));
+  }
+  return false;
+}
+function effectFrierenRelicDiscover(ctx: EffectStart): boolean | void {
+  const { state, source, sourceSlot, library, events, chosen } = ctx;
+  if (chosen?.kind !== "option") {
+    const next = requestChoice(
+      state,
+      source,
+      {
+        kind: "option",
+        side: "friendly",
+        prompt: "Discover 1 of 3 Relics",
+        values: discoverThree(state, relicsInDeck(state, source.owner, library)).map((relic) => ({ label: relic.name, value: relic.id })),
+      },
+      library,
+    );
+    if (next === "asked") return true;
+    if (next) return runEffect(state, source, sourceSlot, library, events, next);
+    return false;
+  }
+
+  const relic = takeRelicFromDeckToHand(state, source.owner, chosen.option.value, library, events);
+  if (relic) events.push(effectEvent(`${source.name} discovers ${relic.name}.`, source));
+  return false;
+}
+// Morpheus pauses twice: the pill chooses Good or Evil, then the chosen
+// alignment offers three random minions from the controller's deck to draw.
+function effectMorpheusChoice(ctx: EffectStart): boolean | void {
+  const { state, source, sourceSlot, library, events, chosen, label } = ctx;
+  if (!chosen || chosen.kind !== "option") {
+    const pill = requestChoice(state, source, TARGETED_EFFECTS.morpheus_choice!, library);
+    if (pill === "asked") return true;
+    if (!pill || pill.kind !== "option") return false;
+    return runEffect(state, source, sourceSlot, library, events, pill);
+  }
+
+  const alignment = chosen.option.value === "good" ? "Good" : chosen.option.value === "evil" ? "Evil" : null;
+  if (alignment) {
+    const offers = discoverAlignmentMinions(state, source.owner, alignment, library);
+    if (offers.length === 0) {
+      events.push(effectEvent(`${label} finds no ${alignment} minion in the deck.`, source));
+      return false;
+    }
+    const cardChoice = requestChoice(
+      state,
+      source,
+      {
+        kind: "option",
+        side: "friendly",
+        prompt: `Discover ${offers.length} ${alignment} minion${offers.length === 1 ? "" : "s"} from the deck`,
+        values: offers.map((card) => ({ label: card.name, value: card.id })),
+      },
+      library,
+    );
+    if (cardChoice === "asked") return true;
+    if (!cardChoice || cardChoice.kind !== "option") return false;
+    return runEffect(state, source, sourceSlot, library, events, cardChoice);
+  }
+
+  const card = library[chosen.option.value];
+  if (!isMinionCard(card) || (card.alignment !== "Good" && card.alignment !== "Evil")) return false;
+  if (!removeCardFromDrawPile(state, source.owner, card.id)) return false;
+  putCardInHand(state, source.owner, card.id, events);
+  events.push(effectEvent(`${label} draws ${card.name} from the deck.`, source));
+  return false;
+}
+// Batman resolves in two prompts: first the victim, then the gadget to use.
+// Keeping the victim in priorOptions makes the second prompt save/undo safe.
+function effectBatmanGadgetChoice(ctx: EffectStart): boolean | void {
+  const { state, source, sourceSlot, library, events, chosen, label } = ctx;
+  if (chosen?.kind === "option") {
+    const targetRef = chosen.priorOptions?.[0];
+    const target = targetRef ? state.players[targetRef.owner].board[targetRef.slot] : null;
+    if (!target) return false;
+    if (chosen.option.value === "freeze") {
+      applyFreeze(state, source, target, events);
+    } else if (chosen.option.value === "silence") {
+      if (!isSlotProtected(state, target) && canDisable(state, source.owner, target, "silence")) {
+        applySilence(target);
+        events.push(effectEvent(`${label} silences ${target.name}.`, source));
+      }
+    } else if (chosen.option.value === "weaken") {
+      setMinionAttack(target,target.atk-2);
+      events.push(effectEvent(`${label} gives ${target.name} -2 ATK.`, source));
+    }
+    return false;
+  }
+  const first = chosen?.kind === "board"
+    ? chosen
+    : requestChoice(state, source, { side: "enemy", prompt: "Choose an enemy minion for Batman" }, library);
+  if (first === "asked") return true;
+  if (!first || first.kind !== "board") return false;
+  const gadget = requestChoice(
+    state,
+    source,
+    {
+      kind: "option",
+      side: "friendly",
+      prompt: "Choose a gadget",
+      values: [
+        { label: "Freeze it", value: "freeze" },
+        { label: "Silence it", value: "silence" },
+        { label: "Give it -2 ATK", value: "weaken" },
+      ],
+    },
+    library,
+    1,
+    [first.target],
+  );
+  if (gadget === "asked") return true;
+  if (gadget) return runEffect(state, source, sourceSlot, library, events, gadget);
+  return false;
+}
+function effectChainAllMinions(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  for (const side of state.players) {
+    for (const minion of side.board) {
+      if (
+        minion &&
+        minion.instanceId !== source.instanceId &&
+        !isSlotProtected(state, minion) &&
+        canDisable(state, source.owner, minion, "chain")
+      ) {
+        applyChain(state, minion, events);
+      }
+    }
+  }
+  events.push(effectEvent(`${label} chains all other minions.`, source));
+  return false;
+}
+function effectFreeChainedShield(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  let freed = 0;
+  for (const minion of player.board) {
+    if (!minion || minion.chained <= 0) continue;
+    minion.chained = 0;
+    resolveChainGrowth(minion, events);
+    minion.sleeping = false;
+    minion.attacksUsed = 0;
+    minion.divineShield = true;
+    freed += 1;
+  }
+  events.push(effectEvent(`${label} frees ${freed} Chained friendly minion${freed === 1 ? "" : "s"}.`, source));
+  return false;
+}
+function effectFloweySaveLoad(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  source.savedCoreHealth = player.health;
+  events.push(effectEvent(`${label} saves the core at ${player.health} HP.`, source));
+  return false;
+}
+function effectAladdinWish(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, player, label, pickedValue } = ctx;
+  // The wish itself is logged, not just its consequence. Watching the
+  // opponent's lamp resolve used to show only the outcome, so a summon out of
+  // the deck and a wish for a summon were the same two lines with nothing
+  // saying a wish had been made at all.
+  const wish =
+    pickedValue === "hero_shield"
+      ? "a shield for the core"
+      : pickedValue === "summon_3"
+        ? "a 3-mana ally"
+        : "an Relic";
+  events.push(effectEvent(`${label} wishes for ${wish}.`, source));
+  if (pickedValue === "hero_shield") {
+    player.heroDivineShield = true;
+    events.push(effectEvent(`${label} gives ${player.name}'s core Divine Shield.`, source));
+  } else if (pickedValue === "summon_3") {
+    summonRandomCostFromDeck(state, source.owner, 3, library, events);
+  } else if (pickedValue === "random_relic") {
+    grantRandomRelic(state, source.owner, source, library, events);
+  }
+  return false;
+}
+function effectRebirthFriendlyDead(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, player, label } = ctx;
+  const deadMinions = player.deadMinions ?? [];
+  const slot = findEmptySlot(state, source.owner);
+  const candidates = deadMinions.flatMap((cardId, index) => {
+    const card = library[cardId];
+    return isMinionCard(card) ? [{ cardId, index, card }] : [];
+  });
+  if (slot >= 0 && candidates.length > 0) {
+    const chosen = candidates[rollInt(state, candidates.length)];
+    if (!chosen) return false;
+    deadMinions.splice(chosen.index, 1);
+    const originalOwner = player.deadMinionOwners?.splice(chosen.index, 1)[0];
+    const discardIndex = state.discard.indexOf(chosen.cardId);
+    if (discardIndex >= 0) state.discard.splice(discardIndex, 1);
+    const reborn = createMinion(chosen.card, source.owner, state);
+    if (originalOwner !== undefined) reborn.originalOwner = originalOwner;
+    reborn.suppressArrivalTheme = true;
+    player.board[slot] = reborn;
+    events.push(effectEvent(`${label} Rebirths ${reborn.name}.`, source));
+  }
+  return false;
+}
+function effectReplaceSameCostRandom(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, picked } = ctx;
+  if (picked && blockedByDominionAuthority(state, source, picked.owner)) {
+    events.push(effectEvent(`${picked.name} is protected by Dominion Authority.`, picked));
+  } else if (picked) {
+    replaceWithRandomSameCost(state, picked, library, events);
+  }
+  return false;
+}
+function effectStasisEnemy(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, picked, pickedSlot } = ctx;
+  if (picked && pickedSlot && !isUntargetable(state, picked)) {
+    state.players[picked.owner].board[pickedSlot.slot] = null;
+    (state.stasis ??= []).push({
+      minion: picked,
+      owner: picked.owner,
+      slot: pickedSlot.slot,
+      // turnNumber advances once per player's turn, so two FULL turns is four
+      // steps, not two — the same arithmetic the pocket room spells out below.
+      // At +2 the victim missed a single turn while the card printed 2 turns.
+      returnAtTurn: state.turnNumber + 4,
+      sourceName: source.name,
+    });
+    events.push({
+      kind: "effect",
+      text: `${label} puts ${picked.name} into stasis for two turns.`,
+      player: source.owner,
+      instanceId: picked.instanceId,
+      motion: "stasis",
+    });
+  } else if (picked) {
+    events.push(effectEvent(`${picked.name} resists stasis.`, picked));
+  }
+  return false;
+}
+function effectDarkDimensionBanish(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, picked, pickedSlot } = ctx;
+  if (picked && pickedSlot) {
+    state.players[picked.owner].board[pickedSlot.slot] = null;
+    (state.darkDimension ??= []).push({
+      minion: picked,
+      owner: picked.owner,
+      slot: pickedSlot.slot,
+      sourceInstanceId: source.instanceId,
+      sourceName: source.name,
+    });
+    events.push({
+      kind: "effect",
+      text: `${label} banishes ${picked.name} to the Dark Dimension until ${source.name} dies.`,
+      player: source.owner,
+      instanceId: picked.instanceId,
+      motion: "stasis",
+    });
+  }
+  return false;
+}
+function effectVaderChainOrDestroy(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, picked, pickedSlot } = ctx;
+  if (picked && pickedSlot) {
+    if (hasDumbledoreProtection(state, picked)) {
+      events.push(effectEvent(`${picked.name} resists Darth Vader's chain.`, picked));
+    } else if (!isSlotProtected(state, picked) && canDisable(state, source.owner, picked, "chain")) {
+      setMinionAttack(picked,1);
+      applyChain(state, picked, events);
+      events.push(effectEvent(`${label} sets ${picked.name}'s ATK to 1 and chains it.`, source));
+    } else {
+      events.push(effectEvent(`${picked.name} resists Darth Vader's chain.`, picked));
+    }
+  }
+  return false;
+}
+// Rimuru combines a one-shot sacrifice with a persistent growth effect.
+// It asks only when a legal victim exists; the ongoing half still attaches
+// when Tempest enters an otherwise empty board.
+function effectRimuruTempest(ctx: EffectContext): boolean | void {
+  const { state, source, sourceSlot, library, events, chosen, label } = ctx;
+  if (!chosen) {
+    const next = requestChoice(state, source, { side: "any", prompt: "Destroy a minion and gain its stats" }, library);
+    if (next === "asked") return true;
+    if (next) return runEffect(state, source, sourceSlot, library, events, next);
+  }
+  const target = chosen?.kind === "board" ? state.players[chosen.target.owner].board[chosen.target.slot] : null;
+  if (target) {
+    const gainedAtk = target.atk;
+    const gainedHp = target.hp;
+    destroyInstance(state, target.owner, target.instanceId, events, `${source.name} destroys ${target.name}`);
+    buffMinion(source, gainedAtk, gainedHp);
+    events.push(effectEvent(`${label} gains ${gainedAtk}/${gainedHp} from ${target.name}.`, source));
+  }
+  if (!source.gainedEffects.some((effect) => effect.effectId === "rimuru_tempest_growth")) {
+    source.gainedEffects.push({ effectId: "rimuru_tempest_growth", timing: "ongoing", text: "Ongoing: Gain +1/+1" });
+  }
+  source.effectId = "none";
+  source.effectTiming = "ongoing";
+}
+function effectCopyMinionEffects(ctx: EffectContext): boolean | void {
+  const { source, events, picked } = ctx;
+  if (picked) copyMinionEffects(source, picked, events);
+}
+function effectNeutralDoubleAtkHp1(ctx: EffectContext): boolean | void {
+  const { source, events, label, picked } = ctx;
+  if (picked) {
+    picked.atk *= 2;
+    setMinionHealth(picked,1,1);
+    events.push(effectEvent(`${label} doubles ${picked.name}'s ATK and leaves it at 1 HP.`, source));
+  }
+}
+function effectStrangeBargain(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, pickedValue } = ctx;
+  const opponentPlayer = state.players[opponent(source.owner)];
+  if (pickedValue === "core_hp") {
+    // Through `dealCoreDamage`, like every other core hit in the game. It used
+    // to subtract from `health` directly, which was the one path in the engine
+    // that walked past Aladdin's core Divine Shield — a shield the player had
+    // paid a card for and could watch fail to do anything.
+    if (dealCoreDamage(state, opponentPlayer.id, 10, events, source)) {
+      events.push(effectEvent(`${label} costs ${opponentPlayer.name} 10 Core HP.`, source));
+    }
+  } else if (pickedValue === "random_minion") {
+    destroyRandomMinion(state, opponentPlayer.id, events, `${source.name}'s bargain claims a random minion`);
+  } else if (pickedValue === "mana") {
+    opponentPlayer.manaPenaltyNextTurn = Math.max(opponentPlayer.manaPenaltyNextTurn ?? 0, 5);
+    events.push(effectEvent(`${label} removes 5 mana from ${opponentPlayer.name}'s next turn.`, source));
+  }
+}
+function effectDeathStarMark(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, picked, pickedCoreOwner } = ctx;
+  // It swings like anything else. The Battlecry used to spend its attack, so a
+  // Death Star handed Charge was silently held back — a rule the card stopped
+  // printing, and one nothing else in the roster has.
+  if (pickedCoreOwner !== null) {
+    source.deathStarTarget = { kind: "core", owner: pickedCoreOwner, resolveAtTurn: state.turnNumber + 2 };
+    events.push(effectEvent(`${label} marks the enemy core.`, source));
+  } else if (picked) {
+    source.deathStarTarget = {
+      kind: "minion",
+      owner: picked.owner,
+      instanceId: picked.instanceId,
+      resolveAtTurn: state.turnNumber + 2,
+    };
+    events.push(effectEvent(`${label} marks ${picked.name}.`, source));
+  }
+}
+function effectKnovPocketRoom(ctx: EffectContext): boolean | void {
+  const { state, source, sourceSlot, library, events, chosen, label, pickedSlot } = ctx;
+  const firstChoice = chosen?.priorOptions?.[0] ?? pickedSlot;
+  if ((chosen?.step ?? 0) === 0) {
+    if (!firstChoice) return false;
+    const next = requestChoice(
+      state,
+      source,
+      { side: "enemy", prompt: "Choose an enemy minion for the pocket room" },
+      library,
+      1,
+      [firstChoice],
+    );
+    if (next === "asked") return true;
+    if (next) return runEffect(state, source, sourceSlot, library, events, next);
+    return false;
+  }
+  const enemyChoice = pickedSlot;
+  if (firstChoice && enemyChoice) {
+    const friendly = state.players[firstChoice.owner].board[firstChoice.slot];
+    const enemyMinion = state.players[enemyChoice.owner].board[enemyChoice.slot];
+    // The two picks must be DIFFERENT minions. Under random play they can both
+    // resolve to the same one, and the release below then puts a single
+    // instance into two slots — the `instance <id> is on the board twice`
+    // breach the balance gate reported on 18 August 2026. Replay it with
+    // `npx tsx scripts/find-duplicate-instance.mts sim-fuzz-46 random,bot`.
+    // The printed rule is "a friendly and an enemy", so one minion is never a
+    // legal room. Refusing costs the controller the Battlecry and leaves the
+    // board untouched, which is far better than a corrupt duel.
+    const sameMinion = Boolean(friendly && enemyMinion && friendly.instanceId === enemyMinion.instanceId);
+    if (sameMinion) {
+      events.push(effectEvent(`${label} cannot open a pocket room around a single minion.`, source));
+    }
+    if (friendly && enemyMinion && !sameMinion) {
+      state.players[friendly.owner].board[firstChoice.slot] = null;
+      state.players[enemyMinion.owner].board[enemyChoice.slot] = null;
+      (state.pocketRooms ??= []).push({
+        owner: source.owner,
+        friendly,
+        friendlySlot: firstChoice.slot,
+        enemy: enemyMinion,
+        enemySlot: enemyChoice.slot,
+        // turnNumber advances once at the start of each player's turn. Two
+        // full turns therefore span four counter increments, not two.
+        returnAtTurn: state.turnNumber + 4,
+      });
+      events.push(effectEvent(`${label} opens a pocket room for ${friendly.name} and ${enemyMinion.name}.`, source));
+    }
+  }
+}
+function effectMeleoronProtectAlly(ctx: EffectContext): boolean | void {
+  const { source, events, label, picked } = ctx;
+  if (picked) {
+    picked.protectedByMeleoron = source.instanceId;
+    events.push(effectEvent(`${label} hides ${picked.name} from every target.`, source));
+  }
+}
+function effectMobAscend(ctx: EffectContext): boolean | void {
+  const { state, source, events, player, label } = ctx;
+  const allies = friendlyOthers(player, source);
+  if (allies.length >= 2) {
+    returnMinionsToHand(state, player.id, allies, events);
+    for(const bonus of source.auraBonuses??[]){bonus.atk=0;bonus.hp=0;bonus.spentAtk=0;bonus.suppressedHp=0;}
+    source.atk = 10;
+    source.maxHp = 10;
+    source.hp = 10;
+    events.push(effectEvent(`${label} releases its power and ascends to 10/10.`, source));
+  }
+}
+function effectRandomAttacksNextTurn(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  for (const side of state.players) {
+    side.randomAttacksFromTurn = state.turnNumber + 1;
+    side.randomAttacksUntilTurn = state.turnNumber + 1;
+  }
+  events.push(effectEvent(`${label} fills the next turn with random attacks.`, source));
+}
+function effectRickReturnAll(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  returnAllMinionsToHand(state, events, source.instanceId, source.owner);
+  events.push(effectEvent(`${label} sends every other minion back to its owner's hand.`, source));
+}
+function effectSummonSins(ctx: EffectContext): boolean | void {
+  const { state, source, events } = ctx;
+  summonSins(state, source, events);
+}
+function effectNarutoShadowClones(ctx: EffectContext): boolean | void {
+  const { state, source, events } = ctx;
+  summonShadowClones(state, source, events);
+}
+function effectStarDestroyerTieFighters(ctx: EffectContext): boolean | void {
+  const { state, source, events } = ctx;
+  summonTieFighters(state, source, events);
+}
+function effectSummonMargit(ctx: EffectContext): boolean | void {
+  const { state, source, events, player, label } = ctx;
+  const slot = findEmptySlot(state, source.owner);
+  if (slot >= 0) {
+    const summoned = createMinion(tokenCard("token:margit"), source.owner, state);
+    summoned.suppressArrivalTheme = true;
+    player.board[slot] = summoned;
+    events.push(effectEvent(`${label} summons Margit the Fell Omen (1/1 with Taunt).`, source));
+  }
+}
+function effectChaosRandomSummon(ctx: EffectContext): boolean | void {
+  const { state, source, library, events } = ctx;
+  summonRandomMinionFromDeck(state, source, library, events);
+}
+function effectHeroicRelics(ctx: EffectContext): boolean | void {
+  const { state, source, library, events } = ctx;
+  grantRandomRelicsToBoard(state, source, library, events);
+}
+function effectEquipRandomRelic(ctx: EffectContext): boolean | void {
+  const { state, source, library, events } = ctx;
+  equipRandomRelic(state, source, library, events);
+}
+function effectDrawCard(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  drawDirect(state, source.owner, 1, events);
+  events.push(effectEvent(`${label} draws a card.`, source));
+}
+function effectDrawRelic(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, label } = ctx;
+  // A random relic, not a choice. Gol D. Roger and Indiana Jones already offer
+  // the pick-one-of-three version, and the house spirit is not a treasure
+  // hunter — it turns up with something useful and no ceremony.
+  //
+  // The randomness runs through the seeded RNG like everything else, never
+  // Math.random, so a duel replays identically from its seed.
+  const available = relicsInDeck(state, source.owner, library);
+  if (available.length) {
+    const choice = available[rollInt(state, available.length)];
+    const relic = takeRelicFromDeckToHand(state, source.owner, choice.id, library, events);
+    if (relic) events.push(effectEvent(`${label} turns up ${relic.name}.`, source));
+  } else {
+    events.push(effectEvent(`${label} finds no relic left.`, source));
+  }
+}
+function effectWallOfFleshGrind(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  damageAllEnemies(state, source, 1, events);
+  events.push(effectEvent(`${label} grinds all enemy minions for 1.`, source));
+}
+function effectRagnarosOngoingBurn(ctx: EffectContext): boolean | void {
+  const { state, source, events, enemyId, label } = ctx;
+  const target = randomEnemyMinion(state, source);
+  const targetSlot = target ? slotOf(state, target) : -1;
+  if (target && targetSlot >= 0) {
+    dealMinionDamage(state, target.owner, targetSlot, 3, source, events, true);
+  } else if (dealCoreDamage(state, enemyId, 3, events, source)) {
+    events.push(effectEvent(`${label} burns the enemy core for 3 damage.`, source));
+  }
+}
+function effectDamageEnemy1(ctx: EffectContext): boolean | void {
+  const { state, source, events, picked } = ctx;
+  const targetSlot = slotOf(state, picked);
+  if (picked && targetSlot >= 0) dealMinionDamage(state, picked.owner, targetSlot, 1, source, events, true);
+}
+function effectAoeDamage3(ctx: EffectContext): boolean | void {
+  const { state, source, events } = ctx;
+  damageAllEnemies(state, source, 3, events);
+}
+function effectTimeBombDestroyAll(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  for (const owner of [0, 1] as PlayerId[]) {
+    for (let slot = 0; slot < boardSize; slot += 1) {
+      if (state.players[owner].board[slot]) {
+        destroyAtSlot(state, owner, slot, events, `${source.name} destroys all minions`, null, false);
+      }
+    }
+  }
+  events.push(effectEvent(`${label} destroys ALL minions.`, source));
+}
+function effectGainDivineShield(ctx: EffectContext): boolean | void {
+  const { source, events, label } = ctx;
+  source.divineShield = true;
+  events.push(effectEvent(`${label} gains Divine Shield.`, source));
+}
+function effectLightYagamiNatureKill(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, picked } = ctx;
+  const slot = picked ? slotOf(state, picked) : -1;
+  if (picked && slot >= 0) {
+    destroyAtSlot(state, picked.owner, slot, events, `${label} writes down ${picked.name}`, source);
+  }
+}
+function effectAntiGoodGrow(ctx: EffectContext): boolean | void {
+  const { source, events, enemy, label } = ctx;
+  const count = enemy.board.filter((minion) => minion?.alignment === "Good").length;
+  if (count > 0) {
+    // +2/+2 per Good enemy, down from +3/+2 (pass 4): 60.3% vs a 45.4%
+    // bracket. This is a COMPOUNDING engine, not a recalculated aura — every
+    // turn's growth is added permanently and survives the Good minions dying.
+    // Good is ~35% of the roster, so a full enemy board averaged +5/+3 a turn,
+    // for ever, on a card whose body is far below its tier.
+    buffMinion(source, count * 2, count * 2);
+    events.push(effectEvent(`${label} grows against Good enemies.`, source));
+  }
+}
+function effectProtectSlot(ctx: EffectContext): boolean | void {
+  const { state, source, events, pickedSlot } = ctx;
+  if (pickedSlot) layAura(state, pickedSlot, "slot_protected", source, events);
+}
+function effectSnapBalance(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  // Thanos never targets himself. The printed body is one of the eligible
+  // minions on the board, but the source must survive its own Battlecry.
+  const eligible = ([0, 1] as PlayerId[]).flatMap((owner) =>
+    state.players[owner].board
+      .map((minion, slot) => ({ owner, slot, minion }))
+      .filter(({ minion }) => minion && minion.instanceId !== source.instanceId && !isUntargetable(state, minion)),
+  );
+  const destroyCount = Math.floor(eligible.length / 2);
+  for (let i = 0; i < destroyCount; i += 1) {
+    const remaining = ([0, 1] as PlayerId[]).flatMap((owner) =>
+      state.players[owner].board
+        .map((minion, slot) => ({ owner, slot, minion }))
+        .filter(({ minion }) => minion && minion.instanceId !== source.instanceId && !isUntargetable(state, minion)),
+    );
+    if (remaining.length === 0) break;
+    const target = remaining[rollInt(state, remaining.length)];
+    if (target?.minion) {
+      destroyAtSlot(state, target.owner, target.slot, events, `${label} reduces the board: ${target.minion.name}`, source);
+    }
+  }
+  events.push(effectEvent(`${label} destroys ${destroyCount} random minion${destroyCount === 1 ? "" : "s"} to reduce the board by half.`, source));
+}
+function effectFreezeAndWeaken(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, picked } = ctx;
+  const target = picked;
+  if (target) {
+    applyFreeze(state, source, target, events);
+    setMinionAttack(target,Math.ceil(target.atk/2));
+    events.push(effectEvent(`${label} halves ${target.name}'s ATK.`, source));
+  }
+}
+function effectSetHp1(ctx: EffectContext): boolean | void {
+  const { source, events, label, picked } = ctx;
+  const target = picked;
+  if (target) {
+    target.hp = 1;
+    events.push(effectEvent(`${label} sets ${target.name}'s HP to 1.`, source));
+  }
+}
+function effectSetAllEnemyHp1(ctx: EffectContext): boolean | void {
+  const { source, events, enemy, label } = ctx;
+  let affected = 0;
+  for (const minion of enemy.board) {
+    if (!minion) continue;
+    minion.hp = 1;
+    affected += 1;
+  }
+  events.push(effectEvent(`${label} sets ${affected} enemy minion${affected === 1 ? "'s" : "s'"} HP to 1.`, source));
+}
+function effectDiscoverRandomKeywordMinion(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, label, pickedValue } = ctx;
+  // A real Discover now. The card has always printed "Discover ... Draw one"
+  // while the engine simply took one at random, so the choice it promised
+  // never reached the player.
+  const card = pickedValue ? library[pickedValue] : undefined;
+  if (pickedValue && isMinionCard(card) && removeCardFromDrawPile(state, source.owner, pickedValue)) {
+    putCardInHand(state, source.owner, pickedValue, events);
+    events.push(effectEvent(`${label} discovers ${card.name}.`, source));
+  }
+}
+function effectCopyMinionToHand(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, label, picked } = ctx;
+  if (picked) {
+    const card = library[picked.cardId];
+    if (isMinionCard(card)) {
+      putCardInHand(state, source.owner, card.id, events);
+      events.push(effectEvent(`${label} puts a copy of ${picked.name} into your hand.`, source));
+    }
+  }
+}
+function effectCopyPassive(ctx: EffectContext): boolean | void {
+  const { source, events, player, enemy, label } = ctx;
+  const copied: string[] = [];
+  for (const donor of player.board) {
+    if (!donor || donor.instanceId === source.instanceId || donor.silenced) continue;
+    const effect = persistentEffects(donor).find(
+      (candidate) => !source.gainedEffects.some((existing) => existing.effectId === candidate.effectId),
+    );
+    if (!effect) continue;
+    source.gainedEffects.push({ ...effect });
+    copied.push(donor.name);
+    break;
+  }
+  for (const donor of enemy.board) {
+    if (!donor || donor.silenced) continue;
+    const effect = persistentEffects(donor).find(
+      (candidate) => !source.gainedEffects.some((existing) => existing.effectId === candidate.effectId),
+    );
+    if (!effect) continue;
+    source.gainedEffects.push({ ...effect });
+    copied.push(donor.name);
+    break;
+  }
+  events.push(effectEvent(`${label} copies ${copied.length} persistent effects.`, source));
+}
+function effectRimuruTempestGrowth(ctx: EffectContext): boolean | void {
+  const { source, events, label } = ctx;
+  buffMinion(source, 1, 1);
+  events.push(effectEvent(`${label} grows +1/+1.`, source));
+}
+function effectSelfBuff2(ctx: EffectContext): boolean | void {
+  const { source, events, label } = ctx;
+  buffMinion(source, 2, 2);
+  events.push(effectEvent(`${label} grows +2/+2.`, source));
+}
+function effectYodaLowestAtkBuff(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  const target = player.board
+    .filter((minion): minion is MinionInstance => Boolean(minion))
+    .sort((left, right) => left.atk - right.atk || left.playOrder - right.playOrder)[0];
+  if (target) {
+    buffMinion(target, 2, 2);
+    events.push(effectEvent(`${label} empowers ${target.name}, the lowest-ATK ally.`, source));
+  }
+}
+function effectSelfAtk3(ctx: EffectContext): boolean | void {
+  const { source, events, label } = ctx;
+  source.atk += 3;
+  events.push(effectEvent(`${label} gains +3 ATK.`, source));
+}
+function effectHeal5(ctx: EffectContext): boolean | void {
+  const { source, events, label } = ctx;
+  source.hp = Math.min(source.maxHp, source.hp + 5);
+  events.push(effectEvent(`${label} heals 5 HP.`, source));
+}
+function effectAvatarAangAwakened(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  for (const minion of player.board) if (minion) minion.hp = minion.maxHp;
+  events.push(effectEvent(`${label} restores all friendly minions.`, source));
+}
+function effectDiscoverTechCard(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, label, pickedValue } = ctx;
+  const card = pickedValue ? library[pickedValue] : undefined;
+  if (pickedValue && isMinionCard(card) && card.camp === "Tech" && removeCardFromDrawPile(state, source.owner, pickedValue)) {
+    putCardInHand(state, source.owner, pickedValue, events);
+    events.push(effectEvent(`${label} draws ${card.name}.`, source));
+  }
+}
+function effectHealSelfFull(ctx: EffectContext): boolean | void {
+  const { source, events, label } = ctx;
+  source.hp = source.maxHp;
+  events.push(effectEvent(`${label} fully heals itself.`, source));
+}
+function effectAoeAll1(ctx: EffectContext): boolean | void {
+  const { state, source, events } = ctx;
+  damageAllOther(state, source, 1, events);
+}
+function effectAoeAll2(ctx: EffectContext): boolean | void {
+  const { state, source, events } = ctx;
+  damageAllOther(state, source, 2, events);
+}
+function effectAoeAll4(ctx: EffectContext): boolean | void {
+  const { state, source, events } = ctx;
+  damageAllOther(state, source, 4, events);
+}
+function effectDestroyEnemyTaunt(ctx: EffectContext): boolean | void {
+  const { state, source, events, picked } = ctx;
+  destroyPicked(state, source, picked, "destroys", events);
+}
+function effectGodrickGraft(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, picked } = ctx;
+  if (picked) {
+    const gainedAtk = picked.atk;
+    const gainedHp = picked.hp;
+    const gainedEffects = copyPersistentMinionTraits(source, picked);
+    destroyInstance(state, picked.owner, picked.instanceId, events, `${source.name} kills ${picked.name} for grafting`);
+    buffMinion(source, gainedAtk, gainedHp);
+    source.effectId = "none";
+    source.effectTiming = source.gainedEffects.some((effect) => effect.timing === "ongoing")
+      ? "ongoing"
+      : source.gainedEffects.some((effect) => effect.timing === "passive")
+        ? "passive"
+        : "none";
+    events.push(
+      effectEvent(
+        `${label} gains ${gainedAtk}/${gainedHp}${gainedEffects ? " and the minion's effects" : ""}.`,
+        source,
+      ),
+    );
+  }
+}
+function effectDestroyDamagedEnemy(ctx: EffectContext): boolean | void {
+  const { state, source, events, picked } = ctx;
+  destroyPicked(state, source, picked, "destroys a wounded enemy", events);
+}
+function effectDestroyAllDamagedEnemies(ctx: EffectContext): boolean | void {
+  const { state, source, events, enemyId, enemy, label } = ctx;
+  let destroyed = 0;
+  for (let slot = 0; slot < boardSize; slot += 1) {
+    const minion = enemy.board[slot];
+    // This is a direct destroy, not attack damage. Evade belongs to the
+    // combat-damage path and must never make a wounded minion survive this.
+    if (!minion || minion.hp >= minion.maxHp || isUntargetable(state, minion)) continue;
+    destroyAtSlot(state, enemyId, slot, events, `${source.name} kills ${minion.name}`);
+    destroyed += 1;
+  }
+  if (destroyed > 0) events.push(effectEvent(`${label} kills all damaged enemy minions.`, source));
+}
+function effectConsumeTech4Hp(ctx: EffectContext): boolean | void {
+  const { state, source, events, picked } = ctx;
+  if (picked) consumeEnemyMinion(state, source, picked, events);
+}
+function effectDevourFriendly(ctx: EffectContext): boolean | void {
+  const { state, source, events, picked } = ctx;
+  const prey = picked;
+  if (prey) {
+    buffMinion(source, prey.atk, prey.hp);
+    destroyInstance(state, source.owner, prey.instanceId, events, `${source.name} consumes ${prey.name}`);
+  }
+}
+function effectFreezeAndSilenceEnemy(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, picked } = ctx;
+  if (picked && !isSlotProtected(state, picked)) {
+    const canFreeze = canDisable(state, source.owner, picked, "freeze");
+    const canSilence = canDisable(state, source.owner, picked, "silence");
+    if (canFreeze) {
+      picked.frozen = true;
+      picked.attacksUsed = maxAttacks(picked);
+    }
+    if (canSilence) applySilence(picked);
+    if (canFreeze || canSilence) {
+      const statuses = [canFreeze ? "freezes" : "", canSilence ? "silences" : ""].filter(Boolean).join(" and ");
+      events.push(effectEvent(`${label} ${statuses} ${picked.name}.`, source));
+    } else {
+      events.push(effectEvent(`${picked.name} resists Kiritsugu's effect.`, picked));
+    }
+  } else if (picked) {
+    events.push(effectEvent(`${picked.name} resists Kiritsugu's effect.`, picked));
+  }
+}
+function effectFreezeAllEnemies(ctx: EffectContext): boolean | void {
+  const { state, source, events, enemy } = ctx;
+  for (const minion of enemy.board) {
+    if (minion) applyFreeze(state, source, minion, events);
+  }
+}
+function effectSilenceEnemy(ctx: EffectContext): boolean | void {
+  const { state, source, events, picked } = ctx;
+  if (picked && !isSlotProtected(state, picked) && canDisable(state, source.owner, picked, "silence")) {
+    applySilence(picked);
+    events.push(effectEvent(`${source.name} silences ${picked.name}.`, source));
+  }
+}
+function effectBuffEvilAlly2(ctx: EffectContext): boolean | void {
+  const { source, events, label, picked } = ctx;
+  if (picked) {
+    buffMinion(picked, 2, 2);
+    events.push(effectEvent(`${label} empowers ${picked.name}.`, source));
+  }
+}
+function effectBuffAllGood2(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  buffAllAllies(player, source, (minion) => minion.alignment === "Good", 2, 2, true);
+  events.push(effectEvent(`${label} empowers all Good allies.`, source));
+}
+function effectBuffAllMagic21(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  buffAllAllies(player, source, (minion) => receivesCampBuff(minion, "Magic"), 2, 1, false);
+  events.push(effectEvent(`${label} empowers Magic allies.`, source));
+}
+function effectBuffAllTech21(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  buffAllAllies(player, source, (minion) => receivesCampBuff(minion, "Tech"), 2, 1, false);
+  events.push(effectEvent(`${label} empowers Tech allies.`, source));
+}
+function effectShieldAllFriendly(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  for (const minion of player.board) if (minion?.alignment === "Good") minion.divineShield = true;
+  events.push(effectEvent(`${label} shields the Good.`, source));
+}
+function effectDoubleOtherFriendlyAttack(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  const allies = friendlyOthers(player, source);
+  for (const ally of allies) ally.atk *= 2;
+  events.push(effectEvent(`${label} doubles the ATK of ${allies.length} other friendly minion${allies.length === 1 ? "" : "s"}.`, source));
+}
+function effectStealHandRelic(ctx: EffectContext): boolean | void {
+  const { state, source, events, enemy, pickedHand } = ctx;
+  if (pickedHand) stealCard(state, source, enemy, () => pickedHand.index, events);
+}
+function effectConsumeAllFriendlyTech(ctx: EffectContext): boolean | void {
+  const { state, source, events, player, label } = ctx;
+  const victims = player.board.filter(
+    (minion): minion is MinionInstance => Boolean(minion && minion.instanceId !== source.instanceId && minion.camp === "Tech"),
+  );
+  let consumed = 0;
+  let gainedEffects = 0;
+  for (const victim of victims) {
+    const gainedAtk = victim.atk;
+    const gainedHp = victim.hp;
+    buffMinion(source, gainedAtk, gainedHp);
+
+    if (hasKeyword(victim, "Taunt") && !hasKeyword(source, "Taunt")) source.keywords.push("Taunt");
+    if (victim.divineShield || hasKeyword(victim, "Divine Shield")) {
+      source.divineShield = true;
+      if (!hasKeyword(source, "Divine Shield")) source.keywords.push("Divine Shield");
+    }
+
+    const effects = [
+      ...(victim.effectId !== "none" && (victim.effectTiming === "passive" || victim.effectTiming === "ongoing" || victim.effectTiming === "onPlayAndOngoing")
+        ? [{ effectId: victim.effectId, timing: victim.effectTiming === "onPlayAndOngoing" ? "ongoing" : victim.effectTiming, text: victim.effect }]
+        : []),
+      ...victim.gainedEffects,
+    ];
+    for (const effect of effects) {
+      if ((effect.timing === "passive" || effect.timing === "ongoing") && effect.effectId !== "none" && !hasEffect(source, effect.effectId)) {
+        source.gainedEffects.push({ effectId: effect.effectId, timing: effect.timing, text: effect.text });
+        gainedEffects += 1;
+      }
+    }
+
+    destroyInstance(state, victim.owner, victim.instanceId, events, `${source.name} consumes ${victim.name}`);
+    consumed += 1;
+  }
+  if (source.gainedEffects.some((effect) => effect.timing === "ongoing")) source.effectTiming = "ongoing";
+  events.push(
+    effectEvent(
+      consumed === 0
+        ? `${label} finds no friendly Tech minion to consume.`
+        : `${label} consumes ${consumed} friendly Tech minion${consumed === 1 ? "" : "s"} and gains their stats${gainedEffects ? " and effects" : ""}.`,
+      source,
+    ),
+  );
+  source.effectId = "none";
+}
+function effectDiceBuff(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  // Halved (2026 balance pass). A full d6 every turn averaged +3.5/+3.5 and
+  // made Kite the single strongest card in the roster at 78% — the die is kept,
+  // because the roll is the card, but it now pays out 1-3 instead of 1-6.
+  const roll = Math.ceil(rollDie(state) / 2);
+  buffMinion(source, roll, roll);
+  events.push(effectEvent(`${label} rolls ${roll} for +${roll}/+${roll}.`, source));
+}
+function effectDoofCoinflip(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  if (coinFlip(state)) {
+    destroyInstance(state, source.owner, source.instanceId, events, `${label} loses the coin flip`);
+  } else {
+    source.atk *= 2;
+    source.hp *= 2;
+    source.maxHp *= 2;
+    events.push(effectEvent(`${label} wins the coin flip and doubles its stats.`, source));
+  }
+}
+function effectBounceFriendly(ctx: EffectContext): boolean | void {
+  const { state, source, events, player, label, picked } = ctx;
+  const target = picked;
+  const slot = slotOf(state, target);
+  if (target && slot >= 0) {
+    player.board[slot] = null;
+    discardAttachedRelics(state, target);
+    putCardInHand(state, player.id, target.cardId, events, target.instanceId);
+    events.push(effectEvent(`${label} returns ${target.name} to hand.`, source));
+  }
+}
+function effectAllyAtk1(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  if (friendlyOthers(player, source).length > 0) {
+    source.atk += 1;
+    events.push(effectEvent(`${label} fights better together.`, source));
+  }
+}
+function effectTauntAura(ctx: EffectContext): boolean | void {
+  const { source, events, player, label } = ctx;
+  for (const minion of friendlyOthers(player, source)) if (!hasKeyword(minion, "Taunt")) minion.keywords.push("Taunt");
+  events.push(effectEvent(`${label} rallies allies to the front.`, source));
+}
+function effectBuddhaPurify(ctx: EffectContext): boolean | void {
+  const { state, source, events, label } = ctx;
+  for (const owner of [0, 1] as PlayerId[]) {
+    for (const minion of state.players[owner].board) {
+      if (!minion) continue;
+      minion.alignment = "Good";
+      minion.chained = 0;
+      resolveChainGrowth(minion, events);
+      minion.frozen = false;
+      minion.thawPending = false;
+      minion.silenced = false;
+      minion.markedBy = null;
+      minion.markedForDeathAtTurn = null;
+    }
+  }
+  events.push(effectEvent(`${label} purifies the board: all minions are Good and lose their negative statuses.`, source));
+}
+function effectHashiraGoodVolley(ctx: EffectContext): boolean | void {
+  const { state, source, events, player, label } = ctx;
+  const damage = player.board.filter(minion => minion?.alignment === "Good").length;
+  damageAllEnemies(state, source, damage, events);
+  events.push(effectEvent(`${label} unleashes a coordinated strike for ${damage} damage to every enemy minion.`, source));
+}
+function effectStealAndEquipRelic(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, label, picked } = ctx;
+  if (picked && hasAnyRelic(picked) && hasFreeRelicSlot(source)) {
+    const relicIndex = firstRelicIndex(picked);
+    const stolen = relicAt(picked, relicIndex);
+    if (!stolen || !canEquipRelicToBearer(stolen, source)) return false;
+    unequipRelic(picked, relicIndex);
+    equipRelic(state, source, stolen, library, events);
+    events.push(effectEvent(`${label} takes ${stolen.name} from ${picked.name} and equips it.`, source));
+  }
+}
+function effectDestroyRelic(ctx: EffectContext): boolean | void {
+  const { state, source, events, label, picked } = ctx;
+  if (picked && hasAnyRelic(picked)) {
+    const relicIndex = firstRelicIndex(picked);
+    const lost = relicAt(picked, relicIndex);
+    if (!lost) return false;
+    unequipRelic(picked, relicIndex);
+    state.discard.push(lost.id);
+    events.push(effectEvent(`${label} destroys ${picked.name}'s ${lost.name}.`, source));
+  }
+}
+function effectMindControl2(ctx: EffectContext): boolean | void {
+  const { state, source, events, picked } = ctx;
+  if (picked) seizeMinion(state, source, picked, events);
+}
+function effectMotokoKusanagi(ctx: EffectContext): boolean | void {
+  const { state, source, events, picked } = ctx;
+  if (picked) seizeMinionTemporarily(state, source, picked, events);
+}
+function effectStealPassive(ctx: EffectContext): boolean | void {
+  const { source, events, label, picked } = ctx;
+  if (picked && picked.effectId !== "none") {
+    source.stolenPassiveFrom = picked.instanceId;
+    source.stolenPassiveText = picked.effect;
+    source.effectId = printedEffectId(picked);
+    source.effectTiming = "passive";
+    picked.effectId = "none";
+    picked.effectTiming = "none";
+    events.push(effectEvent(`${label} steals ${picked.name}'s passive.`, source));
+  }
+}
+function effectBounceFriendlyDiscount(ctx: EffectContext): boolean | void {
+  const { state, source, events, player, label, picked } = ctx;
+  const slot = slotOf(state, picked);
+  if (picked && slot >= 0) {
+    const cardId = picked.cardId;
+    player.board[slot] = null;
+    discardAttachedRelics(state, picked);
+    putCardInHand(state, source.owner, cardId, events, picked.instanceId);
+    player.costReductions[cardId] = (player.costReductions[cardId] ?? 0) + 5;
+    events.push(effectEvent(`${label} sends ${picked.name} home; it returns 5 cheaper.`, source));
+  }
+}
+function effectTransformRandomAlliesUp(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, player, label } = ctx;
+  // `player`, which is the CASTER's board, never `state.players[0]`. Worth
+  // stating because the bug reported against this card was that an opponent's
+  // Mask changed everybody's minions — and the way that reads on screen is
+  // every minion on the table turning over at once, which is also what a
+  // correct cast looks like from the wrong seat when both boards are full.
+  const targets = player.board.filter((minion): minion is MinionInstance => Boolean(minion));
+  const transformed = targets.reduce(
+    (count, target) => count + (transformMinionFromPool(state, source, target, 1, library, events) ? 1 : 0),
+    0,
+  );
+  events.push(effectEvent(`${label} transforms ${transformed} friendly minion${transformed === 1 ? "" : "s"}.`, source));
+}
+function effectDevolveEnemyMinions(ctx: EffectContext): boolean | void {
+  const { state, source, library, events, enemy, label } = ctx;
+  const targets = enemy.board.filter((minion): minion is MinionInstance => Boolean(minion));
+  let transformed = 0;
+  for (const target of targets) {
+    if (blockedByDominionAuthority(state, source, target.owner)) {
+      events.push(effectEvent(`${target.name} is protected by Dominion Authority.`, target));
+      continue;
+    }
+    if (isSlotProtected(state, target) || !canDisable(state, source.owner, target)) {
+      events.push(effectEvent(`${target.name} resists the devolution.`, target));
+      continue;
+    }
+    if (transformMinionFromPool(state, source, target, -1, library, events)) transformed += 1;
+  }
+  events.push(effectEvent(`${label} devolves ${transformed} enemy minion${transformed === 1 ? "" : "s"}.`, source));
+}
+function effectSetStatsChoice(ctx: EffectContext): boolean | void {
+  const { state, source, events, pickedSlot } = ctx;
+  if (pickedSlot) layAura(state, pickedSlot, "slot_stats_one", source, events);
+}
+function effectSlotRandomAttacks(ctx: EffectContext): boolean | void {
+  const { state, source, events, pickedSlot } = ctx;
+  const auraId: SlotAuraId =
+    source.effectId === "slot_random_attacks"
+      ? "random_attacks"
+      : source.effectId === "slot_permanent_chain"
+        ? "slot_chain"
+        : "slot_grow_1";
+  if (pickedSlot) layAura(state, pickedSlot, auraId, source, events);
+}
+
+/**
+ * Effects that run their own prompts before the shared targeting step: each one
+ * asks in stages, so the generic one-prompt resolution below does not fit them.
+ */
+const PROMPTED_EFFECTS: Partial<Record<EffectId, EffectHandler<EffectStart>>> = {
+  discover_relic_self: effectDiscoverRelicSelf,
+  choose_relic: effectDiscoverRelicSelf,
+  frieren_relic_discover: effectFrierenRelicDiscover,
+  morpheus_choice: effectMorpheusChoice,
+  batman_gadget_choice: effectBatmanGadgetChoice,
+};
+
+/** Every other effect, run after its TARGETED_EFFECTS prompt (if any) has an answer. */
+const EFFECT_HANDLERS: Partial<Record<EffectId, EffectHandler<EffectContext>>> = {
+  chain_all_minions: effectChainAllMinions,
+  free_chained_shield: effectFreeChainedShield,
+  flowey_save_load: effectFloweySaveLoad,
+  aladdin_wish: effectAladdinWish,
+  rebirth_friendly_dead: effectRebirthFriendlyDead,
+  replace_same_cost_random: effectReplaceSameCostRandom,
+  stasis_enemy: effectStasisEnemy,
+  dark_dimension_banish: effectDarkDimensionBanish,
+  vader_chain_or_destroy: effectVaderChainOrDestroy,
+  rimuru_tempest: effectRimuruTempest,
+  copy_minion_effects: effectCopyMinionEffects,
+  neutral_double_atk_hp_1: effectNeutralDoubleAtkHp1,
+  strange_bargain: effectStrangeBargain,
+  death_star_mark: effectDeathStarMark,
+  knov_pocket_room: effectKnovPocketRoom,
+  meleoron_protect_ally: effectMeleoronProtectAlly,
+  mob_ascend: effectMobAscend,
+  random_attacks_next_turn: effectRandomAttacksNextTurn,
+  rick_return_all: effectRickReturnAll,
+  summon_sins: effectSummonSins,
+  naruto_shadow_clones: effectNarutoShadowClones,
+  star_destroyer_tie_fighters: effectStarDestroyerTieFighters,
+  summon_margit: effectSummonMargit,
+  chaos_random_summon: effectChaosRandomSummon,
+  heroic_relics: effectHeroicRelics,
+  equip_random_relic: effectEquipRandomRelic,
+  draw_card: effectDrawCard,
+  draw_relic: effectDrawRelic,
+  wall_of_flesh_grind: effectWallOfFleshGrind,
+  ragnaros_ongoing_burn: effectRagnarosOngoingBurn,
+  damage_enemy_1: effectDamageEnemy1,
+  aoe_damage_3: effectAoeDamage3,
+  time_bomb_destroy_all: effectTimeBombDestroyAll,
+  gain_divine_shield: effectGainDivineShield,
+  light_yagami_nature_kill: effectLightYagamiNatureKill,
+  anti_good_grow: effectAntiGoodGrow,
+  protect_slot: effectProtectSlot,
+  snap_balance: effectSnapBalance,
+  freeze_and_weaken: effectFreezeAndWeaken,
+  set_hp_1: effectSetHp1,
+  set_all_enemy_hp_1: effectSetAllEnemyHp1,
+  discover_random_keyword_minion: effectDiscoverRandomKeywordMinion,
+  copy_minion_to_hand: effectCopyMinionToHand,
+  copy_passive: effectCopyPassive,
+  rimuru_tempest_growth: effectRimuruTempestGrowth,
+  self_buff_2: effectSelfBuff2,
+  yoda_lowest_atk_buff: effectYodaLowestAtkBuff,
+  self_atk_3: effectSelfAtk3,
+  heal_5: effectHeal5,
+  avatar_aang_awakened: effectAvatarAangAwakened,
+  discover_tech_card: effectDiscoverTechCard,
+  heal_self_full: effectHealSelfFull,
+  aoe_all_1: effectAoeAll1,
+  aoe_all_2: effectAoeAll2,
+  aoe_all_4: effectAoeAll4,
+  destroy_enemy_taunt: effectDestroyEnemyTaunt,
+  godrick_graft: effectGodrickGraft,
+  destroy_damaged_enemy: effectDestroyDamagedEnemy,
+  destroy_all_damaged_enemies: effectDestroyAllDamagedEnemies,
+  consume_tech_4_hp: effectConsumeTech4Hp,
+  consume_nature_4_hp: effectConsumeTech4Hp,
+  devour_friendly: effectDevourFriendly,
+  freeze_and_silence_enemy: effectFreezeAndSilenceEnemy,
+  freeze_all_enemies: effectFreezeAllEnemies,
+  silence_enemy: effectSilenceEnemy,
+  buff_evil_ally_2: effectBuffEvilAlly2,
+  buff_all_good_2: effectBuffAllGood2,
+  buff_all_magic_2_1: effectBuffAllMagic21,
+  buff_all_tech_2_1: effectBuffAllTech21,
+  shield_all_friendly: effectShieldAllFriendly,
+  double_other_friendly_attack: effectDoubleOtherFriendlyAttack,
+  steal_hand_relic: effectStealHandRelic,
+  consume_all_friendly_tech: effectConsumeAllFriendlyTech,
+  dice_buff: effectDiceBuff,
+  doof_coinflip: effectDoofCoinflip,
+  bounce_friendly: effectBounceFriendly,
+  ally_atk_1: effectAllyAtk1,
+  taunt_aura: effectTauntAura,
+  buddha_purify: effectBuddhaPurify,
+  hashira_good_volley: effectHashiraGoodVolley,
+  steal_and_equip_relic: effectStealAndEquipRelic,
+  destroy_relic: effectDestroyRelic,
+  mind_control_2: effectMindControl2,
+  mind_control_enemy: effectMindControl2,
+  motoko_kusanagi: effectMotokoKusanagi,
+  steal_passive: effectStealPassive,
+  bounce_friendly_discount: effectBounceFriendlyDiscount,
+  transform_random_allies_up: effectTransformRandomAlliesUp,
+  devolve_enemy_minions: effectDevolveEnemyMinions,
+  set_stats_choice: effectSetStatsChoice,
+  slot_random_attacks: effectSlotRandomAttacks,
+  slot_permanent_chain: effectSlotRandomAttacks,
+  slot_growth_1: effectSlotRandomAttacks,
+};
+
 function runEffect(
   state: GameState,
   source: MinionInstance,
@@ -2471,142 +3664,9 @@ function runEffect(
 
   traceEffect(source.effectId);
 
-  if (source.effectId === "discover_relic_self" || source.effectId === "choose_relic") {
-    if (chosen?.kind !== "option") {
-      const next = requestChoice(
-        state,
-        source,
-        {
-          kind: "option",
-          side: "friendly",
-          prompt: source.effectId === "discover_relic_self" ? "Discover 1 of 3 Relics" : "Choose 1 of 3 Relics",
-          values: discoverThree(state, relicsInDeck(state, source.owner, library)).map((relic) => ({ label: relic.name, value: relic.id })),
-        },
-        library,
-      );
-      if (next === "asked") return true;
-      if (next) return runEffect(state, source, sourceSlot, library, events, next);
-      return false;
-    }
-
-    const relic = takeRelicFromDeckToHand(state, source.owner, chosen.option.value, library, events);
-    if (relic) {
-      events.push(effectEvent(`${label} claims ${relic.name}.`, source));
-    }
-    return false;
-  }
-
-  if (source.effectId === "frieren_relic_discover") {
-    if (chosen?.kind !== "option") {
-      const next = requestChoice(
-        state,
-        source,
-        {
-          kind: "option",
-          side: "friendly",
-          prompt: "Discover 1 of 3 Relics",
-          values: discoverThree(state, relicsInDeck(state, source.owner, library)).map((relic) => ({ label: relic.name, value: relic.id })),
-        },
-        library,
-      );
-      if (next === "asked") return true;
-      if (next) return runEffect(state, source, sourceSlot, library, events, next);
-      return false;
-    }
-
-    const relic = takeRelicFromDeckToHand(state, source.owner, chosen.option.value, library, events);
-    if (relic) events.push(effectEvent(`${source.name} discovers ${relic.name}.`, source));
-    return false;
-  }
-
-  // Morpheus pauses twice: the pill chooses Good or Evil, then the chosen
-  // alignment offers three random minions from the controller's deck to draw.
-  if (source.effectId === "morpheus_choice") {
-    if (!chosen || chosen.kind !== "option") {
-      const pill = requestChoice(state, source, TARGETED_EFFECTS.morpheus_choice!, library);
-      if (pill === "asked") return true;
-      if (!pill || pill.kind !== "option") return false;
-      return runEffect(state, source, sourceSlot, library, events, pill);
-    }
-
-    const alignment = chosen.option.value === "good" ? "Good" : chosen.option.value === "evil" ? "Evil" : null;
-    if (alignment) {
-      const offers = discoverAlignmentMinions(state, source.owner, alignment, library);
-      if (offers.length === 0) {
-        events.push(effectEvent(`${label} finds no ${alignment} minion in the deck.`, source));
-        return false;
-      }
-      const cardChoice = requestChoice(
-        state,
-        source,
-        {
-          kind: "option",
-          side: "friendly",
-          prompt: `Discover ${offers.length} ${alignment} minion${offers.length === 1 ? "" : "s"} from the deck`,
-          values: offers.map((card) => ({ label: card.name, value: card.id })),
-        },
-        library,
-      );
-      if (cardChoice === "asked") return true;
-      if (!cardChoice || cardChoice.kind !== "option") return false;
-      return runEffect(state, source, sourceSlot, library, events, cardChoice);
-    }
-
-    const card = library[chosen.option.value];
-    if (!isMinionCard(card) || (card.alignment !== "Good" && card.alignment !== "Evil")) return false;
-    if (!removeCardFromDrawPile(state, source.owner, card.id)) return false;
-    putCardInHand(state, source.owner, card.id, events);
-    events.push(effectEvent(`${label} draws ${card.name} from the deck.`, source));
-    return false;
-  }
-
-
-  // Batman resolves in two prompts: first the victim, then the gadget to use.
-  // Keeping the victim in priorOptions makes the second prompt save/undo safe.
-  if (source.effectId === "batman_gadget_choice") {
-    if (chosen?.kind === "option") {
-      const targetRef = chosen.priorOptions?.[0];
-      const target = targetRef ? state.players[targetRef.owner].board[targetRef.slot] : null;
-      if (!target) return false;
-      if (chosen.option.value === "freeze") {
-        applyFreeze(state, source, target, events);
-      } else if (chosen.option.value === "silence") {
-        if (!isSlotProtected(state, target) && canDisable(state, source.owner, target, "silence")) {
-          applySilence(target);
-          events.push(effectEvent(`${label} silences ${target.name}.`, source));
-        }
-      } else if (chosen.option.value === "weaken") {
-        setMinionAttack(target,target.atk-2);
-        events.push(effectEvent(`${label} gives ${target.name} -2 ATK.`, source));
-      }
-      return false;
-    }
-    const first = chosen?.kind === "board"
-      ? chosen
-      : requestChoice(state, source, { side: "enemy", prompt: "Choose an enemy minion for Batman" }, library);
-    if (first === "asked") return true;
-    if (!first || first.kind !== "board") return false;
-    const gadget = requestChoice(
-      state,
-      source,
-      {
-        kind: "option",
-        side: "friendly",
-        prompt: "Choose a gadget",
-        values: [
-          { label: "Freeze it", value: "freeze" },
-          { label: "Silence it", value: "silence" },
-          { label: "Give it -2 ATK", value: "weaken" },
-        ],
-      },
-      library,
-      1,
-      [first.target],
-    );
-    if (gadget === "asked") return true;
-    if (gadget) return runEffect(state, source, sourceSlot, library, events, gadget);
-    return false;
-  }
+  const start: EffectStart = { state, source, sourceSlot, library, events, chosen, player, enemyId, enemy, label };
+  const prompted = PROMPTED_EFFECTS[source.effectId];
+  if (prompted) return prompted(start) === true;
 
   // Targeted effects resolve against picked / pickedHand / pickedValue.
   let picked: MinionInstance | null = null;
@@ -2635,758 +3695,10 @@ function runEffect(
     if (kind === "boardOrCore" && !picked && pickedCoreOwner === null) return false;
   }
 
-  if (source.effectId === "chain_all_minions") {
-    for (const side of state.players) {
-      for (const minion of side.board) {
-        if (
-          minion &&
-          minion.instanceId !== source.instanceId &&
-          !isSlotProtected(state, minion) &&
-          canDisable(state, source.owner, minion, "chain")
-        ) {
-          applyChain(state, minion, events);
-        }
-      }
-    }
-    events.push(effectEvent(`${label} chains all other minions.`, source));
-    return false;
-  } else if (source.effectId === "free_chained_shield") {
-    let freed = 0;
-    for (const minion of player.board) {
-      if (!minion || minion.chained <= 0) continue;
-      minion.chained = 0;
-      resolveChainGrowth(minion, events);
-      minion.sleeping = false;
-      minion.attacksUsed = 0;
-      minion.divineShield = true;
-      freed += 1;
-    }
-    events.push(effectEvent(`${label} frees ${freed} Chained friendly minion${freed === 1 ? "" : "s"}.`, source));
-    return false;
-  } else if (source.effectId === "flowey_save_load") {
-    source.savedCoreHealth = player.health;
-    events.push(effectEvent(`${label} saves the core at ${player.health} HP.`, source));
-    return false;
-  } else if (source.effectId === "aladdin_wish") {
-    // The wish itself is logged, not just its consequence. Watching the
-    // opponent's lamp resolve used to show only the outcome, so a summon out of
-    // the deck and a wish for a summon were the same two lines with nothing
-    // saying a wish had been made at all.
-    const wish =
-      pickedValue === "hero_shield"
-        ? "a shield for the core"
-        : pickedValue === "summon_3"
-          ? "a 3-mana ally"
-          : "an Relic";
-    events.push(effectEvent(`${label} wishes for ${wish}.`, source));
-    if (pickedValue === "hero_shield") {
-      player.heroDivineShield = true;
-      events.push(effectEvent(`${label} gives ${player.name}'s core Divine Shield.`, source));
-    } else if (pickedValue === "summon_3") {
-      summonRandomCostFromDeck(state, source.owner, 3, library, events);
-    } else if (pickedValue === "random_relic") {
-      grantRandomRelic(state, source.owner, source, library, events);
-    }
-    return false;
-  } else if (source.effectId === "rebirth_friendly_dead") {
-    const deadMinions = player.deadMinions ?? [];
-    const slot = findEmptySlot(state, source.owner);
-    const candidates = deadMinions.flatMap((cardId, index) => {
-      const card = library[cardId];
-      return isMinionCard(card) ? [{ cardId, index, card }] : [];
-    });
-    if (slot >= 0 && candidates.length > 0) {
-      const chosen = candidates[rollInt(state, candidates.length)];
-      if (!chosen) return false;
-      deadMinions.splice(chosen.index, 1);
-      const originalOwner = player.deadMinionOwners?.splice(chosen.index, 1)[0];
-      const discardIndex = state.discard.indexOf(chosen.cardId);
-      if (discardIndex >= 0) state.discard.splice(discardIndex, 1);
-      const reborn = createMinion(chosen.card, source.owner, state);
-      if (originalOwner !== undefined) reborn.originalOwner = originalOwner;
-      reborn.suppressArrivalTheme = true;
-      player.board[slot] = reborn;
-      events.push(effectEvent(`${label} Rebirths ${reborn.name}.`, source));
-    }
-    return false;
-  } else if (source.effectId === "replace_same_cost_random") {
-    if (picked && blockedByDominionAuthority(state, source, picked.owner)) {
-      events.push(effectEvent(`${picked.name} is protected by Dominion Authority.`, picked));
-    } else if (picked) {
-      replaceWithRandomSameCost(state, picked, library, events);
-    }
-    return false;
-  } else if (source.effectId === "stasis_enemy") {
-    if (picked && pickedSlot && !isUntargetable(state, picked)) {
-      state.players[picked.owner].board[pickedSlot.slot] = null;
-      (state.stasis ??= []).push({
-        minion: picked,
-        owner: picked.owner,
-        slot: pickedSlot.slot,
-        // turnNumber advances once per player's turn, so two FULL turns is four
-        // steps, not two — the same arithmetic the pocket room spells out below.
-        // At +2 the victim missed a single turn while the card printed 2 turns.
-        returnAtTurn: state.turnNumber + 4,
-        sourceName: source.name,
-      });
-      events.push({
-        kind: "effect",
-        text: `${label} puts ${picked.name} into stasis for two turns.`,
-        player: source.owner,
-        instanceId: picked.instanceId,
-        motion: "stasis",
-      });
-    } else if (picked) {
-      events.push(effectEvent(`${picked.name} resists stasis.`, picked));
-    }
-    return false;
-  } else if (source.effectId === "dark_dimension_banish") {
-    if (picked && pickedSlot) {
-      state.players[picked.owner].board[pickedSlot.slot] = null;
-      (state.darkDimension ??= []).push({
-        minion: picked,
-        owner: picked.owner,
-        slot: pickedSlot.slot,
-        sourceInstanceId: source.instanceId,
-        sourceName: source.name,
-      });
-      events.push({
-        kind: "effect",
-        text: `${label} banishes ${picked.name} to the Dark Dimension until ${source.name} dies.`,
-        player: source.owner,
-        instanceId: picked.instanceId,
-        motion: "stasis",
-      });
-    }
-    return false;
-  } else if (source.effectId === "vader_chain_or_destroy") {
-    if (picked && pickedSlot) {
-      if (hasDumbledoreProtection(state, picked)) {
-        events.push(effectEvent(`${picked.name} resists Darth Vader's chain.`, picked));
-      } else if (!isSlotProtected(state, picked) && canDisable(state, source.owner, picked, "chain")) {
-        setMinionAttack(picked,1);
-        applyChain(state, picked, events);
-        events.push(effectEvent(`${label} sets ${picked.name}'s ATK to 1 and chains it.`, source));
-      } else {
-        events.push(effectEvent(`${picked.name} resists Darth Vader's chain.`, picked));
-      }
-    }
-    return false;
-  }
-
-  // Rimuru combines a one-shot sacrifice with a persistent growth effect.
-  // It asks only when a legal victim exists; the ongoing half still attaches
-  // when Tempest enters an otherwise empty board.
-  if (source.effectId === "rimuru_tempest" && !chosen) {
-    const next = requestChoice(state, source, { side: "any", prompt: "Destroy a minion and gain its stats" }, library);
-    if (next === "asked") return true;
-    if (next) return runEffect(state, source, sourceSlot, library, events, next);
-  }
-
-  if (source.effectId === "rimuru_tempest") {
-    const target = chosen?.kind === "board" ? state.players[chosen.target.owner].board[chosen.target.slot] : null;
-    if (target) {
-      const gainedAtk = target.atk;
-      const gainedHp = target.hp;
-      destroyInstance(state, target.owner, target.instanceId, events, `${source.name} destroys ${target.name}`);
-      buffMinion(source, gainedAtk, gainedHp);
-      events.push(effectEvent(`${label} gains ${gainedAtk}/${gainedHp} from ${target.name}.`, source));
-    }
-    if (!source.gainedEffects.some((effect) => effect.effectId === "rimuru_tempest_growth")) {
-      source.gainedEffects.push({ effectId: "rimuru_tempest_growth", timing: "ongoing", text: "Ongoing: Gain +1/+1" });
-    }
-    source.effectId = "none";
-    source.effectTiming = "ongoing";
-  } else if (source.effectId === "copy_minion_effects") {
-    if (picked) copyMinionEffects(source, picked, events);
-  } else if (source.effectId === "neutral_double_atk_hp_1") {
-    if (picked) {
-      picked.atk *= 2;
-      setMinionHealth(picked,1,1);
-      events.push(effectEvent(`${label} doubles ${picked.name}'s ATK and leaves it at 1 HP.`, source));
-    }
-  } else if (source.effectId === "strange_bargain") {
-    const opponentPlayer = state.players[opponent(source.owner)];
-    if (pickedValue === "core_hp") {
-      // Through `dealCoreDamage`, like every other core hit in the game. It used
-      // to subtract from `health` directly, which was the one path in the engine
-      // that walked past Aladdin's core Divine Shield — a shield the player had
-      // paid a card for and could watch fail to do anything.
-      if (dealCoreDamage(state, opponentPlayer.id, 10, events, source)) {
-        events.push(effectEvent(`${label} costs ${opponentPlayer.name} 10 Core HP.`, source));
-      }
-    } else if (pickedValue === "random_minion") {
-      destroyRandomMinion(state, opponentPlayer.id, events, `${source.name}'s bargain claims a random minion`);
-    } else if (pickedValue === "mana") {
-      opponentPlayer.manaPenaltyNextTurn = Math.max(opponentPlayer.manaPenaltyNextTurn ?? 0, 5);
-      events.push(effectEvent(`${label} removes 5 mana from ${opponentPlayer.name}'s next turn.`, source));
-    }
-  } else if (source.effectId === "death_star_mark") {
-    // It swings like anything else. The Battlecry used to spend its attack, so a
-    // Death Star handed Charge was silently held back — a rule the card stopped
-    // printing, and one nothing else in the roster has.
-    if (pickedCoreOwner !== null) {
-      source.deathStarTarget = { kind: "core", owner: pickedCoreOwner, resolveAtTurn: state.turnNumber + 2 };
-      events.push(effectEvent(`${label} marks the enemy core.`, source));
-    } else if (picked) {
-      source.deathStarTarget = {
-        kind: "minion",
-        owner: picked.owner,
-        instanceId: picked.instanceId,
-        resolveAtTurn: state.turnNumber + 2,
-      };
-      events.push(effectEvent(`${label} marks ${picked.name}.`, source));
-    }
-  } else if (source.effectId === "knov_pocket_room") {
-    const firstChoice = chosen?.priorOptions?.[0] ?? pickedSlot;
-    if ((chosen?.step ?? 0) === 0) {
-      if (!firstChoice) return false;
-      const next = requestChoice(
-        state,
-        source,
-        { side: "enemy", prompt: "Choose an enemy minion for the pocket room" },
-        library,
-        1,
-        [firstChoice],
-      );
-      if (next === "asked") return true;
-      if (next) return runEffect(state, source, sourceSlot, library, events, next);
-      return false;
-    }
-    const enemyChoice = pickedSlot;
-    if (firstChoice && enemyChoice) {
-      const friendly = state.players[firstChoice.owner].board[firstChoice.slot];
-      const enemyMinion = state.players[enemyChoice.owner].board[enemyChoice.slot];
-      // The two picks must be DIFFERENT minions. Under random play they can both
-      // resolve to the same one, and the release below then puts a single
-      // instance into two slots — the `instance <id> is on the board twice`
-      // breach the balance gate reported on 18 August 2026. Replay it with
-      // `npx tsx scripts/find-duplicate-instance.mts sim-fuzz-46 random,bot`.
-      // The printed rule is "a friendly and an enemy", so one minion is never a
-      // legal room. Refusing costs the controller the Battlecry and leaves the
-      // board untouched, which is far better than a corrupt duel.
-      const sameMinion = Boolean(friendly && enemyMinion && friendly.instanceId === enemyMinion.instanceId);
-      if (sameMinion) {
-        events.push(effectEvent(`${label} cannot open a pocket room around a single minion.`, source));
-      }
-      if (friendly && enemyMinion && !sameMinion) {
-        state.players[friendly.owner].board[firstChoice.slot] = null;
-        state.players[enemyMinion.owner].board[enemyChoice.slot] = null;
-        (state.pocketRooms ??= []).push({
-          owner: source.owner,
-          friendly,
-          friendlySlot: firstChoice.slot,
-          enemy: enemyMinion,
-          enemySlot: enemyChoice.slot,
-          // turnNumber advances once at the start of each player's turn. Two
-          // full turns therefore span four counter increments, not two.
-          returnAtTurn: state.turnNumber + 4,
-        });
-        events.push(effectEvent(`${label} opens a pocket room for ${friendly.name} and ${enemyMinion.name}.`, source));
-      }
-    }
-  } else if (source.effectId === "meleoron_protect_ally") {
-    if (picked) {
-      picked.protectedByMeleoron = source.instanceId;
-      events.push(effectEvent(`${label} hides ${picked.name} from every target.`, source));
-    }
-  } else if (source.effectId === "mob_ascend") {
-    const allies = friendlyOthers(player, source);
-    if (allies.length >= 2) {
-      returnMinionsToHand(state, player.id, allies, events);
-      for(const bonus of source.auraBonuses??[]){bonus.atk=0;bonus.hp=0;bonus.spentAtk=0;bonus.suppressedHp=0;}
-      source.atk = 10;
-      source.maxHp = 10;
-      source.hp = 10;
-      events.push(effectEvent(`${label} releases its power and ascends to 10/10.`, source));
-    }
-  } else if (source.effectId === "random_attacks_next_turn") {
-    for (const side of state.players) {
-      side.randomAttacksFromTurn = state.turnNumber + 1;
-      side.randomAttacksUntilTurn = state.turnNumber + 1;
-    }
-    events.push(effectEvent(`${label} fills the next turn with random attacks.`, source));
-  } else if (source.effectId === "rick_return_all") {
-    returnAllMinionsToHand(state, events, source.instanceId, source.owner);
-    events.push(effectEvent(`${label} sends every other minion back to its owner's hand.`, source));
-  } else if (source.effectId === "summon_sins") {
-    summonSins(state, source, events);
-  } else if (source.effectId === "naruto_shadow_clones") {
-    summonShadowClones(state, source, events);
-  } else if (source.effectId === "star_destroyer_tie_fighters") {
-    summonTieFighters(state, source, events);
-  } else if (source.effectId === "summon_margit") {
-    const slot = findEmptySlot(state, source.owner);
-    if (slot >= 0) {
-      const summoned = createMinion(tokenCard("token:margit"), source.owner, state);
-      summoned.suppressArrivalTheme = true;
-      player.board[slot] = summoned;
-      events.push(effectEvent(`${label} summons Margit the Fell Omen (1/1 with Taunt).`, source));
-    }
-  } else if (source.effectId === "chaos_random_summon") {
-    summonRandomMinionFromDeck(state, source, library, events);
-  } else if (source.effectId === "heroic_relics") {
-    grantRandomRelicsToBoard(state, source, library, events);
-  } else if (source.effectId === "equip_random_relic") {
-    equipRandomRelic(state, source, library, events);
-  } else if (source.effectId === "draw_card") {
-    drawDirect(state, source.owner, 1, events);
-    events.push(effectEvent(`${label} draws a card.`, source));
-  } else if (source.effectId === "draw_relic") {
-    // A random relic, not a choice. Gol D. Roger and Indiana Jones already offer
-    // the pick-one-of-three version, and the house spirit is not a treasure
-    // hunter — it turns up with something useful and no ceremony.
-    //
-    // The randomness runs through the seeded RNG like everything else, never
-    // Math.random, so a duel replays identically from its seed.
-    const available = relicsInDeck(state, source.owner, library);
-    if (available.length) {
-      const choice = available[rollInt(state, available.length)];
-      const relic = takeRelicFromDeckToHand(state, source.owner, choice.id, library, events);
-      if (relic) events.push(effectEvent(`${label} turns up ${relic.name}.`, source));
-    } else {
-      events.push(effectEvent(`${label} finds no relic left.`, source));
-    }
-  } else if (source.effectId === "wall_of_flesh_grind") {
-    damageAllEnemies(state, source, 1, events);
-    events.push(effectEvent(`${label} grinds all enemy minions for 1.`, source));
-  } else if (source.effectId === "ragnaros_ongoing_burn") {
-    const target = randomEnemyMinion(state, source);
-    const targetSlot = target ? slotOf(state, target) : -1;
-    if (target && targetSlot >= 0) {
-      dealMinionDamage(state, target.owner, targetSlot, 3, source, events, true);
-    } else if (dealCoreDamage(state, enemyId, 3, events, source)) {
-      events.push(effectEvent(`${label} burns the enemy core for 3 damage.`, source));
-    }
-  } else if (source.effectId === "damage_enemy_1") {
-    const targetSlot = slotOf(state, picked);
-    if (picked && targetSlot >= 0) dealMinionDamage(state, picked.owner, targetSlot, 1, source, events, true);
-  } else if (source.effectId === "aoe_damage_3") {
-    damageAllEnemies(state, source, 3, events);
-  } else if (source.effectId === "time_bomb_destroy_all") {
-    for (const owner of [0, 1] as PlayerId[]) {
-      for (let slot = 0; slot < boardSize; slot += 1) {
-        if (state.players[owner].board[slot]) {
-          destroyAtSlot(state, owner, slot, events, `${source.name} destroys all minions`, null, false);
-        }
-      }
-    }
-    events.push(effectEvent(`${label} destroys ALL minions.`, source));
-  } else if (source.effectId === "gain_divine_shield") {
-    source.divineShield = true;
-    events.push(effectEvent(`${label} gains Divine Shield.`, source));
-  } else if (source.effectId === "light_yagami_nature_kill") {
-    const slot = picked ? slotOf(state, picked) : -1;
-    if (picked && slot >= 0) {
-      destroyAtSlot(state, picked.owner, slot, events, `${label} writes down ${picked.name}`, source);
-    }
-  } else if (source.effectId === "anti_good_grow") {
-    const count = enemy.board.filter((minion) => minion?.alignment === "Good").length;
-    if (count > 0) {
-      // +2/+2 per Good enemy, down from +3/+2 (pass 4): 60.3% vs a 45.4%
-      // bracket. This is a COMPOUNDING engine, not a recalculated aura — every
-      // turn's growth is added permanently and survives the Good minions dying.
-      // Good is ~35% of the roster, so a full enemy board averaged +5/+3 a turn,
-      // for ever, on a card whose body is far below its tier.
-      buffMinion(source, count * 2, count * 2);
-      events.push(effectEvent(`${label} grows against Good enemies.`, source));
-    }
-  } else if (source.effectId === "protect_slot") {
-    if (pickedSlot) layAura(state, pickedSlot, "slot_protected", source, events);
-  } else if (source.effectId === "snap_balance") {
-    // Thanos never targets himself. The printed body is one of the eligible
-    // minions on the board, but the source must survive its own Battlecry.
-    const eligible = ([0, 1] as PlayerId[]).flatMap((owner) =>
-      state.players[owner].board
-        .map((minion, slot) => ({ owner, slot, minion }))
-        .filter(({ minion }) => minion && minion.instanceId !== source.instanceId && !isUntargetable(state, minion)),
-    );
-    const destroyCount = Math.floor(eligible.length / 2);
-    for (let i = 0; i < destroyCount; i += 1) {
-      const remaining = ([0, 1] as PlayerId[]).flatMap((owner) =>
-        state.players[owner].board
-          .map((minion, slot) => ({ owner, slot, minion }))
-          .filter(({ minion }) => minion && minion.instanceId !== source.instanceId && !isUntargetable(state, minion)),
-      );
-      if (remaining.length === 0) break;
-      const target = remaining[rollInt(state, remaining.length)];
-      if (target?.minion) {
-        destroyAtSlot(state, target.owner, target.slot, events, `${label} reduces the board: ${target.minion.name}`, source);
-      }
-    }
-    events.push(effectEvent(`${label} destroys ${destroyCount} random minion${destroyCount === 1 ? "" : "s"} to reduce the board by half.`, source));
-  } else if (source.effectId === "freeze_and_weaken") {
-    const target = picked;
-    if (target) {
-      applyFreeze(state, source, target, events);
-      setMinionAttack(target,Math.ceil(target.atk/2));
-      events.push(effectEvent(`${label} halves ${target.name}'s ATK.`, source));
-    }
-  } else if (source.effectId === "set_hp_1") {
-    const target = picked;
-    if (target) {
-      target.hp = 1;
-      events.push(effectEvent(`${label} sets ${target.name}'s HP to 1.`, source));
-    }
-  } else if (source.effectId === "set_all_enemy_hp_1") {
-    let affected = 0;
-    for (const minion of enemy.board) {
-      if (!minion) continue;
-      minion.hp = 1;
-      affected += 1;
-    }
-    events.push(effectEvent(`${label} sets ${affected} enemy minion${affected === 1 ? "'s" : "s'"} HP to 1.`, source));
-  } else if (source.effectId === "discover_random_keyword_minion") {
-    // A real Discover now. The card has always printed "Discover ... Draw one"
-    // while the engine simply took one at random, so the choice it promised
-    // never reached the player.
-    const card = pickedValue ? library[pickedValue] : undefined;
-    if (pickedValue && isMinionCard(card) && removeCardFromDrawPile(state, source.owner, pickedValue)) {
-      putCardInHand(state, source.owner, pickedValue, events);
-      events.push(effectEvent(`${label} discovers ${card.name}.`, source));
-    }
-  } else if (source.effectId === "copy_minion_to_hand") {
-    if (picked) {
-      const card = library[picked.cardId];
-      if (isMinionCard(card)) {
-        putCardInHand(state, source.owner, card.id, events);
-        events.push(effectEvent(`${label} puts a copy of ${picked.name} into your hand.`, source));
-      }
-    }
-  } else if (source.effectId === "copy_passive") {
-    const copied: string[] = [];
-    for (const donor of player.board) {
-      if (!donor || donor.instanceId === source.instanceId || donor.silenced) continue;
-      const effect = persistentEffects(donor).find(
-        (candidate) => !source.gainedEffects.some((existing) => existing.effectId === candidate.effectId),
-      );
-      if (!effect) continue;
-      source.gainedEffects.push({ ...effect });
-      copied.push(donor.name);
-      break;
-    }
-    for (const donor of enemy.board) {
-      if (!donor || donor.silenced) continue;
-      const effect = persistentEffects(donor).find(
-        (candidate) => !source.gainedEffects.some((existing) => existing.effectId === candidate.effectId),
-      );
-      if (!effect) continue;
-      source.gainedEffects.push({ ...effect });
-      copied.push(donor.name);
-      break;
-    }
-    events.push(effectEvent(`${label} copies ${copied.length} persistent effects.`, source));
-  } else if (source.effectId === "rimuru_tempest_growth") {
-    buffMinion(source, 1, 1);
-    events.push(effectEvent(`${label} grows +1/+1.`, source));
-  } else if (source.effectId === "self_buff_2") {
-    buffMinion(source, 2, 2);
-    events.push(effectEvent(`${label} grows +2/+2.`, source));
-  } else if (source.effectId === "yoda_lowest_atk_buff") {
-    const target = player.board
-      .filter((minion): minion is MinionInstance => Boolean(minion))
-      .sort((left, right) => left.atk - right.atk || left.playOrder - right.playOrder)[0];
-    if (target) {
-      buffMinion(target, 2, 2);
-      events.push(effectEvent(`${label} empowers ${target.name}, the lowest-ATK ally.`, source));
-    }
-  } else if (source.effectId === "self_atk_3") {
-    source.atk += 3;
-    events.push(effectEvent(`${label} gains +3 ATK.`, source));
-  } else if (source.effectId === "heal_5") {
-    source.hp = Math.min(source.maxHp, source.hp + 5);
-    events.push(effectEvent(`${label} heals 5 HP.`, source));
-  } else if (source.effectId === "avatar_aang_awakened") {
-    for (const minion of player.board) if (minion) minion.hp = minion.maxHp;
-    events.push(effectEvent(`${label} restores all friendly minions.`, source));
-  } else if (source.effectId === "discover_tech_card") {
-    const card = pickedValue ? library[pickedValue] : undefined;
-    if (pickedValue && isMinionCard(card) && card.camp === "Tech" && removeCardFromDrawPile(state, source.owner, pickedValue)) {
-      putCardInHand(state, source.owner, pickedValue, events);
-      events.push(effectEvent(`${label} draws ${card.name}.`, source));
-    }
-  } else if (source.effectId === "heal_self_full") {
-    source.hp = source.maxHp;
-    events.push(effectEvent(`${label} fully heals itself.`, source));
-  } else if (source.effectId === "aoe_all_1") {
-    damageAllOther(state, source, 1, events);
-  } else if (source.effectId === "aoe_all_2") {
-    damageAllOther(state, source, 2, events);
-  } else if (source.effectId === "aoe_all_4") {
-    damageAllOther(state, source, 4, events);
-  } else if (source.effectId === "destroy_enemy_taunt") {
-    destroyPicked(state, source, picked, "destroys", events);
-  } else if (source.effectId === "godrick_graft") {
-    if (picked) {
-      const gainedAtk = picked.atk;
-      const gainedHp = picked.hp;
-      const gainedEffects = copyPersistentMinionTraits(source, picked);
-      destroyInstance(state, picked.owner, picked.instanceId, events, `${source.name} kills ${picked.name} for grafting`);
-      buffMinion(source, gainedAtk, gainedHp);
-      source.effectId = "none";
-      source.effectTiming = source.gainedEffects.some((effect) => effect.timing === "ongoing")
-        ? "ongoing"
-        : source.gainedEffects.some((effect) => effect.timing === "passive")
-          ? "passive"
-          : "none";
-      events.push(
-        effectEvent(
-          `${label} gains ${gainedAtk}/${gainedHp}${gainedEffects ? " and the minion's effects" : ""}.`,
-          source,
-        ),
-      );
-    }
-  } else if (source.effectId === "destroy_damaged_enemy") {
-    destroyPicked(state, source, picked, "destroys a wounded enemy", events);
-  } else if (source.effectId === "destroy_all_damaged_enemies") {
-    let destroyed = 0;
-    for (let slot = 0; slot < boardSize; slot += 1) {
-      const minion = enemy.board[slot];
-      // This is a direct destroy, not attack damage. Evade belongs to the
-      // combat-damage path and must never make a wounded minion survive this.
-      if (!minion || minion.hp >= minion.maxHp || isUntargetable(state, minion)) continue;
-      destroyAtSlot(state, enemyId, slot, events, `${source.name} kills ${minion.name}`);
-      destroyed += 1;
-    }
-    if (destroyed > 0) events.push(effectEvent(`${label} kills all damaged enemy minions.`, source));
-  } else if (source.effectId === "consume_tech_4_hp" || source.effectId === "consume_nature_4_hp") {
-    if (picked) consumeEnemyMinion(state, source, picked, events);
-  } else if (source.effectId === "devour_friendly") {
-    const prey = picked;
-    if (prey) {
-      buffMinion(source, prey.atk, prey.hp);
-      destroyInstance(state, source.owner, prey.instanceId, events, `${source.name} consumes ${prey.name}`);
-    }
-  } else if (source.effectId === "freeze_and_silence_enemy") {
-    if (picked && !isSlotProtected(state, picked)) {
-      const canFreeze = canDisable(state, source.owner, picked, "freeze");
-      const canSilence = canDisable(state, source.owner, picked, "silence");
-      if (canFreeze) {
-        picked.frozen = true;
-        picked.attacksUsed = maxAttacks(picked);
-      }
-      if (canSilence) applySilence(picked);
-      if (canFreeze || canSilence) {
-        const statuses = [canFreeze ? "freezes" : "", canSilence ? "silences" : ""].filter(Boolean).join(" and ");
-        events.push(effectEvent(`${label} ${statuses} ${picked.name}.`, source));
-      } else {
-        events.push(effectEvent(`${picked.name} resists Kiritsugu's effect.`, picked));
-      }
-    } else if (picked) {
-      events.push(effectEvent(`${picked.name} resists Kiritsugu's effect.`, picked));
-    }
-  } else if (source.effectId === "freeze_all_enemies") {
-    for (const minion of enemy.board) {
-      if (minion) applyFreeze(state, source, minion, events);
-    }
-  } else if (source.effectId === "silence_enemy") {
-    if (picked && !isSlotProtected(state, picked) && canDisable(state, source.owner, picked, "silence")) {
-      applySilence(picked);
-      events.push(effectEvent(`${source.name} silences ${picked.name}.`, source));
-    }
-  } else if (source.effectId === "buff_evil_ally_2") {
-    if (picked) {
-      buffMinion(picked, 2, 2);
-      events.push(effectEvent(`${label} empowers ${picked.name}.`, source));
-    }
-  } else if (source.effectId === "buff_all_good_2") {
-    buffAllAllies(player, source, (minion) => minion.alignment === "Good", 2, 2, true);
-    events.push(effectEvent(`${label} empowers all Good allies.`, source));
-  } else if (source.effectId === "buff_all_magic_2_1") {
-    buffAllAllies(player, source, (minion) => receivesCampBuff(minion, "Magic"), 2, 1, false);
-    events.push(effectEvent(`${label} empowers Magic allies.`, source));
-  } else if (source.effectId === "buff_all_tech_2_1") {
-    buffAllAllies(player, source, (minion) => receivesCampBuff(minion, "Tech"), 2, 1, false);
-    events.push(effectEvent(`${label} empowers Tech allies.`, source));
-  } else if (source.effectId === "shield_all_friendly") {
-    for (const minion of player.board) if (minion?.alignment === "Good") minion.divineShield = true;
-    events.push(effectEvent(`${label} shields the Good.`, source));
-  } else if (source.effectId === "double_other_friendly_attack") {
-    const allies = friendlyOthers(player, source);
-    for (const ally of allies) ally.atk *= 2;
-    events.push(effectEvent(`${label} doubles the ATK of ${allies.length} other friendly minion${allies.length === 1 ? "" : "s"}.`, source));
-  } else if (source.effectId === "steal_hand_relic") {
-    if (pickedHand) stealCard(state, source, enemy, () => pickedHand.index, events);
-  } else if (source.effectId === "consume_all_friendly_tech") {
-    const victims = player.board.filter(
-      (minion): minion is MinionInstance => Boolean(minion && minion.instanceId !== source.instanceId && minion.camp === "Tech"),
-    );
-    let consumed = 0;
-    let gainedEffects = 0;
-    for (const victim of victims) {
-      const gainedAtk = victim.atk;
-      const gainedHp = victim.hp;
-      buffMinion(source, gainedAtk, gainedHp);
-
-      if (hasKeyword(victim, "Taunt") && !hasKeyword(source, "Taunt")) source.keywords.push("Taunt");
-      if (victim.divineShield || hasKeyword(victim, "Divine Shield")) {
-        source.divineShield = true;
-        if (!hasKeyword(source, "Divine Shield")) source.keywords.push("Divine Shield");
-      }
-
-      const effects = [
-        ...(victim.effectId !== "none" && (victim.effectTiming === "passive" || victim.effectTiming === "ongoing" || victim.effectTiming === "onPlayAndOngoing")
-          ? [{ effectId: victim.effectId, timing: victim.effectTiming === "onPlayAndOngoing" ? "ongoing" : victim.effectTiming, text: victim.effect }]
-          : []),
-        ...victim.gainedEffects,
-      ];
-      for (const effect of effects) {
-        if ((effect.timing === "passive" || effect.timing === "ongoing") && effect.effectId !== "none" && !hasEffect(source, effect.effectId)) {
-          source.gainedEffects.push({ effectId: effect.effectId, timing: effect.timing, text: effect.text });
-          gainedEffects += 1;
-        }
-      }
-
-      destroyInstance(state, victim.owner, victim.instanceId, events, `${source.name} consumes ${victim.name}`);
-      consumed += 1;
-    }
-    if (source.gainedEffects.some((effect) => effect.timing === "ongoing")) source.effectTiming = "ongoing";
-    events.push(
-      effectEvent(
-        consumed === 0
-          ? `${label} finds no friendly Tech minion to consume.`
-          : `${label} consumes ${consumed} friendly Tech minion${consumed === 1 ? "" : "s"} and gains their stats${gainedEffects ? " and effects" : ""}.`,
-        source,
-      ),
-    );
-    source.effectId = "none";
-  } else if (source.effectId === "dice_buff") {
-    // Halved (2026 balance pass). A full d6 every turn averaged +3.5/+3.5 and
-    // made Kite the single strongest card in the roster at 78% — the die is kept,
-    // because the roll is the card, but it now pays out 1-3 instead of 1-6.
-    const roll = Math.ceil(rollDie(state) / 2);
-    buffMinion(source, roll, roll);
-    events.push(effectEvent(`${label} rolls ${roll} for +${roll}/+${roll}.`, source));
-  } else if (source.effectId === "doof_coinflip") {
-    if (coinFlip(state)) {
-      destroyInstance(state, source.owner, source.instanceId, events, `${label} loses the coin flip`);
-    } else {
-      source.atk *= 2;
-      source.hp *= 2;
-      source.maxHp *= 2;
-      events.push(effectEvent(`${label} wins the coin flip and doubles its stats.`, source));
-    }
-  } else if (source.effectId === "bounce_friendly") {
-    const target = picked;
-    const slot = slotOf(state, target);
-    if (target && slot >= 0) {
-      player.board[slot] = null;
-      discardAttachedRelics(state, target);
-      putCardInHand(state, player.id, target.cardId, events, target.instanceId);
-      events.push(effectEvent(`${label} returns ${target.name} to hand.`, source));
-    }
-  } else if (source.effectId === "ally_atk_1") {
-    if (friendlyOthers(player, source).length > 0) {
-      source.atk += 1;
-      events.push(effectEvent(`${label} fights better together.`, source));
-    }
-  } else if (source.effectId === "taunt_aura") {
-    for (const minion of friendlyOthers(player, source)) if (!hasKeyword(minion, "Taunt")) minion.keywords.push("Taunt");
-    events.push(effectEvent(`${label} rallies allies to the front.`, source));
-  } else if (source.effectId === "buddha_purify") {
-    for (const owner of [0, 1] as PlayerId[]) {
-      for (const minion of state.players[owner].board) {
-        if (!minion) continue;
-        minion.alignment = "Good";
-        minion.chained = 0;
-        resolveChainGrowth(minion, events);
-        minion.frozen = false;
-        minion.thawPending = false;
-        minion.silenced = false;
-        minion.markedBy = null;
-        minion.markedForDeathAtTurn = null;
-      }
-    }
-    events.push(effectEvent(`${label} purifies the board: all minions are Good and lose their negative statuses.`, source));
-  } else if (source.effectId === "hashira_good_volley") {
-    const damage = player.board.filter(minion => minion?.alignment === "Good").length;
-    damageAllEnemies(state, source, damage, events);
-    events.push(effectEvent(`${label} unleashes a coordinated strike for ${damage} damage to every enemy minion.`, source));
-  } else if (source.effectId === "steal_and_equip_relic") {
-    if (picked && hasAnyRelic(picked) && hasFreeRelicSlot(source)) {
-      const relicIndex = firstRelicIndex(picked);
-      const stolen = relicAt(picked, relicIndex);
-      if (!stolen || !canEquipRelicToBearer(stolen, source)) return false;
-      unequipRelic(picked, relicIndex);
-      equipRelic(state, source, stolen, library, events);
-      events.push(effectEvent(`${label} takes ${stolen.name} from ${picked.name} and equips it.`, source));
-    }
-  } else if (source.effectId === "destroy_relic") {
-    if (picked && hasAnyRelic(picked)) {
-      const relicIndex = firstRelicIndex(picked);
-      const lost = relicAt(picked, relicIndex);
-      if (!lost) return false;
-      unequipRelic(picked, relicIndex);
-      state.discard.push(lost.id);
-      events.push(effectEvent(`${label} destroys ${picked.name}'s ${lost.name}.`, source));
-    }
-  } else if (source.effectId === "mind_control_2" || source.effectId === "mind_control_enemy") {
-    if (picked) seizeMinion(state, source, picked, events);
-  } else if (source.effectId === "motoko_kusanagi") {
-    if (picked) seizeMinionTemporarily(state, source, picked, events);
-  } else if (source.effectId === "steal_passive") {
-    if (picked && picked.effectId !== "none") {
-      source.stolenPassiveFrom = picked.instanceId;
-      source.stolenPassiveText = picked.effect;
-      source.effectId = printedEffectId(picked);
-      source.effectTiming = "passive";
-      picked.effectId = "none";
-      picked.effectTiming = "none";
-      events.push(effectEvent(`${label} steals ${picked.name}'s passive.`, source));
-    }
-  } else if (source.effectId === "bounce_friendly_discount") {
-    const slot = slotOf(state, picked);
-    if (picked && slot >= 0) {
-      const cardId = picked.cardId;
-      player.board[slot] = null;
-      discardAttachedRelics(state, picked);
-      putCardInHand(state, source.owner, cardId, events, picked.instanceId);
-      player.costReductions[cardId] = (player.costReductions[cardId] ?? 0) + 5;
-      events.push(effectEvent(`${label} sends ${picked.name} home; it returns 5 cheaper.`, source));
-    }
-  } else if (source.effectId === "transform_random_allies_up") {
-    // `player`, which is the CASTER's board, never `state.players[0]`. Worth
-    // stating because the bug reported against this card was that an opponent's
-    // Mask changed everybody's minions — and the way that reads on screen is
-    // every minion on the table turning over at once, which is also what a
-    // correct cast looks like from the wrong seat when both boards are full.
-    const targets = player.board.filter((minion): minion is MinionInstance => Boolean(minion));
-    const transformed = targets.reduce(
-      (count, target) => count + (transformMinionFromPool(state, source, target, 1, library, events) ? 1 : 0),
-      0,
-    );
-    events.push(effectEvent(`${label} transforms ${transformed} friendly minion${transformed === 1 ? "" : "s"}.`, source));
-  } else if (source.effectId === "devolve_enemy_minions") {
-    const targets = enemy.board.filter((minion): minion is MinionInstance => Boolean(minion));
-    let transformed = 0;
-    for (const target of targets) {
-      if (blockedByDominionAuthority(state, source, target.owner)) {
-        events.push(effectEvent(`${target.name} is protected by Dominion Authority.`, target));
-        continue;
-      }
-      if (isSlotProtected(state, target) || !canDisable(state, source.owner, target)) {
-        events.push(effectEvent(`${target.name} resists the devolution.`, target));
-        continue;
-      }
-      if (transformMinionFromPool(state, source, target, -1, library, events)) transformed += 1;
-    }
-    events.push(effectEvent(`${label} devolves ${transformed} enemy minion${transformed === 1 ? "" : "s"}.`, source));
-  } else if (source.effectId === "set_stats_choice") {
-    if (pickedSlot) layAura(state, pickedSlot, "slot_stats_one", source, events);
-  } else if (
-    source.effectId === "slot_random_attacks" ||
-    source.effectId === "slot_permanent_chain" ||
-    source.effectId === "slot_growth_1"
-  ) {
-    const auraId: SlotAuraId =
-      source.effectId === "slot_random_attacks"
-        ? "random_attacks"
-        : source.effectId === "slot_permanent_chain"
-          ? "slot_chain"
-          : "slot_grow_1";
-    if (pickedSlot) layAura(state, pickedSlot, auraId, source, events);
-  }
-  return false;
+  const handler = EFFECT_HANDLERS[source.effectId];
+  return handler
+    ? handler({ ...start, picked, pickedSlot, pickedHand, pickedValue, pickedCoreOwner }) === true
+    : false;
 }
 
 function copyMinionEffects(source: MinionInstance, target: MinionInstance, events: GameEvent[]): void {
