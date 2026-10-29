@@ -72,9 +72,8 @@ import { randomDeck, validateDeck } from "./decks";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
 import { DraftScreen } from "./screens/DraftScreen";
 import { OnlineScreen } from "./screens/OnlineScreen";
-import { useOnlineSession, type HelloMessage } from "./online/use-online-session";
-import { cleanName, continuesOnlineDuel, normaliseRoomCode, stateFingerprint, stepPlayer, type OnlineMessage, type OnlineStep } from "./online/protocol";
-import { PLAYER_HERO_POWER_IDS } from "./engine/hero-powers";
+import { useOnlineDuel } from "./online/use-online-duel";
+import type { OnlineStep } from "./online/protocol";
 import { beginDraftDuel, draftBotSkill, draftDifficulty, draftDuelIndex, draftReady, draftRivalDeck, loadDraft, recordDraftDuel, saveDraft, startDraftRun, type DraftRun, type DraftSave } from "./draft";
 import { CampaignSpeech, CollectedBossSpeech, type SpeechCue } from "./screens/CampaignSpeech";
 import campaignVoiceManifest from "../data/campaign-voices.json";
@@ -235,8 +234,6 @@ export default function App() {
     restored ? [...restored.events, { kind: "info" as const, text: "Duel restored from your last session." }] : [openingEvent],
   );
   const [mode, setMode] = useState<GameMode>(() => restored?.mode ?? { kind: "hotseat" });
-  /** Online guest: a move is on its way to the host; input waits for the answer. */
-  const [awaitingHost, setAwaitingHost] = useState(false);
   const campaignChapter = mode.kind === "campaign" ? CAMPAIGN_CHAPTERS[mode.chapter - 1] : undefined;
   const campaignBoss = campaignChapter ? library[campaignChapter.bossId] : undefined;
   /** Set during an online duel: which seat this browser plays, and the room. */
@@ -416,6 +413,21 @@ export default function App() {
   const viewerId: PlayerId = online ? online.seat : vsBot ? 0 : seatedPlayer;
   const opponentId = otherPlayer(viewerId);
   const fx = useDuelFx(viewerId, opponentId);
+  const onlineDuel = useOnlineDuel({
+    game, events, mode, deck: progress.playerDeck, heroPower: selectedHeroPower,
+    applyStep: applyOnlineStep,
+    seatDuel: (state, opening, next, resumed) => { beginOnlineDuel(state, opening, next); if (resumed) setDuelIntro(null); },
+    replaceState: (state) => { setGame(state); setSelection(null); },
+    winByDeparture: (winner, reason) => {
+      setGame({ ...game, phase: "gameOver", winner });
+      setEvents((items) => [...items, { kind: "info" as const, text: reason }].slice(-EVENT_LOG_LIMIT));
+      fx.showToast(reason, 3600);
+    },
+    toast: (text) => fx.showToast(text, 3600),
+    openLobby: () => setOverlay("online"),
+  });
+  const { awaitingHost } = onlineDuel;
+  const onlineStatus = onlineDuel.status;
   const relicFlash = fx.relicFlash;
   /** Whether the enemy Hero Power card is showing. Opened by a click, not a hover. */
   const [enemyPowerOpen, setEnemyPowerOpen] = useState(false);
@@ -729,7 +741,7 @@ export default function App() {
       const current=clockLatest.current;
       // Online, the host's clock is the one that counts: it ends the turn for
       // both browsers as a numbered step. The guest's clock only shows the time.
-      if(current.mode.kind==='online'){if(current.mode.seat===0)commitStepRef.current({kind:'timeout',player:clockActor});return;}
+      if(current.mode.kind==='online'){if(current.mode.seat===0)onlineDuel.hostTimeout(clockActor);return;}
       const result=expirePlayerTurn(current.game,clockActor,library);
       if(result.state===current.game)return;
       fx.spawnFx(current.game,result.state,{type:'end_turn',player:clockActor},result.events);setGame(result.state);setSelection(null);
@@ -759,7 +771,7 @@ export default function App() {
    * applies it and sends it on, the guest asks the host to make it.
    */
   function perform(action: GameAction) {
-    if (online) { submitStep({ kind: "action", action }); return; }
+    if (online) { onlineDuel.submitStep({ kind: "action", action }); return; }
     performLocal(action);
   }
 
@@ -839,57 +851,6 @@ export default function App() {
     return result.state;
   }
 
-  // --- online duels ---------------------------------------------------------
-  /** Host: the number of the last step sent. Guest: the last step applied. */
-  const onlineSeq = useRef(0);
-  /** Steps from the host (guest) or move requests from the guest (host), applied one per render. */
-  const [onlineInbox, setOnlineInbox] = useState<OnlineMessage[]>([]);
-  /** Guest: its copy differed from the host's and a full state is on its way. */
-  const awaitingResync = useRef(false);
-  const guestHello = useRef<HelloMessage | null>(null);
-  const [onlineName, setOnlineName] = useState(() => { try { return localStorage.getItem("convergence.online.name") ?? ""; } catch { return ""; } });
-  const [inviteCode] = useState(() => {
-    // An invite link, or the room this tab was playing in before a reload.
-    try { return normaliseRoomCode(window.location.search) ?? normaliseRoomCode(sessionStorage.getItem("convergence.online.room") ?? "") ?? ""; } catch { return ""; }
-  });
-  const latestOnline = useRef({ game, events, mode });
-  latestOnline.current = { game, events, mode };
-  const onlineSession = useOnlineSession({
-    onHello: (hello, returning) => {
-      const roster = new Set(CAMPAIGN_CARD_IDS);
-      const deckOk = hello.deck.length === 30 && new Set(hello.deck).size === 30 && hello.deck.every((id) => roster.has(id));
-      if (!deckOk) return "Your deck must hold 30 different cards. Finish it in My Deck, then join again.";
-      if (hello.heroPower !== null && !PLAYER_HERO_POWER_IDS.includes(hello.heroPower)) return "Your Hero Power is not available in this version.";
-      guestHello.current = { ...hello, name: cleanName(hello.name, "Guest") };
-      onlineReturning.current = returning;
-      return null;
-    },
-    onMessage: (message) => {
-      if (message.t === "start") { receiveOnlineStart(message); return; }
-      if (message.t === "resync") { sendOnlineStart(); return; }
-      if (message.t === "refused") { setAwaitingHost(false); return; }
-      if (message.t === "step" || message.t === "request") setOnlineInbox((items) => [...items, message]);
-    },
-    onOpponentGone: (reason) => {
-      const current = latestOnline.current;
-      if (current.mode.kind !== "online" || current.game.phase === "gameOver") { fx.showToast(reason, 3600); return; }
-      // Walking away from a live duel concedes it.
-      const winner = current.mode.seat;
-      setGame({ ...current.game, phase: "gameOver", winner });
-      setEvents((items) => [...items, { kind: "info" as const, text: reason }].slice(-EVENT_LOG_LIMIT));
-      fx.showToast(reason, 3600);
-    },
-  });
-  const onlineReturning = useRef(false);
-  const onlineStatus = onlineSession.status;
-  // An invite link opens the online lobby with its code filled in, then tidies
-  // the address so a reload does not reopen it.
-  useEffect(() => {
-    if (!inviteCode) return;
-    setOverlay("online");
-    try { window.history.replaceState(null, "", window.location.pathname); } catch { /* the code is already read */ }
-  }, [inviteCode]);
-
   /** A concession: the duel ends at once, for the other seat. */
   function concedeLocal(player: PlayerId): GameState {
     if (game.phase === "gameOver") return game;
@@ -915,98 +876,6 @@ export default function App() {
     if (step.kind === "action") return performLocal(step.action);
     if (step.kind === "timeout") return timeoutLocal(step.player);
     return concedeLocal(step.player);
-  }
-
-  /** Host: applies a step and, if it changed the duel, numbers it and sends it on. */
-  function commitStep(step: OnlineStep): boolean {
-    const next = applyOnlineStep(step);
-    if (next === game) return false;
-    onlineSeq.current += 1;
-    onlineSession.send({ t: "step", seq: onlineSeq.current, step, hash: stateFingerprint(next) });
-    return true;
-  }
-  const commitStepRef = useRef(commitStep);
-  commitStepRef.current = commitStep;
-
-  function submitStep(step: OnlineStep) {
-    if (!online) return;
-    if (online.seat === 0) { commitStep(step); return; }
-    if (awaitingHost) return;
-    setAwaitingHost(true);
-    onlineSession.send({ t: "request", step });
-  }
-
-  // One inbox item per render, so each step is applied to the state the last one produced.
-  useEffect(() => {
-    if (!onlineInbox.length || !online) return;
-    const [message, ...rest] = onlineInbox;
-    setOnlineInbox(rest);
-    if (online.seat === 0) {
-      // Host: only the guest's own seat may move, and only legal moves change anything.
-      if (message.t === "request" && !(stepPlayer(message.step) === 1 && commitStep(message.step))) onlineSession.send({ t: "refused" });
-      return;
-    }
-    if (message.t !== "step" || awaitingResync.current || message.seq <= onlineSeq.current) return;
-    setAwaitingHost(false);
-    if (message.seq !== onlineSeq.current + 1) { awaitingResync.current = true; onlineSession.send({ t: "resync" }); return; }
-    onlineSeq.current = message.seq;
-    const next = applyOnlineStep(message.step);
-    if (stateFingerprint(next) !== message.hash) { awaitingResync.current = true; onlineSession.send({ t: "resync" }); }
-  }, [onlineInbox, online, game]);
-
-  // A request the host never answered (an illegal move, a dropped packet) frees the guest again.
-  useEffect(() => {
-    if (!awaitingHost) return;
-    const timer = window.setTimeout(() => setAwaitingHost(false), 2500);
-    return () => window.clearTimeout(timer);
-  }, [awaitingHost]);
-
-  /** Host: sends the whole duel as it stands, for a start, a rematch or a resync. */
-  function sendOnlineStart(state = latestOnline.current.game, events = latestOnline.current.events) {
-    onlineSession.send({ t: "start", seq: onlineSeq.current, state, events: events.slice(-60) });
-  }
-
-  /** Host: a guest is in. A returning guest gets the duel back; a new one gets a new duel. */
-  useEffect(() => {
-    if (onlineStatus.phase !== "connected" || onlineStatus.role !== "host") return;
-    const current = latestOnline.current;
-    if (onlineReturning.current && current.mode.kind === "online" && current.game.phase !== "gameOver") { sendOnlineStart(); return; }
-    startHostedDuel();
-  }, [onlineStatus]);
-
-  /** Host: builds a duel from both decks, takes seat one, and sends it. */
-  function startHostedDuel() {
-    const hello = guestHello.current;
-    if (!hello || onlineStatus.phase !== "connected") return;
-    const seed = createDuelSeed();
-    const built = createInitialGame(cards, seed, relics, {
-      decks: [progress.playerDeck, hello.deck], heroPowers: [selectedHeroPower, hello.heroPower],
-      mulliganPlayers: [0, 1], hasCoin: true,
-    });
-    built.players[0].name = cleanName(onlineName, "Host");
-    built.players[1].name = hello.name;
-    // Both browsers must hold byte-identical states, so the host plays the copy
-    // that has made the same JSON round trip the guest's has.
-    const state = JSON.parse(JSON.stringify(built)) as GameState;
-    const opening: GameEvent[] = [{ kind: "info", text: `${built.players[0].name} and ${built.players[1].name} meet online.` }];
-    onlineSeq.current = 0;
-    beginOnlineDuel(state, opening, { kind: "online", seat: 0, room: onlineStatus.code, duelId: seed });
-    sendOnlineStart(state, opening);
-  }
-
-  /** Guest: a whole duel arrived, new or as a resync of the current one. */
-  function receiveOnlineStart(message: Extract<OnlineMessage, { t: "start" }>) {
-    const current = latestOnline.current;
-    const status = onlineStatus.phase === "connected" || onlineStatus.phase === "lost" ? onlineStatus : null;
-    onlineSeq.current = message.seq;
-    awaitingResync.current = false;
-    setOnlineInbox([]);
-    setAwaitingHost(false);
-    const sameDuel = continuesOnlineDuel(current.mode, message.seq, status?.code ?? "");
-    if (sameDuel) { setGame(message.state); setSelection(null); return; }
-    beginOnlineDuel(message.state, message.events, { kind: "online", seat: 1, room: status?.code ?? "", duelId: String(message.state.rngSeed) });
-    // A duel already under way (a reload rejoining) skips the opening ceremony.
-    if (message.seq > 0) setDuelIntro(null);
   }
 
   /**
@@ -1059,14 +928,6 @@ export default function App() {
     seatNewDuel({ mode: next, game: state, events: opening, seat: next.seat });
   }
 
-  /** Leaves the online room on purpose. */
-  function leaveOnline() {
-    try { sessionStorage.removeItem("convergence.online.room"); } catch { /* nothing to forget */ }
-    onlineSession.leave();
-    setOnlineInbox([]);
-    setAwaitingHost(false);
-  }
-
   // Record each non-tutorial duel once. Only first campaign clears grant cards.
   useEffect(() => {
     if (game.phase !== "gameOver" || duelRecorded.current || tutorialActive) return;
@@ -1116,8 +977,8 @@ export default function App() {
   function restart() {
     // Online, Restart is Concede mid-duel; afterwards only the host can deal a rematch.
     if (mode.kind === "online") {
-      if (game.phase !== "gameOver") submitStep({ kind: "concede", player: viewerId });
-      else if (mode.seat === 0) startHostedDuel();
+      if (game.phase !== "gameOver") onlineDuel.submitStep({ kind: "concede", player: viewerId });
+      else if (mode.seat === 0) onlineDuel.rematch();
       return;
     }
     // In a draft, Restart is Concede: mid-duel it counts the duel as lost, and
@@ -1244,7 +1105,7 @@ export default function App() {
 
   function toTitle() {
     relicPeek.cancel();
-    if (mode.kind === "online") leaveOnline();
+    if (mode.kind === "online") onlineDuel.leave();
     if (tutorialActive) {
       const previous = tutorialReturn.current;
       if (previous) {
@@ -2421,16 +2282,16 @@ export default function App() {
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
       {overlay === "online" && <OnlineScreen
         status={onlineStatus}
-        name={onlineName}
+        name={onlineDuel.name}
         deckLabel={`${progress.savedDecks.find((deck) => deck.id === progress.selectedDecks[0])?.name ?? "Your deck"} · ${progress.playerDeck.length}/30${selectedHeroPower ? ` · ${heroPowerDefinition(selectedHeroPower)?.name ?? ""}` : ""}`}
         deckReady={validateDeck(progress.playerDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid}
-        initialCode={inviteCode}
-        onName={(name) => { setOnlineName(name); try { localStorage.setItem("convergence.online.name", name); } catch { /* a name is not worth an error */ } }}
-        onHost={() => { void onlineSession.host(); }}
-        onJoin={(code) => { try { sessionStorage.setItem("convergence.online.room", code); } catch { /* reload rejoin is a bonus */ } void onlineSession.join(code, { name: cleanName(onlineName, "Guest"), deck: [...progress.playerDeck], heroPower: selectedHeroPower }); }}
-        onCancel={leaveOnline}
+        initialCode={onlineDuel.inviteCode}
+        onName={onlineDuel.setName}
+        onHost={onlineDuel.host}
+        onJoin={onlineDuel.join}
+        onCancel={onlineDuel.leave}
         onEditDeck={() => openDeck(0, "online")}
-        onClose={() => { if (onlineStatus.phase !== "connected") leaveOnline(); setOverlay(null); }} />}
+        onClose={() => { if (onlineStatus.phase !== "connected") onlineDuel.leave(); setOverlay(null); }} />}
       {online && screen === "playing" && onlineStatus.phase === "lost" ? (
         <div className="online-connection-banner" role="status"><span className="online-dot" aria-hidden="true" />Connection lost. Reconnecting…</div>
       ) : null}
