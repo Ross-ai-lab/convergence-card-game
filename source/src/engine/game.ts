@@ -628,17 +628,7 @@ function resolveHeroPower(
     enemy.minionCostPenaltyNextTurn += 1;
     events.push({ kind: "effect", text: `${definition.name} taxes enemy minion cards by 1 next turn.`, player: playerId });
   } else if (powerId === "po_skadoosh" && target) {
-    if (target.divineShield) {
-      target.divineShield = false;
-      events.push({ kind: "combat", text: `${target.name}'s Divine Shield breaks.`, player: playerId, instanceId: target.instanceId });
-    } else {
-      target.hp -= 3;
-      events.push({ kind: "damage", text: `${definition.name} deals 3 damage to ${target.name}.`, player: playerId, instanceId: target.instanceId });
-      if (target.hp <= 0) {
-        const targetSlot = slotOf(state, target);
-        if (targetSlot >= 0) destroyAtSlot(state, target.owner, targetSlot, events, `${target.name} falls to ${definition.name}`, null);
-      }
-    }
+    dealHeroPowerDamage(state, target, 3, definition.name, events);
   } else if (powerId === "dio_freeze" && target) {
     if (isSlotProtected(state, target) || !canDisable(state, playerId, target, "freeze")) {
       events.push(effectEvent(`${target.name} resists Freeze.`, target));
@@ -659,7 +649,11 @@ function resolveHeroPower(
     setMinionHealth(target,1,1);
     events.push({ kind: "effect", text: `${definition.name} reduces ${target.name} to 1/1.`, player: playerId, instanceId: target.instanceId });
   } else if (powerId === "bill_chaos" && target) {
-    [target.atk, target.hp] = [target.hp, target.atk];
+    // Through the stat-overwrite helpers, so an aura's share is accounted for
+    // and a minion that grows taller keeps a maximum it can be healed back to.
+    const [atk, hp] = [target.hp, target.atk];
+    setMinionAttack(target, atk);
+    setMinionHealth(target, Math.max(target.maxHp, hp), hp);
     events.push({ kind: "effect", text: `${definition.name} swaps ${target.name}'s ATK and HP.`, player: playerId, instanceId: target.instanceId });
   } else if (powerId === "minion_hp" && target) {
     buffMinion(target, 0, 1);
@@ -1091,8 +1085,8 @@ function beginTurn(state: GameState, playerId: PlayerId, library: CardLibrary, e
   events.push({ kind: "turn", text: `${player.name}'s turn begins.`, player: playerId });
 
   // GLaDOS's Test Protocol gives the player fifteen of their own turns. The
-  // check happens when turn thirteen opens, so enemy half-turns never shorten
-  // the promised window.
+  // check happens when their sixteenth turn would open, so enemy half-turns
+  // never shorten the promised window.
   if (playerId === 0 && state.heroPowers[1] === "glados_test_protocol" && player.turnsStarted > 15) {
     player.health = 0;
     state.winner = 1;
@@ -1534,7 +1528,7 @@ function applyFatigue(state: GameState, playerId: PlayerId, events: GameEvent[])
  * that victim's own defences.
  *
  * Shared by the declared attack and by the retaliation, because none of these
- * cards says "when attacking". RoboCop prints "Deal 3x damage against Evil
+ * cards says "when attacking". RoboCop prints "Deal double damage against Evil
  * minions" and Doom Slayer prints the same; both used to deal plain ATK the
  * moment they were the one being swung at, which is half of every fight they
  * are in. Combat here is simultaneous, so a rule with no attack clause has to
@@ -4921,7 +4915,7 @@ function dealMinionDamage(
 /** Relic damage maths, applied after the blow is allowed but before it lands. */
 function modifyIncoming(
   state: GameState,
-  _source: MinionInstance,
+  _source: MinionInstance | null,
   target: MinionInstance,
   amount: number,
 ): number {
@@ -4992,24 +4986,7 @@ function canDamage(
     events.push(effectEvent(`${target.name} is immune to Nature minions.`, target));
     return false;
   }
-  if (hasRelic(target, "philosophers_stone") && state.activePlayer === target.owner) {
-    events.push(effectEvent(`${target.name} is untouchable while the Stone holds.`, target));
-    return false;
-  }
-  if (!target.silenced) {
-    const ownerBoard = state.players[target.owner].board;
-    if (hasEffect(target, "invuln_if_alone") && ownerBoard.filter(Boolean).length <= 1) {
-      events.push(effectEvent(`${target.name} is untouchable while alone.`, target));
-      return false;
-    }
-    if (
-      hasEffect(target, "invuln_with_good_ally") &&
-      ownerBoard.some((minion) => minion && minion.instanceId !== target.instanceId && minion.alignment === "Good")
-    ) {
-      events.push(effectEvent(`${target.name} is shielded by an ally.`, target));
-      return false;
-    }
-  }
+  if (invulnerableNow(state, target, events)) return false;
   const cannotBeEvaded = combatDamage && attackTarget && !source.silenced && hasEffect(source, "nyan_unerring_attacks");
   if (!cannotBeEvaded && !effectDamage && source.owner !== target.owner && hasEffect(target, "evade_first_attack") && !target.silenced) {
     if (target.evadedAttackAtTurn !== state.turnNumber) {
@@ -5080,6 +5057,62 @@ function canDamage(
     }
   }
   return true;
+}
+
+/**
+ * The Invulnerable states. They belong to the target alone, so they refuse
+ * damage whatever dealt it: a minion, an effect, or a Hero Power with no body.
+ */
+function invulnerableNow(state: GameState, target: MinionInstance, events: GameEvent[]): boolean {
+  if (hasRelic(target, "philosophers_stone") && state.activePlayer === target.owner) {
+    events.push(effectEvent(`${target.name} is untouchable while the Stone holds.`, target));
+    return true;
+  }
+  if (target.silenced) return false;
+  const ownerBoard = state.players[target.owner].board;
+  if (hasEffect(target, "invuln_if_alone") && ownerBoard.filter(Boolean).length <= 1) {
+    events.push(effectEvent(`${target.name} is untouchable while alone.`, target));
+    return true;
+  }
+  if (
+    hasEffect(target, "invuln_with_good_ally") &&
+    ownerBoard.some((minion) => minion && minion.instanceId !== target.instanceId && minion.alignment === "Good")
+  ) {
+    events.push(effectEvent(`${target.name} is shielded by an ally.`, target));
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Damage from a Hero Power. There is no attacker, so nothing that reads the
+ * source's Camp, ATK or relics applies, but everything the target carries does:
+ * Invulnerable, Divine Shield, the Philosopher's Stone, Prince Lloyd's ward,
+ * Superman's cap and Godzilla's answer.
+ */
+function dealHeroPowerDamage(
+  state: GameState,
+  target: MinionInstance,
+  amount: number,
+  powerName: string,
+  events: GameEvent[],
+): void {
+  const slot = slotOf(state, target);
+  if (slot < 0 || invulnerableNow(state, target, events)) return;
+  amount = modifyIncoming(state, null, target, amount);
+  if (!target.silenced && supermanCovers(state, target)) amount = Math.min(amount, 3);
+  if (amount <= 0) return;
+  if (target.divineShield && !target.silenced) {
+    target.divineShield = false;
+    events.push({ kind: "combat", text: `${target.name}'s Divine Shield breaks.`, player: target.owner, instanceId: target.instanceId });
+    return;
+  }
+  target.hp -= amount;
+  events.push({ kind: "damage", text: `${powerName} deals ${amount} damage to ${target.name}.`, player: target.owner, instanceId: target.instanceId });
+  if (target.hp > 0 && hasEffect(target, "godzilla_damage_burst") && !target.silenced) {
+    damageAllEnemies(state, target, 2, events, new Set([target.instanceId]));
+  }
+  if (target.hp <= 0) destroyAtSlot(state, target.owner, slot, events, `${target.name} falls to ${powerName}`, null);
 }
 
 function canDeclareAttack(state: GameState, attacker: MinionInstance, target: MinionInstance): boolean {

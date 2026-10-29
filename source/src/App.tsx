@@ -73,7 +73,7 @@ import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
 import { DraftScreen } from "./screens/DraftScreen";
 import { OnlineScreen } from "./screens/OnlineScreen";
 import { useOnlineSession, type HelloMessage } from "./online/use-online-session";
-import { cleanName, normaliseRoomCode, stateFingerprint, stepPlayer, type OnlineMessage, type OnlineStep } from "./online/protocol";
+import { cleanName, continuesOnlineDuel, normaliseRoomCode, stateFingerprint, stepPlayer, type OnlineMessage, type OnlineStep } from "./online/protocol";
 import { PLAYER_HERO_POWER_IDS } from "./engine/hero-powers";
 import { beginDraftDuel, draftBotSkill, draftDifficulty, draftDuelIndex, draftReady, draftRivalDeck, loadDraft, recordDraftDuel, saveDraft, startDraftRun, type DraftRun, type DraftSave } from "./draft";
 import { CampaignSpeech, CollectedBossSpeech, type SpeechCue } from "./screens/CampaignSpeech";
@@ -1002,7 +1002,7 @@ export default function App() {
     awaitingResync.current = false;
     setOnlineInbox([]);
     setAwaitingHost(false);
-    const sameDuel = current.mode.kind === "online" && message.seq > 0 && current.game.rngSeed === message.state.rngSeed;
+    const sameDuel = continuesOnlineDuel(current.mode, message.seq, status?.code ?? "");
     if (sameDuel) { setGame(message.state); setSelection(null); return; }
     beginOnlineDuel(message.state, message.events, { kind: "online", seat: 1, room: status?.code ?? "", duelId: String(message.state.rngSeed) });
     // A duel already under way (a reload rejoining) skips the opening ceremony.
@@ -2014,7 +2014,7 @@ export default function App() {
           onClick={() => setMobileMenuOpen(open => !open)}>☰ Menu</button>
         <div className={`system-buttons${mobileMenuOpen ? " mobile-open" : ""}`} onClickCapture={() => setMobileMenuOpen(false)}>
           {game.heroPowers[viewerId] && <p className="mobile-power-description"><strong>{heroPowerDefinition(game.heroPowers[viewerId])?.name}</strong>
-            <span>{heroPowerDefinition(game.heroPowers[viewerId])?.text}</span><small>2 mana · Once per turn{game.heroPowerUsed[viewerId] ? " · Used" : ""}</small></p>}
+            <span>{heroPowerDefinition(game.heroPowers[viewerId])?.text}</span><small>{effectiveHeroPowerCost(game, viewerId)} mana · Once per turn{game.heroPowerUsed[viewerId] ? " · Used" : ""}</small></p>}
           <button type="button" className="mobile-log-trigger" onClick={() => setLogOpen(open => !open)}>Duel log</button>
           {developerCheatRevealed && <button type="button" className="mobile-undo-trigger" disabled={!history.length || botThinking || game.phase !== "main"} onClick={undo}>Undo last action</button>}
           <button type="button" onClick={restart}>{mode.kind === "draft" || mode.kind === "online" ? "Concede" : "Restart"}</button>

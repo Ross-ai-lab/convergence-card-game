@@ -43,6 +43,18 @@ export type OnlineMessage =
   | { t: "leave" };
 
 /**
+ * Guest: whether a whole-duel message continues the duel already on the table.
+ *
+ * A start numbered above zero is a resync or a reload rejoining, and both carry
+ * on the duel under way in that room. Zero is a new duel or a rematch. The RNG
+ * seed cannot decide it: the seed advances with every roll, so a resync after
+ * any random effect used to be mistaken for a new duel and replayed the opening.
+ */
+export function continuesOnlineDuel(current: { kind: string; room?: string }, seq: number, room: string): boolean {
+  return current.kind === "online" && seq > 0 && current.room === room;
+}
+
+/**
  * A fingerprint of the card data. Two builds with different cards would run
  * different games from the same moves, so they refuse each other up front
  * instead of drifting apart a few turns in.

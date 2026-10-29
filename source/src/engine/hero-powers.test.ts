@@ -334,3 +334,29 @@ describe("menu Hero Powers", () => {
     expect(released.players[0].board[0]).toMatchObject({ chained: 0, chainGrowthPending: false, atk: 4, hp: 4, maxHp: 4 });
   });
 });
+
+describe("campaign Hero Powers keep minion stats honest", () => {
+  it("Chaos on a tall attacker raises its maximum health with its health", () => {
+    // A 6/1 becomes a 1/6. Leaving its maximum at 1 drew it as six health out of
+    // one, and every heal in the game, which tops a minion up to its maximum,
+    // would then have taken five of those six away.
+    const chaos = mainState("bill_chaos");
+    chaos.players[0].board[0] = minion("Modern Tank", 0, { atk: 6, hp: 1, maxHp: 1 });
+    const swapped = usePower(chaos).players[0].board[0]!;
+    expect(swapped).toMatchObject({ atk: 1, hp: 6 });
+    expect(swapped.maxHp).toBeGreaterThanOrEqual(swapped.hp);
+  });
+
+  it("Skadoosh cannot hurt a minion that is Invulnerable", () => {
+    // Homelander is Evil, so Skadoosh may aim at him, but while he is his
+    // owner's only minion he takes no damage from anything.
+    const alone = mainState("po_skadoosh");
+    alone.players[1].board[0] = minion("Homelander", 1);
+    expect(usePower(alone).players[1].board[0]).toMatchObject({ name: "Homelander", hp: 4 });
+
+    const crowded = mainState("po_skadoosh");
+    crowded.players[1].board[0] = minion("Homelander", 1);
+    crowded.players[1].board[1] = minion("John Wick", 1);
+    expect(usePower(crowded).players[1].board[0]).toMatchObject({ name: "Homelander", hp: 1 });
+  });
+});
