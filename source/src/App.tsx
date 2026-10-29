@@ -1009,35 +1009,54 @@ export default function App() {
     if (message.seq > 0) setDuelIntro(null);
   }
 
-  /** Puts an online duel on the table, exactly as beginDuel does for every other mode. */
-  function beginOnlineDuel(state: GameState, opening: GameEvent[], next: Extract<GameMode, { kind: "online" }>) {
+  /**
+   * Puts a new duel on the table. Every way into a duel (a mode from the title,
+   * the tutorial, an online room) goes through here, so a reset added for one
+   * cannot be forgotten by the others.
+   */
+  function seatNewDuel(table: {
+    mode: GameMode;
+    game: GameState;
+    events: GameEvent[];
+    seat?: PlayerId;
+    intro?: boolean;
+    tutorial?: boolean;
+    developer?: boolean;
+  }) {
     void requestPhoneLandscape(phoneLayout.phone);
     sfx.unlock();
     sfx.stopCardTheme();
+    // An ending piece is 16 seconds long, and leaving the screen it belongs to
+    // must take it with you rather than play it over the next one.
     sfx.stopCue();
-    clearSave();
-    setHasLiveSave(false);
-    setTutorialActive(false);
+    setTutorialActive(table.tutorial ?? false);
     setTutorialCompleted(false);
     setTutorialStep(0);
-    setDeveloperDuelActive(false);
+    setDeveloperDuelActive(table.developer ?? false);
     setDeveloperToolsOpen(false);
     duelCards.current = { seen: new Set(), played: new Set() };
     duelRecorded.current = false;
     setPack(null);
     setBossLines([]);
     setOverlay(null);
-    setDuelIntro({ id: fx.nextId(), phase: "prelude" });
-    setMode(next);
-    setGame(state);
+    setDuelIntro(table.intro === false ? null : { id: fx.nextId(), phase: "prelude" });
+    setMode(table.mode);
+    setGame(table.game);
     setHistory([]);
     setSelection(null);
     clearFx({ newDuel: true });
-    setSeatedPlayer(next.seat);
+    setSeatedPlayer(table.seat ?? 0);
     heraldSaid.current = new Set();
     sfx.playOpeningCue(0.35);
-    setEvents(opening);
+    setEvents(table.events);
     setScreen("playing");
+  }
+
+  /** Puts an online duel on the table. It never takes the save slot. */
+  function beginOnlineDuel(state: GameState, opening: GameEvent[], next: Extract<GameMode, { kind: "online" }>) {
+    clearSave();
+    setHasLiveSave(false);
+    seatNewDuel({ mode: next, game: state, events: opening, seat: next.seat });
   }
 
   /** Leaves the online room on purpose. */
@@ -1161,41 +1180,20 @@ export default function App() {
       draftRun = marked.run;
       next = { ...next, skill: draftBotSkill(marked.run.wins) };
     }
-    void requestPhoneLandscape(phoneLayout.phone);
     const nextGame = prepareDuel(next, seed, Boolean(options.testCardId), draftRun);
-    next = { ...next, duelId: seed }; setOverlay(null);
+    next = { ...next, duelId: seed };
     sfx.play("button");
-    sfx.unlock();
-    sfx.stopCardTheme();
-    // An ending piece is 16 seconds long, and leaving the screen it belongs to
-    // must take it with you rather than play it over the next one.
-    sfx.stopCue();
     clearSave();
-    setTutorialActive(false);
-    setTutorialCompleted(false);
-    setTutorialStep(0);
-    setDeveloperDuelActive(Boolean(options.testCardId));
-    setDeveloperToolsOpen(false);
-    duelCards.current = { seen: new Set(), played: new Set() };
-    duelRecorded.current = false;
-    setPack(null);
-    setBossLines([]);
-    setDuelIntro({ id: fx.nextId(), phase: "prelude" });
-    setMode(next);
     if (options.testCardId && library[options.testCardId]) {
       nextGame.players[0].hand = [options.testCardId, ...nextGame.players[0].hand].slice(0, 10);
       nextGame.cheatMode = true;
       nextGame.cheatPlayer = 0;
     }
-    setGame(nextGame);
-    setHistory([]);
-    setSelection(null);
-    clearFx({ newDuel: true });
-    setSeatedPlayer(0);
-    heraldSaid.current = new Set();
-    sfx.playOpeningCue(0.35);
-    setEvents([
-      {
+    seatNewDuel({
+      mode: next,
+      game: nextGame,
+      developer: Boolean(options.testCardId),
+      events: [{
         kind: "info",
         text:
           next.kind === "draft"
@@ -1203,37 +1201,19 @@ export default function App() {
             : next.kind !== "hotseat"
             ? "A practice opponent takes the far side of the board."
             : "Two players, one screen. The board hides itself when the turn changes hands.",
-      },
-    ]);
-    setScreen("playing");
+      }],
+    });
   }
 
   /** Starts the real rules engine in a deterministic teaching position. */
   function beginTutorial() {
     sfx.play("button");
-    sfx.unlock();
-    void requestPhoneLandscape(phoneLayout.phone);
-    sfx.stopCardTheme();
-    // An ending piece is 16 seconds long, and leaving the screen it belongs to
-    // must take it with you rather than play it over the next one.
-    sfx.stopCue();
     if (!tutorialActive) tutorialReturn.current = {
       game, events, mode, hasLiveSave, history, seatedPlayer,
       recorded: duelRecorded.current,
       cards: duelCards.current,
       announcements: heraldSaid.current,
     };
-    setTutorialActive(true);
-    setTutorialCompleted(false);
-    setTutorialStep(0);
-    setDeveloperDuelActive(false);
-    setDeveloperToolsOpen(false);
-    duelCards.current = { seen: new Set(), played: new Set() };
-    duelRecorded.current = false;
-    setPack(null);
-    setDuelIntro(null);
-    // The scripted opponent uses ordinary engine actions at each teaching turn.
-    setMode({ kind: "bot", skill: "easy" });
     const seed = createDuelSeed();
     const tutorialGame = createInitialGame(cards, seed, relics, {
         heroPowers: ["minion_hp", null],
@@ -1242,15 +1222,14 @@ export default function App() {
       });
     tutorialGame.players[0].name = 'Rick Gramps';
     tutorialGame.players[1].name = 'Training Construct';
-    setGame(tutorialGame);
-    setHistory([]);
-    setSelection(null);
-    clearFx({ newDuel: true });
-    setSeatedPlayer(0);
-    heraldSaid.current = new Set();
-    sfx.playOpeningCue(0.35);
-    setEvents([{ kind: "info", text: "Tutorial started. Follow the Rift guide." }]);
-    setScreen("playing");
+    seatNewDuel({
+      // The scripted opponent uses ordinary engine actions at each teaching turn.
+      mode: { kind: "bot", skill: "easy" },
+      game: tutorialGame,
+      events: [{ kind: "info", text: "Tutorial started. Follow the Rift guide." }],
+      intro: false,
+      tutorial: true,
+    });
   }
 
   /** Returns to the saved duel exactly as it was left. */
