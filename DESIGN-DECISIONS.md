@@ -28,11 +28,15 @@ Every universe stays selectable. Later champions receive stronger search and, in
 |---|---|
 | 1–4 | Recruit |
 | 5–10 | Veteran |
-| 11–14 | Ascendant search with cheats disabled |
+| 11–14 | Fair Ascendant: plans whole turns on a narrower search, never reads your reply, no cheats |
 | 15–20 | Full Ascendant with reply-reading, true-dice knowledge, Clairvoyance and Foresight |
 
 The balance gate holds the schedule to account. Each tier's bosses must win measurably more often than the tier below.
 No boss may sit far from the rest of its own tier; such a boss is retuned or its chapter moves.
+
+The fair Ascendant once searched exactly like the full one, and the cheats alone were worth too little to separate them: chapters 11–14 won more often than chapters 15–20.
+Reading your reply and the wider search now belong only to the full Ascendant, so the last step is a real one. The Arena's top rival uses the fair profile too.
+A boss's own power counts toward its tier. Voldemort's Dark Immortality is why his deck carries no self-renewing bodies.
 
 ## Separate decks, complete library
 

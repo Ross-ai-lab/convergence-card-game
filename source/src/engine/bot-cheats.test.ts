@@ -403,6 +403,17 @@ describe("planning a whole turn", () => {
     expect(Math.max(...widths)).toBeGreaterThan(1);
   }, 120_000);
 
+  it("plans on a narrower beam when it plays fair, but still plans", () => {
+    // The fair Ascendant's search is the step below the cheating one. If both
+    // built the same turns, the campaign's last two tiers would differ only in
+    // cheats that measured at 4.5 points, and the climb between them goes flat.
+    const fair: BotCheats = { trueDice: false, readsYourReply: false, clairvoyance: false, foresight: false };
+    const full = positions().map((state) => turnsConsidered(state, library, BOT, cheats).length);
+    const narrow = positions().map((state) => turnsConsidered(state, library, BOT, fair).length);
+    expect(narrow.reduce((a, b) => a + b, 0)).toBeLessThan(full.reduce((a, b) => a + b, 0));
+    expect(Math.max(...narrow)).toBeGreaterThan(1);
+  }, 120_000);
+
   it("every turn it builds is a turn that actually ended", () => {
     for (const state of positions()) {
       for (const line of turnsConsidered(state, library, BOT, cheats)) {

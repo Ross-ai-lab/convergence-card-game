@@ -26,6 +26,9 @@ import { isMinionCard, type GameAction, type GameState, type MinionInstance, typ
  *   hard   — searches whole TURNS: it finishes its own turn greedily, branches
  *            the opponent's reply, and scores the worst board that comes back.
  *            It also sees the true dice and the top of the shared deck.
+ *            Played fair (`readsYourReply` off, the campaign's Ascendant without
+ *            cheats and the Arena's top rival), it still plans whole turns, on a
+ *            narrower beam, and never looks at your reply at all.
  */
 
 export type BotSkill = "easy" | "normal" | "hard";
@@ -61,6 +64,7 @@ export function botDials(): Record<string, unknown> {
     cheats: BOT_CHEATS,
     enginePremium: ENGINE_PREMIUM,
     beamWidth: BEAM_WIDTH,
+    fairBeamWidth: FAIR_BEAM_WIDTH,
     deepLines: DEEP_LINES,
     enemyBranch: ENEMY_BRANCH,
     enemyDice: ENEMY_DICE,
@@ -85,6 +89,29 @@ export function botDials(): Record<string, unknown> {
  * on the UI thread. Read the timing note in the README before raising it.
  */
 const BEAM_WIDTH = 9;
+
+/**
+ * The beam a `hard` bot carries when it does not read your reply.
+ *
+ * The campaign promises four steps, and the last one, Ascendant with its cheats
+ * over Ascendant without them, measured backwards: chapters 11-14 won 87.3% of
+ * their duels and chapters 15-20 83.3%. The cheats were worth 4.5 points on the
+ * same seeds, foresight 3.2 of them, and the fair bosses were simply stronger
+ * duels. The full Ascendant had nothing left to climb.
+ *
+ * Reading your reply is the expensive half of the search, so the fair Ascendant
+ * no longer does it at all, and plans its own turn on four lines instead of
+ * nine. Measured on chapters 11-14, 320 duels against the Veteran stand-in on
+ * the same seeds: 87.5% as it was, 77.8% without the reply look, 72.5% at
+ * width 5, 69.3% at width 4, 63.8% at width 3. Four is the widest beam that
+ * leaves the cheating tier a clear step above it, and it is also the one that
+ * kept Gilgamesh, whose relics need the most planning, closest to his tier.
+ */
+const FAIR_BEAM_WIDTH = 4;
+
+function beamCap(cheats: BotCheats): number {
+  return cheats.readsYourReply ? BEAM_WIDTH : FAIR_BEAM_WIDTH;
+}
 
 /**
  * How many of those finished turns get the full "and then what do they do?"
@@ -378,6 +405,36 @@ function hasTaunt(state: GameState, playerId: PlayerId): boolean {
 }
 
 /**
+ * Dark Immortality: this core stops at 1 HP while its owner controls a minion.
+ *
+ * The lethal check compares reach with core health, and against this core that
+ * test is always true and never decides anything: Voldemort sits on 1 HP with a
+ * body in play and the reach is wasted on a core that cannot fall. Without this
+ * the bot believed it had lethal every turn, so lethal scored the same whatever
+ * it did, and it developed its own board instead of clearing the one keeping the
+ * core alive.
+ */
+function holdsAtOne(state: GameState, playerId: PlayerId): boolean {
+  return state.heroPowers[playerId] === "voldemort_immortal" && state.players[playerId].board.some(Boolean);
+}
+
+function liveBodies(state: GameState, playerId: PlayerId): number {
+  return state.players[playerId].board.filter(Boolean).length;
+}
+
+/**
+ * What each body standing between an immortal core and its death is worth on
+ * top of its board value, once that core is low enough that the bodies are all
+ * that keeps it alive. Killing one is then real progress toward the win.
+ *
+ * Measured on Voldemort's chapter during his deck retune, 300 duels against the
+ * campaign's Veteran stand-in: no guard 59%, 6 per body below 10 HP 53.7%, 12 per
+ * body below 15 HP 51.3% boss wins.
+ */
+const IMMORTAL_GUARD = 12;
+const IMMORTAL_LOW_CORE = 15;
+
+/**
  * How good the whole position looks for `botId`. Positive is good for the bot.
  */
 function scoreState(state: GameState, botId: PlayerId): number {
@@ -406,8 +463,10 @@ function scoreState(state: GameState, botId: PlayerId): number {
   // Lethal, and being open to it, dominate everything else short of the win.
   const myReach = reach(state, botId);
   const theirReach = reach(state, enemyId);
-  if (!hasTaunt(state, enemyId) && myReach >= enemy.health) score += 400;
-  if (!hasTaunt(state, botId) && theirReach >= me.health) score -= 500;
+  if (!hasTaunt(state, enemyId) && !holdsAtOne(state, enemyId) && myReach >= enemy.health) score += 400;
+  if (!hasTaunt(state, botId) && !holdsAtOne(state, botId) && theirReach >= me.health) score -= 500;
+  // Against Dark Immortality the lethal is the last minion, not the core.
+  if (holdsAtOne(state, enemyId) && enemy.health <= IMMORTAL_LOW_CORE) score -= liveBodies(state, enemyId) * IMMORTAL_GUARD;
 
   score += me.hand.length * 0.8 - enemy.hand.length * 0.8;
   // Relics are now cards in hand, so their value is already represented by
@@ -765,7 +824,8 @@ function beamOwnTurn(
   const finished: BeamLine[] = [];
   // The openings are already scored and sorted; the beam starts as the best few
   // it can afford on a board this busy.
-  const width = affordableWidth(openings.length, BEAM_WIDTH);
+  const cap = beamCap(cheats);
+  const width = affordableWidth(openings.length, cap);
   let live: BeamLine[] = openings
     .slice(0, width)
     .map((opening) => ({ firstAction: opening.action, openingScore: opening.score, state: opening.state }));
@@ -799,7 +859,7 @@ function beamOwnTurn(
     if (extended.length === 0) break;
     extended.sort((a, b) => b.score - a.score);
     // Re-price every step: a turn opens crowded and empties as mana is spent.
-    const stepWidth = affordableWidth(Math.ceil(extended.length / Math.max(1, live.length)), BEAM_WIDTH);
+    const stepWidth = affordableWidth(Math.ceil(extended.length / Math.max(1, live.length)), cap);
 
     // Keep the best line for each DIFFERENT opening move before filling the rest
     // of the beam with whatever scores highest overall.
@@ -929,7 +989,11 @@ export function chooseBotAction(
           .map((entry) => entry.line);
 
   for (const line of deepest) {
-    let score = worstReply(line.state, library, botId, cheats);
+    // Played fair it never asks what you do next: each turn is judged by the
+    // board it leaves behind (FAIR_BEAM_WIDTH says why).
+    let score = cheats.readsYourReply
+      ? worstReply(line.state, library, botId, cheats)
+      : scoreState(line.state, botId) + (cheats.clairvoyance ? clairvoyanceEdge(line.state, library, botId) : 0);
     score += tempoAdjustment(line.firstAction);
     // Break ties toward the move that already looked best on its own, so `hard`
     // never plays worse than `normal` on a position where the deep look adds
