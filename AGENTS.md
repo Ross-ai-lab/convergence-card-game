@@ -15,7 +15,7 @@ Follow the current user request and applicable workspace instructions. Read only
 
 | Task | Source | Focused verification |
 |---|---|---|
-| Card text, stats or rarity | [cards.csv](source/data/cards.csv), [relics.csv](source/data/relics.csv), [game.ts](source/src/engine/game.ts) | Relevant engine test and `validate:data` |
+| Card text, stats or rarity | [cards.csv](source/data/cards.csv), [relics.csv](source/data/relics.csv), the effect's handler in [effects/](source/src/engine/effects/) and shared rules in [rules/](source/src/engine/rules/) | Relevant engine test and `validate:data` |
 | Keywords and token inspection | [keywords.ts](source/src/keywords.ts), [card-presentation.ts](source/src/card-presentation.ts), [card-face.tsx](source/src/card-face.tsx), [tokens.ts](source/src/engine/tokens.ts) | The affected card and popup in the gallery |
 | Duel, deck editor or profiles | [App.tsx](source/src/App.tsx) (duel state and flow), [duel/](source/src/duel/) (board, hand, effects, overlays, developer tools), [gallery/](source/src/gallery/) (My Deck and Star Charts), [App.css](source/src/App.css), [gallery-detail.css](source/src/gallery-detail.css) | The actual affected screen and interaction |
 | Phone layout | [mobile.css](source/src/mobile.css), [phone-layout.ts](source/src/phone-layout.ts) | Only the relevant size and orientation |

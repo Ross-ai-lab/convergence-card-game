@@ -16,6 +16,8 @@ The deterministic engine owns legal actions, targeting, effects, combat and seed
 The UI expresses intent through actions instead of implementing a second version of a card effect.
 The bot uses the same legal actions; its difficulty changes how it searches and what campaign information it may know.
 
+[game.ts](source/src/engine/game.ts) is the engine's public surface: setting up a duel, the legal actions and applying one.
+The rules behind it live in [rules/](source/src/engine/rules/), one module per area, and every card effect is one handler in [effects/](source/src/engine/effects/), found by its effect id.
 Search runs through [the bot worker](source/src/engine/bot.worker.ts) to keep it off the interface thread.
 An animation or sound cannot decide a combat result.
 
@@ -63,7 +65,7 @@ Online duels never take the save slot and keep no record, because neither browse
 
 ## One shared Core limit
 
-[STARTING_CORE](source/src/engine/game.ts) supplies the starting health and healing ceiling for every ordinary mode.
+[STARTING_CORE](source/src/engine/rules/core.ts) supplies the starting health and healing ceiling for every ordinary mode.
 Campaign bosses derive their limit from it, and health bars scale against it.
 Keeping these values together prevents a number change from leaving one mode, heal or visual bar behind.
 The current player-facing rules remain in [README](README.md#rules-at-a-glance).

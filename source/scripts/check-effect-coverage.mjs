@@ -47,7 +47,8 @@ import { readCards } from "./card-tools.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const TRACE = join(ROOT, ".preview", "effect-trace.txt");
-const ENGINE = join(ROOT, "src", "engine", "game.ts");
+// The rules engine is game.ts plus the rules/ and effects/ modules it is split into.
+const ENGINE_DIRS = [join(ROOT, "src", "engine"), join(ROOT, "src", "engine", "rules"), join(ROOT, "src", "engine", "effects")];
 const TEST_DIR = join(ROOT, "src", "engine");
 // Vitest's CLI matcher expects slash-separated globs, including on Windows.
 const TEST_GLOB = "src/engine";
@@ -77,7 +78,10 @@ for (const card of cards) {
 // for a rule the engine really does run, so flagging it as a card that "does
 // nothing" is a false accusation — and a false accusation in a report like this
 // is expensive, because the natural response is to go and "fix" working code.
-const engineSource = readFileSync(ENGINE, "utf8");
+const engineSource = ENGINE_DIRS
+  .flatMap((dir) => readdirSync(dir).filter((name) => name.endsWith(".ts") && !name.endsWith(".test.ts")).map((name) => join(dir, name)))
+  .map((file) => readFileSync(file, "utf8"))
+  .join("\n");
 const keywordDriven = new Set(
   cards
     .filter((card) => {
