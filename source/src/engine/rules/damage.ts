@@ -183,6 +183,9 @@ export function modifyIncoming(
   return Math.max(0, modified - damageReduction);
 }
 
+/** Each minion evasion effect and its chance in percent. One card per chance. */
+const DODGE_CHANCES = [["dodge_40", 40], ["dodge_50", 50], ["dodge_60", 60]] as const;
+
 function canDamage(
   state: GameState,
   source: MinionInstance,
@@ -274,16 +277,13 @@ function canDamage(
     events.push(effectEvent(`${target.name} is unmoved.`, target));
     return false;
   }
-  if (!cannotBeEvaded && !effectDamage && hasEffect(target, "dodge_40") && !target.silenced) {
-    if (rollInt(state,100)<40) {
-      events.push(effectEvent(`${target.name} slips away.`, target));
-      return false;
-    }
-  }
-  if (!cannotBeEvaded && !effectDamage && hasEffect(target, "dodge_60") && !target.silenced) {
-    if (rollInt(state, 100) < 60) {
-      events.push(effectEvent(`${target.name} slips away.`, target));
-      return false;
+  // One roll per evasion effect the target carries, in this fixed order.
+  for (const [effectId, chance] of DODGE_CHANCES) {
+    if (!cannotBeEvaded && !effectDamage && hasEffect(target, effectId) && !target.silenced) {
+      if (rollInt(state, 100) < chance) {
+        events.push(effectEvent(`${target.name} slips away.`, target));
+        return false;
+      }
     }
   }
   if (!cannotBeEvaded && !effectDamage && hasRelic(target, "evade_50") && !target.silenced) {

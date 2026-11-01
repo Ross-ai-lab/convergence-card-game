@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Editable source for the Convergence browser card game",
   "scripts": {
+    "prepare": "git -C .. config core.hooksPath .githooks || true",
     "dev": "vite",
     "predev": "npm run prepare:assets",
     "build": "tsc -b && vite build",

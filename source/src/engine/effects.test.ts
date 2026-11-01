@@ -179,6 +179,25 @@ describe("full-roster effects", () => {
     expect(after.players[1].board[0]?.hp).toBe(1);
   });
 
+  it("King (dodge_50): evades about half of incoming attacks, between Bigfoot's 40% and Sans's 60%", () => {
+    const evadedOutOf200 = (name: string) => {
+      let evaded = 0;
+      for (let seed = 1; seed <= 200; seed++) {
+        const state = mainState();
+        state.players[0].board[0] = makeMinion("John Wick", 0, { atk: 1, hp: 20, maxHp: 20 });
+        state.players[1].board[0] = makeMinion(name, 1, { atk: 0, hp: 10, maxHp: 10, keywords: [], divineShield: false });
+        state.rngSeed = seed * 7919;
+        if (attack(state, 0, 0).players[1].board[0]?.hp === 10) evaded++;
+      }
+      return evaded;
+    };
+    const king = evadedOutOf200("King");
+    expect(king).toBeGreaterThan(80);
+    expect(king).toBeLessThan(120);
+    expect(evadedOutOf200("Bigfoot")).toBeLessThan(king);
+    expect(evadedOutOf200("Sans")).toBeGreaterThan(king);
+  });
+
   it("Zoro (on_kill_buff_1): grows +1/+1 after a kill", () => {
     const state = mainState();
     state.players[0].board[0] = makeMinion("Zoro", 0, { atk: 5 });

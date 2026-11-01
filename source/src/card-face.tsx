@@ -444,9 +444,8 @@ export const CardFace = memo(function CardFace({
             </span>
           </>
         )}
-        {/* Relics use RELIC as a bare slot label. Character flavour keeps its
-            decorative quotation marks. */}
-        {quote ? <div className="cf-flavor"><span>{isRelicFace ? quote : `“${quote}”`}</span></div> : null}
+        {/* Relics carry no quote: an object does not speak. */}
+        {quote && !isRelicFace ? <div className="cf-flavor"><span>{`“${quote}”`}</span></div> : null}
         <div className="cf-origin">{card.origin}</div>
         {/* A board name is CENTRED when it can be.
             On a board the name used to be pushed left by an asymmetric padding

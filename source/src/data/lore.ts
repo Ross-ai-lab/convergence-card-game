@@ -9830,7 +9830,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Arthurian legend · Sacred vessel",
     "lore": "The Holy Grail is a sacred vessel whose identity changes across medieval romances and later tradition. In Arthurian stories it becomes the object of a quest that tests purity, courage, and spiritual insight rather than simple strength.",
-    "quote": "The road matters as much as the cup.",
+    "quote": "",
     "str": [
       "Carries immense spiritual symbolism",
       "Calls for the highest kind of quest",
@@ -9884,7 +9884,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Seven Deadly Sins · Demon sword",
     "lore": "Lostvayne is the sacred treasure of Meliodas, a short demon sword tied to his fighting style and the power of reflected magic. It represents the captain's violent history as much as his skill and loyalty to the Seven Deadly Sins.",
-    "quote": "A captain's blade remembers.",
+    "quote": "",
     "str": [
       "Belongs to an extraordinary swordsman",
       "Supports clone-based combat techniques",
@@ -9938,7 +9938,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Middle-earth · Ring of Power",
     "lore": "The One Ring is Sauron's instrument of domination, forged in the fires of Orodruin to control the other Rings of Power. Its promise of strength is inseparable from corruption, and its destruction requires returning it to the fire that made it.",
-    "quote": "One Ring to rule them all.",
+    "quote": "",
     "str": [
       "Grants invisibility to a mortal wearer",
       "Amplifies the will of its master",
@@ -9992,7 +9992,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "MCU · Infinity Stone",
     "lore": "An Infinity Stone is one of six primordial crystals formed at the beginning of the universe. Each embodies a fundamental aspect of existence, and together they can reshape life on a cosmic scale.",
-    "quote": "The universe is written in six laws.",
+    "quote": "",
     "str": [
       "Embodies a fundamental force",
       "Can be wielded on a cosmic scale",
@@ -10046,7 +10046,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Made in Abyss · Delver's relic",
     "lore": "A White Whistle is the relic of a legendary cave raider, made from a human life and recognized by the Abyss as a symbol of authority. It grants access to the deepest layers while binding exploration to sacrifice.",
-    "quote": "The Abyss answers the brave and the cruel alike.",
+    "quote": "",
     "str": [
       "Marks the highest rank of delver",
       "Opens the path to deeper layers",
@@ -10100,7 +10100,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Wizarding World · Slytherin's secret",
     "lore": "The Chamber of Secrets is a hidden chamber beneath Hogwarts built by Salazar Slytherin. It contains a Basilisk and can be opened by the heir of Slytherin through Parseltongue, turning an old prejudice into a living threat.",
-    "quote": "Enemies of the heir, beware.",
+    "quote": "",
     "str": [
       "Conceals an ancient magical weapon",
       "Links architecture to Parseltongue",
@@ -10154,7 +10154,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Cyberpunk fantasy · Arcane interface",
     "lore": "Cyber-Enchantment is the old fantasy dream translated into circuitry: a ward encoded as a living protocol, a spell that travels through a network instead of a ley line.",
-    "quote": "The network remembers the spell.",
+    "quote": "",
     "str": [
       "Marries symbolic magic with systems thinking",
       "Can protect information and identity",
@@ -10203,7 +10203,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Fate · Noble Phantasm of Gilgamesh",
     "lore": "Ea is the ancient sword wielded by Gilgamesh in the Fate series. Its rotating body represents the primordial separation of heaven and earth, and its Noble Phantasm, Enuma Elish, tears at the world's texture.",
-    "quote": "The world has a seam.",
+    "quote": "",
     "str": [
       "Represents creation before recorded history",
       "Belongs to the King of Heroes",
@@ -10257,7 +10257,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Wizarding World · Deathly Hallow",
     "lore": "The Elder Wand is one of the three Deathly Hallows, made by Death in the tale told to the Peverell brothers. Its reputation as the most powerful wand makes allegiance more important than possession.",
-    "quote": "The last word is mine.",
+    "quote": "",
     "str": [
       "Channels exceptionally powerful magic",
       "Carries the myth of unbeatable skill",
@@ -10311,7 +10311,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "One Punch Man · Monsterization agent",
     "lore": "Monster Cells are created by the Monster Association to transform humans into monsters. Eating one can unlock a person's suppressed obsession, but the change usually means surrendering human identity for power.",
-    "quote": "What would you become to win?",
+    "quote": "",
     "str": [
       "Amplifies a person's latent fixation",
       "Can create dramatic physical transformation",
@@ -10365,7 +10365,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Wizarding World · Alchemical masterpiece",
     "lore": "The Philosopher's Stone is an alchemical object capable of producing the Elixir of Life and turning any metal into pure gold. In the wizarding world it is made by Nicolas Flamel, whose long life becomes inseparable from the stone's fate.",
-    "quote": "There are other ways to live forever.",
+    "quote": "",
     "str": [
       "Represents the height of alchemical craft",
       "Produces the Elixir of Life",
@@ -10419,7 +10419,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Transformers · Source of machine life",
     "lore": "The AllSpark is the source of life for the Transformers and the object at the center of Cybertronian creation myths. It can awaken machines, sustain a civilization, and become the prize that turns Optimus Prime and Megatron against one another.",
-    "quote": "Till all are one.",
+    "quote": "",
     "str": [
       "Creates or awakens Cybertronian life",
       "Carries the history of a world",
@@ -10473,7 +10473,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Tensura · Anti-magic mask",
     "lore": "The anti-magic mask is worn by Shizue Izawa, the Otherworlder known as Shizu. It suppresses magical energy and becomes part of the mystery surrounding the people and worlds that shaped her life.",
-    "quote": "Some memories need a face.",
+    "quote": "",
     "str": [
       "Suppresses magical signatures",
       "Hides the wearer's identity",
@@ -10527,7 +10527,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "One Piece · Devil Fruit",
     "lore": "A Devil Fruit grants its eater a strange ability, but takes away the ability to swim. The fruits range from elemental powers to transformations, and their deepest mysteries connect to the lost history of the world.",
-    "quote": "The sea takes its price.",
+    "quote": "",
     "str": [
       "Gives one person a singular ability",
       "Allows wildly different forms of expression",
@@ -10581,7 +10581,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Fantasy folklore · Apothecary staple",
     "lore": "The healing potion is a recurring fantasy image: a bottle of concentrated restoration carried by adventurers, soldiers, and hedge wizards. Its meaning is simple, but its ingredients reveal the healer's culture and craft.",
-    "quote": "Every journey needs a remedy.",
+    "quote": "",
     "str": [
       "Represents practical care",
       "Portable and immediate in folklore",
@@ -10630,7 +10630,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Hunter x Hunter · Royal birth",
     "lore": "The Chimera Ant Queen's nest is a place of feeding, growth, and violent evolution. The Queen produces offspring by consuming living creatures, and the colony's future emerges from the bodies and traits brought into the nest.",
-    "quote": "The next generation is already moving.",
+    "quote": "",
     "str": [
       "Turns adaptation into inheritance",
       "Creates a collective identity",
@@ -10684,7 +10684,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Death Note · Shinigami eye deal",
     "lore": "The Shinigami Eyes let a human see the name and remaining lifespan of another person. The price is half the human's remaining life, paid to a Shinigami in exchange for the sight.",
-    "quote": "I can see your name.",
+    "quote": "",
     "str": [
       "Reveals hidden identity",
       "Makes mortality visible",
@@ -10738,7 +10738,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "The Mask · Loki's wooden face",
     "lore": "The Mask is a supernatural green face associated with Loki that releases the wearer's suppressed impulses. It turns Stanley Ipkiss into the elastic, fourth-wall-breaking Big Head, with reality bending around comic instinct.",
-    "quote": "Somebody stop me!",
+    "quote": "",
     "str": [
       "Releases impossible imagination",
       "Bends physical reality",
@@ -10792,7 +10792,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "MCU · Space Stone containment vessel",
     "lore": "The Tesseract is the crystalline containment vessel for the Space Stone in the Marvel Cinematic Universe. It powers the research of Project P.E.G.A.S.U.S., opens portals, and becomes a prize for the Red Skull, Loki, and Thanos.",
-    "quote": "Space is negotiable.",
+    "quote": "",
     "str": [
       "Opens portals across vast distance",
       "Contains one of the Infinity Stones",
@@ -10846,7 +10846,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Demon Slayer · Nakime's fortress",
     "lore": "The Infinity Castle is the shifting extradimensional stronghold of Muzan Kibutsuji. Nakime controls its rooms with her biwa, moving demons and intruders through impossible distances as the Demon Slayer Corps closes in.",
-    "quote": "The rooms keep moving.",
+    "quote": "",
     "str": [
       "Rewrites the architecture of a battlefield",
       "Separates enemies at will",
@@ -10900,7 +10900,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Greek myth · The forbidden jar",
     "lore": "Pandora's Box is more accurately a jar in the earliest Greek account. Zeus sends Pandora to humanity, and when the jar is opened, evils escape into the world while Hope remains inside or arrives last, depending on the reading.",
-    "quote": "Curiosity opens what fear keeps closed.",
+    "quote": "",
     "str": [
       "Explains the arrival of suffering",
       "Preserves Hope as a final mystery",
@@ -10954,7 +10954,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "The Monkey's Paw · Cautionary talisman",
     "lore": "In W. W. Jacobs's short story, a mummified paw is said to grant three wishes. Sergeant-Major Morris warns the Whites about it, but the family wishes anyway and discovers that a fulfilled desire can arrive in the cruelest literal form.",
-    "quote": "Be careful what you wish for.",
+    "quote": "",
     "str": [
       "Makes desire physically consequential",
       "Turns ordinary wishes into moral tests",
@@ -11008,7 +11008,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Biblical relic · Covenant chest",
     "lore": "The Ark of the Covenant is the sacred chest described in the Hebrew Bible as the dwelling place of God's covenant with Israel. Indiana Jones and the Raiders of the Lost Ark turn its sacred imagery into an archaeological adventure about reverence and desecration.",
-    "quote": "It belongs in a museum.",
+    "quote": "",
     "str": [
       "Represents covenant and presence",
       "Unites ritual, memory, and law",
@@ -11062,7 +11062,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Cthulhu Mythos · Forbidden grimoire",
     "lore": "The Necronomicon is a fictional grimoire created by H. P. Lovecraft and attributed to the mad poet Abdul Alhazred. Its fragments describe cosmic entities and rituals that make human knowledge feel small, temporary, and dangerous.",
-    "quote": "The dead have footnotes.",
+    "quote": "",
     "str": [
       "Contains forbidden cosmic knowledge",
       "Expands horror beyond human scale",
@@ -11116,7 +11116,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Dragon Ball · Earth's wish orbs",
     "lore": "The Dragon Balls are seven magical orbs that summon Shenron when gathered. Their wishes are limited by the dragon and the creator of the set, while the search for them carries the story from a comic adventure into cosmic history.",
-    "quote": "Your wish is granted.",
+    "quote": "",
     "str": [
       "Turns a scattered search into a miracle",
       "Connects Earth to its guardians",
@@ -11170,7 +11170,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Marvel · Hammer of Thor",
     "lore": "Mjolnir is the enchanted hammer of Thor, forged in a dying star and marked by Odin's worthiness enchantment. It returns to its wielder, commands storms, and has been lifted by heroes who prove themselves worthy of its responsibility.",
-    "quote": "Whosoever holds this hammer, if they be worthy...",
+    "quote": "",
     "str": [
       "Commands thunder and flight",
       "Returns when called by its worthy wielder",
@@ -11224,7 +11224,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Arthurian legend · Sword of kingship",
     "lore": "Excalibur is King Arthur's famous sword, usually given to him by the Lady of the Lake. Later retellings sometimes merge it with the sword drawn from the stone, but the legends consistently make it a sign of rightful kingship and a weapon beyond ordinary craft.",
-    "quote": "The right hand finds the hilt.",
+    "quote": "",
     "str": [
       "Represents rightful authority",
       "Carries supernatural sharpness and durability",
@@ -11278,7 +11278,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Ben 10 · Omnitrix device",
     "lore": "The Omnitrix is a device created by Azmuth that lets its wearer access the genetic templates of many alien species. It was designed as a tool for understanding and peace, but its range of forms makes it one of the most dangerous objects in the galaxy.",
-    "quote": "It's hero time!",
+    "quote": "",
     "str": [
       "Stores a library of alien forms",
       "Turns adaptation into identity",
@@ -11332,7 +11332,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "JoJo · Stand-creating Arrow",
     "lore": "The Stand Arrows are mysterious weapons made from a meteorite carrying an otherworldly virus. Those who survive the piercing may awaken a Stand, while those who cannot endure it are left behind by the same force that grants another person extraordinary power.",
-    "quote": "The arrow chooses.",
+    "quote": "",
     "str": [
       "Awakens hidden potential",
       "Turns a wound into a new identity",
@@ -11386,7 +11386,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Pokémon · Capsule for partners",
     "lore": "A Poké Ball is a compact device used to carry Pokémon between journeys and battles. Its small shape hides a carefully tuned interior, turning a powerful creature's movement between the wild and a trainer's side into a familiar red-and-white gesture.",
-    "quote": "Gotta catch them all!",
+    "quote": "",
     "str": [
       "Makes partnership portable",
       "Bridges wild and civilised spaces",
@@ -11440,7 +11440,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Harry Potter · Ministry time device",
     "lore": "A Time-Turner is a magical hourglass that lets its user revisit a limited span of time. Hermione Granger uses one to attend overlapping lessons, and later stories show how even a small change in chronology can carry enormous consequences.",
-    "quote": "Minutes become possibilities.",
+    "quote": "",
     "str": [
       "Makes lost time reachable",
       "Rewards careful planning",
@@ -11494,7 +11494,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Marvel · Klyntar organism",
     "lore": "A symbiote is a living alien organism that bonds with a host and shares its senses, strength, and instincts. The relationship can become a partnership like Venom and Eddie Brock, or a struggle in which hunger and identity threaten to consume the person inside the suit.",
-    "quote": "We are Venom.",
+    "quote": "",
     "str": [
       "Shares power through partnership",
       "Heals and protects its host",
@@ -11548,7 +11548,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "Men in Black · Memory eraser",
     "lore": "The neuralyzer is a compact device used by the Men in Black to erase or replace memories with a flash of light. It keeps the hidden alien world from becoming public knowledge, while leaving its agents responsible for deciding which truths ordinary people are allowed to remember.",
-    "quote": "Look right here.",
+    "quote": "",
     "str": [
       "Erases dangerous knowledge",
       "Protects a secret world",
@@ -11602,7 +11602,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ],
     "rank": "DC · Green Lantern power ring",
     "lore": "A Green Lantern power ring is an advanced device powered by will and connected to the emotional spectrum. It translates a Lantern's imagination into solid light, grants flight and protection, and answers most strongly when its wielder refuses to surrender.",
-    "quote": "In brightest day, in blackest night.",
+    "quote": "",
     "str": [
       "Turns imagination into solid light",
       "Rewards courage and discipline",

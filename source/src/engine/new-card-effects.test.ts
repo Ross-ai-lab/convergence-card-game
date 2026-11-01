@@ -492,7 +492,7 @@ describe("2026 card replacements", () => {
       Musashi: { atk: 2, hp: 1 },
       Illumi: { atk: 1, hp: 1 },
       "Grand Master Yoda": { atk: 5, hp: 5, effectId: "yoda_lowest_atk_buff", effectTiming: "ongoing", keywords: ["Cannot Attack", "Ongoing"] },
-      King: { cost: 1, atk: 0, hp: 3, effectId: "dodge_60", effectTiming: "passive", keywords: ["Taunt", "Passive"], effect: "Taunt. Passive: Evade 60% of attacks" },
+      King: { cost: 1, atk: 0, hp: 3, effectId: "dodge_50", effectTiming: "passive", keywords: ["Taunt", "Passive"], effect: "Taunt. Passive: Evade 50% of attacks" },
       "Dominion Authority": { atk: 1, hp: 4, effectId: "dominion_authority", effectTiming: "passive", keywords: ["Passive"] },
       Kratos: {
         cost: 6,
@@ -1544,11 +1544,11 @@ describe("2026 card replacements", () => {
     expect(awake.players[1].board[0]?.atk).toBe(3);
   });
 
-  it("King is a 0/3 Taunt minion with 60% evasion", () => {
+  it("King is a 0/3 Taunt minion with 50% evasion", () => {
     const state = mainState("king-taunt");
     state.players[0].board[0] = minion("King", 0, {sleeping:false});
     state.players[1].board[0] = minion("John Wick", 1, {sleeping:false});
-    expect(state.players[0].board[0]).toMatchObject({atk:0,hp:3,keywords:["Taunt","Passive"],effectId:"dodge_60"});
+    expect(state.players[0].board[0]).toMatchObject({atk:0,hp:3,keywords:["Taunt","Passive"],effectId:"dodge_50"});
     expect(getLegalActions(state,library).some(a=>a.type==="attack_minion" && a.attackerSlot===0)).toBe(true);
     const enemyTurn=endTurn(state,0);
     expect(enemyTurn.players[1].board[0]?.attackLocked).toBe(false);

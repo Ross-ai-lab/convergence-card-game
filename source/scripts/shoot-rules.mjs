@@ -17,7 +17,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { launch } from "./browser.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.join(here, "..", ".preview", "rules");
@@ -26,7 +26,7 @@ const url = process.argv[2] ?? "http://localhost:5177";
 fs.rmSync(outDir, { recursive: true, force: true });
 fs.mkdirSync(outDir, { recursive: true });
 
-const browser = await chromium.launch();
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
 await page.goto(url, { waitUntil: "networkidle" });
 

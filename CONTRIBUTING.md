@@ -115,10 +115,12 @@ An unchanged workbook can be verified with Node alone. The generator refuses a m
 2. Keep effect text consistent with the engine. Specific effects ask the player to choose; explicitly random, positional, weakest, or costliest effects resolve automatically.
 3. Add or update the behaviour test. Every nontrivial new card needs a test reached by `check:coverage`.
 4. Run `validate:data` and the focused behaviour and browser checks needed for this change. Rebuild the workbook and playable release.
-5. Name the affected cards in the change description. `npm run changed-cards` and `npm run card-history -- "Card name"` help trace changes.
+5. Name the affected cards in the change description. `npm run changed-cards` prints a summary to paste, and `npm run card-history -- "Card name"` traces a card's past. The commit-message hook refuses a commit that changes card data without naming every changed card; `npm ci` switches it on for the clone.
 
 Effect text has no final period, comma, semicolon, or colon. Internal sentences retain punctuation.
 Use the existing wording for repeated mechanics, such as Freeze, Silence, Chained, and Reborn.
+Every card prints its own effect. Two cards never share an effect id or print the same rule under different labels; `validate:data` and `npm test` fail on a duplicate. Give the second card its own variant, as Bigfoot, King and Sans evade 40%, 50% and 60%.
+Relics carry no flavour quote, on the card or in their Star Chart profile.
 Every new engine vocabulary value belongs in [types.ts](source/src/engine/types.ts); validators derive their lists from it.
 
 Mana is the subject's lore power tier. Assign it from canon capabilities and the Basic reference ladder, independently of card stats or gameplay results.
