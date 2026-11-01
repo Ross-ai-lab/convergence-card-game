@@ -55,7 +55,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
 3. Select **Collection**, choose a universe and challenge its champion.
 4. Win new cards, earn Hero Powers and build the deck you want to play.
 
-**Mend Core** is available and equipped from the start. Your first champion victory also unlocks **The Empty Chair**, a six-panel comic in the Lore book. Nine further chapters remain sealed.
+**Mend Core** is available and equipped from the start. Your first champion victory also unlocks **The Empty Chair**, a six-panel comic in the Lore book. Nine further chapters open as more champions fall; the last needs all twenty.
 
 ### Controls
 

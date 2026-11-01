@@ -1,0 +1,19 @@
+Use case: illustration-story. Create final production comic artwork for an original fantasy card game chapter called The Archivist's Card (Chapter 6 of 10). This is ONE square atlas containing exactly SIX equal rectangular comic panels, in a perfectly aligned 3-column by 2-row grid, read left-to-right then top-to-bottom. Every cell is portrait 2:3. Request a crisp 2048 by 2048 square image. No outer margin. No text anywhere, no letters, speech balloons, captions, watermarks or logos; the game adds readable dialogue itself. Use narrow straight dark gutters only on the exact one-third and two-third vertical boundaries and the halfway horizontal boundary. Each cell must be a complete self-contained illustration, no elements crossing a gutter.
+
+Art direction: exceptional professional graphic novel illustration, expressive hand-inked contours, rich hand-painted gouache shading, fine paper texture, deep violet shadows, antique gold highlights, celestial teal light, strong cinematic compositions. Match the look of Chapter 1, The Empty Chair. Avoid photorealism, generic 3D, flat icon art and excessive details that obscure the action on phones. Never depict recognisable characters from existing films, games, comics or anime; champions appear only as glowing silhouettes or as card frames.
+
+Original protagonist in every appropriate panel: Rick Gramps, a sturdy elderly man with swept-back silver hair, short white beard, bushy brows, round brass goggles pushed up on his forehead, weathered olive long coat, wine-red scarf, fingerless gloves, one small brass cuff on his left wrist. Wry and determined, never a caricature. Consistent face and clothing across panels. Recurring character where named: The Archivist, a young woman in an oversized midnight-blue hooded coat, short copper hair, carrying a small ring of gold keys. Calm and knowing.
+
+Panel 1 upper left: Rick alone in the round ledger chamber breaks a gold wax seal on a page of the giant ledger, lantern light, furtive.
+
+Panel 2 upper middle: pressed flat between huge ledger pages lies an old card bearing a portrait of the copper-haired Archivist, a heavy golden lock thread wrapped around it.
+
+Panel 3 upper right: the Archivist stands in the arched doorway, her silhouette edged with a faint glowing rectangular card border, her expression sad and honest.
+
+Panel 4 lower left: close-up of the key ring held up to the light; each gold key bow contains a tiny painted image of the same seaside city at different times of day.
+
+Panel 5 lower middle: Rick laughs warmly and offers the Archivist's card back to her with an open hand, she hesitates with the beginning of a smile.
+
+Panel 6 lower right: a quiet two-shot: Rick's gaze moves from the smooth blank key on the Archivist's ring down to the small brass cuff on his own left wrist, which glints.
+
+Keep important faces and action below the top 12 percent of each panel and above the bottom 12 percent, leaving calm shaded areas there for later UI captions.

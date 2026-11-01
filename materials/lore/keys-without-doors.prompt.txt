@@ -1,0 +1,19 @@
+Use case: illustration-story. Create final production comic artwork for an original fantasy card game chapter called Keys Without Doors (Chapter 2 of 10). This is ONE square atlas containing exactly SIX equal rectangular comic panels, in a perfectly aligned 3-column by 2-row grid, read left-to-right then top-to-bottom. Every cell is portrait 2:3. Request a crisp 2048 by 2048 square image. No outer margin. No text anywhere, no letters, speech balloons, captions, watermarks or logos; the game adds readable dialogue itself. Use narrow straight dark gutters only on the exact one-third and two-third vertical boundaries and the halfway horizontal boundary. Each cell must be a complete self-contained illustration, no elements crossing a gutter.
+
+Art direction: exceptional professional graphic novel illustration, expressive hand-inked contours, rich hand-painted gouache shading, fine paper texture, deep violet shadows, antique gold highlights, celestial teal light, strong cinematic compositions. Match the look of Chapter 1, The Empty Chair. Avoid photorealism, generic 3D, flat icon art and excessive details that obscure the action on phones. Never depict recognisable characters from existing films, games, comics or anime; champions appear only as glowing silhouettes or as card frames.
+
+Original protagonist in every appropriate panel: Rick Gramps, a sturdy elderly man with swept-back silver hair, short white beard, bushy brows, round brass goggles pushed up on his forehead, weathered olive long coat, wine-red scarf, fingerless gloves, one small brass cuff on his left wrist. Wry and determined, never a caricature. Consistent face and clothing across panels. Recurring character where named: The Archivist, a young woman in an oversized midnight-blue hooded coat, short copper hair, carrying a small ring of gold keys. Calm and knowing.
+
+Panel 1 upper left: close-up of Rick's gloved hand holding an ornate card; inside the card frame a miniature landscape glows as a tiny sun rises over it, light spilling onto his face.
+
+Panel 2 upper middle: Rick in a cluttered workshop of brass instruments holds the card to his ear with eyes narrowed, faint swirls of wind and tiny birds escape the card's edge.
+
+Panel 3 upper right: the Archivist sits across a worn wooden table and fans out a ring of many unique gold keys under a hanging lamp, Rick leans in, the keys cast long shadows.
+
+Panel 4 lower left: one gold key on the table glows and rotates by itself; in the background through a round window a far-off floating card's golden lock thread snaps loose.
+
+Panel 5 lower middle: Rick points at a smooth blank key without teeth; the Archivist closes her hand over it protectively, her expression guarded for the first time.
+
+Panel 6 lower right: the Archivist walks away down a vaulted corridor toward an arched doorway; on the far wall a huge shadow of two hands cuts a deck of cards, Rick watches from the foreground.
+
+Keep important faces and action below the top 12 percent of each panel and above the bottom 12 percent, leaving calm shaded areas there for later UI captions.

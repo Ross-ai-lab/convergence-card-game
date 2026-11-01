@@ -118,6 +118,11 @@ Clearing a duel cancels its pending write so an old action cannot restore a fini
 Named decks retain independent card lists and their selected Hero Power. Edits save automatically to the selected name, initially Starter Deck. Creating a deck starts empty and never replaces an existing name; an incomplete deck cannot start a duel until it reaches thirty cards. Legacy unnamed and unsaved drafts migrate without losing cards. Hotseat seats keep separate named decks by default.
 Browser storage is local to the device and origin. There is no account synchronization.
 
+## Lore chapters open with the campaign
+
+The Lore book's ten chapters open on first champion victories: one, two, four, six and so on, with the finale only after all twenty. Replays and cheats never open one.
+[chapters.json](materials/lore/chapters.json) authors chapters II–X with an art brief per panel. Until a chapter's painted atlas exists, the reader draws its panels as storyboards from the same script, so the story is readable before the art.
+
 ## A static release with relative assets
 
 [source/](source/) is editable; [play/](play/) is its generated browser release.
