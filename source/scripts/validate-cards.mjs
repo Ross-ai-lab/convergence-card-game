@@ -342,7 +342,7 @@ for (const [index, card] of cards.entries()) {
 if (cards.length !== 183) errors.push(`Expected 183 cards, found ${cards.length}`);
 if (relics.length !== 34) errors.push(`Expected 34 relics, found ${relics.length}`);
 for (const [index, relic] of relics.entries()) {
-  if (relic.flavor?.trim()) errors.push(`Line ${index + 2}: ${relic.name} has flavour text; relics carry no quote`);
+  if (relic.flavor !== "RELIC") errors.push(`Line ${index + 2}: ${relic.name} must print the standard RELIC label as its flavour`);
   checkEffectPunctuation(relic.name, index + 2, relic.effect, errors);
   const stingPath = path.join(projectRoot, "public", "audio", "stings", `${relic.id}.ogg`);
   if (!fs.existsSync(stingPath)) {

@@ -120,7 +120,7 @@ An unchanged workbook can be verified with Node alone. The generator refuses a m
 Effect text has no final period, comma, semicolon, or colon. Internal sentences retain punctuation.
 Use the existing wording for repeated mechanics, such as Freeze, Silence, Chained, and Reborn.
 Every card prints its own effect. Two cards never share an effect id or print the same rule under different labels; `validate:data` and `npm test` fail on a duplicate. Give the second card its own variant, as Bigfoot, King and Sans evade 40%, 50% and 60%.
-Relics carry no flavour quote, on the card or in their Star Chart profile.
+Every relic prints the standard RELIC label in its flavour slot.
 Every new engine vocabulary value belongs in [types.ts](source/src/engine/types.ts); validators derive their lists from it.
 
 Mana is the subject's lore power tier. Assign it from canon capabilities and the Basic reference ladder, independently of card stats or gameplay results.

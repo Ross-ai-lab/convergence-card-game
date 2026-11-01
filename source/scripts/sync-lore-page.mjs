@@ -111,8 +111,6 @@ for (const card of roster) {
     atk: relic ? 0 : Number(card.atk),
     hp: relic ? 0 : Number(card.hp),
     cc: CAMP_ACCENT[camp],
-    // An object does not speak: relic profiles carry no quote.
-    ...(relic ? { quote: "" } : {}),
   };
   if (!synced[card.id].rar || !synced[card.id].cc) throw new Error(`Unknown rarity or camp on ${card.id} ${card.name}`);
 }
