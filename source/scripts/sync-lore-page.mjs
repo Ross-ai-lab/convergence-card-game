@@ -9,9 +9,9 @@
  *
  * This script copies the card-owned fields from cards.csv and relics.csv into
  * every profile, puts the profiles in roster order, and rebuilds the Star
- * Charts grid from them. A grid portrait already embedded in the page is kept.
- * A new card takes materials/lore/portraits/<id>.webp when it exists, and
- * otherwise links its card art from the published game.
+ * Charts grid from them. Each grid portrait links materials/lore/portraits/<id>.webp,
+ * so the page stays small and phones fetch portraits as they scroll. A card
+ * with no portrait file there links its card art from the published game.
  *
  *   node scripts/sync-lore-page.mjs           rewrite the page when it is stale
  *   node scripts/sync-lore-page.mjs --check   fail when the page is stale
@@ -74,10 +74,9 @@ function radar(vals, glow) {
   return `${svg}</svg>`;
 }
 
-function portraitFor(id, art, existing) {
-  if (existing.has(id)) return existing.get(id);
-  const file = path.join(portraitDir, `${id}.webp`);
-  if (fs.existsSync(file)) return `data:image/webp;base64,${fs.readFileSync(file).toString("base64")}`;
+function portraitFor(id, art) {
+  // Linked, never embedded: embedded portraits once made this page 7 MB.
+  if (fs.existsSync(path.join(portraitDir, `${id}.webp`))) return `lore/portraits/${id}.webp`;
   return `../play${art}`;
 }
 
@@ -122,12 +121,9 @@ const gridFrom = page.indexOf(gridOpen) + gridOpen.length;
 if (gridFrom < gridOpen.length) throw new Error("Star Charts grid not found on the lore page");
 const gridTo = page.indexOf("</div>", page.lastIndexOf("</article>", page.indexOf('<div id="tab-fights"')));
 const oldGrid = page.slice(gridFrom, gridTo);
-const existingPortraits = new Map();
 const existingNotes = new Map();
 for (const match of oldGrid.matchAll(/<article class="sc-card" data-id="([^"]+)"[\s\S]*?<\/article>/g)) {
-  const portrait = match[0].match(/class="sc-portrait"[^>]*src="([^"]+)"/);
   const note = match[0].match(/<p class="sc-note">([^<]*)<\/p>/);
-  if (portrait) existingPortraits.set(match[1], portrait[1]);
   if (note) existingNotes.set(match[1], note[1]);
 }
 
@@ -140,7 +136,7 @@ const articles = roster.map((card) => {
   const axes = AXIS_KEYS.map((key, i) => `data-${key}="${d.vals[i]}"`).join(" ");
   const meta = card.kind === "relic" ? `${esc(d.origin)} · Relic` : `${esc(d.origin)} · ${esc(d.camp)} · ${esc(d.align)}`;
   return `<article class="sc-card" data-id="${card.id}" data-name="${esc(d.name.toLowerCase())}" data-origin="${esc(d.origin.toLowerCase())}" data-camp="${d.camp}" data-align="${esc(d.align)}" data-rarity="${rarity}" data-total="${total}" ${axes} style="--cc:${glow}" title="${esc(d.name)} — ${note}">`
-    + `<img class="sc-portrait" loading="lazy" src="${portraitFor(card.id, card.art, existingPortraits)}" alt="${esc(d.name)}">`
+    + `<img class="sc-portrait" loading="lazy" src="${portraitFor(card.id, card.art)}" alt="${esc(d.name)}">`
     + `<div class="sc-body"><h3 class="sc-name">${esc(d.name)}</h3>`
     + `<p class="sc-meta"><span class="sc-dot" style="background:${RARITY_DOT[rarity]}"></span>${meta}</p>`
     + `${radar(d.vals, glow)}<p class="sc-note">${note}</p></div></article>`;
@@ -151,6 +147,10 @@ const span = between(next, "window.CV_DETAIL=", ";</script>");
 next = next.slice(0, span.from) + detailJson + next.slice(span.to);
 next = next.replace(/<p class="sc-sub">[^<]*?, scored 0 to 10/,
   `<p class="sc-sub">All ${cards.length} characters and ${relics.length} relics, scored 0 to 10`);
+
+if (/src="data:image\/(?:jpeg|png|webp)/.test(next)) {
+  throw new Error("The lore page embeds an image. Save it under materials/lore/ and link it instead.");
+}
 
 if (next === page) {
   console.log(`Lore page is current: ${roster.length} Star Chart profiles.`);
