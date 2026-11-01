@@ -17,14 +17,13 @@ import "./board-fx.css";
 import "./dev-only.css";
 import { sfx } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
-import { BOT_CHEATS } from "./engine/bot";
 import { BotSearch } from "./engine/bot-search";
 import { PointerStore, type ScreenPoint } from "./pointer-store";
 
 import { requestPhoneLandscape, usePhoneLayout } from './phone-layout';
 import { useRelicPeek } from './relic-peek';
 
-import { heroPowerDefinition, randomHeroPower } from "./engine/hero-powers";
+import { heroPowerDefinition } from "./engine/hero-powers";
 import { isMinionCard } from "./engine/types";
 import { isTokenCardId } from "./engine/tokens";
 import {
@@ -71,7 +70,6 @@ import { useOnlineDuel } from "./online/use-online-duel";
 import type { OnlineStep } from "./online/protocol";
 import { beginDraftDuel, draftBotSkill, draftDifficulty, draftDuelIndex, draftReady, draftRivalDeck, loadDraft, recordDraftDuel, saveDraft, startDraftRun, type DraftRun, type DraftSave } from "./draft";
 import { CampaignSpeech, CollectedBossSpeech, type SpeechCue } from "./screens/CampaignSpeech";
-import campaignVoiceManifest from "../data/campaign-voices.json";
 import { onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
@@ -82,7 +80,6 @@ import {
   PassScreen,
   SettingsPanel,
   TitleScreen,
-  type DuelIntroPhase,
   type GameMode,
 } from "./screens/Screens";
 // The component modules below bring no stylesheets of their own; every CSS
@@ -90,6 +87,19 @@ import {
 import { useFullscreen } from "./use-fullscreen";
 import { campAccent, CardFace, FontRevisionContext, KeywordPopover, playableFace, RelicCardPeek } from "./card-face";
 import type { DuelIntroState } from "./duel/fx";
+import {
+  BOT_DELAY_MS,
+  BOT_FIRST_DELAY_MS,
+  BOT_ID,
+  campaignVoiceDuration,
+  DEVELOPER_MVP_DAMAGE,
+  DEVELOPER_MVP_INSTANCE,
+  foresightSeat,
+  heroPowersForDuel,
+  openingEvent,
+  TENSION_CORE,
+} from "./duel/duel-setup";
+import { useDuelIntroSchedule } from "./duel/use-duel-intro";
 import { useDuelFx } from "./duel/use-duel-fx";
 import { useCardPreview } from "./duel/use-card-preview";
 import { useDuelInput, type DragState } from "./duel/use-duel-input";
@@ -104,65 +114,6 @@ import { DeveloperTools } from "./duel/developer-tools";
 import { GameOver } from "./duel/game-over";
 import { CardGallery } from "./gallery/card-gallery";
 import { GalleryDetailModal } from "./gallery/card-profile";
-
-function campaignVoiceDuration(key: string): number | undefined {
-  const entries = campaignVoiceManifest as Record<string, { duration?: unknown }>;
-  const entry = entries[key];
-  return typeof entry?.duration === "number" ? entry.duration : undefined;
-}
-
-function heroPowersForDuel(
-  mode: GameMode,
-  playerPower: HeroPowerId | null,
-  seed: string,
-): [HeroPowerId | null, HeroPowerId | null] {
-  return mode.kind === "hotseat" ? [playerPower, playerPower] : [playerPower, randomHeroPower(seed)];
-}
-
-// Keep this schedule aligned with the opening animation table in the project
-// README. The intro ends after the mana reveal; opening card flights continue
-// as pointer-free visual polish instead of blocking the first action.
-const DUEL_INTRO_TIMINGS = {
-  preludeMs: 1_860,
-  revealMs: 1_680,
-  drawMs: 3_430,
-  manaMs: 570,
-  exitMs: 315,
-} as const;
-/** Core at or under this swaps the music to the tense bed. Roughly a quarter. */
-const TENSION_CORE = 12;
-
-/**
- * The made-up damage tally behind the developer result screen.
- *
- * A tally entry needs an instance id and a number, and neither exists when no
- * duel was played. The id is spelled out rather than random so a screenshot of
- * that screen is reproducible, and the damage is a flat figure because there is
- * nothing to derive it from — see `developerShowResult`.
- */
-const DEVELOPER_MVP_INSTANCE = "developer-mvp";
-const DEVELOPER_MVP_DAMAGE = 42;
-
-const BOT_ID: PlayerId = 1;
-
-/**
- * The one cheat the engine has to know about, because the draw it changes
- * happens deep inside `beginTurn` where nothing knows which seat is a bot.
- * Every other cheat lives in the bot's own search. Hotseat grants it to nobody.
- */
-function foresightSeat(mode: GameMode): PlayerId | null {
-  // A draft rival carries its own fair cheats in the duel state instead.
-  return (mode.kind === "bot" || mode.kind === "campaign") && BOT_CHEATS[mode.skill].foresight ? BOT_ID : null;
-}
-// The practice bot thinks fast enough to be invisible — these pauses exist so a
-// human can watch what it did, not because it is slow.
-const BOT_DELAY_MS = 620;
-const BOT_FIRST_DELAY_MS = 900;
-
-const openingEvent: GameEvent = {
-  kind: "info",
-  text: "The rift opens. Player One begins.",
-};
 
 export default function App() {
   const { isFullscreen, toggleFullscreen } = useFullscreen();
@@ -280,27 +231,16 @@ export default function App() {
   function persistProgress(next: Progress) {
     setProgress(next); const saved = saveProgress(next); setStorageError(!saved); return saved;
   }
-  function createDeckPreset(name:string,seat:0|1):boolean {
-    const next=createNamedDeck(progress,name,seat);
-    if(next===progress)return false;
-    const saved=saveProgress(next);setStorageError(!saved);
-    if(saved)setProgress(next);
+  /** Saves a deck-list edit before showing it; false when nothing changed or the save failed. */
+  function commitDeckEdit(next: Progress): boolean {
+    if (next === progress) return false;
+    const saved = saveProgress(next); setStorageError(!saved);
+    if (saved) setProgress(next);
     return saved;
   }
-  function renameDeckPreset(id:string,name:string):boolean {
-    const next=renameNamedDeck(progress,id,name);
-    if(next===progress)return false;
-    const saved=saveProgress(next);setStorageError(!saved);
-    if(saved)setProgress(next);
-    return saved;
-  }
-  function deleteDeckPreset(id:string):boolean {
-    const next=deleteNamedDeck(progress,id);
-    if(next===progress)return false;
-    const saved=saveProgress(next);setStorageError(!saved);
-    if(saved)setProgress(next);
-    return saved;
-  }
+  const createDeckPreset = (name: string, seat: 0 | 1) => commitDeckEdit(createNamedDeck(progress, name, seat));
+  const renameDeckPreset = (id: string, name: string) => commitDeckEdit(renameNamedDeck(progress, id, name));
+  const deleteDeckPreset = (id: string) => commitDeckEdit(deleteNamedDeck(progress, id));
   function setSelectedHeroPower(power: HeroPowerId) { persistProgress(acknowledgeHeroPowers(selectHeroPower(progress, power,builderSeat))); }
   function openDeck(seat: 0 | 1 = 0, back: "title" | "campaign" | "hotseat" | "online" = "title") {
     const next=ensureNamedDeck(progress,seat);if(next!==progress)persistProgress(next);
@@ -465,47 +405,8 @@ export default function App() {
     onFontsReady(() => refit((n) => n + 1));
   }, []);
 
-  // A fresh duel has a complete opening state immediately, but the player
-  // should experience that state arriving in beats. The intro is view-only:
-  // it never changes the engine state, it only unlocks the already-created
-  // board after the rift, opening deal, and mana reveal have landed.
-  useEffect(() => {
-    if (!duelIntro) return;
-    const { id, phase } = duelIntro;
-    const moveTo = (nextPhase: DuelIntroPhase) => {
-      setDuelIntro((current) => (current && current.id === id ? { ...current, phase: nextPhase } : current));
-    };
-
-    if (phase === "prelude") {
-      const timer = window.setTimeout(() => moveTo("reveal"), DUEL_INTRO_TIMINGS.preludeMs);
-      return () => window.clearTimeout(timer);
-    }
-    if (phase === "reveal") {
-      sfx.play("turn", 0.08);
-      const timer = window.setTimeout(() => moveTo("draw"), DUEL_INTRO_TIMINGS.revealMs);
-      return () => window.clearTimeout(timer);
-    }
-    if (phase === "draw") {
-      const frame = window.requestAnimationFrame(() => {
-        fx.spawnOpeningDeal(game.players[viewerId].hand.length, game.players[opponentId].hand.length);
-      });
-      const timer = window.setTimeout(() => moveTo("mana"), DUEL_INTRO_TIMINGS.drawMs);
-      return () => {
-        window.cancelAnimationFrame(frame);
-        window.clearTimeout(timer);
-      };
-    }
-    if (phase === "mana") {
-      sfx.play("mana", 0.08);
-      const timer = window.setTimeout(() => moveTo("exit"), DUEL_INTRO_TIMINGS.manaMs);
-      return () => window.clearTimeout(timer);
-    }
-    const timer = window.setTimeout(
-      () => setDuelIntro((current) => (current?.id === id ? null : current)),
-      DUEL_INTRO_TIMINGS.exitMs,
-    );
-    return () => window.clearTimeout(timer);
-  }, [duelIntro]);
+  useDuelIntroSchedule(duelIntro, setDuelIntro, () =>
+    fx.spawnOpeningDeal(game.players[viewerId].hand.length, game.players[opponentId].hand.length));
 
   // Persist after every change. A finished duel is not worth resuming, so the
   // slot is cleared instead of holding a game-over screen forever.
