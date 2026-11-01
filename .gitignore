@@ -14,3 +14,5 @@ trailer/Concat-Project/cache/
 materials/*.xlsx.sync.lock
 materials/*.xlsx.*.tmp
 materials/*.xlsx.*.tmp.inspect.ndjson
+# Rendered trailers stay local until published as a release asset.
+/*.mp4
