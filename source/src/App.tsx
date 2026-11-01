@@ -1,7 +1,7 @@
 import { TUTORIAL_LESSONS, tutorialAllowsAction, nextTutorialStep, tutorialOpponentAction } from './tutorial';
 import {TurnClock,TurnClockWarning,humanTurnKey} from './turn-clock';
 import {expirePlayerTurn} from './engine/turn-timeout';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
 import "./gallery-detail.css";
@@ -112,8 +112,13 @@ import { DrawChoiceOverlay, EventLog, HoverCard, MulliganOverlay, TargetPrompt, 
 import { CardPack } from "./duel/card-pack";
 import { DeveloperTools } from "./duel/developer-tools";
 import { GameOver } from "./duel/game-over";
-import { CardGallery } from "./gallery/card-gallery";
-import { GalleryDetailModal } from "./gallery/card-profile";
+
+// Loaded when first opened, keeping them out of the first download. The card
+// profile carries every Star Chart (over 300 KB of lore). Neither module
+// imports a stylesheet, so loading them late cannot reorder the CSS cascade.
+const loadGallery = () => import("./gallery/card-gallery");
+const CardGallery = lazy(() => loadGallery().then((module) => ({ default: module.CardGallery })));
+const GalleryDetailModal = lazy(() => import("./gallery/card-profile").then((module) => ({ default: module.GalleryDetailModal })));
 
 export default function App() {
   const { isFullscreen, toggleFullscreen } = useFullscreen();
@@ -400,6 +405,17 @@ export default function App() {
   // the fallback's metrics. One re-render once they arrive re-measures the whole
   // roster. It cannot flash oversized text: the fallback is WIDER than Nunito,
   // so the first pass errs a little small and then grows.
+  // Fetch My Deck in the background once the first screen has settled, so it
+  // still opens without a wait.
+  useEffect(() => {
+    const prefetch = () => { void loadGallery(); };
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(prefetch, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const timer = window.setTimeout(prefetch, 2000);
+    return () => window.clearTimeout(timer);
+  }, []);
   const [fontRevision, refit] = useState(0);
   useEffect(() => {
     onFontsReady(() => refit((n) => n + 1));
@@ -1780,18 +1796,18 @@ export default function App() {
         onResume={continueDuel}
         onClose={() => setOverlay(null)} />}
       {overlay === 'lore' && <LoreLibrary completedBosses={progress.completedBosses} onClose={()=>setOverlay(null)} />}
-      {overlay === "deck" && <CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onPresetRename={renameDeckPreset} onPresetDelete={deleteDeckPreset} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
-        onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
+      {overlay === "deck" && <Suspense fallback={null}><CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onPresetRename={renameDeckPreset} onPresetDelete={deleteDeckPreset} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+        onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} /></Suspense>}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}
       {storageError && <div className="campaign-storage-error" role="alert">Progress could not be saved. Keep this page open and retry.
         <button onClick={() => { if (persistProgress(progress) && game.phase === "gameOver") { clearSave(); setHasLiveSave(false); } }}>Retry save</button></div>}
-      {overlay === "opponent" && campaignBoss && <GalleryDetailModal
+      {overlay === "opponent" && campaignBoss && <Suspense fallback={null}><GalleryDetailModal
         entry={{ key: campaignBoss.id, card: campaignBoss, face: playableFace(campaignBoss) }}
         locked={false}
         onClose={() => setOverlay(null)}
         onNavigate={() => undefined}
-      />}
+      /></Suspense>}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel

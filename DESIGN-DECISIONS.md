@@ -128,6 +128,7 @@ The Lore book's ten chapters open on first champion victories: one, two, four, s
 [source/](source/) is editable; [play/](play/) is its generated browser release.
 The game runs below the repository's Pages path, so runtime URLs use [asset-url.ts](source/src/engine/asset-url.ts) and the configured base.
 The artwork folder is one maintained WebP library. A replacement can use a new filename to avoid stale cached art.
+My Deck and card profiles, with their Star Chart lore, load on first use and My Deck is fetched in the background once the title screen settles. A module that imports a stylesheet stays in the first download, so loading order never changes the CSS cascade.
 Story text remains usable when its audio cannot load. Legendary and Mythic minion music follows the tier policy while stored lower-tier tracks remain available for future tier changes.
 
 ## Engine contracts
