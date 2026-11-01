@@ -29,6 +29,9 @@ jobs:
       - name: Verify card workbook matches the current game
         run: node source/scripts/sync-card-workbook.mjs --check
 
+      - name: Verify lore page matches the current cards
+        run: node source/scripts/sync-lore-page.mjs --check
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
 

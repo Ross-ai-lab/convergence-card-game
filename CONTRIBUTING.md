@@ -49,6 +49,8 @@ npm run dev
 The development address is **http://localhost:5177**. The port is fixed; an occupied port produces an error.
 Use the server address rather than opening the game through `file://`.
 `npm run prepare:assets` prepares the lore module, checks the workbook and refreshes gallery previews. Both development and production builds use it.
+The [lore page](materials/Convergence-Official-Lore.html) authors every Star Chart profile. `npm run sync:lore` copies each card's name, world, cost, stats, rarity, camp and alignment into it from the CSVs and rebuilds its Star Charts grid; `prepare:assets` runs it first.
+A new card needs a profile on that page. Its grid portrait comes from `materials/lore/portraits/<id>.webp` when present, otherwise from its card art.
 Campaign voice checks run explicitly when voice or story assets change.
 
 ```sh
