@@ -51,6 +51,7 @@ Use the server address rather than opening the game through `file://`.
 `npm run prepare:assets` prepares the lore module, checks the workbook and refreshes gallery previews. Both development and production builds use it.
 The [lore page](materials/Convergence-Official-Lore.html) authors every Star Chart profile. `npm run sync:lore` copies each card's name, world, cost, stats, rarity, camp and alignment into it from the CSVs and rebuilds its Star Charts grid; `prepare:assets` runs it first.
 A new card needs a profile on that page. Its grid portrait comes from `materials/lore/portraits/<id>.webp` when present, otherwise from its card art.
+The page links every picture from `materials/lore/` instead of embedding it, which keeps it near 1 MB instead of 7 MB; `sync:lore` refuses an embedded image.
 Campaign voice checks run explicitly when voice or story assets change.
 
 ```sh
