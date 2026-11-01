@@ -1,0 +1,19 @@
+Use case: illustration-story. Create final production comic artwork for an original fantasy card game chapter called Showdown at the Table (Chapter 9 of 10). This is ONE square atlas containing exactly SIX equal rectangular comic panels, in a perfectly aligned 3-column by 2-row grid, read left-to-right then top-to-bottom. Every cell is portrait 2:3. Request a crisp 2048 by 2048 square image. No outer margin. No text anywhere, no letters, speech balloons, captions, watermarks or logos; the game adds readable dialogue itself. Use narrow straight dark gutters only on the exact one-third and two-third vertical boundaries and the halfway horizontal boundary. Each cell must be a complete self-contained illustration, no elements crossing a gutter.
+
+Art direction: exceptional professional graphic novel illustration, expressive hand-inked contours, rich hand-painted gouache shading, fine paper texture, deep violet shadows, antique gold highlights, celestial teal light, strong cinematic compositions. Match the look of Chapter 1, The Empty Chair. Avoid photorealism, generic 3D, flat icon art and excessive details that obscure the action on phones. Never depict recognisable characters from existing films, games, comics or anime; champions appear only as glowing silhouettes or as card frames.
+
+Original protagonist in every appropriate panel: Rick Gramps, a sturdy elderly man with swept-back silver hair, short white beard, bushy brows, round brass goggles pushed up on his forehead, weathered olive long coat, wine-red scarf, fingerless gloves, one small brass cuff on his left wrist. Wry and determined, never a caricature. Consistent face and clothing across panels. Recurring character where named: The Archivist, a young woman in an oversized midnight-blue hooded coat, short copper hair, carrying a small ring of gold keys. Calm and knowing. Recurring character where named: The Dealer, a towering faceless figure in a long coat made of overlapping playing-card backs, with enormous luminous pale hands and no visible face beneath a deep hood; violet light leaks from the gaps between its cards.
+
+Panel 1 upper left: wide symmetrical shot down the length of the ancient card table: Rick seated at one end, the towering Dealer at the other, candles in a line between them, worlds floating overhead.
+
+Panel 2 upper middle: the Dealer's enormous hands slam down a row of cards with heavy black lock chains; storms and fire erupt from them across the table toward Rick.
+
+Panel 3 upper right: Rick's cards rise in front of him as a wall of glowing silhouettes of many shapes, holding back the storm and fire, Rick calm behind them with one card raised.
+
+Panel 4 lower left: the Archivist hurls her ring of gold keys over the table; the keys scatter through the air like comets, each streaking toward one of the Dealer's chained cards.
+
+Panel 5 lower middle: the black chains on the Dealer's cards shatter into gold sparks all at once; the cards turn bright and drift across the table to Rick's side, the Dealer recoiling.
+
+Panel 6 lower right: Rick lays down one final card with a decisive snap; across the table the Dealer's coat of card backs begins to come apart, loose cards peeling away into the air.
+
+Keep important faces and action below the top 12 percent of each panel and above the bottom 12 percent, leaving calm shaded areas there for later UI captions.

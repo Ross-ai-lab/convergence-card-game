@@ -7,7 +7,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { loadChromium } from "./browser.mjs";
+import { launchServer } from "./browser.mjs";
 import { readCheckOptions, selectChecks, changedPaths } from "./check-selection.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -211,8 +211,7 @@ async function runAll(suites) {
 
   const browserSuites = suites.filter((suite) => suite.browser);
   if (browserSuites.length > 0) {
-    const chromium = await loadChromium();
-    server = await chromium.launchServer();
+    server = await launchServer();
     process.env.CONVERGENCE_BROWSER_WS = server.wsEndpoint();
   }
 

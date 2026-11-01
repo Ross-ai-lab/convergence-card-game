@@ -3,7 +3,7 @@ import { cards, relics } from "../data/cards";
 import { applyAction, createInitialGame, getLegalActions, makeCardLibrary } from "../engine/game";
 import { CAMPAIGN_STARTER_DECK } from "../campaign";
 import {
-  cleanName, inviteLink, newRoomCode, normaliseRoomCode, parseMessage, ROOM_CODE_LENGTH, roomPeerId, stateFingerprint, stepPlayer,
+  cleanName, continuesOnlineDuel, inviteLink, newRoomCode, normaliseRoomCode, parseMessage, ROOM_CODE_LENGTH, roomPeerId, stateFingerprint, stepPlayer,
 } from "./protocol";
 
 describe("online protocol", () => {
@@ -53,5 +53,14 @@ describe("online protocol", () => {
     expect(cleanName("   ", "Guest")).toBe("Guest");
     expect(cleanName("  Ross   the   Great  ", "Guest")).toBe("Ross the Great");
     expect(cleanName("x".repeat(40), "Guest")).toHaveLength(20);
+  });
+
+  it("treats a resync in the same room as the same duel, however far its dice have rolled", () => {
+    const playing = { kind: "online", room: "ABCDEF" };
+    expect(continuesOnlineDuel(playing, 12, "ABCDEF")).toBe(true);
+    // Zero is a new duel or a rematch; another room or no live duel is never a continuation.
+    expect(continuesOnlineDuel(playing, 0, "ABCDEF")).toBe(false);
+    expect(continuesOnlineDuel(playing, 12, "GHJKLM")).toBe(false);
+    expect(continuesOnlineDuel({ kind: "campaign" }, 12, "ABCDEF")).toBe(false);
   });
 });

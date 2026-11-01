@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { LORE_CHAPTER_ONE, isLoreChapterUnlocked } from '../lore-chapters';
+import { LORE_CHAPTERS, LORE_CHAPTER_VICTORIES, isLoreChapterUnlocked, type LoreChapter } from '../lore-chapters';
 import { resolvePublicAssetUrl } from '../engine/asset-url';
 import './LoreLibrary.css';
 
@@ -46,42 +46,71 @@ export function LoreBookButton({onOpen}:{onOpen:()=>void}) {
   </button>;
 }
 
+const NUMERALS = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+/** Storyboard light per chapter: keys, ledger, house, fold, archivist, ink, last lock, showdown, dawn. */
+const STORYBOARD_HUES = [270, 265, 32, 285, 195, 330, 235, 44, 352, 172];
+
 export function LoreLibrary({completedBosses,onClose}:{completedBosses:readonly number[];onClose:()=>void}) {
-  const [reading,setReading] = useState(false);
-  const unlocked = isLoreChapterUnlocked(1,completedBosses);
-  useEffect(()=>{const listener=(event:KeyboardEvent)=>{if(event.key==='Escape'){if(reading)setReading(false);else onClose();}};window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener);},[onClose,reading]);
-  if (reading && unlocked) return <ComicReader onBack={()=>setReading(false)} onClose={onClose}/>;
+  const [reading,setReading] = useState<LoreChapter|null>(null);
+  const opened = LORE_CHAPTERS.filter(chapter=>isLoreChapterUnlocked(chapter.number,completedBosses)).length;
+  const victories = new Set(completedBosses).size;
+  useEffect(()=>{const listener=(event:KeyboardEvent)=>{if(event.key==='Escape'){if(reading)setReading(null);else onClose();}};window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener);},[onClose,reading]);
+  if (reading) return <ComicReader chapter={reading} onBack={()=>setReading(null)} onClose={onClose}/>;
+  const intro = opened===0 ? 'Win against any champion to open the first chapter.'
+    : opened===LORE_CHAPTERS.length ? 'Every door is open. The chair is yours.'
+    : opened===1 ? 'Your first victory opened a door.'
+    : `${opened} of ${LORE_CHAPTERS.length} chapters open. Each new champion you defeat brings the next one closer.`;
   return <div className="lore-library-veil" onPointerDown={event=>event.target===event.currentTarget&&onClose()}>
     <section className="lore-library" role="dialog" aria-modal="true" aria-label="Lore chapters">
       <header><div><small>The Convergence chronicles</small><h2>Lore</h2></div><button type="button" aria-label="Close Lore" onClick={onClose}>×</button></header>
-      <p>{unlocked?'Your first victory opened a door.':'Win against any champion to open the first chapter.'}</p>
-      <div className="lore-chapter-grid">{Array.from({length:10},(_,index)=>{const available=isLoreChapterUnlocked(index+1,completedBosses);return <button key={index} disabled={!available} onClick={()=>available&&setReading(true)} className={`lore-chapter${available?' is-unlocked':''}`} aria-label={`Lore chapter ${index+1}, ${available?'The Empty Chair':'locked'}`}>
-        <span className="lore-chapter-number">{['I','II','III','IV','V','VI','VII','VIII','IX','X'][index]}</span>
-        <span><strong>{available?'The Empty Chair':`Chapter ${index+1}`}</strong><small>{available?'Read chapter I':'Locked'}</small></span>
+      <p>{intro}</p>
+      <div className="lore-chapter-grid">{LORE_CHAPTERS.map((chapter,index)=>{const available=isLoreChapterUnlocked(chapter.number,completedBosses);const needed=LORE_CHAPTER_VICTORIES[index]-victories;return <button key={chapter.slug} disabled={!available} onClick={()=>available&&setReading(chapter)} className={`lore-chapter${available?' is-unlocked':''}`} aria-label={`Lore chapter ${chapter.number}, ${available?chapter.title:'locked'}`}>
+        <span className="lore-chapter-number">{NUMERALS[index]}</span>
+        <span><strong>{available?chapter.title:`Chapter ${chapter.number}`}</strong><small>{available?`Read chapter ${NUMERALS[index]}`:opened>0?`${needed} more ${needed===1?'victory':'victories'}`:'Locked'}</small></span>
         {available?<span aria-hidden="true" className="lore-read-arrow">›</span>:<svg viewBox="0 0 24 28" aria-hidden="true"><path d="M6 12V8a6 6 0 0112 0v4M3 12h18v13H3z" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="18" r="2" fill="currentColor"/></svg>}
       </button>;})}</div>
     </section>
   </div>;
 }
 
-function ComicReader({onBack,onClose}:{onBack:()=>void;onClose:()=>void}) {
+/** One gold line drawing per storyboard chapter, drawn on a 100 by 100 grid. */
+const MOTIFS: Record<string,string> = {
+  'keys-without-doors':'M30 50a14 14 0 1 0 28 0a14 14 0 1 0 -28 0M58 50H86M76 50v10M84 50v8M38 50a6 6 0 1 0 12 0a6 6 0 1 0 -12 0',
+  'the-ledger':'M50 30C40 24 26 24 16 28V76C26 72 40 72 50 78C60 72 74 72 84 76V28C74 24 60 24 50 30ZM50 30V78M24 38H42M24 46H42M24 54H38M58 38H76M58 46H76M58 54H72',
+  'the-house-always-deals':'M22 34L48 26L58 74L32 82ZM40 28L66 22L74 72L48 78ZM56 24H82V76H56ZM69 40L74 50L69 60L64 50Z',
+  'fold':'M28 22L52 28L74 20L70 46L80 66L56 72L34 80L36 56L22 42ZM36 56L52 46L70 46M52 28L52 46L56 72',
+  'the-archivists-card':'M30 18H70V82H30ZM50 34a9 9 0 1 0 0.1 0M36 72C38 58 62 58 64 72M30 24H70',
+  'counterfeit':'M50 18C62 38 72 50 72 62a22 22 0 0 1 -44 0C28 50 38 38 50 18ZM40 62a10 10 0 0 0 10 10',
+  'the-last-lock':'M32 46V36a18 18 0 0 1 36 0V46M24 46H76V84H24ZM50 58a5 5 0 1 0 0.1 0M50 63V72',
+  'showdown-at-the-table':'M20 30L46 24L52 70L26 76ZM80 30L54 24L48 70L74 76ZM50 14V22M42 16L46 22M58 16L54 22',
+  'new-game':'M30 84V40a20 20 0 0 1 40 0V84ZM50 84V30M18 84H82M50 20V12M30 26L24 20M70 26L76 20M22 44H14M78 44H86',
+};
+
+function ComicReader({chapter,onBack,onClose}:{chapter:LoreChapter;onBack:()=>void;onClose:()=>void}) {
   const [panel,setPanel] = useState(0);
   const [spread,setSpread] = useState(()=>matchMedia('(min-width:650px)').matches);
-  const [loaded,setLoaded] = useState(false);
+  const [loaded,setLoaded] = useState(!chapter.art);
   const [failed,setFailed] = useState(false);
-  const art = resolvePublicAssetUrl('lore/the-empty-chair.webp?v=chapter-one-2026');
+  const art = chapter.art ? resolvePublicAssetUrl(chapter.art) : null;
   const count = spread ? 2 : 1;
-  const last = LORE_CHAPTER_ONE.panels.length;
+  const last = chapter.panels.length;
+  const numeral = NUMERALS[chapter.number-1];
+  const motif = MOTIFS[chapter.slug];
   const advance = (direction:number) => setPanel(current=>Math.max(0,Math.min(last-count,current+direction*count)));
   useEffect(()=>{const media=matchMedia('(min-width:650px)');const change=()=>{setSpread(media.matches);setPanel(current=>Math.min(current,last-(media.matches?2:1)));};media.addEventListener('change',change);return()=>media.removeEventListener('change',change);},[last]);
   useEffect(()=>{const listener=(event:KeyboardEvent)=>{if(event.key==='ArrowRight')advance(1);if(event.key==='ArrowLeft')advance(-1);};window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener);},[count,last]);
   return <div className="lore-library-veil comic-veil">
-    <section className="comic-reader" role="dialog" aria-modal="true" aria-label="The Empty Chair comic">
-      <header><button type="button" onClick={onBack} aria-label="Back to Lore">‹</button><div><small>Chapter I</small><h2>{LORE_CHAPTER_ONE.title}</h2></div><button type="button" onClick={onClose} aria-label="Close comic">×</button></header>
-      <img className="comic-loader" src={art} alt="" onLoad={()=>setLoaded(true)} onError={()=>setFailed(true)}/>
+    <section className="comic-reader" role="dialog" aria-modal="true" aria-label={`${chapter.title} comic`} style={{'--sb-hue':`${STORYBOARD_HUES[chapter.number-1]}`} as CSSProperties}>
+      <header><button type="button" onClick={onBack} aria-label="Back to Lore">‹</button><div><small>Chapter {numeral}</small><h2>{chapter.title}</h2></div><button type="button" onClick={onClose} aria-label="Close comic">×</button></header>
+      {art&&<img className="comic-loader" src={art} alt="" onLoad={()=>setLoaded(true)} onError={()=>setFailed(true)}/>}
       {!loaded&&<p role="status" className="comic-loading">{failed?'The artwork could not load. Close and reopen the chapter to retry.':'Opening the chapter…'}</p>}
       <div className="comic-spread" style={{'--comic-columns':count} as CSSProperties} aria-live="polite">
-        {LORE_CHAPTER_ONE.panels.slice(panel,panel+count).map((entry,offset)=>{const index=panel+offset;return <article key={index} className={`comic-frame${loaded?' is-loaded':''}`} aria-label={`Panel ${index+1}: ${entry.scene}`} style={{backgroundImage:`url("${art}")`,backgroundPosition:`${index%3*50}% ${Math.floor(index/3)*100}%`}}>
+        {chapter.panels.slice(panel,panel+count).map((entry,offset)=>{const index=panel+offset;return <article key={index} className={`comic-frame${loaded?' is-loaded':''}${art?'':' is-storyboard'}`} aria-label={`Panel ${index+1}: ${entry.scene}`} style={art?{backgroundImage:`url("${art}")`,backgroundPosition:`${index%3*50}% ${Math.floor(index/3)*100}%`}:{'--sb-tilt':`${(index%2?1:-1)*(4+index*3)}deg`} as CSSProperties}>
+          {!art&&<div className="storyboard-art" aria-hidden="true">
+            {motif&&<svg viewBox="0 0 100 100"><path d={motif}/></svg>}
+            <span className="storyboard-mark">{numeral} · {index+1}</span>
+            <p className="storyboard-scene">{entry.scene}</p>
+          </div>}
           {entry.caption&&<p className="comic-caption">{entry.caption}</p>}
           {entry.dialogue&&<p className="comic-dialogue">{entry.dialogue}</p>}
         </article>;})}

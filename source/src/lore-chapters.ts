@@ -1,3 +1,16 @@
+import chapterScripts from '../../materials/lore/chapters.json';
+
+export type LorePanel = { caption: string; dialogue: string; scene: string };
+
+/** A Lore book chapter. `art` is a painted six-panel atlas; without one the reader draws a storyboard. */
+export type LoreChapter = {
+  number: number;
+  title: string;
+  slug: string;
+  panels: readonly LorePanel[];
+  art?: string;
+};
+
 export const LORE_CHAPTER_ONE = {
   title: 'The Empty Chair',
   panels: [
@@ -10,6 +23,22 @@ export const LORE_CHAPTER_ONE = {
   ],
 } as const;
 
+export const LORE_CHAPTERS: readonly LoreChapter[] = [
+  {number:1,title:LORE_CHAPTER_ONE.title,slug:'the-empty-chair',panels:LORE_CHAPTER_ONE.panels,art:'lore/the-empty-chair.webp?v=chapter-one-2026'},
+  ...chapterScripts.chapters.map(({number,title,slug,panels})=>({
+    number,title,slug,
+    panels:panels.map(({caption,dialogue,scene})=>({caption,dialogue,scene})),
+  })),
+];
+
+/**
+ * First champion victories needed for each chapter. The first opens on any
+ * victory, the rest roughly every two, and the finale only once all twenty
+ * champions have fallen.
+ */
+export const LORE_CHAPTER_VICTORIES = [1, 2, 4, 6, 8, 10, 12, 14, 17, 20] as const;
+
 export function isLoreChapterUnlocked(chapter: number, completedBosses: readonly number[]): boolean {
-  return chapter === 1 && completedBosses.length > 0;
+  const needed = LORE_CHAPTER_VICTORIES[chapter - 1];
+  return needed !== undefined && new Set(completedBosses).size >= needed;
 }

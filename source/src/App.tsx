@@ -1,7 +1,7 @@
 import { TUTORIAL_LESSONS, tutorialAllowsAction, nextTutorialStep, tutorialOpponentAction } from './tutorial';
 import {TurnClock,TurnClockWarning,humanTurnKey} from './turn-clock';
 import {expirePlayerTurn} from './engine/turn-timeout';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
 import "./gallery-detail.css";
@@ -17,32 +17,27 @@ import "./board-fx.css";
 import "./dev-only.css";
 import { sfx } from "./audio/sfx";
 import { cards, relics } from "./data/cards";
-import { BOT_CHEATS } from "./engine/bot";
 import { BotSearch } from "./engine/bot-search";
 import { PointerStore, type ScreenPoint } from "./pointer-store";
 
 import { requestPhoneLandscape, usePhoneLayout } from './phone-layout';
 import { useRelicPeek } from './relic-peek';
 
-import { heroPowerDefinition, randomHeroPower } from "./engine/hero-powers";
-import { isMinionCard, isRelicCard } from "./engine/types";
+import { heroPowerDefinition } from "./engine/hero-powers";
+import { isMinionCard } from "./engine/types";
 import { isTokenCardId } from "./engine/tokens";
 import {
   actionKey,
   applyAction,
-  attacksRandomly,
   CONCEALED_CHOICE_EFFECTS,
   createInitialGame,
   duelMvp,
   effectiveCardCost,
   effectiveHeroPowerCost,
   getLegalActions,
-  hasFreeRelicSlot,
   hasInfiniteMana,
   makeCardLibrary,
-  relicLockSource,
   opponentHandRevealed,
-  relicRequiredAlignment,
   STARTING_CORE,
 } from "./engine/game";
 import type {
@@ -51,7 +46,6 @@ import type {
   GameEvent,
   GameState,
   HeroPowerId,
-  MinionInstance,
   PlayerId,
 } from "./engine/types";
 import { clearSave, EVENT_LOG_LIMIT, loadGame, queueSaveGame } from "./storage";
@@ -72,12 +66,10 @@ import { randomDeck, validateDeck } from "./decks";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
 import { DraftScreen } from "./screens/DraftScreen";
 import { OnlineScreen } from "./screens/OnlineScreen";
-import { useOnlineSession, type HelloMessage } from "./online/use-online-session";
-import { cleanName, normaliseRoomCode, stateFingerprint, stepPlayer, type OnlineMessage, type OnlineStep } from "./online/protocol";
-import { PLAYER_HERO_POWER_IDS } from "./engine/hero-powers";
+import { useOnlineDuel } from "./online/use-online-duel";
+import type { OnlineStep } from "./online/protocol";
 import { beginDraftDuel, draftBotSkill, draftDifficulty, draftDuelIndex, draftReady, draftRivalDeck, loadDraft, recordDraftDuel, saveDraft, startDraftRun, type DraftRun, type DraftSave } from "./draft";
 import { CampaignSpeech, CollectedBossSpeech, type SpeechCue } from "./screens/CampaignSpeech";
-import campaignVoiceManifest from "../data/campaign-voices.json";
 import { onFontsReady } from "./textfit";
 import { loadPlayerCount } from "./playerCount";
 import { createDuelSeed } from "./duelSeed";
@@ -88,7 +80,6 @@ import {
   PassScreen,
   SettingsPanel,
   TitleScreen,
-  type DuelIntroPhase,
   type GameMode,
 } from "./screens/Screens";
 // The component modules below bring no stylesheets of their own; every CSS
@@ -96,8 +87,22 @@ import {
 import { useFullscreen } from "./use-fullscreen";
 import { campAccent, CardFace, FontRevisionContext, KeywordPopover, playableFace, RelicCardPeek } from "./card-face";
 import type { DuelIntroState } from "./duel/fx";
+import {
+  BOT_DELAY_MS,
+  BOT_FIRST_DELAY_MS,
+  BOT_ID,
+  campaignVoiceDuration,
+  DEVELOPER_MVP_DAMAGE,
+  DEVELOPER_MVP_INSTANCE,
+  foresightSeat,
+  heroPowersForDuel,
+  openingEvent,
+  TENSION_CORE,
+} from "./duel/duel-setup";
+import { useDuelIntroSchedule } from "./duel/use-duel-intro";
 import { useDuelFx } from "./duel/use-duel-fx";
 import { useCardPreview } from "./duel/use-card-preview";
+import { useDuelInput, type DragState } from "./duel/use-duel-input";
 import { useDebugHook } from "./duel/use-debug-hook";
 import { applyDeveloperEdit, type DeveloperEdit } from "./duel/developer-edits";
 import { BoardRow, canAttackCore, FollowingArrow, otherPlayer, type Selection } from "./duel/board";
@@ -107,77 +112,13 @@ import { DrawChoiceOverlay, EventLog, HoverCard, MulliganOverlay, TargetPrompt, 
 import { CardPack } from "./duel/card-pack";
 import { DeveloperTools } from "./duel/developer-tools";
 import { GameOver } from "./duel/game-over";
-import { CardGallery } from "./gallery/card-gallery";
-import { GalleryDetailModal } from "./gallery/card-profile";
 
-function campaignVoiceDuration(key: string): number | undefined {
-  const entries = campaignVoiceManifest as Record<string, { duration?: unknown }>;
-  const entry = entries[key];
-  return typeof entry?.duration === "number" ? entry.duration : undefined;
-}
-
-function heroPowersForDuel(
-  mode: GameMode,
-  playerPower: HeroPowerId | null,
-  seed: string,
-): [HeroPowerId | null, HeroPowerId | null] {
-  return mode.kind === "hotseat" ? [playerPower, playerPower] : [playerPower, randomHeroPower(seed)];
-}
-
-// Keep this schedule aligned with the opening animation table in the project
-// README. The intro ends after the mana reveal; opening card flights continue
-// as pointer-free visual polish instead of blocking the first action.
-const DUEL_INTRO_TIMINGS = {
-  preludeMs: 1_860,
-  revealMs: 1_680,
-  drawMs: 3_430,
-  manaMs: 570,
-  exitMs: 315,
-} as const;
-/** Core at or under this swaps the music to the tense bed. Roughly a quarter. */
-const TENSION_CORE = 12;
-
-/**
- * The made-up damage tally behind the developer result screen.
- *
- * A tally entry needs an instance id and a number, and neither exists when no
- * duel was played. The id is spelled out rather than random so a screenshot of
- * that screen is reproducible, and the damage is a flat figure because there is
- * nothing to derive it from — see `developerShowResult`.
- */
-const DEVELOPER_MVP_INSTANCE = "developer-mvp";
-const DEVELOPER_MVP_DAMAGE = 42;
-
-// Pointer-driven drag & drop. A press only becomes a drag after DRAG_THRESHOLD px
-// of movement, so plain clicks keep the original select-then-click flow. The
-// live pointer position is not here: it lives in the PointerStore.
-type DragState =
-  | { kind: "hand"; handIndex: number; cardId: string; active: boolean }
-  | { kind: "attacker"; slotIndex: number; ox: number; oy: number; active: boolean }
-  | null;
-
-const DRAG_THRESHOLD = 8;
-
-const BOT_ID: PlayerId = 1;
-
-/**
- * The one cheat the engine has to know about, because the draw it changes
- * happens deep inside `beginTurn` where nothing knows which seat is a bot.
- * Every other cheat lives in the bot's own search. Hotseat grants it to nobody.
- */
-function foresightSeat(mode: GameMode): PlayerId | null {
-  // A draft rival carries its own fair cheats in the duel state instead.
-  return (mode.kind === "bot" || mode.kind === "campaign") && BOT_CHEATS[mode.skill].foresight ? BOT_ID : null;
-}
-// The practice bot thinks fast enough to be invisible — these pauses exist so a
-// human can watch what it did, not because it is slow.
-const BOT_DELAY_MS = 620;
-const BOT_FIRST_DELAY_MS = 900;
-
-const openingEvent: GameEvent = {
-  kind: "info",
-  text: "The rift opens. Player One begins.",
-};
+// Loaded when first opened, keeping them out of the first download. The card
+// profile carries every Star Chart (over 300 KB of lore). Neither module
+// imports a stylesheet, so loading them late cannot reorder the CSS cascade.
+const loadGallery = () => import("./gallery/card-gallery");
+const CardGallery = lazy(() => loadGallery().then((module) => ({ default: module.CardGallery })));
+const GalleryDetailModal = lazy(() => import("./gallery/card-profile").then((module) => ({ default: module.GalleryDetailModal })));
 
 export default function App() {
   const { isFullscreen, toggleFullscreen } = useFullscreen();
@@ -235,8 +176,6 @@ export default function App() {
     restored ? [...restored.events, { kind: "info" as const, text: "Duel restored from your last session." }] : [openingEvent],
   );
   const [mode, setMode] = useState<GameMode>(() => restored?.mode ?? { kind: "hotseat" });
-  /** Online guest: a move is on its way to the host; input waits for the answer. */
-  const [awaitingHost, setAwaitingHost] = useState(false);
   const campaignChapter = mode.kind === "campaign" ? CAMPAIGN_CHAPTERS[mode.chapter - 1] : undefined;
   const campaignBoss = campaignChapter ? library[campaignChapter.bossId] : undefined;
   /** Set during an online duel: which seat this browser plays, and the room. */
@@ -297,27 +236,16 @@ export default function App() {
   function persistProgress(next: Progress) {
     setProgress(next); const saved = saveProgress(next); setStorageError(!saved); return saved;
   }
-  function createDeckPreset(name:string,seat:0|1):boolean {
-    const next=createNamedDeck(progress,name,seat);
-    if(next===progress)return false;
-    const saved=saveProgress(next);setStorageError(!saved);
-    if(saved)setProgress(next);
+  /** Saves a deck-list edit before showing it; false when nothing changed or the save failed. */
+  function commitDeckEdit(next: Progress): boolean {
+    if (next === progress) return false;
+    const saved = saveProgress(next); setStorageError(!saved);
+    if (saved) setProgress(next);
     return saved;
   }
-  function renameDeckPreset(id:string,name:string):boolean {
-    const next=renameNamedDeck(progress,id,name);
-    if(next===progress)return false;
-    const saved=saveProgress(next);setStorageError(!saved);
-    if(saved)setProgress(next);
-    return saved;
-  }
-  function deleteDeckPreset(id:string):boolean {
-    const next=deleteNamedDeck(progress,id);
-    if(next===progress)return false;
-    const saved=saveProgress(next);setStorageError(!saved);
-    if(saved)setProgress(next);
-    return saved;
-  }
+  const createDeckPreset = (name: string, seat: 0 | 1) => commitDeckEdit(createNamedDeck(progress, name, seat));
+  const renameDeckPreset = (id: string, name: string) => commitDeckEdit(renameNamedDeck(progress, id, name));
+  const deleteDeckPreset = (id: string) => commitDeckEdit(deleteNamedDeck(progress, id));
   function setSelectedHeroPower(power: HeroPowerId) { persistProgress(acknowledgeHeroPowers(selectHeroPower(progress, power,builderSeat))); }
   function openDeck(seat: 0 | 1 = 0, back: "title" | "campaign" | "hotseat" | "online" = "title") {
     const next=ensureNamedDeck(progress,seat);if(next!==progress)persistProgress(next);
@@ -415,11 +343,29 @@ export default function App() {
   // the incoming player's side may render or be clickable.
   const viewerId: PlayerId = online ? online.seat : vsBot ? 0 : seatedPlayer;
   const opponentId = otherPlayer(viewerId);
+  // A bot's Discover/target prompt belongs to the hidden opponent. Keep the
+  // engine prompt alive for the bot, but do not render its choices to the human.
+  const pendingTarget =
+    game.phase === "targeting" && game.pendingTarget?.player === viewerId ? game.pendingTarget : null;
   const fx = useDuelFx(viewerId, opponentId);
+  const onlineDuel = useOnlineDuel({
+    game, events, mode, deck: progress.playerDeck, heroPower: selectedHeroPower,
+    applyStep: applyOnlineStep,
+    seatDuel: (state, opening, next, resumed) => { beginOnlineDuel(state, opening, next); if (resumed) setDuelIntro(null); },
+    replaceState: (state) => { setGame(state); setSelection(null); },
+    winByDeparture: (winner, reason) => {
+      setGame({ ...game, phase: "gameOver", winner });
+      setEvents((items) => [...items, { kind: "info" as const, text: reason }].slice(-EVENT_LOG_LIMIT));
+      fx.showToast(reason, 3600);
+    },
+    toast: (text) => fx.showToast(text, 3600),
+    openLobby: () => setOverlay("online"),
+  });
+  const { awaitingHost } = onlineDuel;
+  const onlineStatus = onlineDuel.status;
   const relicFlash = fx.relicFlash;
   /** Whether the enemy Hero Power card is showing. Opened by a click, not a hover. */
   const [enemyPowerOpen, setEnemyPowerOpen] = useState(false);
-  const [apexAlert,setApexAlert]=useState<number|null>(null);
   const [drag, setDrag] = useState<DragState>(null);
   /** Where a drag or an aim points. Moves re-render only the ghost and the arrow. */
   const pointer = useMemo(() => new PointerStore(), []);
@@ -434,8 +380,6 @@ export default function App() {
   const [playerCount, setPlayerCount] = useState<number | null>(null);
   /** Herald lines already spoken this duel. A ref, so a re-render cannot re-fire one. */
   const heraldSaid = useRef(new Set<string>());
-  const dragOrigin = useRef({ x: 0, y: 0 });
-  const suppressClick = useRef(false);
   const legalActions = useMemo(() => getLegalActions(game, library), [game, library]);
   const botSearch = useMemo(() => new BotSearch(), []);
   useEffect(() => () => botSearch.dispose(), [botSearch]);
@@ -461,52 +405,24 @@ export default function App() {
   // the fallback's metrics. One re-render once they arrive re-measures the whole
   // roster. It cannot flash oversized text: the fallback is WIDER than Nunito,
   // so the first pass errs a little small and then grows.
+  // Fetch My Deck in the background once the first screen has settled, so it
+  // still opens without a wait.
+  useEffect(() => {
+    const prefetch = () => { void loadGallery(); };
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(prefetch, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const timer = window.setTimeout(prefetch, 2000);
+    return () => window.clearTimeout(timer);
+  }, []);
   const [fontRevision, refit] = useState(0);
   useEffect(() => {
     onFontsReady(() => refit((n) => n + 1));
   }, []);
 
-  // A fresh duel has a complete opening state immediately, but the player
-  // should experience that state arriving in beats. The intro is view-only:
-  // it never changes the engine state, it only unlocks the already-created
-  // board after the rift, opening deal, and mana reveal have landed.
-  useEffect(() => {
-    if (!duelIntro) return;
-    const { id, phase } = duelIntro;
-    const moveTo = (nextPhase: DuelIntroPhase) => {
-      setDuelIntro((current) => (current && current.id === id ? { ...current, phase: nextPhase } : current));
-    };
-
-    if (phase === "prelude") {
-      const timer = window.setTimeout(() => moveTo("reveal"), DUEL_INTRO_TIMINGS.preludeMs);
-      return () => window.clearTimeout(timer);
-    }
-    if (phase === "reveal") {
-      sfx.play("turn", 0.08);
-      const timer = window.setTimeout(() => moveTo("draw"), DUEL_INTRO_TIMINGS.revealMs);
-      return () => window.clearTimeout(timer);
-    }
-    if (phase === "draw") {
-      const frame = window.requestAnimationFrame(() => {
-        fx.spawnOpeningDeal(game.players[viewerId].hand.length, game.players[opponentId].hand.length);
-      });
-      const timer = window.setTimeout(() => moveTo("mana"), DUEL_INTRO_TIMINGS.drawMs);
-      return () => {
-        window.cancelAnimationFrame(frame);
-        window.clearTimeout(timer);
-      };
-    }
-    if (phase === "mana") {
-      sfx.play("mana", 0.08);
-      const timer = window.setTimeout(() => moveTo("exit"), DUEL_INTRO_TIMINGS.manaMs);
-      return () => window.clearTimeout(timer);
-    }
-    const timer = window.setTimeout(
-      () => setDuelIntro((current) => (current?.id === id ? null : current)),
-      DUEL_INTRO_TIMINGS.exitMs,
-    );
-    return () => window.clearTimeout(timer);
-  }, [duelIntro]);
+  useDuelIntroSchedule(duelIntro, setDuelIntro, () =>
+    fx.spawnOpeningDeal(game.players[viewerId].hand.length, game.players[opponentId].hand.length));
 
   // Persist after every change. A finished duel is not worth resuming, so the
   // slot is cleared instead of holding a game-over screen forever.
@@ -708,6 +624,13 @@ export default function App() {
   // Every affordance and click reads this. Empty while the opponent is thinking,
   // so nothing lights up and nothing can be clicked on their behalf.
   const uiActions = viewerCanAct && !awaitingHost && !duelIntro && !needsLandscape && !(tutorialActive && tutorialCompleted) ? legalActions.filter(action=>!tutorialActive||tutorialAllowsAction(tutorialStep,game,action)) : [];
+  const {
+    apexAlert, apexPrey, attackCore, cancelAttackerSelection, cancelDrag, cancelTarget, endDrag,
+    guardedHandClick, guardedSlotClick, moveDrag, startAttackDrag, startHandDrag, trackTargetPointer,
+  } = useDuelInput({
+    game, library, viewerId, opponentId, uiActions, pendingTarget, selection, setSelection,
+    drag, setDrag, setTargetArrowOrigin, pointer, perform, fx, clearHoverPreview, duelIntro, setEnemyPowerOpen,
+  });
   const clockActor:PlayerId|null=tutorialActive||game.phase==='mulligan'||game.phase==='gameOver'||vsBot&&game.activePlayer===1?null:game.activePlayer;
   const clockKey=clockActor===null?null:humanTurnKey(mode.duelId,clockActor,game.players[clockActor].turnsStarted);
   const choiceActor=game.phase==='targeting'?game.pendingTarget?.player:game.phase==='drawChoice'?game.drawChoice?.player:game.activePlayer;
@@ -729,7 +652,7 @@ export default function App() {
       const current=clockLatest.current;
       // Online, the host's clock is the one that counts: it ends the turn for
       // both browsers as a numbered step. The guest's clock only shows the time.
-      if(current.mode.kind==='online'){if(current.mode.seat===0)commitStepRef.current({kind:'timeout',player:clockActor});return;}
+      if(current.mode.kind==='online'){if(current.mode.seat===0)onlineDuel.hostTimeout(clockActor);return;}
       const result=expirePlayerTurn(current.game,clockActor,library);
       if(result.state===current.game)return;
       fx.spawnFx(current.game,result.state,{type:'end_turn',player:clockActor},result.events);setGame(result.state);setSelection(null);
@@ -759,7 +682,7 @@ export default function App() {
    * applies it and sends it on, the guest asks the host to make it.
    */
   function perform(action: GameAction) {
-    if (online) { submitStep({ kind: "action", action }); return; }
+    if (online) { onlineDuel.submitStep({ kind: "action", action }); return; }
     performLocal(action);
   }
 
@@ -839,57 +762,6 @@ export default function App() {
     return result.state;
   }
 
-  // --- online duels ---------------------------------------------------------
-  /** Host: the number of the last step sent. Guest: the last step applied. */
-  const onlineSeq = useRef(0);
-  /** Steps from the host (guest) or move requests from the guest (host), applied one per render. */
-  const [onlineInbox, setOnlineInbox] = useState<OnlineMessage[]>([]);
-  /** Guest: its copy differed from the host's and a full state is on its way. */
-  const awaitingResync = useRef(false);
-  const guestHello = useRef<HelloMessage | null>(null);
-  const [onlineName, setOnlineName] = useState(() => { try { return localStorage.getItem("convergence.online.name") ?? ""; } catch { return ""; } });
-  const [inviteCode] = useState(() => {
-    // An invite link, or the room this tab was playing in before a reload.
-    try { return normaliseRoomCode(window.location.search) ?? normaliseRoomCode(sessionStorage.getItem("convergence.online.room") ?? "") ?? ""; } catch { return ""; }
-  });
-  const latestOnline = useRef({ game, events, mode });
-  latestOnline.current = { game, events, mode };
-  const onlineSession = useOnlineSession({
-    onHello: (hello, returning) => {
-      const roster = new Set(CAMPAIGN_CARD_IDS);
-      const deckOk = hello.deck.length === 30 && new Set(hello.deck).size === 30 && hello.deck.every((id) => roster.has(id));
-      if (!deckOk) return "Your deck must hold 30 different cards. Finish it in My Deck, then join again.";
-      if (hello.heroPower !== null && !PLAYER_HERO_POWER_IDS.includes(hello.heroPower)) return "Your Hero Power is not available in this version.";
-      guestHello.current = { ...hello, name: cleanName(hello.name, "Guest") };
-      onlineReturning.current = returning;
-      return null;
-    },
-    onMessage: (message) => {
-      if (message.t === "start") { receiveOnlineStart(message); return; }
-      if (message.t === "resync") { sendOnlineStart(); return; }
-      if (message.t === "refused") { setAwaitingHost(false); return; }
-      if (message.t === "step" || message.t === "request") setOnlineInbox((items) => [...items, message]);
-    },
-    onOpponentGone: (reason) => {
-      const current = latestOnline.current;
-      if (current.mode.kind !== "online" || current.game.phase === "gameOver") { fx.showToast(reason, 3600); return; }
-      // Walking away from a live duel concedes it.
-      const winner = current.mode.seat;
-      setGame({ ...current.game, phase: "gameOver", winner });
-      setEvents((items) => [...items, { kind: "info" as const, text: reason }].slice(-EVENT_LOG_LIMIT));
-      fx.showToast(reason, 3600);
-    },
-  });
-  const onlineReturning = useRef(false);
-  const onlineStatus = onlineSession.status;
-  // An invite link opens the online lobby with its code filled in, then tidies
-  // the address so a reload does not reopen it.
-  useEffect(() => {
-    if (!inviteCode) return;
-    setOverlay("online");
-    try { window.history.replaceState(null, "", window.location.pathname); } catch { /* the code is already read */ }
-  }, [inviteCode]);
-
   /** A concession: the duel ends at once, for the other seat. */
   function concedeLocal(player: PlayerId): GameState {
     if (game.phase === "gameOver") return game;
@@ -917,135 +789,54 @@ export default function App() {
     return concedeLocal(step.player);
   }
 
-  /** Host: applies a step and, if it changed the duel, numbers it and sends it on. */
-  function commitStep(step: OnlineStep): boolean {
-    const next = applyOnlineStep(step);
-    if (next === game) return false;
-    onlineSeq.current += 1;
-    onlineSession.send({ t: "step", seq: onlineSeq.current, step, hash: stateFingerprint(next) });
-    return true;
-  }
-  const commitStepRef = useRef(commitStep);
-  commitStepRef.current = commitStep;
-
-  function submitStep(step: OnlineStep) {
-    if (!online) return;
-    if (online.seat === 0) { commitStep(step); return; }
-    if (awaitingHost) return;
-    setAwaitingHost(true);
-    onlineSession.send({ t: "request", step });
-  }
-
-  // One inbox item per render, so each step is applied to the state the last one produced.
-  useEffect(() => {
-    if (!onlineInbox.length || !online) return;
-    const [message, ...rest] = onlineInbox;
-    setOnlineInbox(rest);
-    if (online.seat === 0) {
-      // Host: only the guest's own seat may move, and only legal moves change anything.
-      if (message.t === "request" && !(stepPlayer(message.step) === 1 && commitStep(message.step))) onlineSession.send({ t: "refused" });
-      return;
-    }
-    if (message.t !== "step" || awaitingResync.current || message.seq <= onlineSeq.current) return;
-    setAwaitingHost(false);
-    if (message.seq !== onlineSeq.current + 1) { awaitingResync.current = true; onlineSession.send({ t: "resync" }); return; }
-    onlineSeq.current = message.seq;
-    const next = applyOnlineStep(message.step);
-    if (stateFingerprint(next) !== message.hash) { awaitingResync.current = true; onlineSession.send({ t: "resync" }); }
-  }, [onlineInbox, online, game]);
-
-  // A request the host never answered (an illegal move, a dropped packet) frees the guest again.
-  useEffect(() => {
-    if (!awaitingHost) return;
-    const timer = window.setTimeout(() => setAwaitingHost(false), 2500);
-    return () => window.clearTimeout(timer);
-  }, [awaitingHost]);
-
-  /** Host: sends the whole duel as it stands, for a start, a rematch or a resync. */
-  function sendOnlineStart(state = latestOnline.current.game, events = latestOnline.current.events) {
-    onlineSession.send({ t: "start", seq: onlineSeq.current, state, events: events.slice(-60) });
-  }
-
-  /** Host: a guest is in. A returning guest gets the duel back; a new one gets a new duel. */
-  useEffect(() => {
-    if (onlineStatus.phase !== "connected" || onlineStatus.role !== "host") return;
-    const current = latestOnline.current;
-    if (onlineReturning.current && current.mode.kind === "online" && current.game.phase !== "gameOver") { sendOnlineStart(); return; }
-    startHostedDuel();
-  }, [onlineStatus]);
-
-  /** Host: builds a duel from both decks, takes seat one, and sends it. */
-  function startHostedDuel() {
-    const hello = guestHello.current;
-    if (!hello || onlineStatus.phase !== "connected") return;
-    const seed = createDuelSeed();
-    const built = createInitialGame(cards, seed, relics, {
-      decks: [progress.playerDeck, hello.deck], heroPowers: [selectedHeroPower, hello.heroPower],
-      mulliganPlayers: [0, 1], hasCoin: true,
-    });
-    built.players[0].name = cleanName(onlineName, "Host");
-    built.players[1].name = hello.name;
-    // Both browsers must hold byte-identical states, so the host plays the copy
-    // that has made the same JSON round trip the guest's has.
-    const state = JSON.parse(JSON.stringify(built)) as GameState;
-    const opening: GameEvent[] = [{ kind: "info", text: `${built.players[0].name} and ${built.players[1].name} meet online.` }];
-    onlineSeq.current = 0;
-    beginOnlineDuel(state, opening, { kind: "online", seat: 0, room: onlineStatus.code, duelId: seed });
-    sendOnlineStart(state, opening);
-  }
-
-  /** Guest: a whole duel arrived, new or as a resync of the current one. */
-  function receiveOnlineStart(message: Extract<OnlineMessage, { t: "start" }>) {
-    const current = latestOnline.current;
-    const status = onlineStatus.phase === "connected" || onlineStatus.phase === "lost" ? onlineStatus : null;
-    onlineSeq.current = message.seq;
-    awaitingResync.current = false;
-    setOnlineInbox([]);
-    setAwaitingHost(false);
-    const sameDuel = current.mode.kind === "online" && message.seq > 0 && current.game.rngSeed === message.state.rngSeed;
-    if (sameDuel) { setGame(message.state); setSelection(null); return; }
-    beginOnlineDuel(message.state, message.events, { kind: "online", seat: 1, room: status?.code ?? "", duelId: String(message.state.rngSeed) });
-    // A duel already under way (a reload rejoining) skips the opening ceremony.
-    if (message.seq > 0) setDuelIntro(null);
-  }
-
-  /** Puts an online duel on the table, exactly as beginDuel does for every other mode. */
-  function beginOnlineDuel(state: GameState, opening: GameEvent[], next: Extract<GameMode, { kind: "online" }>) {
+  /**
+   * Puts a new duel on the table. Every way into a duel (a mode from the title,
+   * the tutorial, an online room) goes through here, so a reset added for one
+   * cannot be forgotten by the others.
+   */
+  function seatNewDuel(table: {
+    mode: GameMode;
+    game: GameState;
+    events: GameEvent[];
+    seat?: PlayerId;
+    intro?: boolean;
+    tutorial?: boolean;
+    developer?: boolean;
+  }) {
     void requestPhoneLandscape(phoneLayout.phone);
     sfx.unlock();
     sfx.stopCardTheme();
+    // An ending piece is 16 seconds long, and leaving the screen it belongs to
+    // must take it with you rather than play it over the next one.
     sfx.stopCue();
-    clearSave();
-    setHasLiveSave(false);
-    setTutorialActive(false);
+    setTutorialActive(table.tutorial ?? false);
     setTutorialCompleted(false);
     setTutorialStep(0);
-    setDeveloperDuelActive(false);
+    setDeveloperDuelActive(table.developer ?? false);
     setDeveloperToolsOpen(false);
     duelCards.current = { seen: new Set(), played: new Set() };
     duelRecorded.current = false;
     setPack(null);
     setBossLines([]);
     setOverlay(null);
-    setDuelIntro({ id: fx.nextId(), phase: "prelude" });
-    setMode(next);
-    setGame(state);
+    setDuelIntro(table.intro === false ? null : { id: fx.nextId(), phase: "prelude" });
+    setMode(table.mode);
+    setGame(table.game);
     setHistory([]);
     setSelection(null);
     clearFx({ newDuel: true });
-    setSeatedPlayer(next.seat);
+    setSeatedPlayer(table.seat ?? 0);
     heraldSaid.current = new Set();
     sfx.playOpeningCue(0.35);
-    setEvents(opening);
+    setEvents(table.events);
     setScreen("playing");
   }
 
-  /** Leaves the online room on purpose. */
-  function leaveOnline() {
-    try { sessionStorage.removeItem("convergence.online.room"); } catch { /* nothing to forget */ }
-    onlineSession.leave();
-    setOnlineInbox([]);
-    setAwaitingHost(false);
+  /** Puts an online duel on the table. It never takes the save slot. */
+  function beginOnlineDuel(state: GameState, opening: GameEvent[], next: Extract<GameMode, { kind: "online" }>) {
+    clearSave();
+    setHasLiveSave(false);
+    seatNewDuel({ mode: next, game: state, events: opening, seat: next.seat });
   }
 
   // Record each non-tutorial duel once. Only first campaign clears grant cards.
@@ -1097,8 +888,8 @@ export default function App() {
   function restart() {
     // Online, Restart is Concede mid-duel; afterwards only the host can deal a rematch.
     if (mode.kind === "online") {
-      if (game.phase !== "gameOver") submitStep({ kind: "concede", player: viewerId });
-      else if (mode.seat === 0) startHostedDuel();
+      if (game.phase !== "gameOver") onlineDuel.submitStep({ kind: "concede", player: viewerId });
+      else if (mode.seat === 0) onlineDuel.rematch();
       return;
     }
     // In a draft, Restart is Concede: mid-duel it counts the duel as lost, and
@@ -1161,41 +952,20 @@ export default function App() {
       draftRun = marked.run;
       next = { ...next, skill: draftBotSkill(marked.run.wins) };
     }
-    void requestPhoneLandscape(phoneLayout.phone);
     const nextGame = prepareDuel(next, seed, Boolean(options.testCardId), draftRun);
-    next = { ...next, duelId: seed }; setOverlay(null);
+    next = { ...next, duelId: seed };
     sfx.play("button");
-    sfx.unlock();
-    sfx.stopCardTheme();
-    // An ending piece is 16 seconds long, and leaving the screen it belongs to
-    // must take it with you rather than play it over the next one.
-    sfx.stopCue();
     clearSave();
-    setTutorialActive(false);
-    setTutorialCompleted(false);
-    setTutorialStep(0);
-    setDeveloperDuelActive(Boolean(options.testCardId));
-    setDeveloperToolsOpen(false);
-    duelCards.current = { seen: new Set(), played: new Set() };
-    duelRecorded.current = false;
-    setPack(null);
-    setBossLines([]);
-    setDuelIntro({ id: fx.nextId(), phase: "prelude" });
-    setMode(next);
     if (options.testCardId && library[options.testCardId]) {
       nextGame.players[0].hand = [options.testCardId, ...nextGame.players[0].hand].slice(0, 10);
       nextGame.cheatMode = true;
       nextGame.cheatPlayer = 0;
     }
-    setGame(nextGame);
-    setHistory([]);
-    setSelection(null);
-    clearFx({ newDuel: true });
-    setSeatedPlayer(0);
-    heraldSaid.current = new Set();
-    sfx.playOpeningCue(0.35);
-    setEvents([
-      {
+    seatNewDuel({
+      mode: next,
+      game: nextGame,
+      developer: Boolean(options.testCardId),
+      events: [{
         kind: "info",
         text:
           next.kind === "draft"
@@ -1203,37 +973,19 @@ export default function App() {
             : next.kind !== "hotseat"
             ? "A practice opponent takes the far side of the board."
             : "Two players, one screen. The board hides itself when the turn changes hands.",
-      },
-    ]);
-    setScreen("playing");
+      }],
+    });
   }
 
   /** Starts the real rules engine in a deterministic teaching position. */
   function beginTutorial() {
     sfx.play("button");
-    sfx.unlock();
-    void requestPhoneLandscape(phoneLayout.phone);
-    sfx.stopCardTheme();
-    // An ending piece is 16 seconds long, and leaving the screen it belongs to
-    // must take it with you rather than play it over the next one.
-    sfx.stopCue();
     if (!tutorialActive) tutorialReturn.current = {
       game, events, mode, hasLiveSave, history, seatedPlayer,
       recorded: duelRecorded.current,
       cards: duelCards.current,
       announcements: heraldSaid.current,
     };
-    setTutorialActive(true);
-    setTutorialCompleted(false);
-    setTutorialStep(0);
-    setDeveloperDuelActive(false);
-    setDeveloperToolsOpen(false);
-    duelCards.current = { seen: new Set(), played: new Set() };
-    duelRecorded.current = false;
-    setPack(null);
-    setDuelIntro(null);
-    // The scripted opponent uses ordinary engine actions at each teaching turn.
-    setMode({ kind: "bot", skill: "easy" });
     const seed = createDuelSeed();
     const tutorialGame = createInitialGame(cards, seed, relics, {
         heroPowers: ["minion_hp", null],
@@ -1242,15 +994,14 @@ export default function App() {
       });
     tutorialGame.players[0].name = 'Rick Gramps';
     tutorialGame.players[1].name = 'Training Construct';
-    setGame(tutorialGame);
-    setHistory([]);
-    setSelection(null);
-    clearFx({ newDuel: true });
-    setSeatedPlayer(0);
-    heraldSaid.current = new Set();
-    sfx.playOpeningCue(0.35);
-    setEvents([{ kind: "info", text: "Tutorial started. Follow the Rift guide." }]);
-    setScreen("playing");
+    seatNewDuel({
+      // The scripted opponent uses ordinary engine actions at each teaching turn.
+      mode: { kind: "bot", skill: "easy" },
+      game: tutorialGame,
+      events: [{ kind: "info", text: "Tutorial started. Follow the Rift guide." }],
+      intro: false,
+      tutorial: true,
+    });
   }
 
   /** Returns to the saved duel exactly as it was left. */
@@ -1265,7 +1016,7 @@ export default function App() {
 
   function toTitle() {
     relicPeek.cancel();
-    if (mode.kind === "online") leaveOnline();
+    if (mode.kind === "online") onlineDuel.leave();
     if (tutorialActive) {
       const previous = tutorialReturn.current;
       if (previous) {
@@ -1302,32 +1053,6 @@ export default function App() {
     const timer = window.setTimeout(toTitle, 1500);
     return () => window.clearTimeout(timer);
   }, [tutorialActive, tutorialCompleted]);
-
-  /** Answers an open targeting prompt by naming a minion on the board. */
-  function chooseTargetAt(owner: PlayerId, slotIndex: number): boolean {
-    const pending = game.pendingTarget;
-    // "slot" prompts are answered the same way, but an EMPTY slot is a valid answer.
-    if (game.phase !== "targeting" || !pending) return false;
-    if (pending.kind !== "board" && pending.kind !== "slot" && pending.kind !== "boardOrCore") return false;
-    const choiceIndex = pending.options.findIndex((option) => option.owner === owner && option.slot === slotIndex);
-    if (choiceIndex < 0) {
-      sfx.play("invalid");
-      return false;
-    }
-    perform({ type: "choose_target", player: pending.player, choiceIndex });
-    return true;
-  }
-
-  /** Cancels a fresh target-card play or Hero Power through the engine. */
-  function cancelTarget(): boolean {
-    const pending = game.pendingTarget;
-    if (!pending || pending.player !== viewerId || (!pending.cancelPlay && !pending.cancelHeroPower)) return false;
-    const action = uiActions.find((candidate) => candidate.type === "cancel_target" && candidate.player === viewerId);
-    if (!action) return false;
-    sfx.play("button");
-    perform(action);
-    return true;
-  }
 
   /** One informational line in the duel log, trimmed to the shared limit. */
   function logInfo(text: string) {
@@ -1445,404 +1170,12 @@ export default function App() {
       : `Developer mode opened the result screen on ${winnerLabel}${champion}. Nothing was recorded: no duel, no record line, no pack.`);
   }
 
-  function trackTargetPointer(event: React.PointerEvent<HTMLElement>) {
-    if (game.phase === "main" && selection?.kind === "attacker" && !drag?.active) {
-      pointer.schedule({ x: event.clientX, y: event.clientY });
-      return;
-    }
-    if (
-      game.phase !== "targeting" ||
-      !pendingTarget ||
-      pendingTarget.player !== viewerId ||
-      (pendingTarget.kind !== "board" && pendingTarget.kind !== "slot" && pendingTarget.kind !== "boardOrCore")
-    ) {
-      return;
-    }
-    pointer.schedule({ x: event.clientX, y: event.clientY });
-  }
-
-  function onHandCard(handIndex: number) {
-    if (duelIntro) return;
-    if (game.phase === "main" && selection?.kind === "hand" && selection.handIndex === handIndex) {
-      setSelection(null);
-      return;
-    }
-    if (game.phase === "main" && selection?.kind === "attacker") {
-      cancelAttackerSelection();
-      return;
-    }
-    if (
-      game.phase === "targeting" &&
-      game.pendingTarget?.player === viewerId &&
-      (game.pendingTarget.cancelPlay || game.pendingTarget.cancelHeroPower)
-    ) {
-      cancelTarget();
-      return;
-    }
-    if (game.phase !== "main") {
-      setSelection(null);
-      return;
-    }
-    const canPlay = uiActions.some(
-      (action) => (action.type === "play_card" || action.type === "play_relic") && action.handIndex === handIndex,
-    );
-    if (!canPlay) {
-      // Every card in hand looks equally playable now, so the reason is said
-      // once, briefly, in the middle of the board — not branded on the card.
-      setSelection(null);
-      // NAME THE REASON. A relic refused by Kratos used to be reported as "No
-      // room on the board", which is a different problem with a different fix
-      // and sends the player rearranging a board that was never the issue.
-      const card = library[viewer.hand[handIndex]];
-      const relicLock = card && isRelicCard(card) ? relicLockSource(game, viewerId) : null;
-      const requiredAlignment = card && isRelicCard(card) ? relicRequiredAlignment(card.relicId, card.effect) : null;
-      const noEligibleBearer = requiredAlignment !== null &&
-        !viewer.board.some((slot) => slot?.alignment === requiredAlignment && hasFreeRelicSlot(slot));
-      const boardFull = !viewer.board.some((slot) => !slot);
-      fx.showToast(
-        relicLock
-          ? `${relicLock} is blocking your relics`
-          : noEligibleBearer
-            ? `No ${requiredAlignment} minions`
-          : boardFull
-            ? "No room on the board"
-            : "Not enough mana",
-      );
-      sfx.play("invalid");
-      return;
-    }
-    setSelection({ kind: "hand", handIndex });
-  }
-
-  /**
-   * Selects a minion to attack with, and warns when its swing will be rolled
-   * rather than aimed — Kurogiri, or a Bill Cipher slot. Said at the moment
-   * of decision, because the redirect happens after the target is chosen.
-   */
-  function armAttacker(slotIndex: number) {
-    setSelection({ kind: "attacker", slotIndex });
-    const sourceElement = document.querySelector<HTMLElement>(`[data-slot="${viewerId}-${slotIndex}"]`);
-    const bounds = sourceElement?.getBoundingClientRect();
-    if (bounds) {
-      const origin = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
-      setTargetArrowOrigin(origin);
-      pointer.set(origin);
-    }
-    const minion = viewer.board[slotIndex];
-    if (minion && attacksRandomly(game, minion)) fx.showToast("Swinging blind — the target is rolled");
-  }
-
-  /** Drop an armed attack without spending the minion's attack. */
-  function cancelAttackerSelection(): boolean {
-    if (selection?.kind !== "attacker") return false;
-    sfx.play("button");
-    setSelection(null);
-    clearHoverPreview();
-    setTargetArrowOrigin(null);
-    return true;
-  }
-
-  /** Flash the live Taunt blockers when an aimed attack tries to pass them. */
-  function flashTauntBlockers(targetSlot?: number): boolean {
-    if (game.phase !== "main" || selection?.kind !== "attacker") return false;
-    const attackerSlot = selection.slotIndex;
-    const legalAttackTargets = new Set(
-      uiActions
-        .filter(
-          (action): action is Extract<GameAction, { type: "attack_minion" }> =>
-            action.type === "attack_minion" && action.attackerSlot === attackerSlot,
-        )
-        .map((action) => action.targetSlot),
-    );
-    if (targetSlot !== undefined && legalAttackTargets.has(targetSlot)) return false;
-
-    const blockerIds = game.players[opponentId].board
-      .map((minion, slot) => ({ minion, slot }))
-      .filter(
-        ({ minion, slot }) =>
-          Boolean(minion) &&
-          !minion!.silenced &&
-          minion!.keywords.includes("Taunt") &&
-          legalAttackTargets.has(slot),
-      )
-      .map(({ minion }) => minion!.instanceId);
-    if (blockerIds.length === 0) return false;
-
-    fx.flashTaunt(blockerIds);
-    return true;
-  }
-
-  function onBoardSlot(owner: PlayerId, slotIndex: number) {
-    if (duelIntro) return;
-    const minion = game.players[owner].board[slotIndex];
-
-    if (game.phase === "targeting") {
-      const chosen = chooseTargetAt(owner, slotIndex);
-      if (!chosen) cancelTarget();
-      return;
-    }
-    if (game.phase !== "main") return;
-
-    if (selection?.kind === "hand" && owner === viewerId) {
-      const action = uiActions.find(
-        (candidate) =>
-          (candidate.type === "play_card" || candidate.type === "play_relic") &&
-          candidate.player === viewerId &&
-          candidate.handIndex === selection.handIndex &&
-          candidate.slotIndex === slotIndex,
-      );
-      if (action) {
-        perform(action);
-        return;
-      }
-      // No placement here -- the slot already holds one of your own minions.
-      // Fall through so the click ARMS that minion instead of being swallowed:
-      // returning here meant picking up a card silently disabled attacking, and
-      // you had to place the card before you could swing with anything.
-    }
-
-    if (selection?.kind === "attacker") {
-      if (owner !== opponentId) {
-        cancelAttackerSelection();
-        return;
-      }
-      const action = uiActions.find(
-        (candidate) =>
-          candidate.type === "attack_minion" &&
-          candidate.attackerSlot === selection.slotIndex &&
-          candidate.targetSlot === slotIndex,
-      );
-      if (action) perform(action);
-      else if (!minion || !flashTauntBlockers(slotIndex)) cancelAttackerSelection();
-      return;
-    }
-
-    if (owner === viewerId && minion) {
-      const hasAttack = uiActions.some(
-        (action) =>
-          (action.type === "attack_minion" || action.type === "attack_core") &&
-          action.player === viewerId &&
-          action.attackerSlot === slotIndex,
-      );
-      if (hasAttack) armAttacker(slotIndex);
-    }
-  }
-
-  // ------------------------------------------------------------- drag & drop
-  function startHandDrag(e: React.PointerEvent<HTMLElement>, handIndex: number, playable: boolean) {
-    if (duelIntro) return;
-    if (e.pointerType === "touch" || e.pointerType === "pen") return;
-    if (game.phase !== "main" || !playable) return;
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // synthetic events have no active pointer — drag still works without capture
-    }
-    dragOrigin.current = { x: e.clientX, y: e.clientY };
-    setDrag({ kind: "hand", handIndex, cardId: viewer.hand[handIndex], active: false });
-  }
-
-  function startAttackDrag(e: React.PointerEvent<HTMLElement>, slotIndex: number, canAttack: boolean) {
-    if (duelIntro) return;
-    if (e.pointerType === "touch") return;
-    if (game.phase !== "main" || !canAttack) return;
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // see above
-    }
-    const r = e.currentTarget.getBoundingClientRect();
-    dragOrigin.current = { x: e.clientX, y: e.clientY };
-    setDrag({
-      kind: "attacker",
-      slotIndex,
-      ox: r.left + r.width / 2,
-      oy: r.top + r.height / 2,
-      active: false,
-    });
-  }
-
-  function moveDrag(e: React.PointerEvent) {
-    if (!drag) return;
-    const becameActive =
-      !drag.active &&
-      Math.hypot(e.clientX - dragOrigin.current.x, e.clientY - dragOrigin.current.y) > DRAG_THRESHOLD;
-    if (becameActive) {
-      clearHoverPreview();
-      sfx.play("pickup");
-      if (drag.kind === "hand") setSelection({ kind: "hand", handIndex: drag.handIndex });
-      else {
-        armAttacker(drag.slotIndex);
-        setTargetArrowOrigin(null);
-      }
-    }
-    // Activate immediately so a release before the next frame still drops the card.
-    if (becameActive) {
-      pointer.set({ x: e.clientX, y: e.clientY });
-      setDrag({ ...drag, active: true });
-    } else if (drag.active) pointer.schedule({ x: e.clientX, y: e.clientY });
-  }
-
-  function endDrag(e: React.PointerEvent) {
-    if (e.pointerType === "touch") clearHoverPreview();
-    if (!drag) return;
-    if (!drag.active) {
-      // Never moved past the threshold — this is a plain click; let onClick handle it.
-      setDrag(null);
-      return;
-    }
-    suppressClick.current = true;
-    window.setTimeout(() => {
-      suppressClick.current = false;
-    }, 0);
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const slotEl = el?.closest("[data-slot]") ?? null;
-    const heroEl = el?.closest("[data-hero]") ?? null;
-    let performed = false;
-    if (drag.kind === "hand" && slotEl) {
-      const [ownerStr, slotStr] = (slotEl.getAttribute("data-slot") ?? "").split("-");
-      if (Number(ownerStr) === viewerId) {
-        const slotIndex = Number(slotStr);
-        const action = uiActions.find(
-          (candidate) =>
-            (candidate.type === "play_card" || candidate.type === "play_relic") &&
-            candidate.handIndex === drag.handIndex &&
-            candidate.slotIndex === slotIndex,
-        );
-        if (action) {
-          perform(action);
-          performed = true;
-        }
-      }
-    } else if (drag.kind === "attacker") {
-      if (slotEl) {
-        const [ownerStr, slotStr] = (slotEl.getAttribute("data-slot") ?? "").split("-");
-        if (Number(ownerStr) === opponentId) {
-          const targetSlot = Number(slotStr);
-          const action = uiActions.find(
-            (candidate) =>
-              candidate.type === "attack_minion" &&
-              candidate.attackerSlot === drag.slotIndex &&
-              candidate.targetSlot === targetSlot,
-          );
-          if (action) {
-            perform(action);
-            performed = true;
-          }
-        }
-      } else if (heroEl && Number(heroEl.getAttribute("data-hero")) === opponentId) {
-        const action = uiActions.find(
-          (candidate) => candidate.type === "attack_core" && candidate.attackerSlot === drag.slotIndex,
-        );
-        if (action) {
-          perform(action);
-          performed = true;
-        }
-      }
-    }
-    if (!performed) {
-      sfx.play("invalid");
-      const apexBlocked=drag.kind==='attacker'&&heroEl&&Number(heroEl.getAttribute('data-hero'))===opponentId&&flashApexRestriction();
-      if(!apexBlocked&&!cancelAttackerSelection())setSelection(null);
-    }
-    clearHoverPreview();
-    setDrag(null);
-  }
-
-  function cancelDrag() {
-    // `pointercancel` is the NORMAL path on a phone: the row scrollers take
-    // horizontal swipes via `touch-action: pan-x`, and the browser cancels the
-    // pointer the moment it claims one. The preview has to close with it.
-    clearHoverPreview();
-    if (!drag) return;
-    if (drag.active) {
-      sfx.play("invalid");
-      if (!cancelAttackerSelection()) setSelection(null);
-    }
-    setDrag(null);
-  }
-
-  const guardedHandClick = (handIndex: number) => {
-    if (suppressClick.current) return;
-    onHandCard(handIndex);
-  };
-
-  const guardedSlotClick = (owner: PlayerId, slotIndex: number) => {
-    if (suppressClick.current) return;
-    onBoardSlot(owner, slotIndex);
-  };
-
-  const apexBodies=game.heroPowers[opponentId]==='yujiro_apex_duel'?viewer.board.filter((m):m is MinionInstance=>Boolean(m)):[];
-  const apexAttack=Math.max(-1,...apexBodies.map(m=>m.atk));
-  const apexPrey=(selection?.kind==='attacker'?apexBodies.find(m=>m===viewer.board[selection.slotIndex]&&m.atk===apexAttack):null)??apexBodies.find(m=>m.atk===apexAttack);
-  function flashApexRestriction():boolean {
-    const attacker=selection?.kind==='attacker'?viewer.board[selection.slotIndex]:null;
-    if(game.heroPowers[opponentId]!=='yujiro_apex_duel'||!attacker||attacker.atk>=apexAttack)return false;
-    const marker=fx.nextId();setEnemyPowerOpen(true);setApexAlert(marker);
-    window.setTimeout(()=>setApexAlert(current=>current===marker?null:current),1100);
-    return true;
-  }
-  function attackCore() {
-    if (selection?.kind !== "attacker") return;
-    const action = uiActions.find(
-      (candidate) => candidate.type === "attack_core" && candidate.attackerSlot === selection.slotIndex,
-    );
-    if (action) perform(action);
-    else if (!flashApexRestriction()&&!flashTauntBlockers()) cancelAttackerSelection();
-  }
-
   const endTurnAction = uiActions.find((action) => action.type === "end_turn");
   const coinAction = uiActions.find((action) => action.type === "use_coin");
   const coreTargetable = canAttackCore(uiActions, selection);
   const heroFx = (id: PlayerId) => fx.impacts.filter((fx) => fx.slot === "hero" && fx.owner === id);
-  // A bot's Discover/target prompt belongs to the hidden opponent. Keep the
-  // engine prompt alive for the bot, but do not render its choices to the human.
-  const pendingTarget =
-    game.phase === "targeting" && game.pendingTarget?.player === viewerId ? game.pendingTarget : null;
-  const targetSourceKey = pendingTarget
-    ? pendingTarget.heroPowerId
-      ? `hero-power:${pendingTarget.heroPowerId}`
-      : `board:${pendingTarget.sourceOwner}:${pendingTarget.sourceInstanceId}`
-    : null;
 
-  // Target arrows are view-only, but their origin belongs to the real source:
-  // the Hero Power button for a power, or the minion that opened a card effect.
-  // Resolve it after the pending target renders so the arrow follows responsive
-  // layout instead of guessing from the board grid.
-  useEffect(() => {
-    if (
-      game.phase !== "targeting" ||
-      !pendingTarget ||
-      pendingTarget.player !== viewerId ||
-      (pendingTarget.kind !== "board" && pendingTarget.kind !== "slot" && pendingTarget.kind !== "boardOrCore")
-    ) {
-      setTargetArrowOrigin(null);
-      return;
-    }
 
-    let sourceElement: HTMLElement | null = null;
-    if (pendingTarget.heroPowerId) {
-      sourceElement = document.querySelector<HTMLElement>(".hero-power-button");
-    } else {
-      const sourceSlot = game.players[pendingTarget.sourceOwner].board.findIndex(
-        (minion) => minion?.instanceId === pendingTarget.sourceInstanceId,
-      );
-      if (sourceSlot >= 0) {
-        sourceElement = document.querySelector<HTMLElement>(`[data-slot="${pendingTarget.sourceOwner}-${sourceSlot}"]`);
-      }
-    }
-
-    const bounds = sourceElement?.getBoundingClientRect();
-    if (!bounds) {
-      setTargetArrowOrigin(null);
-      return;
-    }
-    const origin = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
-    setTargetArrowOrigin(origin);
-    pointer.set(origin);
-  }, [game.phase, pendingTarget?.kind, targetSourceKey, viewerId]);
   // Read off the state rather than asking the bot — chooseBotAction simulates
   // every legal move, which is far too much work to redo on every render.
   // Online, the "bot" is the other browser: the same reading tells whose move it is.
@@ -2014,7 +1347,7 @@ export default function App() {
           onClick={() => setMobileMenuOpen(open => !open)}>☰ Menu</button>
         <div className={`system-buttons${mobileMenuOpen ? " mobile-open" : ""}`} onClickCapture={() => setMobileMenuOpen(false)}>
           {game.heroPowers[viewerId] && <p className="mobile-power-description"><strong>{heroPowerDefinition(game.heroPowers[viewerId])?.name}</strong>
-            <span>{heroPowerDefinition(game.heroPowers[viewerId])?.text}</span><small>2 mana · Once per turn{game.heroPowerUsed[viewerId] ? " · Used" : ""}</small></p>}
+            <span>{heroPowerDefinition(game.heroPowers[viewerId])?.text}</span><small>{effectiveHeroPowerCost(game, viewerId)} mana · Once per turn{game.heroPowerUsed[viewerId] ? " · Used" : ""}</small></p>}
           <button type="button" className="mobile-log-trigger" onClick={() => setLogOpen(open => !open)}>Duel log</button>
           {developerCheatRevealed && <button type="button" className="mobile-undo-trigger" disabled={!history.length || botThinking || game.phase !== "main"} onClick={undo}>Undo last action</button>}
           <button type="button" onClick={restart}>{mode.kind === "draft" || mode.kind === "online" ? "Concede" : "Restart"}</button>
@@ -2442,16 +1775,16 @@ export default function App() {
         onPlay={(chapter) => beginDuel({ kind: "campaign", chapter, skill: CAMPAIGN_DIFFICULTIES[CAMPAIGN_CHAPTERS[chapter - 1].difficultyId].botSkill })} />}
       {overlay === "online" && <OnlineScreen
         status={onlineStatus}
-        name={onlineName}
+        name={onlineDuel.name}
         deckLabel={`${progress.savedDecks.find((deck) => deck.id === progress.selectedDecks[0])?.name ?? "Your deck"} · ${progress.playerDeck.length}/30${selectedHeroPower ? ` · ${heroPowerDefinition(selectedHeroPower)?.name ?? ""}` : ""}`}
         deckReady={validateDeck(progress.playerDeck, CAMPAIGN_CARD_IDS, progress.unlockedIds).valid}
-        initialCode={inviteCode}
-        onName={(name) => { setOnlineName(name); try { localStorage.setItem("convergence.online.name", name); } catch { /* a name is not worth an error */ } }}
-        onHost={() => { void onlineSession.host(); }}
-        onJoin={(code) => { try { sessionStorage.setItem("convergence.online.room", code); } catch { /* reload rejoin is a bonus */ } void onlineSession.join(code, { name: cleanName(onlineName, "Guest"), deck: [...progress.playerDeck], heroPower: selectedHeroPower }); }}
-        onCancel={leaveOnline}
+        initialCode={onlineDuel.inviteCode}
+        onName={onlineDuel.setName}
+        onHost={onlineDuel.host}
+        onJoin={onlineDuel.join}
+        onCancel={onlineDuel.leave}
         onEditDeck={() => openDeck(0, "online")}
-        onClose={() => { if (onlineStatus.phase !== "connected") leaveOnline(); setOverlay(null); }} />}
+        onClose={() => { if (onlineStatus.phase !== "connected") onlineDuel.leave(); setOverlay(null); }} />}
       {online && screen === "playing" && onlineStatus.phase === "lost" ? (
         <div className="online-connection-banner" role="status"><span className="online-dot" aria-hidden="true" />Connection lost. Reconnecting…</div>
       ) : null}
@@ -2463,18 +1796,18 @@ export default function App() {
         onResume={continueDuel}
         onClose={() => setOverlay(null)} />}
       {overlay === 'lore' && <LoreLibrary completedBosses={progress.completedBosses} onClose={()=>setOverlay(null)} />}
-      {overlay === "deck" && <CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onPresetRename={renameDeckPreset} onPresetDelete={deleteDeckPreset} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
-        onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} />}
+      {overlay === "deck" && <Suspense fallback={null}><CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onPresetRename={renameDeckPreset} onPresetDelete={deleteDeckPreset} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+        onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} /></Suspense>}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}
       {storageError && <div className="campaign-storage-error" role="alert">Progress could not be saved. Keep this page open and retry.
         <button onClick={() => { if (persistProgress(progress) && game.phase === "gameOver") { clearSave(); setHasLiveSave(false); } }}>Retry save</button></div>}
-      {overlay === "opponent" && campaignBoss && <GalleryDetailModal
+      {overlay === "opponent" && campaignBoss && <Suspense fallback={null}><GalleryDetailModal
         entry={{ key: campaignBoss.id, card: campaignBoss, face: playableFace(campaignBoss) }}
         locked={false}
         onClose={() => setOverlay(null)}
         onNavigate={() => undefined}
-      />}
+      /></Suspense>}
       {overlay === "howToPlay" ? <HowToPlay onClose={() => setOverlay(null)} /> : null}
       {overlay === "settings" ? (
         <SettingsPanel

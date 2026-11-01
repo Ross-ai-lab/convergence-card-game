@@ -22,6 +22,8 @@
  *   npm run sim -- --games 1000          the largest permitted balance sample
  *   npm run sim -- --mode fuzz --games 400
  *   npm run sim -- --skill hard          how the roster looks under the strong bot
+ *   npm run sim -- --replay <seed> --drivers bot,random --any-power
+ *                                        replay one fuzz duel; --any-power when it dealt boss powers
  *
  * Writes `.preview/balance/report.html` and `.preview/balance/stats.json`.
  */
@@ -561,7 +563,7 @@ function runFuzz(games: number) {
   // harder one to chase. The drivers travel with the seed because a fuzz duel is
   // not reproducible without them — half the rotation is random play, and
   // replaying that seed under bot play is a different duel.
-  const problemOrigins: { text: string; seed: string; drivers: [Driver, Driver] }[] = [];
+  const problemOrigins: { text: string; seed: string; drivers: [Driver, Driver]; anyPower: boolean }[] = [];
   let softLocks = 0;
   let stalls = 0;
   // Split by driver: a stall in a bot-vs-bot fuzz duel is a real bot stall and
@@ -594,9 +596,12 @@ function runFuzz(games: number) {
       skills: ["normal", "normal"],
       turnCap: TURN_CAP,
       deepChecks: true,
+      // Half the duels deal any Hero Power, campaign bosses' included, so the
+      // boss powers face the invariants too; the other half is the real game.
+      anyHeroPower: index % 2 === 1,
     });
     problems.push(...result.problems);
-    for (const text of result.problems) problemOrigins.push({ text, seed, drivers });
+    for (const text of result.problems) problemOrigins.push({ text, seed, drivers, anyPower: index % 2 === 1 });
     actions += result.actions;
     if (result.softLocked) softLocks += 1;
     if (result.stalled) {
@@ -608,8 +613,8 @@ function runFuzz(games: number) {
     }
   }
 
-  const unique = new Map<string, { count: number; seed: string; drivers: [Driver, Driver] }>();
-  for (const { text, seed, drivers } of problemOrigins) {
+  const unique = new Map<string, { count: number; seed: string; drivers: [Driver, Driver]; anyPower: boolean }>();
+  for (const { text, seed, drivers, anyPower } of problemOrigins) {
     // Strip the turn number so the same defect reported on 200 different turns
     // collapses to one line with a count.
     const key = text.replace(/turn \d+/g, "turn N").replace(/\b[a-z]\d+\b/g, "<id>");
@@ -617,7 +622,7 @@ function runFuzz(games: number) {
     // First occurrence wins: the earliest seed is the cheapest to replay, and a
     // stable choice means two runs of the same build name the same duel.
     if (seen) seen.count += 1;
-    else unique.set(key, { count: 1, seed, drivers });
+    else unique.set(key, { count: 1, seed, drivers, anyPower });
   }
 
   return {
@@ -633,11 +638,11 @@ function runFuzz(games: number) {
     invariantBreaches: problems.filter((text) => !isSoftLockProblem(text)).length,
     unique: [...unique.entries()]
       .sort((a, b) => b[1].count - a[1].count)
-      .map(([text, { count, seed, drivers }]) => ({ text, count, seed, drivers })),
+      .map(([text, { count, seed, drivers, anyPower }]) => ({ text, count, seed, drivers, anyPower })),
     /** Every distinct invariant breach with a duel that produces it. */
     breaches: [...unique.entries()]
       .filter(([text]) => !isSoftLockProblem(text))
-      .map(([text, { count, seed, drivers }]) => ({ text, count, seed, drivers })),
+      .map(([text, { count, seed, drivers, anyPower }]) => ({ text, count, seed, drivers, anyPower })),
   };
 }
 
@@ -1000,6 +1005,7 @@ if (REPLAY) {
     turnCap: TURN_CAP,
     deepChecks: true,
     startingHealth: CORE_HP,
+    anyHeroPower: flag("any-power"),
   });
   console.log(`Replaying ${REPLAY} at ${SKILL} with drivers ${drivers.join(",")}, turn cap ${TURN_CAP}`);
   console.log(`  winner ${one.winner ?? "nobody"}, ${one.turns} turns, ${one.actions} actions`);
@@ -1296,7 +1302,7 @@ if (fuzz) {
   console.log(`          ${fuzz.total} invariant breaches, ${fuzz.softLocks} soft-locks, ${fuzz.stalls} stalls`);
   for (const u of fuzz.unique.slice(0, 12)) {
     console.log(`          ${String(u.count).padStart(5)} x ${u.text}`);
-    console.log(`                  replay: npm run sim -- --replay ${u.seed} --drivers ${u.drivers.join(",")}`);
+    console.log(`                  replay: npm run sim -- --replay ${u.seed} --drivers ${u.drivers.join(",")}${u.anyPower ? " --any-power" : ""}`);
   }
 }
 

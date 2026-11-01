@@ -272,6 +272,7 @@ export const EFFECT_IDS = [
   "invuln_with_good_ally",
   "invuln_if_alone",
   "dodge_40",
+  "dodge_50",
   "immune_magic_minions",
   "immune_tech_minions",
   "immune_nature_minions",

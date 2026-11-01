@@ -1,0 +1,19 @@
+Use case: illustration-story. Create final production comic artwork for an original fantasy card game chapter called The Last Lock (Chapter 8 of 10). This is ONE square atlas containing exactly SIX equal rectangular comic panels, in a perfectly aligned 3-column by 2-row grid, read left-to-right then top-to-bottom. Every cell is portrait 2:3. Request a crisp 2048 by 2048 square image. No outer margin. No text anywhere, no letters, speech balloons, captions, watermarks or logos; the game adds readable dialogue itself. Use narrow straight dark gutters only on the exact one-third and two-third vertical boundaries and the halfway horizontal boundary. Each cell must be a complete self-contained illustration, no elements crossing a gutter.
+
+Art direction: exceptional professional graphic novel illustration, expressive hand-inked contours, rich hand-painted gouache shading, fine paper texture, deep violet shadows, antique gold highlights, celestial teal light, strong cinematic compositions. Match the look of Chapter 1, The Empty Chair. Avoid photorealism, generic 3D, flat icon art and excessive details that obscure the action on phones. Never depict recognisable characters from existing films, games, comics or anime; champions appear only as glowing silhouettes or as card frames.
+
+Original protagonist in every appropriate panel: Rick Gramps, a sturdy elderly man with swept-back silver hair, short white beard, bushy brows, round brass goggles pushed up on his forehead, weathered olive long coat, wine-red scarf, fingerless gloves, one small brass cuff on his left wrist. Wry and determined, never a caricature. Consistent face and clothing across panels. Recurring character where named: The Archivist, a young woman in an oversized midnight-blue hooded coat, short copper hair, carrying a small ring of gold keys. Calm and knowing.
+
+Panel 1 upper left: the starry void filled with hundreds of floating door-cards, their golden lock threads broken and drifting, each little world bright and alive.
+
+Panel 2 upper middle: the Archivist points past Rick's shoulder at a small dim card drifting just behind him like a shadow, wrapped in the heaviest lock thread of all.
+
+Panel 3 upper right: close-up of the dim card: inside it a quiet suburban street at dusk and a small house with a porch light on, faded colours like an old photograph, Rick's face reflected in it.
+
+Panel 4 lower left: the Archivist holds the smooth blank key beside Rick's left wrist; the brass cuff on his wrist glows with exactly the same engraving pattern as the key's bow.
+
+Panel 5 lower middle: Rick's gloved fingers unclasp the small brass cuff, which unfolds into an ornate brass key with intricate teeth, light pouring from its seams.
+
+Panel 6 lower right: Rick closes his fist around the brass key, jaw set, turning away from the dim home card toward the distant card table glowing on the horizon, the Archivist beside him.
+
+Keep important faces and action below the top 12 percent of each panel and above the bottom 12 percent, leaving calm shaded areas there for later UI captions.

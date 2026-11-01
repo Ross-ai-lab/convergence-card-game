@@ -13,7 +13,7 @@
 // numbers below can be read straight against App.css. Random placement is
 // seeded, so a rebuild reproduces the same files byte for byte on one machine.
 import { mkdir, writeFile } from "node:fs/promises";
-import { chromium } from "playwright";
+import { launch } from "./browser.mjs";
 
 const OUT = new URL("../src/assets/shine/", import.meta.url);
 
@@ -296,7 +296,7 @@ function drawAll() {
   return out;
 }
 
-const browser = await chromium.launch();
+const browser = await launch();
 try {
   const page = await browser.newPage();
   const textures = await page.evaluate(drawAll);

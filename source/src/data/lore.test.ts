@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cards, relics } from "./cards";
 import { LORE_DETAILS } from "./lore";
+import { rarityName } from "../engine/types";
 
 describe("Star Chart coverage", () => {
   it("profiles every playable minion and Relic", () => {
@@ -11,6 +12,23 @@ describe("Star Chart coverage", () => {
       const profile = LORE_DETAILS[card.id];
       expect(profile?.name, `${card.id} (${card.name})`).toBeTruthy();
       expect(profile?.vals, `${card.id} chart`).toHaveLength(6);
+    }
+  });
+
+  it("prints the same card facts as the rosters", () => {
+    // The lore page once kept its own copy of these and fell 98 profiles behind
+    // a rebalance. `npm run sync:lore` copies them from the CSVs.
+    for (const card of cards) {
+      const profile = LORE_DETAILS[card.id];
+      expect(
+        [profile.name, profile.origin, profile.cost, profile.atk, profile.hp, profile.rar, profile.camp, profile.align],
+        `${card.id} ${card.name}`,
+      ).toEqual([card.name, card.origin, card.cost, card.atk, card.hp, rarityName(card.rarity), card.camp, card.alignment]);
+    }
+    for (const relic of relics) {
+      const profile = LORE_DETAILS[relic.id];
+      expect([profile.name, profile.origin, profile.cost, profile.rar], `${relic.id} ${relic.name}`)
+        .toEqual([relic.name, relic.origin, relic.cost, "Relic"]);
     }
   });
 

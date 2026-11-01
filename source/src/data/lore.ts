@@ -1,4 +1,4 @@
-/* Generated from the official lore page and materials/Convergence-Star-Charts-Additions.json. Do not edit by hand. */
+/* Generated from the official lore page (materials/Convergence-Official-Lore.html). Do not edit by hand. */
 export interface LoreRival {
   who: string;
   rel: string;
@@ -147,7 +147,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Good",
     "cost": 1,
     "atk": 1,
-    "hp": 1,
+    "hp": 4,
     "cc": "#2f9c63",
     "vals": [
       2,
@@ -194,14 +194,14 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c004": {
     "name": "Bigfoot",
-    "origin": "Basic",
+    "origin": "Myth",
     "epithet": "the Sasquatch",
     "rar": "Rare",
     "camp": "Nature",
     "align": "Neutral",
     "cost": 2,
-    "atk": 1,
-    "hp": 1,
+    "atk": 2,
+    "hp": 2,
     "cc": "#2f9c63",
     "vals": [
       5,
@@ -415,9 +415,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Tech",
     "align": "Neutral",
-    "cost": 6,
+    "cost": 5,
     "atk": 3,
-    "hp": 7,
+    "hp": 5,
     "cc": "#1a86a8",
     "vals": [
       6,
@@ -525,7 +525,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Good",
     "cost": 6,
     "atk": 2,
-    "hp": 2,
+    "hp": 3,
     "cc": "#7a52c8",
     "vals": [
       7,
@@ -578,8 +578,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Neutral",
     "cost": 7,
-    "atk": 1,
-    "hp": 7,
+    "atk": 3,
+    "hp": 6,
     "cc": "#1a86a8",
     "vals": [
       2,
@@ -633,7 +633,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Good",
     "cost": 7,
     "atk": 3,
-    "hp": 6,
+    "hp": 3,
     "cc": "#7a52c8",
     "vals": [
       5,
@@ -687,7 +687,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Neutral",
     "cost": 7,
     "atk": 4,
-    "hp": 5,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       8,
@@ -793,9 +793,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Tech",
     "align": "Good",
-    "cost": 7,
+    "cost": 8,
     "atk": 4,
-    "hp": 4,
+    "hp": 8,
     "cc": "#1a86a8",
     "vals": [
       9,
@@ -848,8 +848,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Neutral",
     "cost": 8,
-    "atk": 7,
-    "hp": 7,
+    "atk": 6,
+    "hp": 5,
     "cc": "#7a52c8",
     "vals": [
       9,
@@ -1118,8 +1118,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Good",
     "cost": 9,
-    "atk": 5,
-    "hp": 6,
+    "atk": 4,
+    "hp": 8,
     "cc": "#7a52c8",
     "vals": [
       9,
@@ -1172,8 +1172,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 9,
-    "atk": 4,
-    "hp": 8,
+    "atk": 3,
+    "hp": 3,
     "cc": "#7a52c8",
     "vals": [
       7,
@@ -1280,8 +1280,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Good",
     "cost": 10,
-    "atk": 8,
-    "hp": 8,
+    "atk": 10,
+    "hp": 10,
     "cc": "#2f9c63",
     "vals": [
       10,
@@ -1443,7 +1443,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Good",
     "cost": 10,
     "atk": 4,
-    "hp": 6,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       6,
@@ -1497,7 +1497,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Evil",
     "cost": 5,
     "atk": 3,
-    "hp": 6,
+    "hp": 2,
     "cc": "#7a52c8",
     "vals": [
       7,
@@ -1550,8 +1550,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Good",
     "cost": 5,
-    "atk": 3,
-    "hp": 5,
+    "atk": 2,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       5,
@@ -1657,10 +1657,10 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 5,
+    "cost": 7,
     "atk": 1,
     "hp": 1,
-    "cc": "#1a86a8",
+    "cc": "#7a52c8",
     "vals": [
       7,
       8,
@@ -1712,8 +1712,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Evil",
     "cost": 4,
-    "atk": 5,
-    "hp": 3,
+    "atk": 4,
+    "hp": 4,
     "cc": "#2f9c63",
     "vals": [
       7,
@@ -1767,7 +1767,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Evil",
     "cost": 4,
     "atk": 2,
-    "hp": 4,
+    "hp": 2,
     "cc": "#7a52c8",
     "vals": [
       2,
@@ -1813,7 +1813,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c035": {
-    "name": "Spiderman",
+    "name": "Spider-Man",
     "origin": "MCU",
     "epithet": "Friendly Neighborhood Spider-Man",
     "rar": "Legendary",
@@ -1874,8 +1874,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Evil",
     "cost": 4,
-    "atk": 2,
-    "hp": 4,
+    "atk": 3,
+    "hp": 3,
     "cc": "#1a86a8",
     "vals": [
       6,
@@ -2090,7 +2090,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Neutral",
     "cost": 6,
-    "atk": 4,
+    "atk": 5,
     "hp": 3,
     "cc": "#2f9c63",
     "vals": [
@@ -2137,15 +2137,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c041": {
-    "name": "Bill Cypher",
+    "name": "Bill Cipher",
     "origin": "Gravity Falls",
     "epithet": "Dream Demon",
     "rar": "Mythic",
     "camp": "Magic",
     "align": "Evil",
     "cost": 10,
-    "atk": 7,
-    "hp": 7,
+    "atk": 6,
+    "hp": 6,
     "cc": "#7a52c8",
     "vals": [
       3,
@@ -2199,7 +2199,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Neutral",
     "cost": 10,
     "atk": 4,
-    "hp": 6,
+    "hp": 8,
     "cc": "#7a52c8",
     "vals": [
       6,
@@ -2254,7 +2254,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 10,
     "atk": 1,
     "hp": 1,
-    "cc": "#2f9c63",
+    "cc": "#7a52c8",
     "vals": [
       9,
       10,
@@ -2306,7 +2306,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Good",
     "cost": 10,
-    "atk": 7,
+    "atk": 6,
     "hp": 7,
     "cc": "#7a52c8",
     "vals": [
@@ -2362,7 +2362,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 10,
     "atk": 1,
     "hp": 1,
-    "cc": "#2f9c63",
+    "cc": "#1a86a8",
     "vals": [
       2,
       4,
@@ -2414,8 +2414,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Neutral",
     "cost": 10,
-    "atk": 6,
-    "hp": 8,
+    "atk": 10,
+    "hp": 7,
     "cc": "#7a52c8",
     "vals": [
       3,
@@ -2576,8 +2576,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Good",
     "cost": 9,
-    "atk": 5,
-    "hp": 7,
+    "atk": 1,
+    "hp": 1,
     "cc": "#7a52c8",
     "vals": [
       7,
@@ -2630,8 +2630,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 9,
-    "atk": 5,
-    "hp": 5,
+    "atk": 4,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       7,
@@ -2686,7 +2686,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 9,
     "atk": 6,
     "hp": 8,
-    "cc": "#1a86a8",
+    "cc": "#2f9c63",
     "vals": [
       8,
       8,
@@ -2738,8 +2738,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 9,
-    "atk": 6,
-    "hp": 6,
+    "atk": 8,
+    "hp": 5,
     "cc": "#7a52c8",
     "vals": [
       6,
@@ -2845,10 +2845,10 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Tech",
     "align": "Good",
-    "cost": 9,
-    "atk": 4,
-    "hp": 8,
-    "cc": "#7a52c8",
+    "cost": 4,
+    "atk": 2,
+    "hp": 3,
+    "cc": "#1a86a8",
     "vals": [
       4,
       4,
@@ -2894,14 +2894,14 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c055": {
     "name": "Death Star",
-    "origin": "Basic",
+    "origin": "Star Wars",
     "epithet": "The Ultimate Power",
     "rar": "Rare",
     "camp": "Tech",
     "align": "Neutral",
     "cost": 9,
-    "atk": 9,
-    "hp": 9,
+    "atk": 7,
+    "hp": 6,
     "cc": "#1a86a8",
     "vals": [
       10,
@@ -2954,7 +2954,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Evil",
     "cost": 9,
-    "atk": 5,
+    "atk": 7,
     "hp": 6,
     "cc": "#2f9c63",
     "vals": [
@@ -3008,8 +3008,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Evil",
     "cost": 9,
-    "atk": 6,
-    "hp": 7,
+    "atk": 7,
+    "hp": 5,
     "cc": "#2f9c63",
     "vals": [
       9,
@@ -3062,8 +3062,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Evil",
     "cost": 8,
-    "atk": 6,
-    "hp": 8,
+    "atk": 5,
+    "hp": 5,
     "cc": "#2f9c63",
     "vals": [
       9,
@@ -3117,7 +3117,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Neutral",
     "cost": 8,
     "atk": 4,
-    "hp": 6,
+    "hp": 4,
     "cc": "#2f9c63",
     "vals": [
       6,
@@ -3163,15 +3163,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c060": {
-    "name": "Monkey D. Luffy Gear 5",
+    "name": "Monkey D. Luffy",
     "origin": "One Piece",
     "epithet": "Warrior of Liberation",
     "rar": "Mythic",
     "camp": "Magic",
     "align": "Good",
     "cost": 8,
-    "atk": 7,
-    "hp": 3,
+    "atk": 6,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       9,
@@ -3226,7 +3226,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 5,
     "atk": 1,
     "hp": 1,
-    "cc": "#1a86a8",
+    "cc": "#7a52c8",
     "vals": [
       6,
       9,
@@ -3271,15 +3271,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c062": {
-    "name": "S Class Heroes",
+    "name": "S-Class Heroes",
     "origin": "OPM",
     "epithet": "The Association's Elite",
     "rar": "Legendary",
     "camp": "ALL",
     "align": "Good",
     "cost": 8,
-    "atk": 5,
-    "hp": 6,
+    "atk": 4,
+    "hp": 7,
     "cc": "#d5a84c",
     "vals": [
       8,
@@ -3331,9 +3331,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 8,
-    "atk": 5,
-    "hp": 6,
+    "cost": 4,
+    "atk": 2,
+    "hp": 1,
     "cc": "#7a52c8",
     "vals": [
       2,
@@ -3386,8 +3386,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Good",
     "cost": 8,
-    "atk": 5,
-    "hp": 6,
+    "atk": 4,
+    "hp": 5,
     "cc": "#7a52c8",
     "vals": [
       9,
@@ -3442,7 +3442,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 8,
     "atk": 4,
     "hp": 3,
-    "cc": "#2f9c63",
+    "cc": "#7a52c8",
     "vals": [
       9,
       9,
@@ -3493,9 +3493,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Nature",
     "align": "Evil",
-    "cost": 8,
-    "atk": 7,
-    "hp": 7,
+    "cost": 7,
+    "atk": 5,
+    "hp": 6,
     "cc": "#2f9c63",
     "vals": [
       8,
@@ -3547,9 +3547,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 8,
+    "cost": 4,
     "atk": 0,
-    "hp": 7,
+    "hp": 5,
     "cc": "#7a52c8",
     "vals": [
       2,
@@ -3649,14 +3649,14 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c069": {
-    "name": "Netero",
+    "name": "Isaac Netero",
     "origin": "HxH",
     "epithet": "Chairman of the Hunters",
     "rar": "Mythic",
     "camp": "Magic",
     "align": "Good",
     "cost": 7,
-    "atk": 3,
+    "atk": 4,
     "hp": 4,
     "cc": "#7a52c8",
     "vals": [
@@ -3710,8 +3710,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Neutral",
     "cost": 7,
-    "atk": 4,
-    "hp": 6,
+    "atk": 3,
+    "hp": 5,
     "cc": "#7a52c8",
     "vals": [
       8,
@@ -3765,7 +3765,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Evil",
     "cost": 7,
     "atk": 4,
-    "hp": 6,
+    "hp": 5,
     "cc": "#7a52c8",
     "vals": [
       8,
@@ -3872,7 +3872,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Good",
     "cost": 7,
-    "atk": 5,
+    "atk": 4,
     "hp": 5,
     "cc": "#7a52c8",
     "vals": [
@@ -3926,9 +3926,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Good",
     "cost": 7,
-    "atk": 2,
-    "hp": 6,
-    "cc": "#2f9c63",
+    "atk": 5,
+    "hp": 5,
+    "cc": "#7a52c8",
     "vals": [
       4,
       6,
@@ -3980,8 +3980,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Evil",
     "cost": 7,
-    "atk": 3,
-    "hp": 5,
+    "atk": 5,
+    "hp": 3,
     "cc": "#1a86a8",
     "vals": [
       7,
@@ -4036,7 +4036,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 7,
     "atk": 4,
     "hp": 5,
-    "cc": "#7a52c8",
+    "cc": "#2f9c63",
     "vals": [
       9,
       9,
@@ -4086,7 +4086,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "epithet": "Fame Without the Fight",
     "rar": "Rare",
     "camp": "Nature",
-    "align": "Good",
+    "align": "Neutral",
     "cost": 1,
     "atk": 0,
     "hp": 3,
@@ -4135,15 +4135,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c080": {
-    "name": "Gandalf The White",
+    "name": "Gandalf the White",
     "origin": "Lord of the Rings",
     "epithet": "The White Rider",
     "rar": "Legendary",
     "camp": "Magic",
     "align": "Good",
     "cost": 6,
-    "atk": 1,
-    "hp": 1,
+    "atk": 2,
+    "hp": 2,
     "cc": "#7a52c8",
     "vals": [
       4,
@@ -4195,10 +4195,10 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Legendary",
     "camp": "Tech",
     "align": "Neutral",
-    "cost": 6,
-    "atk": 4,
-    "hp": 4,
-    "cc": "#7a52c8",
+    "cost": 4,
+    "atk": 1,
+    "hp": 3,
+    "cc": "#1a86a8",
     "vals": [
       3,
       4,
@@ -4250,8 +4250,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Neutral",
     "cost": 6,
-    "atk": 3,
-    "hp": 5,
+    "atk": 5,
+    "hp": 6,
     "cc": "#7a52c8",
     "vals": [
       9,
@@ -4346,7 +4346,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "epithet": "The Chimera Ant King",
     "rar": "Mythic",
     "camp": "Nature",
-    "align": "Evil",
+    "align": "Neutral",
     "cost": 7,
     "atk": 4,
     "hp": 6,
@@ -4500,8 +4500,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Evil",
     "cost": 6,
-    "atk": 5,
-    "hp": 6,
+    "atk": 4,
+    "hp": 5,
     "cc": "#2f9c63",
     "vals": [
       9,
@@ -4556,7 +4556,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 6,
     "atk": 4,
     "hp": 4,
-    "cc": "#7a52c8",
+    "cc": "#2f9c63",
     "vals": [
       8,
       8,
@@ -4608,8 +4608,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Neutral",
     "cost": 6,
-    "atk": 4,
-    "hp": 4,
+    "atk": 2,
+    "hp": 6,
     "cc": "#7a52c8",
     "vals": [
       9,
@@ -4716,7 +4716,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 6,
-    "atk": 4,
+    "atk": 3,
     "hp": 5,
     "cc": "#7a52c8",
     "vals": [
@@ -4770,8 +4770,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Neutral",
     "cost": 6,
-    "atk": 6,
-    "hp": 6,
+    "atk": 3,
+    "hp": 3,
     "cc": "#1a86a8",
     "vals": [
       5,
@@ -4818,9 +4818,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Tech",
     "align": "Neutral",
-    "cost": 6,
-    "atk": 5,
-    "hp": 4,
+    "cost": 3,
+    "atk": 2,
+    "hp": 2,
     "cc": "#1a86a8",
     "vals": [
       7,
@@ -4923,7 +4923,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Good",
     "cost": 5,
     "atk": 2,
-    "hp": 7,
+    "hp": 2,
     "cc": "#2f9c63",
     "vals": [
       8,
@@ -4976,8 +4976,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 5,
-    "atk": 4,
-    "hp": 4,
+    "atk": 3,
+    "hp": 2,
     "cc": "#7a52c8",
     "vals": [
       7,
@@ -5023,16 +5023,16 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c097": {
-    "name": "Elder Beast",
+    "name": "Elden Beast",
     "origin": "Elden Ring",
     "epithet": "The Elden Ring Itself",
     "rar": "Legendary",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 5,
-    "atk": 2,
+    "cost": 6,
+    "atk": 4,
     "hp": 4,
-    "cc": "#2f9c63",
+    "cc": "#7a52c8",
     "vals": [
       8,
       8,
@@ -5138,7 +5138,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 5,
-    "atk": 4,
+    "atk": 3,
     "hp": 3,
     "cc": "#7a52c8",
     "vals": [
@@ -5185,7 +5185,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c100": {
-    "name": "Rennalla queen of the full moon",
+    "name": "Rennala Queen of the Full Moon",
     "origin": "Elden Ring",
     "epithet": "Grief-Struck Sorceress Queen",
     "rar": "Epic",
@@ -5193,7 +5193,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Neutral",
     "cost": 5,
     "atk": 2,
-    "hp": 5,
+    "hp": 3,
     "cc": "#7a52c8",
     "vals": [
       3,
@@ -5395,15 +5395,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c104": {
-    "name": "Glados",
+    "name": "GLaDOS",
     "origin": "Portal",
     "epithet": "Aperture's Rogue AI",
-    "rar": "Rare",
+    "rar": "Legendary",
     "camp": "Tech",
     "align": "Evil",
     "cost": 5,
     "atk": 2,
-    "hp": 5,
+    "hp": 3,
     "cc": "#1a86a8",
     "vals": [
       3,
@@ -5564,8 +5564,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 4,
-    "atk": 2,
-    "hp": 4,
+    "atk": 3,
+    "hp": 5,
     "cc": "#7a52c8",
     "vals": [
       5,
@@ -5619,7 +5619,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Neutral",
     "cost": 4,
     "atk": 2,
-    "hp": 3,
+    "hp": 1,
     "cc": "#2f9c63",
     "vals": [
       7,
@@ -5667,9 +5667,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Good",
     "cost": 4,
-    "atk": 4,
-    "hp": 1,
-    "cc": "#7a52c8",
+    "atk": 3,
+    "hp": 3,
+    "cc": "#2f9c63",
     "vals": [
       7,
       7,
@@ -5722,7 +5722,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Good",
     "cost": 4,
     "atk": 3,
-    "hp": 4,
+    "hp": 3,
     "cc": "#2f9c63",
     "vals": [
       6,
@@ -5775,7 +5775,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Evil",
     "cost": 4,
-    "atk": 2,
+    "atk": 3,
     "hp": 3,
     "cc": "#1a86a8",
     "vals": [
@@ -5824,8 +5824,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 4,
-    "atk": 1,
-    "hp": 4,
+    "atk": 2,
+    "hp": 6,
     "cc": "#7a52c8",
     "vals": [
       5,
@@ -5932,8 +5932,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 4,
-    "atk": 3,
-    "hp": 3,
+    "atk": 4,
+    "hp": 4,
     "cc": "#7a52c8",
     "vals": [
       1,
@@ -5979,15 +5979,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     ]
   },
   "c115": {
-    "name": "One Eyed Owl",
+    "name": "One-Eyed Owl",
     "origin": "Tokyo Ghoul",
     "epithet": "The One-Eyed Owl",
     "rar": "Epic",
     "camp": "Nature",
     "align": "Evil",
-    "cost": 4,
-    "atk": 5,
-    "hp": 5,
+    "cost": 5,
+    "atk": 4,
+    "hp": 4,
     "cc": "#2f9c63",
     "vals": [
       8,
@@ -6039,8 +6039,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Legendary",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 4,
-    "atk": 2,
+    "cost": 6,
+    "atk": 4,
     "hp": 3,
     "cc": "#7a52c8",
     "vals": [
@@ -6094,7 +6094,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 4,
-    "atk": 5,
+    "atk": 6,
     "hp": 5,
     "cc": "#7a52c8",
     "vals": [
@@ -6148,8 +6148,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Neutral",
     "cost": 4,
-    "atk": 4,
-    "hp": 4,
+    "atk": 2,
+    "hp": 3,
     "cc": "#1a86a8",
     "vals": [
       4,
@@ -6253,7 +6253,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 2,
     "hp": 2,
-    "cc": "#7a52c8",
+    "cc": "#2f9c63",
     "vals": [
       7,
       7,
@@ -6359,7 +6359,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Evil",
     "cost": 4,
-    "atk": 3,
+    "atk": 2,
     "hp": 5,
     "cc": "#2f9c63",
     "vals": [
@@ -6413,9 +6413,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Good",
     "cost": 3,
-    "atk": 1,
-    "hp": 1,
-    "cc": "#7a52c8",
+    "atk": 2,
+    "hp": 2,
+    "cc": "#1a86a8",
     "vals": [
       3,
       3,
@@ -6577,7 +6577,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 2,
     "hp": 2,
-    "cc": "#7a52c8",
+    "cc": "#2f9c63",
     "vals": [
       6,
       5,
@@ -6683,7 +6683,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Evil",
     "cost": 3,
-    "atk": 2,
+    "atk": 5,
     "hp": 1,
     "cc": "#2f9c63",
     "vals": [
@@ -6737,7 +6737,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 3,
-    "atk": 2,
+    "atk": 3,
     "hp": 3,
     "cc": "#7a52c8",
     "vals": [
@@ -6791,7 +6791,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 3,
-    "atk": 4,
+    "atk": 2,
     "hp": 2,
     "cc": "#7a52c8",
     "vals": [
@@ -6845,8 +6845,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 3,
-    "atk": 2,
-    "hp": 2,
+    "atk": 1,
+    "hp": 1,
     "cc": "#7a52c8",
     "vals": [
       4,
@@ -6899,8 +6899,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Good",
     "cost": 3,
-    "atk": 2,
-    "hp": 2,
+    "atk": 1,
+    "hp": 1,
     "cc": "#7a52c8",
     "vals": [
       5,
@@ -7007,7 +7007,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Nature",
     "align": "Evil",
     "cost": 3,
-    "atk": 4,
+    "atk": 3,
     "hp": 3,
     "cc": "#2f9c63",
     "vals": [
@@ -7277,8 +7277,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Neutral",
     "cost": 3,
-    "atk": 3,
-    "hp": 3,
+    "atk": 2,
+    "hp": 2,
     "cc": "#1a86a8",
     "vals": [
       3,
@@ -7326,7 +7326,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Good",
     "cost": 3,
-    "atk": 1,
+    "atk": 2,
     "hp": 4,
     "cc": "#1a86a8",
     "vals": [
@@ -7433,9 +7433,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Epic",
     "camp": "Nature",
     "align": "Good",
-    "cost": 3,
-    "atk": 2,
-    "hp": 3,
+    "cost": 5,
+    "atk": 4,
+    "hp": 4,
     "cc": "#2f9c63",
     "vals": [
       8,
@@ -7651,8 +7651,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Neutral",
     "cost": 2,
     "atk": 1,
-    "hp": 2,
-    "cc": "#2f9c63",
+    "hp": 1,
+    "cc": "#1a86a8",
     "vals": [
       3,
       3,
@@ -7704,7 +7704,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Tech",
     "align": "Neutral",
     "cost": 2,
-    "atk": 1,
+    "atk": 2,
     "hp": 2,
     "cc": "#1a86a8",
     "vals": [
@@ -7760,7 +7760,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 2,
     "atk": 1,
     "hp": 1,
-    "cc": "#2f9c63",
+    "cc": "#7a52c8",
     "vals": [
       2,
       4,
@@ -7866,7 +7866,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Good",
     "cost": 2,
-    "atk": 1,
+    "atk": 0,
     "hp": 1,
     "cc": "#7a52c8",
     "vals": [
@@ -8081,9 +8081,9 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Magic",
     "align": "Neutral",
-    "cost": 2,
-    "atk": 0,
-    "hp": 1,
+    "cost": 4,
+    "atk": 2,
+    "hp": 3,
     "cc": "#7a52c8",
     "vals": [
       6,
@@ -8138,7 +8138,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 3,
     "atk": 1,
     "hp": 1,
-    "cc": "#2f9c63",
+    "cc": "#7a52c8",
     "vals": [
       7,
       7,
@@ -8190,7 +8190,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "camp": "Magic",
     "align": "Evil",
     "cost": 2,
-    "atk": 1,
+    "atk": 2,
     "hp": 1,
     "cc": "#7a52c8",
     "vals": [
@@ -8243,8 +8243,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "rar": "Rare",
     "camp": "Nature",
     "align": "Evil",
-    "cost": 2,
-    "atk": 2,
+    "cost": 4,
+    "atk": 5,
     "hp": 4,
     "cc": "#2f9c63",
     "vals": [
@@ -8516,7 +8516,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 3,
     "hp": 3,
-    "cc": "#2f9c63",
+    "cc": "#7a52c8",
     "vals": [
       4,
       5,
@@ -8728,7 +8728,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "epithet": "Smartest Man in the World",
     "rar": "Rare",
     "camp": "Tech",
-    "align": "Good",
+    "align": "Neutral",
     "cost": 1,
     "atk": 1,
     "hp": 1,
@@ -8786,7 +8786,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 1,
     "hp": 1,
-    "cc": "#2f9c63",
+    "cc": "#1a86a8",
     "vals": [
       1,
       2,
@@ -8893,8 +8893,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Evil",
     "cost": 1,
     "atk": 1,
-    "hp": 2,
-    "cc": "#2f9c63",
+    "hp": 1,
+    "cc": "#7a52c8",
     "vals": [
       6,
       7,
@@ -8940,7 +8940,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c171": {
     "name": "Goblins",
-    "origin": "Basic",
+    "origin": "Myth",
     "epithet": "The Swarming Horde",
     "rar": "Rare",
     "camp": "Nature",
@@ -9001,7 +9001,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Neutral",
     "cost": 1,
     "atk": 1,
-    "hp": 2,
+    "hp": 1,
     "cc": "#2f9c63",
     "vals": [
       1,
@@ -9210,15 +9210,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c176": {
     "name": "Meteor",
-    "origin": "Astronomy",
+    "origin": "Basic",
     "epithet": "A Visitor from Deep Space",
     "rar": "Rare",
     "camp": "Nature",
     "align": "Neutral",
     "cost": 8,
     "atk": 4,
-    "hp": 3,
-    "cc": "#79c66a",
+    "hp": 4,
+    "cc": "#2f9c63",
     "vals": [
       10,
       8,
@@ -9267,7 +9267,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 7,
     "atk": 3,
     "hp": 7,
-    "cc": "#70c9ff",
+    "cc": "#1a86a8",
     "vals": [
       7,
       10,
@@ -9308,7 +9308,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "c178": {
     "name": "Black Hole",
-    "origin": "Astrophysics",
+    "origin": "Basic",
     "epithet": "The Point of No Return",
     "rar": "Rare",
     "camp": "Magic",
@@ -9316,7 +9316,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 10,
     "atk": 7,
     "hp": 4,
-    "cc": "#b996ff",
+    "cc": "#7a52c8",
     "vals": [
       10,
       10,
@@ -9365,7 +9365,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 2,
     "hp": 2,
-    "cc": "#b996ff",
+    "cc": "#7a52c8",
     "vals": [
       6,
       5,
@@ -9413,13 +9413,13 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "name": "Prince Lloyd",
     "origin": "7th Prince",
     "epithet": "The Magic Prodigy",
-    "rar": "Legendary",
+    "rar": "Epic",
     "camp": "Magic",
     "align": "Good",
     "cost": 6,
     "atk": 2,
     "hp": 2,
-    "cc": "#b996ff",
+    "cc": "#7a52c8",
     "vals": [
       4,
       5,
@@ -9473,7 +9473,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 2,
     "hp": 1,
-    "cc": "#7a52c8",
+    "cc": "#1a86a8",
     "vals": [
       8,
       7,
@@ -9581,7 +9581,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 8,
     "atk": 2,
     "hp": 2,
-    "cc": "#f0c767",
+    "cc": "#7a52c8",
     "vals": [
       9,
       9,
@@ -9634,8 +9634,8 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "align": "Good",
     "cost": 6,
     "atk": 2,
-    "hp": 5,
-    "cc": "#2f9c63",
+    "hp": 6,
+    "cc": "#7a52c8",
     "vals": [
       4,
       8,
@@ -9733,9 +9733,85 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
       }
     ]
   },
+  "c186": {
+    "name": "Antimatter Bomb",
+    "origin": "Basic",
+    "rar": "Rare",
+    "camp": "Tech",
+    "align": "Neutral",
+    "cost": 9,
+    "atk": 1,
+    "hp": 1,
+    "cc": "#1a86a8",
+    "ability": "Deathrattle: Deal 20 damage to both cores",
+    "rivals": [],
+    "epithet": "Mutual destruction",
+    "vals": [
+      9,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "rank": "Catastrophic deterrent",
+    "lore": "A fragile antimatter warhead built around a single terrible promise: its destruction will punish both sides. Even its commander cannot escape the final blast.",
+    "quote": "No safe distance.",
+    "str": [
+      "Devastating core blast",
+      "Threatens both sides",
+      "Punishes destruction"
+    ],
+    "wk": [
+      "Extremely fragile",
+      "Harms its own commander",
+      "Silence disables the final blast"
+    ],
+    "sig_name": "Containment Failure",
+    "sig_desc": "Its final detonation deals 20 damage to both cores.",
+    "playstyle": "A risky finisher or deterrent"
+  },
+  "c187": {
+    "name": "Carrier Strike Group",
+    "origin": "Basic",
+    "rar": "Rare",
+    "camp": "Tech",
+    "align": "Neutral",
+    "cost": 5,
+    "atk": 2,
+    "hp": 5,
+    "cc": "#1a86a8",
+    "ability": "Passive: Enemy Tech minions cannot attack",
+    "rivals": [],
+    "epithet": "Fleet air superiority",
+    "vals": [
+      6,
+      7,
+      0,
+      0,
+      7,
+      4
+    ],
+    "rank": "Coordinated naval force",
+    "lore": "A carrier sails with escorts, aircraft and overlapping defenses. Together they dominate the battlespace, preventing enemy Tech minions from launching attacks while the fleet remains active.",
+    "quote": "The horizon belongs to the fleet.",
+    "str": [
+      "Disrupts enemy Tech forces",
+      "Durable supporting body",
+      "Coordinates a fleet of defenses"
+    ],
+    "wk": [
+      "Other camps remain free to attack",
+      "Silence ends the suppression",
+      "Its own attack is modest"
+    ],
+    "sig_name": "Air Superiority",
+    "sig_desc": "Enemy Tech minions cannot attack while the fleet is active.",
+    "playstyle": "Suppresses opposing Tech attackers"
+  },
   "r001": {
     "name": "The Holy Grail",
-    "origin": "Arthurian Legend",
+    "origin": "Myth",
     "epithet": "The Vessel of the Quest",
     "rar": "Relic",
     "camp": "Relic",
@@ -9743,7 +9819,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 5,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       7,
       8,
@@ -9797,7 +9873,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 3,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       8,
       5,
@@ -9843,7 +9919,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r003": {
     "name": "One Ring",
-    "origin": "The Lord of the Rings",
+    "origin": "Lord of The Rings",
     "epithet": "The Ruling Ring",
     "rar": "Relic",
     "camp": "Relic",
@@ -9851,7 +9927,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       8,
       7,
@@ -9897,7 +9973,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r005": {
     "name": "Infinity Stone",
-    "origin": "Marvel Cinematic Universe",
+    "origin": "MCU",
     "epithet": "A Fragment of Cosmic Law",
     "rar": "Relic",
     "camp": "Relic",
@@ -9905,7 +9981,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 3,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       8,
       5,
@@ -9959,7 +10035,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 3,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       5,
       6,
@@ -10013,7 +10089,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 3,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       6,
       7,
@@ -10059,7 +10135,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r008": {
     "name": "Cyber-Enchantment",
-    "origin": "Cyberpunk fantasy",
+    "origin": "Myth",
     "epithet": "The Wired Ward",
     "rar": "Relic",
     "camp": "Relic",
@@ -10067,7 +10143,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 3,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       5,
       7,
@@ -10116,7 +10192,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 3,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       10,
       4,
@@ -10170,7 +10246,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       5,
       4,
@@ -10216,7 +10292,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r011": {
     "name": "Monster Cell",
-    "origin": "One Punch Man",
+    "origin": "OPM",
     "epithet": "The Mutation Seed",
     "rar": "Relic",
     "camp": "Relic",
@@ -10224,7 +10300,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 2,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       8,
       7,
@@ -10270,7 +10346,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r012": {
     "name": "Philosopher's Stone",
-    "origin": "Harry Potter",
+    "origin": "Myth",
     "epithet": "The Red Stone of Alchemy",
     "rar": "Relic",
     "camp": "Relic",
@@ -10278,7 +10354,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       5,
       7,
@@ -10332,7 +10408,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       7,
       6,
@@ -10378,7 +10454,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r014": {
     "name": "Anti-magic Mask",
-    "origin": "That Time I Got Reincarnated as a Slime",
+    "origin": "That time I got reincarnated as a Slime",
     "epithet": "Shizu's Sealed Face",
     "rar": "Relic",
     "camp": "Relic",
@@ -10386,7 +10462,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       4,
       6,
@@ -10440,7 +10516,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 2,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       8,
       5,
@@ -10486,7 +10562,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r016": {
     "name": "Healing Potion",
-    "origin": "Fantasy folklore",
+    "origin": "That time I got reincarnated as a Slime",
     "epithet": "The Restorative Draught",
     "rar": "Relic",
     "camp": "Relic",
@@ -10494,7 +10570,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       2,
       8,
@@ -10535,7 +10611,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r017": {
     "name": "Queen's Cocoon",
-    "origin": "Hunter x Hunter",
+    "origin": "Hxh",
     "epithet": "The Chimera Ant Chrysalis",
     "rar": "Relic",
     "camp": "Relic",
@@ -10543,7 +10619,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 2,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       7,
       8,
@@ -10597,7 +10673,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       6,
       3,
@@ -10651,7 +10727,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 2,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       7,
       4,
@@ -10697,7 +10773,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r020": {
     "name": "Tesseract",
-    "origin": "Marvel Cinematic Universe",
+    "origin": "MCU",
     "epithet": "The Space Stone's Cube",
     "rar": "Relic",
     "camp": "Relic",
@@ -10705,7 +10781,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       7,
       5,
@@ -10759,7 +10835,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       6,
       8,
@@ -10805,7 +10881,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r022": {
     "name": "Pandora's Box",
-    "origin": "Greek Mythology",
+    "origin": "Myth",
     "epithet": "The Jar of What Was Unleashed",
     "rar": "Relic",
     "camp": "Relic",
@@ -10813,7 +10889,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 2,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       7,
       5,
@@ -10859,15 +10935,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r023": {
     "name": "The Monkey's Paw",
-    "origin": "W. W. Jacobs",
+    "origin": "Myth",
     "epithet": "The Crooked Wish",
     "rar": "Relic",
     "camp": "Relic",
     "align": "Relic",
-    "cost": 3,
+    "cost": 2,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       8,
       4,
@@ -10913,7 +10989,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r024": {
     "name": "Ark of the Covenant",
-    "origin": "Hebrew Bible / Indiana Jones",
+    "origin": "Indiana Jones",
     "epithet": "The Ark of the Testimony",
     "rar": "Relic",
     "camp": "Relic",
@@ -10921,7 +10997,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 4,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       6,
       8,
@@ -10967,7 +11043,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r025": {
     "name": "Necronomicon",
-    "origin": "H. P. Lovecraft",
+    "origin": "Myth",
     "epithet": "The Book of the Dead",
     "rar": "Relic",
     "camp": "Relic",
@@ -10975,7 +11051,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 2,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       6,
       4,
@@ -11029,7 +11105,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 7,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       7,
       7,
@@ -11083,7 +11159,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 5,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       10,
       8,
@@ -11137,7 +11213,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 2,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       9,
       6,
@@ -11191,7 +11267,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 3,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       8,
       8,
@@ -11237,15 +11313,15 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
   },
   "r030": {
     "name": "Stand Arrow",
-    "origin": "JoJo's Bizarre Adventure",
+    "origin": "JoJo",
     "epithet": "The Arrow That Awakens Stands",
     "rar": "Relic",
     "camp": "Relic",
     "align": "Relic",
-    "cost": 2,
+    "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       7,
       8,
@@ -11299,7 +11375,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       6,
       7,
@@ -11353,7 +11429,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 2,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       7,
       8,
@@ -11407,7 +11483,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       9,
       9,
@@ -11461,7 +11537,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       5,
       6,
@@ -11515,7 +11591,7 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
     "cost": 1,
     "atk": 0,
     "hp": 0,
-    "cc": "#54d6c3",
+    "cc": "#1f9e8f",
     "vals": [
       8,
       7,
@@ -11558,81 +11634,5 @@ export const LORE_DETAILS: Record<string, LoreDetail> = {
         "id": ""
       }
     ]
-  },
-  "c186": {
-    "name": "Antimatter Bomb",
-    "origin": "Basic",
-    "rar": "Rare",
-    "camp": "Tech",
-    "align": "Neutral",
-    "cost": 9,
-    "atk": 1,
-    "hp": 1,
-    "cc": "#46e0ff",
-    "ability": "Deathrattle: Deal 20 damage to both cores",
-    "rivals": [],
-    "epithet": "Mutual destruction",
-    "vals": [
-      9,
-      1,
-      0,
-      0,
-      0,
-      0
-    ],
-    "rank": "Catastrophic deterrent",
-    "lore": "A fragile antimatter warhead built around a single terrible promise: its destruction will punish both sides. Even its commander cannot escape the final blast.",
-    "quote": "No safe distance.",
-    "str": [
-      "Devastating core blast",
-      "Threatens both sides",
-      "Punishes destruction"
-    ],
-    "wk": [
-      "Extremely fragile",
-      "Harms its own commander",
-      "Silence disables the final blast"
-    ],
-    "sig_name": "Containment Failure",
-    "sig_desc": "Its final detonation deals 20 damage to both cores.",
-    "playstyle": "A risky finisher or deterrent"
-  },
-  "c187": {
-    "name": "Carrier Strike Group",
-    "origin": "Basic",
-    "rar": "Rare",
-    "camp": "Tech",
-    "align": "Neutral",
-    "cost": 5,
-    "atk": 1,
-    "hp": 5,
-    "cc": "#46e0ff",
-    "ability": "Passive: Enemy Tech minions cannot attack",
-    "rivals": [],
-    "epithet": "Fleet air superiority",
-    "vals": [
-      6,
-      7,
-      0,
-      0,
-      7,
-      4
-    ],
-    "rank": "Coordinated naval force",
-    "lore": "A carrier sails with escorts, aircraft and overlapping defenses. Together they dominate the battlespace, preventing enemy Tech minions from launching attacks while the fleet remains active.",
-    "quote": "The horizon belongs to the fleet.",
-    "str": [
-      "Disrupts enemy Tech forces",
-      "Durable supporting body",
-      "Coordinates a fleet of defenses"
-    ],
-    "wk": [
-      "Other camps remain free to attack",
-      "Silence ends the suppression",
-      "Its own attack is modest"
-    ],
-    "sig_name": "Air Superiority",
-    "sig_desc": "Enemy Tech minions cannot attack while the fleet is active.",
-    "playstyle": "Suppresses opposing Tech attackers"
   }
 };

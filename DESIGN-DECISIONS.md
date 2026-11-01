@@ -16,6 +16,8 @@ The deterministic engine owns legal actions, targeting, effects, combat and seed
 The UI expresses intent through actions instead of implementing a second version of a card effect.
 The bot uses the same legal actions; its difficulty changes how it searches and what campaign information it may know.
 
+[game.ts](source/src/engine/game.ts) is the engine's public surface: setting up a duel, the legal actions and applying one.
+The rules behind it live in [rules/](source/src/engine/rules/), one module per area, and every card effect is one handler in [effects/](source/src/engine/effects/), found by its effect id.
 Search runs through [the bot worker](source/src/engine/bot.worker.ts) to keep it off the interface thread.
 An animation or sound cannot decide a combat result.
 
@@ -28,11 +30,15 @@ Every universe stays selectable. Later champions receive stronger search and, in
 |---|---|
 | 1–4 | Recruit |
 | 5–10 | Veteran |
-| 11–14 | Ascendant search with cheats disabled |
+| 11–14 | Fair Ascendant: plans whole turns on a narrower search, never reads your reply, no cheats |
 | 15–20 | Full Ascendant with reply-reading, true-dice knowledge, Clairvoyance and Foresight |
 
 The balance gate holds the schedule to account. Each tier's bosses must win measurably more often than the tier below.
 No boss may sit far from the rest of its own tier; such a boss is retuned or its chapter moves.
+
+The fair Ascendant once searched exactly like the full one, and the cheats alone were worth too little to separate them: chapters 11–14 won more often than chapters 15–20.
+Reading your reply and the wider search now belong only to the full Ascendant, so the last step is a real one. The Arena's top rival uses the fair profile too.
+A boss's own power counts toward its tier. Voldemort's Dark Immortality is why his deck carries no self-renewing bodies.
 
 ## Separate decks, complete library
 
@@ -59,7 +65,7 @@ Online duels never take the save slot and keep no record, because neither browse
 
 ## One shared Core limit
 
-[STARTING_CORE](source/src/engine/game.ts) supplies the starting health and healing ceiling for every ordinary mode.
+[STARTING_CORE](source/src/engine/rules/core.ts) supplies the starting health and healing ceiling for every ordinary mode.
 Campaign bosses derive their limit from it, and health bars scale against it.
 Keeping these values together prevents a number change from leaving one mode, heal or visual bar behind.
 The current player-facing rules remain in [README](README.md#rules-at-a-glance).
@@ -112,11 +118,17 @@ Clearing a duel cancels its pending write so an old action cannot restore a fini
 Named decks retain independent card lists and their selected Hero Power. Edits save automatically to the selected name, initially Starter Deck. Creating a deck starts empty and never replaces an existing name; an incomplete deck cannot start a duel until it reaches thirty cards. Legacy unnamed and unsaved drafts migrate without losing cards. Hotseat seats keep separate named decks by default.
 Browser storage is local to the device and origin. There is no account synchronization.
 
+## Lore chapters open with the campaign
+
+The Lore book's ten chapters open on first champion victories: one, two, four, six and so on, with the finale only after all twenty. Replays and cheats never open one.
+[chapters.json](materials/lore/chapters.json) authors chapters II–X with an art brief per panel. Until a chapter's painted atlas exists, the reader draws its panels as storyboards from the same script, so the story is readable before the art.
+
 ## A static release with relative assets
 
 [source/](source/) is editable; [play/](play/) is its generated browser release.
 The game runs below the repository's Pages path, so runtime URLs use [asset-url.ts](source/src/engine/asset-url.ts) and the configured base.
 The artwork folder is one maintained WebP library. A replacement can use a new filename to avoid stale cached art.
+My Deck and card profiles, with their Star Chart lore, load on first use and My Deck is fetched in the background once the title screen settles. A module that imports a stylesheet stays in the first download, so loading order never changes the CSS cascade.
 Story text remains usable when its audio cannot load. Legendary and Mythic minion music follows the tier policy while stored lower-tier tracks remain available for future tier changes.
 
 ## Engine contracts

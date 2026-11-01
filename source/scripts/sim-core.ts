@@ -24,6 +24,7 @@ import {
   type CardLibrary,
 } from "../src/engine/game";
 import { chooseBotAction, BOT_CHEATS, type BotSkill } from "../src/engine/bot";
+import { HERO_POWER_IDS } from "../src/engine/hero-powers";
 import { createDraftKit } from "../src/draft-core";
 import { CAMPAIGN_CARD_IDS } from "../src/progress";
 import type { CardDefinition, GameAction, GameState, HeroPowerId, MinionInstance, PlayerId, RelicDefinition } from "../src/engine/types";
@@ -92,7 +93,8 @@ export function checkState(state: GameState, where: string): string[] {
     if (!Number.isFinite(player.mana) || player.mana < 0) bad(`p${player.id} mana is ${player.mana}`);
     if (player.maxMana > 10) bad(`p${player.id} maxMana ${player.maxMana} above the cap`);
     if (player.board.length !== BOARD_SIZE) bad(`p${player.id} board has ${player.board.length} slots, not ${BOARD_SIZE}`);
-    if (player.hand.length > 40) bad(`p${player.id} hand has ${player.hand.length} cards`);
+    if (player.hand.length > 10) bad(`p${player.id} hand has ${player.hand.length} cards, above the limit of 10`);
+    if (player.health <= 0 && state.phase !== "gameOver") bad(`p${player.id} core is at ${player.health} but the duel is still ${state.phase}`);
 
     player.board.forEach((minion, slot) => {
       if (!minion) return;
@@ -104,6 +106,10 @@ export function checkState(state: GameState, where: string): string[] {
       if (minion.hp <= 0) bad(`${minion.name} is alive at ${minion.hp} hp in slot ${slot}`);
       if (minion.atk < 0) bad(`${minion.name} has negative atk ${minion.atk}`);
       if (minion.relic && !minion.relic.relicId) bad(`${minion.name} carries a relic with no relicId`);
+      // Every heal tops a minion up to its maximum, so health above it is health
+      // the next heal takes away. Bill Cipher's Chaos produced exactly that.
+      if (minion.hp > minion.maxHp) bad(`${minion.name} hp ${minion.hp} is above its maximum ${minion.maxHp}`);
+      if (minion.chained < 0 || minion.attacksUsed < 0) bad(`${minion.name} has a negative counter (chained ${minion.chained}, attacks ${minion.attacksUsed})`);
     });
   }
 
@@ -286,6 +292,13 @@ export interface PlayOptions {
    */
   grantCheats?: boolean;
   /**
+   * Deal each seat any Hero Power, the twenty campaign bosses' own included,
+   * instead of the drafted player power. Fuzz only: the boss powers are part of
+   * the rules engine like any card, and nothing else ever played them with the
+   * invariants armed. Picked from the seed, so a replay deals the same pair.
+   */
+  anyHeroPower?: boolean;
+  /**
    * The duel's opening state, when the caller sets it up itself: a campaign boss
    * duel, say. Omitted = two drafted decks with Hero Powers, a mulligan for each
    * seat and The Coin for the second, as two people meet online or in hotseat.
@@ -320,6 +333,12 @@ export function resolveCheatSeat(
   return entitled.length === 1 ? entitled[0] : null;
 }
 
+function anyHeroPowers(seed: string): [HeroPowerId, HeroPowerId] {
+  const rng = makeRng(`${seed}:powers`);
+  const pick = () => HERO_POWER_IDS[Math.floor(rng() * HERO_POWER_IDS.length)];
+  return [pick(), pick()];
+}
+
 export function playOneGame(options: PlayOptions): GameResult {
   const { cards, relics, seed, drivers, skills, turnCap, deepChecks, startingHealth, manaRamp, grantCheats } = options;
   const library = makeCardLibrary(cards, relics);
@@ -333,7 +352,7 @@ export function playOneGame(options: PlayOptions): GameResult {
     const seats = ([0, 1] as const).map((seat) => draftedSeat(cards, relics, seed, seat));
     const setup: Parameters<typeof createInitialGame>[3] = {
       decks: [seats[0].deck, seats[1].deck],
-      heroPowers: [seats[0].heroPower, seats[1].heroPower],
+      heroPowers: options.anyHeroPower ? anyHeroPowers(seed) : [seats[0].heroPower, seats[1].heroPower],
       mulliganPlayers: [0, 1],
       hasCoin: true,
     };

@@ -342,6 +342,7 @@ for (const [index, card] of cards.entries()) {
 if (cards.length !== 183) errors.push(`Expected 183 cards, found ${cards.length}`);
 if (relics.length !== 34) errors.push(`Expected 34 relics, found ${relics.length}`);
 for (const [index, relic] of relics.entries()) {
+  if (relic.flavor !== "RELIC") errors.push(`Line ${index + 2}: ${relic.name} must print the standard RELIC label as its flavour`);
   checkEffectPunctuation(relic.name, index + 2, relic.effect, errors);
   const stingPath = path.join(projectRoot, "public", "audio", "stings", `${relic.id}.ogg`);
   if (!fs.existsSync(stingPath)) {
@@ -423,20 +424,19 @@ for (const claim of COUNT_CLAIMS) {
   }
 }
 
+errors.push(...sharedEffectErrors(cards));
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
 }
 
-// --- shared-effect report (warning, never an error) ---------------------------
-// Two cards may legitimately share an effectId when the mechanic genuinely
-// describes both of them, so this can never fail the build. It exists because
-// the opposite case is invisible: an effect written for one character and then
-// borrowed to fill a second card reads as filler, and nothing in the data says
-// which of the two it was written for. The README's effect-selection doctrine
-// calls repeated text acceptable only when it describes each subject, and this
-// list is how that judgement gets made instead of skipped.
-function reportSharedEffects(all) {
+// --- shared effects (a build failure) ---------------------------------------
+// Every card prints its own effect. The owner's rule: two cards never share an
+// effectId, and never print the same rule under two labels. A duplicate fails
+// validation at once, so a borrowed effect is caught when it is written rather
+// than found months later. Give the second card its own variant instead, e.g.
+// Bigfoot evades 40%, King 50% and Sans 60%.
+function sharedEffectErrors(all) {
   const withEffects = all.filter((card) => card.effectId?.trim() && card.effectId.trim() !== "none");
 
   const group = (keyOf) => {
@@ -451,52 +451,27 @@ function reportSharedEffects(all) {
       .sort((a, b) => b[1].length - a[1].length || String(a[0]).localeCompare(String(b[0])));
   };
 
-  const byLabel = group((card) => card.effectId.trim());
-
-  // The label is only half the question. Grouping by label can miss a duplicate
-  // when two cards use different ids, so the printed-text check below keeps that
-  // review visible instead of relying on memory.
-  //
-  // Normalising the printed text catches that case. It only works because the
-  // roster's wording is kept deliberately uniform (see the README's card wording
-  // rules): one verb for destruction, digits for counts, no shouting, every
-  // effect ending as a sentence. Wording drift is what would blind this half.
+  // The label is only half the question: two cards can print the same rule
+  // under different ids. Normalising the printed text catches that case. It
+  // only works because the roster's wording is kept deliberately uniform (see
+  // CONTRIBUTING's card wording rules); wording drift would blind this half.
   const normalise = (text) =>
     (text ?? "")
       .toLowerCase()
       .replace(/[^a-z0-9+\-/ ]/g, " ")
       .replace(/\s+/g, " ")
       .trim();
+  const byLabel = group((card) => card.effectId.trim());
   const byText = group((card) => normalise(card.effect)).filter(
     ([, cards]) => new Set(cards.map((card) => card.effectId.trim())).size > 1,
   );
 
-  if (!byLabel.length && !byText.length) {
-    console.log("Shared effects: none");
-    return;
-  }
-
-  if (byLabel.length) {
-    const cardCount = byLabel.reduce((total, [, cards]) => total + cards.length, 0);
-    console.log(
-      `Shared effects: ${byLabel.length} effect${byLabel.length === 1 ? "" : "s"} printed on ${cardCount} cards ` +
-        `(review each against the effect-selection doctrine; this is never a build failure)`,
-    );
-    for (const [effectId, cards] of byLabel) {
-      console.log(`  ${effectId}: ${cards.map((card) => card.name).join(", ")}`);
-    }
-  }
-
-  if (byText.length) {
-    console.log(
-      `Same rule under DIFFERENT labels: ${byText.length} ` +
-        `(the label hides these; the printed text does not)`,
-    );
-    for (const [, cards] of byText) {
-      console.log(`  ${cards.map((card) => `${card.name} [${card.effectId.trim()}]`).join(", ")}`);
-      console.log(`      "${cards[0].effect}"`);
-    }
-  }
+  return [
+    ...byLabel.map(([effectId, cards]) =>
+      `Shared effect ${effectId} is printed on ${cards.map((card) => card.name).join(", ")}; give each card its own effect`),
+    ...byText.map(([, cards]) =>
+      `Same rule under different labels: ${cards.map((card) => `${card.name} [${card.effectId.trim()}]`).join(", ")} print "${cards[0].effect}"`),
+  ];
 }
 
 console.log("Card data OK");
@@ -505,4 +480,4 @@ console.log("Costs:", JSON.stringify(countBy(cards, "cost")));
 console.log("Rarities:", JSON.stringify(countBy(cards, "rarity")));
 console.log("Camps:", JSON.stringify(countBy(cards, "camp")));
 console.log("Token audio:", tokenAudio.length, "Deathrattle/passive themes");
-reportSharedEffects(cards);
+console.log("Shared effects: none");

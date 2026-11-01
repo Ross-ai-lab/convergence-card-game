@@ -1,0 +1,19 @@
+Use case: illustration-story. Create final production comic artwork for an original fantasy card game chapter called Fold (Chapter 5 of 10). This is ONE square atlas containing exactly SIX equal rectangular comic panels, in a perfectly aligned 3-column by 2-row grid, read left-to-right then top-to-bottom. Every cell is portrait 2:3. Request a crisp 2048 by 2048 square image. No outer margin. No text anywhere, no letters, speech balloons, captions, watermarks or logos; the game adds readable dialogue itself. Use narrow straight dark gutters only on the exact one-third and two-third vertical boundaries and the halfway horizontal boundary. Each cell must be a complete self-contained illustration, no elements crossing a gutter.
+
+Art direction: exceptional professional graphic novel illustration, expressive hand-inked contours, rich hand-painted gouache shading, fine paper texture, deep violet shadows, antique gold highlights, celestial teal light, strong cinematic compositions. Match the look of Chapter 1, The Empty Chair. Avoid photorealism, generic 3D, flat icon art and excessive details that obscure the action on phones. Never depict recognisable characters from existing films, games, comics or anime; champions appear only as glowing silhouettes or as card frames.
+
+Original protagonist in every appropriate panel: Rick Gramps, a sturdy elderly man with swept-back silver hair, short white beard, bushy brows, round brass goggles pushed up on his forehead, weathered olive long coat, wine-red scarf, fingerless gloves, one small brass cuff on his left wrist. Wry and determined, never a caricature. Consistent face and clothing across panels. Recurring character where named: The Archivist, a young woman in an oversized midnight-blue hooded coat, short copper hair, carrying a small ring of gold keys. Calm and knowing. Recurring character where named: The Dealer, a towering faceless figure in a long coat made of overlapping playing-card backs, with enormous luminous pale hands and no visible face beneath a deep hood; violet light leaks from the gaps between its cards.
+
+Panel 1 upper left: a giant pale hand closes around one of the floating door-cards in the starry void and begins to crumple it, the tiny world inside darkening and tilting.
+
+Panel 2 upper middle: the Archivist sprints along a narrow bridge of light across the void, hood flying back, reaching toward the crumpling card in the distance.
+
+Panel 3 upper right: Rick hurls his entire deck into the void; the cards fly out and lock edge to edge into a glowing stepping-stone path leading toward the dying world.
+
+Panel 4 lower left: Rick leaps from the last card of the path and snatches the half-crumpled card out from between enormous glowing fingers, coat and scarf whipping behind him.
+
+Panel 5 lower middle: close-up of the rescued card smoothing itself flat in Rick's palm, the tiny world inside relighting, a golden lock thread reattaching to his brass cuff.
+
+Panel 6 lower right: Rick and the Archivist stand side by side on the card path, seen from behind, looking out at thousands of floating locked door-cards stretching to the horizon.
+
+Keep important faces and action below the top 12 percent of each panel and above the bottom 12 percent, leaving calm shaded areas there for later UI captions.

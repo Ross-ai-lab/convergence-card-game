@@ -2,8 +2,9 @@
  * Extract the Star Charts profiles from the official lore page into a small
  * TypeScript data module used by the game's card gallery.
  *
- * The lore page is the authoring source for these profiles. Keeping extraction
- * here prevents the gallery from carrying a hand-copied, silently stale blob.
+ * The lore page is the authoring source for these profiles, and
+ * sync-lore-page.mjs keeps their card fields in step with the rosters. Keeping
+ * extraction here prevents the gallery from carrying a hand-copied, stale blob.
  */
 
 import fs from "node:fs";
@@ -13,7 +14,6 @@ import { fileURLToPath } from "node:url";
 const sourceDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const projectDir = path.resolve(sourceDir, "..");
 const lorePath = path.join(projectDir, "materials", "Convergence-Official-Lore.html");
-const additionsPath = path.join(projectDir, "materials", "Convergence-Star-Charts-Additions.json");
 const outputPath = path.join(sourceDir, "src", "data", "lore.ts");
 
 const html = fs.readFileSync(lorePath, "utf8");
@@ -24,16 +24,7 @@ const jsonStart = start + marker.length;
 const jsonEnd = html.indexOf(";</script>", jsonStart);
 if (jsonEnd < 0) throw new Error(`Could not find the Star Charts closing marker in ${lorePath}`);
 
-const officialDetails = JSON.parse(html.slice(jsonStart, jsonEnd));
-const additions = JSON.parse(fs.readFileSync(additionsPath, "utf8"));
-if (!additions || typeof additions !== "object" || Array.isArray(additions)) {
-  throw new Error(`Star Charts additions must be an object in ${additionsPath}`);
-}
-const duplicateIds = Object.keys(additions).filter((id) => Object.hasOwn(officialDetails, id));
-if (duplicateIds.length) {
-  throw new Error(`Star Charts additions overlap official profiles: ${duplicateIds.join(", ")}`);
-}
-const details = { ...officialDetails, ...additions };
+const details = JSON.parse(html.slice(jsonStart, jsonEnd));
 const entries = Object.entries(details);
 if (entries.length === 0) throw new Error("Star Charts data parsed to zero profiles");
 
@@ -46,7 +37,7 @@ for (const [id, profile] of entries) {
   }
 }
 
-const output = `/* Generated from the official lore page and materials/Convergence-Star-Charts-Additions.json. Do not edit by hand. */
+const output = `/* Generated from the official lore page (materials/Convergence-Official-Lore.html). Do not edit by hand. */
 export interface LoreRival {
   who: string;
   rel: string;

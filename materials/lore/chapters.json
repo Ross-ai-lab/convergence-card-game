@@ -1,0 +1,406 @@
+{
+  "about": "Draft scripts for the sealed Lore book chapters II-X. Chapter I lives in source/src/lore-chapters.ts. Each chapter is six comic panels read left-to-right, top-to-bottom. caption, dialogue and scene follow LORE_CHAPTER_ONE; art is the panel brief used in that chapter's .prompt.txt. Only original characters appear in the artwork; champions from other universes are shown as glowing card frames or silhouettes, never drawn.",
+  "cast": {
+    "rick": "Rick Gramps, a sturdy elderly man with swept-back silver hair, short white beard, bushy brows, round brass goggles pushed up on his forehead, weathered olive long coat, wine-red scarf, fingerless gloves, one small brass cuff on his left wrist. Wry and determined, never a caricature.",
+    "archivist": "The Archivist, a young woman in an oversized midnight-blue hooded coat, short copper hair, carrying a small ring of gold keys. Calm and knowing.",
+    "dealer": "The Dealer, a towering faceless figure in a long coat made of overlapping playing-card backs, with enormous luminous pale hands and no visible face beneath a deep hood; violet light leaks from the gaps between its cards."
+  },
+  "chapters": [
+    {
+      "number": 2,
+      "slug": "keys-without-doors",
+      "title": "Keys Without Doors",
+      "cast": ["rick", "archivist"],
+      "panels": [
+        {
+          "caption": "Every victory left something warm in his pocket.",
+          "dialogue": "",
+          "scene": "Rick turns a newly won card over in his hand. A tiny sun rises inside its frame.",
+          "art": "close-up of Rick's gloved hand holding an ornate card; inside the card frame a miniature landscape glows as a tiny sun rises over it, light spilling onto his face"
+        },
+        {
+          "caption": "",
+          "dialogue": "They're alive in there.",
+          "scene": "Rick holds the card to his ear. Faint wind and birdsong come from inside.",
+          "art": "Rick in a cluttered workshop of brass instruments holds the card to his ear with eyes narrowed, faint swirls of wind and tiny birds escape the card's edge"
+        },
+        {
+          "caption": "The Archivist kept count.",
+          "dialogue": "One key for every lock. One lock for every world.",
+          "scene": "The Archivist spreads her ring of gold keys across a table. Each key is cut differently.",
+          "art": "the Archivist sits across a worn wooden table and fans out a ring of many unique gold keys under a hanging lamp, Rick leans in, the keys cast long shadows"
+        },
+        {
+          "caption": "",
+          "dialogue": "You turned one when you won.",
+          "scene": "A single key glows and turns by itself. A distant lock clicks open.",
+          "art": "one gold key on the table glows and rotates by itself; in the background through a round window a far-off floating card's golden lock thread snaps loose"
+        },
+        {
+          "caption": "One key had no teeth at all.",
+          "dialogue": "Then what does that one open?",
+          "scene": "Rick points at a smooth, blank key. The Archivist closes her hand around it.",
+          "art": "Rick points at a smooth blank key without teeth; the Archivist closes her hand over it protectively, her expression guarded for the first time"
+        },
+        {
+          "caption": "She did not answer. Somewhere, a deck was being cut.",
+          "dialogue": "Win again, and you'll see.",
+          "scene": "The Archivist walks toward an arched doorway. Behind her, a shadow cuts a deck in two.",
+          "art": "the Archivist walks away down a vaulted corridor toward an arched doorway; on the far wall a huge shadow of two hands cuts a deck of cards, Rick watches from the foreground"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "slug": "the-ledger",
+      "title": "The Ledger",
+      "cast": ["rick", "archivist"],
+      "panels": [
+        {
+          "caption": "The keys led down.",
+          "dialogue": "",
+          "scene": "Rick and the Archivist descend a spiral staircase that winds around a shaft of floating pages.",
+          "art": "high angle view down a vast spiral staircase around a deep shaft filled with drifting parchment pages, Rick and the Archivist small on the steps, lantern light"
+        },
+        {
+          "caption": "A library of one book.",
+          "dialogue": "Somebody's been taking notes.",
+          "scene": "At the bottom stands a single enormous ledger, taller than a house, its pages turning on their own.",
+          "art": "an immense open ledger taller than a house on an ancient lectern in a dark round chamber, its pages turning by themselves, Rick tiny in front of it with goggles lowered"
+        },
+        {
+          "caption": "Every duel, written in gold.",
+          "dialogue": "Before it happened.",
+          "scene": "The Archivist runs a finger down columns of gold ink. Fresh lines write themselves ahead of her.",
+          "art": "close-up of the Archivist's finger tracing columns of shimmering gold handwriting; further down the page new lines of gold are writing themselves as she watches"
+        },
+        {
+          "caption": "",
+          "dialogue": "That's my name. Crossed out.",
+          "scene": "Rick finds his own name over and over, each entry struck through with a heavy black line.",
+          "art": "Rick leans close to the page, a magnifying lens over one goggle eye; the page shows rows of heavy black strike-through lines over glowing gold entries"
+        },
+        {
+          "caption": "He was not in the script.",
+          "dialogue": "Every time you win, the book has to change.",
+          "scene": "Black ink bleeds and rewrites a page as the Archivist watches, worried.",
+          "art": "the ledger page buckles as black ink bleeds across it and rewrites the gold lines; the Archivist steps back with worry, violet light rising from the paper"
+        },
+        {
+          "caption": "",
+          "dialogue": "Good. I hate spoilers.",
+          "scene": "Rick tears out the page with his own name and pockets it, grinning.",
+          "art": "Rick tears a page out of the giant ledger with a defiant grin and stuffs it in his long coat; loose pages swirl upward around him like startled birds"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "slug": "the-house-always-deals",
+      "title": "The House Always Deals",
+      "cast": ["rick", "archivist", "dealer"],
+      "panels": [
+        {
+          "caption": "The torn page summoned its author.",
+          "dialogue": "",
+          "scene": "The card table shudders. Every card on it flips face down at once.",
+          "art": "the immense ancient card table from the empty-chair scene, every card on it flipping face down at once in a wave, candles guttering, Rick seated at the head"
+        },
+        {
+          "caption": "The Dealer.",
+          "dialogue": "You are sitting in my chair.",
+          "scene": "The Dealer rises from the far end of the table, its coat of card backs rustling.",
+          "art": "the Dealer rises at the far end of the long table, towering, faceless under its hood, coat of overlapping card backs, enormous pale luminous hands resting on the table edge"
+        },
+        {
+          "caption": "",
+          "dialogue": "Retire. Forever. Every comfort. No more games.",
+          "scene": "The Dealer slides a single card across the table. It shows a quiet house by a lake.",
+          "art": "close-up of a giant pale hand sliding one card across the table toward Rick; the card shows a peaceful lakeside cottage at sunset, warm and tempting"
+        },
+        {
+          "caption": "",
+          "dialogue": "Not now. Don't be tempted.",
+          "scene": "The Archivist grips Rick's shoulder from behind.",
+          "art": "the Archivist stands behind Rick's chair, gripping his shoulder, her eyes fixed on the Dealer, her key ring clenched in her other hand"
+        },
+        {
+          "caption": "",
+          "dialogue": "I tried retirement. Eleven minutes.",
+          "scene": "Rick flicks the card back. It spins through the air between them.",
+          "art": "Rick leans back and flicks the lakeside card back across the table with two fingers, the card spinning in mid-air, his expression unimpressed"
+        },
+        {
+          "caption": "The House does not lose. It only waits.",
+          "dialogue": "Then we play.",
+          "scene": "The Dealer's hands begin shuffling. Worlds blur past inside the cards.",
+          "art": "dramatic low angle of the Dealer's huge glowing hands shuffling a deck in a cascade; inside each blurred card a different tiny world flashes past, violet and gold light"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "slug": "fold",
+      "title": "Fold",
+      "cast": ["rick", "archivist", "dealer"],
+      "panels": [
+        {
+          "caption": "The Dealer answered with a demonstration.",
+          "dialogue": "",
+          "scene": "A giant hand closes around one floating card and starts to crumple it.",
+          "art": "a giant pale hand closes around one of the floating door-cards in the starry void and begins to crumple it, the tiny world inside darkening and tilting"
+        },
+        {
+          "caption": "",
+          "dialogue": "It's folding a world!",
+          "scene": "The Archivist runs along a narrow bridge of light toward the crumpling card.",
+          "art": "the Archivist sprints along a narrow bridge of light across the void, hood flying back, reaching toward the crumpling card in the distance"
+        },
+        {
+          "caption": "Rick had one trick the Dealer didn't.",
+          "dialogue": "",
+          "scene": "Rick throws his whole deck into the void. The cards lock edge to edge into a path.",
+          "art": "Rick hurls his entire deck into the void; the cards fly out and lock edge to edge into a glowing stepping-stone path leading toward the dying world"
+        },
+        {
+          "caption": "",
+          "dialogue": "Got you.",
+          "scene": "Rick snatches the half-crumpled card out of the Dealer's fingers.",
+          "art": "Rick leaps from the last card of the path and snatches the half-crumpled card out from between enormous glowing fingers, coat and scarf whipping behind him"
+        },
+        {
+          "caption": "Inside his collection, the world began to breathe again.",
+          "dialogue": "Collected things don't fold.",
+          "scene": "The card smooths flat in Rick's hand. Its little sun comes back on.",
+          "art": "close-up of the rescued card smoothing itself flat in Rick's palm, the tiny world inside relighting, a golden lock thread reattaching to his brass cuff"
+        },
+        {
+          "caption": "Collecting had never been a hobby. It was a rescue.",
+          "dialogue": "Then let's collect all of them.",
+          "scene": "Rick and the Archivist look out at thousands of locked worlds.",
+          "art": "Rick and the Archivist stand side by side on the card path, seen from behind, looking out at thousands of floating locked door-cards stretching to the horizon"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "slug": "the-archivists-card",
+      "title": "The Archivist's Card",
+      "cast": ["rick", "archivist"],
+      "panels": [
+        {
+          "caption": "The Ledger had one page she never let him read.",
+          "dialogue": "",
+          "scene": "Rick returns alone to the Ledger and opens it to a page sealed with gold wax.",
+          "art": "Rick alone in the round ledger chamber breaks a gold wax seal on a page of the giant ledger, lantern light, furtive"
+        },
+        {
+          "caption": "The first entry. The first lock.",
+          "dialogue": "Huh.",
+          "scene": "Pressed between the pages is a card showing the Archivist's face.",
+          "art": "pressed flat between huge ledger pages lies an old card bearing a portrait of the copper-haired Archivist, a heavy golden lock thread wrapped around it"
+        },
+        {
+          "caption": "",
+          "dialogue": "I'm not from between the worlds. I'm a world.",
+          "scene": "The Archivist stands in the doorway. Her edges flicker like the border of a card.",
+          "art": "the Archivist stands in the arched doorway, her silhouette edged with a faint glowing rectangular card border, her expression sad and honest"
+        },
+        {
+          "caption": "Each key was a piece of home.",
+          "dialogue": "I've been unlocking everyone else first.",
+          "scene": "She holds up her key ring. Every key holds a tiny image of the same city.",
+          "art": "close-up of the key ring held up to the light; each gold key bow contains a tiny painted image of the same seaside city at different times of day"
+        },
+        {
+          "caption": "",
+          "dialogue": "That's a terrible plan. I love it.",
+          "scene": "Rick laughs and hands the card back to her.",
+          "art": "Rick laughs warmly and offers the Archivist's card back to her with an open hand, she hesitates with the beginning of a smile"
+        },
+        {
+          "caption": "The blank key still had nowhere to go.",
+          "dialogue": "",
+          "scene": "Rick glances at the toothless key on her ring, then at the cuff on his own wrist.",
+          "art": "a quiet two-shot: Rick's gaze moves from the smooth blank key on the Archivist's ring down to the small brass cuff on his own left wrist, which glints"
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "slug": "counterfeit",
+      "title": "Counterfeit",
+      "cast": ["rick", "archivist", "dealer"],
+      "panels": [
+        {
+          "caption": "The House changed the rules.",
+          "dialogue": "",
+          "scene": "Ink-black copies of Rick's cards rise out of the arena floor.",
+          "art": "in the circular duel arena, figures made of dripping black ink rise up from the cracked floor shaped like card frames, faceless and hollow, violet light behind"
+        },
+        {
+          "caption": "",
+          "dialogue": "Counterfeits. Same face, nobody home.",
+          "scene": "Rick studies a counterfeit card. Its picture is a smear.",
+          "art": "Rick holds up an ink-black counterfeit card next to a genuine glowing one; the counterfeit's image is a blank smear, the genuine card shines"
+        },
+        {
+          "caption": "But his champions remembered who had freed them.",
+          "dialogue": "",
+          "scene": "Rick's cards rise around him as glowing silhouettes, each a different shape.",
+          "art": "Rick's collected cards rise into the air around him and become tall glowing silhouettes of many different shapes and sizes, no faces or details visible, only light"
+        },
+        {
+          "caption": "",
+          "dialogue": "Fakes left. Real ones, with me.",
+          "scene": "The Archivist points. The silhouettes surge forward.",
+          "art": "the Archivist points across the arena and the glowing silhouettes surge forward as a wave of gold light toward the ink figures"
+        },
+        {
+          "caption": "Ink cannot hold a shape it never earned.",
+          "dialogue": "",
+          "scene": "The counterfeits splash apart into puddles.",
+          "art": "the black ink figures burst apart into splashes and puddles as gold light hits them, droplets frozen mid-air, dramatic action"
+        },
+        {
+          "caption": "",
+          "dialogue": "Your move.",
+          "scene": "Rick looks up at the Dealer's hand above the arena.",
+          "art": "low angle: Rick stands amid the ink puddles and looks straight up at the enormous pale hand hovering above the arena, which slowly curls into a fist"
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "slug": "the-last-lock",
+      "title": "The Last Lock",
+      "cast": ["rick", "archivist"],
+      "panels": [
+        {
+          "caption": "Almost every door stood open.",
+          "dialogue": "",
+          "scene": "Hundreds of floating cards hang unlocked, their worlds bright.",
+          "art": "the starry void filled with hundreds of floating door-cards, their golden lock threads broken and drifting, each little world bright and alive"
+        },
+        {
+          "caption": "One card had been hidden in plain sight.",
+          "dialogue": "That one's been following you.",
+          "scene": "The Archivist points at a small dark card that drifts close behind Rick.",
+          "art": "the Archivist points past Rick's shoulder at a small dim card drifting just behind him like a shadow, wrapped in the heaviest lock thread of all"
+        },
+        {
+          "caption": "",
+          "dialogue": "That's my home. It was destroyed.",
+          "scene": "Inside the card is a quiet street and a small house Rick recognises.",
+          "art": "close-up of the dim card: inside it a quiet suburban street at dusk and a small house with a porch light on, faded colours like an old photograph, Rick's face reflected in it"
+        },
+        {
+          "caption": "Not destroyed. Locked.",
+          "dialogue": "The first world the House ever took.",
+          "scene": "The Archivist holds up the toothless key. It matches the cuff on Rick's wrist.",
+          "art": "the Archivist holds the smooth blank key beside Rick's left wrist; the brass cuff on his wrist glows with exactly the same engraving pattern as the key's bow"
+        },
+        {
+          "caption": "He had worn the last key for four thousand years.",
+          "dialogue": "",
+          "scene": "Rick unclasps the brass cuff. It unfolds into a key with teeth.",
+          "art": "Rick's gloved fingers unclasp the small brass cuff, which unfolds into an ornate brass key with intricate teeth, light pouring from its seams"
+        },
+        {
+          "caption": "",
+          "dialogue": "Not yet. First I beat the House.",
+          "scene": "Rick closes his hand around the key and turns toward the table.",
+          "art": "Rick closes his fist around the brass key, jaw set, turning away from the dim home card toward the distant card table glowing on the horizon, the Archivist beside him"
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "slug": "showdown-at-the-table",
+      "title": "Showdown at the Table",
+      "cast": ["rick", "archivist", "dealer"],
+      "panels": [
+        {
+          "caption": "One game. Every world at stake.",
+          "dialogue": "",
+          "scene": "Rick and the Dealer face each other across the ancient table.",
+          "art": "wide symmetrical shot down the length of the ancient card table: Rick seated at one end, the towering Dealer at the other, candles in a line between them, worlds floating overhead"
+        },
+        {
+          "caption": "",
+          "dialogue": "I play everything you freed.",
+          "scene": "The Dealer lays down card after card, each a locked world turned against Rick.",
+          "art": "the Dealer's enormous hands slam down a row of cards with heavy black lock chains; storms and fire erupt from them across the table toward Rick"
+        },
+        {
+          "caption": "Rick's hand was smaller. It was also loyal.",
+          "dialogue": "",
+          "scene": "Rick's cards rise as glowing silhouettes and hold the line.",
+          "art": "Rick's cards rise in front of him as a wall of glowing silhouettes of many shapes, holding back the storm and fire, Rick calm behind them with one card raised"
+        },
+        {
+          "caption": "",
+          "dialogue": "Now, Gramps!",
+          "scene": "The Archivist throws her key ring across the table. Every key flies to its lock.",
+          "art": "the Archivist hurls her ring of gold keys over the table; the keys scatter through the air like comets, each streaking toward one of the Dealer's chained cards"
+        },
+        {
+          "caption": "Every chain broke at once.",
+          "dialogue": "",
+          "scene": "The Dealer's cards turn bright and change sides.",
+          "art": "the black chains on the Dealer's cards shatter into gold sparks all at once; the cards turn bright and drift across the table to Rick's side, the Dealer recoiling"
+        },
+        {
+          "caption": "",
+          "dialogue": "Check the ledger. You're the one crossed out.",
+          "scene": "Rick lays down his final card. The Dealer's coat starts coming apart into loose cards.",
+          "art": "Rick lays down one final card with a decisive snap; across the table the Dealer's coat of card backs begins to come apart, loose cards peeling away into the air"
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "slug": "new-game",
+      "title": "New Game",
+      "cast": ["rick", "archivist", "dealer"],
+      "panels": [
+        {
+          "caption": "The House came apart one card at a time.",
+          "dialogue": "",
+          "scene": "Under the Dealer's falling cards is a tired old man with a brass cuff.",
+          "art": "the Dealer's card-back coat falls away in a blizzard of cards, revealing beneath the hood a very old, tired, thin man with a white beard and an identical brass cuff on his wrist"
+        },
+        {
+          "caption": "",
+          "dialogue": "I stopped playing. So I became the House.",
+          "scene": "The old man sits at the table. He looks like Rick, many centuries further on.",
+          "art": "the ancient tired man sits slumped at the table in the candlelight, his face a much older echo of Rick's; Rick stands opposite, stunned"
+        },
+        {
+          "caption": "",
+          "dialogue": "Then deal yourself back in.",
+          "scene": "Rick slides a single card across to his older self.",
+          "art": "Rick slides a single glowing card across the table to his older self, his expression softened, the old man's trembling hand reaching for it"
+        },
+        {
+          "caption": "One door left.",
+          "dialogue": "",
+          "scene": "Rick turns the brass key in the lock of his home card. Light pours out.",
+          "art": "Rick turns the ornate brass key in a small golden lock on the dim home card; warm light floods out of the card across his face, the Archivist watching with her hand on her heart"
+        },
+        {
+          "caption": "Every world was free to leave. Most of them came back to play.",
+          "dialogue": "Same time next week?",
+          "scene": "The arena fills with glowing visitors arriving through open card-doors.",
+          "art": "the circular duel arena at dawn filled with crowds of glowing silhouettes arriving through hundreds of open card-shaped doorways floating around the rim, banners of light, celebration"
+        },
+        {
+          "caption": "The chair at the head of the table stays empty now.",
+          "dialogue": "Your deal.",
+          "scene": "Rick hands the deck to the Archivist. The chair behind them stays empty.",
+          "art": "Rick hands an ornate deck to the smiling Archivist across the card table; behind them the great chair at the head of the table stands empty in a shaft of golden light"
+        }
+      ]
+    }
+  ]
+}

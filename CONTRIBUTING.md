@@ -49,6 +49,8 @@ npm run dev
 The development address is **http://localhost:5177**. The port is fixed; an occupied port produces an error.
 Use the server address rather than opening the game through `file://`.
 `npm run prepare:assets` prepares the lore module, checks the workbook and refreshes gallery previews. Both development and production builds use it.
+The [lore page](materials/Convergence-Official-Lore.html) authors every Star Chart profile. `npm run sync:lore` copies each card's name, world, cost, stats, rarity, camp and alignment into it from the CSVs and rebuilds its Star Charts grid; `prepare:assets` runs it first.
+A new card needs a profile on that page. Its grid portrait comes from `materials/lore/portraits/<id>.webp` when present, otherwise from its card art.
 Campaign voice checks run explicitly when voice or story assets change.
 
 ```sh
@@ -113,10 +115,12 @@ An unchanged workbook can be verified with Node alone. The generator refuses a m
 2. Keep effect text consistent with the engine. Specific effects ask the player to choose; explicitly random, positional, weakest, or costliest effects resolve automatically.
 3. Add or update the behaviour test. Every nontrivial new card needs a test reached by `check:coverage`.
 4. Run `validate:data` and the focused behaviour and browser checks needed for this change. Rebuild the workbook and playable release.
-5. Name the affected cards in the change description. `npm run changed-cards` and `npm run card-history -- "Card name"` help trace changes.
+5. Name the affected cards in the change description. `npm run changed-cards` prints a summary to paste, and `npm run card-history -- "Card name"` traces a card's past. The commit-message hook refuses a commit that changes card data without naming every changed card; `npm ci` switches it on for the clone.
 
 Effect text has no final period, comma, semicolon, or colon. Internal sentences retain punctuation.
 Use the existing wording for repeated mechanics, such as Freeze, Silence, Chained, and Reborn.
+Every card prints its own effect. Two cards never share an effect id or print the same rule under different labels; `validate:data` and `npm test` fail on a duplicate. Give the second card its own variant, as Bigfoot, King and Sans evade 40%, 50% and 60%.
+Every relic prints the standard RELIC label in its flavour slot.
 Every new engine vocabulary value belongs in [types.ts](source/src/engine/types.ts); validators derive their lists from it.
 
 Mana is the subject's lore power tier. Assign it from canon capabilities and the Basic reference ladder, independently of card stats or gameplay results.

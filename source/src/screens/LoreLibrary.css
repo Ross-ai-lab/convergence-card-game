@@ -34,12 +34,23 @@
 .comic-dialogue {position:absolute;bottom:13px;right:13px;max-width:84%;margin:0;padding:10px 12px;border:2px solid #423044;border-radius:15px 15px 3px 15px;background:#fff0cf;color:#2d2031;font:800 15px/1.25 Arial,sans-serif;box-shadow:0 3px 9px #0005;}
 .comic-reader footer {display:flex;align-items:center;justify-content:center;gap:20px;min-height:38px;font-size:12px;color:#d7c5a0;}
 .comic-reader footer .comic-finish {font-size:12px;min-height:38px;}
+/* Storyboard frames stand in for a chapter until its painted atlas exists. */
+.comic-frame.is-storyboard {overflow:hidden;background:
+  radial-gradient(120% 70% at 50% 42%,hsl(var(--sb-hue) 45% 30% / .85),transparent 70%),
+  repeating-linear-gradient(var(--sb-tilt),#ffffff06 0 2px,transparent 2px 9px),
+  linear-gradient(170deg,hsl(var(--sb-hue) 35% 16%),#120f1d 78%);}
+.storyboard-art {position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:22% 9% 26%;text-align:center;}
+.storyboard-art svg {width:min(46%,150px);flex:0 1 auto;min-height:0;overflow:visible;filter:drop-shadow(0 0 14px hsl(var(--sb-hue) 70% 60% / .45));transform:rotate(var(--sb-tilt));}
+.storyboard-art path {fill:none;stroke:#e8c475;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+.storyboard-mark {font:800 10px Arial,sans-serif;letter-spacing:.24em;color:#c8ac73b3;}
+.storyboard-scene {margin:0;max-width:28ch;color:#efe2c4d9;font:italic 14px/1.4 Georgia,serif;text-wrap:balance;}
 @media(max-width:640px) {
  .lore-chapter-number {flex-basis:26px;width:26px;font-size:17px;}
  .comic-reader {padding:9px;gap:7px;}
  .comic-reader h2 {font-size:22px;}
  .comic-caption {font-size:13px;padding:6px 8px;top:8px;left:8px;}
  .comic-dialogue {font-size:13px;padding:8px 10px;bottom:10px;right:10px;}
+ .storyboard-scene {font-size:13px;}
 }
 @media(max-height:600px) and (min-width:650px) {
  .comic-reader {padding:8px;gap:6px;}
