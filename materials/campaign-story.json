@@ -1,6 +1,12 @@
 {
   "protagonist": "Rick Gramps",
   "premise": "Retirement lasted eleven minutes. I got bored, built an arena, and began collecting the dangerous people in existence. It's a hobby, technically, assuming hobbies involve portals, property damage, and motivated lunatics trying to kill you at lunch.\n\nThe collection's tiny, the champions are hostile, and my insurance is fictional. Beat them, take their fighters, and make the next universe interesting.",
+  "rickEmotes": {
+    "hi": "Hi!",
+    "wellPlayed": "Well played.",
+    "oops": "Oops.",
+    "taunt": "You'll look great in my collection."
+  },
   "chapters": [
     {
       "chapter": 1,

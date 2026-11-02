@@ -8,8 +8,10 @@
  * puts the menu and the bubbles beside the portrait in either layout.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { sfx } from "../audio/sfx";
 import type { PlayerId } from "../engine/types";
 import { EMOTES, emoteBubbleDuration, type EmoteId } from "../emotes";
+import { emoteVoiceDuration } from "./duel-setup";
 
 export interface EmoteBubble {
   id: number;
@@ -23,6 +25,10 @@ export interface EmoteBubble {
 /**
  * One bubble per seat, each cleared by its own timer, and at most one pending
  * reply. `clear` drops everything, for a new duel or leaving the board.
+ *
+ * A line with a recording is spoken on the campaign voice channel, which keeps
+ * one voice at a time: an emote cuts a story line short, and the next line cuts
+ * the emote.
  */
 export function useEmoteBubbles() {
   const [bubbles, setBubbles] = useState<Partial<Record<PlayerId, EmoteBubble>>>({});
@@ -30,21 +36,22 @@ export function useEmoteBubbles() {
   const timers = useRef<Partial<Record<PlayerId, number>>>({});
   const reply = useRef<number | null>(null);
 
-  const say = useCallback((owner: PlayerId, speaker: string, text: string, accent?: string) => {
+  const say = useCallback((owner: PlayerId, speaker: string, text: string, accent?: string, voice?: string | null) => {
     const bubble: EmoteBubble = { id: ++serial.current, owner, speaker, text, accent };
+    if (voice) sfx.playBossSpeech(voice);
     window.clearTimeout(timers.current[owner]);
     timers.current[owner] = window.setTimeout(() => {
       setBubbles((current) => (current[owner]?.id === bubble.id ? { ...current, [owner]: undefined } : current));
-    }, emoteBubbleDuration(text));
+    }, emoteBubbleDuration(text, voice ? emoteVoiceDuration(voice) : 0));
     setBubbles((current) => ({ ...current, [owner]: bubble }));
   }, []);
 
   /** Says `text` after `delay`, unless a reply is already on its way. */
-  const sayLater = useCallback((delay: number, owner: PlayerId, speaker: string, text: string, accent?: string) => {
+  const sayLater = useCallback((delay: number, owner: PlayerId, speaker: string, text: string, accent?: string, voice?: string | null) => {
     if (reply.current !== null) return false;
     reply.current = window.setTimeout(() => {
       reply.current = null;
-      say(owner, speaker, text, accent);
+      say(owner, speaker, text, accent, voice);
     }, delay);
     return true;
   }, [say]);

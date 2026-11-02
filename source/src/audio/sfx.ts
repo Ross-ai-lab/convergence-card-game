@@ -130,7 +130,7 @@ const THEME_CACHE_LIMIT = 20;
  */
 const THEME_DUCK_CEILING = 7.0;
 const BOSS_VOICE_CACHE_LIMIT = 16;
-const BOSS_VOICE_KEY = /^(?:rick-prologue|\d{2}-(?:rick-intro|entrance|defeat|loss|play))$/;
+const BOSS_VOICE_KEY = /^(?:rick-prologue|\d{2}-(?:rick-intro|entrance|defeat|loss|play)|(?:rick|\d{2})-emote-(?:hi|wellPlayed|oops|taunt))$/;
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -1124,7 +1124,7 @@ function playThemeClip(cardId: string, delay = 0): void {
 
 // ---------------------------------------------------------- campaign voices
 function campaignVoiceUrl(key: string): string {
-  return `${import.meta.env.BASE_URL}audio/campaign/${key}.ogg`;
+  return `${import.meta.env.BASE_URL}audio/${key.includes("-emote-") ? "emotes" : "campaign"}/${key}.ogg`;
 }
 
 function clearBossVoice(token: number): void {

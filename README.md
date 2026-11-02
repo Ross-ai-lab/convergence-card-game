@@ -114,7 +114,7 @@ Unfinished cancellable plays return to hand when time expires; committed choices
 Training and developer test duels have no deadline.
 
 Each champion has a named power and voiced dialogue. The text remains readable when audio is unavailable.
-Champions answer your emotes in their own words; practice opponents and Arena rivals answer as rivals. Emote replies are text only.
+Rick says each emote aloud, and champions answer in their own recorded voices; practice opponents and Arena rivals answer as rivals, in text only.
 Victory dialogue and unclaimed rewards survive a reload.
 
 ### Achievements

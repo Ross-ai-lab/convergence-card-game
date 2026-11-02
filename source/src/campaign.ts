@@ -18,7 +18,7 @@ export interface CampaignDifficulty {
   readonly cheats: Readonly<BotCheats>;
 }
 
-/** A champion's answer to each of the player's four emotes. Text only; the emotes carry no recordings. */
+/** A champion's answer to each of the player's four emotes, each with a recording in data/emote-voices.json. */
 export interface CampaignEmoteReplies { readonly hi: string; readonly wellPlayed: string; readonly oops: string; readonly taunt: string }
 
 export interface CampaignChapter {
@@ -66,6 +66,14 @@ export const CAMPAIGN_INITIAL_COLLECTION = freezeIds(definition.initialUnlockedC
 export const CAMPAIGN_UNIVERSE_EXEMPT_IDS = freezeIds(definition.universeExemptCardIds);
 export const CAMPAIGN_PROTAGONIST = storyDefinition.protagonist;
 export const CAMPAIGN_PREMISE = storyDefinition.premise;
+/** What Rick says for each of the player's four emotes, in every mode where the player is Rick. */
+export const CAMPAIGN_RICK_EMOTES: CampaignEmoteReplies = (() => {
+  const lines = storyDefinition.rickEmotes;
+  if (!lines?.hi || !lines.wellPlayed || !lines.oops || !lines.taunt) {
+    throw new Error("The campaign story needs Rick's line for every emote: hi, wellPlayed, oops and taunt.");
+  }
+  return Object.freeze({hi: lines.hi, wellPlayed: lines.wellPlayed, oops: lines.oops, taunt: lines.taunt});
+})();
 export const CAMPAIGN_ROSTER_SIZE = definition.rosterCount;
 export const CAMPAIGN_CHAPTERS: readonly CampaignChapter[] = Object.freeze(
   definition.chapters.map((raw): CampaignChapter => {

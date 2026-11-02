@@ -22,7 +22,13 @@
         "loss": "smug deadpan condescension",
         "play": "dry sarcastic assistance"
       },
-      "seed": 4201
+      "seed": 4201,
+      "emoteDirection": {
+        "hi": "bored bureaucratic politeness that is faintly insulting",
+        "wellPlayed": "dry backhanded gratitude",
+        "oops": "clinical deadpan amusement",
+        "taunt": "cool withering condescension"
+      }
     },
     "2": {
       "name": "Po",
@@ -33,7 +39,13 @@
         "loss": "embarrassed good-natured encouragement with a firm warning",
         "play": "supportive team-leader excitement with improvised confidence"
       },
-      "seed": 4202
+      "seed": 4202,
+      "emoteDirection": {
+        "hi": "flustered delighted excitement",
+        "wellPlayed": "surprised bashful joy bursting into a cheer, then a sheepish thank-you",
+        "oops": "warm sympathetic reassurance with a self-deprecating chuckle",
+        "taunt": "awkward eager trash talk, proud of a weak joke"
+      }
     },
     "3": {
       "name": "Yujiro",
@@ -44,7 +56,13 @@
         "loss": "mocking disappointment",
         "play": "eager rough amusement"
       },
-      "seed": 4203
+      "seed": 4203,
+      "emoteDirection": {
+        "hi": "impatient contemptuous dismissal",
+        "wellPlayed": "cold scornful indifference with predatory interest",
+        "oops": "hard unforgiving judgment",
+        "taunt": "low menacing scorn"
+      }
     },
     "4": {
       "name": "Light Yagami",
@@ -55,7 +73,13 @@
         "loss": "cold triumphant certainty",
         "play": "quiet conspiratorial confidence"
       },
-      "seed": 4204
+      "seed": 4204,
+      "emoteDirection": {
+        "hi": "polite measured courtesy with hidden menace",
+        "wellPlayed": "smug self-satisfied certainty",
+        "oops": "cool patronising correction",
+        "taunt": "soft chilling threat, almost a whisper"
+      }
     },
     "5": {
       "name": "Lord Voldemort",
@@ -66,7 +90,13 @@
         "loss": "quiet cruel satisfaction",
         "play": "sinister restrained promise"
       },
-      "seed": 4205
+      "seed": 4205,
+      "emoteDirection": {
+        "hi": "offended icy hauteur",
+        "wellPlayed": "silken contemptuous warning",
+        "oops": "quiet cruel admonition",
+        "taunt": "cold affronted disdain"
+      }
     },
     "6": {
       "name": "Darth Vader",
@@ -77,7 +107,13 @@
         "loss": "stern disappointed judgment",
         "play": "clipped disciplined obedience"
       },
-      "seed": 4206
+      "seed": 4206,
+      "emoteDirection": {
+        "hi": "grave formal acknowledgement",
+        "wellPlayed": "measured stern approval that becomes a lesson",
+        "oops": "cold conditional forbearance",
+        "taunt": "heavy ominous certainty"
+      }
     },
     "7": {
       "name": "Conquest",
@@ -88,7 +124,13 @@
         "loss": "taunting disappointment",
         "play": "hungry impatient enthusiasm"
       },
-      "seed": 4207
+      "seed": 4207,
+      "emoteDirection": {
+        "hi": "gleeful menacing cheer",
+        "wellPlayed": "roaring amused approval with a growling laugh",
+        "oops": "mocking gleeful threat",
+        "taunt": "brutal laughing contempt"
+      }
     },
     "8": {
       "name": "Dio Brando",
@@ -99,7 +141,13 @@
         "loss": "gloating triumphant grandeur",
         "play": "flamboyant showmanship"
       },
-      "seed": 4208
+      "seed": 4208,
+      "emoteDirection": {
+        "hi": "intrigued arrogant amusement",
+        "wellPlayed": "flamboyant self-praise",
+        "oops": "theatrical gleeful scorn",
+        "taunt": "outraged grandiose arrogance"
+      }
     },
     "9": {
       "name": "All for One",
@@ -110,7 +158,13 @@
         "loss": "smug instructive superiority",
         "play": "quiet acquisitive delight"
       },
-      "seed": 4209
+      "seed": 4209,
+      "emoteDirection": {
+        "hi": "warm courteous hospitality with a sinister undertone",
+        "wellPlayed": "gentle acquisitive admiration",
+        "oops": "soft patronising wisdom with quiet greed",
+        "taunt": "amused velvety condescension"
+      }
     },
     "10": {
       "name": "Meruem",
@@ -121,7 +175,13 @@
         "loss": "calm decisive judgment",
         "play": "focused strategic confidence"
       },
-      "seed": 4210
+      "seed": 4210,
+      "emoteDirection": {
+        "hi": "terse regal command",
+        "wellPlayed": "quiet genuine curiosity and grudging interest",
+        "oops": "calm stern instruction",
+        "taunt": "low cold warning"
+      }
     },
     "11": {
       "name": "Ainz Ooal Gown",
@@ -132,7 +192,13 @@
         "loss": "pompous satisfied certainty",
         "play": "grand formal assurance"
       },
-      "seed": 4211
+      "seed": 4211,
+      "emoteDirection": {
+        "hi": "pompous ceremonial condescension",
+        "wellPlayed": "grand formal approval masking private uncertainty",
+        "oops": "imperious assurance that falters on the last word",
+        "taunt": "stiff offended dignity"
+      }
     },
     "12": {
       "name": "Eye of Sauron",
@@ -143,7 +209,13 @@
         "loss": "cold crushing triumph",
         "play": "quiet ominous certainty"
       },
-      "seed": 4212
+      "seed": 4212,
+      "emoteDirection": {
+        "hi": "vast slow ominous pronouncement",
+        "wellPlayed": "cold omniscient dismissal",
+        "oops": "slow crushing certainty",
+        "taunt": "deep hungry menace"
+      }
     },
     "13": {
       "name": "Monkey D. Luffy",
@@ -154,7 +226,13 @@
         "loss": "frustrated but upbeat insistence on a stronger rematch",
         "play": "reckless infectious battle excitement and crew-leading joy"
       },
-      "seed": 4213
+      "seed": 4213,
+      "emoteDirection": {
+        "hi": "bright cheerful greeting with a goofy laugh",
+        "wellPlayed": "wildly excited admiration",
+        "oops": "laughing carefree reassurance",
+        "taunt": "stubborn joyful defiance"
+      }
     },
     "14": {
       "name": "Gilgamesh",
@@ -165,7 +243,13 @@
         "loss": "contemptuous leisurely victory",
         "play": "imperious disdain"
       },
-      "seed": 4214
+      "seed": 4214,
+      "emoteDirection": {
+        "hi": "affronted royal arrogance",
+        "wellPlayed": "lofty grudging condescension",
+        "oops": "bored aristocratic contempt",
+        "taunt": "languid possessive superiority"
+      }
     },
     "15": {
       "name": "Gojo",
@@ -176,7 +260,13 @@
         "loss": "friendly smug teasing",
         "play": "mischievous easy confidence"
       },
-      "seed": 4215
+      "seed": 4215,
+      "emoteDirection": {
+        "hi": "breezy playful cheer",
+        "wellPlayed": "teasing light praise with a smirk",
+        "oops": "mock-sympathetic smug teasing",
+        "taunt": "amused carefree arrogance"
+      }
     },
     "16": {
       "name": "Elden Beast",
@@ -187,7 +277,13 @@
         "loss": "quiet timeless judgment",
         "play": "gentle majestic assurance"
       },
-      "seed": 4216
+      "seed": 4216,
+      "emoteDirection": {
+        "hi": "distant serene pronouncement",
+        "wellPlayed": "solemn measured approval",
+        "oops": "gentle timeless calm",
+        "taunt": "vast serene reproach"
+      }
     },
     "17": {
       "name": "Bill Cipher",
@@ -198,7 +294,13 @@
         "loss": "manic taunting triumph",
         "play": "mischievous explosive enthusiasm"
       },
-      "seed": 4220
+      "seed": 4220,
+      "emoteDirection": {
+        "hi": "manic shouting glee",
+        "wellPlayed": "delighted unhinged praise with a sinister edge",
+        "oops": "cackling hysterical laughter",
+        "taunt": "gleeful creepy confidence"
+      }
     },
     "18": {
       "name": "Thanos",
@@ -209,7 +311,13 @@
         "loss": "solemn assured judgment",
         "play": "quiet decisive confidence"
       },
-      "seed": 4218
+      "seed": 4218,
+      "emoteDirection": {
+        "hi": "calm weighty acknowledgement",
+        "wellPlayed": "measured sincere respect, unmoved",
+        "oops": "solemn empathetic gravity",
+        "taunt": "quiet absolute certainty"
+      }
     },
     "19": {
       "name": "Goku",
@@ -220,7 +328,13 @@
         "loss": "warm encouraging good sportsmanship",
         "play": "bright eager determination"
       },
-      "seed": 4219
+      "seed": 4219,
+      "emoteDirection": {
+        "hi": "bright eager friendliness",
+        "wellPlayed": "excited thrilled admiration",
+        "oops": "warm upbeat encouragement",
+        "taunt": "playful fired-up challenge"
+      }
     },
     "20": {
       "name": "Saitama",
@@ -231,7 +345,13 @@
         "loss": "matter-of-fact disappointment and an unhurried warning",
         "play": "dry efficient readiness with everyday distraction"
       },
-      "seed": 4221
+      "seed": 4221,
+      "emoteDirection": {
+        "hi": "flat bored greeting",
+        "wellPlayed": "mildly confused deadpan with slight impatience",
+        "oops": "flat indifference, then sudden distracted interest",
+        "taunt": "bored deadpan pause, unimpressed"
+      }
     }
   }
 }

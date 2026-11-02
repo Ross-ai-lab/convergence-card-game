@@ -68,7 +68,7 @@ Online duels never take the save slot and keep no record, because neither browse
 The player's portrait opens four emotes: Hi, Well played, Oops and Taunt. A bot answers about a second later, a champion in its own words from [campaign-story.json](materials/campaign-story.json) and anyone else as a rival. Online, the other browser shows the emote.
 Emotes are not engine actions and are not saved. Online they travel as their own message beside the numbered steps, so a lost emote is simply lost and can never cause a resync. A build without emotes drops the message as unknown.
 There is no mute: emotes are four fixed lines, and a bot never has more than one reply on its way, so a burst of emotes gets one answer.
-Replies are text only. The campaign's recorded voices cover the story lines, and the emote lines have no recordings.
+Rick speaks his four emotes and every champion speaks its four replies, recorded like the story lines; a reply waits until Rick has finished. Rivals and online players are not voiced: rivals have no champion voice, and an online player has their own name rather than Rick's. Emote lines share the one campaign voice channel, so an emote cuts a story line short and the next line cuts the emote.
 
 ## Achievements read the saves
 

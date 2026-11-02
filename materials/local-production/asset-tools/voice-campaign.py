@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -21,6 +22,7 @@ VOICE_CLONE_ENGINE = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
 STAGES = ("entrance", "defeat", "loss", "play")
 RICK_PROLOGUE_KEY = "rick-prologue"
 RICK_INTRO_SUFFIX = "rick-intro"
+EMOTE_IDS = ("hi", "wellPlayed", "oops", "taunt")
 
 
 def filters_for(chapter: int) -> list[str]:
@@ -81,13 +83,94 @@ def run_generation(
     ]
     if model_dir:
         command += ["--model-dir", model_dir]
+    if args.emotes:
+        # One-word emotes run well under the engine's story-length floor; a runaway take still fails.
+        command += ["--min-seconds", "0.4", "--max-seconds", "15"]
     if args.force:
         command.append("--force")
     return subprocess.run(command, cwd=WORKSPACE).returncode
 
 
+def emote_jobs(
+    story: dict, cast: dict, clone: dict, reference_audio: Path, reference_transcript: str, selected_keys: set[str] | None,
+) -> tuple[list[dict[str, object]], list[dict[str, object]], dict[str, dict[str, object]]]:
+    """Rick's four player emotes (Base clone) and every champion's four replies (VoiceDesign).
+
+    Keys are ``rick-emote-<id>`` and ``NN-emote-<id>``; ``identity`` carries the
+    speaker fields this adapter adds to the shared engine's manifest.
+    """
+    design: list[dict[str, object]] = []
+    base: list[dict[str, object]] = []
+    identity: dict[str, dict[str, object]] = {}
+    for emote in EMOTE_IDS:
+        key = f"rick-emote-{emote}"
+        if selected_keys is not None and key not in selected_keys:
+            continue
+        text = str(story["rickEmotes"][emote])
+        base.append({
+            "id": key,
+            "text": text,
+            "spoken": text,
+            "seed": int(clone.get("seed", cast["protagonist"]["seed"])),
+            "engine": VOICE_CLONE_ENGINE,
+            "reference_audio": str(reference_audio),
+            "reference_transcript": reference_transcript,
+            "filters": ["highpass=f=65"],
+        })
+        identity[key] = {"chapter": 0, "speaker": cast["protagonist"]["name"], "stage": "emote", "emote": emote, "text": text}
+    for chapter in story["chapters"]:
+        number = int(chapter["chapter"])
+        voice = cast["cast"][str(number)]
+        for emote in EMOTE_IDS:
+            key = f"{number:02d}-emote-{emote}"
+            if selected_keys is not None and key not in selected_keys:
+                continue
+            text = str(chapter["emotes"][emote])
+            design.append({
+                "id": key,
+                "text": text,
+                "spoken": text.capitalize() if number == 20 else text,
+                "voice": str(voice["voice"]),
+                "direction": str(voice["emoteDirection"][emote]),
+                "seed": int(voice["seed"]),
+                "engine": VOICE_DESIGN_ENGINE,
+                "filters": filters_for(number),
+            })
+            identity[key] = {"chapter": number, "bossId": chapter["bossId"], "speaker": voice["name"], "stage": "emote", "emote": emote, "text": text}
+    if selected_keys is not None:
+        unknown = sorted(selected_keys - set(identity))
+        if unknown:
+            raise RuntimeError(f"Unknown emote voice key(s): {', '.join(unknown)}")
+    return design, base, identity
+
+
+SHIPPED_FIELDS = (
+    "chapter", "bossId", "speaker", "stage", "emote", "duration", "text", "fingerprint", "audioSha256",
+    "engine", "model_type", "model_repo", "seed", "reference_audio_sha256", "reference_transcript",
+)
+
+
+def promote_emotes() -> int:
+    """Copy the held emote recordings into the game, with the manifest fields the game and checker read."""
+    held = json.loads((ROOT / ".preview/voice-full-hold/emote-voices.json").read_text(encoding="utf-8"))
+    target = ROOT / "source/public/audio/emotes"
+    target.mkdir(parents=True, exist_ok=True)
+    shipped: dict[str, dict[str, object]] = {}
+    for key in sorted(held):
+        source = ROOT / ".preview/voice-full-hold/emotes" / f"{key}.ogg"
+        if not source.is_file():
+            raise RuntimeError(f"Held emote recording is missing: {source}")
+        shutil.copyfile(source, target / source.name)
+        shipped[key] = {field: held[key][field] for field in SHIPPED_FIELDS if field in held[key]}
+    (ROOT / "source/data/emote-voices.json").write_text(json.dumps(shipped, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Promoted {len(shipped)} emote recordings to {target}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--emotes", action="store_true", help="voice the duel emotes instead of the campaign story: Rick's four lines and each champion's four replies")
+    parser.add_argument("--promote", action="store_true", help="with --emotes: copy the held emote recordings into the game instead of generating")
     parser.add_argument("--chapters", default="", help="chapter numbers, comma-separated; default is all 20")
     parser.add_argument("--keys", default="all", help="recording keys, comma-separated; an unfiltered default run includes all 80 boss lines, Rick's prologue and 20 Rick selections")
     parser.add_argument("--stages", default=",".join(STAGES), help="stage names, comma-separated")
@@ -96,6 +179,10 @@ def main() -> int:
     parser.add_argument("--model-dir", default="", help="optional explicit VoiceDesign model directory")
     parser.add_argument("--base-model-dir", default="", help="optional explicit Base voice-cloning model directory")
     args = parser.parse_args()
+    if args.promote:
+        if not args.emotes:
+            parser.error("--promote only applies to --emotes")
+        return promote_emotes()
     if args.batch_size < 1 or args.batch_size > 4:
         parser.error("--batch-size must be between 1 and 4 on the approved 6 GB GPU")
 
@@ -126,6 +213,28 @@ def main() -> int:
             "Rick's saved Base transcript does not match the reference transcript file. "
             "Repair the exact transcript before generating cloned dialogue."
         )
+
+    if args.emotes:
+        design_jobs, clone_jobs, identity = emote_jobs(
+            story, cast, clone, reference_audio, reference_transcript.strip(), selected_keys,
+        )
+        if not identity:
+            raise RuntimeError("No emote voice jobs selected")
+        target = ROOT / ".preview/voice-full-hold/emotes"
+        raw = ROOT / ".preview/campaign-voices/raw-emotes"
+        manifest_path = ROOT / ".preview/voice-full-hold/emote-voices.json"
+        result = run_generation(design_jobs, "design", target, raw, manifest_path, args, args.model_dir)
+        if result != 0:
+            return result
+        result = run_generation(clone_jobs, "base", target, raw, manifest_path, args, args.base_model_dir)
+        if result != 0:
+            return result
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        for key, fields in identity.items():
+            manifest[key] = {**manifest.get(key, {}), **fields}
+        manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"Convergence emote jobs: {len(identity)} requested; manifest now contains {len(manifest)} recordings")
+        return 0
 
     design_jobs: list[dict[str, object]] = []
     clone_jobs: list[dict[str, object]] = []

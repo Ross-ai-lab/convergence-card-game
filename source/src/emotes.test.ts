@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CAMPAIGN_CHAPTERS } from "./campaign";
-import { EMOTES, EMOTE_IDS, emoteBubbleDuration, emoteLine, emoteReply, isEmoteId, RIVAL_REPLIES } from "./emotes";
+import { EMOTES, EMOTE_IDS, EMOTE_REPLY_DELAY_MS, emoteBubbleDuration, emoteLine, emoteReply, emoteReplyDelay, emoteVoiceKey, isEmoteId, RIVAL_REPLIES } from "./emotes";
 
 describe("emotes", () => {
   it("offers Hi, Well played, Oops and Taunt, in that order", () => {
@@ -27,6 +27,21 @@ describe("emotes", () => {
 
   it("answers as a rival outside the campaign", () => {
     for (const id of EMOTE_IDS) expect(emoteReply(id)).toBe(RIVAL_REPLIES[id]);
+  });
+
+  it("voices Rick and every champion, and no rival or named online player", () => {
+    expect(emoteVoiceKey("taunt", "Rick Gramps")).toBe("rick-emote-taunt");
+    expect(emoteVoiceKey("wellPlayed", "GLaDOS", CAMPAIGN_CHAPTERS[0])).toBe("01-emote-wellPlayed");
+    expect(emoteVoiceKey("hi", "Saitama", CAMPAIGN_CHAPTERS[19])).toBe("20-emote-hi");
+    expect(emoteVoiceKey("hi", "Rival")).toBeNull();
+    expect(emoteVoiceKey("oops", "Host")).toBeNull();
+  });
+
+  it("waits for Rick to finish before a champion answers", () => {
+    expect(emoteReplyDelay()).toBe(EMOTE_REPLY_DELAY_MS);
+    expect(emoteReplyDelay(0.5)).toBe(EMOTE_REPLY_DELAY_MS);
+    expect(emoteReplyDelay(2.4)).toBe(2750);
+    expect(emoteBubbleDuration("Hi!", 4)).toBe(4600);
   });
 
   it("keeps a bubble up long enough to read, and never all turn", () => {

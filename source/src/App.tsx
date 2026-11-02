@@ -92,6 +92,7 @@ import {
   BOT_FIRST_DELAY_MS,
   BOT_ID,
   campaignVoiceDuration,
+  emoteVoiceDuration,
   DEVELOPER_MVP_DAMAGE,
   DEVELOPER_MVP_INSTANCE,
   foresightSeat,
@@ -109,7 +110,7 @@ import { BoardRow, canAttackCore, FollowingArrow, otherPlayer, type Selection } 
 import { DragGhost, HandFan, ManaTray } from "./duel/hand";
 import { HeroPlate, HeroPowerButton, HeroPowerCard, ProtocolWarningBubble } from "./duel/hero";
 import { EmoteMenu, EmoteSpeech, useEmoteBubbles } from "./duel/emotes";
-import { EMOTE_REPLY_DELAY_MS, emoteLine, emoteReply, type EmoteId } from "./emotes";
+import { emoteLine, emoteReply, emoteReplyDelay, emoteVoiceKey, type EmoteId } from "./emotes";
 import { ACHIEVEMENTS, achievementSnapshot, clearAchievements, duelFeats, emptyAchievements, grantAchievements, grantMeasured, loadAchievements, markAchievementsSeen, saveAchievements, unseenAchievements, type AchievementSave } from "./achievements";
 import { AchievementToast, AchievementsButton, AchievementsScreen } from "./screens/Achievements";
 import { DRAFT_WIN_GOAL } from "./draft-core";
@@ -405,7 +406,10 @@ export default function App() {
       fx.showToast(reason, 3600);
     },
     toast: (text) => fx.showToast(text, 3600),
-    onEmote: (emote) => emotes.say(opponentId, game.players[opponentId].name, emoteLine(emote)),
+    onEmote: (emote) => {
+      const speaker = game.players[opponentId].name;
+      emotes.say(opponentId, speaker, emoteLine(emote), undefined, emoteVoiceKey(emote, speaker));
+    },
     openLobby: () => setOverlay("online"),
   });
   const { awaitingHost } = onlineDuel;
@@ -583,13 +587,15 @@ export default function App() {
   function sayEmote(emote: EmoteId) {
     setEmoteMenuOpen(false);
     if (!canEmote) return;
-    emotes.say(viewerId, game.players[viewerId].name, emoteLine(emote));
+    const voice = emoteVoiceKey(emote, game.players[viewerId].name);
+    emotes.say(viewerId, game.players[viewerId].name, emoteLine(emote), undefined, voice);
     if (emote === "wellPlayed") saidWellPlayed.current = true;
     if (emote === "hi" && campaignBoss) earnAchievements(["pleasantries"]);
     if (online) { onlineDuel.sendEmote(emote); return; }
     if (!vsBot) return;
-    emotes.sayLater(EMOTE_REPLY_DELAY_MS, opponentId, campaignBoss?.name ?? game.players[opponentId].name, emoteReply(emote, campaignChapter),
-      campaignBoss && isMinionCard(campaignBoss) ? campAccent(campaignBoss.camp) : undefined);
+    emotes.sayLater(emoteReplyDelay(voice ? emoteVoiceDuration(voice) : 0), opponentId, campaignBoss?.name ?? game.players[opponentId].name, emoteReply(emote, campaignChapter),
+      campaignBoss && isMinionCard(campaignBoss) ? campAccent(campaignBoss.camp) : undefined,
+      campaignChapter ? emoteVoiceKey(emote, game.players[opponentId].name, campaignChapter) : null);
   }
 
   /**

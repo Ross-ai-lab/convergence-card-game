@@ -1,4 +1,4 @@
-/** Guard 80 boss lines, Rick's prologue and 20 Rick selections against stale assets. */
+/** Guard 80 boss lines, Rick's prologue, 20 Rick selections and 84 emote lines against stale assets. */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -97,6 +97,44 @@ for (const chapter of story.chapters) {
 assert.equal(Object.keys(voices).length, keys.length + rickIntroKeys.length + 1, "The manifest must contain exactly 80 boss lines, 20 Rick selections and Rick's prologue");
 console.log(`PASS all ${keys.length} boss recordings, ${rickIntroKeys.length} Rick selections and Rick's prologue: dialogue, cast fingerprints, checksums and durations`);
 
+// Emotes: Rick's four player lines (Base clone) and every champion's four replies (VoiceDesign).
+const emoteIds = ["hi", "wellPlayed", "oops", "taunt"];
+const emoteVoices = JSON.parse(await readFile(path.join(ROOT, "data/emote-voices.json"), "utf8"));
+const emoteFingerprint = (chapter, emote) => {
+  const voice = cast.cast[String(chapter.chapter)];
+  const instruction = `${voice.voice} Perform with ${voice.emoteDirection[emote]}. Fluent English, vivid natural acting, clear words, no music or sound effects.`;
+  return createHash("sha256").update(`[${[cast.engine, chapter.emotes[emote], instruction, voice.seed, "mix-v2"].map(pythonString).join(", ")}]`).digest("hex");
+};
+const emoteKeys = [];
+const checkEmote = async (key, text, expectedFingerprint) => {
+  emoteKeys.push(key);
+  const entry = emoteVoices[key];
+  assert(entry, `Missing emote voice manifest entry: ${key}`);
+  assert.equal(entry.text, text, `Stale emote text: ${key}`);
+  assert.equal(entry.fingerprint, expectedFingerprint, `Stale emote casting/direction: ${key}`);
+  const file = path.join(ROOT, "public/audio/emotes", `${key}.ogg`);
+  const data = await readFile(file);
+  assert.equal(createHash("sha256").update(data).digest("hex"), entry.audioSha256, `Changed recording: ${key}`);
+  if (!process.argv.includes("--hash-only")) {
+    const duration = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file], { encoding: "utf8" }));
+    assert(duration > 0.4 && duration < 12, `Invalid emote duration: ${key} (${duration}s)`);
+    assert(Math.abs(duration - entry.duration) < 0.1, `Manifest duration drift: ${key}`);
+  }
+};
+for (const emote of emoteIds) {
+  const key = `rick-emote-${emote}`;
+  await checkEmote(key, story.rickEmotes[emote], rickFingerprint(story.rickEmotes[emote]));
+  assert.equal(emoteVoices[key].reference_audio_sha256, rickReferenceSha, `Stale Rick reference audio: ${key}`);
+}
+for (const chapter of story.chapters) {
+  for (const emote of emoteIds) {
+    await checkEmote(`${String(chapter.chapter).padStart(2, "0")}-emote-${emote}`, chapter.emotes[emote], emoteFingerprint(chapter, emote));
+  }
+}
+assert.equal(emoteKeys.length, 84);
+assert.equal(Object.keys(emoteVoices).length, emoteKeys.length, "The emote manifest must contain exactly Rick's 4 lines and 80 champion replies");
+console.log(`PASS all ${emoteKeys.length} emote recordings: Rick's 4 lines and 80 champion replies`);
+
 const base = process.argv.find((arg) => arg.startsWith("http"));
 if (base) {
   const { launch } = await import("./browser.mjs");
@@ -108,6 +146,7 @@ if (base) {
     await page.goto(base);
     await page.locator(".title-screen").waitFor();
     const allKeys = [...keys, ...rickIntroKeys, rickKey];
+    const emoteUrl = (key) => new URL(`audio/emotes/${key}.ogg`, rootUrl).href;
     const decoded = await page.evaluate(async (urls) => {
       const context = new AudioContext();
       const durations = [];
@@ -119,11 +158,11 @@ if (base) {
       }
       await context.close();
       return durations;
-    }, allKeys.map((key) => [key, assetUrl(key)]));
-    assert.equal(decoded.length, 101);
+    }, [...allKeys.map((key) => [key, assetUrl(key)]), ...emoteKeys.map((key) => [key, emoteUrl(key)])]);
+    assert.equal(decoded.length, 101 + emoteKeys.length);
     const hasControlHook = await page.evaluate(() => typeof window.__sfx?.probeBossSpeech === "function");
     if (hasControlHook) {
-      for (const key of ["01-play", "20-play", "01-rick-intro", "20-rick-intro", rickKey]) {
+      for (const key of ["01-play", "20-play", "01-rick-intro", "20-rick-intro", rickKey, "rick-emote-taunt", "17-emote-hi"]) {
         const signal = await page.evaluate((value) => window.__sfx.probeBossSpeech(value, 5000), key);
         assert(signal.peak > 0.01 && signal.activeMs > 200, `${key} must emit an audible signal: ${JSON.stringify(signal)}`);
       }
@@ -141,9 +180,9 @@ if (base) {
       });
       await page.waitForTimeout(500);
       assert.equal(await page.evaluate(() => window.__sfx.getStats().bossSpeechKey), null, "Cancelled Rick fetch cannot start speech later");
-      console.log("PASS browser campaign audio: all 101 files decode; Rick is audible, muted, and cancelled correctly");
+      console.log(`PASS browser campaign audio: all 101 story and ${emoteKeys.length} emote files decode; Rick and emotes are audible, muted, and cancelled correctly`);
     } else {
-      console.log("PASS browser campaign audio: all 101 files decode; production omits the development-only control probe");
+      console.log(`PASS browser campaign audio: all 101 story and ${emoteKeys.length} emote files decode; production omits the development-only control probe`);
     }
   } finally {
     await browser.close();

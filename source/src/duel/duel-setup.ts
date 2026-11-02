@@ -1,5 +1,6 @@
 /** Constants and pure helpers for seating a duel, shared by App and its hooks. */
 import campaignVoiceManifest from "../../data/campaign-voices.json";
+import emoteVoiceManifest from "../../data/emote-voices.json";
 import { BOT_CHEATS } from "../engine/bot";
 import { randomHeroPower } from "../engine/hero-powers";
 import type { GameEvent, HeroPowerId, PlayerId } from "../engine/types";
@@ -9,6 +10,12 @@ export function campaignVoiceDuration(key: string): number | undefined {
   const entries = campaignVoiceManifest as Record<string, { duration?: unknown }>;
   const entry = entries[key];
   return typeof entry?.duration === "number" ? entry.duration : undefined;
+}
+
+/** Seconds of an emote recording, or 0 when the line has none. */
+export function emoteVoiceDuration(key: string): number {
+  const entry = (emoteVoiceManifest as Record<string, { duration?: unknown }>)[key];
+  return typeof entry?.duration === "number" ? entry.duration : 0;
 }
 
 export function heroPowersForDuel(

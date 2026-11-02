@@ -179,8 +179,10 @@ Generated `source/dist` can be removed after publishing. The release in `play/` 
 
 Character dialogue was generated with **Qwen3-TTS**.
 The project uses **Qwen3-TTS-12Hz-1.7B-VoiceDesign** to cast character voices and **Qwen3-TTS-12Hz-1.7B-Base** to reuse selected reference voices consistently.
-The game ships 101 campaign recordings: Rick Gramps's prologue, twenty Rick introductions, and eighty champion dialogue lines.
-The [voice cast](materials/campaign-voice-cast.json) and [recording manifest](source/data/campaign-voices.json) preserve the dialogue, recording fingerprints, and audio checksums.
+The game ships 101 campaign recordings (Rick Gramps's prologue, twenty Rick introductions and eighty champion dialogue lines) and 84 emote recordings (Rick's four emotes and every champion's four replies).
+The [voice cast](materials/campaign-voice-cast.json) and the recording manifests ([story](source/data/campaign-voices.json), [emotes](source/data/emote-voices.json)) preserve the dialogue, recording fingerprints, and audio checksums.
+Each champion's `emoteDirection` in the cast directs its four replies; Rick's emote lines are `rickEmotes` in [campaign-story.json](materials/campaign-story.json), and the game reads them from there.
+`npm run voice:audition -- --emotes` renders the emotes into `.preview/voice-full-hold/emotes` for review (`--keys 07-emote-hi,rick-emote-oops --force` redoes chosen lines). `npm run voice:audition -- --emotes --promote` copies them into the game and its manifest; then run `npm run check:campaign-voices`.
 Voice models and generation environments are not required to play.
 
 ## Developer tools
