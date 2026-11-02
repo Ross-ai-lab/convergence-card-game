@@ -353,9 +353,17 @@ await page.screenshot({ path: path.join(outputDir, "rift-draft-run.png"), fullPa
       await hostPage.waitForTimeout(1200);
       const [hostAfter, guestAfter] = await fingerprints();
       check("online moves keep both duels identical", hostAfter.fingerprint === guestAfter.fingerprint && hostAfter.turn === 3, JSON.stringify({ host: hostAfter.turn, guest: guestAfter.turn }));
+      // An emote travels beside the numbered steps and never changes the duel.
+      await guestPage.locator(".command-bar .hero-plate.me").click({ force: true });
+      await guestPage.getByRole("menuitem", { name: "Taunt", exact: true }).click();
+      const heard = await hostPage.locator('.emote-speech[data-emote-owner="1"]').textContent({ timeout: 5000 }).catch(() => "");
+      check("an online emote reaches the other browser", heard.includes("You'll look great in my collection."), heard);
+      const [hostEmoted, guestEmoted] = await fingerprints();
+      check("an online emote leaves both duels unchanged", hostEmoted.fingerprint === hostAfter.fingerprint && guestEmoted.fingerprint === guestAfter.fingerprint);
       await guestPage.getByRole("button", { name: "Concede", exact: true }).click();
       await hostPage.locator(".result-overlay").waitFor({ timeout: 10000 });
       check("a guest concession ends the duel for the host", (await hostPage.locator(".result-title").textContent())?.includes("Wins") ?? false);
+      check("winning an online duel earns its achievement", await hostPage.evaluate(() => "online-win" in (JSON.parse(localStorage.getItem("convergence.achievements.v1") ?? "{}").earned ?? {})));
       check("only the host is offered a rematch", (await hostPage.getByRole("button", { name: "Rematch" }).count()) === 1 && (await guestPage.getByRole("button", { name: "Rematch" }).count()) === 0);
     }
   } finally {

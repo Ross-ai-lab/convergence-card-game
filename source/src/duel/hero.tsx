@@ -36,6 +36,8 @@ export function HeroPlate({
   heroPowerCounter,
   protocolWarning = false,
   apexPrey,
+  onPortrait,
+  emoteMenuOpen,
 }: {
   player: GameState["players"][number];
   identity?: { card: PlayableCard; chapter: number; universe: string };
@@ -58,6 +60,9 @@ export function HeroPlate({
   heroPowerCounter?: string;
   protocolWarning?: boolean;
   apexPrey?:MinionInstance;
+  /** The player's own plate only: opens the emote menu. */
+  onPortrait?: () => void;
+  emoteMenuOpen?: boolean;
 }) {
   const wasHit = floats.some((f) => f.delta < 0);
   const classes = [
@@ -79,14 +84,17 @@ export function HeroPlate({
   const power = heroPowerDefinition(heroPower);
   const canStrike = enemy && targetable && Boolean(onStrike);
   const strikeHandler = canStrike ? onStrike : onBlockedStrike;
+  const clickHandler = enemy ? strikeHandler : onPortrait;
   return (
     <button
       type="button"
-      className={classes}
+      className={onPortrait && !enemy ? `${classes} can-emote` : classes}
       data-hero={player.id}
-      onClick={strikeHandler}
-      aria-disabled={strikeHandler ? undefined : true}
-      aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : undefined}
+      onClick={clickHandler}
+      aria-disabled={clickHandler ? undefined : true}
+      aria-label={enemy && power ? `${player.name}. Hero Power: ${power.name}. ${power.text}` : onPortrait && !enemy ? `${player.name}. Emotes` : undefined}
+      aria-haspopup={onPortrait && !enemy ? "menu" : undefined}
+      aria-expanded={onPortrait && !enemy ? Boolean(emoteMenuOpen) : undefined}
     >
       {enemy && <span className="hero-health-fill" aria-hidden="true" style={{width:`${Math.max(0,Math.min(1,player.health/STARTING_CORE))*100}%`,'--boss-tint':campAccent(identity && isMinionCard(identity.card) ? identity.card.camp : 'Nature')} as CSSProperties} />}
       {/* Light layers that pulse by opacity alone, so the compositor runs them. */}

@@ -175,7 +175,7 @@ function Rift() {
   );
 }
 
-function Overlay({
+export function Overlay({
   title,
   onClose,
   children,
@@ -235,6 +235,7 @@ export function TitleScreen({
   onDraft,
   onOnline,
   onLore,
+  achievementsButton,
   onDeveloperTools,
   onDeveloperUnlock,
   onDeveloperReset,
@@ -258,6 +259,8 @@ export function TitleScreen({
   onDraft: () => void;
   onOnline: () => void;
   onLore: () => void;
+  /** The Achievements medal, which sits under the Lore book. */
+  achievementsButton?: ReactNode;
   onDeveloperTools: () => void;
   onDeveloperUnlock: () => void;
   onDeveloperReset: () => void;
@@ -284,6 +287,7 @@ export function TitleScreen({
       </div>
       <FloatingCardField />
       <LoreBookButton onOpen={onLore} />
+      {achievementsButton}
       <FullscreenButton active={isFullscreen} onToggle={onToggleFullscreen} className="title-fullscreen-trigger" />
 
       <div className="duel-orbit" aria-label="Choose an opponent">

@@ -15,6 +15,7 @@ import { CAMPAIGN_CARD_IDS } from "../progress";
 import type { GameMode } from "../screens/Screens";
 import { cleanName, continuesOnlineDuel, normaliseRoomCode, stateFingerprint, stepPlayer, type OnlineMessage, type OnlineStep } from "./protocol";
 import { useOnlineSession, type HelloMessage } from "./use-online-session";
+import type { EmoteId } from "../emotes";
 
 type OnlineMode = Extract<GameMode, { kind: "online" }>;
 
@@ -37,6 +38,8 @@ export interface OnlineDuelOptions {
   /** The opponent walked away from a live duel, which concedes it to this seat. */
   winByDeparture: (winner: PlayerId, reason: string) => void;
   toast: (text: string) => void;
+  /** The opponent said an emote. */
+  onEmote: (emote: EmoteId) => void;
   /** An invite link was opened. */
   openLobby: () => void;
 }
@@ -76,6 +79,7 @@ export function useOnlineDuel(options: OnlineDuelOptions) {
       if (message.t === "start") { receiveStart(message); return; }
       if (message.t === "resync") { sendStart(); return; }
       if (message.t === "refused") { setAwaitingHost(false); return; }
+      if (message.t === "emote") { latest.current.onEmote(message.emote); return; }
       if (message.t === "step" || message.t === "request") setInbox((items) => [...items, message]);
     },
     onOpponentGone: (reason) => {
@@ -206,6 +210,8 @@ export function useOnlineDuel(options: OnlineDuelOptions) {
     },
     awaitingHost,
     submitStep,
+    /** Tells the other browser this seat said an emote. */
+    sendEmote(emote: EmoteId) { session.send({ t: "emote", emote }); },
     hostTimeout,
     rematch: startHostedDuel,
     leave,

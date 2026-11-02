@@ -60,7 +60,7 @@ import {
 } from "./progress";
 import { CAMPAIGN_CHAPTERS, CAMPAIGN_STARTER_DECK, CAMPAIGN_DIFFICULTIES, CAMPAIGN_PREMISE, CAMPAIGN_PROTAGONIST } from "./campaign";
 import { createCampaignDuel } from "./campaign-duel";
-import { campaignComplete, canPlayChapter, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, saveDeckDraft, createNamedDeck, ensureNamedDeck, selectNamedDeck, renameNamedDeck, deleteNamedDeck, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
+import { campaignComplete, canPlayChapter, acknowledgeBossSpeech, acknowledgeRewards, acknowledgeHeroPowers, saveDeckDraft, createNamedDeck, ensureNamedDeck, selectNamedDeck, renameNamedDeck, deleteNamedDeck, duplicateNamedDeck, selectHeroPower, CAMPAIGN_CARD_IDS } from "./progress";
 import { LoreLibrary } from './screens/LoreLibrary';
 import { randomDeck, validateDeck } from "./decks";
 import { CampaignScreen, HotseatSetup } from "./screens/CampaignScreens";
@@ -108,6 +108,11 @@ import { applyDeveloperEdit, type DeveloperEdit } from "./duel/developer-edits";
 import { BoardRow, canAttackCore, FollowingArrow, otherPlayer, type Selection } from "./duel/board";
 import { DragGhost, HandFan, ManaTray } from "./duel/hand";
 import { HeroPlate, HeroPowerButton, HeroPowerCard, ProtocolWarningBubble } from "./duel/hero";
+import { EmoteMenu, EmoteSpeech, useEmoteBubbles } from "./duel/emotes";
+import { EMOTE_REPLY_DELAY_MS, emoteLine, emoteReply, type EmoteId } from "./emotes";
+import { ACHIEVEMENTS, achievementSnapshot, clearAchievements, duelFeats, emptyAchievements, grantAchievements, grantMeasured, loadAchievements, markAchievementsSeen, saveAchievements, unseenAchievements, type AchievementSave } from "./achievements";
+import { AchievementToast, AchievementsButton, AchievementsScreen } from "./screens/Achievements";
+import { DRAFT_WIN_GOAL } from "./draft-core";
 import { DrawChoiceOverlay, EventLog, HoverCard, MulliganOverlay, TargetPrompt, TutorialCoach } from "./duel/panels";
 import { CardPack } from "./duel/card-pack";
 import { DeveloperTools } from "./duel/developer-tools";
@@ -140,6 +145,41 @@ export default function App() {
   const [draft, setDraft] = useState<DraftSave>(() => loadDraft());
   function persistDraft(next: DraftSave) {
     setDraft(next); const saved = saveDraft(next); setStorageError(!saved); return saved;
+  }
+  /**
+   * Achievements, in their own save. The ref holds the newest save so two
+   * grants in one render never overwrite each other.
+   */
+  const [achievements, setAchievements] = useState<AchievementSave>(() => loadAchievements());
+  const achievementsRef = useRef(achievements);
+  const [achievementToasts, setAchievementToasts] = useState<string[]>([]);
+  const closeAchievementToast = useCallback(() => setAchievementToasts((queue) => queue.slice(1)), []);
+  /** Earned since the Achievements page was last opened, for its New marks. */
+  const [achievementsFresh, setAchievementsFresh] = useState<string[]>([]);
+  function commitAchievements(result: { save: AchievementSave; earned: string[] }, announce = true) {
+    if (!result.earned.length) return;
+    achievementsRef.current = result.save;
+    setAchievements(result.save);
+    saveAchievements(result.save);
+    if (announce) setAchievementToasts((queue) => [...queue, ...result.earned]);
+  }
+  function earnAchievements(ids: readonly string[]) {
+    commitAchievements(grantAchievements(achievementsRef.current, ids, Date.now()));
+  }
+  const achievementProgress = useMemo(() => achievementSnapshot(progress, draft), [progress, draft]);
+  // Measured achievements follow the saves. What a returning player had already
+  // reached is credited quietly on load; anything reached afterwards is announced.
+  const achievementsBooted = useRef(false);
+  useEffect(() => {
+    commitAchievements(grantMeasured(achievementsRef.current, achievementProgress, Date.now()), achievementsBooted.current);
+    achievementsBooted.current = true;
+  }, [achievementProgress]);
+  function openAchievements() {
+    const seen = new Set(achievementsRef.current.seen);
+    setAchievementsFresh(Object.keys(achievementsRef.current.earned).filter((id) => !seen.has(id)));
+    const next = markAchievementsSeen(achievementsRef.current);
+    if (next !== achievementsRef.current) { achievementsRef.current = next; setAchievements(next); saveAchievements(next); }
+    setOverlay("achievements");
   }
   // Save the initial campaign record before a first duel can finish.
   useEffect(() => {
@@ -198,7 +238,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [duelIntro, setDuelIntro] = useState<DuelIntroState | null>(null);
-  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "campaign" | "deck" | "hotseat" | "opponent" | "lore" | "draft" | "online">(null);
+  const [overlay, setOverlay] = useState<null | "settings" | "howToPlay" | "campaign" | "deck" | "hotseat" | "opponent" | "lore" | "draft" | "online" | "achievements">(null);
   useEffect(() => {
     if (overlay !== "opponent") return;
     const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOverlay(null); };
@@ -246,6 +286,7 @@ export default function App() {
   const createDeckPreset = (name: string, seat: 0 | 1) => commitDeckEdit(createNamedDeck(progress, name, seat));
   const renameDeckPreset = (id: string, name: string) => commitDeckEdit(renameNamedDeck(progress, id, name));
   const deleteDeckPreset = (id: string) => commitDeckEdit(deleteNamedDeck(progress, id));
+  const duplicateDeckPreset = (id: string, seat: 0 | 1) => commitDeckEdit(duplicateNamedDeck(progress, id, seat));
   function setSelectedHeroPower(power: HeroPowerId) { persistProgress(acknowledgeHeroPowers(selectHeroPower(progress, power,builderSeat))); }
   function openDeck(seat: 0 | 1 = 0, back: "title" | "campaign" | "hotseat" | "online" = "title") {
     const next=ensureNamedDeck(progress,seat);if(next!==progress)persistProgress(next);
@@ -348,6 +389,11 @@ export default function App() {
   const pendingTarget =
     game.phase === "targeting" && game.pendingTarget?.player === viewerId ? game.pendingTarget : null;
   const fx = useDuelFx(viewerId, opponentId);
+  const emotes = useEmoteBubbles();
+  const [emoteMenuOpen, setEmoteMenuOpen] = useState(false);
+  const closeEmoteMenu = useCallback(() => setEmoteMenuOpen(false), []);
+  /** This duel's player said Well played, for the Good Sport achievement. */
+  const saidWellPlayed = useRef(false);
   const onlineDuel = useOnlineDuel({
     game, events, mode, deck: progress.playerDeck, heroPower: selectedHeroPower,
     applyStep: applyOnlineStep,
@@ -359,6 +405,7 @@ export default function App() {
       fx.showToast(reason, 3600);
     },
     toast: (text) => fx.showToast(text, 3600),
+    onEmote: (emote) => emotes.say(opponentId, game.players[opponentId].name, emoteLine(emote)),
     openLobby: () => setOverlay("online"),
   });
   const { awaitingHost } = onlineDuel;
@@ -522,6 +569,28 @@ export default function App() {
   const seatOwner = game.phase === "mulligan" && game.mulligan ? game.mulligan.player : game.activePlayer;
   const curtainUp =
     mode.kind === "hotseat" && screen === "playing" && game.phase !== "gameOver" && seatOwner !== seatedPlayer;
+
+  /**
+   * Emotes: the player's portrait opens four of them, and a bot answers in a
+   * champion's own words, or as a rival. Online, the other browser shows it.
+   * Never in the tutorial, and never while the board is covered.
+   */
+  const canEmote = screen === "playing" && !tutorialActive && game.phase !== "gameOver" && game.phase !== "mulligan" &&
+    !duelIntro && !curtainUp && !needsLandscape && !overlay && !mobileMenuOpen && (!online || onlineStatus.phase === "connected");
+  useEffect(() => { if (!canEmote) setEmoteMenuOpen(false); }, [canEmote]);
+  // A new duel, or leaving the board, starts with nobody mid-sentence.
+  useEffect(() => { emotes.clear(); setEmoteMenuOpen(false); }, [mode, screen, emotes.clear]);
+  function sayEmote(emote: EmoteId) {
+    setEmoteMenuOpen(false);
+    if (!canEmote) return;
+    emotes.say(viewerId, game.players[viewerId].name, emoteLine(emote));
+    if (emote === "wellPlayed") saidWellPlayed.current = true;
+    if (emote === "hi" && campaignBoss) earnAchievements(["pleasantries"]);
+    if (online) { onlineDuel.sendEmote(emote); return; }
+    if (!vsBot) return;
+    emotes.sayLater(EMOTE_REPLY_DELAY_MS, opponentId, campaignBoss?.name ?? game.players[opponentId].name, emoteReply(emote, campaignChapter),
+      campaignBoss && isMinionCard(campaignBoss) ? campAccent(campaignBoss.camp) : undefined);
+  }
 
   /**
    * Whose turn it is, announced.
@@ -745,7 +814,7 @@ export default function App() {
       if (tutorialActive && !tutorialCompleted && action.player === viewerId) {
         const step=nextTutorialStep(tutorialStep,action,result.state);
         setTutorialStep(step);
-        if(step===TUTORIAL_LESSONS.length)setTutorialCompleted(true);
+        if(step===TUTORIAL_LESSONS.length){setTutorialCompleted(true);earnAchievements(["tutorial"]);}
       }
     }
     const visibleEvents = hiddenEnemyDiscover
@@ -816,6 +885,7 @@ export default function App() {
     setDeveloperToolsOpen(false);
     duelCards.current = { seen: new Set(), played: new Set() };
     duelRecorded.current = false;
+    saidWellPlayed.current = false;
     setPack(null);
     setBossLines([]);
     setOverlay(null);
@@ -843,13 +913,22 @@ export default function App() {
   useEffect(() => {
     if (game.phase !== "gameOver" || duelRecorded.current || tutorialActive) return;
     duelRecorded.current = true;
+    // One-duel feats count only for a duel won fairly against someone else:
+    // never a Local Duel, a developer duel, or with infinite mana.
+    const fair = mode.kind !== "hotseat" && !developerDuelActive && !viewerHasInfiniteMana;
+    const feats = fair ? duelFeats(game, viewerId) : [];
+    if (mode.kind === "online" && game.winner === viewerId) feats.push("online-win");
+    if (mode.kind !== "hotseat" && saidWellPlayed.current && typeof game.winner === "number" && game.winner !== viewerId) feats.push("good-sport");
+    earnAchievements(feats);
     // Online duels award nothing and keep no record.
     if (mode.kind === "online") return;
     // A draft result belongs to the run, never to the collection's records.
     if (mode.kind === "draft") {
       const outcome = game.winner === viewerId ? "won" : typeof game.winner === "number" ? "lost" : "drawn";
       const mvp = typeof game.winner === "number" ? duelMvp(game, game.winner)?.cardId ?? null : null;
-      if (persistDraft(recordDraftDuel(draft, mode.runId, mode.duelId ?? "", outcome, mvp))) { clearSave(); setHasLiveSave(false); }
+      const next = recordDraftDuel(draft, mode.runId, mode.duelId ?? "", outcome, mvp);
+      if (next.run?.finished && next.run.wins >= DRAFT_WIN_GOAL && next.run.losses === 0) earnAchievements(["arena-flawless"]);
+      if (persistDraft(next)) { clearSave(); setHasLiveSave(false); }
       return;
     }
     const next = finishDuel(
@@ -860,7 +939,7 @@ export default function App() {
     const saved = persistProgress(next);
     if (saved) { clearSave(); setHasLiveSave(false); }
     if (next.pendingRewards.length) setPack(next.pendingRewards);
-  }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress, tutorialActive, draft]);
+  }, [game.phase, game.winner, game.turnNumber, mode, viewerId, progress, tutorialActive, draft, developerDuelActive, viewerHasInfiniteMana]);
 
   function prepareDuel(next: GameMode, seed: string, developer = false, draftRun?: DraftRun) {
     if (next.kind === "draft" && draftRun) {
@@ -921,6 +1000,10 @@ export default function App() {
     clearProgress();
     const next = emptyProgress();
     persistProgress(next);
+    // Achievements read from the progress just cleared, so they start again with it.
+    clearAchievements();
+    achievementsRef.current = emptyAchievements(); achievementsBooted.current = false;
+    setAchievements(achievementsRef.current); setAchievementToasts([]);
     clearSave(); setHasLiveSave(false); duelRecorded.current = true;
     setPack(null); setOverlay(null); setScreen("title");
     setGame(createInitialGame(cards, createDuelSeed(), relics, { decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK] }));
@@ -1214,7 +1297,7 @@ export default function App() {
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
       if (mobileMenuOpen && event.key === "Escape") { setMobileMenuOpen(false); return; }
-      if (needsLandscape || overlay || developerToolsOpen || mobileMenuOpen || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "mulligan") return;
+      if (needsLandscape || overlay || developerToolsOpen || mobileMenuOpen || emoteMenuOpen || curtainUp || duelIntro || pendingTarget || game.phase === "drawChoice" || game.phase === "mulligan") return;
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
 
       if (event.key === " " || event.key === "Enter") {
@@ -1234,7 +1317,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, overlay, developerToolsOpen, mobileMenuOpen, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length, needsLandscape, developerCheatRevealed]);
+  }, [screen, overlay, developerToolsOpen, mobileMenuOpen, emoteMenuOpen, curtainUp, duelIntro, pendingTarget, game, endTurnAction, history.length, needsLandscape, developerCheatRevealed]);
 
   // While a card or an arrow follows the pointer, every display frame runs the
   // main thread, and Chrome then restyles each running CSS animation on it. The
@@ -1520,6 +1603,13 @@ export default function App() {
               floats={fx.floats.filter((f) => f.slot === "hero" && f.owner === viewerId)}
               impacts={heroFx(viewerId)}
               active={game.activePlayer === viewerId && game.phase !== "gameOver"}
+              emoteMenuOpen={emoteMenuOpen}
+              onPortrait={canEmote ? () => {
+                // Mid-play, the portrait stays out of the way of the card or attacker in hand.
+                if (selection || pendingTarget) return;
+                sfx.play("button");
+                setEmoteMenuOpen((open) => !open);
+              } : undefined}
             />
             {game.heroPowers[viewerId] ? (
               <HeroPowerButton
@@ -1731,6 +1821,11 @@ export default function App() {
       ) : null}
 
       {duelIntro ? <DuelIntro phase={duelIntro.phase} onSkip={skipDuelIntro} /> : null}
+      {emoteMenuOpen && canEmote ? <EmoteMenu owner={viewerId} onPick={sayEmote} onClose={closeEmoteMenu} /> : null}
+      {screen === "playing" && game.phase !== "gameOver" ? ([viewerId, opponentId] as const).map((owner) => {
+        const bubble = emotes.bubbles[owner];
+        return bubble ? <EmoteSpeech key={bubble.id} bubble={bubble} enemy={owner === opponentId} /> : null;
+      }) : null}
       {bossLines[0] && screen === "playing" && game.phase !== "gameOver" ? <CollectedBossSpeech key={bossLines[0].id} cue={bossLines[0]} onDone={closeBossLine} /> : null}
       {chapterSpeech && (() => {
         const chapter = CAMPAIGN_CHAPTERS[chapterSpeech.mode.chapter-1];
@@ -1761,6 +1856,8 @@ export default function App() {
           onToggleFullscreen={toggleFullscreen}
           onTutorial={beginTutorial}
           onLore={() => setOverlay('lore')}
+          achievementsButton={<AchievementsButton earned={Object.keys(achievements.earned).length} total={ACHIEVEMENTS.length}
+            unseen={unseenAchievements(achievements)} onOpen={openAchievements} />}
           onDeveloperTools={() => setDeveloperToolsOpen(true)}
           developerCheatRevealed={developerCheatRevealed}
           developerCheatActive={progress.developerCheat}
@@ -1796,7 +1893,9 @@ export default function App() {
         onResume={continueDuel}
         onClose={() => setOverlay(null)} />}
       {overlay === 'lore' && <LoreLibrary completedBosses={progress.completedBosses} onClose={()=>setOverlay(null)} />}
-      {overlay === "deck" && <Suspense fallback={null}><CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onPresetRename={renameDeckPreset} onPresetDelete={deleteDeckPreset} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
+      {overlay === "achievements" && <AchievementsScreen save={achievements} snapshot={achievementProgress} fresh={achievementsFresh} onClose={() => setOverlay(null)} />}
+      {achievementToasts[0] ? <AchievementToast key={achievementToasts[0]} id={achievementToasts[0]} onDone={closeAchievementToast} /> : null}
+      {overlay === "deck" && <Suspense fallback={null}><CardGallery onPresetCreate={name=>createDeckPreset(name,builderSeat)} onPresetSelect={id=>persistProgress(selectNamedDeck(progress,id,builderSeat))} onPresetRename={renameDeckPreset} onPresetDelete={deleteDeckPreset} onPresetDuplicate={id=>duplicateDeckPreset(id,builderSeat)} onHeroPowerViewed={()=>persistProgress(acknowledgeHeroPowers(progress))} onHeroPowerChange={setSelectedHeroPower} progress={progress} fontRevision={fontRevision} seat={builderSeat} onChange={(ids) => persistProgress(saveDeckDraft(progress, ids, builderSeat))}
         onClose={() => setOverlay(builderReturn === "title" ? null : builderReturn)} /></Suspense>}
       {overlay === "hotseat" && <HotseatSetup progress={progress} onClose={() => setOverlay(null)} onEdit={(seat) => openDeck(seat, "hotseat")}
         onStart={() => beginDuel({ kind: "hotseat" })} />}

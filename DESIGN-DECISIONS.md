@@ -63,6 +63,20 @@ Two builds with different card data refuse each other, because the same moves wo
 Connections go directly between browsers through PeerJS's free public signalling and relay service. It needs no account and no server of our own; the trade is that a few strict networks cannot connect. Either player could read hidden cards with browser tools, which is acceptable for duels between friends.
 Online duels never take the save slot and keep no record, because neither browser can resume one alone.
 
+## Emotes never touch the duel
+
+The player's portrait opens four emotes: Hi, Well played, Oops and Taunt. A bot answers about a second later, a champion in its own words from [campaign-story.json](materials/campaign-story.json) and anyone else as a rival. Online, the other browser shows the emote.
+Emotes are not engine actions and are not saved. Online they travel as their own message beside the numbered steps, so a lost emote is simply lost and can never cause a resync. A build without emotes drops the message as unknown.
+There is no mute: emotes are four fixed lines, and a bot never has more than one reply on its way, so a burst of emotes gets one answer.
+Replies are text only. The campaign's recorded voices cover the story lines, and the emote lines have no recordings.
+
+## Achievements read the saves
+
+Most achievements are measured from what the game already saves: champions defeated, cards earned from them, Hero Powers, duel ladders and the Arena record. A returning player is credited quietly for earlier progress, and anything reached afterwards is announced.
+Cards and Hero Powers are counted from champions actually defeated, so the developer unlock earns no collection achievement.
+One-duel feats cannot be rebuilt from the saves and are granted as they happen. They need a fair win: never a Local Duel, a developer duel or infinite mana.
+Achievements keep their own save, `convergence.achievements.v1`. They award and unlock nothing, so they can never disturb the collection or the Arena. The developer progress reset clears them with the progress they were read from.
+
 ## One shared Core limit
 
 [STARTING_CORE](source/src/engine/rules/core.ts) supplies the starting health and healing ceiling for every ordinary mode.

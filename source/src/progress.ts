@@ -240,6 +240,23 @@ export function createNamedDeck(progress:Progress,name:string,seat:0|1=0):Progre
   return {...progress,savedDecks,selectedDecks,[seat===0?'playerDeck':'hotseatDeck']:[]};
 }
 /**
+ * Copies a deck, cards and Hero Power, under the first free "<name> copy" name
+ * and selects the copy for that seat, so edits land on the copy and the
+ * original stays as it was. Any deck can be copied, the Starter Deck included.
+ */
+export function duplicateNamedDeck(progress:Progress,id:string,seat:0|1=0):Progress {
+  const deck=progress.savedDecks.find(entry=>entry.id===id);
+  if(!deck)return progress;
+  const taken=(name:string)=>progress.savedDecks.some(entry=>entry.name.toLocaleLowerCase()===name.toLocaleLowerCase());
+  const nameFor=(suffix:string)=>`${deck.name.slice(0,60-suffix.length)}${suffix}`;
+  let name=nameFor(' copy'),serial=2;
+  while(taken(name))name=nameFor(` copy ${serial++}`);
+  const copy:SavedDeck={id:uniqueDeckId(progress),name,cards:[...deck.cards],heroPower:deck.heroPower};
+  const index=progress.savedDecks.indexOf(deck);
+  const savedDecks=[...progress.savedDecks.slice(0,index+1),copy,...progress.savedDecks.slice(index+1)];
+  return selectNamedDeck({...progress,savedDecks},copy.id,seat);
+}
+/**
  * The Starter Deck is the template every collection keeps: loading progress
  * recreates it whenever no deck carries its name, so renaming or deleting it
  * would only bring a fresh copy back on the next visit. It stays put instead.

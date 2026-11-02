@@ -1,5 +1,5 @@
 import {describe,it,expect,vi,afterEach} from 'vitest';
-import {emptyProgress,saveDeckDraft,createNamedDeck,ensureNamedDeck,selectNamedDeck,selectHeroPower,unlockAllProgress,saveProgress,loadProgress,renameNamedDeck,deleteNamedDeck,PROGRESS_KEY} from './progress';
+import {emptyProgress,saveDeckDraft,createNamedDeck,ensureNamedDeck,selectNamedDeck,selectHeroPower,unlockAllProgress,saveProgress,loadProgress,renameNamedDeck,deleteNamedDeck,duplicateNamedDeck,PROGRESS_KEY} from './progress';
 afterEach(()=>vi.unstubAllGlobals());
 function memoryStorage(){
   const values=new Map<string,string>();
@@ -99,5 +99,28 @@ describe('renaming and deleting decks',()=>{
     const gone=deleteNamedDeck(other,spare);
     expect(gone.selectedDecks[0]).toBe(main);
     expect(gone.savedDecks.map(d=>d.name)).toEqual(['Starter Deck','Main']);
+  });
+  it('duplicates a deck beside the original, with its cards and Hero Power, and selects the copy',()=>{
+    const p=emptyProgress(),starter=p.selectedDecks[0]!;
+    const copy=duplicateNamedDeck(p,starter),id=copy.selectedDecks[0]!;
+    expect(id).not.toBe(starter);
+    expect(copy.savedDecks.map(d=>d.name)).toEqual(['Starter Deck','Starter Deck copy']);
+    const made=copy.savedDecks.find(d=>d.id===id)!;
+    expect(made.cards).toEqual(p.savedDecks[0].cards);expect(made.heroPower).toBe(p.savedDecks[0].heroPower);
+    expect(copy.playerDeck).toEqual(p.playerDeck);
+    // Editing the copy leaves the original untouched.
+    const edited=saveDeckDraft(copy,copy.playerDeck.slice(1));
+    expect(edited.savedDecks.find(d=>d.id===starter)!.cards).toHaveLength(30);
+    expect(edited.savedDecks.find(d=>d.id===id)!.cards).toHaveLength(29);
+    // A second copy takes the next free name; the copied deck's own seat choice holds.
+    expect(duplicateNamedDeck(copy,starter).savedDecks.map(d=>d.name)).toEqual(['Starter Deck','Starter Deck copy 2','Starter Deck copy']);
+    expect(duplicateNamedDeck(copy,starter,1).selectedDecks[0]).toBe(id);
+    expect(duplicateNamedDeck(p,'missing')).toBe(p);
+  });
+  it('keeps a duplicated long name within the sixty-character limit',()=>{
+    const p=createNamedDeck(emptyProgress(),'x'.repeat(60));
+    const copy=duplicateNamedDeck(p,p.selectedDecks[0]!);
+    const name=copy.savedDecks.find(d=>d.id===copy.selectedDecks[0])!.name;
+    expect(name).toHaveLength(60);expect(name.endsWith(' copy')).toBe(true);
   });
 });

@@ -18,8 +18,11 @@ export interface CampaignDifficulty {
   readonly cheats: Readonly<BotCheats>;
 }
 
+/** A champion's answer to each of the player's four emotes. Text only; the emotes carry no recordings. */
+export interface CampaignEmoteReplies { readonly hi: string; readonly wellPlayed: string; readonly oops: string; readonly taunt: string }
+
 export interface CampaignChapter {
-  readonly story: Readonly<{ rickIntro: string; entrance: string; defeat: string; loss: string; play: string }>;
+  readonly story: Readonly<{ rickIntro: string; entrance: string; defeat: string; loss: string; play: string; emotes: CampaignEmoteReplies }>;
   readonly chapter: number;
   readonly bossId: string;
   readonly universe: string;
@@ -70,8 +73,13 @@ export const CAMPAIGN_CHAPTERS: readonly CampaignChapter[] = Object.freeze(
     if (!story || story.bossId !== raw.bossId || !story.rickIntro || !story.entrance || !story.defeat || !story.loss || !story.play) {
       throw new Error(`Campaign chapter ${raw.chapter} needs Rick's selection, entrance, defeat, loss and collected-card dialogue.`);
     }
+    const emotes = story.emotes;
+    if (!emotes?.hi || !emotes.wellPlayed || !emotes.oops || !emotes.taunt) {
+      throw new Error(`Campaign chapter ${raw.chapter} needs a champion reply to every emote: hi, wellPlayed, oops and taunt.`);
+    }
     return Object.freeze({
-    story: Object.freeze({rickIntro: story.rickIntro, entrance: story.entrance, defeat: story.defeat, loss: story.loss, play: story.play}),
+    story: Object.freeze({rickIntro: story.rickIntro, entrance: story.entrance, defeat: story.defeat, loss: story.loss, play: story.play,
+      emotes: Object.freeze({hi: emotes.hi, wellPlayed: emotes.wellPlayed, oops: emotes.oops, taunt: emotes.taunt})}),
     chapter: raw.chapter,
     bossId: raw.bossId,
     universe: raw.universe,

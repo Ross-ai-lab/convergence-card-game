@@ -33,6 +33,13 @@ describe("online protocol", () => {
     expect(stepPlayer({ kind: "concede", player: 0 })).toBe(0);
   });
 
+  it("carries the four emotes and nothing else, without extra fields", () => {
+    for (const emote of ["hi", "wellPlayed", "oops", "taunt"]) expect(parseMessage({ t: "emote", emote })).toEqual({ t: "emote", emote });
+    expect(parseMessage({ t: "emote", emote: "rude" })).toBeNull();
+    expect(parseMessage({ t: "emote" })).toBeNull();
+    expect(parseMessage({ t: "emote", emote: "hi", text: "<b>anything</b>" })).toEqual({ t: "emote", emote: "hi" });
+  });
+
   it("gives two copies of one duel the same fingerprint, step after step, through a JSON round trip", () => {
     const library = makeCardLibrary(cards, relics);
     let host = createInitialGame(cards, "fingerprint-seed", relics, { decks: [CAMPAIGN_STARTER_DECK, CAMPAIGN_STARTER_DECK], mulliganPlayers: [0, 1], hasCoin: true });

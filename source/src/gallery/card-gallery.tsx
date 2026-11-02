@@ -7,7 +7,7 @@ import { ALIGNMENTS, CAMPS, CATALOGUE_RARITY_ORDER, compareCatalogue, rarityName
 import type { HeroPowerId } from "../engine/types";
 import type { CardFaceModel } from "../card-presentation";
 import { CardFace, CardPeek, GalleryPreviewContext, playableFace, relicFace } from "../card-face";
-import { PencilSimple, Trash } from "@phosphor-icons/react";
+import { CopySimple, PencilSimple, Trash } from "@phosphor-icons/react";
 import { botWins, canEditDeck, hasNewHeroPower, isStarterPreset, type Progress } from "../progress";
 import { CAMPAIGN_CHAPTERS } from "../campaign";
 import { useGalleryVisibility } from "../gallery-visibility";
@@ -120,9 +120,10 @@ function faceValue(face: CardFaceModel, key: FilterKey): string {
  */
 type UnlockFilter = "unlocked" | "locked";
 
-export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose, onPresetCreate,onPresetSelect,onPresetRename,onPresetDelete }: {
+export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHeroPowerChange, onHeroPowerViewed, onClose, onPresetCreate,onPresetSelect,onPresetRename,onPresetDelete,onPresetDuplicate }: {
   onPresetCreate:(name:string)=>boolean;onPresetSelect:(id:string)=>boolean;
   onPresetRename:(id:string,name:string)=>boolean;onPresetDelete:(id:string)=>boolean;
+  onPresetDuplicate:(id:string)=>boolean;
   progress: Progress; fontRevision: number; seat?: 0 | 1; onChange: (ids: string[]) => void; onHeroPowerChange: (power: HeroPowerId) => void; onHeroPowerViewed: () => void; onClose: () => void;
 }) {
   const deck = seat === 0 ? progress.playerDeck : progress.hotseatDeck;
@@ -419,6 +420,8 @@ export function CardGallery({ progress, fontRevision, seat = 0, onChange, onHero
               {progress.savedDecks.map(preset=><option key={preset.id} value={preset.id}>{preset.name}</option>)}
             </select></label>
             <div className="gallery-deck-manage">
+              <button type="button" disabled={readOnly||!selectedPreset} aria-label="Duplicate deck" title="Duplicate deck"
+                onClick={()=>{if(!selectedPreset)return;setDeckPreview(null);setDeckNotice(onPresetDuplicate(selectedPreset.id)?'Deck duplicated':'Could not duplicate. Browser storage is unavailable.');}}><CopySimple size={16} weight="bold" aria-hidden="true"/></button>
               <button type="button" disabled={readOnly||starterSelected||!selectedPreset} aria-label="Rename deck"
                 title={starterSelected?'The Starter Deck keeps its name':'Rename deck'}
                 onClick={()=>{if(!selectedPreset)return;setNameMode('rename');setDeckName(selectedPreset.name);setSaveError('');setSaveOpen(true);}}><PencilSimple size={16} weight="bold" aria-hidden="true"/></button>

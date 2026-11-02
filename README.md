@@ -21,6 +21,7 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
   - [Controls](#controls)
 - [Rules at a glance](#rules-at-a-glance)
 - [Win and collect](#win-and-collect)
+  - [Achievements](#achievements)
   - [Arena](#arena)
   - [Online duels](#online-duels)
   - [Progress stays in this browser](#progress-stays-in-this-browser)
@@ -67,12 +68,13 @@ It uses separate 30-card decks and a deterministic rules engine. Play directly i
 | Read a card | Hover the hand, board or deck list | Inspect a card in My Deck; hold a collection card to open its profile |
 | Inspect a relic | Hover or hold its attached badge | Tap for a brief preview; hold to keep it open |
 | End your turn | **End Turn**, Space or Enter | **End Turn** |
+| Emote | Click your portrait, then **Hi**, **Well played**, **Oops** or **Taunt** | Tap your portrait (the health gem in a phone duel), then an emote |
 | Cancel a choice | Escape | Tap the selection again or the board background |
 
 In My Deck, click a keyword for its explanation or a token name for its enlarged card.
 Locked cards keep their printed rules visible and identify the champion needed to unlock them.
 **Starter Deck** is selected initially. Each named deck saves its edits automatically, including its Hero Power. Use **Create a new deck** to name an empty deck, **Saved decks** to switch between them, and **Clear** to empty the selected deck. Incomplete decks can be finished later.
-The pencil and bin beside **Saved decks** rename or delete the selected deck. The Starter Deck always keeps its name and cannot be deleted. **Choose Hero Power** sits at the top of the deck list.
+The copy, pencil and bin buttons beside **Saved decks** duplicate, rename or delete the selected deck. A duplicate is selected straight away, so later edits change the copy and leave the original as it was. The Starter Deck always keeps its name and cannot be deleted. **Choose Hero Power** sits at the top of the deck list.
 Cards sort by mana, lowest first; choosing a mana value sorts that result by rarity instead.
 
 Phone battles use landscape orientation. Menus and deck editing also work upright. Swipe the hand to reach later cards.
@@ -112,7 +114,16 @@ Unfinished cancellable plays return to hand when time expires; committed choices
 Training and developer test duels have no deadline.
 
 Each champion has a named power and voiced dialogue. The text remains readable when audio is unavailable.
+Champions answer your emotes in their own words; practice opponents and Arena rivals answer as rivals. Emote replies are text only.
 Victory dialogue and unclaimed rewards survive a reload.
+
+### Achievements
+
+The trophy under the Lore book opens **Achievements**: 29 milestones and feats across champions, the collection, duels, the Arena and single duels.
+Milestones include defeating 1, 5, 10, 15 and all 20 champions, owning 60, 100, 150 and all cards, unlocking every Hero Power, and duel and Arena win counts.
+Feats are earned in one duel, such as winning with 3 or less core health or with minions from four universes on your board.
+Progress you made before achievements existed is credited on your first visit. A new achievement is announced as it happens; the trophy shows how many you have not yet looked at.
+Achievements award nothing and unlock nothing. Feats need a fair win: a Local Duel, a developer duel or infinite mana does not count.
 
 ### Arena
 
@@ -127,13 +138,13 @@ Between duels, the run screen shows the next rival's Hero Power and, for each fi
 
 Open **Online** on the title screen. One player creates a room and sends its six-letter code or invite link; the other joins with it. The duel starts as soon as both are in. No account is needed.
 Each player uses their own deck and Hero Power. The room's creator plays first; the other player receives **The Coin**. Both players have an opening mulligan and 100-second turns.
-**Concede** ends the duel at once. After a duel, the room's creator can deal a rematch. Online duels do not award cards and are not saved.
+Emotes reach the other player's screen. **Concede** ends the duel at once. After a duel, the room's creator can deal a rematch. Online duels do not award cards and are not saved.
 If a connection drops, the duel waits for up to a minute while the joining player reconnects, including after reloading the page. Leaving the duel concedes it.
 Players connect directly, through PeerJS's free public service. A few strict networks block such connections; another network usually works.
 
 ### Progress stays in this browser
 
-Your collection, decks and ongoing duel save on this device in this browser.
+Your collection, decks, achievements and ongoing duel save on this device in this browser.
 A private window or cleared browser storage starts a separate collection. **Continue duel** restores an unfinished game.
 There is no account synchronization. The website displays an aggregate visit count.
 

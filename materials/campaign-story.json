@@ -9,7 +9,13 @@
       "entrance": "A retired man with a portal gun and a scrapbook. How promising. Step into the arena, Rick Gramps. I have designed a very short test of your remaining life expectancy.",
       "defeat": "The results are conclusive. You are considerably more dangerous than you look. Fine. My facility and its assets are at your disposal. Please stop touching the buttons.",
       "play": "Your assistant has arrived, Gramps. Try not to lower the average intelligence on this side of the arena.",
-      "loss": "That was your best attempt? How educational. I will file it under preventable accidents. Try again when your collection has developed basic problem-solving skills."
+      "loss": "That was your best attempt? How educational. I will file it under preventable accidents. Try again when your collection has developed basic problem-solving skills.",
+      "emotes": {
+        "hi": "Hello. I am legally required to return your greeting. There. Done.",
+        "wellPlayed": "Thank you. I would return the compliment, but I try not to lie more than necessary.",
+        "oops": "Noted. I have filed that under expected outcomes.",
+        "taunt": "Your collection would need a much larger shelf. And a better curator."
+      }
     },
     {
       "chapter": 2,
@@ -18,7 +24,13 @@
       "entrance": "Oh! You're Rick Gramps, right? The guy collecting fighters from different worlds? That's actually kind of amazing. Also kind of alarming. If you're looking for somebody who can handle a little pressure, I'm your panda. Just don't point me at anything with lasers.",
       "defeat": "Okay, you got me. That was a real fight, and I'm saying that as somebody who has been punched through several walls. I'll join your collection, Gramps. But we train before breakfast, and I'm keeping the dumplings. Those are non-negotiable.",
       "play": "All right, everybody, stay together! I don't know this battlefield, but I know how to improvise. If things get weird, hit the biggest problem first. If things get delicious, save me some. Both plans can work at once.",
-      "loss": "Wow. That did not go the way I rehearsed it in my head. Your fighters are tough, but tough is not enough yet. Go practice, eat something, and come back. I'll be here. Probably in the kitchen, but still here."
+      "loss": "Wow. That did not go the way I rehearsed it in my head. Your fighters are tough, but tough is not enough yet. Go practice, eat something, and come back. I'll be here. Probably in the kitchen, but still here.",
+      "emotes": {
+        "hi": "Hi! Oh wow, hi! Sorry, I'm still really excited about this.",
+        "wellPlayed": "Really? You think so? Skadoosh! I mean, thank you.",
+        "oops": "Don't worry, I do that all the time. Usually with noodles.",
+        "taunt": "Ooh, trash talk! Okay, okay. Your deck is very... rectangular!"
+      }
     },
     {
       "chapter": 3,
@@ -27,7 +39,13 @@
       "entrance": "A grandfather collecting fighters? Good. I was worried retirement had made you sensible. Bring your strongest pet. I need a warm-up.",
       "defeat": "Heh. You actually made me work for it. All right, old man. I will fight for your collection. Keep finding opponents worth breaking.",
       "play": "Gramps. Tell me this one can take a punch.",
-      "loss": "Already done? I was just starting to enjoy myself. Pick up your collection, old man. Bring me something that fights back next time."
+      "loss": "Already done? I was just starting to enjoy myself. Pick up your collection, old man. Bring me something that fights back next time.",
+      "emotes": {
+        "hi": "Spare me the pleasantries. Fight.",
+        "wellPlayed": "Praise from prey means nothing. Show me more.",
+        "oops": "A weakness confessed is still a weakness.",
+        "taunt": "Words are the last refuge of the weak. Use your fists."
+      }
     },
     {
       "chapter": 4,
@@ -36,7 +54,13 @@
       "entrance": "Rick Gramps. An alias, I assume. You gather dangerous people and call it a hobby. I prefer a world with order. Let us decide whose vision survives.",
       "defeat": "Every route I prepared led back to you. I underestimated your reach. I will serve your collection. A strategist is more useful at your side than beneath your feet.",
       "play": "Leave the calculations to me, Gramps. They will notice the trap when it is already closed.",
-      "loss": "Every move you made led here. You mistook a collection of powerful pieces for a plan, Gramps. I suggest you learn the difference."
+      "loss": "Every move you made led here. You mistook a collection of powerful pieces for a plan, Gramps. I suggest you learn the difference.",
+      "emotes": {
+        "hi": "Good evening. Let's keep this civil, for now.",
+        "wellPlayed": "Of course it was. Everything is proceeding exactly as I planned.",
+        "oops": "A mistake? I don't make those. You, however, clearly do.",
+        "taunt": "Careful. I only need your name to end this."
+      }
     },
     {
       "chapter": 5,
@@ -45,7 +69,13 @@
       "entrance": "You cross into my world carrying borrowed champions and call yourself powerful. Come closer, collector. Let us discover how much courage remains when your servants fall.",
       "defeat": "You have power I cannot dismiss. Very well. My wand and my followers will serve you. Do not confuse obedience with affection, Gramps.",
       "play": "Your enemies will learn to fear your collection, Gramps. I shall make certain of it.",
-      "loss": "Your champions have fallen, and my world remains mine. Remember this feeling, collector. It is the cost of reaching beyond your power."
+      "loss": "Your champions have fallen, and my world remains mine. Remember this feeling, collector. It is the cost of reaching beyond your power.",
+      "emotes": {
+        "hi": "You dare address me so casually?",
+        "wellPlayed": "Flattery will not save you from what comes next.",
+        "oops": "Errors are punished in my presence. Remember that.",
+        "taunt": "I have been called many things. A collectible is not one of them."
+      }
     },
     {
       "chapter": 6,
@@ -54,7 +84,13 @@
       "entrance": "Your machines have brought you far, Rick Gramps. They will not protect you here. Stand your ground. I will measure this power you claim to possess.",
       "defeat": "Your power is real. I will serve under your command. Direct it with purpose, Gramps. An empire is wasted on a man who is merely bored.",
       "play": "Your command is acknowledged. I will clear the path.",
-      "loss": "Your ambition exceeds your discipline, Gramps. This defeat was inevitable. Return when you can command your strength rather than merely gather it."
+      "loss": "Your ambition exceeds your discipline, Gramps. This defeat was inevitable. Return when you can command your strength rather than merely gather it.",
+      "emotes": {
+        "hi": "We meet at last, collector.",
+        "wellPlayed": "Impressive. But you are not a master yet.",
+        "oops": "Apology accepted. For now.",
+        "taunt": "Your confidence is misplaced. Your collection will not save you."
+      }
     },
     {
       "chapter": 7,
@@ -63,7 +99,13 @@
       "entrance": "Look at that. A whole collection, arranged for my amusement. I usually have to travel between worlds to find this much resistance. You have saved me the trouble, Gramps.",
       "defeat": "Ha! I remember pain now. You have earned my service, old man. Find me another battle like that and I might even enjoy taking orders.",
       "play": "You promised me a fight, Gramps. These had better not disappoint.",
-      "loss": "Oh, that was disappointing. All those worlds, and this is what you brought me? Go find stronger toys, Gramps. I will be waiting."
+      "loss": "Oh, that was disappointing. All those worlds, and this is what you brought me? Go find stronger toys, Gramps. I will be waiting.",
+      "emotes": {
+        "hi": "Hi! Isn't this fun? It's about to get so much worse for you.",
+        "wellPlayed": "Ha! You're tougher than you look. That just means this takes longer.",
+        "oops": "Oops? You'll be saying that a lot more before I'm done.",
+        "taunt": "Collect me? Old man, I break things like you for fun."
+      }
     },
     {
       "chapter": 8,
@@ -72,7 +114,13 @@
       "entrance": "You wish to collect DIO? How generous of you to deliver an audience. Watch closely, Rick Gramps. Your grand adventure is about to become a story about me.",
       "defeat": "Impossible... and yet here you stand. Very well, Gramps. I will lend my power to your collection. Make the victories spectacular. I refuse to serve in obscurity.",
       "play": "Stand back, Gramps. Your collection is about to acquire a proper sense of theatre.",
-      "loss": "And so your grand collection becomes an audience for DIO! Do not look so surprised, Gramps. I told you whose story this would be."
+      "loss": "And so your grand collection becomes an audience for DIO! Do not look so surprised, Gramps. I told you whose story this would be.",
+      "emotes": {
+        "hi": "Oh? You're approaching me?",
+        "wellPlayed": "Of course it was well played. It was played against DIO.",
+        "oops": "Useless, useless! Your mistakes amuse me.",
+        "taunt": "A collector, collecting DIO? Know your place, old man!"
+      }
     },
     {
       "chapter": 9,
@@ -81,7 +129,13 @@
       "entrance": "Such an ambitious little catalogue. I collect useful gifts too. Shall we compare methods, Rick Gramps? One of us is leaving this arena with a remarkable new acquisition.",
       "defeat": "So I am the acquisition. An unfamiliar position, but I recognise a superior hand. My gifts will serve you, Gramps. Let us make your rivals regret having talent.",
       "play": "A useful opponent, Gramps. Let us see what can be taken from them.",
-      "loss": "A fascinating selection of gifts, wasted on an inexperienced collector. Recover what you can, Gramps. I have learned rather a lot about your methods."
+      "loss": "A fascinating selection of gifts, wasted on an inexperienced collector. Recover what you can, Gramps. I have learned rather a lot about your methods.",
+      "emotes": {
+        "hi": "Welcome. Do make yourself comfortable. You won't be leaving soon.",
+        "wellPlayed": "A fine move. Perhaps I will take it from you.",
+        "oops": "A mistake is only a gift you haven't learned to use. I'll take that one.",
+        "taunt": "Collect me? My dear man, I am the one who collects."
+      }
     },
     {
       "chapter": 10,
@@ -90,7 +144,13 @@
       "entrance": "You measure greatness by the beings you can command. I have ruled by strength. Sit across from me, Rick Gramps. Let us discover whether either of us understands power.",
       "defeat": "You have shown me something I did not know. I accept your command, Gramps. My kingdom's strength will join your collection. Use it for more than your boredom.",
       "play": "I see the shape of this contest, Gramps. Allow me to change it.",
-      "loss": "The contest is decided. You gathered strength without understanding its purpose. Consider your defeat carefully, Gramps. It may yet teach you something."
+      "loss": "The contest is decided. You gathered strength without understanding its purpose. Consider your defeat carefully, Gramps. It may yet teach you something.",
+      "emotes": {
+        "hi": "State your purpose. Briefly.",
+        "wellPlayed": "Interesting. You are more than I expected, human.",
+        "oops": "Even a king learns from error. Will you?",
+        "taunt": "You speak of possession to a king. Choose your next words carefully."
+      }
     },
     {
       "chapter": 11,
@@ -99,7 +159,13 @@
       "entrance": "You stand before the ruler of Nazarick. Your collection is impressive, Rick Gramps, but you have mistaken an audience for an invitation to conquer. I shall correct that error.",
       "defeat": "A most... unexpected demonstration. The wise ruler recognises when an alliance is necessary. Nazarick will serve your campaign, Gramps. I trust you appreciate the magnitude of this concession.",
       "play": "Your summon was well judged, Gramps. Naturally, I have anticipated everything.",
-      "loss": "Precisely as planned. Nazarick remains beyond your reach, Gramps. You may withdraw with your surviving dignity. I recommend leaving promptly."
+      "loss": "Precisely as planned. Nazarick remains beyond your reach, Gramps. You may withdraw with your surviving dignity. I recommend leaving promptly.",
+      "emotes": {
+        "hi": "You may greet the Sorcerer King. Once.",
+        "wellPlayed": "A satisfactory move. Everything is going according to my plan, naturally.",
+        "oops": "A miscalculation. I, of course, make none. Probably.",
+        "taunt": "Bold words. Albedo would have your head for that."
+      }
     },
     {
       "chapter": 12,
@@ -108,7 +174,13 @@
       "entrance": "I see the hunger behind your amusement, collector. World after world, bent to your desire. Come into my sight, Rick Gramps. Let us see whose will endures.",
       "defeat": "Your will has pierced the shadow. My gaze will turn upon your enemies. Command, Gramps, and they will find no place beyond the reach of your collection.",
       "play": "I see them, Gramps. Their courage is already beginning to fail.",
-      "loss": "Your will has broken beneath my gaze. Gather your scattered champions, Gramps. Even across worlds, you cannot hide your fear from me."
+      "loss": "Your will has broken beneath my gaze. Gather your scattered champions, Gramps. Even across worlds, you cannot hide your fear from me.",
+      "emotes": {
+        "hi": "I see you.",
+        "wellPlayed": "Every move you make, I have already seen.",
+        "oops": "Your failure was always visible to me.",
+        "taunt": "You cannot hide your hunger from me. It will consume you."
+      }
     },
     {
       "chapter": 13,
@@ -117,7 +189,13 @@
       "entrance": "Whoa! You crossed a bunch of worlds looking for strong people? That sounds like an adventure. I'm Luffy, and I'm not joining anybody who can't protect their crew. Show me what your collection can do, Gramps. Then we'll see which of us gets to call the next move.",
       "defeat": "That was fun! Your crew hit hard, and you kept standing when you should've been down. Fine, I'll sail with you for now. But I choose the direction, I get first word on the adventure, and somebody better have meat.",
       "play": "Hey, everybody, don't slow down! Find the strongest one and knock it over. I don't care what this place is supposed to do; we're making our own adventure. Keep your eyes open, your fists ready, and leave room for lunch.",
-      "loss": "That wasn't enough, Gramps. Your fighters tried, but they didn't make me serious. Go find stronger friends and come back. I'll wait right here. Well, maybe not right here. I get hungry when I wait, and there's always another island."
+      "loss": "That wasn't enough, Gramps. Your fighters tried, but they didn't make me serious. Go find stronger friends and come back. I'll wait right here. Well, maybe not right here. I get hungry when I wait, and there's always another island.",
+      "emotes": {
+        "hi": "Yo! Shishishi!",
+        "wellPlayed": "That was awesome! Do it again!",
+        "oops": "Hahaha! Don't worry about it, I mess up all the time too!",
+        "taunt": "I'm not going in anybody's collection. I'm gonna be King of the Pirates!"
+      }
     },
     {
       "chapter": 14,
@@ -126,7 +204,13 @@
       "entrance": "A collector? How quaint. You have mistaken a handful of curiosities for a treasury. Approach, Rick Gramps. I will show you what it means to possess greatness.",
       "defeat": "You have earned the king's attention... and his service. My treasury will answer your call, Gramps. Treat the privilege with the dignity your wardrobe lacks.",
       "play": "You may admire the treasury later, Gramps. For now, watch your enemies learn their place.",
-      "loss": "You have seen a true treasury, collector. Take your little curiosities and leave. I may permit another audience when you acquire some taste."
+      "loss": "You have seen a true treasury, collector. Take your little curiosities and leave. I may permit another audience when you acquire some taste.",
+      "emotes": {
+        "hi": "Who permitted you to address the King?",
+        "wellPlayed": "You may take pride in that. A small amount.",
+        "oops": "As expected of a mongrel.",
+        "taunt": "Everything in this world is already mine, collector. Including you."
+      }
     },
     {
       "chapter": 15,
@@ -135,7 +219,13 @@
       "entrance": "Rick Gramps! Nice collection. Bold choice, trying to add me to it. Go on, take your best shot. I would hate for this to be boring for both of us.",
       "defeat": "Okay. That actually got through. You win, Gramps. I am in. Someone has to keep this collection looking good, and you clearly need the help.",
       "play": "Hey, Gramps. Want the quick solution or the embarrassing one?",
-      "loss": "Aw, already? You had a few good ideas, Gramps. They just needed to get past me. Try again. I am happy to give you another lesson."
+      "loss": "Aw, already? You had a few good ideas, Gramps. They just needed to get past me. Try again. I am happy to give you another lesson.",
+      "emotes": {
+        "hi": "Yo! Enjoying the show?",
+        "wellPlayed": "Not bad! Still not close, though.",
+        "oops": "Hey, it happens to everyone. Well, not me. But everyone else.",
+        "taunt": "Cute. You'd need a much stronger shelf to hold the strongest."
+      }
     },
     {
       "chapter": 16,
@@ -144,7 +234,13 @@
       "entrance": "Small wanderer between worlds. You reach for stars and name them possessions. Step into the golden silence, Rick Gramps. Let your will be weighed against eternity.",
       "defeat": "Your will has crossed the golden silence. The stars bend toward your command. Carry this light into the worlds ahead, Gramps. Eternity will walk within your collection.",
       "play": "Your call reaches the stars, Gramps. Their light answers.",
-      "loss": "Your light fades at the edge of eternity. Return to your small worlds, wanderer. The stars remain beyond your grasp."
+      "loss": "Your light fades at the edge of eternity. Return to your small worlds, wanderer. The stars remain beyond your grasp.",
+      "emotes": {
+        "hi": "The golden order notes your presence.",
+        "wellPlayed": "A will worth weighing. Continue.",
+        "oops": "Errors fade, as all things fade into the gold.",
+        "taunt": "Stars are not owned, small wanderer. They are endured."
+      }
     },
     {
       "chapter": 17,
@@ -153,7 +249,13 @@
       "entrance": "WELL, LOOK WHO COLLECTED HIS WAY TO THE END OF REALITY! Cute arena, Gramps. Cute little army. Let us find out what happens when the final exhibit starts collecting YOU.",
       "defeat": "YOU ACTUALLY DID IT. Every world, every champion, and now the triangle. Fine, Gramps. I will fight for your collection. But if eternity gets boring, remember whose idea this was.",
       "play": "MISS ME, GRAMPS? Point me at something that still thinks reality is a rule.",
-      "loss": "OH, GRAMPS. YOU REACHED THE END OF REALITY AND FORGOT TO READ THE FINE PRINT! Pick up your little army. The final exhibit is still running the museum."
+      "loss": "OH, GRAMPS. YOU REACHED THE END OF REALITY AND FORGOT TO READ THE FINE PRINT! Pick up your little army. The final exhibit is still running the museum.",
+      "emotes": {
+        "hi": "HEY THERE, GRAMPS! LOVELY DAY FOR A REALITY COLLAPSE!",
+        "wellPlayed": "OOH, CLEVER! I'LL REMEMBER THAT. I REMEMBER EVERYTHING.",
+        "oops": "HAHAHA! DO IT AGAIN! THAT WAS HILARIOUS!",
+        "taunt": "COLLECT ME? BUDDY, I'VE BEEN WATCHING YOUR SHELF FOR YEARS."
+      }
     },
     {
       "chapter": 18,
@@ -162,7 +264,13 @@
       "entrance": "You gather power to escape boredom. I gathered it to reshape existence. There is a difference between a collection and a purpose, Rick Gramps. I will show you.",
       "defeat": "You have the strength to impose your will across worlds. I acknowledge it. My power will serve your collection, Gramps. Perhaps purpose will find you along the way.",
       "play": "You have chosen your moment, Gramps. I will make it decisive.",
-      "loss": "Power without purpose has brought you here. Remember what it cost, Gramps. The universe will not yield because you need a new hobby."
+      "loss": "Power without purpose has brought you here. Remember what it cost, Gramps. The universe will not yield because you need a new hobby.",
+      "emotes": {
+        "hi": "Collector.",
+        "wellPlayed": "You have my respect. It changes nothing.",
+        "oops": "I know what it is to fail. You will learn it too.",
+        "taunt": "I am inevitable. Your collection is not."
+      }
     },
     {
       "chapter": 19,
@@ -171,7 +279,13 @@
       "entrance": "So you are Rick Gramps! I heard you have been beating some incredible fighters. Forget the collection for a minute. Let us see how far we can push each other!",
       "defeat": "That was amazing! You really got me, Gramps. Sure, I will join your collection. Just promise we will keep finding stronger opponents. This is going to be fun!",
       "play": "Ready, Gramps! Let us give them a fight worth remembering.",
-      "loss": "That was fun, Gramps! You almost caught me with that last one. Take a breather, train your team, and come back. I want to see what you try next!"
+      "loss": "That was fun, Gramps! You almost caught me with that last one. Take a breather, train your team, and come back. I want to see what you try next!",
+      "emotes": {
+        "hi": "Hey! I'm Goku! This is gonna be so much fun!",
+        "wellPlayed": "Whoa, nice move! You're getting me all fired up!",
+        "oops": "Ha! Don't sweat it. Get back up and keep fighting!",
+        "taunt": "Hehe, you'll have to beat me first! Let's go all out!"
+      }
     },
     {
       "chapter": 20,
@@ -180,7 +294,13 @@
       "entrance": "You're the collector? You crossed the multiverse looking for the strongest guy, and now you're wasting my afternoon. Fine, hit me with whatever you've got. Just make it quick—I have a supermarket sale to catch, and those discounts don't come back.",
       "defeat": "You won. Huh. That's unusual. You and your fighters actually made me put in some effort, so I guess I'll come along. Don't make a big ceremony out of it. Just tell me where the next fight is, and whether there's a grocery store nearby.",
       "play": "Point me at the strongest one. I'll finish this before it gets complicated. After that, I'm going home, unless somebody knows a good discount store nearby. I'm not being rude. I just have errands, and the monsters can wait.",
-      "loss": "You lost. It happens. Your team just wasn't strong enough today, and I'm not going to pretend otherwise. Train them, find somebody tougher, and come back. If you're planning a rematch, try not to schedule it during the supermarket sale."
+      "loss": "You lost. It happens. Your team just wasn't strong enough today, and I'm not going to pretend otherwise. Train them, find somebody tougher, and come back. If you're planning a rematch, try not to schedule it during the supermarket sale.",
+      "emotes": {
+        "hi": "Oh. Hey.",
+        "wellPlayed": "Huh? Thanks, I guess. Is it almost over?",
+        "oops": "It's fine. Wait, is there a sale on today?",
+        "taunt": "Okay. ...Is that the whole speech?"
+      }
     }
   ]
 }

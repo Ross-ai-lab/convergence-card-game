@@ -15,6 +15,7 @@
  */
 import { cards, relics } from "../data/cards";
 import type { GameAction, GameEvent, GameState, HeroPowerId, PlayerId } from "../engine/types";
+import { isEmoteId, type EmoteId } from "../emotes";
 
 /** Bumped whenever a message changes shape. */
 export const ONLINE_PROTOCOL = 1;
@@ -40,7 +41,13 @@ export type OnlineMessage =
   /** Guest to host: my copy differs, send the whole state. */
   | { t: "resync" }
   /** Either side: I am leaving this duel on purpose. */
-  | { t: "leave" };
+  | { t: "leave" }
+  /**
+   * Either side: the sender said an emote. Outside the numbered steps, because
+   * it changes nothing in the duel: a lost emote is a lost emote, never a
+   * resync. A build without emotes drops it as an unknown message.
+   */
+  | { t: "emote"; emote: EmoteId };
 
 /**
  * Guest: whether a whole-duel message continues the duel already on the table.
@@ -122,6 +129,8 @@ export function parseMessage(value: unknown): OnlineMessage | null {
     case "refused":
     case "leave":
       return value as OnlineMessage;
+    case "emote":
+      return isEmoteId(value.emote) ? { t: "emote", emote: value.emote } : null;
     default:
       return null;
   }
